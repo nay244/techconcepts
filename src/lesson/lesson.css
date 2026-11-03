@@ -467,6 +467,11 @@
   border-top: 1px solid var(--line);
 }
 
+/* The console's panels scroll and so clip: a ring drawn outside the region would be cut off on three sides, so it is drawn inside. */
+.event-log__scroll:focus-visible {
+  outline-offset: -2px;
+}
+
 .event-log table {
   width: 100%;
 }
@@ -549,9 +554,10 @@
   gap: var(--space-2) var(--space-3);
 }
 
+/* No overflow clip here: the focus ring is drawn outside each button, and a clip would hide it.
+   The end buttons round their own outer corners instead, one pixel inside the group's border. */
 .playback__speeds {
   display: inline-flex;
-  overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
 }
@@ -569,6 +575,14 @@
 
 .playback__speed + .playback__speed {
   border-left: 1px solid var(--line-strong);
+}
+
+.playback__speed:first-child {
+  border-radius: calc(var(--radius) - 1px) 0 0 calc(var(--radius) - 1px);
+}
+
+.playback__speed:last-child {
+  border-radius: 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0;
 }
 
 /* The speed in use is the inverse of the rest: a solid fill, not a hue. */
