@@ -40,6 +40,10 @@ export interface LogRow {
   n: number;
   eventId: string;
   time: number;
+  /** The actor that sent the message, and the actors it was sent to and passed through: ids, not addresses. */
+  from: string;
+  to: string[];
+  via?: string[];
   src: string;
   dst: string;
   protocol: string;
@@ -84,6 +88,9 @@ function logRow(e: MessageEvent, n: number): LogRow {
     n,
     eventId: e.id,
     time: e.time,
+    from: e.from,
+    to: [...e.to],
+    ...(e.via === undefined ? {} : { via: [...e.via] }),
     src: e.src,
     dst: e.dst,
     protocol: e.protocol,

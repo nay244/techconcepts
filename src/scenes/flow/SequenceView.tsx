@@ -3,6 +3,7 @@ import type { Actor, FlowScene } from '../../content/schema';
 import type { DerivedState, LogRow } from '../../engine/timeline';
 import { formatTime } from '../../lib/format';
 import DeviceIcon from './DeviceIcon';
+import { arrowSpan, type ArrowSpan } from './geometry';
 import './flow.css';
 
 export interface SequenceViewProps {
@@ -14,28 +15,6 @@ export interface SequenceViewProps {
 /** Room for one lifeline column, so many actors scroll sideways instead of squeezing the labels. */
 const LIFELINE_MIN_WIDTH_REM = 6;
 
-interface Ends {
-  from: number;
-  to: number;
-}
-
-/**
- * Which lifelines a log row joins. A row names its endpoints by address, so
- * each is found as the actor that owns that address. An address no actor owns
- * (a broadcast, or a host outside the picture) is read as "the rest of the
- * diagram": the arrow runs to the end farther from the other lifeline.
- */
-function endsOf(actors: Actor[], row: LogRow): Ends {
-  const last = actors.length - 1;
-  const owner = (address: string) => actors.findIndex((actor) => actor.addresses.includes(address));
-  const farEnd = (i: number) => (i <= last - i ? last : 0);
-
-  const from = owner(row.src);
-  const to = owner(row.dst);
-  if (from < 0 && to < 0) return { from: 0, to: last };
-  return { from: from < 0 ? farEnd(to) : from, to: to < 0 ? farEnd(from) : to };
-}
-
 /**
  * The grid line of lifeline `i` in a row's grid. Each lifeline has two grid
  * columns, so its centre is the line between them, and an arrow spanning two
@@ -43,27 +22,36 @@ function endsOf(actors: Actor[], row: LogRow): Ends {
  */
 const lineOf = (i: number): number => 2 * i + 2;
 
-function gridColumn({ from, to }: Ends): string {
-  if (from === to) return `${lineOf(from)} / ${lineOf(from) + 1}`;
-  return `${lineOf(Math.min(from, to))} / ${lineOf(Math.max(from, to))}`;
+function gridColumn({ lo, hi, direction }: ArrowSpan): string {
+  return direction === 'self' ? `${lineOf(lo)} / ${lineOf(lo) + 1}` : `${lineOf(lo)} / ${lineOf(hi)}`;
 }
 
-const directionOf = ({ from, to }: Ends): 'right' | 'left' | 'self' => (from === to ? 'self' : from < to ? 'right' : 'left');
+/** "A", "A and B", "A, B and C". */
+function listOf(names: string[]): string {
+  return names.length < 2 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
 
-function Arrow({ row, ends, actors, onOpenPacket }: { row: LogRow; ends: Ends; actors: Actor[]; onOpenPacket(packetId: string): void }) {
+interface ArrowProps {
+  row: LogRow;
+  actors: Actor[];
+  onOpenPacket(packetId: string): void;
+}
+
+function Arrow({ row, actors, onOpenPacket }: ArrowProps) {
+  const span = arrowSpan(actors, row);
   const dropped = row.outcome === 'dropped';
+  const nameOf = (id: string) => actors.find((actor) => actor.id === id)?.label ?? id;
   const props = {
     className: 'flow-arrow',
     'data-arrow': '',
     'data-kind': row.kind,
     'data-outcome': row.outcome,
-    'data-from': actors[ends.from]?.id,
-    'data-to': actors[ends.to]?.id,
-    'data-direction': directionOf(ends),
-    style: { gridColumn: gridColumn(ends) },
+    'data-from': row.from,
+    'data-to': row.to.join(' '),
+    'data-direction': span.direction,
+    style: { gridColumn: gridColumn(span) },
   };
   const packet = row.packet;
-  const route = `from ${actors[ends.from]?.label ?? row.src} to ${actors[ends.to]?.label ?? row.dst}`;
   const body = (
     <>
       <span className="flow-arrow__text">
@@ -71,11 +59,15 @@ function Arrow({ row, ends, actors, onOpenPacket }: { row: LogRow; ends: Ends; a
         <span className="flow-arrow__time">{formatTime(row.time)}</span>
         {dropped && <span className="flow-flag">Dropped</span>}
         <span className="sr-only">
-          {route}
+          {`from ${nameOf(row.from)} to ${listOf(row.to.map(nameOf))}`}
           {packet === undefined ? '' : ': open packet details'}
         </span>
       </span>
-      <span className="flow-arrow__line" aria-hidden="true" />
+      <span className="flow-arrow__line" aria-hidden="true">
+        {span.stops.map((i) => (
+          <span key={i} className="flow-arrow__stop" style={{ left: `${((i - span.lo) / (span.hi - span.lo)) * 100}%` }} />
+        ))}
+      </span>
     </>
   );
 
@@ -93,6 +85,10 @@ function Arrow({ row, ends, actors, onOpenPacket }: { row: LogRow; ends: Ends; a
  * scene's order, and one arrow per log row, top to bottom in the order they
  * were sent. Built from HTML rather than drawn in one SVG so the text stays
  * readable at any width and an arrow with a packet can be a real button.
+ *
+ * An arrow runs from the sender's lifeline to the farthest of the row's
+ * targets, with a dot on each nearer target it reaches. Lifelines are found by
+ * actor id, which the log row carries, never by address.
  */
 export function SequenceView({ scene, state, onOpenPacket }: SequenceViewProps) {
   const { actors } = scene;
@@ -128,7 +124,7 @@ export function SequenceView({ scene, state, onOpenPacket }: SequenceViewProps) 
             <ol className="flow-seq__rows" role="list">
               {state.log.map((row) => (
                 <li key={row.n} className="flow-seq__row" style={{ gridTemplateColumns: `repeat(${actors.length * 2}, minmax(0, 1fr))` }}>
-                  <Arrow row={row} ends={endsOf(actors, row)} actors={actors} onOpenPacket={onOpenPacket} />
+                  <Arrow row={row} actors={actors} onOpenPacket={onOpenPacket} />
                 </li>
               ))}
             </ol>

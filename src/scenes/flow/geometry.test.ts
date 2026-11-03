@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import type { Actor, FlowScene, MessageEvent } from '../../content/schema';
-import { CHIP_LIFT, chipAlign, chipSpot, pathFor } from './geometry';
+import { CHIP_LIFT, arrowSpan, chipAlign, chipSpot, pathFor } from './geometry';
 
 const actor = (id: string, x: number, y: number): Actor => ({ id, kind: 'router', label: id, addresses: [], x, y });
 
@@ -74,4 +74,42 @@ test('chipAlign centres a chip, except near a side edge where it grows inward', 
   expect(chipAlign({ x: 920, y: 100 })).toBe('end');
   expect(chipAlign({ x: 150, y: 100 })).toBe('center');
   expect(chipAlign({ x: 850, y: 100 })).toBe('center');
+});
+
+describe('arrowSpan', () => {
+  // Lifelines 0 to 3 are a, r, b and c.
+  const span = (from: string, to: string[]) => arrowSpan(scene.actors, { from, to });
+
+  test('runs left to right from a sender to a target on its right', () => {
+    expect(span('a', ['b'])).toEqual({ lo: 0, hi: 2, direction: 'right', stops: [] });
+  });
+
+  test('runs right to left when the target is on the left', () => {
+    expect(span('b', ['a'])).toEqual({ lo: 0, hi: 2, direction: 'left', stops: [] });
+  });
+
+  test('runs to the farthest target and dots the nearer ones it reaches', () => {
+    expect(span('a', ['c', 'r'])).toEqual({ lo: 0, hi: 3, direction: 'right', stops: [1] });
+    expect(span('c', ['a', 'b'])).toEqual({ lo: 0, hi: 3, direction: 'left', stops: [2] });
+  });
+
+  test('has a head at both ends when the sender sits between its targets', () => {
+    expect(span('r', ['a', 'c'])).toEqual({ lo: 0, hi: 3, direction: 'both', stops: [] });
+  });
+
+  test('is a loop when the only target is the sender', () => {
+    expect(span('r', ['r'])).toEqual({ lo: 1, hi: 1, direction: 'self', stops: [] });
+  });
+
+  test('does not count the sender as one of its own targets', () => {
+    expect(span('a', ['a', 'b'])).toEqual({ lo: 0, hi: 2, direction: 'right', stops: [] });
+  });
+
+  test('counts a repeated target once', () => {
+    expect(span('a', ['c', 'c', 'r', 'r'])).toEqual({ lo: 0, hi: 3, direction: 'right', stops: [1] });
+  });
+
+  test('leaves out a target the scene does not have', () => {
+    expect(span('a', ['ghost', 'b'])).toEqual({ lo: 0, hi: 2, direction: 'right', stops: [] });
+  });
 });

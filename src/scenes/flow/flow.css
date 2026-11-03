@@ -281,25 +281,40 @@ button.flow-arrow:hover .flow-arrow__label {
   border-top-style: dashed;
 }
 
-/* The arrowhead: a 9 by 10 px triangle on the end the message travels to. */
+/* Arrowheads: a 9 by 10 px triangle at each end the message travels to. ::after is
+   the right end and ::before the left, and a direction switches on the ones it needs. */
+.flow-arrow__line::before,
 .flow-arrow__line::after {
   content: '';
   position: absolute;
   top: -6px;
+  display: none;
   border: 5px solid transparent;
 }
 
-.flow-arrow[data-direction='right'] .flow-arrow__line::after {
+.flow-arrow:is([data-direction='right'], [data-direction='both']) .flow-arrow__line::after {
+  display: block;
   right: -1px;
   border-right-width: 0;
   border-left: 9px solid var(--mark);
 }
 
-.flow-arrow[data-direction='left'] .flow-arrow__line::after,
-.flow-arrow[data-direction='self'] .flow-arrow__line::after {
+.flow-arrow:is([data-direction='left'], [data-direction='both'], [data-direction='self']) .flow-arrow__line::before {
+  display: block;
   left: -1px;
   border-left-width: 0;
   border-right: 9px solid var(--mark);
+}
+
+/* A dot where the arrow reaches a target that is not at its end. */
+.flow-arrow__stop {
+  position: absolute;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mark);
+  translate: -50% 0;
 }
 
 /* A message a device sends to itself loops out to the right and back. */
@@ -310,7 +325,7 @@ button.flow-arrow:hover .flow-arrow__label {
   border-radius: 0 8px 8px 0;
 }
 
-.flow-arrow[data-direction='self'] .flow-arrow__line::after {
+.flow-arrow[data-direction='self'] .flow-arrow__line::before {
   top: auto;
   bottom: -6px;
 }

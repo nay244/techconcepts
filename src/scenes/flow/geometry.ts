@@ -1,4 +1,5 @@
-import type { FlowScene, MessageEvent } from '../../content/schema';
+import type { Actor, FlowScene, MessageEvent } from '../../content/schema';
+import type { LogRow } from '../../engine/timeline';
 
 export interface Point {
   x: number;
@@ -47,4 +48,37 @@ const EDGE_ZONE = 150;
 export function chipAlign(spot: Point): ChipAlign {
   if (spot.x < EDGE_ZONE) return 'start';
   return spot.x > VIEW_WIDTH - EDGE_ZONE ? 'end' : 'center';
+}
+
+export interface ArrowSpan {
+  /** Lifeline indices (positions in `scene.actors`) the arrow runs between, `lo <= hi`. */
+  lo: number;
+  hi: number;
+  /** Which end carries the arrowhead; `both` when the sender sits between its targets, `self` when there is no other target. */
+  direction: 'right' | 'left' | 'both' | 'self';
+  /** Targets inside the span, each marked with a dot because the arrowhead is already on a farther one. */
+  stops: number[];
+}
+
+/**
+ * Where a sequence arrow runs, from the row's actor ids: from the sender to the
+ * farthest of its targets, reaching every target on the way. A `via` actor is
+ * only passed through, so it has no say in the span and gets no mark. An id the
+ * scene lacks is left out (lessons are checked when built, so this is only a
+ * guard); a sender that is also a target is not counted as one.
+ */
+export function arrowSpan(actors: Actor[], row: Pick<LogRow, 'from' | 'to'>): ArrowSpan {
+  const indexOf = (id: string) => actors.findIndex((actor) => actor.id === id);
+  const from = Math.max(0, indexOf(row.from));
+  const targets = [...new Set(row.to.map(indexOf).filter((i) => i >= 0 && i !== from))];
+  if (targets.length === 0) return { lo: from, hi: from, direction: 'self', stops: [] };
+
+  const lo = Math.min(from, ...targets);
+  const hi = Math.max(from, ...targets);
+  return {
+    lo,
+    hi,
+    direction: lo === from ? 'right' : hi === from ? 'left' : 'both',
+    stops: targets.filter((i) => i > lo && i < hi),
+  };
 }

@@ -118,6 +118,8 @@ test('log rows are numbered from 1 and carry the message fields', () => {
     n: 1,
     eventId: 'm1',
     time: 0,
+    from: 'a',
+    to: ['b'],
     src: '192.168.1.10',
     dst: '192.168.1.20',
     protocol: 'Demo',
@@ -131,6 +133,31 @@ test('log rows are numbered from 1 and carry the message fields', () => {
   // Optional fields are left off, not set to undefined.
   expect(d.log[1]).not.toHaveProperty('packet');
   expect(d.log[1]).not.toHaveProperty('tableChange');
+});
+
+test('a log row names the actors by id, so a view need not guess them from addresses', () => {
+  const sent: MessageEvent = {
+    type: 'message',
+    id: 'wide',
+    from: 'a',
+    to: ['b', 'a'],
+    via: ['b'],
+    src: '0.0.0.0:68',
+    dst: '255.255.255.255:67',
+    protocol: 'Demo',
+    kind: 'broadcast',
+    label: 'Shout',
+    summary: 'Sent to everyone.',
+    size: 10,
+    time: 0,
+  };
+  const lesson = lessonWith(structuredClone(L.steps[2]!.events), { stepOneEvents: [sent] });
+  const row = deriveState(lesson, 1, 1, null).log[0]!;
+  expect(row).toMatchObject({ from: 'a', to: ['b', 'a'], via: ['b'] });
+  // The row has its own copies: changing it cannot change the lesson.
+  row.to.push('x');
+  expect(sent.to).toEqual(['b', 'a']);
+  expect(deriveState(L, 1, 1, null).log[0]).not.toHaveProperty('via');
 });
 
 test('highlight only for current-step table events', () => expect(deriveState(L, 3, 0, null).tables.t.highlight).toBeNull());
