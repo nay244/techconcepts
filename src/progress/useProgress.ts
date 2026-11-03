@@ -1,12 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createSafeStorage } from '../lib/storage';
 import type { SafeStorage } from '../lib/storage';
-import { PROGRESS_KEY, clearProgress, emptyProgress, loadProgress, sanitizeProgress, saveProgress } from './store';
+import { PROGRESS_KEY, clearProgress, emptyProgress, loadProgress, mergeProgress, sanitizeProgress, saveProgress } from './store';
 import type { ProgressData } from './store';
 
 // Shared by every island on the page. Creating it never touches `window`, so
 // importing this module is safe while the page is rendered on the server.
 const defaultStorage = createSafeStorage();
+
+/**
+ * The browser's `storage` event only reaches other documents, so a change made
+ * here is announced on `window` for the other islands in this document. It is
+ * a window event rather than module state so it works even if the module ends
+ * up bundled more than once.
+ */
+const CHANGED_EVENT = 'techconcepts:progress-changed';
+
+/** Every instance, the one that made the change included, then shows what is now in storage. */
+function announce(): void {
+  window.dispatchEvent(new Event(CHANGED_EVENT));
+}
 
 export interface UseProgress {
   /** False until the island has mounted, so the server render shows no progress. */
@@ -23,9 +36,14 @@ type Snapshot = Pick<UseProgress, 'ready' | 'available' | 'data'>;
 
 /**
  * Browser-only learning progress. `known` maps each lesson key to its last step
- * (`{ [entry.key]: entry.maxPosition }`); saved records for other lessons are
- * ignored and saved positions are clamped to it. It is read when progress loads
- * or changes, so passing a fresh object each render is fine.
+ * (`{ [entry.key]: entry.maxPosition }`). `data` shows only those lessons, with
+ * saved positions clamped to it. Saved records for other lessons are ignored,
+ * not deleted: `update` leaves them in storage exactly as they were, and
+ * `reset` is the only thing that clears them. `known` is read when progress
+ * loads or changes, so passing a fresh object each render is fine.
+ *
+ * Every instance in the document (and in other tabs) reloads when one of them
+ * updates or resets, so islands on the same page never disagree.
  *
  * `storage` is for tests and must be the same object on every render; callers use the default.
  */
@@ -50,23 +68,30 @@ export function useProgress(known: Record<string, number>, storage: SafeStorage 
     };
     load();
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener(CHANGED_EVENT, load);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(CHANGED_EVENT, load);
+    };
   }, [storage]);
 
   const update = useCallback(
     (fn: (d: ProgressData) => ProgressData) => {
+      const known = knownRef.current;
       // Start from what is stored now, which may be newer than this island's copy.
-      const base = sanitizeProgress(loadProgress(storage), knownRef.current);
-      const data = sanitizeProgress(fn(base), knownRef.current);
-      saveProgress(storage, data);
-      setSnapshot((prev) => ({ ...prev, available: storage.available, data }));
+      const stored = loadProgress(storage);
+      // `fn` sees and changes only the lessons it was given...
+      const next = sanitizeProgress(fn(sanitizeProgress(stored, known)), known);
+      // ...and every other saved lesson is written back as it was.
+      saveProgress(storage, mergeProgress(stored, next, known));
+      announce();
     },
     [storage],
   );
 
   const reset = useCallback(() => {
     clearProgress(storage);
-    setSnapshot((prev) => ({ ...prev, available: storage.available, data: emptyProgress() }));
+    announce();
   }, [storage]);
 
   return { ...snapshot, update, reset };

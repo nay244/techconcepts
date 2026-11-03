@@ -6,6 +6,7 @@ import {
   clearProgress,
   emptyProgress,
   loadProgress,
+  mergeProgress,
   parseProgress,
   recordVisit,
   resumePosition,
@@ -198,6 +199,54 @@ describe('recordVisit', () => {
     recordVisit(d, 'networking/dhcp', 8, 8, now);
     recordVisit(d, 'networking/arp', 2, 6, now);
     expect(JSON.stringify(d)).toBe(before);
+  });
+});
+
+describe('mergeProgress', () => {
+  const known = { 'networking/dhcp': 8, 'networking/arp': 6 };
+  const other = { status: 'finished' as const, furthestPosition: 40, lastOpened: 'earlier' };
+
+  function stored(lastLesson: string | null): ProgressData {
+    return {
+      version: 1,
+      lastLesson,
+      lessons: {
+        'ai/x': other,
+        'networking/dhcp': { status: 'in-progress', furthestPosition: 2, lastOpened: 'earlier' },
+        'networking/arp': { status: 'finished', furthestPosition: 6, lastOpened: 'earlier' },
+      },
+    };
+  }
+
+  test('lessons that are not known survive untouched', () => {
+    const next = recordVisit(sanitizeProgress(stored(null), known), 'networking/dhcp', 5, 8, now);
+    const merged = mergeProgress(stored(null), next, known);
+    expect(merged.lessons['ai/x']).toEqual(other);
+    expect(merged.lessons['networking/dhcp']).toMatchObject({ furthestPosition: 5 });
+  });
+
+  test('known lessons come from the new data, so one that is gone from it is removed', () => {
+    const { 'networking/arp': _removed, ...rest } = sanitizeProgress(stored(null), known).lessons;
+    const merged = mergeProgress(stored(null), { version: 1, lessons: rest, lastLesson: null }, known);
+    expect(Object.keys(merged.lessons).sort()).toEqual(['ai/x', 'networking/dhcp']);
+  });
+
+  test.each([
+    ['takes the new last lesson when there is one', 'ai/x', 'networking/arp', 'networking/arp'],
+    ['keeps a stored last lesson that is not known when the new one is null', 'ai/x', null, 'ai/x'],
+    ['drops a stored last lesson that is known when the new one is null', 'networking/dhcp', null, null],
+    ['stays null when both are null', null, null, null],
+  ])('last lesson: %s', (_label, storedLast, nextLast, expected) => {
+    const next = { ...sanitizeProgress(stored(storedLast), known), lastLesson: nextLast };
+    expect(mergeProgress(stored(storedLast), next, known).lastLesson).toBe(expected);
+  });
+
+  test('does not change its inputs', () => {
+    const s = stored('ai/x');
+    const next = sanitizeProgress(s, known);
+    const before = JSON.stringify([s, next]);
+    mergeProgress(s, next, known);
+    expect(JSON.stringify([s, next])).toBe(before);
   });
 });
 

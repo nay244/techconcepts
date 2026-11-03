@@ -91,6 +91,23 @@ export function sanitizeProgress(d: ProgressData, known: Record<string, number>)
 }
 
 /**
+ * Combines what is stored with `next`, a sanitized view that was changed. Only
+ * the lessons in `known` are `next`'s to decide; every other saved record is
+ * kept exactly as stored, because a lesson that is unlisted for now (another
+ * track, a draft, a rollback) is ignored, not deleted. A stored `lastLesson`
+ * that is not known also survives when `next` names none.
+ */
+export function mergeProgress(stored: ProgressData, next: ProgressData, known: Record<string, number>): ProgressData {
+  const kept = Object.entries(stored.lessons).filter(([key]) => !Object.hasOwn(known, key));
+  const keepStoredLast = next.lastLesson === null && stored.lastLesson !== null && !Object.hasOwn(known, stored.lastLesson);
+  return {
+    version: 1,
+    lessons: Object.fromEntries([...kept, ...Object.entries(next.lessons)]),
+    lastLesson: keepStoredLast ? stored.lastLesson : next.lastLesson,
+  };
+}
+
+/**
  * Records that `key` was opened at `position` (0 is the Overview). Moving past
  * the Overview starts the lesson, reaching `maxPosition` finishes it, and a
  * finished lesson stays finished however it is opened again. Returns new data.
