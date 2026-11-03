@@ -1,0 +1,622 @@
+/* The lesson page's panels: the explanation panel (Overview, steps, Try it,
+   Check yourself, Recap), the event log and the playback controls.
+
+   Colour comes from the shared tokens. The semantic hues are marks (a dot, an
+   edge, a ring) that need 3:1 against the panel, so every word stays in an ink
+   token. A kind's hue always comes with its name in words, and a dropped
+   message adds the word "Dropped" and a dashed edge or a hollow dot. The text
+   on the Dropped pill is drawn in --bg on a --blocked fill, the same pair as
+   the flow scene's pill, which reaches 4.5:1 in both themes.
+   Check yourself's right and wrong answers are told by words, not by hue: the
+   semantic tokens have one meaning each, and none of them means "correct".
+   Nothing here moves, so there is no motion to switch off for reduced-motion. */
+
+/* ---- Marks shared by the event card, the log and the legend ---- */
+
+.kind-dot {
+  --mark: var(--ink-muted);
+  display: inline-block;
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: var(--mark);
+}
+.kind-dot[data-kind='request'] {
+  --mark: var(--request);
+}
+.kind-dot[data-kind='response'] {
+  --mark: var(--response);
+}
+.kind-dot[data-kind='control'] {
+  --mark: var(--control);
+}
+.kind-dot[data-kind='broadcast'] {
+  --mark: var(--broadcast);
+}
+.kind-dot[data-kind='encrypted'] {
+  --mark: var(--encrypted);
+}
+/* A dropped message is a hollow ring, so its shape differs from the filled dots too. */
+.kind-dot[data-kind='dropped'] {
+  --mark: var(--blocked);
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--mark);
+}
+
+.kind-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dropped-flag {
+  padding: 0 0.4375rem;
+  border-radius: 999px;
+  background: var(--blocked);
+  color: var(--bg);
+  font: 600 var(--text-xs) / 1.5 var(--font-sans);
+  letter-spacing: 0.02em;
+}
+
+/* ---- Explanation panel ---- */
+
+.explain {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  padding: var(--space-4);
+  color: var(--ink);
+}
+
+.explain__live {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.explain__live > *,
+.explain p {
+  margin: 0;
+}
+
+.explain__hook {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--line-strong);
+  color: var(--ink-strong);
+  font-size: var(--text-lg);
+  line-height: 1.5;
+}
+
+.explain__name {
+  margin: 0;
+  font-size: var(--text-3xl);
+  overflow-wrap: anywhere;
+}
+
+.explain__full-name {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.explain__eyebrow {
+  color: var(--ink-muted);
+  font: 600 var(--text-xs) / 1.4 var(--font-sans);
+  letter-spacing: 0.08em;
+}
+
+.explain__title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.explain__subtitle {
+  color: var(--ink-muted);
+}
+
+.explain__narrative {
+  line-height: 1.65;
+}
+
+.explain__facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+}
+
+.explain__fact {
+  display: grid;
+  grid-template-columns: minmax(5rem, 40%) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.explain__fact dt {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.explain__fact dd {
+  margin: 0;
+  color: var(--ink-strong);
+  font: 400 var(--text-sm) / 1.5 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+/* ---- Event card ---- */
+
+.event-card {
+  --mark: var(--ink-muted);
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--mark);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+}
+.event-card[data-kind='request'] {
+  --mark: var(--request);
+}
+.event-card[data-kind='response'] {
+  --mark: var(--response);
+}
+.event-card[data-kind='control'] {
+  --mark: var(--control);
+}
+.event-card[data-kind='broadcast'] {
+  --mark: var(--broadcast);
+}
+.event-card[data-kind='encrypted'] {
+  --mark: var(--encrypted);
+}
+.event-card[data-outcome='dropped'] {
+  --mark: var(--blocked);
+  border-style: dashed;
+  border-color: var(--line-strong);
+  border-left-color: var(--mark);
+}
+
+.event-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+}
+
+.event-card__label {
+  color: var(--ink-strong);
+  font-weight: 600;
+}
+
+.event-card__head .kind-tag {
+  color: var(--ink);
+  font-size: var(--text-xs);
+}
+
+.event-card__route {
+  color: var(--ink-strong);
+  font-weight: 500;
+}
+
+.event-card__meta {
+  color: var(--ink-muted);
+  font: 400 var(--text-xs) / 1.4 var(--font-mono);
+}
+
+/* ---- Titles and layout shared by Try it, Check yourself and the Recap ---- */
+
+.tryit,
+.check,
+.recap {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  min-width: 0;
+}
+
+.tryit p,
+.check p,
+.recap p {
+  margin: 0;
+}
+
+.lesson-panel__title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+/* ---- Try it ---- */
+
+.tryit__prompt {
+  color: var(--ink-strong);
+}
+
+.tryit__choices {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tryit__choice {
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+  color: var(--ink-strong);
+  font: 500 var(--text-sm) / 1.4 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tryit__choice:hover {
+  border-color: var(--ink-muted);
+}
+
+/* The chosen one gets a heavier ring in --selected and a tick, so it is not told by hue alone. */
+.tryit__choice[aria-pressed='true'] {
+  border-color: var(--selected);
+  box-shadow: inset 0 0 0 2px var(--selected);
+  background: color-mix(in srgb, var(--selected) 14%, var(--panel-raised));
+}
+
+.tryit__choice[aria-pressed='true']::before {
+  content: '✓';
+  content: '✓' / '';
+  margin-right: var(--space-2);
+}
+
+.tryit__outcome:not(:empty) {
+  padding: var(--space-3);
+  border-left: 3px solid var(--line-strong);
+  background: var(--panel-raised);
+}
+
+.tryit__notice {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+}
+
+.tryit__notice > summary {
+  padding: var(--space-2) var(--space-3);
+  color: var(--ink-strong);
+  font: 600 var(--text-sm) / 1.4 var(--font-sans);
+  cursor: pointer;
+}
+
+.tryit__notice > p {
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+/* ---- Check yourself ---- */
+
+.check__question {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+}
+
+.check__question > legend {
+  padding: 0 var(--space-2);
+  color: var(--ink-strong);
+  font: 600 var(--text-base) / 1.4 var(--font-sans);
+}
+
+.check__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: 2.5rem;
+  padding: var(--space-2);
+  border-radius: var(--radius);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.check__option:hover {
+  background: var(--panel);
+}
+
+.check__option > input {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--selected);
+}
+
+.check__feedback:not(:empty) {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--line-strong);
+  background: var(--panel);
+}
+
+.check__feedback strong {
+  color: var(--ink-strong);
+}
+
+/* ---- Recap ---- */
+
+.recap__takeaways {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-left: var(--space-5);
+  color: var(--ink-strong);
+}
+
+.recap__section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.recap__label {
+  margin: 0;
+  color: var(--ink-strong);
+  font: 600 var(--text-sm) / 1.4 var(--font-sans);
+}
+
+.recap__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recap__tags > li {
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel-raised);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.recap__references {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.recap__nav {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.recap__button,
+.recap__soon {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font: 600 var(--text-base) / 1.4 var(--font-sans);
+  text-align: center;
+}
+
+.recap__button {
+  display: grid;
+  place-items: center;
+  background: var(--panel-raised);
+  color: var(--ink-strong);
+  text-decoration: none;
+}
+
+.recap__button:hover {
+  border-color: var(--ink-muted);
+}
+
+/* Not a link, so it looks like a button that is not there yet: dashed and quiet. */
+.recap__soon {
+  display: grid;
+  place-items: center;
+  border-style: dashed;
+  color: var(--ink-muted);
+}
+
+.recap__prev {
+  font-size: var(--text-sm);
+}
+
+/* ---- Event log ---- */
+
+.event-log {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--ink);
+}
+
+.event-log__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  list-style: none;
+  font-size: var(--text-xs);
+}
+
+.event-log__legend > li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The log scrolls inside its own box, so it must be able to take focus for a keyboard user to scroll it. */
+.event-log__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+}
+
+.event-log table {
+  width: 100%;
+}
+
+.event-log th,
+.event-log td {
+  padding: var(--space-1) var(--space-3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.event-log th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* A shadow, not a border: a collapsed border does not travel with a sticky header cell. */
+  box-shadow: inset 0 -1px 0 var(--line);
+  background: var(--panel);
+  color: var(--ink-muted);
+  font: 500 var(--text-xs) / 1.6 var(--font-sans);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.event-log td {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.event-log tbody tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+/* Words are set in the sans face and may wrap; addresses, times and sizes are data and stay on one line. */
+.event-log td.event-log__prose {
+  font-family: var(--font-sans);
+  white-space: normal;
+}
+
+.event-log tr[data-outcome='dropped'] > td:first-child {
+  box-shadow: inset 4px 0 0 var(--blocked);
+}
+
+.event-log td.event-log__empty {
+  padding: var(--space-5) var(--space-4);
+  color: var(--ink-muted);
+  font-family: var(--font-sans);
+  text-align: center;
+  white-space: normal;
+}
+
+.event-log__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.event-log__button {
+  min-height: 1.75rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+  color: var(--ink-strong);
+  font: 500 var(--text-xs) / 1.4 var(--font-sans);
+  cursor: pointer;
+}
+
+.event-log__button:hover {
+  border-color: var(--ink-muted);
+}
+
+/* ---- Playback controls ---- */
+
+.playback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.playback__speeds {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.playback__speed {
+  min-width: 2.75rem;
+  min-height: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: var(--panel-raised);
+  color: var(--ink);
+  font: 500 var(--text-sm) / 1.4 var(--font-mono);
+  cursor: pointer;
+}
+
+.playback__speed + .playback__speed {
+  border-left: 1px solid var(--line-strong);
+}
+
+/* The speed in use is the inverse of the rest: a solid fill, not a hue. */
+.playback__speed[aria-pressed='true'] {
+  background: var(--ink-strong);
+  color: var(--bg);
+}
+
+.playback__buttons {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.playback__button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+  color: var(--ink-strong);
+  cursor: pointer;
+}
+
+.playback__button:hover:not(:disabled) {
+  border-color: var(--ink-muted);
+}
+
+.playback__button--primary {
+  background: var(--ink-strong);
+  color: var(--bg);
+}
+
+.playback__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Fingers need more room than a pointer does. */
+@media (pointer: coarse) {
+  .playback__speed {
+    min-height: 2.75rem;
+  }
+
+  .playback__button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
