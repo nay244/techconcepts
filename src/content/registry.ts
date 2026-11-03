@@ -1,0 +1,165 @@
+import { estimateMinutes } from './estimate';
+import type { CertTag } from './certs';
+import type { Lesson, Track } from './schema';
+import { tracks } from './tracks';
+
+export type LessonSummary =
+  | {
+      available: true;
+      key: string;
+      trackId: string;
+      slug: string;
+      url: string;
+      number: number;
+      title: string;
+      partTitle: string;
+      summary: string;
+      minutes: number;
+      certTags: CertTag[];
+      stepCount: number;
+      /** The last position in the lesson: Overview, steps, Try it, Check yourself, Recap. */
+      maxPosition: number;
+    }
+  | {
+      available: false;
+      key: string;
+      trackId: string;
+      slug: string;
+      number: number;
+      title: string;
+      partTitle: string;
+    };
+
+export type AvailableSummary = Extract<LessonSummary, { available: true }>;
+
+/**
+ * One entry per lesson the track plans, in track order, numbered from 1 across
+ * all parts. `lessons` is keyed by slug; a planned lesson with no file is
+ * returned as unavailable. Throws when a lesson is not in the track, is filed
+ * under a different slug than its own, or has a different title than the
+ * track lists.
+ */
+export function buildEntries(track: Track, lessons: Record<string, Lesson>): LessonSummary[] {
+  const planned = new Map(track.parts.flatMap((part) => part.lessons.map((l) => [l.slug, l.title] as const)));
+  for (const [slug, lesson] of Object.entries(lessons)) {
+    const title = planned.get(slug);
+    if (title === undefined) throw new Error(`Lesson "${slug}" is not listed in the ${track.id} track.`);
+    if (lesson.slug !== slug) throw new Error(`Lesson filed as "${slug}" has the slug "${lesson.slug}"; the slug must match.`);
+    if (lesson.title !== title) {
+      throw new Error(`Lesson "${slug}" has the title "${lesson.title}", but the ${track.id} track lists the title "${title}".`);
+    }
+  }
+
+  const entries: LessonSummary[] = [];
+  for (const part of track.parts) {
+    for (const planned of part.lessons) {
+      const base = {
+        key: `${track.id}/${planned.slug}`,
+        trackId: track.id,
+        slug: planned.slug,
+        number: entries.length + 1,
+        title: planned.title,
+        partTitle: part.title,
+      };
+      const lesson = Object.hasOwn(lessons, planned.slug) ? lessons[planned.slug] : undefined;
+      entries.push(
+        lesson === undefined
+          ? { available: false, ...base }
+          : {
+              available: true,
+              ...base,
+              url: `/${track.id}/${planned.slug}`,
+              summary: lesson.summary,
+              minutes: estimateMinutes(lesson),
+              certTags: lesson.certTags,
+              stepCount: lesson.steps.length,
+              maxPosition: lesson.steps.length + 3,
+            },
+      );
+    }
+  }
+  return entries;
+}
+
+/**
+ * The nearest available lessons before and after `slug`, skipping planned
+ * ones. `nextPlanned` is true when the entry right after `slug` exists but is
+ * not available yet. An unknown slug has no neighbors.
+ */
+export function neighbors(
+  entries: LessonSummary[],
+  slug: string,
+): { prev: AvailableSummary | null; next: AvailableSummary | null; nextPlanned: boolean } {
+  const index = entries.findIndex((e) => e.slug === slug);
+  if (index === -1) return { prev: null, next: null, nextPlanned: false };
+
+  const isAvailable = (e: LessonSummary): e is AvailableSummary => e.available;
+  const prev = entries.slice(0, index).reverse().find(isAvailable) ?? null;
+  const next = entries.slice(index + 1).find(isAvailable) ?? null;
+  const following = entries[index + 1];
+  return { prev, next, nextPlanned: following !== undefined && !following.available };
+}
+
+/** `planned` counts every entry in the track (the "of 19" in "7 of 19 complete"). */
+export function trackTotals(entries: LessonSummary[]): { available: number; planned: number; minutes: number } {
+  const available = entries.filter((e): e is AvailableSummary => e.available);
+  return {
+    available: available.length,
+    planned: entries.length,
+    minutes: available.reduce((sum, e) => sum + e.minutes, 0),
+  };
+}
+
+const LESSON_PATH = /^\.\/lessons\/([^/]+)\/([^/]+)\.ts$/;
+
+/**
+ * Groups the glob result into `{ trackId: { slug: lesson } }`. The folder
+ * name is the track id and the file name must equal the lesson's slug.
+ */
+export function groupLessonModules(modules: Record<string, Lesson>): Record<string, Record<string, Lesson>> {
+  const grouped: Record<string, Record<string, Lesson>> = {};
+  for (const [path, lesson] of Object.entries(modules)) {
+    const match = LESSON_PATH.exec(path);
+    if (match === null) throw new Error(`Unexpected lesson file path "${path}".`);
+    const [, trackId, fileName] = match as unknown as [string, string, string];
+    if (typeof lesson !== 'object' || lesson === null || typeof lesson.slug !== 'string') {
+      throw new Error(`${path} must default-export defineLesson({ ... }).`);
+    }
+    if (lesson.slug !== fileName) {
+      throw new Error(`${path}: the file name "${fileName}" must equal the lesson slug "${lesson.slug}".`);
+    }
+    (grouped[trackId] ??= {})[fileName] = lesson;
+  }
+  return grouped;
+}
+
+// Test files sit beside the lessons they cover, so they are excluded here.
+const modules = import.meta.glob<Lesson>(['./lessons/*/*.ts', '!./lessons/*/*.test.ts'], {
+  eager: true,
+  import: 'default',
+});
+const lessonsByTrack = groupLessonModules(modules);
+
+for (const trackId of Object.keys(lessonsByTrack)) {
+  if (!tracks.some((t) => t.id === trackId)) {
+    throw new Error(`src/content/lessons/${trackId} does not match any track id (${tracks.map((t) => t.id).join(', ')}).`);
+  }
+}
+
+const entriesByTrack = new Map(
+  tracks.map((t) => [t.id, buildEntries(t, Object.hasOwn(lessonsByTrack, t.id) ? lessonsByTrack[t.id]! : {})]),
+);
+
+export function getTrack(id: string): Track | undefined {
+  return tracks.find((t) => t.id === id);
+}
+
+export function getEntries(trackId: string): LessonSummary[] {
+  return entriesByTrack.get(trackId) ?? [];
+}
+
+export function getLesson(trackId: string, slug: string): Lesson | undefined {
+  if (!Object.hasOwn(lessonsByTrack, trackId)) return undefined;
+  const lessons = lessonsByTrack[trackId]!;
+  return Object.hasOwn(lessons, slug) ? lessons[slug] : undefined;
+}
