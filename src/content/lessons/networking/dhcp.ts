@@ -445,7 +445,7 @@ export default defineLesson({
     name: 'DHCP',
     fullName: 'Dynamic Host Configuration Protocol',
     description:
-      'DHCP gives a device everything it needs to talk on a network: an IP address, a subnet mask, a default gateway and a DNS server. A DHCP server, usually your router, lends these out for a set time, a lease, and keeps a table of who holds what. Watch a laptop join a home Wi-Fi network, then see what happens when the addresses run out.',
+      'DHCP gives a device everything it needs to talk on a network: an IP address, a subnet mask, a default gateway and a DNS server. A DHCP server, usually your router, lends these out for a set time, a lease, and keeps a table of who holds what. Watch a laptop join a home Wi-Fi network, then see what happens when addresses run out.',
     facts: [
       { label: 'Layer', value: 'Application (7)' },
       { label: 'Ports', value: 'UDP 67 (server), UDP 68 (client)' },
@@ -497,7 +497,7 @@ export default defineLesson({
       title: 'Discover',
       subtitle: 'A device with no address calls out',
       narrative:
-        "You've just joined the Wi-Fi, and your laptop has a problem: it has no IP address and doesn't know who to ask. So it does what you would in a hotel lobby with no desk in sight: it calls out to the whole room. That call is a Discover. It goes to 255.255.255.255, the broadcast address, so every device on the network receives it, and it's aimed at UDP port 67, where DHCP servers listen. The laptop sends it from 0.0.0.0, which means \"I have no address yet\". The phone hears it too, but nothing on the phone listens on port 67, so it ignores it.",
+        "You've just joined the Wi-Fi, and your laptop has a problem: it has no IP address and doesn't know who to ask. So it does what you would in a hotel lobby with no desk in sight: it calls out to the whole room. That call is a Discover. It goes to 255.255.255.255, the broadcast address, so every device on the network receives it, and it's aimed at UDP port 67, where DHCP servers listen (lessons 10 and 11 cover ports and UDP). The laptop sends it from 0.0.0.0, which means \"I have no address yet\". The phone hears it too, but nothing on the phone listens on port 67, so it ignores it.",
       facts: [
         { label: 'From', value: '0.0.0.0, UDP port 68' },
         { label: 'To', value: '255.255.255.255, UDP port 67' },
@@ -511,7 +511,7 @@ export default defineLesson({
       title: 'Offer',
       subtitle: 'The server proposes an address and settings',
       narrative:
-        "The router runs a DHCP server, and it hears the Discover. It picks a free address from its pool, 192.168.1.100, and answers with an Offer, like a clerk sliding a key across the desk. An Offer carries the whole kit: a subnet mask, a default gateway, a DNS server (it turns names into addresses; more in lesson 13) and the length of the lease, here 24 hours. The laptop asked for the reply to be broadcast, since it can't receive a direct one yet. Clients that can take a direct reply leave that out, and servers then answer directly. The phone ignores this Offer, because it names the laptop's MAC address.",
+        "A hotel clerk hears a guest ask for a room and slides a key across the desk. The router, which runs a DHCP server, does the same: it hears the Discover, picks a free address from its pool (the addresses it can give out), 192.168.1.100, and answers with an Offer. The Offer carries the whole kit: a subnet mask, a default gateway, a DNS server (it turns names into addresses; more in lesson 13) and the lease length, here 24 hours. The laptop has no address yet, so the Offer is broadcast too, though a client that can take a direct reply gets it directly. The phone ignores it: the Offer names the laptop's MAC address.",
       facts: [
         { label: 'Address offered', value: LAPTOP_IP },
         { label: 'Subnet mask', value: '255.255.255.0' },
@@ -525,7 +525,7 @@ export default defineLesson({
       title: 'Request',
       subtitle: 'The device says which offer it takes',
       narrative:
-        "The laptop accepts with a Request: \"I'll take 192.168.1.100, from the server at 192.168.1.1.\" You might expect this to go straight to the router, but it's another broadcast from 0.0.0.0, and that's deliberate. If a second DHCP server had also sent an Offer, this broadcast tells it, \"you weren't chosen, so free up the address you offered.\" The server identifier inside the message says whose offer won. Until the server confirms, the address isn't the laptop's to use, so it still sends from 0.0.0.0.",
+        "The laptop accepts with a Request: \"I'll take 192.168.1.100, from the server at 192.168.1.1.\" You might expect this to go straight to the router, but it's another broadcast from 0.0.0.0, on purpose. If a second DHCP server had also sent an Offer, this broadcast tells it, \"you weren't chosen, so free up the address you offered.\" The server identifier inside the message says whose offer won. Until the server confirms, the address isn't the laptop's to use, so it still sends from 0.0.0.0.",
       facts: [
         { label: 'Address requested', value: LAPTOP_IP },
         { label: 'Server chosen', value: `${ROUTER_IP} (server identifier)` },
@@ -538,7 +538,7 @@ export default defineLesson({
       title: 'Acknowledge',
       subtitle: 'The server confirms and writes it down',
       narrative:
-        "The server confirms with an Acknowledge, or ACK: the address is yours for 24 hours. It also writes a row in its lease table, the register of which IP address belongs to which MAC address until the lease runs out. That register is how the router never gives one address to two devices, and it usually sits behind a router's \"connected devices\" page. The laptop now sets up its address, mask, gateway and DNS server from the ACK and can talk normally. Discover, Offer, Request, Acknowledge: you'll hear this called DORA.",
+        "The server confirms with an Acknowledge, or ACK: the address is yours for 24 hours. It also writes a row in its lease table, the register of which IP address belongs to which MAC address until the lease runs out. That register is how the router never gives one address to two devices, and it usually sits behind a router's \"connected devices\" page. The laptop then applies the ACK's address, mask, gateway and DNS server and can talk normally. Discover, Offer, Request, Acknowledge: you'll hear this called DORA.",
       facts: [
         { label: 'Address', value: LAPTOP_IP },
         { label: 'Lease', value: '24 hours' },
@@ -551,7 +551,7 @@ export default defineLesson({
       title: 'Renew',
       subtitle: 'Halfway through the lease, ask to keep it',
       narrative:
-        "An address is a loan, like a hotel stay, so it has to be renewed. Halfway through the lease, at 12 hours (43,200 seconds), the laptop sends a Request straight to the server that gave it the address. There's no broadcast this time: it has an address to send from, and it knows the server. It puts that address in a field called ciaddr, and the server answers with an ACK that starts a fresh 24 hours. If the server stays silent until the lease ends, the laptop drops the address and starts again with a Discover. On Windows, ipconfig /renew asks for this on demand.",
+        "An address is a loan, like a hotel stay, so it has to be renewed. Halfway through the lease, at 12 hours (43,200 seconds), the laptop sends a Request straight to the server that gave it the address. No broadcast this time: it has an address to send from and knows the server. It puts that address in a field called ciaddr, and the server's ACK starts a fresh 24 hours. If the server stays silent, at 87.5% of the lease the laptop broadcasts its Request to any server, and if the lease runs out it drops the address and starts again with a Discover. On Windows, ipconfig /renew asks for this on demand.",
       facts: [
         { label: 'Renews at', value: `${RENEW_SECONDS} seconds (half of ${LEASE_SECONDS})` },
         { label: 'Sent to', value: '192.168.1.1, UDP port 67, directly' },
@@ -630,7 +630,7 @@ export default defineLesson({
           },
         ],
         explanation:
-          "The phone runs the same four steps with its own transaction ID, and the router offers the next free address, 192.168.1.101. The laptop hears every broadcast and ignores it, because each message names the phone's MAC address. The lease table now holds two rows, and while both leases last, the router won't give either address to anyone else.",
+          "The phone runs the same four steps with its own transaction ID, and the router offers the next free address, 192.168.1.101. The laptop hears every broadcast and ignores it, because each message names the phone's MAC address. The lease table now holds two rows, and while both leases last, neither address goes to anyone else.",
       },
       {
         id: 'pool-full',
@@ -664,7 +664,7 @@ export default defineLesson({
           }),
         ],
         explanation:
-          "The pool is the range of addresses a server may hand out. With a pool of one, the laptop's lease already uses the only address, so the router has nothing to offer the phone and stays silent. The phone asks again after about 4 seconds, then waits longer between tries. When it gives up, it can give itself an address starting 169.254 (APIPA, or link-local, RFC 3927), which reaches devices on the same Wi-Fi but, with no gateway, nothing beyond. A helpdesk tech who sees a 169.254 address should check the DHCP server: is it running, can the device reach it, and has its pool run out?",
+          "With a pool of one, the laptop's lease already uses the only address, so the router has nothing to offer the phone and stays silent. The phone asks again after about 4 seconds, then waits longer between tries. When it gives up, it can give itself an address starting 169.254 (APIPA, or link-local, RFC 3927). That address works only with other devices that also gave themselves one, so the phone can't reach the router, the laptop or the internet. A helpdesk tech who sees a 169.254 address should check the DHCP server: is it running, can the device reach it, and has its pool run out?",
       },
     ],
   },
@@ -676,7 +676,7 @@ export default defineLesson({
       options: ['UDP 68', 'UDP 67', 'TCP 67', 'TCP 53'],
       answer: 1,
       explanation:
-        "Servers listen on UDP 67 and clients send from UDP 68. DHCP uses UDP because a broadcast needs no connection first, and the client has no address to open one from. TCP 53 belongs to DNS, which gets its own lesson.",
+        "Servers listen on UDP 67 and clients send from UDP 68. DHCP uses UDP because a broadcast needs no connection first, and the client has no address to open one from. Port 53 belongs to DNS (lesson 13).",
     },
     {
       id: 'why-broadcast',
@@ -684,7 +684,7 @@ export default defineLesson({
       options: [
         'Broadcasts arrive faster than messages to one device',
         'It is the address of the DHCP server',
-        "The laptop doesn't know where the server is, so it asks everyone on the network",
+        "The laptop doesn't know where the server is, so it asks everyone",
       ],
       answer: 2,
       explanation:
@@ -695,12 +695,12 @@ export default defineLesson({
       prompt: 'A user tells your helpdesk their laptop has the address 169.254.20.5. What does that most likely mean?',
       options: [
         'It received a lease from the DHCP server',
-        'It could not reach a DHCP server and gave itself an address',
+        'It got no answer from a DHCP server and gave itself an address',
         'It is connected straight to the internet',
       ],
       answer: 1,
       explanation:
-        "Addresses starting 169.254 are reserved for self-assigned (link-local) use. The laptop asked for a lease, heard nothing, and picked one itself. Check the Wi-Fi or cable first, then whether the DHCP server is running and has addresses left.",
+        "Addresses starting 169.254 are self-assigned (link-local). The laptop asked for a lease, got no Offer, and picked one itself. Check the Wi-Fi or cable, then whether the DHCP server is running and has addresses left.",
     },
   ],
 
@@ -708,7 +708,7 @@ export default defineLesson({
     takeaways: [
       'DHCP gives a new device its IP address, subnet mask, default gateway and DNS server automatically.',
       'Discover, Offer, Request, Acknowledge: clients use UDP port 68 and servers UDP port 67, and the first messages are broadcasts because the client has no address yet.',
-      'An address is a lease, renewed halfway through. An address starting 169.254 means the device could not reach a DHCP server.',
+      'An address is a lease, renewed halfway through. An address starting 169.254 means the device got no answer from a DHCP server.',
     ],
   },
 });

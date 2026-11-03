@@ -264,6 +264,15 @@ test('with the pool full, the phone asks at 60 s and again at 64 s, and no Offer
   expect(full.explanation).toMatch(/APIPA|link-local/);
 });
 
+test('the pool-full explanation says a 169.254 address cannot reach the router, the laptop or the internet', () => {
+  if (dhcp.tryIt.mode !== 'choices') throw new Error('choices expected');
+  const { explanation } = dhcp.tryIt.choices.find((c) => c.id === 'pool-full')!;
+  // A self-assigned address talks only to other self-assigned devices (RFC 3927); the router and laptop are on 192.168.1.0/24.
+  expect(explanation).toMatch(/only with other devices that also gave themselves one/);
+  expect(explanation).toMatch(/can't reach the router, the laptop or the internet/);
+  expect(explanation).not.toMatch(/reaches devices on the same/i);
+});
+
 // ------------------------------------------------------------ meta, check
 
 test('meta follows the brief', () => {
@@ -322,6 +331,39 @@ test('Check yourself asks the three brief questions, and UDP 67 is the answer to
   expect(first.options[first.answer]).toBe('UDP 67');
   expect(dhcp.check[1]!.prompt).toMatch(/255\.255\.255\.255/);
   expect(dhcp.check[2]!.prompt).toMatch(/169\.254\.20\.5/);
+});
+
+test('a 169.254 address means no answer from a DHCP server, not an unreachable one (the pool-full Discover does arrive)', () => {
+  const q3 = dhcp.check[2]!;
+  expect(q3.options[q3.answer]).toBe('It got no answer from a DHCP server and gave itself an address');
+  const prose = [q3.options.join(' '), q3.explanation, dhcp.recap.takeaways.join(' ')].join(' ');
+  expect(prose).not.toMatch(/could not reach/i);
+  expect(dhcp.recap.takeaways[2]).toMatch(/got no answer from a DHCP server/);
+});
+
+test('the Renew step covers the rebinding step at 87.5% of the lease before the lease runs out', () => {
+  const renew = dhcp.steps.find((s) => s.id === 'renew')!;
+  expect(renew.narrative).toMatch(/87\.5% of the lease the laptop broadcasts its Request to any server/);
+  // The order the narrative tells it in: renew at half, rebind at 87.5%, then start over with a Discover.
+  const at = (text: string) => renew.narrative.indexOf(text);
+  expect(at('Halfway through the lease')).toBeLessThan(at('87.5%'));
+  expect(at('87.5%')).toBeLessThan(at('starts again with a Discover'));
+});
+
+test('the Offer step opens with the analogy and says what a pool is where it first uses the word', () => {
+  const offer = dhcp.steps.find((s) => s.id === 'offer')!;
+  expect(offer.narrative).toMatch(/^A hotel clerk/);
+  expect(offer.narrative.indexOf('pool (the addresses it can give out)')).toBeGreaterThan(-1);
+  // The one place "pool" is used in a step before the Offer would be the Discover step; it must not appear there.
+  expect(dhcp.steps.find((s) => s.id === 'discover')!.narrative).not.toMatch(/\bpool\b/);
+});
+
+test('ports and UDP point ahead to lessons 10 and 11, and Q1 does not claim TCP 53 for DNS', () => {
+  const discover = dhcp.steps.find((s) => s.id === 'discover')!;
+  expect(discover.narrative).toMatch(/lessons 10 and 11 cover ports and UDP/);
+  const q1 = dhcp.check[0]!;
+  expect(q1.explanation).toMatch(/Port 53 belongs to DNS \(lesson 13\)/);
+  expect(q1.explanation).not.toMatch(/TCP 53/);
 });
 
 test('no gamification language anywhere in the lesson', () => {
