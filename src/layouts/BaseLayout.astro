@@ -1,0 +1,47 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { themeBootScript } from '../lib/theme';
+import { tokensToCss } from '../styles/tokens';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+const SITE_NAME = 'TechConcepts';
+const { title, description, image = '/og-default.png' } = Astro.props;
+
+// Home passes the bare site name; every other page is "<page> · TechConcepts".
+const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
+// Social crawlers need an absolute image URL.
+const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Before anything paints: the theme boot script, then the tokens it selects between. */}
+    <script is:inline set:html={themeBootScript} />
+    <style is:inline set:html={tokensToCss()} />
+    <noscript><style>.theme-toggle { display: none; }</style></noscript>
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={imageUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <SiteHeader />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

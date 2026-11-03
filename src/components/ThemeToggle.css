@@ -1,0 +1,37 @@
+.theme-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--panel);
+}
+
+.theme-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.theme-toggle button:hover {
+  color: var(--ink-strong);
+}
+
+/* Keyed to the root attribute rather than aria-pressed so the right segment is
+   lit before the island hydrates. The filled background and border carry the
+   state; colour alone does not. */
+:root[data-theme='light'] .theme-toggle [data-theme-value='light'],
+:root[data-theme='dark'] .theme-toggle [data-theme-value='dark'] {
+  border-color: var(--line-strong);
+  background: var(--panel-raised);
+  color: var(--ink-strong);
+}
