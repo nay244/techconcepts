@@ -1,0 +1,222 @@
+/* The packet inspector: it replaces the scene canvas, so it fills its parent and
+   scrolls inside it, and its header stays put so Close is always in reach.
+   The layer bar is deliberately neutral. The eight semantic hues each have one
+   meaning in the lesson (a request, a reply, a broadcast...), and a layer is
+   none of those, so segments are told apart by their text label and by two
+   alternating greys, and every label stays in an ink token. Nothing here moves,
+   so there is no motion to switch off for reduced-motion. */
+
+.inspector {
+  height: 100%;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.inspector__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.inspector__heading {
+  min-width: 0;
+}
+
+.inspector__name {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.inspector__meta {
+  margin: var(--space-1) 0 0;
+  color: var(--ink);
+  font: 400 var(--text-sm) / 1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.inspector__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.inspector__btn {
+  min-height: 2.25rem;
+  padding: 0.25rem var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+  color: var(--ink-strong);
+  font: 500 var(--text-sm) / 1.4 var(--font-sans);
+  cursor: pointer;
+}
+
+.inspector__btn:hover {
+  border-color: var(--ink-muted);
+}
+
+.inspector__body {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.inspector__context > p {
+  margin: 0;
+}
+
+.inspector__context > p + p {
+  margin-top: var(--space-1);
+}
+
+.inspector__summary {
+  color: var(--ink-strong);
+}
+
+.inspector__seen {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---- Layer bar ---- */
+
+.inspector__caption {
+  margin: 0 0 var(--space-1);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.inspector__bar {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  list-style: none;
+}
+
+/* The inline flex-grow is the layer's size in bytes, so segments share the bar in proportion
+   to it. A segment never shrinks below its own label, though: a 8-byte UDP header would
+   otherwise be too narrow to read. */
+.inspector__seg {
+  flex-basis: 0;
+  min-width: min-content;
+  padding: var(--space-2);
+  background: color-mix(in srgb, var(--ink-muted) var(--fill, 10%), var(--panel));
+  color: var(--ink-strong);
+  font: 500 var(--text-xs) / 1.3 var(--font-mono);
+  text-align: center;
+}
+
+.inspector__seg:nth-child(even) {
+  --fill: 22%;
+}
+
+.inspector__seg + .inspector__seg {
+  border-left: 1px solid var(--line-strong);
+}
+
+/* ---- Field tree ---- */
+
+.inspector__tree {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.inspector__layer {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-raised);
+}
+
+.inspector__layer > summary {
+  padding: var(--space-3) var(--space-4);
+  color: var(--ink-strong);
+  font: 600 var(--text-base) / 1.3 var(--font-sans);
+  cursor: pointer;
+}
+
+.inspector__layer-summary {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.inspector__fields {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Name, value and tag share a row and the explanation runs underneath, aligned with the value. */
+.inspector__field {
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.inspector__field-name {
+  color: var(--ink-strong);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.inspector__field-value {
+  color: var(--ink-strong);
+  font: 400 var(--text-sm) / 1.5 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.inspector__field-explain {
+  grid-column: 2 / -1;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* The tag is a mark in neutral ink, not a hue: it is the word "E.G." that carries the meaning. */
+.inspector__eg {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 600 var(--text-xs) / 1.5 var(--font-sans);
+  letter-spacing: 0.04em;
+}
+
+.inspector__legend {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+/* On a narrow screen the name takes a line of its own, then the value and tag, then the explanation. */
+@media (max-width: 36rem) {
+  .inspector__field {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .inspector__field-name {
+    grid-column: 1 / -1;
+  }
+
+  .inspector__field-explain {
+    grid-column: 1 / -1;
+  }
+}
