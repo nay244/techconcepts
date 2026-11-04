@@ -624,3 +624,38 @@ describe('playground lessons', () => {
     expect(screen.getByRole('region', { name: 'Explanation' })).toBe(explanation);
   });
 });
+
+// ------------------------------------------------------------ live region
+
+describe('live region at the non-step positions', () => {
+  /** The polite region that announces the position. */
+  const live = () => document.querySelector<HTMLElement>('.explain__live')!;
+
+  async function fromLastStep(presses: number): Promise<void> {
+    window.history.replaceState({}, '', '?step=4');
+    renderConsole();
+    await user.keyboard('{ArrowRight}'.repeat(presses));
+  }
+
+  test('Try it is announced with its prompt', async () => {
+    await fromLastStep(1);
+    expect(live()).toHaveTextContent('Try it. Which address should the laptop send to?');
+  });
+
+  test('Check yourself is announced', async () => {
+    await fromLastStep(2);
+    expect(live()).toHaveTextContent('Check yourself');
+  });
+
+  test('the Recap is announced', async () => {
+    await fromLastStep(3);
+    expect(live()).toHaveTextContent('Recap');
+  });
+
+  test('the cue is visually hidden and the panel is not repeated inside the region', async () => {
+    await fromLastStep(1);
+    const cue = within(live()).getByText(/^Try it\./);
+    expect(cue).toHaveClass('sr-only');
+    expect(within(live()).queryByRole('radio')).not.toBeInTheDocument();
+  });
+});

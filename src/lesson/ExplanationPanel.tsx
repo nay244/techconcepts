@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Fact, Lesson } from '../content/schema';
-import type { DerivedState, Sections } from '../engine/timeline';
+import { positionLabel, type DerivedState, type Sections } from '../engine/timeline';
 import { wrapAtDots } from '../lib/wrapAtDots';
 import { eventCard, kindLabel, type EventCard } from './eventCard';
 import './lesson.css';
@@ -65,7 +65,8 @@ function EventCardView({ card, kindWord }: { card: EventCard; kindWord: string }
  * yourself and the Recap it shows `children` instead, so the console picks
  * which of those panels goes in.
  *
- * The Overview and steps sit in a polite live region that stays in the page
+ * The Overview and steps (and, at the other positions, a hidden line naming where the learner is)
+ * sit in a polite live region that stays in the page
  * as the learner moves about, so a new step, and each message as it plays, is
  * announced. A region added with its content already in it would not be.
  */
@@ -74,6 +75,16 @@ export function ExplanationPanel({ lesson, sections, position, state, actorLabel
   const step = position >= 1 && position <= sections.stepCount ? lesson.steps[position - 1] : undefined;
   const legend = lesson.scene.type === 'flow' ? lesson.scene.legend : [];
   const card = step === undefined ? null : eventCard(state, actorLabel);
+
+  // Focus does not move when the position changes, so at the positions with a panel of their own
+  // the live region says where the learner has got to. (The Subnetting canvas has its own
+  // role="status", but that speaks only after the learner compares two addresses, never on a move.)
+  const cue =
+    overview || step !== undefined
+      ? ''
+      : position === sections.tryIt
+        ? `Try it. ${lesson.tryIt.prompt}`
+        : positionLabel(lesson, position);
 
   return (
     <div className="explain">
@@ -97,6 +108,7 @@ export function ExplanationPanel({ lesson, sections, position, state, actorLabel
             <FactList facts={step.facts} />
           </>
         ) : null}
+        {!overview && step === undefined ? <p className="sr-only">{cue}</p> : null}
       </div>
       {overview ? resume : null}
       {!overview && step === undefined ? children : null}
