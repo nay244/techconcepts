@@ -33,9 +33,9 @@ export const actorKindSchema = z.enum([
 ]);
 export const certTagSchema = z.enum(CERT_TAG_IDS);
 
-export const factSchema = z.object({ label: text, value: text });
+export const factSchema = z.strictObject({ label: text, value: text });
 
-export const actorSchema = z.object({
+export const actorSchema = z.strictObject({
   id: text,
   kind: actorKindSchema,
   label: text,
@@ -44,7 +44,7 @@ export const actorSchema = z.object({
   y: z.number().min(0).max(600),
 });
 
-export const linkSchema = z.object({
+export const linkSchema = z.strictObject({
   id: text,
   from: text,
   to: text,
@@ -54,23 +54,23 @@ export const linkSchema = z.object({
 /** One table row: column key to cell text. Cells may be empty. */
 export const rowSchema = z.record(z.string(), z.string());
 
-export const tableDefSchema = z.object({
+export const tableDefSchema = z.strictObject({
   id: text,
   actor: text,
   title: text,
-  columns: z.array(z.object({ key: text, label: text })).min(1),
+  columns: z.array(z.strictObject({ key: text, label: text })).min(1),
   keyColumn: text,
   initialRows: z.array(rowSchema),
 });
 
-export const fieldSchema = z.object({
+export const fieldSchema = z.strictObject({
   name: text,
   value: z.string(),
   explain: z.string().optional(),
   example: z.boolean().optional(),
 });
 
-export const layerSchema = z.object({
+export const layerSchema = z.strictObject({
   name: text,
   size: count,
   summary: text,
@@ -78,7 +78,7 @@ export const layerSchema = z.object({
   declaredLength: count.optional(),
 });
 
-export const packetSchema = z.object({
+export const packetSchema = z.strictObject({
   name: text,
   summary: text,
   seenAt: z.string().optional(),
@@ -86,7 +86,7 @@ export const packetSchema = z.object({
   layers: z.array(layerSchema).min(1),
 });
 
-export const messageEventSchema = z.object({
+export const messageEventSchema = z.strictObject({
   type: z.literal('message'),
   id: text,
   from: text,
@@ -105,7 +105,7 @@ export const messageEventSchema = z.object({
   packet: z.string().optional(),
 });
 
-export const tableEventSchema = z.object({
+export const tableEventSchema = z.strictObject({
   type: z.literal('table'),
   id: text,
   table: text,
@@ -119,28 +119,28 @@ export const tableEventSchema = z.object({
 
 export const sceneEventSchema = z.discriminatedUnion('type', [messageEventSchema, tableEventSchema]);
 
-export const flowSceneSchema = z.object({
+export const flowSceneSchema = z.strictObject({
   type: z.literal('flow'),
   views: z.array(z.enum(['network', 'sequence'])).min(1),
   actors: z.array(actorSchema).min(1),
   links: z.array(linkSchema),
   tables: z.array(tableDefSchema),
   packets: z.record(z.string(), packetSchema),
-  legend: z.array(z.object({ kind: z.union([messageKindSchema, z.literal('dropped')]), label: text })),
+  legend: z.array(z.strictObject({ kind: z.union([messageKindSchema, z.literal('dropped')]), label: text })),
 });
 
-export const playgroundSceneSchema = z.object({
+export const playgroundSceneSchema = z.strictObject({
   type: z.literal('playground'),
   playground: z.literal('subnet'),
 });
 
-export const playgroundPresetSchema = z.object({
+export const playgroundPresetSchema = z.strictObject({
   address: z.string(),
   prefix: z.number().int(),
   compare: z.string().optional(),
 });
 
-export const stepSchema = z.object({
+export const stepSchema = z.strictObject({
   id: text,
   title: text,
   subtitle: text,
@@ -151,15 +151,15 @@ export const stepSchema = z.object({
 });
 
 export const tryItSchema = z.discriminatedUnion('mode', [
-  z.object({
+  z.strictObject({
     mode: z.literal('choices'),
     prompt: text,
-    choices: z.array(z.object({ id: text, label: text, events: z.array(sceneEventSchema), explanation: text })),
+    choices: z.array(z.strictObject({ id: text, label: text, events: z.array(sceneEventSchema), explanation: text })),
   }),
-  z.object({ mode: z.literal('free'), prompt: text, explanation: text }),
+  z.strictObject({ mode: z.literal('free'), prompt: text, explanation: text }),
 ]);
 
-export const questionSchema = z.object({
+export const questionSchema = z.strictObject({
   id: text,
   prompt: text,
   options: z.array(text),
@@ -167,7 +167,7 @@ export const questionSchema = z.object({
   explanation: text,
 });
 
-export const lessonSchema = z.object({
+export const lessonSchema = z.strictObject({
   slug: slugSchema,
   title: text,
   subtitle: text,
@@ -176,22 +176,22 @@ export const lessonSchema = z.object({
   osiLayers: z.array(z.number().int().min(1).max(7)),
   certTags: z.array(certTagSchema),
   summary: text,
-  references: z.array(z.object({ label: text, url: z.url({ protocol: /^https$/ }) })),
-  overview: z.object({ hook: text, name: text, fullName: text, description: text, facts: z.array(factSchema) }),
+  references: z.array(z.strictObject({ label: text, url: z.url({ protocol: /^https$/ }) })),
+  overview: z.strictObject({ hook: text, name: text, fullName: text, description: text, facts: z.array(factSchema) }),
   scene: z.discriminatedUnion('type', [flowSceneSchema, playgroundSceneSchema]),
   steps: z.array(stepSchema),
   tryIt: tryItSchema,
   check: z.array(questionSchema),
-  recap: z.object({ takeaways: z.array(text) }),
+  recap: z.strictObject({ takeaways: z.array(text) }),
 });
 
-export const partSchema = z.object({
+export const partSchema = z.strictObject({
   id: slugSchema,
   title: text,
-  lessons: z.array(z.object({ slug: slugSchema, title: text })).min(1),
+  lessons: z.array(z.strictObject({ slug: slugSchema, title: text })).min(1),
 });
 
-export const trackSchema = z.object({
+export const trackSchema = z.strictObject({
   id: slugSchema,
   title: text,
   description: text,

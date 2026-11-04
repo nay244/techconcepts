@@ -541,3 +541,21 @@ test('defineTrack rejects duplicate part ids, empty parts and bad slugs', () => 
   expect(() => defineTrack(trackOf([{ id: 'one', slugs: ['Bad Slug'] }]))).toThrow(/slug/);
   expect(() => defineTrack({ ...trackOf([{ id: 'one', slugs: ['a'] }]), level: 'expert' as never })).toThrow(/level/);
 });
+
+test('rejects an unknown key in a step, an event, Try it or the lesson, naming where it is', () => {
+  const step = fixtureLesson();
+  (step.steps[0] as any).subtitel = 'typo';
+  expect(issuesOf(step)).toContainEqual(expect.stringMatching(/^steps\[0\]: .*Unrecognized key.*"subtitel"/));
+
+  const event = fixtureLesson();
+  ev(event, 0, 0).outcom = 'dropped';
+  expect(issuesOf(event)).toContainEqual(expect.stringMatching(/^steps\[0\]\.events\[0\]: .*Unrecognized key.*"outcom"/));
+
+  const tryIt = fixtureLesson();
+  (tryIt.tryIt as any).promt = 'typo';
+  expect(issuesOf(tryIt)).toContainEqual(expect.stringMatching(/^tryIt: .*Unrecognized key.*"promt"/));
+
+  const top = fixtureLesson();
+  (top as any).sumary = 'typo';
+  expect(issuesOf(top)).toContainEqual(expect.stringMatching(/Unrecognized key.*"sumary"/));
+});
