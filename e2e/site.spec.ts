@@ -160,13 +160,25 @@ test.describe('Track page', () => {
   });
 });
 
+test.describe('Stats line', () => {
+  test('Home card and Track page say "3 of 19 lessons ready" with the total time and level', async ({ page }) => {
+    for (const path of ['/', '/networking']) {
+      await page.goto(path);
+      await expect(page.locator('main')).toContainText(/3 of 19 lessons ready\s*\S*\s*\d+ min in total\s*\S*\s*Beginner/);
+    }
+  });
+});
+
 test.describe('About and 404', () => {
   test('About states where progress lives, credits the inspirations, and can reset', async ({ page }) => {
     await page.goto('/about');
     await expect(page).toHaveTitle('About · TechConcepts');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(page.locator('main')).toContainText('only in this browser');
-    await expect(page.locator('main')).toContainText('never sent anywhere');
+    await expect(page.locator('main')).toContainText('TechConcepts never sends your progress or theme choice to a server');
+    // The e2e build has no analytics token, so there is no beacon and no sentence about one.
+    await expect(page.locator('main')).not.toContainText('page views');
+    await expect(page.locator('script[src*="cloudflareinsights"]')).toHaveCount(0);
     await expect(page.locator('main')).toContainText('Protocol Explorer');
     await expect(page.locator('main')).toContainText('TryHackMe');
     await hydrated(page);
@@ -192,6 +204,11 @@ test.describe('storage blocked', () => {
         },
       }),
     );
+  });
+
+  test('pages carry no analytics script without a token', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('script[src*="cloudflareinsights"]')).toHaveCount(0);
   });
 
   test('Home has no Continue card, a lesson steps to the Recap, and the theme toggle still switches', async ({ page }) => {

@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import { analyticsBeacon, analyticsToken } from '../lib/analytics';
 import { themeBootScript } from '../lib/theme';
 import { tokensToCss } from '../styles/tokens';
 
@@ -23,6 +24,7 @@ const { title, description, image = '/og-default.png', chrome = true } = Astro.p
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
 // Social crawlers need an absolute image URL.
+const beacon = analyticsBeacon(analyticsToken);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
 ---
 
@@ -57,5 +59,6 @@ const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
         <slot />
       )
     }
+    {beacon && <script is:inline {...beacon}></script>}
   </body>
 </html>

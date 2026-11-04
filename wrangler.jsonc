@@ -1,0 +1,13 @@
+{
+  // The Worker's name; Cloudflare shows it in the dashboard and uses it in the preview address.
+  // It must match the name of the Cloudflare project the owner creates.
+  "name": "techconcepts",
+  // Cloudflare's docs ask for a compatibility date (the Workers runtime behaviour to pin).
+  // There is no Worker code here, only static files, so the date has no effect on the site.
+  "compatibility_date": "2026-11-04",
+  "assets": {
+    "directory": "./dist",
+    // An unknown address gets the site's own 404 page, with a 404 status.
+    "not_found_handling": "404-page"
+  }
+}

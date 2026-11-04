@@ -26,9 +26,8 @@ const level = track.level.charAt(0).toUpperCase() + track.level.slice(1);
     <h1>{track.title}</h1>
     <p class="track__description">{track.description}</p>
     <ul class="track__stats" role="list">
-      <li>{planned} lessons</li>
-      <li>{available} ready now</li>
-      <li>{minutes} min of lessons ready</li>
+      <li>{available} of {planned} lessons ready</li>
+      <li>{minutes} min in total</li>
       <li>{level}</li>
     </ul>
 

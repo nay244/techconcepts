@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ResetProgress from '../components/ResetProgress';
 import '../components/site.css';
+import { analyticsToken } from '../lib/analytics';
 ---
 
 <BaseLayout title="About" description="What TechConcepts is, how its lessons are made, who inspired it, and how it keeps your progress private.">
@@ -27,7 +28,8 @@ import '../components/site.css';
 
     <section aria-labelledby="privacy">
       <h2 id="privacy">Your progress stays with you</h2>
-      <p>TechConcepts remembers which lessons you have started and finished, and whether you prefer the light or dark theme. This is saved only in this browser, on this device, and is never sent anywhere. There are no accounts. Your answers to the check questions are not saved at all.</p>
+      <p>TechConcepts remembers which lessons you have started and finished, and whether you prefer the light or dark theme. This is saved only in this browser, on this device. TechConcepts never sends your progress or theme choice to a server. There are no accounts. Your answers to the check questions are not saved at all.</p>
+      {analyticsToken?.trim() && <p>The site counts page views with privacy-friendly analytics that use no cookies and know nothing about your progress.</p>}
       <p>If you would like to start fresh, you can clear it here. Clearing your browser data does the same.</p>
       <ResetProgress client:load />
     </section>
