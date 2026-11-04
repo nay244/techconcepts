@@ -90,7 +90,7 @@ test('overview facts follow the brief', () => {
   const fact = (label: string) => s.overview.facts.find((f) => f.label === label)?.value;
   expect(fact('Written as')).toBe('192.168.1.0/24');
   expect(fact('Mask')).toBe('255.255.255.0');
-  expect(fact('Usable hosts')).toBe('2 to the power of host bits, minus 2');
+  expect(fact('Usable hosts')).toBe('2 to the power of host bits, minus 2 (for /30 and bigger)');
   expect(fact('Defined in')).toBe('RFC 950, RFC 4632');
 });
 
@@ -246,7 +246,7 @@ describe('step 6: a /30', () => {
 describe('every address and prefix a step states is one the engine computes for it', () => {
   const extras: Record<number, { addresses: string[]; prefixes: number[] }> = {
     0: { addresses: [], prefixes: [] },
-    1: { addresses: ['11111111.11111111.11111111.00000000'], prefixes: [] },
+    1: { addresses: [], prefixes: [] },
     2: { addresses: [], prefixes: [] },
     // The four /26 subnets of the /24, and the /24 they were cut from.
     3: { addresses: ['192.168.1.0', '192.168.1.128', '192.168.1.192', '255.255.255.192'], prefixes: [24] },
@@ -407,6 +407,77 @@ describe('Check yourself', () => {
       expect(new Set(q.options).size).toBe(q.options.length);
       expect(countWords(q.explanation)).toBeGreaterThan(10);
     }
+  });
+});
+
+// ------------------------------------------------------------ what the lesson says about reserved addresses
+
+describe('the usable-hosts rule is stated only for the range the lesson covers', () => {
+  const everything = () => [
+    s.overview.hook,
+    s.overview.description,
+    ...s.overview.facts.map((f) => `${f.label}: ${f.value}`),
+    ...s.steps.flatMap((x) => [x.title, x.subtitle, x.narrative, ...x.facts.map((f) => `${f.label}: ${f.value}`)]),
+    s.tryIt.prompt,
+    s.tryIt.mode === 'free' ? s.tryIt.explanation : '',
+    ...s.check.flatMap((q) => [q.prompt, ...q.options, q.explanation]),
+    ...s.recap.takeaways,
+  ];
+
+  test('takeaway 2 gives the rule for ordinary subnets (/30 and bigger) and pins its three numbers', () => {
+    const takeaway = s.recap.takeaways[1]!;
+    expect(takeaway).toMatch(/ordinary subnets \(\/30 and bigger/);
+    expect(takeaway).toMatch(/254 usable in a \/24, 62 in a \/26, 2 in a \/30/);
+    // The three numbers are what the engine says.
+    expect([24, 26, 30].map((prefix) => subnetInfo(ip('10.0.0.1'), prefix).usableHosts)).toEqual([254, 62, 2]);
+  });
+
+  test('the step 3 subtitle and the overview fact carry the same scope', () => {
+    expect(s.steps[2]!.subtitle).toBe('Two addresses in an ordinary subnet are reserved');
+    expect(s.overview.facts.find((f) => f.label === 'Usable hosts')?.value).toMatch(/\(for \/30 and bigger\)$/);
+  });
+
+  test('no text claims the rule for "every subnet", and none mentions /31 or /32, which the slider does not reach', () => {
+    for (const text of everything()) {
+      expect(text).not.toMatch(/\bevery subnet\b/i);
+      expect(text).not.toMatch(/\/(31|32)\b/);
+    }
+  });
+
+  test('outside the rule: a /31 has 2 usable hosts and a /32 has 1, so the scope matters', () => {
+    expect(subnetInfo(ip('10.0.0.0'), 31).usableHosts).toBe(2);
+    expect(subnetInfo(ip('10.0.0.0'), 32).usableHosts).toBe(1);
+    expect(subnetInfo(ip('10.0.0.0'), 30).usableHosts).toBe(2 ** 2 - 2);
+  });
+});
+
+describe('terms and analogy', () => {
+  test('"host bit" is defined at first use, in step 2, and not again in step 3', () => {
+    expect(s.steps[0]!.narrative).not.toMatch(/host bit/);
+    expect(s.steps[1]!.narrative).toContain('a 1 for every network bit (a bit in the network part) and a 0 for every host bit (a bit in the host part)');
+    expect(s.steps[2]!.narrative).not.toMatch(/\(each bit/);
+  });
+
+  test('step 1 does not teach that the first three numbers are always the network', () => {
+    expect(s.steps[0]!.narrative).not.toMatch(/first three numbers/);
+    expect(s.steps[0]!.narrative).toContain('the next step shows what decides where the line falls');
+  });
+
+  test('the street analogy is one analogy: a subnet is a street, a /30 is a short lane, and no "neighborhood" or "private lane"', () => {
+    expect(s.steps[3]!.narrative).toContain("Each subnet is its own street: a router doesn't pass its broadcasts on to the next one.");
+    expect(s.steps[3]!.narrative).not.toMatch(/\bnever\b/);
+    expect(s.steps[5]!.narrative).toContain('a short lane with exactly two houses');
+    for (const step of s.steps) expect(step.narrative).not.toMatch(/neighborhood|private lane/);
+  });
+
+  test('CIDR is expanded where it is first used, and the lesson is named for subnetting, not for CIDR', () => {
+    expect(s.steps[1]!.narrative).toContain('(CIDR notation, from Classless Inter-Domain Routing)');
+    expect(s.overview.fullName).toBe('Subnetwork addressing');
+  });
+
+  test('wording: "Neither can be given to a device", and the split is "once the prefix reaches /26 or more"', () => {
+    expect(s.steps[2]!.narrative).toContain('Neither can be given to a device');
+    expect(s.check[1]!.explanation).toContain('once the prefix reaches /26 or more');
   });
 });
 

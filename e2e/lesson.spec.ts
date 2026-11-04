@@ -341,11 +341,22 @@ test.describe('/networking/subnetting: the playground', () => {
     await expect(page.getByText(/^Three things to notice\./)).toBeHidden();
   });
 
-  test('Space does nothing, because there is nothing to play', async ({ page }) => {
+  test('Space does nothing, because there is nothing to play, and the page is left to handle it', async ({ page }) => {
     await openLesson(page, '/networking/subnetting');
     await advance(page, 2);
     await blurFocus(page);
+    // Nothing visible changes if Space is mishandled in a playground, so check the contract itself: the console
+    // does not cancel the key. The listener goes on the window before the key is pressed, and runs after the console's own.
+    await page.evaluate(() => {
+      (window as unknown as { spaceCancelled: Promise<boolean> }).spaceCancelled = new Promise((resolve) => {
+        window.addEventListener('keydown', (event) => {
+          if (event.code === 'Space') resolve(event.defaultPrevented);
+        });
+      });
+    });
     await page.keyboard.press('Space');
+    const cancelled = await page.evaluate(() => (window as unknown as { spaceCancelled: Promise<boolean> }).spaceCancelled);
+    expect(cancelled).toBe(false);
     await expect(page.getByText('STEP 2 OF 6')).toBeVisible();
   });
 

@@ -10,8 +10,10 @@ import { defineLesson } from '../../define';
  * Every step is driven by its preset, and every number a step states is one
  * the subnet engine produces for that preset; the tests pin them. The
  * playground covers /16 to /30, where usable hosts are always 2 to the power of
- * the host bits, minus 2. (A /31 or /32 follows other rules, RFC 3021, and is
- * left out of this lesson on purpose.)
+ * the host bits, minus 2. A /31 follows other rules (RFC 3021) and a /32 is a
+ * single host, so both are left out of this lesson on purpose, and everything
+ * the lesson says about reserved addresses says "ordinary subnet" or "/30 and
+ * bigger".
  */
 export default defineLesson({
   slug: 'subnetting',
@@ -31,13 +33,13 @@ export default defineLesson({
     hook:
       "Picture a street of houses. Every address has two parts: the street and the house number. Neighbors on your street are a short walk away; another street means going out by the main road. IP addresses work the same way. Subnetting is how a network decides where the street ends and the house number begins.",
     name: 'Subnetting',
-    fullName: 'Subnetworks and CIDR notation',
+    fullName: 'Subnetwork addressing',
     description:
       "A subnet is a smaller network cut out of a bigger one. A number called the mask marks where an address stops naming the network and starts naming the device. Subnetting has a reputation for being hard, but it comes down to moving that line and counting.",
     facts: [
       { label: 'Written as', value: '192.168.1.0/24' },
       { label: 'Mask', value: '255.255.255.0' },
-      { label: 'Usable hosts', value: '2 to the power of host bits, minus 2' },
+      { label: 'Usable hosts', value: '2 to the power of host bits, minus 2 (for /30 and bigger)' },
       { label: 'Defined in', value: 'RFC 950, RFC 4632' },
     ],
   },
@@ -50,7 +52,7 @@ export default defineLesson({
       title: 'An address has two parts',
       subtitle: 'Network on the left, host on the right',
       narrative:
-        'Think of 12 Oak Street. "Oak Street" says which street, and 12 says which house. An IP address also has two parts: a network part, which says which network a device is on, and a host part, which says which device it is. (A host is any device with an address; lesson 3 covers addresses and binary.) Here, in 192.168.1.10, the first three numbers are the network and the last, 10, is the host. The canvas shows the 32 bits, the ones and zeros a computer reads, with the network part marked.',
+        'Think of 12 Oak Street. "Oak Street" says which street, and 12 says which house. An IP address also has two parts: a network part, which says which network a device is on, and a host part, which says which device it is. (A host is any device with an address; lesson 3 covers addresses and binary.) Here, in 192.168.1.10, the network part is 192.168.1 and the host part is 10 (the next step shows what decides where the line falls). The canvas shows the 32 bits, the ones and zeros a computer reads, with the network part marked.',
       facts: [
         { label: 'Address', value: '192.168.1.10' },
         { label: 'Network part', value: '192.168.1 (the first 24 bits)' },
@@ -65,7 +67,7 @@ export default defineLesson({
       title: 'The mask draws the line',
       subtitle: 'A number says where the network part ends',
       narrative:
-        "How does a device know where the street name ends? Imagine a card with holes cut in it, laid over the address: the bits under the holes show through as the network part, and the rest are covered up as the host part. That card is the subnet mask, a number with a 1 for every network bit and a 0 for every host bit. 255.255.255.0 is 24 ones then 8 zeros, so the first 24 bits are the network. That count is the prefix length, written after a slash: 192.168.1.10/24 (CIDR notation).",
+        "How does a device know where the street name ends? Imagine a card with holes cut in it, laid over the address: the bits under the holes show through as the network part, and the rest are covered up as the host part. That card is the subnet mask, a number with a 1 for every network bit (a bit in the network part) and a 0 for every host bit (a bit in the host part). 255.255.255.0 is 24 ones then 8 zeros, so the first 24 bits are the network. That count is the prefix length, written after a slash: 192.168.1.10/24 (CIDR notation, from Classless Inter-Domain Routing).",
       facts: [
         { label: 'Mask', value: '255.255.255.0' },
         { label: 'Mask in binary', value: '11111111.11111111.11111111.00000000' },
@@ -77,9 +79,9 @@ export default defineLesson({
     {
       id: 'reserved',
       title: 'Network, broadcast and hosts',
-      subtitle: 'Two addresses in every subnet are reserved',
+      subtitle: 'Two addresses in an ordinary subnet are reserved',
       narrative:
-        "A street has its own name and a loudspeaker every house can hear. A subnet reserves two addresses the same way. Set every host bit (each bit of the host part) to 0 and you get the network address, 192.168.1.0, the subnet's own name. Set them all to 1 and you get the broadcast address, 192.168.1.255, which reaches every device in the subnet at once. Neither can go to a device. So 8 host bits give 256 addresses (2 to the power of 8), minus 2: 254 usable hosts, 192.168.1.1 to 192.168.1.254.",
+        "A street has its own name and a loudspeaker every house can hear. A subnet reserves two addresses the same way. Set every host bit to 0 and you get the network address, 192.168.1.0, the subnet's own name. Set them all to 1 and you get the broadcast address, 192.168.1.255, which reaches every device in the subnet at once. Neither can be given to a device. So 8 host bits give 256 addresses (2 to the power of 8), minus 2: 254 usable hosts, 192.168.1.1 to 192.168.1.254.",
       facts: [
         { label: 'Network address', value: '192.168.1.0' },
         { label: 'Broadcast address', value: '192.168.1.255' },
@@ -94,7 +96,7 @@ export default defineLesson({
       title: 'Borrowing bits',
       subtitle: 'Move the line right for smaller subnets',
       narrative:
-        "Is the street too long? Move the dividing line to split it. Here the mask grows from /24 to /26, so 2 bits that were host bits become network bits. That is called borrowing bits. Two borrowed bits make 4 subnets (2 to the power of 2) of 64 addresses each, starting at 192.168.1.0, .64, .128 and .192. The address 192.168.1.70 is in the one starting at 192.168.1.64, with 6 host bits left: 64 minus 2 leaves 62 usable hosts. Each subnet is its own neighborhood: a broadcast never leaves it.",
+        "Is the street too long? Move the dividing line to split it. Here the mask grows from /24 to /26, so 2 bits that were host bits become network bits. That is called borrowing bits. Two borrowed bits make 4 subnets (2 to the power of 2) of 64 addresses each, starting at 192.168.1.0, .64, .128 and .192. The address 192.168.1.70 is in the one starting at 192.168.1.64, with 6 host bits left: 64 minus 2 leaves 62 usable hosts. Each subnet is its own street: a router doesn't pass its broadcasts on to the next one.",
       facts: [
         { label: 'Mask', value: '255.255.255.192 (/26)' },
         { label: 'Cut from one /24', value: '4 subnets of 64 addresses' },
@@ -124,7 +126,7 @@ export default defineLesson({
       title: 'Tiny subnets',
       subtitle: 'A /30 holds exactly two devices',
       narrative:
-        "Some subnets are tiny, like a private lane with exactly two houses. A /30 leaves just 2 host bits, so 4 addresses (2 to the power of 2): the network address, the broadcast address and 2 usable hosts. A cable between two routers needs exactly that, one address per end, so engineers often use /30 subnets for those links, wasting no host addresses. Here 10.0.0.5/30 is in the subnet 10.0.0.4, whose hosts are 10.0.0.5 and 10.0.0.6. (10.x.x.x is private; see lesson 3.)",
+        "Some subnets are tiny, like a short lane with exactly two houses. A /30 leaves just 2 host bits, so 4 addresses (2 to the power of 2): the network address, the broadcast address and 2 usable hosts. A cable between two routers needs exactly that, one address per end, so engineers often use /30 subnets for those links, wasting no host addresses. Here 10.0.0.5/30 is in the subnet 10.0.0.4, whose hosts are 10.0.0.5 and 10.0.0.6. (10.x.x.x is private; see lesson 3.)",
       facts: [
         { label: 'Mask', value: '255.255.255.252 (/30)' },
         { label: 'This subnet', value: '10.0.0.4 to 10.0.0.7' },
@@ -163,7 +165,7 @@ export default defineLesson({
       ],
       answer: 2,
       explanation:
-        "In a /24 the first three numbers are the network part, and both addresses begin 192.168.1. Only the host part differs, so they share a subnet and can talk directly. They stop sharing a subnet only at /26 or longer.",
+        "In a /24 the first three numbers are the network part, and both addresses begin 192.168.1. Only the host part differs, so they share a subnet and can talk directly. They stop sharing a subnet once the prefix reaches /26 or more.",
     },
     {
       id: 'thirty-uses',
@@ -182,7 +184,7 @@ export default defineLesson({
   recap: {
     takeaways: [
       "An address has a network part and a host part. The mask, written as a prefix length like /24, marks where one ends.",
-      "A subnet with h host bits has 2 to the power of h addresses, two of them reserved (network and broadcast): 254 usable in a /24, 62 in a /26, 2 in a /30.",
+      "A subnet with h host bits has 2 to the power of h addresses. In ordinary subnets (/30 and bigger, the ones you can build here), two are reserved (network and broadcast): 254 usable in a /24, 62 in a /26, 2 in a /30.",
       "Two addresses share a subnet when their network parts match under the same mask. If they don't, traffic between them goes through a router.",
     ],
   },
