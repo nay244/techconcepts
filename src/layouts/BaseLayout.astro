@@ -4,6 +4,7 @@ import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { analyticsBeacon, analyticsToken } from '../lib/analytics';
 import { themeBootScript } from '../lib/theme';
+import { canonicalUrl } from '../lib/url';
 import { tokensToCss } from '../styles/tokens';
 
 interface Props {
@@ -26,8 +27,8 @@ const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
 // Social crawlers need an absolute image URL.
 const beacon = analyticsBeacon(analyticsToken);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
-// The page's own absolute address on the live site.
-const pageUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+// The page's own absolute address on the live site, in the slash-less form it is served at.
+const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
 ---
 
 <!doctype html>

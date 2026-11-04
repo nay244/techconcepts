@@ -1,0 +1,5 @@
+# Cloudflare reads this file at deploy time; it is not served as a page.
+# Files under /_astro/ carry a content hash in their names, so a changed file
+# gets a new name. Browsers can keep them for a year without checking again.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable

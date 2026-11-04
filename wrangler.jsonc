@@ -8,6 +8,10 @@
   "assets": {
     "directory": "./dist",
     // An unknown address gets the site's own 404 page, with a 404 status.
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // The site links to slash-less addresses such as /networking/dhcp. Serve those
+    // directly; /networking/dhcp/ and /networking/dhcp/index.html redirect (307) to them.
+    // The default, auto-trailing-slash, would redirect every internal link the other way.
+    "html_handling": "drop-trailing-slash"
   }
 }
