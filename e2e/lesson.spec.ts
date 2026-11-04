@@ -1,9 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /** Every lesson page to check. Later pilots append themselves here. */
 const LESSONS: { path: string; kind: 'flow' | 'playground' }[] = [
   { path: '/networking/dhcp', kind: 'flow' },
   { path: '/networking/subnetting', kind: 'playground' },
+  { path: '/networking/firewalls', kind: 'flow' },
 ];
 
 /** The console is one island: once Astro drops its `ssr` marker, React is listening. */
@@ -31,6 +32,23 @@ async function goToTryIt(page: Page): Promise<void> {
   const tryIt = page.getByRole('heading', { level: 2, name: 'Try it' });
   for (let i = 0; i < 12 && !(await tryIt.isVisible()); i += 1) await nextStep(page).click();
   await expect(tryIt).toBeVisible();
+}
+
+/** The scroll containers above an element that hide any part of it: inside the viewport is not enough if a scrolling panel clips it. */
+function clippingContainers(target: Locator): Promise<string[]> {
+  return target.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const clipped: string[] = [];
+    for (let node = el.parentElement; node !== null; node = node.parentElement) {
+      const { overflowX, overflowY } = getComputedStyle(node);
+      if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden')) continue;
+      const room = node.getBoundingClientRect();
+      if (box.top < room.top || box.bottom > room.bottom || box.left < room.left || box.right > room.right) {
+        clipped.push(node.className || node.tagName);
+      }
+    }
+    return clipped;
+  });
 }
 
 /** The least a device's label and its addresses may measure on screen, in CSS pixels (ruling R28). */
@@ -254,19 +272,7 @@ test.describe('/networking/subnetting: the playground', () => {
       await expect(result).toBeInViewport({ ratio: 1 });
 
       // Inside the viewport is not enough if a scrolling panel is hiding part of it: it has to sit inside every scroll container above it.
-      const clippedBy = await result.evaluate((el) => {
-        const box = el.getBoundingClientRect();
-        const clipped: string[] = [];
-        for (let node = el.parentElement; node !== null; node = node.parentElement) {
-          const { overflowX, overflowY } = getComputedStyle(node);
-          if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden')) continue;
-          const room = node.getBoundingClientRect();
-          if (box.top < room.top || box.bottom > room.bottom || box.left < room.left || box.right > room.right) {
-            clipped.push(node.className || node.tagName);
-          }
-        }
-        return clipped;
-      });
+      const clippedBy = await clippingContainers(result);
       expect(clippedBy).toEqual([]);
     });
   }
@@ -370,4 +376,28 @@ test.describe('/networking/subnetting: the playground', () => {
     await advance(page, 2);
     await expect(usable).toHaveText('2');
   });
+});
+
+test.describe('/networking/firewalls: the rule list', () => {
+  // The rule list is this lesson's teaching surface: the row a step matched has to be seen, not hidden below the stage or in a scroll area.
+  for (const [width, height] of [
+    [1280, 650],
+    [1024, 768],
+  ] as const) {
+    test(`the matched rule row is visible at every step at ${width}x${height}`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name !== 'short-desktop', 'Sets its own desktop viewport; one project is enough.');
+      await page.setViewportSize({ width, height });
+      await openLesson(page, '/networking/firewalls');
+      const expected = ['1', '3', '2', '3'];
+      for (const [i, rule] of expected.entries()) {
+        // Moving to a step starts it playing.
+        await nextStep(page).click();
+        const row = page.locator('.device-table[data-table="rules"] tr[data-highlight="matched"]');
+        await expect(row).toHaveCount(1, { timeout: 8_000 });
+        await expect(row.locator('td').first()).toContainText(rule);
+        await expect(row, `step ${i + 1}`).toBeInViewport({ ratio: 1 });
+        expect(await clippingContainers(row), `step ${i + 1}`).toEqual([]);
+      }
+    });
+  }
 });
