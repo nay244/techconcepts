@@ -26,6 +26,8 @@ const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
 // Social crawlers need an absolute image URL.
 const beacon = analyticsBeacon(analyticsToken);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
+// The page's own absolute address on the live site.
+const pageUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 ---
 
 <!doctype html>
@@ -42,6 +44,9 @@ const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={imageUrl} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>

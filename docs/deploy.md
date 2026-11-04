@@ -25,7 +25,7 @@ You do these once. Nothing here needs a password pasted into any tool; you sign 
    - Project name: `techconcepts` (it must match `name` in `wrangler.jsonc`)
    - Production branch: `main`
    - Build command: `npm run build`
-   - Deploy command: `npx wrangler deploy` (the default)
+   - Deploy command: `npm run deploy` (it runs the `wrangler` pinned in `package.json`, which Workers Builds installs with the other dependencies; the dashboard's default `npx wrangler deploy` would also use that local copy)
    - Root directory: leave empty
    - Build variable: `NODE_VERSION` = `24`
 
