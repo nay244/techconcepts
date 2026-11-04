@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Field, Layer } from '../schema';
-import { dhcpLayer, ethernetLayer, ipv4Layer, packet, udpLayer } from './packets';
+import { dhcpLayer, ethernetLayer, ipv4Layer, packet, tcpLayer, udpLayer } from './packets';
 
 const MAC = '00:00:5E:00:53:10';
 
@@ -265,6 +265,152 @@ describe('udpLayer', () => {
     ['length', { length: 65536 }],
   ] as const)('rejects an out-of-range %s', (name, override) => {
     expect(() => udpLayer({ srcPort: 68, dstPort: 67, length: 308, ...override })).toThrow(new RegExp(name));
+  });
+});
+
+// ------------------------------------------------------------ TCP
+
+describe('tcpLayer', () => {
+  const tcp = (o: Partial<Parameters<typeof tcpLayer>[0]> = {}) =>
+    tcpLayer({
+      src: '203.0.113.50',
+      dst: '10.0.0.10',
+      srcPort: 51514,
+      dstPort: 443,
+      flags: ['SYN'],
+      seq: 2310884771,
+      window: 64240,
+      mss: 1460,
+      ...o,
+    });
+  const syn = tcp();
+  const synAck = tcp({ src: '10.0.0.10', dst: '203.0.113.50', srcPort: 443, dstPort: 51514, flags: ['SYN', 'ACK'], seq: 1187419304, ack: 2310884772 });
+
+  test('is 24 bytes with the one option, 20 without, and declares no length (TCP has no length field)', () => {
+    expect(syn.size).toBe(24);
+    expect(tcp({ mss: undefined }).size).toBe(20);
+    expect(syn.declaredLength).toBeUndefined();
+  });
+
+  test('lists the header fields in wire order, with the option last', () => {
+    expect(namesOf(syn)).toEqual([
+      'Source port',
+      'Destination port',
+      'Sequence number',
+      'Acknowledgment number',
+      'Data offset (header length)',
+      'Flags',
+      'Window size',
+      'Checksum',
+      'Urgent pointer',
+      'Maximum segment size (option 2)',
+    ]);
+    expect(namesOf(tcp({ mss: undefined })).at(-1)).toBe('Urgent pointer');
+  });
+
+  test('glosses the well-known ports (22, 23, 80, 443) and leaves other ports bare', () => {
+    expect(valueOf(syn, 'Source port')).toBe('51514');
+    expect(valueOf(syn, 'Destination port')).toBe('443 (HTTPS)');
+    expect(valueOf(tcp({ dstPort: 22 }), 'Destination port')).toBe('22 (SSH)');
+    expect(valueOf(tcp({ dstPort: 23 }), 'Destination port')).toBe('23 (Telnet)');
+    expect(valueOf(tcp({ dstPort: 80 }), 'Destination port')).toBe('80 (HTTP)');
+    expect(valueOf(synAck, 'Source port')).toBe('443 (HTTPS)');
+  });
+
+  test('a SYN sets only the SYN flag and acknowledges nothing; a SYN-ACK sets both and acknowledges the number after the SYN', () => {
+    expect(valueOf(syn, 'Flags')).toBe('0x002 (SYN)');
+    expect(valueOf(syn, 'Acknowledgment number')).toBe('0');
+    expect(fieldOf(syn, 'Acknowledgment number').explain).toMatch(/not used/i);
+    expect(valueOf(synAck, 'Flags')).toBe('0x012 (SYN, ACK)');
+    expect(valueOf(synAck, 'Acknowledgment number')).toBe('2310884772');
+    expect(fieldOf(synAck, 'Acknowledgment number').explain).toMatch(/plus 1/i);
+  });
+
+  test('the data offset counts 4-byte words: 5 for a bare header, 6 with the option', () => {
+    expect(valueOf(syn, 'Data offset (header length)')).toBe('6 (24 bytes)');
+    expect(valueOf(tcp({ mss: undefined }), 'Data offset (header length)')).toBe('5 (20 bytes)');
+  });
+
+  test('shows the sequence number, window and option it was given', () => {
+    expect(valueOf(syn, 'Sequence number')).toBe('2310884771');
+    expect(valueOf(syn, 'Window size')).toBe('64240 bytes');
+    expect(valueOf(syn, 'Maximum segment size (option 2)')).toBe('1460 bytes');
+    expect(valueOf(syn, 'Urgent pointer')).toBe('0');
+  });
+
+  test('marks only the sequence number and the checksum as examples', () => expect(examplesOf(syn)).toEqual(['Sequence number', 'Checksum']));
+
+  test('every field explains itself', () => expect(synAck.fields.every((f) => f.explain)).toBe(true));
+
+  test('the flags explanation names each flag that is set, and only those', () => {
+    expect(fieldOf(syn, 'Flags').explain).toMatch(/SYN/);
+    expect(fieldOf(syn, 'Flags').explain).not.toMatch(/ACK/);
+    expect(fieldOf(synAck, 'Flags').explain).toMatch(/SYN.*ACK/);
+  });
+
+  test('the displayed segment sums to 0xFFFF with its pseudo-header, which is how a receiver verifies a checksum', () => {
+    for (const [layer, src, dst] of [
+      [syn, '203.0.113.50', '10.0.0.10'],
+      [synAck, '10.0.0.10', '203.0.113.50'],
+    ] as const) {
+      const words32 = (name: string) => {
+        const n = Number(valueOf(layer, name).split(' ')[0]);
+        return [Math.floor(n / 0x10000), n % 0x10000];
+      };
+      const address = (text: string) => {
+        const o = text.split('.').map(Number) as [number, number, number, number];
+        return [(o[0] << 8) | o[1], (o[2] << 8) | o[3]];
+      };
+      const words = [
+        ...address(src),
+        ...address(dst),
+        6, // protocol: TCP
+        layer.size, // TCP length: the header, with no data
+        Number.parseInt(valueOf(layer, 'Source port'), 10),
+        Number.parseInt(valueOf(layer, 'Destination port'), 10),
+        ...words32('Sequence number'),
+        ...words32('Acknowledgment number'),
+        (Number.parseInt(valueOf(layer, 'Data offset (header length)'), 10) << 12) | Number.parseInt(valueOf(layer, 'Flags').slice(2, 5), 16),
+        Number.parseInt(valueOf(layer, 'Window size'), 10),
+        Number.parseInt(valueOf(layer, 'Checksum').slice(2), 16),
+        0, // urgent pointer
+        0x0204, // option 2 (maximum segment size), length 4
+        Number.parseInt(valueOf(layer, 'Maximum segment size (option 2)'), 10),
+      ];
+      let sum = words.reduce((a, w) => a + w, 0);
+      while (sum > 0xffff) sum = (sum & 0xffff) + (sum >>> 16);
+      expect(sum).toBe(0xffff);
+    }
+  });
+
+  test('sits under an IPv4 header whose total length covers it, and a wrong length is caught', () => {
+    const ip = (totalLength: number) =>
+      ipv4Layer({ src: '203.0.113.50', dst: '10.0.0.10', protocol: 'TCP', ttl: 52, totalLength });
+    const p = packet({ name: 'n', summary: 's', layers: [ip(44), syn] });
+    expect(p.size).toBe(44);
+    expect(() => packet({ name: 'n', summary: 's', layers: [ip(40), syn] })).toThrow(/IPv4/);
+  });
+
+  test('an ACK needs an acknowledgment number, and a segment without ACK must not carry one', () => {
+    expect(() => tcp({ flags: ['SYN', 'ACK'] })).toThrow(/acknowledgment/i);
+    expect(() => tcp({ flags: ['SYN'], ack: 5 })).toThrow(/acknowledgment/i);
+  });
+
+  test('rejects an address that is not IPv4, naming it', () => {
+    expect(() => tcp({ src: '203.0.113' })).toThrow(/203\.0\.113/);
+    expect(() => tcp({ dst: '300.0.0.1' })).toThrow(/300\.0\.0\.1/);
+  });
+
+  test.each([
+    ['srcPort', { srcPort: 65536 }],
+    ['dstPort', { dstPort: -1 }],
+    ['seq', { seq: 4294967296 }],
+    ['seq', { seq: -1 }],
+    ['window', { window: 65536 }],
+    ['mss', { mss: 0 }],
+    ['mss', { mss: 65536 }],
+  ] as const)('rejects an out-of-range %s', (name, override) => {
+    expect(() => tcp(override)).toThrow(new RegExp(name));
   });
 });
 

@@ -182,8 +182,8 @@ const PORT_NAMES: Record<number, string> = { 53: 'DNS', 67: 'DHCP server', 68: '
 /** Shown for the UDP checksum, which covers the data too, so a header-only helper cannot work it out. */
 const EXAMPLE_UDP_CHECKSUM = '0x8d2f';
 
-function portValue(port: number): string {
-  const name = PORT_NAMES[port];
+function portValue(port: number, names: Record<number, string> = PORT_NAMES): string {
+  const name = names[port];
   return name === undefined ? String(port) : `${port} (${name})`;
 }
 
@@ -218,6 +218,132 @@ export function udpLayer(o: { srcPort: number; dstPort: number; length: number }
         explain: 'A check number over the header and the data, so the receiver can spot damage.',
         example: true,
       },
+    ],
+  };
+}
+
+// --------------------------------------------------------------------- TCP
+
+const TCP_PORT_NAMES: Record<number, string> = { 22: 'SSH', 23: 'Telnet', 80: 'HTTP', 443: 'HTTPS' };
+const TCP_HEADER_BYTES = 20;
+const TCP_MSS_OPTION_BYTES = 4;
+
+/** Control bits in the order a capture lists them (ACK last), with the bit each one sets and what it means. */
+const TCP_FLAGS = {
+  SYN: { bit: 0x002, meaning: 'SYN starts a connection.' },
+  FIN: { bit: 0x001, meaning: 'FIN closes it.' },
+  RST: { bit: 0x004, meaning: 'RST aborts it.' },
+  PSH: { bit: 0x008, meaning: 'PSH asks the receiver to pass the data on at once.' },
+  ACK: { bit: 0x010, meaning: 'ACK says the acknowledgment number is valid.' },
+} as const;
+export type TcpFlag = keyof typeof TCP_FLAGS;
+
+/**
+ * A TCP header with no data after it, such as the SYN and SYN-ACK that open a
+ * connection. The checksum is worked out over the pseudo-header (the two IP
+ * addresses, the protocol and the length) and the header itself, so it is the
+ * number a receiver would verify; it is marked as an example because it
+ * changes with the sequence number, which differs in every real capture.
+ */
+export function tcpLayer(o: {
+  /** The IPv4 addresses the segment travels between: the checksum covers them. */
+  src: string;
+  dst: string;
+  srcPort: number;
+  dstPort: number;
+  flags: TcpFlag[];
+  seq: number;
+  /** Required with the ACK flag, and not allowed without it. */
+  ack?: number;
+  window: number;
+  /** The maximum segment size option (option 2), sent on a SYN. Leave out for a bare 20-byte header. */
+  mss?: number;
+}): Layer {
+  assertWhole('tcpLayer', 'srcPort', o.srcPort, 0, 0xffff);
+  assertWhole('tcpLayer', 'dstPort', o.dstPort, 0, 0xffff);
+  assertWhole('tcpLayer', 'seq', o.seq, 0, 0xffffffff);
+  assertWhole('tcpLayer', 'window', o.window, 0, 0xffff);
+  if (o.mss !== undefined) assertWhole('tcpLayer', 'mss', o.mss, 1, 0xffff);
+  const hasAck = o.flags.includes('ACK');
+  if (hasAck !== (o.ack !== undefined)) {
+    throw new Error('tcpLayer: a segment with the ACK flag needs an acknowledgment number, and one without it must not have one.');
+  }
+  if (o.ack !== undefined) assertWhole('tcpLayer', 'ack', o.ack, 0, 0xffffffff);
+
+  const size = TCP_HEADER_BYTES + (o.mss === undefined ? 0 : TCP_MSS_OPTION_BYTES);
+  const names = (Object.keys(TCP_FLAGS) as TcpFlag[]).filter((flag) => o.flags.includes(flag));
+  const bits = names.reduce((sum, flag) => sum + TCP_FLAGS[flag].bit, 0);
+  const ack = o.ack ?? 0;
+
+  const checksum = checksum16([
+    ...addressWords('tcpLayer', 'src', o.src),
+    ...addressWords('tcpLayer', 'dst', o.dst),
+    IP_PROTOCOLS.TCP,
+    size,
+    o.srcPort,
+    o.dstPort,
+    o.seq >>> 16,
+    o.seq & 0xffff,
+    ack >>> 16,
+    ack & 0xffff,
+    ((size / 4) << 12) | bits,
+    o.window,
+    0x0000,
+    0x0000,
+    ...(o.mss === undefined ? [] : [0x0204, o.mss]),
+  ]);
+
+  return {
+    name: 'TCP',
+    size,
+    summary: 'Sends data to the right program using port numbers, over a connection set up first so it arrives complete and in order.',
+    fields: [
+      { name: 'Source port', value: portValue(o.srcPort, TCP_PORT_NAMES), explain: 'The port the sender is using; replies come back to it.' },
+      {
+        name: 'Destination port',
+        value: portValue(o.dstPort, TCP_PORT_NAMES),
+        explain: 'The port that picks which program on the receiving device gets the data.',
+      },
+      {
+        name: 'Sequence number',
+        value: String(o.seq),
+        explain: 'Numbers the bytes of a connection so they can be put back in order; a connection starts at a random number.',
+        example: true,
+      },
+      {
+        name: 'Acknowledgment number',
+        value: String(ack),
+        explain: hasAck
+          ? 'The next number the sender expects from the other side. A SYN uses up one number, so in a reply to a SYN it is the other side\'s number plus 1.'
+          : 'Not used yet: nothing has arrived to acknowledge, so it is 0.',
+      },
+      {
+        name: 'Data offset (header length)',
+        value: `${size / 4} (${size} bytes)`,
+        explain: 'Counted in 4-byte words, like the IP header length: where the TCP header ends and the data starts.',
+      },
+      {
+        name: 'Flags',
+        value: `${hex(bits, 3)} (${names.join(', ')})`,
+        explain: `Single-bit switches that say what the segment is for. ${names.map((flag) => TCP_FLAGS[flag].meaning).join(' ')}`,
+      },
+      { name: 'Window size', value: `${o.window} bytes`, explain: 'How many bytes the sender is ready to receive right now.' },
+      {
+        name: 'Checksum',
+        value: hex(checksum, 4),
+        explain: 'A check number over the header and the data, plus the IP addresses, so the receiver can spot damage.',
+        example: true,
+      },
+      { name: 'Urgent pointer', value: '0', explain: 'Used only when the urgent flag is set; it is not, so this is 0.' },
+      ...(o.mss === undefined
+        ? []
+        : [
+            {
+              name: 'Maximum segment size (option 2)',
+              value: `${o.mss} bytes`,
+              explain: 'The most data the sender wants in one segment; 1460 fits an Ethernet frame once the 20-byte IP and TCP headers are counted.',
+            },
+          ]),
     ],
   };
 }
