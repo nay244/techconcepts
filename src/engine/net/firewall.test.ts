@@ -46,6 +46,20 @@ test('an invalid CIDR source throws so a bad lesson fails loudly', () => {
   expect(() => evaluateRules([bad], { sourceIp: '198.51.100.7', protocol: 'tcp', port: 22 })).toThrow(/Invalid CIDR/);
 });
 
+test('a mistyped source in a rule that never matches still throws, wherever the rules are used', () => {
+  const bad: FirewallRule = { id: 'typo', action: 'deny', protocol: 'tcp', port: 9999, source: '198.51.100.7', note: 'No slash' };
+  const list = [rules[0]!, bad];
+  const probe: Probe = {
+    id: 'p', label: 'HTTPS', from: 'a', to: 'b', sourceIp: '203.0.113.50', destIp: '192.0.2.10',
+    protocol: 'tcp', port: 443, time: 1, size: 60, summary: 'x',
+  };
+  // The first rule decides every probe, so the bad rule is never reached by matching.
+  expect(() => evaluateRules(list, { sourceIp: '203.0.113.50', protocol: 'tcp', port: 443 })).toThrow(/Invalid CIDR "198.51.100.7"/);
+  expect(() => ruleRows(list)).toThrow(/Invalid CIDR/);
+  expect(() => firewallScenario({ firewall: 'fw', table: 't', rules: list, probes: [probe] })).toThrow(/Invalid CIDR/);
+  expect(() => firewallScenario({ firewall: 'fw', table: 't', rules: list, probes: [], replaceRules: true })).toThrow(/Invalid CIDR/);
+});
+
 test('columns', () =>
   expect(FIREWALL_COLUMNS).toEqual([
     { key: '#', label: '#' },
