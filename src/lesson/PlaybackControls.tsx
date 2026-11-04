@@ -2,12 +2,20 @@ import type { Dispatch, ReactNode } from 'react';
 import type { PlaybackAction, PlaybackState } from '../engine/playback';
 import './lesson.css';
 
-export interface PlaybackControlsProps {
-  state: PlaybackState;
-  /** Whether the current position has events to play. Without any, there is nothing to replay. */
-  hasEvents: boolean;
-  dispatch: Dispatch<PlaybackAction>;
-}
+export type PlaybackControlsProps =
+  | {
+      /** The full set, for a scene that plays: speed, previous, play or pause, next and replay. */
+      variant?: 'playback';
+      state: PlaybackState;
+      /** Whether the current position has events to play. Without any, there is nothing to replay. */
+      hasEvents: boolean;
+      dispatch: Dispatch<PlaybackAction>;
+    }
+  | {
+      /** Previous and next only, for a scene with nothing to play (a playground, ruling R29). */
+      variant: 'steps';
+      dispatch: Dispatch<PlaybackAction>;
+    };
 
 const SPEEDS = [
   { speed: 0.5, label: '0.5×' },
@@ -58,12 +66,34 @@ const ICONS = {
   ),
 };
 
+function StepButton({ direction, dispatch }: { direction: 'prev' | 'next'; dispatch: Dispatch<PlaybackAction> }) {
+  const label = direction === 'prev' ? 'Previous step' : 'Next step';
+  return (
+    <button type="button" className="playback__button" aria-label={label} title={label} onClick={() => dispatch({ type: direction })}>
+      {ICONS[direction]}
+    </button>
+  );
+}
+
 /**
- * Speed, previous, play or pause, next and replay. Presentational: it sends
- * actions to `dispatch` and owns no keyboard shortcut (the console does). The
- * icon buttons are named by aria-label, with the same words as a tooltip.
+ * Speed, previous, play or pause, next and replay; or, as `variant="steps"`,
+ * previous and next alone. Presentational: it sends actions to `dispatch` and
+ * owns no keyboard shortcut (the console does). The icon buttons are named by
+ * aria-label, with the same words as a tooltip.
  */
-export function PlaybackControls({ state, hasEvents, dispatch }: PlaybackControlsProps) {
+export function PlaybackControls(props: PlaybackControlsProps) {
+  const { dispatch } = props;
+  if (props.variant === 'steps') {
+    return (
+      <div className="playback" data-variant="steps">
+        <div className="playback__buttons">
+          <StepButton direction="prev" dispatch={dispatch} />
+          <StepButton direction="next" dispatch={dispatch} />
+        </div>
+      </div>
+    );
+  }
+  const { state, hasEvents } = props;
   const playLabel = state.playing ? 'Pause (Space)' : 'Play (Space)';
   return (
     <div className="playback">
@@ -81,15 +111,7 @@ export function PlaybackControls({ state, hasEvents, dispatch }: PlaybackControl
         ))}
       </div>
       <div className="playback__buttons">
-        <button
-          type="button"
-          className="playback__button"
-          aria-label="Previous step"
-          title="Previous step"
-          onClick={() => dispatch({ type: 'prev' })}
-        >
-          {ICONS.prev}
-        </button>
+        <StepButton direction="prev" dispatch={dispatch} />
         <button
           type="button"
           className="playback__button playback__button--primary"
@@ -99,15 +121,7 @@ export function PlaybackControls({ state, hasEvents, dispatch }: PlaybackControl
         >
           {state.playing ? ICONS.pause : ICONS.play}
         </button>
-        <button
-          type="button"
-          className="playback__button"
-          aria-label="Next step"
-          title="Next step"
-          onClick={() => dispatch({ type: 'next' })}
-        >
-          {ICONS.next}
-        </button>
+        <StepButton direction="next" dispatch={dispatch} />
         <button
           type="button"
           className="playback__button"

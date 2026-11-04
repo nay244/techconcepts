@@ -438,6 +438,17 @@ test('PlaybackControls: Replay is off when the position has no events to replay'
   expect(screen.getByRole('button', { name: 'Next step' })).toBeEnabled();
 });
 
+test('PlaybackControls: the steps variant has Previous step and Next step only', async () => {
+  const user = userEvent.setup();
+  const dispatch = vi.fn();
+  render(<PlaybackControls variant="steps" dispatch={dispatch} />);
+  expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Previous step', 'Next step']);
+  expect(screen.queryByRole('group', { name: 'Speed' })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Previous step' }));
+  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  expect(dispatch.mock.calls).toEqual([[{ type: 'prev' }], [{ type: 'next' }]]);
+});
+
 // ------------------------------------------------------------ ExplanationPanel
 
 const actorLabel = (id: string) => scene.actors.find((a) => a.id === id)?.label ?? id;

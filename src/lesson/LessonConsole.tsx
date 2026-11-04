@@ -2,16 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type Dispatch
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { FlowScene, Lesson, PlaygroundPreset, SceneEvent } from '../content/schema';
 import { usePlayback, type PlaybackAction, type PlaybackState } from '../engine/playback';
-import {
-  currentEvents,
-  deriveState,
-  parseStepParam,
-  resumeLabel,
-  sectionsFor,
-  type DerivedState,
-  type LogRow,
-  type Sections,
-} from '../engine/timeline';
+import { currentEvents, deriveState, parseStepParam, resumeLabel, sectionsFor, type DerivedState, type Sections } from '../engine/timeline';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import NetworkView from '../scenes/flow/NetworkView';
@@ -24,12 +15,13 @@ import DeviceTablePanel from '../scenes/table/DeviceTablePanel';
 import CheckYourself from './CheckYourself';
 import EventLog from './EventLog';
 import ExplanationPanel from './ExplanationPanel';
-import { shouldIgnoreShortcut } from './keyboard';
 import Outline from './Outline';
 import PlaybackControls from './PlaybackControls';
 import RecapPanel from './RecapPanel';
 import TopBar from './TopBar';
 import TryItPanel from './TryItPanel';
+import { useInspector } from './useInspector';
+import { useLessonShortcuts } from './useLessonShortcuts';
 import { useReducedMotion } from './useReducedMotion';
 import './console.css';
 
@@ -49,16 +41,6 @@ export interface LessonConsoleProps {
 
 type View = FlowScene['views'][number];
 const VIEW_LABEL: Record<View, string> = { network: 'Network', sequence: 'Sequence' };
-
-/** The packet open in the inspector: the log row it was opened from, at the position it was opened. */
-interface Inspecting {
-  n: number;
-  packetId: string;
-  position: number;
-}
-
-/** Where focus goes when the inspector shows a packet: the inspector itself, or the button just pressed. */
-type InspectorFocus = 'inspector' | 'Previous packet' | 'Next packet';
 
 const isAvailable = (entry: LessonSummary): entry is AvailableSummary => entry.available;
 
@@ -99,26 +81,40 @@ function FinishedMarker() {
 interface PlaygroundPanelsProps {
   preset: PlaygroundPreset;
   locked: boolean;
+  position: number;
+  dispatch: Dispatch<PlaybackAction>;
+  /** The explanation. It goes between the canvas and the readout, the order a phone shows them in. */
+  children: ReactNode;
 }
 
 /**
- * The subnet playground's two grid cells, the canvas (centre) and its readout
- * (bottom), sharing one playground state. The console keys this by position, so
- * every position starts from its own preset and Try it's edits are dropped as
+ * A playground lesson's grid cells in reading order: the canvas (centre), the
+ * explanation, then the readout under the step buttons (bottom). The canvas and
+ * the readout share one playground state, which starts over at every position,
+ * so each position starts from its own preset and Try it's edits are dropped as
  * soon as the learner leaves it: nothing about Try it is kept (spec §10.5).
+ * Only that state starts over (ruling R22): the cells stay mounted, so the
+ * explanation's live region is never replaced.
  */
-function PlaygroundPanels({ preset, locked }: PlaygroundPanelsProps) {
-  const state = useSubnetPlayground(preset, locked);
+function PlaygroundPanels({ preset, locked, position, dispatch, children }: PlaygroundPanelsProps) {
+  const state = useSubnetPlayground(preset, locked, position);
   return (
     <>
       <div className="console__center">
-        <SubnetCanvas state={state} />
+        <div className="console__stage" data-view="playground">
+          <SubnetCanvas state={state} />
+        </div>
       </div>
+      {children}
       <div className="console__log">
         <div className="console__log-head">
           <p className="console__label" aria-hidden="true">
             Current values
           </p>
+          {/* Nothing plays in a playground, so the steps are all there is to move through (ruling R29). */}
+          <div className="console__controls">
+            <PlaybackControls variant="steps" dispatch={dispatch} />
+          </div>
         </div>
         <div className="console__log-body">
           <SubnetReadout state={state} />
@@ -161,9 +157,9 @@ function FlowLog({ scene, derived, state, hasEvents, dispatch, onOpenPacket }: F
  * one playback state. It renders the Overview first, as the server did, and
  * only then follows a `?step=` link. Progress is recorded on every move.
  *
- * Keys: Space plays or pauses, → and ← move between positions, Esc closes the
- * inspector. Space and the arrows are left alone on form controls, buttons and
- * links, which use those keys themselves.
+ * Keys (`useLessonShortcuts`): Space plays or pauses, → and ← move between
+ * positions, Esc closes the inspector. The packet inspector's state and its
+ * focus handling are in `useInspector`.
  */
 export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev, next, nextPlanned, entries }: LessonConsoleProps) {
   const sections = useMemo(() => sectionsFor(lesson.steps.length), [lesson]);
@@ -216,77 +212,9 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
 
   // ---------------------------------------------------------------- inspector
 
-  const [inspecting, setInspecting] = useState<Inspecting | null>(null);
-  // Moving to another position closes the inspector: the scene is what the new position is about.
-  if (inspecting !== null && inspecting.position !== position) setInspecting(null);
-  const open = inspecting !== null && inspecting.position === position ? inspecting : null;
-  const inspectorBox = useRef<HTMLDivElement>(null);
-  const opener = useRef<HTMLElement | null>(null);
-  const focusOnShow = useRef<InspectorFocus>('inspector');
-  const returnFocus = useRef(false);
-
-  const openPacket = useCallback(
-    (packetId: string, n: number) => {
-      if (lesson.scene.type !== 'flow' || !Object.hasOwn(lesson.scene.packets, packetId)) return;
-      const active = document.activeElement;
-      opener.current = active instanceof HTMLElement && active !== document.body ? active : null;
-      focusOnShow.current = 'inspector';
-      // The scene is out of sight while the inspector is open, so it waits.
-      dispatch({ type: 'pause' });
-      setInspecting({ n, packetId, position });
-    },
-    [lesson, dispatch, position],
-  );
-
-  /** The scene views know a packet by id only; it opens at the latest row that carries it. */
-  const openPacketFromScene = useCallback(
-    (packetId: string) => {
-      const row = derived.log.findLast((r) => r.packet === packetId);
-      if (row !== undefined) openPacket(packetId, row.n);
-    },
-    [derived.log, openPacket],
-  );
-
-  const closeInspector = useCallback(() => {
-    returnFocus.current = true;
-    setInspecting(null);
-  }, []);
-
-  const showRow = (row: LogRow, focus: InspectorFocus) => {
-    focusOnShow.current = focus;
-    setInspecting({ n: row.n, packetId: row.packet!, position });
-  };
-
-  const openRow = open?.n ?? null;
-  // Focus follows the inspector: into it when it opens, onto the pressed button's replacement when it moves.
-  useEffect(() => {
-    const box = inspectorBox.current;
-    if (openRow === null || box === null) return;
-    const buttons = Array.from(box.querySelectorAll<HTMLButtonElement>('.inspector__actions button'));
-    const named = (name: string) => buttons.find((button) => button.textContent === name);
-    const wanted = focusOnShow.current;
-    const other = wanted === 'Next packet' ? 'Previous packet' : 'Next packet';
-    const button = wanted === 'inspector' ? undefined : (named(wanted) ?? named(other));
-    if (button !== undefined) {
-      button.focus();
-      return;
-    }
-    // The Inspector owns no focus handling, so its section is made focusable here and takes focus itself.
-    const section = box.querySelector<HTMLElement>('.inspector');
-    if (section === null) return;
-    section.tabIndex = -1;
-    section.focus();
-  }, [openRow]);
-
-  const inspectorOpen = open !== null;
-  // On close, focus goes back to the control that opened the inspector.
-  useEffect(() => {
-    if (inspectorOpen || !returnFocus.current) return;
-    returnFocus.current = false;
-    const target = opener.current;
-    opener.current = null;
-    if (target?.isConnected) target.focus();
-  }, [inspectorOpen]);
+  const explanation = useRef<HTMLElement>(null);
+  const inspector = useInspector({ lesson, position, log: derived.log, dispatch, fallbackFocus: explanation });
+  const { open } = inspector;
 
   // ---------------------------------------------------------------- outline drawer
 
@@ -318,34 +246,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
 
   // ---------------------------------------------------------------- keyboard
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-      // The drawer is a modal dialog with keys of its own (Esc closes it).
-      if (event.target instanceof Element && event.target.closest('dialog') !== null) return;
-      // Esc is the way out of the inspector wherever focus is, its own buttons included.
-      if (event.key === 'Escape') {
-        if (inspectorOpen) closeInspector();
-        return;
-      }
-      if (shouldIgnoreShortcut(event.target)) return;
-      switch (event.key) {
-        case ' ':
-          event.preventDefault();
-          // Holding Space down would otherwise flicker between play and pause.
-          if (!event.repeat) dispatch({ type: 'toggle' });
-          break;
-        case 'ArrowRight':
-          dispatch({ type: 'next' });
-          break;
-        case 'ArrowLeft':
-          dispatch({ type: 'prev' });
-          break;
-      }
-    }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [dispatch, inspectorOpen, closeInspector]);
+  useLessonShortcuts({ dispatch, canPlay: flow !== null, inspectorOpen: open !== null, closeInspector: inspector.close });
 
   // ---------------------------------------------------------------- view and explanation
 
@@ -358,7 +259,6 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
     setViewChanged(true);
   };
 
-  const explanation = useRef<HTMLElement>(null);
   useEffect(() => {
     // A new position starts reading from the top.
     if (explanation.current !== null) explanation.current.scrollTop = 0;
@@ -412,10 +312,10 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
                 state={derived}
                 reducedMotion={reducedMotion}
                 speed={state.speed}
-                onOpenPacket={openPacketFromScene}
+                onOpenPacket={inspector.openPacketFromScene}
               />
             ) : (
-              <SequenceView scene={flow} state={derived} onOpenPacket={openPacketFromScene} />
+              <SequenceView scene={flow} state={derived} onOpenPacket={inspector.openPacketFromScene} />
             )}
           </div>
           {flow.tables.length > 0 ? (
@@ -432,14 +332,14 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
           ) : null}
         </div>
         {open !== null && packet !== undefined ? (
-          <div className="console__inspector" ref={inspectorBox}>
+          <div className="console__inspector" ref={inspector.boxRef}>
             <Inspector
               key={open.n}
               packet={packet}
               row={openLogRow}
-              onClose={closeInspector}
-              onPrev={before === undefined ? undefined : () => showRow(before, 'Previous packet')}
-              onNext={after === undefined ? undefined : () => showRow(after, 'Next packet')}
+              onClose={inspector.close}
+              onPrev={before === undefined ? undefined : () => inspector.showRow(before, 'Previous packet')}
+              onNext={after === undefined ? undefined : () => inspector.showRow(after, 'Next packet')}
             />
           </div>
         ) : null}
@@ -448,6 +348,14 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
   }
 
   // ---------------------------------------------------------------- page
+
+  const explain = (
+    <section ref={explanation} className="console__explain" aria-label="Explanation" tabIndex={0}>
+      <ExplanationPanel lesson={lesson} sections={sections} position={position} state={derived} actorLabel={actorLabel} resume={resume}>
+        {panel}
+      </ExplanationPanel>
+    </section>
+  );
 
   const outlineProps = {
     lesson,
@@ -477,34 +385,28 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
 
       <main id="main" className="console__main">
         {flow !== null ? (
-          flowCenter
+          <>
+            {flowCenter}
+            {explain}
+            <FlowLog
+              scene={flow}
+              derived={derived}
+              state={state}
+              hasEvents={events.length > 0}
+              dispatch={dispatch}
+              onOpenPacket={inspector.openPacket}
+            />
+          </>
         ) : (
-          <PlaygroundPanels key={position} preset={presetAt(lesson, sections, position)} locked={position !== sections.tryIt} />
-        )}
-
-        <section ref={explanation} className="console__explain" aria-label="Explanation" tabIndex={0}>
-          <ExplanationPanel
-            lesson={lesson}
-            sections={sections}
+          <PlaygroundPanels
+            preset={presetAt(lesson, sections, position)}
+            locked={position !== sections.tryIt}
             position={position}
-            state={derived}
-            actorLabel={actorLabel}
-            resume={resume}
-          >
-            {panel}
-          </ExplanationPanel>
-        </section>
-
-        {flow !== null ? (
-          <FlowLog
-            scene={flow}
-            derived={derived}
-            state={state}
-            hasEvents={events.length > 0}
             dispatch={dispatch}
-            onOpenPacket={openPacket}
-          />
-        ) : null}
+          >
+            {explain}
+          </PlaygroundPanels>
+        )}
       </main>
 
       <dialog

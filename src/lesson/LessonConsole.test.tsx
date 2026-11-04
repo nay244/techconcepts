@@ -219,6 +219,45 @@ describe('keyboard', () => {
     await user.keyboard('{ArrowRight}');
     expect(screen.getByText('STEP 2 OF 4')).toBeInTheDocument();
   });
+
+  /** Gives a panel the overflow a browser would measure; jsdom lays nothing out. */
+  function overflow(panel: HTMLElement, sizes: { scrollWidth?: number; scrollHeight?: number }): void {
+    panel.style.overflowX = 'auto';
+    panel.style.overflowY = 'auto';
+    const all = { clientWidth: 300, scrollWidth: 300, clientHeight: 200, scrollHeight: 200, ...sizes };
+    for (const [name, value] of Object.entries(all)) Object.defineProperty(panel, name, { configurable: true, value });
+  }
+
+  test('Space in an explanation that scrolls is left to it; the arrows still move', async () => {
+    renderConsole();
+    const explanation = screen.getByRole('region', { name: 'Explanation' });
+    overflow(explanation, { scrollHeight: 900 });
+    explanation.focus();
+    await user.keyboard(' ');
+    expect(playButton()).toHaveAccessibleName('Play (Space)');
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByText('STEP 1 OF 4')).toBeInTheDocument();
+  });
+
+  test('the arrows in an event log that scrolls sideways are left to it; Space still plays', async () => {
+    renderConsole();
+    const log = screen.getByRole('region', { name: 'Event log' });
+    overflow(log, { scrollWidth: 1024 });
+    log.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.queryByText('STEP 1 OF 4')).not.toBeInTheDocument();
+    await user.keyboard(' ');
+    expect(playButton()).toHaveAccessibleName('Pause (Space)');
+  });
+
+  test('a focused panel with nothing to scroll leaves the keys to the lesson', async () => {
+    renderConsole();
+    const explanation = screen.getByRole('region', { name: 'Explanation' });
+    overflow(explanation, {});
+    explanation.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByText('STEP 1 OF 4')).toBeInTheDocument();
+  });
 });
 
 // ------------------------------------------------------------ top bar
@@ -450,6 +489,19 @@ describe('inspector', () => {
     expect(screen.getByText('STEP 2 OF 4')).toBeInTheDocument();
   });
 
+  test('a step change made from inside it puts focus back on Details, not on the page', async () => {
+    renderConsole();
+    await user.keyboard('{ArrowRight}');
+    await wait(EVENT_DURATION_MS.message);
+    await user.click(screen.getByRole('button', { name: 'Details' }));
+    expect(inspector()).toContainElement(document.activeElement as HTMLElement);
+    // Focus is on the inspector's section, which is not a button, so the arrow is the lesson's.
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByText('STEP 2 OF 4')).toBeInTheDocument();
+    expect(inspector()).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(screen.getAllByRole('button', { name: 'Details' })[0]);
+  });
+
   test('opening it pauses playback', async () => {
     renderConsole(twoPackets());
     await user.click(within(outline()).getByRole('button', { name: 'Step 4: When it goes wrong' }));
@@ -463,11 +515,15 @@ describe('inspector', () => {
 describe('playground lessons', () => {
   const slider = () => screen.getByRole('slider', { name: 'Prefix length' });
 
-  test('show the subnet canvas and the current values, with no playback controls', () => {
+  test('show the subnet canvas and the current values, with step buttons but nothing to play', () => {
     renderConsole(P);
     expect(screen.getByRole('region', { name: 'Subnet playground' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Current values' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous step' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next step' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^(Play|Pause) \(Space\)$/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Replay step' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Speed' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Event log' })).not.toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'View' })).not.toBeInTheDocument();
   });
@@ -502,11 +558,55 @@ describe('playground lessons', () => {
     expect(slider()).toHaveValue('16');
   });
 
-  test('arrow keys on the slider change the prefix, not the step', async () => {
+  // jsdom does not move a range input on arrow keys, so this checks the console leaves the key alone.
+  test('arrow keys on the slider are left to it: the step stays and the key is not cancelled', async () => {
     renderConsole(P);
     await user.click(within(outline()).getByRole('button', { name: 'Try it' }));
     slider().focus();
-    await user.keyboard('{ArrowRight}');
+    expect(fireEvent.keyDown(slider(), { key: 'ArrowRight' })).toBe(true);
+    await user.keyboard('{ArrowLeft}');
     expect(screen.getByRole('heading', { name: 'Try it' })).toBeInTheDocument();
+    expect(slider()).toHaveValue('16');
+  });
+
+  test('Previous step and Next step move between positions', async () => {
+    renderConsole(P);
+    await user.click(screen.getByRole('button', { name: 'Next step' }));
+    expect(screen.getByText('STEP 1 OF 4')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Next step' }));
+    expect(slider()).toHaveValue('26');
+    await user.click(screen.getByRole('button', { name: 'Previous step' }));
+    expect(screen.getByText('STEP 1 OF 4')).toBeInTheDocument();
+  });
+
+  test('Space does nothing, and is left to the page; the arrows still move between positions', async () => {
+    renderConsole(P);
+    expect(fireEvent.keyDown(document.body, { key: ' ' })).toBe(true);
+    expect(screen.queryByText(/^STEP \d OF 4$/)).not.toBeInTheDocument();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByText('STEP 1 OF 4')).toBeInTheDocument();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.queryByText(/^STEP \d OF 4$/)).not.toBeInTheDocument();
+  });
+
+  test('read in the order a phone shows them: canvas, explanation, then the readout and its step buttons', () => {
+    const { container } = renderConsole(P);
+    const main = container.querySelector('main')!;
+    const order = [
+      screen.getByRole('region', { name: 'Subnet playground' }),
+      screen.getByRole('region', { name: 'Explanation' }),
+      screen.getByRole('region', { name: 'Current values' }),
+    ];
+    for (const panel of order) expect(main).toContainElement(panel);
+    expect(order[0]!.compareDocumentPosition(order[1]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(order[1]!.compareDocumentPosition(order[2]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  test('the explanation stays the same element from step to step', async () => {
+    renderConsole(P);
+    const explanation = screen.getByRole('region', { name: 'Explanation' });
+    await user.click(screen.getByRole('button', { name: 'Next step' }));
+    await user.click(screen.getByRole('button', { name: 'Next step' }));
+    expect(screen.getByRole('region', { name: 'Explanation' })).toBe(explanation);
   });
 });

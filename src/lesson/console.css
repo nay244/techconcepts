@@ -370,6 +370,14 @@ a.outline__lesson[aria-current='page'] {
   width: 100%;
 }
 
+/* A playground's canvas is a form, not a picture: it is as tall as its controls. */
+.console__stage[data-view='playground'] {
+  display: block;
+  flex: none;
+  min-height: 0;
+  container-type: normal;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .console__stage[data-fade] {
     animation: console-fade 200ms ease-out;
@@ -690,7 +698,6 @@ a.outline__lesson[aria-current='page'] {
     display: none;
   }
 
-  /* Flex order puts a playground's readout after the explanation, as on a flow lesson. */
   .console__main {
     display: flex;
     flex: 1;
@@ -707,6 +714,12 @@ a.outline__lesson[aria-current='page'] {
     height: clamp(260px, 70vw, 460px);
   }
 
+  /* A playground's canvas takes the same room at least, and grows to fit its controls. */
+  .console__stage[data-view='playground'] {
+    height: auto;
+    min-height: clamp(260px, 70vw, 460px);
+  }
+
   .console__inspector {
     height: min(80vh, 40rem);
   }
@@ -717,7 +730,8 @@ a.outline__lesson[aria-current='page'] {
   }
 
   /* The log's wrappers step aside so the controls belong to the whole column:
-     sticky only sticks inside its parent, and here that parent is the page. */
+     sticky only sticks inside its parent, and here that parent is the page. Flex order then
+     puts the controls last, under the log or the playground's readout. */
   .console__log,
   .console__log-head {
     display: contents;

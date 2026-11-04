@@ -16,6 +16,10 @@ async function blurFocus(page: Page): Promise<void> {
 
 const playButton = (page: Page) => page.getByRole('button', { name: /^(Play|Pause) \(Space\)$/ });
 
+/** The least a device's label and its addresses may measure on screen, in CSS pixels (ruling R28). */
+const MIN_LABEL_PX = 12;
+const MIN_ADDRESS_PX = 11;
+
 for (const lesson of LESSONS) {
   test.describe(lesson.path, () => {
     test('has no page errors, and ArrowRight walks it to the Recap', async ({ page }) => {
@@ -68,10 +72,51 @@ for (const lesson of LESSONS) {
     });
 
     test('phone: the playback bar is on screen at the top of the page', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'phone' || lesson.kind !== 'flow');
+      test.skip(testInfo.project.name !== 'phone');
       await openLesson(page, lesson.path);
       expect(await page.evaluate(() => window.scrollY)).toBe(0);
-      await expect(playButton(page)).toBeInViewport({ ratio: 1 });
+      const steps = [page.getByRole('button', { name: 'Previous step' }), page.getByRole('button', { name: 'Next step' })];
+      for (const button of steps) await expect(button).toBeInViewport({ ratio: 1 });
+      if (lesson.kind === 'flow') {
+        await expect(playButton(page)).toBeInViewport({ ratio: 1 });
+      } else {
+        // A playground has nothing to play: the bar is the step buttons alone (ruling R29), and they work.
+        await expect(playButton(page)).toHaveCount(0);
+        await steps[1]!.click();
+        await expect(page.getByText(/^STEP 1 OF \d+$/)).toBeVisible();
+      }
+    });
+
+    test('the text under each device reads at 12 px (labels) and 11 px (addresses) at least, and none of it overlaps', async ({ page }) => {
+      test.skip(lesson.kind !== 'flow', 'Only flow lessons draw devices.');
+      await openLesson(page, lesson.path);
+      const measure = () =>
+        page.evaluate(() => {
+          const svg = document.querySelector<SVGSVGElement>('.flow-network__svg')!;
+          const scale = svg.getScreenCTM()!.a;
+          const read = (selector: string) =>
+            [...svg.querySelectorAll<SVGTextElement>(selector)].map((text) => ({
+              text: text.textContent ?? '',
+              px: Math.round(parseFloat(getComputedStyle(text).fontSize) * scale * 100) / 100,
+              box: text.getBoundingClientRect().toJSON() as DOMRect,
+            }));
+          return { labels: read('.flow-device__label'), addresses: read('.flow-device__address') };
+        });
+      // The view sizes its text once it has measured itself, just after it hydrates.
+      await expect.poll(async () => Math.min(...(await measure()).labels.map((label) => label.px))).toBeGreaterThanOrEqual(MIN_LABEL_PX);
+      const measured = await measure();
+      expect(measured.labels.length).toBeGreaterThan(0);
+      for (const label of measured.labels) expect(label.px, label.text).toBeGreaterThanOrEqual(MIN_LABEL_PX);
+      for (const address of measured.addresses) expect(address.px, address.text).toBeGreaterThanOrEqual(MIN_ADDRESS_PX);
+
+      const all = [...measured.labels, ...measured.addresses];
+      const overlapping = all.flatMap((a, i) =>
+        all
+          .slice(i + 1)
+          .filter((b) => a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom)
+          .map((b) => `${a.text} / ${b.text}`),
+      );
+      expect(overlapping).toEqual([]);
     });
 
     test('phone: the outline opens in a drawer and jumps', async ({ page }, testInfo) => {

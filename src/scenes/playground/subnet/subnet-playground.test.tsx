@@ -308,6 +308,19 @@ test('re-rendering with the same preset values in a fresh object keeps the learn
   expect(valueOf('Network')).toBe('10.1.2.0');
 });
 
+test('a new reset key starts over from the same preset; the same key keeps the edits', () => {
+  const { result, rerender } = renderHook(
+    (props: { resetKey: number }) => useSubnetPlayground({ address: '192.168.1.10', prefix: 24 }, false, props.resetKey),
+    { initialProps: { resetKey: 5 } },
+  );
+  act(() => result.current.setPrefix(28));
+  rerender({ resetKey: 5 });
+  expect(result.current.prefix).toBe(28);
+  rerender({ resetKey: 6 });
+  expect(result.current.prefix).toBe(24);
+  expect(result.current.addressText).toBe('192.168.1.10');
+});
+
 test('the inputs leave keyboard events alone, so Space and arrow keys behave normally and bubble to the page', async () => {
   const user = userEvent.setup();
   const onKey = vi.fn((event: KeyboardEvent) => event.defaultPrevented);
