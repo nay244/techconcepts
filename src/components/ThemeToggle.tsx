@@ -53,7 +53,15 @@ const OPTIONS: { value: Theme; label: string; icon: ReactNode }[] = [
   },
 ];
 
-export default function ThemeToggle() {
+export interface ThemeToggleProps {
+  /**
+   * For a crowded bar: below 768 px the buttons show their icons only. Each
+   * keeps its word as its name, so it still says what it does.
+   */
+  compact?: boolean;
+}
+
+export default function ThemeToggle({ compact = false }: ThemeToggleProps) {
   const theme = useSyncExternalStore(subscribe, readAppliedTheme, getServerSnapshot);
 
   function choose(next: Theme): void {
@@ -62,11 +70,11 @@ export default function ThemeToggle() {
   }
 
   return (
-    <div className="theme-toggle" role="group" aria-label="Color theme">
+    <div className="theme-toggle" role="group" aria-label="Color theme" data-compact={compact ? '' : undefined}>
       {OPTIONS.map(({ value, label, icon }) => (
         <button key={value} type="button" data-theme-value={value} aria-pressed={theme === value} onClick={() => choose(value)}>
           {icon}
-          <span>{label}</span>
+          <span className="theme-toggle__word">{label}</span>
         </button>
       ))}
     </div>

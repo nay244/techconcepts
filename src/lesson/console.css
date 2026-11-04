@@ -686,22 +686,6 @@ a.outline__lesson[aria-current='page'] {
     justify-self: start;
   }
 
-  /* The theme buttons keep their sun and moon; their words stay as the buttons' names only,
-     so the brand row fits a phone. */
-  .topbar .theme-toggle button {
-    position: relative;
-    padding: 0.375rem 0.625rem;
-  }
-
-  .topbar .theme-toggle button > span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
   .console__outline {
     display: none;
   }

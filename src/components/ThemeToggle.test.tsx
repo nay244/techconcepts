@@ -106,3 +106,22 @@ test('server-renders with nothing pressed, then hydrates to the applied theme wi
   act(() => root.unmount());
   container.remove();
 });
+
+test('compact marks the group for its icon-only style, and each button keeps its word as its name', async () => {
+  const user = userEvent.setup();
+  render(<ThemeToggle compact />);
+  const group = screen.getByRole('group', { name: 'Color theme' });
+  expect(group).toHaveAttribute('data-compact');
+  expect(
+    within(group)
+      .getAllByRole('button')
+      .map((b) => b.textContent),
+  ).toEqual(['Light', 'Dark']);
+  await user.click(screen.getByRole('button', { name: 'Light' }));
+  expect(document.documentElement.dataset.theme).toBe('light');
+});
+
+test('is not compact unless asked', () => {
+  render(<ThemeToggle />);
+  expect(screen.getByRole('group', { name: 'Color theme' })).not.toHaveAttribute('data-compact');
+});

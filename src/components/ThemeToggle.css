@@ -35,3 +35,20 @@
   background: var(--panel-raised);
   color: var(--ink-strong);
 }
+
+/* Compact: on a phone, icons only. The word stays in the accessibility tree as the button's name. */
+@media (max-width: 767.98px) {
+  .theme-toggle[data-compact] button {
+    position: relative;
+    padding: 0.375rem 0.625rem;
+  }
+
+  .theme-toggle[data-compact] .theme-toggle__word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
