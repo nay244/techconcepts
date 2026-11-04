@@ -317,18 +317,18 @@ test('table summaries are joined onto the most recent log row', () => {
     message('m5'),
     { type: 'table', id: 'e2', table: 't', op: 'update', key: '192.168.1.10', row: { mac: 'ZZ' }, summary: 'Changed it.' },
   ]);
-  // The match arrives before this step's first message, so it does not join the previous step's last row.
+  // The match arrives before this step's first message: it waits for that message and does not join the previous step's row.
   expect(deriveState(L2, 3, 1, null).log.at(-1)?.tableChange).toBe('The server remembers the laptop.');
   const d = deriveState(L2, 3, 3, null);
   expect(d.log.map((x) => [x.eventId, x.tableChange])).toEqual([
     ['m1', undefined],
     ['m2', undefined],
     ['m3', 'The server remembers the laptop.'],
-    ['m5', 'Changed it.'],
+    ['m5', 'Found it.; Changed it.'],
   ]);
 });
 
-test('a table event before any message is applied to the table but not the log', () => {
+test('a table event before any message is applied to the table at once, and told with the position\'s first message', () => {
   const L2 = lessonWith([{ type: 'table', id: 'e1', table: 't', op: 'match', key: 'x', summary: 'ignored' }], {
     stepOneEvents: [
       { type: 'table', id: 'first', table: 't', op: 'add', row: { ip: '10.0.0.1', mac: 'AA' }, summary: 'Remembered.' },
@@ -342,7 +342,43 @@ test('a table event before any message is applied to the table but not the log',
 
   const later = deriveState(L2, 1, 2, null);
   expect(later.log).toHaveLength(1);
-  expect(later.log[0]).not.toHaveProperty('tableChange');
+  expect(later.log[0]).toMatchObject({ eventId: 'm1', tableChange: 'Remembered.' });
+});
+
+test('a table change that leads its position joins the position\'s next message, not the previous step\'s row', () => {
+  const L2 = lessonWith([
+    { type: 'table', id: 'e1', table: 't', op: 'match', key: '192.168.1.10', summary: 'Found it.' },
+    message('m5'),
+  ]);
+  const d = deriveState(L2, 3, 2, null);
+  expect(d.log.map((x) => [x.eventId, x.tableChange])).toEqual([
+    ['m1', undefined],
+    ['m2', undefined],
+    ['m3', 'The server remembers the laptop.'],
+    ['m5', 'Found it.'],
+  ]);
+  // Before that message has played there is nowhere to tell it: the row of the earlier step stays as it was.
+  expect(deriveState(L2, 3, 1, null).log.at(-1)?.tableChange).toBe('The server remembers the laptop.');
+});
+
+test('a table change that trails its position joins that position\'s previous message', () => {
+  const L2 = lessonWith([message('m5'), { type: 'table', id: 'e2', table: 't', op: 'match', key: '192.168.1.10', summary: 'Trailing.' }]);
+  const d = deriveState(L2, 3, 2, null);
+  expect(d.log.at(-1)).toMatchObject({ eventId: 'm5', tableChange: 'Trailing.' });
+});
+
+test('several leading changes are told together, and nothing crosses positions', () => {
+  const L2 = lessonWith([
+    { type: 'table', id: 'e1', table: 't', op: 'match', key: 'x', summary: 'One.' },
+    { type: 'table', id: 'e2', table: 't', op: 'match', key: 'y', summary: 'Two.' },
+    message('m5'),
+  ]);
+  const d = deriveState(L2, 3, 3, null);
+  expect(d.log.find((x) => x.eventId === 'm5')!.tableChange).toBe('One.; Two.');
+  expect(d.log.filter((x) => x.eventId !== 'm5').some((x) => x.tableChange?.includes('One.'))).toBe(false);
+  // A position with only a table change leaves the next position's rows alone too.
+  const only = lessonWith([{ type: 'table', id: 'e1', table: 't', op: 'match', key: 'x', summary: 'Alone.' }]);
+  expect(deriveState(only, 4, 0, null).log.some((x) => x.tableChange?.includes('Alone.'))).toBe(false);
 });
 
 // ---------------------------------------------------------------- purity

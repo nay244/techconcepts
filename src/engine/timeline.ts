@@ -174,19 +174,30 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number, try
   const log: LogRow[] = [];
   let activeMessage: MessageEvent | null = null;
   let lastGroup: number | null = null;
+  // Table changes that came before any message of their own position, told with that position's next message.
+  let pending: { group: number; summaries: string[] } | null = null;
+  const join = (row: LogRow, summaries: string[]) => {
+    row.tableChange = [...(row.tableChange === undefined ? [] : [row.tableChange]), ...summaries].join('; ');
+  };
 
   for (const { event, isCurrent, group } of applied) {
     if (event.type === 'message') {
       log.push(logRow(event, log.length + 1));
       lastGroup = group;
+      const row = log.at(-1)!;
+      if (pending !== null && pending.group === group) join(row, pending.summaries);
+      pending = null;
       if (isCurrent) activeMessage = event;
       continue;
     }
 
-    // A table change is told alongside the message just before it. Before any message of its own position
-    // (a Try it that starts by replacing the rules) it only reaches the table, not the previous position's last row.
+    // A table change is told alongside the message just before it in its own position. If the position has
+    // no message yet (a Try it that starts by replacing the rules) it waits for the position's next message.
+    // It never joins another position's row.
     const last = log.at(-1);
-    if (last !== undefined && lastGroup === group) last.tableChange = last.tableChange === undefined ? event.summary : `${last.tableChange}; ${event.summary}`;
+    if (last !== undefined && lastGroup === group) join(last, [event.summary]);
+    else if (pending !== null && pending.group === group) pending.summaries.push(event.summary);
+    else pending = { group, summaries: [event.summary] };
 
     const def = defs.get(event.table);
     const state = tables[event.table];
