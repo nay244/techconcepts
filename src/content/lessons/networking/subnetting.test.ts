@@ -90,7 +90,7 @@ test('overview facts follow the brief', () => {
   const fact = (label: string) => s.overview.facts.find((f) => f.label === label)?.value;
   expect(fact('Written as')).toBe('192.168.1.0/24');
   expect(fact('Mask')).toBe('255.255.255.0');
-  expect(fact('Usable hosts')).toBe('2 to the power of host bits, minus 2 (for /30 and bigger)');
+  expect(fact('Usable hosts')).toBe('2 to the power of host bits, minus 2 (for prefixes up to /30)');
   expect(fact('Defined in')).toBe('RFC 950, RFC 4632');
 });
 
@@ -424,9 +424,9 @@ describe('the usable-hosts rule is stated only for the range the lesson covers',
     ...s.recap.takeaways,
   ];
 
-  test('takeaway 2 gives the rule for ordinary subnets (/30 and bigger) and pins its three numbers', () => {
+  test('takeaway 2 gives the rule for ordinary subnets (prefixes up to /30) and pins its three numbers', () => {
     const takeaway = s.recap.takeaways[1]!;
-    expect(takeaway).toMatch(/ordinary subnets \(\/30 and bigger/);
+    expect(takeaway).toMatch(/ordinary subnets \(prefixes up to \/30, the ones you can build here\)/);
     expect(takeaway).toMatch(/254 usable in a \/24, 62 in a \/26, 2 in a \/30/);
     // The three numbers are what the engine says.
     expect([24, 26, 30].map((prefix) => subnetInfo(ip('10.0.0.1'), prefix).usableHosts)).toEqual([254, 62, 2]);
@@ -434,7 +434,7 @@ describe('the usable-hosts rule is stated only for the range the lesson covers',
 
   test('the step 3 subtitle and the overview fact carry the same scope', () => {
     expect(s.steps[2]!.subtitle).toBe('Two addresses in an ordinary subnet are reserved');
-    expect(s.overview.facts.find((f) => f.label === 'Usable hosts')?.value).toMatch(/\(for \/30 and bigger\)$/);
+    expect(s.overview.facts.find((f) => f.label === 'Usable hosts')?.value).toMatch(/\(for prefixes up to \/30\)$/);
   });
 
   test('no text claims the rule for "every subnet", and none mentions /31 or /32, which the slider does not reach', () => {

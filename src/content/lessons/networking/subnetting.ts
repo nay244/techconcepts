@@ -39,7 +39,7 @@ export default defineLesson({
     facts: [
       { label: 'Written as', value: '192.168.1.0/24' },
       { label: 'Mask', value: '255.255.255.0' },
-      { label: 'Usable hosts', value: '2 to the power of host bits, minus 2 (for /30 and bigger)' },
+      { label: 'Usable hosts', value: '2 to the power of host bits, minus 2 (for prefixes up to /30)' },
       { label: 'Defined in', value: 'RFC 950, RFC 4632' },
     ],
   },
@@ -184,7 +184,7 @@ export default defineLesson({
   recap: {
     takeaways: [
       "An address has a network part and a host part. The mask, written as a prefix length like /24, marks where one ends.",
-      "A subnet with h host bits has 2 to the power of h addresses. In ordinary subnets (/30 and bigger, the ones you can build here), two are reserved (network and broadcast): 254 usable in a /24, 62 in a /26, 2 in a /30.",
+      "A subnet with h host bits has 2 to the power of h addresses. In ordinary subnets (prefixes up to /30, the ones you can build here), two are reserved (network and broadcast): 254 usable in a /24, 62 in a /26, 2 in a /30.",
       "Two addresses share a subnet when their network parts match under the same mask. If they don't, traffic between them goes through a router.",
     ],
   },
