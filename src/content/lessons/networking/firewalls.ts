@@ -202,11 +202,12 @@ export default defineLesson({
       title: 'Rules are read top to bottom',
       subtitle: 'The firewall checks its list from rule 1',
       narrative:
-        "The guard reads a clipboard from the top, line by line. A firewall reads its rule list the same way. Each rule says allow or deny for one kind of traffic: a protocol (here TCP; lesson 11), a port (the door number of a service; lesson 10) and a source (the address it comes from; lesson 3). A visitor at 203.0.113.50 now asks for port 443, the door for secure websites. Rule 1 allows TCP 443 from any source, so the visit goes through and the firewall never reads rules 2 and 3. (10.0.0.10 is a private address, so in real life NAT passes visits on to it; lesson 12.)",
+        "The guard reads a clipboard from the top, line by line. A firewall reads its rule list the same way. Each rule says allow or deny for one kind of traffic: a protocol (here TCP, the reliable way most connections travel; lesson 11), a port (the door number of a service; lesson 10) and a source (the address it comes from; lesson 3). A visitor at 203.0.113.50 now asks for port 443, the door for secure websites. Rule 1 allows TCP 443 from any source, so the visit goes through and the firewall never reads rules 2 and 3.",
       facts: [
         { label: 'Visit', value: 'TCP port 443 from 203.0.113.50' },
         { label: 'Rule 1', value: 'ALLOW TCP 443, any source' },
         { label: 'Result', value: 'Allowed by rule 1, passed on to the web server' },
+        { label: 'Web server', value: '10.0.0.10 is private, so in real life NAT passes visits on to it (lesson 12)' },
       ],
       events: httpsEvents,
     },
@@ -241,7 +242,7 @@ export default defineLesson({
       title: 'Everything else is blocked',
       subtitle: 'The last rule catches what nothing allowed',
       narrative:
-        "The visitor now tries port 23, Telnet, an old way to log in that sends everything, passwords included, as readable text. Nobody wrote a rule about port 23, yet it's blocked: it fits neither rule 1 nor rule 2, so it falls to rule 3, Block everything else. Allowing only what you need and blocking the rest is called default deny, and NIST's firewall guidance recommends it, because a rule you forgot to write then leaves a door shut, not open. Not every firewall blocks by default, so when you inherit a rule list, check its last rule.",
+        "The guard's clipboard ends with one last line: anyone not named above, turn away. The visitor now tries port 23, Telnet, an old way to log in that sends everything, passwords included, as readable text. Nobody wrote a rule about port 23, yet it's blocked: it fits neither rule 1 nor rule 2, so it falls to rule 3, Block everything else. Allowing only what you need and blocking the rest is called default deny, and NIST's firewall guidance recommends it, because a rule you forgot to write then leaves a door shut, not open. Not every firewall blocks by default, so when you inherit a rule list, check its last rule.",
       facts: [
         { label: 'Visit', value: 'TCP port 23 (Telnet) from 203.0.113.50' },
         { label: 'Rules that fit', value: 'Rule 3 only, the catch-all' },
@@ -291,7 +292,7 @@ export default defineLesson({
         label: "Move 'Block everything else' to the top",
         events: tryItEvents('deny-first', [blockRule, httpsRule, adminRule], FOUR),
         explanation:
-          "'Block everything else' now sits at rule 1, and it fits every packet, so the firewall stops reading there every time. All four visits are blocked, even the website on 443 and the admin's login, because the allow rules below can never get a turn. Order matters: put the specific allow rules first and the catch-all last.",
+          "'Block everything else' now sits at rule 1, and it fits every packet, so the firewall stops reading there every time. All four visits are blocked, even the website on 443 and the admin's login, because the allow rules below can never get a turn. Order matters: put the most specific rules first and the catch-all last.",
       },
       {
         id: 'allow-http',
@@ -313,11 +314,11 @@ export default defineLesson({
   check: [
     {
       id: 'no-rule-matches',
-      prompt: 'A firewall follows a default-deny policy. A packet matches none of its rules. What happens to it?',
+      prompt: "A packet matches none of the rules in this lesson's list. What happens to it?",
       options: ['It is allowed, because no rule forbids it', 'It waits for an administrator to decide', 'It is blocked, because no rule allows it'],
       answer: 2,
       explanation:
-        'Under default deny, whatever no rule allows is blocked. In this lesson, rule 3 does that job in plain sight. The opposite, allowing everything not forbidden, would leave a door open for every danger nobody thought of.',
+        'Whatever no rule allows is blocked. That is default deny, and rule 3 does the job in plain sight. NIST recommends it; the opposite, allowing everything not forbidden, would leave a door open for every danger nobody thought of.',
     },
     {
       id: 'rule-order',
@@ -341,7 +342,7 @@ export default defineLesson({
   recap: {
     takeaways: [
       'A firewall checks each connection against a rule list, using addresses and ports (layers 3 and 4), and allows or blocks it.',
-      'Rules are read from the top and the first match wins, so order matters: specific allow rules go first and the catch-all deny goes last.',
+      'Rules are read from the top and the first match wins, so order matters: put the most specific rules first and the catch-all last.',
       'A recommended policy is default deny: block whatever nothing allows. A stateful firewall also remembers the connections it allowed, so their replies pass without a rule of their own.',
     ],
   },

@@ -283,13 +283,15 @@ test('explanations say what each outcome was and why', () => {
 
 // ------------------------------------------------------------ narrative facts
 
-test('step 1 teaches the rule list and points ahead to ports, TCP and IP addresses, and says where 10.0.0.10 fits', () => {
+test('step 1 teaches the rule list and points ahead to ports, TCP and IP addresses; where 10.0.0.10 fits is a fact, not a second idea', () => {
   const n = step('rules-top-down').narrative;
   expect(n).toMatch(/lesson 11/);
   expect(n).toMatch(/lesson 10/);
   expect(n).toMatch(/lesson 3/);
-  expect(n).toMatch(/10\.0\.0\.10 is a private address/);
-  expect(n).toMatch(/lesson 12/);
+  expect(n).toMatch(/TCP, the reliable way most connections travel; lesson 11/);
+  expect(n).not.toMatch(/10\.0\.0\.10|NAT/);
+  const web = step('rules-top-down').facts.find((f) => f.label === 'Web server')!;
+  expect(web.value).toBe('10.0.0.10 is private, so in real life NAT passes visits on to it (lesson 12)');
   expect(n).toMatch(/port 443/);
 });
 
@@ -333,7 +335,8 @@ test('narratives obey the limits and the voice', () => {
 
 test('the overview analogy is one guard at one front door, and steps stay with it', () => {
   expect(fw.overview.hook).toMatch(/guard at the front door/);
-  for (const id of ['rules-top-down', 'named-source', 'replies']) expect(step(id).narrative, id).toMatch(/guard/);
+  for (const s of fw.steps) expect(s.narrative, s.id).toMatch(/\bguard\b|\bclipboard\b/);
+  expect(step('everything-else').narrative).toMatch(/^The guard's clipboard/);
 });
 
 // ------------------------------------------------------------ check yourself
@@ -341,7 +344,7 @@ test('the overview analogy is one guard at one front door, and steps stay with i
 test('Check yourself asks the three brief questions with the right answers', () => {
   expect(fw.check).toHaveLength(3);
   const right = (i: number) => fw.check[i]!.options[fw.check[i]!.answer];
-  expect(fw.check[0]!.prompt).toMatch(/default-deny/);
+  expect(fw.check[0]!.prompt).toBe("A packet matches none of the rules in this lesson's list. What happens to it?");
   expect(right(0)).toBe('It is blocked, because no rule allows it');
   expect(fw.check[1]!.prompt).toMatch(/Rule 1: allow TCP 22 from any source\. Rule 2: deny TCP 22 from 203\.0\.113\.50/);
   expect(right(1)).toBe('Allowed, because rule 1 fits first');
@@ -368,6 +371,7 @@ test('the rule-order question is right under first-match', () => {
 test('recap says what is recommended, not that every firewall blocks by default', () => {
   const text = fw.recap.takeaways.join(' ');
   expect(text).toMatch(/recommended policy is default deny/);
+  expect(fw.recap.takeaways[1]).toMatch(/put the most specific rules first and the catch-all last/);
   expect(text).toMatch(/stateful firewall also remembers the connections it allowed/);
 });
 
@@ -376,10 +380,11 @@ test('no gamification language anywhere in the lesson', () => {
   expect(text.match(/\b(points|scores?|scored|badges?|streaks?|mission complete|xp)\b/i)?.[0]).toBeUndefined();
 });
 
-test('"Rules updated" is not pinned to the last step\'s reply in the log; the first Try it visit tells its own match', () => {
-  const log = deriveState(fw, 6, choice('deny-first').events.length, 'deny-first').log;
-  const reply = log.find((row) => row.eventId === 'https-reply')!;
-  expect(reply.tableChange).toBeUndefined();
-  expect(log.find((row) => row.eventId === 'deny-first-https-in')!.tableChange).toBe('Rule 1 → DENY');
-  expect(log.some((row) => row.tableChange?.includes('Rules updated'))).toBe(false);
+test('"Rules updated" lands on the first visit of each Try it choice, not on the last step\'s reply', () => {
+  for (const c of choices()) {
+    const log = deriveState(fw, 6, c.events.length, c.id).log;
+    expect(log.find((row) => row.eventId === 'https-reply')!.tableChange, c.id).toBeUndefined();
+    expect(log.find((row) => row.eventId === `${c.id}-https-in`)!.tableChange, c.id).toMatch(/^Rules updated; Rule \d → (ALLOW|DENY)$/);
+    expect(log.filter((row) => row.tableChange?.includes('Rules updated')), c.id).toHaveLength(1);
+  }
 });
