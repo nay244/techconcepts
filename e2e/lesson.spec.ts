@@ -106,6 +106,16 @@ for (const lesson of LESSONS) {
       }
     });
 
+    test('desktop: a focused lease table keeps focus when playback adds a row to it', async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop-dark' || lesson.path !== '/networking/dhcp');
+      // Step 4 plays messages, then a table event that remounts the lease table.
+      await openLesson(page, `${lesson.path}?step=4`);
+      const table = page.getByRole('region', { name: /^DHCP lease table/ });
+      await table.focus();
+      await expect(table.getByRole('cell', { name: '192.168.1.100' })).toBeVisible({ timeout: 15_000 });
+      await expect(table).toBeFocused();
+    });
+
     test('short desktop: the playback controls are on screen', async ({ page }, testInfo) => {
       test.skip(testInfo.project.name !== 'short-desktop');
       await openLesson(page, lesson.path);
