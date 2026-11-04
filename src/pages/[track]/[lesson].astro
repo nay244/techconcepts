@@ -1,0 +1,43 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { getEntries, getLesson, neighbors, type AvailableSummary } from '../../content/registry';
+import { tracks } from '../../content/tracks';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LessonConsole from '../../lesson/LessonConsole';
+
+/** One page for every lesson that has been written, in every track. */
+export const getStaticPaths = (() =>
+  tracks.flatMap((track) => {
+    const entries = getEntries(track.id);
+    return entries
+      .filter((entry): entry is AvailableSummary => entry.available)
+      .map((entry) => {
+        const lesson = getLesson(track.id, entry.slug);
+        // An available entry is built from its lesson, so this cannot happen.
+        if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
+        return {
+          params: { track: track.id, lesson: entry.slug },
+          props: { track, entry, entries, lesson, ...neighbors(entries, entry.slug) },
+        };
+      });
+  })) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { track, entry, entries, lesson, prev, next, nextPlanned } = Astro.props;
+---
+
+<BaseLayout title={lesson.title} description={lesson.summary} chrome={false}>
+  <LessonConsole
+    client:load
+    trackId={track.id}
+    trackTitle={track.title}
+    lesson={lesson}
+    entry={entry}
+    total={entries.length}
+    prev={prev}
+    next={next}
+    nextPlanned={nextPlanned}
+    entries={entries}
+  />
+</BaseLayout>

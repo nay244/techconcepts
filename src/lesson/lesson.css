@@ -511,6 +511,15 @@
   white-space: normal;
 }
 
+/* A row with a packet opens it when clicked; Details is its keyboard control. */
+.event-log tr[data-packet] {
+  cursor: pointer;
+}
+
+.event-log tr[data-packet]:hover > td {
+  background: var(--panel-raised);
+}
+
 .event-log tr[data-outcome='dropped'] > td:first-child {
   box-shadow: inset 4px 0 0 var(--blocked);
 }

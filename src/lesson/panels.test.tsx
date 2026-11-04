@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test, vi } from 'vitest';
 import { validateLesson } from '../content/define';
@@ -216,6 +216,37 @@ test('EventLog: Details opens the packet, passing the packet id and the message 
   await user.click(screen.getByRole('button', { name: 'Details' }));
   expect(onOpenPacket).toHaveBeenCalledTimes(1);
   expect(onOpenPacket).toHaveBeenCalledWith('p1', 1);
+});
+
+test('EventLog: clicking a row with a packet opens it, and Details opens it only once', async () => {
+  const user = userEvent.setup();
+  const onOpenPacket = vi.fn();
+  renderLog(1, 1, { onOpenPacket });
+  await user.click(screen.getByText('The laptop says hello.'));
+  expect(onOpenPacket).toHaveBeenCalledTimes(1);
+  expect(onOpenPacket).toHaveBeenLastCalledWith('p1', 1);
+  // The button sits inside the row: its click must not reach the row as well.
+  await user.click(screen.getByRole('button', { name: 'Details' }));
+  expect(onOpenPacket).toHaveBeenCalledTimes(2);
+});
+
+test('EventLog: clicking a row without a packet does nothing', async () => {
+  const user = userEvent.setup();
+  const onOpenPacket = vi.fn();
+  renderLog(2, 2, { onOpenPacket });
+  await user.click(screen.getByText('The server answers.'));
+  expect(onOpenPacket).not.toHaveBeenCalled();
+});
+
+test('EventLog: selecting text in a row does not open it', () => {
+  const onOpenPacket = vi.fn();
+  renderLog(1, 1, { onOpenPacket });
+  const summary = screen.getByText('The laptop says hello.');
+  window.getSelection()!.selectAllChildren(summary);
+  // A real pointer would select by dragging; fireEvent keeps the selection user-event would reset.
+  fireEvent.click(summary);
+  expect(onOpenPacket).not.toHaveBeenCalled();
+  window.getSelection()!.removeAllRanges();
 });
 
 test('EventLog: only rows with a packet get a Details button', () => {

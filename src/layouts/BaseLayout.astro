@@ -9,10 +9,16 @@ interface Props {
   title: string;
   description: string;
   image?: string;
+  /**
+   * The site header and footer around the page. The lesson page turns them off:
+   * its console has its own top bar and owns the whole screen, and marks its own
+   * main region with id="main" for the skip link.
+   */
+  chrome?: boolean;
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png' } = Astro.props;
+const { title, description, image = '/og-default.png', chrome = true } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -38,10 +44,18 @@ const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
-    <SiteHeader />
-    <main id="main">
-      <slot />
-    </main>
-    <SiteFooter />
+    {
+      chrome ? (
+        <>
+          <SiteHeader />
+          <main id="main">
+            <slot />
+          </main>
+          <SiteFooter />
+        </>
+      ) : (
+        <slot />
+      )
+    }
   </body>
 </html>

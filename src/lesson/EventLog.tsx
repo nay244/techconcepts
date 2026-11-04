@@ -21,10 +21,19 @@ const COLUMNS = ['#', 'Time', 'Source', 'Destination', 'Protocol', 'Kind', 'Summ
  * (the lesson legend's own label) beside a dot in that kind's colour, a dropped
  * message says "Dropped" in its summary, and the legend above explains the
  * dots. The scroll area is focusable so a keyboard user can scroll it.
+ *
+ * A row with a packet also opens it when clicked (spec §10.3), as a mouse
+ * shortcut; its Details button stays the control for keyboard users.
  */
 export function EventLog({ state, showTableColumn, legend, onOpenPacket }: EventLogProps) {
   const id = useId();
   const columns = showTableColumn ? [...COLUMNS, 'Table change'] : COLUMNS;
+
+  /** A mouse shortcut for Details. A click that ends a text selection is left alone, so an address can be copied. */
+  function openFromRow(packetId: string, n: number): void {
+    if (window.getSelection()?.isCollapsed === false) return;
+    onOpenPacket(packetId, n);
+  }
 
   return (
     <div className="event-log">
@@ -63,7 +72,12 @@ export function EventLog({ state, showTableColumn, legend, onOpenPacket }: Event
                 const packet = row.packet;
                 const summaryId = `${id}-summary-${row.n}`;
                 return (
-                  <tr key={row.n} data-outcome={row.outcome}>
+                  <tr
+                    key={row.n}
+                    data-outcome={row.outcome}
+                    data-packet={packet === undefined ? undefined : 'true'}
+                    onClick={packet === undefined ? undefined : () => openFromRow(packet, row.n)}
+                  >
                     <td>{row.n}</td>
                     <td>{formatTime(row.time)}</td>
                     <td>{row.src}</td>
@@ -84,7 +98,11 @@ export function EventLog({ state, showTableColumn, legend, onOpenPacket }: Event
                             type="button"
                             className="event-log__button"
                             aria-describedby={summaryId}
-                            onClick={() => onOpenPacket(packet, row.n)}
+                            onClick={(event) => {
+                              // The row opens the packet too; one click must open it once.
+                              event.stopPropagation();
+                              onOpenPacket(packet, row.n);
+                            }}
                           >
                             Details
                           </button>
