@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Fact, Lesson } from '../content/schema';
 import type { DerivedState, Sections } from '../engine/timeline';
+import { wrapAtDots } from '../lib/wrapAtDots';
 import { eventCard, kindLabel, type EventCard } from './eventCard';
 import './lesson.css';
 
@@ -24,7 +25,7 @@ function FactList({ facts }: { facts: Fact[] }) {
       {facts.map((fact, i) => (
         <div key={i} className="explain__fact">
           <dt>{fact.label}</dt>
-          <dd>{fact.value}</dd>
+          <dd>{wrapAtDots(fact.value)}</dd>
         </div>
       ))}
     </dl>

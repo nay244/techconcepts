@@ -238,6 +238,109 @@ test.describe('/networking/subnetting: the playground', () => {
     await expect(page.getByRole('status')).toHaveText('');
   });
 
+  // Step 5's whole point is this result, so it has to be there when the learner arrives, not behind a scroll bar.
+  for (const [width, height] of [
+    [1280, 650],
+    [1024, 768],
+  ] as const) {
+    test(`step 5's result is in view, and not clipped by its panel, at ${width}x${height}`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name !== 'short-desktop', 'Sets its own desktop viewport; one project is enough.');
+      await page.setViewportSize({ width, height });
+      await openLesson(page, '/networking/subnetting');
+      await advance(page, 5);
+      const result = page.getByRole('status');
+      await expect(result).toHaveText('Different subnets: traffic between them goes through a router');
+      await expect(compare(page)).toBeInViewport({ ratio: 1 });
+      await expect(result).toBeInViewport({ ratio: 1 });
+
+      // Inside the viewport is not enough if a scrolling panel is hiding part of it: it has to sit inside every scroll container above it.
+      const clippedBy = await result.evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        const clipped: string[] = [];
+        for (let node = el.parentElement; node !== null; node = node.parentElement) {
+          const { overflowX, overflowY } = getComputedStyle(node);
+          if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden')) continue;
+          const room = node.getBoundingClientRect();
+          if (box.top < room.top || box.bottom > room.bottom || box.left < room.left || box.right > room.right) {
+            clipped.push(node.className || node.tagName);
+          }
+        }
+        return clipped;
+      });
+      expect(clippedBy).toEqual([]);
+    });
+  }
+
+  test('phone: step 5 shows the result right under the form, above the step buttons', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'phone');
+    await openLesson(page, '/networking/subnetting');
+    await advance(page, 5);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const result = page.getByRole('status');
+    await expect(result).toHaveText('Different subnets: traffic between them goes through a router');
+    const [resultBox, barBox] = await Promise.all([result.boundingBox(), nextStep(page).boundingBox()]);
+    expect(resultBox!.y + resultBox!.height).toBeLessThanOrEqual(barBox!.y);
+    // It follows the compare field directly: nothing but the field and a gap sits between them.
+    const fieldBox = (await compare(page).boundingBox())!;
+    expect(resultBox!.y - (fieldBox.y + fieldBox.height)).toBeLessThan(40);
+  });
+
+  test('a fact value breaks its line only after a dot or at a space, never inside a group of digits', async ({ page }) => {
+    await openLesson(page, '/networking/subnetting');
+    // Step 2 has the binary mask, the longest unbroken value; steps 4 to 6 have addresses with text around them.
+    for (const step of [2, 4, 5, 6]) {
+      await page.goto('/networking/subnetting');
+      await page.locator('astro-island:not([ssr])').first().waitFor({ state: 'attached' });
+      await advance(page, step);
+      const wrapped = await page.locator('.explain__fact dd').evaluateAll((values) =>
+        values.map((dd) => {
+          const full = dd.textContent ?? '';
+          const rects: { index: number; top: number }[] = [];
+          const walker = document.createTreeWalker(dd, NodeFilter.SHOW_TEXT);
+          let index = 0;
+          for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+            const text = node.textContent ?? '';
+            for (let i = 0; i < text.length; i += 1) {
+              const range = document.createRange();
+              range.setStart(node, i);
+              range.setEnd(node, i + 1);
+              const rect = range.getClientRects()[0];
+              if (rect !== undefined && !/\s/.test(text[i]!)) rects.push({ index: index + i, top: Math.round(rect.top) });
+            }
+            index += text.length;
+          }
+          // A line ends where the next visible character sits lower; it may do so after a dot, or before a space.
+          const badEnds: string[] = [];
+          for (let i = 0; i + 1 < rects.length; i += 1) {
+            if (rects[i + 1]!.top <= rects[i]!.top + 2) continue;
+            const at = rects[i]!.index;
+            const next = rects[i + 1]!.index;
+            const afterDot = full[at] === '.';
+            const atSpace = /\s/.test(full.slice(at + 1, next));
+            if (!afterDot && !atSpace) badEnds.push(full.slice(Math.max(0, at - 6), at + 1) + '|' + full.slice(next, next + 6));
+          }
+          return { full, lines: new Set(rects.map((r) => r.top)).size, badEnds };
+        }),
+      );
+      for (const value of wrapped) expect(value.badEnds, `step ${step}: ${value.full}`).toEqual([]);
+      if (step === 2) {
+        const binary = wrapped.find((value) => value.full.startsWith('11111111'))!;
+        // Wrapping must really happen here, or the check above proves nothing.
+        expect(binary.lines).toBeGreaterThan(1);
+      }
+    }
+  });
+
+  test('Try it opens with its three things to notice showing', async ({ page }) => {
+    await openLesson(page, '/networking/subnetting');
+    await goToTryIt(page);
+    const notice = page.locator('details.tryit__notice');
+    await expect(notice).toHaveAttribute('open', '');
+    await expect(page.getByText(/^Three things to notice\./)).toBeVisible();
+    await notice.getByText('What to notice').click();
+    await expect(page.getByText(/^Three things to notice\./)).toBeHidden();
+  });
+
   test('Space does nothing, because there is nothing to play', async ({ page }) => {
     await openLesson(page, '/networking/subnetting');
     await advance(page, 2);

@@ -9,6 +9,7 @@ import { fixtureLesson } from '../content/test-fixtures';
 import { initialPlayback, type PlaybackState } from '../engine/playback';
 import { deriveState, sectionsFor } from '../engine/timeline';
 import { contrastRatio } from '../lib/contrast';
+import { wrapAtDots } from '../lib/wrapAtDots';
 import { tokens } from '../styles/tokens';
 import CheckYourself from './CheckYourself';
 import EventLog from './EventLog';
@@ -480,6 +481,28 @@ test('ExplanationPanel: the Overview lists its facts as a description list', () 
   expect([...list!.querySelectorAll('dd')].map((d) => d.textContent)).toEqual(['2 (data link)', '192.168.1.20']);
 });
 
+test('ExplanationPanel: a fact value may break the line after a dot and nowhere else, and reads the same', () => {
+  const { container } = renderPanel(0);
+  const value = [...container.querySelectorAll('dd')].find((d) => d.textContent === '192.168.1.20')!;
+  expect(value.innerHTML).toBe('192.<wbr>168.<wbr>1.<wbr>20');
+  // Only dots get a break point: a value with none is left whole.
+  const plain = [...container.querySelectorAll('dd')].find((d) => d.textContent === '2 (data link)')!;
+  expect(plain.querySelector('wbr')).toBeNull();
+});
+
+test('wrapAtDots: a break point follows every dot, including a binary mask, and the text is unchanged', () => {
+  const mask = '11111111.11111111.11111111.00000000';
+  const { container } = render(<dd>{wrapAtDots(mask)}</dd>);
+  expect(container.textContent).toBe(mask);
+  expect(container.querySelectorAll('wbr')).toHaveLength(3);
+  expect(container.innerHTML).toBe('<dd>11111111.<wbr>11111111.<wbr>11111111.<wbr>00000000</dd>');
+  const sentence = render(<dd>{wrapAtDots('192.168.1.10, in the subnet 192.168.1.0')}</dd>);
+  expect(sentence.container.textContent).toBe('192.168.1.10, in the subnet 192.168.1.0');
+  expect(sentence.container.querySelectorAll('wbr')).toHaveLength(6);
+  const none = render(<dd>{wrapAtDots('/24 (24 ones)')}</dd>);
+  expect(none.container.querySelectorAll('wbr')).toHaveLength(0);
+});
+
 test('ExplanationPanel: the Overview shows the resume slot, and only the Overview does', () => {
   const resume = <button type="button">Resume at step 2 of 4</button>;
   const { unmount } = renderPanel(0, 0, { resume });
@@ -627,17 +650,25 @@ test('TryItPanel: free mode shows the prompt, with no choices', () => {
   expect(screen.queryAllByRole('button').filter((b) => b.getAttribute('aria-pressed') !== null)).toHaveLength(0);
 });
 
-test('TryItPanel: free mode keeps the explanation under a "What to notice" disclosure', async () => {
+test('TryItPanel: free mode shows the explanation under a "What to notice" disclosure that starts open and can be folded away', async () => {
   const user = userEvent.setup();
   const { container } = render(<TryItPanel tryIt={freeTryIt} chosen={null} done={false} onChoose={noop} />);
   const details = container.querySelector('details');
   expect(details).not.toBeNull();
-  expect(details).not.toHaveAttribute('open');
+  expect(details).toHaveAttribute('open');
   const summary = screen.getByText('What to notice');
   expect(summary.tagName).toBe('SUMMARY');
   expect(details).toContainElement(screen.getByText('A longer prefix makes a smaller network.'));
+  expect(screen.getByText('A longer prefix makes a smaller network.')).toBeVisible();
+  await user.click(summary);
+  expect(details).not.toHaveAttribute('open');
   await user.click(summary);
   expect(details).toHaveAttribute('open');
+});
+
+test('TryItPanel: choices mode has no disclosure', () => {
+  const { container } = render(<TryItPanel tryIt={choicesTryIt} chosen={null} done={false} onChoose={noop} />);
+  expect(container.querySelector('details')).toBeNull();
 });
 
 // ------------------------------------------------------------ colour (see lesson.css)

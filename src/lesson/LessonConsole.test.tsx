@@ -602,6 +602,20 @@ describe('playground lessons', () => {
     expect(order[1]!.compareDocumentPosition(order[2]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  test('the comparison is with the controls in the canvas, and its result stays one live region from step to step', async () => {
+    renderConsole(P);
+    const canvas = screen.getByRole('region', { name: 'Subnet playground' });
+    const readout = screen.getByRole('region', { name: 'Current values' });
+    expect(within(canvas).getByRole('textbox', { name: 'Compare with' })).toBeInTheDocument();
+    expect(within(canvas).getByRole('status')).toBeInTheDocument();
+    expect(within(readout).queryByRole('textbox', { name: 'Compare with' })).not.toBeInTheDocument();
+
+    const status = screen.getByRole('status');
+    await user.click(screen.getByRole('button', { name: 'Next step' }));
+    await user.click(screen.getByRole('button', { name: 'Next step' }));
+    expect(screen.getByRole('status')).toBe(status);
+  });
+
   test('the explanation stays the same element from step to step', async () => {
     renderConsole(P);
     const explanation = screen.getByRole('region', { name: 'Explanation' });

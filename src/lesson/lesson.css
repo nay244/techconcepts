@@ -139,6 +139,8 @@
   font-size: var(--text-sm);
 }
 
+/* A value breaks after a dot (ExplanationPanel puts a <wbr> there) or at a space. `anywhere` only
+   steps in for a token wider than the column that has neither, so nothing runs out of the panel. */
 .explain__fact dd {
   margin: 0;
   color: var(--ink-strong);

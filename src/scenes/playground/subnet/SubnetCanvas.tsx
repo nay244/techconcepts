@@ -57,9 +57,61 @@ function BitRow({ address, prefix }: { address: number; prefix: number }) {
   );
 }
 
+const RESULT = {
+  same: 'Same subnet',
+  different: 'Different subnets: traffic between them goes through a router',
+} as const;
+
 /**
- * The playground's controls and the address in binary. While `state.locked` the
- * controls are disabled and say why; the lesson unlocks them at Try it.
+ * "Same subnet?": a second address to compare with the first, and the answer
+ * beside it. It sits under the bits, in the centre cell, so the answer is in
+ * view whatever the screen height, and it is a live region that stays in the
+ * page so a screen reader hears the answer when it first appears.
+ */
+function CompareRow({ state }: { state: SubnetPlaygroundState }) {
+  const { compare, compareText, setCompareText, compareError, locked } = state;
+  const titleId = useId();
+  const compareId = useId();
+  const errorId = useId();
+
+  return (
+    <div className="subnet-compare" role="group" aria-labelledby={titleId}>
+      <p id={titleId} className="subnet-compare__title">
+        Same subnet?
+      </p>
+      <div className="subnet-compare__row">
+        <div className="subnet-field">
+          <label htmlFor={compareId}>Compare with</label>
+          <input
+            id={compareId}
+            className="subnet-input"
+            type="text"
+            value={compareText}
+            onChange={(event) => setCompareText(event.target.value)}
+            disabled={locked}
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={compareError === null ? undefined : true}
+            aria-describedby={compareError === null ? undefined : errorId}
+          />
+          {compareError === null ? null : (
+            <p id={errorId} className="subnet-error">
+              {compareError}
+            </p>
+          )}
+        </div>
+        <p role="status" className="subnet-result" data-result={compare ?? undefined}>
+          {compare === null ? null : RESULT[compare]}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The playground's controls, the address in binary and the comparison with a
+ * second address. While `state.locked` the controls are disabled and say why;
+ * the lesson unlocks them at Try it.
  */
 export function SubnetCanvas({ state }: { state: SubnetPlaygroundState }) {
   const { addressText, setAddressText, prefix, setPrefix, address, addressError, locked } = state;
@@ -116,6 +168,8 @@ export function SubnetCanvas({ state }: { state: SubnetPlaygroundState }) {
       {locked ? <p className="subnet-note">You can change these in Try it.</p> : null}
 
       <BitRow address={address} prefix={prefix} />
+
+      <CompareRow state={state} />
     </section>
   );
 }

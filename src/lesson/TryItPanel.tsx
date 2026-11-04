@@ -15,7 +15,8 @@ export interface TryItPanelProps {
  * The Try it step. With choices, the learner picks one and watches the scene
  * play it; its explanation arrives once it has played out, in a live region so
  * it is announced. A free-form Try it (a playground) has no choices: the
- * learner works in the scene, and the explanation waits under a disclosure.
+ * learner works in the scene, and the explanation sits under a "What to
+ * notice" disclosure that starts open.
  */
 export function TryItPanel({ tryIt, chosen, done, onChoose }: TryItPanelProps) {
   const promptId = useId();
@@ -25,7 +26,8 @@ export function TryItPanel({ tryIt, chosen, done, onChoose }: TryItPanelProps) {
       <div className="tryit">
         <h2 className="lesson-panel__title">Try it</h2>
         <p className="tryit__prompt">{tryIt.prompt}</p>
-        <details className="tryit__notice">
+        {/* Open to begin with: the three things to notice are part of the task, and a learner can still fold it away. */}
+        <details className="tryit__notice" open>
           <summary>What to notice</summary>
           <p>{tryIt.explanation}</p>
         </details>

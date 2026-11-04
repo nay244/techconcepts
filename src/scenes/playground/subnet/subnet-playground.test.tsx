@@ -50,10 +50,21 @@ test('unlocked at 192.168.1.10/24: the readout shows the network and the usable 
   expect(valueOf('Last host')).toBe('192.168.1.254');
 });
 
-test('the readout is a description list: six values and the Same subnet? check', () => {
+test('the readout is a description list of six values, and the comparison is not in it', () => {
   render(<Playground preset={PRESET} />);
   const terms = [...readout().querySelectorAll('dl > div > dt')].map((dt) => dt.textContent);
-  expect(terms).toEqual(['Mask', 'Network', 'Broadcast', 'First host', 'Last host', 'Usable hosts', 'Same subnet?']);
+  expect(terms).toEqual(['Mask', 'Network', 'Broadcast', 'First host', 'Last host', 'Usable hosts']);
+  expect(within(readout()).queryByLabelText('Compare with')).not.toBeInTheDocument();
+  expect(within(readout()).queryByRole('status')).not.toBeInTheDocument();
+});
+
+test('the comparison sits in the canvas, under the bit row: a "Same subnet?" group with its field and its result', () => {
+  render(<Playground preset={{ address: '192.168.1.10', prefix: 26, compare: '192.168.1.70' }} />);
+  const group = within(canvas()).getByRole('group', { name: 'Same subnet?' });
+  expect(within(group).getByLabelText('Compare with')).toHaveValue('192.168.1.70');
+  expect(within(group).getByRole('status')).toHaveTextContent(DIFFERENT);
+  const bits = canvas().querySelector('.subnet-bits')!;
+  expect(bits.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
 test('the slider moves the prefix: /26 gives 62 usable hosts in the same network', () => {
@@ -174,7 +185,7 @@ test('the compare field shows its own error and no result while its text is inva
   expect(screen.getByText(DIFFERENT)).toBeInTheDocument();
 
   fireEvent.change(compareInput(), { target: { value: '192.168.1.256' } });
-  expect(within(readout()).getByText(IPV4_ERROR)).toBeInTheDocument();
+  expect(within(canvas()).getAllByText(IPV4_ERROR)).toHaveLength(1);
   expect(compareInput()).toBeInvalid();
   expect(compareInput()).toHaveAccessibleDescription(IPV4_ERROR);
   expect(screen.queryByText(DIFFERENT)).not.toBeInTheDocument();
@@ -262,7 +273,7 @@ test('while the address text is invalid, the bit row keeps showing the last vali
   expect(bitsOf('host')).toEqual(['001010']);
 });
 
-// ------------------------------------------------------------ the readout's compare field
+// ------------------------------------------------------------ the canvas's compare field
 
 test('an empty compare field shows no result and no error, and so does a field of spaces', async () => {
   const user = userEvent.setup();
@@ -279,7 +290,7 @@ test('an empty compare field shows no result and no error, and so does a field o
 test('the compare result is announced politely when it changes', async () => {
   const user = userEvent.setup();
   render(<Playground preset={{ address: '192.168.1.10', prefix: 24 }} />);
-  const status = within(readout()).getByRole('status');
+  const status = within(canvas()).getByRole('status');
   expect(status).toBeEmptyDOMElement();
   await user.type(compareInput(), ' 192.168.1.70 ');
   expect(status).toHaveTextContent('Same subnet');

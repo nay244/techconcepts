@@ -1,5 +1,5 @@
-/* The subnet playground: the canvas (controls and the address in binary) and the
-   readout of current values. Colour comes from the shared tokens.
+/* The subnet playground: the canvas (controls, the address in binary and the
+   comparison with a second address) and the readout of current values. Colour comes from the shared tokens.
    Network and host bits are told apart four ways: the words "Network" and "Host"
    with their bit counts, a divider between them, a solid rule and tint on the
    network side against a dashed rule and plain fill on the host side, and the
@@ -187,14 +187,18 @@
 
 .subnet-readout dl {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  /* About 9rem: two tiles to a row on a phone, so the readout stays short. */
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: var(--space-3);
   margin: 0;
 }
 
+/* The widest value, 255.255.255.192, is 15 characters: at 14 px in IBM Plex Mono (0.6 em each) that is
+   126 px, which with this padding is exactly the 9rem a tile may shrink to. From 1400 px there is room
+   for 16 px text. A value that still cannot fit breaks after a dot (see wrapAtDots), never inside a group. */
 .subnet-readout__item {
   min-width: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel-raised);
@@ -209,28 +213,63 @@
 .subnet-readout dd {
   margin: var(--space-1) 0 0;
   color: var(--ink-strong);
-  font: 500 var(--text-base) / 1.4 var(--font-mono);
+  font: 500 var(--text-sm) / 1.4 var(--font-mono);
   overflow-wrap: anywhere;
 }
 
-.subnet-readout__compare {
-  grid-column: 1 / -1;
+@media (min-width: 1400px) {
+  .subnet-readout__item {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .subnet-readout dd {
+    font-size: var(--text-base);
+  }
 }
 
-.subnet-readout__compare dd {
+/* ---- "Same subnet?": a second address and the answer beside it ---- */
+
+.subnet-compare {
   display: grid;
   gap: var(--space-2);
-  font-family: var(--font-sans);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
 }
 
-.subnet-readout__compare .subnet-field {
-  max-width: 22rem;
+.subnet-compare__title {
+  margin: 0;
+  color: var(--ink-strong);
+  font: 600 var(--text-sm) / 1.4 var(--font-sans);
+}
+
+/* The field and the answer share a row while there is room, and stack on a phone. */
+.subnet-compare__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2) var(--space-4);
+}
+
+.subnet-compare .subnet-field {
+  flex: 0 1 15rem;
 }
 
 /* The result's rule is neutral ink: "Same" and "Different" are spelled out, and neither is a pass or a fail. */
 .subnet-result {
-  min-height: 1.4em;
+  flex: 1 1 14rem;
+  display: flex;
+  align-items: center;
   margin: 0;
+  color: var(--ink-strong);
+}
+
+/* Beside the input (from 768 px the canvas is wide enough), the result lines up with it:
+   the margin is the label's height. Stacked on a phone it needs no offset. */
+@media (min-width: 768px) {
+  .subnet-result {
+    min-height: 2.5rem;
+    margin-top: 1.65rem;
+  }
 }
 
 .subnet-result[data-result] {
