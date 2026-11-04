@@ -401,3 +401,77 @@ test.describe('/networking/firewalls: the rule list', () => {
     });
   }
 });
+
+/** Every row of a device table, fully inside both the viewport and the centre panel that holds it. */
+async function expectRowsFullyVisible(page: Page, tableId: string, rows: number, where: string): Promise<void> {
+  await expect(page.locator(`.device-table[data-table="${tableId}"] tbody tr`), where).toHaveCount(rows, { timeout: 20_000 });
+  const outside = await page.evaluate((id) => {
+    const centre = document.querySelector('.console__center')!.getBoundingClientRect();
+    return [...document.querySelectorAll(`.device-table[data-table="${id}"] tbody tr`)]
+      .map((tr) => tr.getBoundingClientRect())
+      .map((r, i) => ({ i, ok: r.top >= centre.top && r.bottom <= centre.bottom && r.top >= 0 && r.bottom <= window.innerHeight }))
+      .filter((r) => !r.ok)
+      .map((r) => r.i + 1);
+  }, tableId);
+  expect(outside, `${where}: rows not fully visible`).toEqual([]);
+}
+
+test.describe('the whole rule list and lease table show at 1440x900 (ruling R37)', () => {
+  test.beforeEach(({}, testInfo) => test.skip(testInfo.project.name !== 'desktop-light', 'Sets its own desktop viewport; one project is enough.'));
+
+  test('Firewalls: every rule row beside the stage, at every step and every Try it choice', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openLesson(page, '/networking/firewalls');
+    for (let step = 1; step <= 5; step += 1) {
+      await nextStep(page).click();
+      await expectRowsFullyVisible(page, 'rules', 3, `step ${step}`);
+    }
+    await nextStep(page).click();
+    const choices: [string, number][] = [
+      ["Move 'Block everything else' to the top", 3],
+      ["Add 'Allow TCP 80' above the last rule", 4],
+      ['Remove the admin SSH rule', 2],
+    ];
+    for (const [label, rows] of choices) {
+      await page.getByRole('button', { name: label }).click();
+      await expectRowsFullyVisible(page, 'rules', rows, label);
+      // The stage is still drawn at a size the labels read at (ruling R28); the label check above covers the exact sizes.
+      expect((await page.locator('.console__stage').boundingBox())!.height).toBeGreaterThanOrEqual(256);
+    }
+  });
+
+  test('DHCP: the lease rows are fully visible at the last step and at Try it', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openLesson(page, '/networking/dhcp');
+    await advance(page, 5);
+    await expectRowsFullyVisible(page, 'leases', 1, 'last step');
+    await nextStep(page).click();
+    await page.getByRole('button', { name: 'Connect the phone', exact: true }).click();
+    await expectRowsFullyVisible(page, 'leases', 2, 'Connect the phone');
+  });
+});
+
+test('Firewalls: while the inspector hides the scene the console does not try to scroll the centre panel', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'short-desktop', 'Needs a short screen, where the centre scrolls.');
+  await openLesson(page, '/networking/firewalls');
+  await nextStep(page).click();
+  const row = page.locator('.device-table tr[data-highlight="matched"]');
+  await expect(row).toHaveCount(1, { timeout: 8_000 });
+  const centre = page.locator('.console__center');
+  // With the scene hidden its rows have no position; a scroll aimed at them would be aimed at nothing.
+  await centre.evaluate((el) => {
+    (window as unknown as { scrolls: number }).scrolls = 0;
+    const original = el.scrollTo.bind(el);
+    el.scrollTo = ((...args: unknown[]) => {
+      (window as unknown as { scrolls: number }).scrolls += 1;
+      return (original as (...a: unknown[]) => void)(...args);
+    }) as typeof el.scrollTo;
+  });
+  await page.getByRole('button', { name: 'Details' }).first().click();
+  await expect(page.getByRole('region', { name: 'Packet inspector' })).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => (window as unknown as { scrolls: number }).scrolls)).toBe(0);
+  // Closing it brings the matched row back into view.
+  await page.getByRole('button', { name: 'Close inspector' }).click();
+  await expect(row).toBeInViewport({ ratio: 1 });
+});

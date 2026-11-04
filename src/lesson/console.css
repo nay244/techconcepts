@@ -568,12 +568,13 @@ a.outline__lesson[aria-current='page'] {
     flex: 1 0 auto;
   }
 
-  /* The stage comes first (ruling R28): three quarters of the centre's height below the view
-     toggle (cqh counts inside the padding), up to the 360 px at which the designed text already
-     reads at 12 px. The device tables share what is left; when they need more, the centre scrolls
-     to them, and the top of a table still shows, so it is found. */
+  /* The stage and the tables share the centre (rulings R28, R36, R37). The stage takes what the
+     tables leave, never less than 16 rem (256 px, where the designed text still reads at 12 px), so
+     when the centre is tall enough every table row shows beside the stage with nothing to scroll.
+     When it is not, the centre scrolls, and the row an event points at is brought into view
+     (LessonConsole). */
   .console__stage {
-    min-height: max(12rem, min(22.5rem, (100cqh - var(--space-3) - 2.25rem) * 0.75));
+    min-height: 16rem;
   }
 
   .console__explain {

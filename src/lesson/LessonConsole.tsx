@@ -76,7 +76,8 @@ function lastTableEvent(events: SceneEvent[], played: number, tableId: string): 
  */
 function revealHighlightedRow(centre: HTMLElement, instant: boolean): void {
   const row = centre.querySelector<HTMLElement>('.device-table tr[data-highlight]');
-  if (row === null || getComputedStyle(centre).overflowY === 'visible') return;
+  // A row that is not drawn (the inspector hides the scene) has no position to scroll to.
+  if (row === null || row.offsetParent === null || getComputedStyle(centre).overflowY === 'visible') return;
   const rowBox = row.getBoundingClientRect();
   const room = centre.getBoundingClientRect();
   const above = rowBox.top - room.top;
@@ -307,7 +308,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
   // One string that changes whenever a table event plays, as the table panels' keys do.
   const tableEvents = flow === null ? '' : flow.tables.map((table) => lastTableEvent(events, eventIndex, table.id)).join('|');
   useEffect(() => {
-    if (tableEvents !== '' && centre.current !== null) revealHighlightedRow(centre.current, reducedMotion);
+    if (tableEvents !== '' && open === null && centre.current !== null) revealHighlightedRow(centre.current, reducedMotion);
   }, [tableEvents, position, view, open, reducedMotion]);
 
   let flowCenter: ReactNode = null;
