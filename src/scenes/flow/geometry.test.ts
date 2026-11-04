@@ -1,6 +1,18 @@
 import { describe, expect, test } from 'vitest';
 import type { Actor, FlowScene, MessageEvent } from '../../content/schema';
-import { CHIP_LIFT, arrowSpan, chipAlign, chipSpot, pathFor } from './geometry';
+import {
+  ADDRESS_SIZE,
+  CHIP_LIFT,
+  LABEL_SIZE,
+  MIN_ADDRESS_PX,
+  MIN_LABEL_PX,
+  NODE_RADIUS,
+  arrowSpan,
+  chipAlign,
+  chipSpot,
+  deviceText,
+  pathFor,
+} from './geometry';
 
 const actor = (id: string, x: number, y: number): Actor => ({ id, kind: 'router', label: id, addresses: [], x, y });
 
@@ -111,5 +123,42 @@ describe('arrowSpan', () => {
 
   test('leaves out a target the scene does not have', () => {
     expect(span('a', ['ghost', 'b'])).toEqual({ lo: 0, hi: 2, direction: 'right', stops: [] });
+  });
+});
+
+describe('deviceText', () => {
+  test('keeps the designed sizes until it knows the scale', () => {
+    for (const scale of [null, 0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(deviceText(scale)).toMatchObject({ label: LABEL_SIZE, address: ADDRESS_SIZE });
+    }
+  });
+
+  test('keeps the designed sizes where they already read at the minimums, so they are the most it draws', () => {
+    for (const scale of [0.7, 1, 1.6]) expect(deviceText(scale)).toMatchObject({ label: 20, address: 16 });
+  });
+
+  test.each([0.317, 0.363, 0.4, 0.507, 0.6, 0.65])('at %s px per unit the text reads at 12 px and 11 px on screen at least', (scale) => {
+    const text = deviceText(scale);
+    expect(text.label * scale).toBeGreaterThanOrEqual(MIN_LABEL_PX);
+    expect(text.address * scale).toBeGreaterThanOrEqual(MIN_ADDRESS_PX);
+    // Only as big as it has to be: a tenth of a unit less would fall short, unless the designed size rules.
+    if (text.label > LABEL_SIZE) expect((text.label - 0.1) * scale).toBeLessThan(MIN_LABEL_PX);
+    if (text.address > ADDRESS_SIZE) expect((text.address - 0.1) * scale).toBeLessThan(MIN_ADDRESS_PX);
+  });
+
+  test('grows the label and the address each on their own account', () => {
+    // At 0.62 the designed label already reads at 12.4 px, but a 16-unit address would read at 9.9 px.
+    expect(deviceText(0.62)).toMatchObject({ label: 20, address: 17.8 });
+  });
+
+  test.each([null, 0.317, 0.363, 0.5, 1])('at %s, no line box touches the disc or the next line', (scale) => {
+    const text = deviceText(scale);
+    const box = (baseline: number, size: number) => ({ top: baseline - 1.025 * size, bottom: baseline + 0.275 * size });
+    const label = box(text.labelY, text.label);
+    const first = box(text.firstAddressY, text.address);
+    const second = box(text.firstAddressY + text.lineHeight, text.address);
+    expect(label.top).toBeGreaterThan(NODE_RADIUS);
+    expect(first.top).toBeGreaterThan(label.bottom);
+    expect(second.top).toBeGreaterThan(first.bottom);
   });
 });

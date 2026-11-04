@@ -12,6 +12,54 @@ export const VIEW_HEIGHT = 600;
 
 /** Radius of the disc behind each device icon. */
 export const NODE_RADIUS = 38;
+/** The device text as designed, in canvas units: the label's size and each address line's. It is never drawn smaller. */
+export const LABEL_SIZE = 20;
+export const ADDRESS_SIZE = 16;
+/** The least a device's label and its addresses may measure on screen, in CSS pixels (ruling R28). */
+export const MIN_LABEL_PX = 12;
+export const MIN_ADDRESS_PX = 11;
+/** How far a line's box reaches above and below its baseline, per unit of font size (IBM Plex: 1.025 and 0.275, rounded up). */
+const ASCENT = 1.05;
+const DESCENT = 0.3;
+/** Space between the disc and the label's box, and between one line's box and the next. */
+const TEXT_GAP = 2;
+
+export interface DeviceText {
+  /** Font sizes, in canvas units. */
+  label: number;
+  address: number;
+  /** Baselines below the device's centre: the label's, then the first address line's. */
+  labelY: number;
+  firstAddressY: number;
+  /** From one address line's baseline to the next. */
+  lineHeight: number;
+}
+
+const roundUp = (value: number): number => Math.ceil(value * 10) / 10;
+const round1 = (value: number): number => Math.round(value * 10) / 10;
+
+/**
+ * The text under each device, for a canvas drawn at `scale` screen pixels per
+ * canvas unit. A small canvas would shrink the designed sizes past reading, so
+ * the text grows in canvas units until it measures MIN_LABEL_PX and
+ * MIN_ADDRESS_PX on screen; a large canvas keeps the designed sizes. The lines
+ * are spaced so their boxes never touch the disc or each other. A scale that is
+ * not known yet (before the canvas is on screen) gives the designed layout.
+ */
+export function deviceText(scale: number | null): DeviceText {
+  const known = scale !== null && Number.isFinite(scale) && scale > 0;
+  const label = known ? Math.max(LABEL_SIZE, roundUp(MIN_LABEL_PX / scale)) : LABEL_SIZE;
+  const address = known ? Math.max(ADDRESS_SIZE, roundUp(MIN_ADDRESS_PX / scale)) : ADDRESS_SIZE;
+  const labelY = round1(NODE_RADIUS + TEXT_GAP + label * ASCENT);
+  return {
+    label,
+    address,
+    labelY,
+    firstAddressY: round1(labelY + label * DESCENT + TEXT_GAP + address * ASCENT),
+    lineHeight: round1(address * (ASCENT + DESCENT) + TEXT_GAP),
+  };
+}
+
 /** How far above a device's centre a chip rides, so a chip at rest sits on top of the device instead of hiding it. */
 export const CHIP_LIFT = NODE_RADIUS + 18;
 /** Closest a chip's centre may come to the top edge. */

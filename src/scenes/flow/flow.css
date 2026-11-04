@@ -70,23 +70,26 @@
   stroke-width: 1.5;
 }
 
-/* A halo in the panel colour keeps text readable where it crosses a link. */
+/* A halo in the panel colour keeps text readable where it crosses a link. It is
+   sized in em, so it grows with the text when the view enlarges it (sizes here
+   are the designed ones; the view sets the size it needs inline). */
 .flow-device__label,
 .flow-device__address {
   paint-order: stroke;
   stroke: var(--panel);
-  stroke-width: 5px;
   stroke-linejoin: round;
 }
 
 .flow-device__label {
   fill: var(--ink-strong);
   font: 600 20px var(--font-sans);
+  stroke-width: 0.25em;
 }
 
 .flow-device__address {
   fill: var(--ink);
   font: 400 16px var(--font-mono);
+  stroke-width: 0.3125em;
 }
 
 /* A chip rests where it is placed (left and top, set by the view). `translate`

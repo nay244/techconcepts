@@ -1,9 +1,9 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type RefCallback } from 'react';
 import type { Actor, FlowScene, Link, MessageEvent } from '../../content/schema';
 import { EVENT_DURATION_MS } from '../../engine/playback';
 import type { DerivedState } from '../../engine/timeline';
 import DeviceIcon from './DeviceIcon';
-import { chipAlign, chipSpot, NODE_RADIUS, pathFor, VIEW_HEIGHT, VIEW_WIDTH, type Point } from './geometry';
+import { chipAlign, chipSpot, deviceText, NODE_RADIUS, pathFor, VIEW_HEIGHT, VIEW_WIDTH, type DeviceText, type Point } from './geometry';
 import './flow.css';
 
 export interface NetworkViewProps {
@@ -19,8 +19,6 @@ export interface NetworkViewProps {
 /** The 48 px icon is drawn at this scale inside its disc. */
 const ICON_SCALE = 1.25;
 const ICON_OFFSET = -(48 * ICON_SCALE) / 2;
-/** Space between lines of text under a device. */
-const LINE_HEIGHT = 20;
 /** Half the gap between the two lines of a tunnel. */
 const TUNNEL_HALF_GAP = 3;
 
@@ -50,19 +48,24 @@ function LinkLine({ link, from, to }: { link: Link; from: Actor; to: Actor }) {
   );
 }
 
-function Device({ actor }: { actor: Actor }) {
-  const labelY = NODE_RADIUS + 22;
+function Device({ actor, text }: { actor: Actor; text: DeviceText }) {
   return (
     <g className="flow-device" data-device={actor.id} transform={`translate(${actor.x} ${actor.y})`}>
       <circle className="flow-device__disc" r={NODE_RADIUS} />
       <g transform={`translate(${ICON_OFFSET} ${ICON_OFFSET}) scale(${ICON_SCALE})`}>
         <DeviceIcon kind={actor.kind} />
       </g>
-      <text className="flow-device__label" y={labelY} textAnchor="middle">
+      <text className="flow-device__label" y={text.labelY} textAnchor="middle" style={{ fontSize: text.label }}>
         {actor.label}
       </text>
       {actor.addresses.map((address, i) => (
-        <text key={i} className="flow-device__address" y={labelY + LINE_HEIGHT * (i + 1)} textAnchor="middle">
+        <text
+          key={i}
+          className="flow-device__address"
+          y={Math.round((text.firstAddressY + text.lineHeight * i) * 10) / 10}
+          textAnchor="middle"
+          style={{ fontSize: text.address }}
+        >
           {address}
         </text>
       ))}
@@ -159,13 +162,43 @@ function Chip({ msg, destination, path, speed, reducedMotion, onOpenPacket }: Ch
 }
 
 /**
+ * How many screen pixels one canvas unit takes, measured once the canvas is on
+ * the page and again whenever it changes size. Null until then, and wherever it
+ * cannot be measured (on the server, and in jsdom).
+ */
+function useCanvasScale(): [RefCallback<SVGSVGElement>, number | null] {
+  const [scale, setScale] = useState<number | null>(null);
+  const ref = useCallback((svg: SVGSVGElement | null) => {
+    if (svg === null) return;
+    // The drawing is fitted inside the box (preserveAspectRatio meet), so the smaller ratio is the scale.
+    // Rounded down, so text sized from it is never short of its minimum.
+    const measure = (width: number, height: number) => {
+      const fit = Math.floor(Math.min(width / VIEW_WIDTH, height / VIEW_HEIGHT) * 1000) / 1000;
+      setScale(fit > 0 ? fit : null);
+    };
+    const box = svg.getBoundingClientRect();
+    measure(box.width, box.height);
+    if (typeof ResizeObserver !== 'function') return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry !== undefined) measure(entry.contentRect.width, entry.contentRect.height);
+    });
+    observer.observe(svg);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, scale];
+}
+
+/**
  * The topology: devices joined by links, with the message now in flight drawn
  * as a chip for each of its targets. The picture is an image to assistive
  * technology; the chips are separate, real elements above it so a chip with a
- * packet can be a focusable button.
+ * packet can be a focusable button. The text under the devices keeps a readable
+ * size on screen however small the canvas is drawn (see `deviceText`).
  */
 export function NetworkView({ scene, state, reducedMotion, speed = 1, onOpenPacket }: NetworkViewProps) {
   const actors = new Map(scene.actors.map((actor) => [actor.id, actor]));
+  const [svgRef, scale] = useCanvasScale();
+  const text = deviceText(scale);
   const msg = state.activeMessage;
   // The picture's text alternative: who is in it and how they are joined.
   const nameOf = (id: string) => actors.get(id)?.label ?? id;
@@ -174,14 +207,14 @@ export function NetworkView({ scene, state, reducedMotion, speed = 1, onOpenPack
 
   return (
     <div className="flow-network">
-      <svg className="flow-network__svg" viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} role="img" aria-label={description}>
+      <svg ref={svgRef} className="flow-network__svg" viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`} role="img" aria-label={description}>
         {scene.links.map((link) => {
           const from = actors.get(link.from);
           const to = actors.get(link.to);
           return from === undefined || to === undefined ? null : <LinkLine key={link.id} link={link} from={from} to={to} />;
         })}
         {scene.actors.map((actor) => (
-          <Device key={actor.id} actor={actor} />
+          <Device key={actor.id} actor={actor} text={text} />
         ))}
       </svg>
       {msg !== null &&

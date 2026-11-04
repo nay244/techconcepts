@@ -549,8 +549,23 @@ a.outline__lesson[aria-current='page'] {
     min-height: 0;
   }
 
+  /* A size container, so the stage below can claim a share of the centre's height. */
   .console__center {
     grid-area: center;
+    container-type: size;
+  }
+
+  /* The scene fills the centre and never shrinks below its content: the centre scrolls instead. */
+  .console__scene {
+    flex: 1 0 auto;
+  }
+
+  /* The stage comes first (ruling R28): three quarters of the centre's height below the view
+     toggle (cqh counts inside the padding), up to the 360 px at which the designed text already
+     reads at 12 px. The device tables share what is left; when they need more, the centre scrolls
+     to them, and the top of a table still shows, so it is found. */
+  .console__stage {
+    min-height: max(12rem, min(22.5rem, (100cqh - var(--space-3) - 2.25rem) * 0.75));
   }
 
   .console__explain {

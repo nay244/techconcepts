@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test, vi } from 'vitest';
 import { validateLesson } from '../../content/define';
@@ -8,7 +8,7 @@ import { fixtureLesson } from '../../content/test-fixtures';
 import { deriveState } from '../../engine/timeline';
 import { contrastRatio } from '../../lib/contrast';
 import { tokens } from '../../styles/tokens';
-import { chipSpot } from './geometry';
+import { chipSpot, deviceText } from './geometry';
 import NetworkView from './NetworkView';
 
 const L: Lesson = validateLesson(fixtureLesson()).lesson;
@@ -52,6 +52,64 @@ test('shows every actor with its label and addresses', () => {
   for (const actor of scene.actors) {
     expect(screen.getByText(actor.label)).toBeInTheDocument();
     for (const address of actor.addresses) expect(screen.getByText(address)).toBeInTheDocument();
+  }
+});
+
+// ---- device text on a small canvas (ruling R28)
+
+const labelOf = (container: HTMLElement, id: string) =>
+  container.querySelector<SVGTextElement>(`[data-device="${id}"] .flow-device__label`)!;
+const addressesOf = (container: HTMLElement, id: string) => [
+  ...container.querySelectorAll<SVGTextElement>(`[data-device="${id}"] .flow-device__address`),
+];
+
+test('without a measured size (on the server, in jsdom) the device text keeps its designed layout', () => {
+  const { container } = render(<NetworkView scene={scene} state={deriveState(L, 0, 0, null)} reducedMotion={false} onOpenPacket={noop} />);
+  const designed = deviceText(null);
+  expect(labelOf(container, 'a').style.fontSize).toBe('20px');
+  expect(labelOf(container, 'a').getAttribute('y')).toBe(String(designed.labelY));
+  expect(addressesOf(container, 'a').map((t) => [t.style.fontSize, t.getAttribute('y')])).toEqual([
+    ['16px', String(designed.firstAddressY)],
+    ['16px', String(Math.round((designed.firstAddressY + designed.lineHeight) * 10) / 10)],
+  ]);
+});
+
+test('on a small canvas the device text grows to stay readable, and follows the canvas as it resizes', () => {
+  let report: ResizeObserverCallback = () => undefined;
+  const observe = vi.fn();
+  const disconnect = vi.fn();
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: ResizeObserverCallback) {
+        report = callback;
+      }
+      observe = observe;
+      disconnect = disconnect;
+    },
+  );
+  // 366 by 220 px: a phone's canvas, so 0.366 px per unit across and 0.3666 down; the smaller rules.
+  vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 366, height: 220 } as DOMRect);
+  try {
+    const { container, unmount } = render(
+      <NetworkView scene={scene} state={deriveState(L, 0, 0, null)} reducedMotion={false} onOpenPacket={noop} />,
+    );
+    expect(observe).toHaveBeenCalledWith(container.querySelector('svg'));
+    const small = deviceText(0.366);
+    expect(labelOf(container, 'b').style.fontSize).toBe(`${small.label}px`);
+    expect(labelOf(container, 'b').getAttribute('y')).toBe(String(small.labelY));
+    expect(addressesOf(container, 'b')[0]!.style.fontSize).toBe(`${small.address}px`);
+    expect(small.label * 0.366).toBeGreaterThanOrEqual(12);
+
+    // Widened to 900 px: the designed sizes are enough again.
+    act(() => report([{ contentRect: { width: 900, height: 540 } } as ResizeObserverEntry], {} as ResizeObserver));
+    expect(labelOf(container, 'b').style.fontSize).toBe('20px');
+    expect(addressesOf(container, 'b')[0]!.style.fontSize).toBe('16px');
+
+    unmount();
+    expect(disconnect).toHaveBeenCalled();
+  } finally {
+    vi.unstubAllGlobals();
   }
 });
 
