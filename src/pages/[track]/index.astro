@@ -1,0 +1,106 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { getEntries, trackTotals } from '../../content/registry';
+import { tracks } from '../../content/tracks';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ResetProgress from '../../components/ResetProgress';
+import TrackLessonList from '../../components/TrackLessonList';
+import '../../components/site.css';
+
+export const getStaticPaths = (() =>
+  tracks.map((track) => ({
+    params: { track: track.id },
+    props: { track, entries: getEntries(track.id) },
+  }))) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { track, entries } = Astro.props;
+const { planned, available, minutes } = trackTotals(entries);
+const level = track.level.charAt(0).toUpperCase() + track.level.slice(1);
+---
+
+<BaseLayout title={track.title} description={track.description}>
+  <div class="container track">
+    <nav aria-label="Breadcrumb" class="track__crumbs"><a href="/">Home</a></nav>
+    <h1>{track.title}</h1>
+    <p class="track__description">{track.description}</p>
+    <ul class="track__stats" role="list">
+      <li>{planned} lessons</li>
+      <li>{available} ready now</li>
+      <li>{minutes} min of lessons ready</li>
+      <li>{level}</li>
+    </ul>
+
+    <div class="track__body">
+      <ResetProgress client:load />
+      <TrackLessonList client:load trackId={track.id} entries={entries} planned={planned} />
+    </div>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .track {
+    padding-block: var(--space-6) var(--space-4);
+  }
+  .track__crumbs {
+    margin-bottom: var(--space-4);
+    font-size: var(--text-sm);
+  }
+  .track__description {
+    max-width: var(--measure);
+    font-size: var(--text-lg);
+  }
+  .track__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-5);
+    margin: 0 0 var(--space-6);
+    padding: 0;
+    list-style: none;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+  /* The two islands are display: contents, so their pieces are laid out here:
+     the progress line and Reset side by side, then the chips, then the parts.
+     Reset comes first in the source so keyboard order matches what is shown. */
+  .track__body {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: var(--space-5);
+    align-items: start;
+  }
+  .track__body .reset {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .track__body .track-progress {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .track__body .track-filter,
+  .track__body .track-parts {
+    grid-column: 1 / -1;
+  }
+  .track__body .track-filter {
+    margin-top: var(--space-4);
+  }
+  .track__body p.sr-only {
+    grid-column: 1;
+  }
+  @media (max-width: 34rem) {
+    .track__body {
+      grid-template-columns: 1fr;
+    }
+    .track__body .reset,
+    .track__body .track-progress {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .track__body .track-progress {
+      order: -1;
+    }
+  }
+</style>

@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ResetProgress from '../components/ResetProgress';
+import '../components/site.css';
+---
+
+<BaseLayout title="About" description="What TechConcepts is, how its lessons are made, who inspired it, and how it keeps your progress private.">
+  <div class="container about">
+    <h1>About TechConcepts</h1>
+
+    <section aria-labelledby="what">
+      <h2 id="what">What TechConcepts is</h2>
+      <p>TechConcepts teaches how technology works through short, visual lessons. Each one shows a real process, such as a laptop asking a network for an address, one step at a time, and explains it in plain language.</p>
+      <p>The first track, Networking Concepts, is written for anyone starting out, including people studying for entry-level IT certifications. You do not need an account, and you can open any lesson in any order.</p>
+    </section>
+
+    <section aria-labelledby="how">
+      <h2 id="how">How lessons are made</h2>
+      <p>Every lesson has the same shape: an overview, four to six steps, something to try, a few questions to check yourself, and a short recap. A lesson takes 15 minutes or less. The explanation starts with an everyday comparison, then gives you the precise term.</p>
+      <p>The example networks use addresses reserved for documentation and private use, so nothing in a lesson points at a real machine.</p>
+    </section>
+
+    <section aria-labelledby="credits">
+      <h2 id="credits">Credits</h2>
+      <p>Protocol Explorer and TryHackMe were an inspiration for TechConcepts: the first for the idea of watching a protocol work, the second for its friendly, guided way of teaching. They are inspiration only. TechConcepts is not affiliated with, endorsed by, or built from either of them.</p>
+    </section>
+
+    <section aria-labelledby="privacy">
+      <h2 id="privacy">Your progress stays with you</h2>
+      <p>TechConcepts remembers which lessons you have started and finished, and whether you prefer the light or dark theme. This is saved only in this browser, on this device, and is never sent anywhere. There are no accounts. Your answers to the check questions are not saved at all.</p>
+      <p>If you would like to start fresh, you can clear it here. Clearing your browser data does the same.</p>
+      <ResetProgress client:load />
+    </section>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .about {
+    max-width: 44rem;
+    padding-block: var(--space-7) var(--space-4);
+  }
+  .about section {
+    margin-top: var(--space-6);
+  }
+  .about h2 {
+    font-size: var(--text-xl);
+  }
+</style>
