@@ -460,7 +460,7 @@ export default defineLesson({
     type: 'flow',
     views: ['network', 'sequence'],
     actors: [
-      { id: 'laptop', kind: 'laptop', label: 'Laptop', addresses: [], x: 200, y: 400 },
+      { id: 'laptop', kind: 'laptop', label: 'Laptop', addresses: [LAPTOP_MAC], x: 200, y: 400 },
       { id: 'router', kind: 'router', label: 'Router · DHCP server', addresses: [ROUTER_IP], x: 500, y: 200 },
       { id: 'phone', kind: 'phone', label: 'Phone', addresses: [PHONE_MAC], x: 800, y: 400 },
     ],
@@ -525,7 +525,7 @@ export default defineLesson({
       title: 'Request',
       subtitle: 'The device says which offer it takes',
       narrative:
-        "The laptop accepts with a Request: \"I'll take 192.168.1.100, from the server at 192.168.1.1.\" You might expect this to go straight to the router, but it's another broadcast from 0.0.0.0, on purpose. If a second DHCP server had also sent an Offer, this broadcast tells it, \"you weren't chosen, so free up the address you offered.\" The server identifier inside the message says whose offer won. Until the server confirms, the address isn't the laptop's to use, so it still sends from 0.0.0.0.",
+        "Back at the front desk, the guest says which key they'll take: the laptop accepts with a Request: \"I'll take 192.168.1.100, from the server at 192.168.1.1.\" You might expect this to go straight to the router, but it's another broadcast from 0.0.0.0, on purpose. If a second DHCP server had also sent an Offer, this broadcast tells it, \"you weren't chosen, so free up the address you offered.\" The server identifier inside the message says whose offer won. Until the server confirms, the address isn't the laptop's to use, so it still sends from 0.0.0.0.",
       facts: [
         { label: 'Address requested', value: LAPTOP_IP },
         { label: 'Server chosen', value: `${ROUTER_IP} (server identifier)` },
@@ -538,7 +538,7 @@ export default defineLesson({
       title: 'Acknowledge',
       subtitle: 'The server confirms and writes it down',
       narrative:
-        "The server confirms with an Acknowledge, or ACK: the address is yours for 24 hours. It also writes a row in its lease table, the register of which IP address belongs to which MAC address until the lease runs out. That register is how the router never gives one address to two devices, and it usually sits behind a router's \"connected devices\" page. The laptop then applies the ACK's address, mask, gateway and DNS server and can talk normally. Discover, Offer, Request, Acknowledge: you'll hear this called DORA.",
+        "The clerk writes the booking down and hands the key over: the server confirms with an Acknowledge, or ACK: the address is yours for 24 hours. It also writes a row in its lease table, the register of which IP address belongs to which MAC address until the lease runs out. That register is how the router never gives one address to two devices, and it usually sits behind a router's \"connected devices\" page. The laptop then applies the ACK's address, mask, gateway and DNS server and can talk normally. Discover, Offer, Request, Acknowledge: you'll hear this called DORA.",
       facts: [
         { label: 'Address', value: LAPTOP_IP },
         { label: 'Lease', value: '24 hours' },

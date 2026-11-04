@@ -311,7 +311,9 @@ test('the scene is a flow with the laptop, the phone and the DHCP server joined 
     ['router', 'Router · DHCP server'],
     ['phone', 'Phone'],
   ]);
-  expect(scene.actors.find((a) => a.id === 'laptop')!.addresses).toEqual([]);
+  // Both clients show their MAC address, the one address a device has before DHCP gives it an IP.
+  expect(scene.actors.find((a) => a.id === 'laptop')!.addresses).toEqual(['00:00:5E:00:53:10']);
+  expect(scene.actors.find((a) => a.id === 'phone')!.addresses).toEqual(['00:00:5E:00:53:11']);
   expect(scene.actors.find((a) => a.id === 'router')!.addresses).toEqual(['192.168.1.1']);
   expect(scene.links.map((l) => [l.from, l.to, l.medium])).toEqual([
     ['laptop', 'router', 'wireless'],
@@ -356,6 +358,13 @@ test('the Offer step opens with the analogy and says what a pool is where it fir
   expect(offer.narrative.indexOf('pool (the addresses it can give out)')).toBeGreaterThan(-1);
   // The one place "pool" is used in a step before the Offer would be the Discover step; it must not appear there.
   expect(dhcp.steps.find((s) => s.id === 'discover')!.narrative).not.toMatch(/\bpool\b/);
+});
+
+test('the Request and Acknowledge steps open with the hotel analogy, then name the message', () => {
+  const request = dhcp.steps.find((s) => s.id === 'request')!;
+  const ack = dhcp.steps.find((s) => s.id === 'acknowledge')!;
+  expect(request.narrative).toMatch(/^Back at the front desk, the guest says which key they'll take: the laptop accepts with a Request/);
+  expect(ack.narrative).toMatch(/^The clerk writes the booking down and hands the key over: the server confirms with an Acknowledge, or ACK/);
 });
 
 test('ports and UDP point ahead to lessons 10 and 11, and Q1 does not claim TCP 53 for DNS', () => {
