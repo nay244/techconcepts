@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type Dispatch, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { FlowScene, Lesson, PlaygroundPreset, SceneEvent } from '../content/schema';
 import { usePlayback, type PlaybackAction, type PlaybackState } from '../engine/playback';
@@ -310,6 +310,19 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
     if (tableEvents !== '' && open === null && centre.current !== null) revealHighlightedRow(centre.current, reducedMotion);
   }, [tableEvents, position, view, open, reducedMotion]);
 
+  // A table panel is remounted for each table event, and a focused element that is removed leaves the
+  // focus on <body>. So the table whose region has the focus is remembered, and the new region gets it back.
+  const focusedTable = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const id = focusedTable.current;
+    if (id === null || centre.current === null) return;
+    const regions = Array.from(centre.current.querySelectorAll<HTMLElement>('.device-table'));
+    if (regions.some((region) => region === document.activeElement)) return;
+    // Only if the focus was lost to the remount; focus that moved on has already cleared the memory.
+    if (document.activeElement !== null && document.activeElement !== document.body) return;
+    regions.find((region) => region.dataset.table === id)?.focus({ preventScroll: true });
+  }, [tableEvents]);
+
   let flowCenter: ReactNode = null;
   if (flow !== null) {
     const packetRows = derived.log.filter((row) => row.packet !== undefined);
@@ -346,7 +359,17 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
             )}
           </div>
           {flow.tables.length > 0 ? (
-            <div className="console__tables">
+            <div
+              className="console__tables"
+              onFocus={(event) => {
+                const region = (event.target as HTMLElement).closest<HTMLElement>('.device-table');
+                focusedTable.current = region === null || event.target !== region ? null : (region.dataset.table ?? null);
+              }}
+              // A blur from an element still in the page is the focus moving on; one from a removed panel is not.
+              onBlur={(event) => {
+                if ((event.target as HTMLElement).isConnected) focusedTable.current = null;
+              }}
+            >
               {flow.tables.map((table) => (
                 <DeviceTablePanel
                   key={`${table.id}:${lastTableEvent(events, eventIndex, table.id)}`}

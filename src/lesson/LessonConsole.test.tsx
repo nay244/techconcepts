@@ -371,6 +371,33 @@ describe('scene', () => {
     expect(screen.getByRole('region', { name: 'Neighbor table · Server' })).toBeInTheDocument();
   });
 
+  test('a focused table region keeps focus when a table event remounts it during playback', async () => {
+    window.history.replaceState({}, '', '?step=2');
+    renderConsole(); // arriving at a step starts it playing
+    const region = () => screen.getByRole('region', { name: 'Neighbor table · Server' });
+    await wait(EVENT_DURATION_MS.message);
+    const before = region();
+    before.focus();
+    expect(document.activeElement).toBe(before);
+    // The step's table event plays: the panel is keyed on it, so it is a new element.
+    await wait(EVENT_DURATION_MS.message);
+    await wait(EVENT_DURATION_MS.table);
+    expect(region()).not.toBe(before);
+    expect(document.activeElement).toBe(region());
+  });
+
+  test('a table event does not take focus from anywhere else', async () => {
+    window.history.replaceState({}, '', '?step=2');
+    renderConsole();
+    await wait(EVENT_DURATION_MS.message);
+    const region = screen.getByRole('region', { name: 'Neighbor table · Server' });
+    region.focus();
+    screen.getByRole('region', { name: 'Explanation' }).focus();
+    await wait(EVENT_DURATION_MS.message);
+    await wait(EVENT_DURATION_MS.table);
+    expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Explanation' }));
+  });
+
   test('passes reduced motion on to the network view', async () => {
     const reduce = (matches: boolean) =>
       vi.stubGlobal(
