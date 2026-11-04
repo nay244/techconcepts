@@ -2,6 +2,7 @@
 import { CERT_TAGS, type CertTag } from '../content/certs';
 import { getEntries, trackTotals, type AvailableSummary } from '../content/registry';
 import { comingSoonTracks, tracks } from '../content/tracks';
+import { levelLabel } from '../lib/entries';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ContinueCard from '../components/ContinueCard';
 import TrackProgress from '../components/TrackProgress';
@@ -17,7 +18,7 @@ const first = available[0]!;
 const present = new Set(available.flatMap((e) => e.certTags));
 const certTags = (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.has(tag));
 
-const level = track.level.charAt(0).toUpperCase() + track.level.slice(1);
+const level = levelLabel(track.level);
 
 const steps = [
   { name: 'Watch', line: 'Follow each step as devices send messages to one another, with a plain-English explanation beside it.' },

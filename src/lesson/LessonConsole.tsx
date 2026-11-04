@@ -3,6 +3,7 @@ import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { FlowScene, Lesson, PlaygroundPreset, SceneEvent } from '../content/schema';
 import { usePlayback, type PlaybackAction, type PlaybackState } from '../engine/playback';
 import { currentEvents, deriveState, parseStepParam, resumeLabel, sectionsFor, type DerivedState, type Sections } from '../engine/timeline';
+import { knownFrom } from '../lib/entries';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import NetworkView from '../scenes/flow/NetworkView';
@@ -41,8 +42,6 @@ export interface LessonConsoleProps {
 
 type View = FlowScene['views'][number];
 const VIEW_LABEL: Record<View, string> = { network: 'Network', sequence: 'Sequence' };
-
-const isAvailable = (entry: LessonSummary): entry is AvailableSummary => entry.available;
 
 /**
  * The preset the playground shows at a position: each step's own; the first
@@ -201,7 +200,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
   // ---------------------------------------------------------------- progress
 
   // Stable while the entries are, so the progress hook is not handed a new object on every render.
-  const known = useMemo(() => Object.fromEntries(entries.filter(isAvailable).map((e) => [e.key, e.maxPosition])), [entries]);
+  const known = useMemo(() => knownFrom(entries), [entries]);
   const progress = useProgress(known);
   const { update } = progress;
   const [deepLinked, setDeepLinked] = useState(false);

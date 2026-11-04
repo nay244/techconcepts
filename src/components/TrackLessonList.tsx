@@ -2,21 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { CERT_TAGS } from '../content/certs';
 import type { CertTag } from '../content/certs';
 import type { LessonSummary } from '../content/registry';
+import { byPart, STATUS_TEXT } from '../lib/entries';
 import { ProgressSummary, useTrackProgress } from './TrackProgress';
 import './site.css';
-
-const STATUS_TEXT = { finished: 'Finished', 'in-progress': 'In progress' } as const;
-
-/** Consecutive entries that share a part, in order. */
-function byPart(entries: LessonSummary[]): { title: string; entries: LessonSummary[] }[] {
-  const parts: { title: string; entries: LessonSummary[] }[] = [];
-  for (const entry of entries) {
-    const last = parts.at(-1);
-    if (last?.title === entry.partTitle) last.entries.push(entry);
-    else parts.push({ title: entry.partTitle, entries: [entry] });
-  }
-  return parts;
-}
 
 /**
  * The track's progress line, cert filter chips and every part with its

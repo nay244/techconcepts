@@ -6,12 +6,6 @@ function isTheme(value: unknown): value is Theme {
   return value === 'light' || value === 'dark';
 }
 
-/** A saved choice wins; anything else follows the operating system. */
-export function resolveTheme(saved: string | null, prefersDark: boolean): Theme {
-  if (isTheme(saved)) return saved;
-  return prefersDark ? 'dark' : 'light';
-}
-
 /** Sets the theme on the root element, where the CSS tokens are keyed. */
 export function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
@@ -25,9 +19,9 @@ export function readAppliedTheme(): Theme | null {
 
 /**
  * Inline `<head>` script that applies the theme before first paint, so there is
- * no flash of the wrong theme. It cannot import anything, so it repeats the
- * resolveTheme rule, and it wraps every access: a blocked `window.localStorage`
- * getter throws, and so can `matchMedia`. Browsers that report no preference
+ * no flash of the wrong theme. It cannot import anything, so it holds the whole rule itself (a
+ * saved choice wins, anything else follows the system), and it wraps every access: a blocked
+ * `window.localStorage` getter throws, and so can `matchMedia`. Browsers that report no preference
  * (or have no matchMedia) get dark, matching the CSS fallback in tokens.ts.
  */
 export const themeBootScript = `(function () {

@@ -1,14 +1,10 @@
 import { useMemo } from 'react';
 import type { LessonSummary } from '../content/registry';
+import { knownFrom } from '../lib/entries';
 import { trackCompletion } from '../progress/store';
 import type { ProgressData } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import './site.css';
-
-/** What `useProgress` needs: each available lesson's key and last position. */
-export function knownFrom(entries: LessonSummary[]): Record<string, number> {
-  return Object.fromEntries(entries.flatMap((e) => (e.available ? [[e.key, e.maxPosition] as const] : [])));
-}
 
 export function useTrackProgress(entries: LessonSummary[]) {
   // Memoized: `known` is a new object per render otherwise.

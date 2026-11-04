@@ -2,6 +2,7 @@
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
 import { getEntries, trackTotals } from '../../content/registry';
 import { tracks } from '../../content/tracks';
+import { levelLabel } from '../../lib/entries';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ResetProgress from '../../components/ResetProgress';
 import TrackLessonList from '../../components/TrackLessonList';
@@ -17,7 +18,7 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { track, entries } = Astro.props;
 const { planned, available, minutes } = trackTotals(entries);
-const level = track.level.charAt(0).toUpperCase() + track.level.slice(1);
+const level = levelLabel(track.level);
 ---
 
 <BaseLayout title={track.title} description={track.description}>

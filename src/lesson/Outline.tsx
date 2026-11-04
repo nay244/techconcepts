@@ -1,6 +1,7 @@
 import type { LessonSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import type { Sections } from '../engine/timeline';
+import { byPart, STATUS_TEXT } from '../lib/entries';
 import type { LessonProgress, ProgressData } from '../progress/store';
 
 export interface OutlineProps {
@@ -15,21 +16,8 @@ export interface OutlineProps {
   progress: ProgressData;
 }
 
-const STATUS_TEXT: Record<LessonProgress['status'], string> = { finished: 'Finished', 'in-progress': 'In progress' };
-
 function statusOf(progress: ProgressData, key: string): LessonProgress['status'] | null {
   return Object.hasOwn(progress.lessons, key) ? progress.lessons[key]!.status : null;
-}
-
-/** Consecutive entries that share a part, in order. */
-function byPart(entries: LessonSummary[]): { title: string; entries: LessonSummary[] }[] {
-  const parts: { title: string; entries: LessonSummary[] }[] = [];
-  for (const entry of entries) {
-    const last = parts.at(-1);
-    if (last?.title === entry.partTitle) last.entries.push(entry);
-    else parts.push({ title: entry.partTitle, entries: [entry] });
-  }
-  return parts;
 }
 
 function LessonLink({ entry, current, status }: { entry: LessonSummary; current: boolean; status: LessonProgress['status'] | null }) {

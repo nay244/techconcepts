@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { AvailableSummary } from '../content/registry';
 import { resumeLabel } from '../engine/timeline';
 import { resumePosition, trackCompletion } from '../progress/store';
-import { knownFrom } from './TrackProgress';
+import { knownFrom } from '../lib/entries';
 import { useProgress } from '../progress/useProgress';
 import './site.css';
 

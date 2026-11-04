@@ -1,16 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { THEME_KEY, applyTheme, readAppliedTheme, resolveTheme, themeBootScript } from './theme';
-
-test.each([
-  ['light', true, 'light'],
-  ['dark', false, 'dark'],
-  [null, true, 'dark'],
-  [null, false, 'light'],
-  ['bogus', true, 'dark'],
-] as const)('resolveTheme(%s, %s) = %s', (saved, prefersDark, expected) => {
-  expect(resolveTheme(saved, prefersDark)).toBe(expected);
-});
+import { THEME_KEY, applyTheme, readAppliedTheme, themeBootScript } from './theme';
 
 test('the theme key is namespaced', () => {
   expect(THEME_KEY).toBe('techconcepts:theme');
