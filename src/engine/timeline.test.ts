@@ -317,13 +317,13 @@ test('table summaries are joined onto the most recent log row', () => {
     message('m5'),
     { type: 'table', id: 'e2', table: 't', op: 'update', key: '192.168.1.10', row: { mac: 'ZZ' }, summary: 'Changed it.' },
   ]);
-  // The match arrives before this step's first message, so it joins the previous step's last row.
-  expect(deriveState(L2, 3, 1, null).log.at(-1)?.tableChange).toBe('The server remembers the laptop.; Found it.');
+  // The match arrives before this step's first message, so it does not join the previous step's last row.
+  expect(deriveState(L2, 3, 1, null).log.at(-1)?.tableChange).toBe('The server remembers the laptop.');
   const d = deriveState(L2, 3, 3, null);
   expect(d.log.map((x) => [x.eventId, x.tableChange])).toEqual([
     ['m1', undefined],
     ['m2', undefined],
-    ['m3', 'The server remembers the laptop.; Found it.'],
+    ['m3', 'The server remembers the laptop.'],
     ['m5', 'Changed it.'],
   ]);
 });

@@ -155,9 +155,11 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number, try
 
   // At Check and Recap every step is applied; Try it's variant is not.
   const earlier = lesson.steps.slice(0, Math.max(0, Math.min(p - 1, s.stepCount))).flatMap((step) => step.events);
+  // `group` is the step an event belongs to (-1 for the current position's own events), so a table change is only ever told with a message of its own position.
+  const groups = lesson.steps.slice(0, Math.max(0, Math.min(p - 1, s.stepCount))).flatMap((step, i) => step.events.map(() => i));
   const applied = [
-    ...earlier.map((event) => ({ event, isCurrent: false })),
-    ...current.slice(0, Math.max(0, eventIndex)).map((event) => ({ event, isCurrent: true })),
+    ...earlier.map((event, i) => ({ event, isCurrent: false, group: groups[i]! })),
+    ...current.slice(0, Math.max(0, eventIndex)).map((event) => ({ event, isCurrent: true, group: -1 })),
   ];
 
   const defs = new Map<string, TableDef>();
@@ -171,17 +173,20 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number, try
 
   const log: LogRow[] = [];
   let activeMessage: MessageEvent | null = null;
+  let lastGroup: number | null = null;
 
-  for (const { event, isCurrent } of applied) {
+  for (const { event, isCurrent, group } of applied) {
     if (event.type === 'message') {
       log.push(logRow(event, log.length + 1));
+      lastGroup = group;
       if (isCurrent) activeMessage = event;
       continue;
     }
 
-    // A table change is told alongside the message just before it. Before any message it only reaches the table.
+    // A table change is told alongside the message just before it. Before any message of its own position
+    // (a Try it that starts by replacing the rules) it only reaches the table, not the previous position's last row.
     const last = log.at(-1);
-    if (last !== undefined) last.tableChange = last.tableChange === undefined ? event.summary : `${last.tableChange}; ${event.summary}`;
+    if (last !== undefined && lastGroup === group) last.tableChange = last.tableChange === undefined ? event.summary : `${last.tableChange}; ${event.summary}`;
 
     const def = defs.get(event.table);
     const state = tables[event.table];

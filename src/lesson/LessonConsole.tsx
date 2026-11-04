@@ -67,6 +67,26 @@ function lastTableEvent(events: SceneEvent[], played: number, tableId: string): 
   return 'none';
 }
 
+/**
+ * Scrolls the centre panel, and nothing else, just far enough to show the row a
+ * table event points at. The tables sit under the stage and the centre scrolls,
+ * so on a short screen the rule or lease a step is about could be out of sight.
+ * Where the centre does not scroll (one column on a phone, where the page does),
+ * the row is left alone.
+ */
+function revealHighlightedRow(centre: HTMLElement, instant: boolean): void {
+  const row = centre.querySelector<HTMLElement>('.device-table tr[data-highlight]');
+  if (row === null || getComputedStyle(centre).overflowY === 'visible') return;
+  const rowBox = row.getBoundingClientRect();
+  const room = centre.getBoundingClientRect();
+  const above = rowBox.top - room.top;
+  const below = rowBox.bottom - room.bottom;
+  if (above >= 0 && below <= 0) return;
+  // Whole pixels, rounded outwards, so the row is not left a fraction of a pixel short.
+  const top = centre.scrollTop + (above < 0 ? Math.floor(above) : Math.ceil(below));
+  centre.scrollTo({ top, behavior: instant ? 'auto' : 'smooth' });
+}
+
 function FinishedMarker() {
   return (
     <p className="console__finished">
@@ -283,6 +303,13 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
 
   // ---------------------------------------------------------------- flow centre
 
+  const centre = useRef<HTMLDivElement>(null);
+  // One string that changes whenever a table event plays, as the table panels' keys do.
+  const tableEvents = flow === null ? '' : flow.tables.map((table) => lastTableEvent(events, eventIndex, table.id)).join('|');
+  useEffect(() => {
+    if (tableEvents !== '' && centre.current !== null) revealHighlightedRow(centre.current, reducedMotion);
+  }, [tableEvents, position, view, open, reducedMotion]);
+
   let flowCenter: ReactNode = null;
   if (flow !== null) {
     const packetRows = derived.log.filter((row) => row.packet !== undefined);
@@ -293,7 +320,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, prev,
     const packet = open === null ? undefined : flow.packets[open.packetId];
 
     flowCenter = (
-      <div className="console__center">
+      <div className="console__center" ref={centre}>
         {/* Hidden, not unmounted, under the inspector: the view keeps its scroll and the control that opened it. */}
         <div className="console__scene" hidden={open !== null}>
           {flow.views.length > 1 ? (
