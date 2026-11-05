@@ -18,7 +18,7 @@ export const ADDRESS_SIZE = 16;
 /** The least a device's label and its addresses may measure on screen, in CSS pixels (ruling R28). */
 export const MIN_LABEL_PX = 12;
 export const MIN_ADDRESS_PX = 11;
-/** How far a line's box reaches above and below its baseline, per unit of font size (IBM Plex: 1.025 and 0.275, rounded up). */
+/** How far a line's box reaches above and below its baseline, per unit of font size (1.025 and 0.275, rounded up; measured on the previous typeface, to recheck against Atkinson). */
 const ASCENT = 1.05;
 const DESCENT = 0.3;
 /** Space between the disc and the label's box, and between one line's box and the next. */

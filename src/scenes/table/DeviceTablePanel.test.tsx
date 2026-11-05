@@ -154,6 +154,6 @@ function mix(fg: string, bg: string, share: number): string {
 // Vitest drops stylesheet contents, so these numbers mirror the CSS rather than read it.
 test.each(['dark', 'light'] as const)('a highlighted row keeps its text at 4.5:1 and its accent at 3:1 in the %s theme', (theme) => {
   const t = tokens[theme];
-  expect(contrastRatio(t['ink-strong'], mix(t.selected, t.panel, 40))).toBeGreaterThanOrEqual(4.5);
-  expect(contrastRatio(t.selected, t.panel)).toBeGreaterThanOrEqual(3);
+  expect(contrastRatio(t['ink-strong'], mix(t.selected, t.card, 40))).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t.selected, t.card)).toBeGreaterThanOrEqual(3);
 });

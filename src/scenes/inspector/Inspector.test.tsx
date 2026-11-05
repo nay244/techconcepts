@@ -245,9 +245,9 @@ function mix(fg: string, bg: string, share: number): string {
   return `#${[0, 1, 2].map((i) => channel(i).toString(16).padStart(2, '0')).join('')}`;
 }
 
-// inspector.css fills alternate layer segments with 10% and 22% --ink-muted over --panel; 22% is the harder case.
+// inspector.css fills alternate layer segments with 10% and 22% --muted over --card; 22% is the harder case.
 // Vitest drops stylesheet contents, so these numbers mirror the CSS rather than read it.
 test.each(['dark', 'light'] as const)('segment labels keep 4.5:1 on their fill in the %s theme', (theme) => {
   const t = tokens[theme];
-  for (const share of [10, 22]) expect(contrastRatio(t['ink-strong'], mix(t['ink-muted'], t.panel, share))).toBeGreaterThanOrEqual(4.5);
+  for (const share of [10, 22]) expect(contrastRatio(t['ink-strong'], mix(t['muted'], t.card, share))).toBeGreaterThanOrEqual(4.5);
 });

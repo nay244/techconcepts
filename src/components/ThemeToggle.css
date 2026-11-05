@@ -4,7 +4,7 @@
   padding: 2px;
   border: 1px solid var(--line-strong);
   border-radius: calc(var(--radius) + 2px);
-  background: var(--panel);
+  background: var(--card);
 }
 
 .theme-toggle button {
@@ -15,7 +15,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius);
   background: transparent;
-  color: var(--ink-muted);
+  color: var(--muted);
   font: inherit;
   font-size: var(--text-sm);
   line-height: 1.4;
@@ -32,7 +32,7 @@
 :root[data-theme='light'] .theme-toggle [data-theme-value='light'],
 :root[data-theme='dark'] .theme-toggle [data-theme-value='dark'] {
   border-color: var(--line-strong);
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink-strong);
 }
 

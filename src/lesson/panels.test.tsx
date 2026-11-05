@@ -673,11 +673,11 @@ test('TryItPanel: choices mode has no disclosure', () => {
 
 // ------------------------------------------------------------ colour (see lesson.css)
 
-// The Dropped pill is text on a solid --blocked fill drawn in --bg; the muted text sits on --panel-raised in the event card and facts;
+// The Dropped pill is text on a solid --blocked fill drawn in --bg; the muted text sits on --card-2 in the event card and facts;
 // the pressed speed button and the play button are --bg text on an --ink-strong fill.
 test.each(['dark', 'light'] as const)('the text pairs lesson.css relies on reach 4.5:1 in the %s theme', (theme) => {
   const t = tokens[theme];
   expect(contrastRatio(t.bg, t.blocked)).toBeGreaterThanOrEqual(4.5);
-  expect(contrastRatio(t['ink-muted'], t['panel-raised'])).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t['muted'], t['card-2'])).toBeGreaterThanOrEqual(4.5);
   expect(contrastRatio(t.bg, t['ink-strong'])).toBeGreaterThanOrEqual(4.5);
 });

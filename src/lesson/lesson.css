@@ -14,7 +14,7 @@
 /* ---- Marks shared by the event card, the log and the legend ---- */
 
 .kind-dot {
-  --mark: var(--ink-muted);
+  --mark: var(--muted);
   display: inline-block;
   flex: none;
   width: 0.625rem;
@@ -94,12 +94,12 @@
 }
 
 .explain__full-name {
-  color: var(--ink-muted);
+  color: var(--muted);
   font-size: var(--text-sm);
 }
 
 .explain__eyebrow {
-  color: var(--ink-muted);
+  color: var(--muted);
   font: 600 var(--text-xs) / 1.4 var(--font-sans);
   letter-spacing: 0.08em;
 }
@@ -110,7 +110,7 @@
 }
 
 .explain__subtitle {
-  color: var(--ink-muted);
+  color: var(--muted);
 }
 
 .explain__narrative {
@@ -124,7 +124,7 @@
   padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
 }
 
 .explain__fact {
@@ -135,7 +135,7 @@
 }
 
 .explain__fact dt {
-  color: var(--ink-muted);
+  color: var(--muted);
   font-size: var(--text-sm);
 }
 
@@ -151,14 +151,14 @@
 /* ---- Event card ---- */
 
 .event-card {
-  --mark: var(--ink-muted);
+  --mark: var(--muted);
   display: grid;
   gap: var(--space-1);
   padding: var(--space-3);
   border: 1px solid var(--line);
   border-left: 4px solid var(--mark);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
 }
 .event-card[data-kind='request'] {
   --mark: var(--request);
@@ -205,7 +205,7 @@
 }
 
 .event-card__meta {
-  color: var(--ink-muted);
+  color: var(--muted);
   font: 400 var(--text-xs) / 1.4 var(--font-mono);
 }
 
@@ -247,7 +247,7 @@
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink-strong);
   font: 500 var(--text-sm) / 1.4 var(--font-sans);
   text-align: left;
@@ -255,14 +255,14 @@
 }
 
 .tryit__choice:hover {
-  border-color: var(--ink-muted);
+  border-color: var(--muted);
 }
 
 /* The chosen one gets a heavier ring in --selected and a tick, so it is not told by hue alone. */
 .tryit__choice[aria-pressed='true'] {
   border-color: var(--selected);
   box-shadow: inset 0 0 0 2px var(--selected);
-  background: color-mix(in srgb, var(--selected) 14%, var(--panel-raised));
+  background: color-mix(in srgb, var(--selected) 14%, var(--card-2));
 }
 
 .tryit__choice[aria-pressed='true']::before {
@@ -274,13 +274,13 @@
 .tryit__outcome:not(:empty) {
   padding: var(--space-3);
   border-left: 3px solid var(--line-strong);
-  background: var(--panel-raised);
+  background: var(--card-2);
 }
 
 .tryit__notice {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
 }
 
 .tryit__notice > summary {
@@ -302,7 +302,7 @@
   padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
 }
 
 .check__question > legend {
@@ -323,7 +323,7 @@
 }
 
 .check__option:hover {
-  background: var(--panel);
+  background: var(--card);
 }
 
 .check__option > input {
@@ -338,7 +338,7 @@
   margin-top: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-left: 3px solid var(--line-strong);
-  background: var(--panel);
+  background: var(--card);
 }
 
 .check__feedback strong {
@@ -379,7 +379,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink);
   font-size: var(--text-sm);
   line-height: 1.7;
@@ -414,13 +414,13 @@
 .recap__button {
   display: grid;
   place-items: center;
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink-strong);
   text-decoration: none;
 }
 
 .recap__button:hover {
-  border-color: var(--ink-muted);
+  border-color: var(--muted);
 }
 
 /* Not a link, so it looks like a button that is not there yet: dashed and quiet. */
@@ -428,7 +428,7 @@
   display: grid;
   place-items: center;
   border-style: dashed;
-  color: var(--ink-muted);
+  color: var(--muted);
 }
 
 .recap__prev {
@@ -491,8 +491,8 @@
   z-index: 1;
   /* A shadow, not a border: a collapsed border does not travel with a sticky header cell. */
   box-shadow: inset 0 -1px 0 var(--line);
-  background: var(--panel);
-  color: var(--ink-muted);
+  background: var(--card);
+  color: var(--muted);
   font: 500 var(--text-xs) / 1.6 var(--font-sans);
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -519,7 +519,7 @@
 }
 
 .event-log tr[data-packet]:hover > td {
-  background: var(--panel-raised);
+  background: var(--card-2);
 }
 
 .event-log tr[data-outcome='dropped'] > td:first-child {
@@ -528,7 +528,7 @@
 
 .event-log td.event-log__empty {
   padding: var(--space-5) var(--space-4);
-  color: var(--ink-muted);
+  color: var(--muted);
   font-family: var(--font-sans);
   text-align: center;
   white-space: normal;
@@ -546,14 +546,14 @@
   padding: 0 var(--space-2);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink-strong);
   font: 500 var(--text-xs) / 1.4 var(--font-sans);
   cursor: pointer;
 }
 
 .event-log__button:hover {
-  border-color: var(--ink-muted);
+  border-color: var(--muted);
 }
 
 /* ---- Playback controls ---- */
@@ -578,7 +578,7 @@
   min-height: 2.25rem;
   padding: 0 var(--space-2);
   border: 0;
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink);
   font: 500 var(--text-sm) / 1.4 var(--font-mono);
   cursor: pointer;
@@ -615,13 +615,13 @@
   padding: 0;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background: var(--panel-raised);
+  background: var(--card-2);
   color: var(--ink-strong);
   cursor: pointer;
 }
 
 .playback__button:hover:not(:disabled) {
-  border-color: var(--ink-muted);
+  border-color: var(--muted);
 }
 
 .playback__button--primary {

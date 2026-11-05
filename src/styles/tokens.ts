@@ -2,13 +2,28 @@ import type { Theme } from '../lib/theme';
 
 export type TokenName =
   | 'bg'
-  | 'panel'
-  | 'panel-raised'
+  | 'bg-soft'
+  | 'card'
+  | 'card-2'
+  | 'tile'
   | 'line'
   | 'line-strong'
   | 'ink'
   | 'ink-strong'
-  | 'ink-muted'
+  | 'muted'
+  | 'accent'
+  | 'accent-ink'
+  | 'accent-soft'
+  | 'accent-line'
+  | 'here'
+  | 'here-soft'
+  | 'focus'
+  | 'dot'
+  | 'hero-bg'
+  | 'hero-glow'
+  | 'shadow-sm'
+  | 'shadow-lg'
+  | 'btn-shadow'
   | 'request'
   | 'response'
   | 'control'
@@ -16,57 +31,86 @@ export type TokenName =
   | 'allowed'
   | 'blocked'
   | 'encrypted'
-  | 'selected'
-  | 'focus';
+  | 'selected';
 
 /**
  * The eight semantic hues each keep one meaning in every scene of every track:
  * request, response, control (handshakes), broadcast, allowed, blocked,
- * encrypted and selected. They sit about 45 degrees apart in OKLCH and are
- * checked for contrast and mutual distinctness in tokens.test.ts. Colour is
- * never the only signal: scenes always pair it with a label, icon or text.
+ * encrypted and selected. They are checked for contrast and mutual distinctness
+ * in tokens.test.ts. Colour is never the only signal: scenes always pair it
+ * with a label, icon or text.
  *
- * Surfaces are neutral graphite (dark) and warm paper (light), deliberately
- * not navy, so the site does not echo Protocol Explorer.
+ * Surfaces, ink, accent and the first five hues are the approved mockups'
+ * values (home-v6, track-v2, firewalls-v1); `here` is darkened slightly in the
+ * light theme so it reaches 4.5:1 on white. The mockups do not define control,
+ * encrypted or selected, so those three are chosen here.
  */
 export const tokens: Record<Theme, Record<TokenName, string>> = {
-  dark: {
-    bg: '#111416',
-    panel: '#181c1f',
-    'panel-raised': '#20252a',
-    line: '#2d343a',
-    'line-strong': '#434d56',
-    ink: '#d6dce0',
-    'ink-strong': '#f4f6f7',
-    'ink-muted': '#9ca8b1',
-    request: '#59aaf8',
-    response: '#f99f55',
-    control: '#aa88ef',
-    broadcast: '#f17dbe',
-    allowed: '#67d283',
-    blocked: '#ef6567',
-    encrypted: '#4fcbdb',
-    selected: '#ead65f',
-    focus: '#ffffff',
-  },
   light: {
-    bg: '#f1efea',
-    panel: '#faf9f6',
-    'panel-raised': '#ffffff',
-    line: '#d8d4cb',
-    'line-strong': '#b3ad9f',
-    ink: '#262b30',
-    'ink-strong': '#0e1215',
-    'ink-muted': '#575f67',
-    request: '#1f68bc',
-    response: '#b55b0d',
-    control: '#734dbe',
-    broadcast: '#ae4090',
-    allowed: '#2a824a',
-    blocked: '#c42942',
-    encrypted: '#187f90',
-    selected: '#8a8419',
-    focus: '#000000',
+    bg: '#ffffff',
+    'bg-soft': '#f4f7fb',
+    card: '#ffffff',
+    'card-2': '#f8fafd',
+    tile: '#eef3f9',
+    line: 'rgba(11, 26, 51, 0.10)',
+    'line-strong': 'rgba(11, 26, 51, 0.18)',
+    ink: '#3a4860',
+    'ink-strong': '#0b1a33',
+    muted: '#5a6780',
+    accent: '#1f63c0',
+    'accent-ink': '#ffffff',
+    'accent-soft': 'rgba(31, 99, 192, 0.07)',
+    'accent-line': 'rgba(31, 99, 192, 0.22)',
+    here: '#a66900',
+    'here-soft': 'rgba(214, 146, 20, 0.12)',
+    focus: '#0b1a33',
+    dot: 'rgba(31, 99, 192, 0.16)',
+    'hero-bg': '#f5f8fc',
+    'hero-glow': 'rgba(31, 99, 192, 0.06)',
+    'shadow-sm': '0 1px 2px rgba(11, 26, 51, 0.04), 0 8px 24px -12px rgba(11, 26, 51, 0.16)',
+    'shadow-lg': '0 1px 2px rgba(11, 26, 51, 0.05), 0 28px 56px -28px rgba(11, 26, 51, 0.30)',
+    'btn-shadow': '0 10px 24px -12px rgba(31, 99, 192, 0.75)',
+    request: '#1f63c0',
+    response: '#b4540a',
+    control: '#6d42b8',
+    broadcast: '#b23a8e',
+    allowed: '#23824a',
+    blocked: '#c22f2b',
+    encrypted: '#0d7a86',
+    selected: '#7a7410',
+  },
+  dark: {
+    bg: '#060c17',
+    'bg-soft': '#0a1322',
+    card: '#0c1728',
+    'card-2': '#0a1424',
+    tile: '#142339',
+    line: 'rgba(127, 176, 234, 0.13)',
+    'line-strong': 'rgba(127, 176, 234, 0.24)',
+    ink: '#c3d1e6',
+    'ink-strong': '#f2f7ff',
+    muted: '#93a8c6',
+    accent: '#5aa9ff',
+    'accent-ink': '#04101f',
+    'accent-soft': 'rgba(90, 169, 255, 0.09)',
+    'accent-line': 'rgba(90, 169, 255, 0.30)',
+    here: '#f5b83d',
+    'here-soft': 'rgba(245, 184, 61, 0.12)',
+    focus: '#ffffff',
+    dot: 'rgba(127, 176, 234, 0.16)',
+    'hero-bg': '#050b15',
+    'hero-glow': 'rgba(90, 169, 255, 0.07)',
+    'shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6)',
+    'shadow-lg': '0 1px 2px rgba(0, 0, 0, 0.3), 0 30px 60px -28px rgba(0, 0, 0, 0.75)',
+    'btn-shadow': '0 10px 28px -12px rgba(90, 169, 255, 0.6)',
+    request: '#5aa9ff',
+    response: '#ff9f5a',
+    control: '#b697ff',
+    broadcast: '#ff7fc4',
+    allowed: '#5fd68a',
+    blocked: '#ff7a7a',
+    encrypted: '#4fd6e6',
+    selected: '#e8d95c',
   },
 };
 
@@ -76,17 +120,10 @@ function declarations(theme: Theme): string {
 }
 
 /**
- * CSS custom properties for both themes. Selection order:
- *   1. `data-theme` on the root element wins, set by the boot script or the toggle.
- *   2. With no `data-theme` (JavaScript off), follow `prefers-color-scheme`.
- *   3. Otherwise dark, the site default.
+ * CSS custom properties for both themes, keyed the way the mockups key them:
+ * the light block also covers `:root`, so a page with no `data-theme` is light,
+ * and `data-theme` on the root element (set by the boot script or the toggle) wins.
  */
 export function tokensToCss(): string {
-  const light = declarations('light');
-  return [
-    `:root {\n${declarations('dark')}\n}`,
-    `@media (prefers-color-scheme: light) {\n  :root:not([data-theme]) {\n${light.replace(/^/gm, '  ')}\n  }\n}`,
-    `:root[data-theme="dark"] {\n${declarations('dark')}\n}`,
-    `:root[data-theme="light"] {\n${light}\n}`,
-  ].join('\n');
+  return [`:root,\n[data-theme="light"] {\n${declarations('light')}\n}`, `[data-theme="dark"] {\n${declarations('dark')}\n}`].join('\n');
 }
