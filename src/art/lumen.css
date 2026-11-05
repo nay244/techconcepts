@@ -136,7 +136,6 @@
 .lm-pool { fill: url(#lm-pool-g); opacity: var(--pool-op); }
 .lm-orbit { stroke-dasharray: 1.5 4; opacity: .8; }
 .lm-orbit2 { opacity: .45; }
-[data-theme="light"] .lm-orbit { stroke: #b4bfce; }
 .lm-void { fill: #07090c; }
 .lm-see { fill: var(--anatomy-top); stroke: color-mix(in srgb, var(--lit-b) 45%, #000); stroke-width: .5px; vector-effect: non-scaling-stroke; }
 .lm-inlay { fill: none; stroke: var(--anatomy-lo); stroke-width: .6px; vector-effect: non-scaling-stroke; }
@@ -189,9 +188,18 @@
 
 /* ---------- Variables the finish reads ---------- */
 :root { --lit-a: #a8e8ff; --lit-b: #2f7bff; --pool: #2f7bff; }
+/* Theme: light on :root, dark under the system setting when no theme is chosen, and an explicit
+   data-theme wins in both directions (the same order as tokensToCss in src/styles/tokens.ts). */
 :root, [data-theme="light"] { --pool-op: .5; --halo: #3d4a5e; --halo-op: .4; --fig-bg: #eef2f7; --fig-line: rgba(11,26,51,.12); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) { --pool-op: 1; --halo: #000; --halo-op: .9; --fig-bg: #070d18; --fig-line: rgba(127,176,234,.14); }
+}
 [data-theme="dark"] { --pool-op: 1; --halo: #000; --halo-op: .9; --fig-bg: #070d18; --fig-line: rgba(127,176,234,.14); }
 
+/* Light-only rule: applies with no theme chosen unless the system is dark. */
+@media not (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lm-orbit { stroke: #b4bfce; }
+}
 [data-theme="light"] .lm-orbit { stroke: #b4bfce; }
 
 /* ---------- Parts used by the small figures and the home hero ---------- */

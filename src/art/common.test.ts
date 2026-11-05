@@ -46,4 +46,17 @@ describe('shared figure helpers', () => {
     expect(css).toContain('--pool: #2f7bff');
     expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.lm-svg \{ animation: none/);
   });
+
+  test('theme variables follow the system without a data-theme attribute, and explicit themes win', () => {
+    expect(css).toMatch(/:root, \[data-theme="light"\] \{ --pool-op: \.5; --halo: #3d4a5e;/);
+    expect(css).toMatch(
+      /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \{ --pool-op: 1; --halo: #000; --halo-op: \.9; --fig-bg: #070d18;/,
+    );
+    expect(css).toMatch(/\n\[data-theme="dark"\] \{ --pool-op: 1; --halo: #000;/);
+    // the light-only orbit colour applies with no attribute only when the system is not dark
+    expect(css).toMatch(
+      /@media not \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \.lm-orbit \{ stroke: #b4bfce; \}\s*\}/,
+    );
+    expect(css.match(/\[data-theme="light"\] \.lm-orbit/g)).toHaveLength(1);
+  });
 });
