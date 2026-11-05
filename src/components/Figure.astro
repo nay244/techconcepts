@@ -1,0 +1,10 @@
+---
+// Prints a figure that was drawn at build time (see src/art/figures). The markup is ours, never user input.
+interface Props {
+  svg: string;
+  class?: string;
+}
+const { svg, class: className } = Astro.props;
+---
+
+{className ? <div class={className} set:html={svg} /> : <Fragment set:html={svg} />}
