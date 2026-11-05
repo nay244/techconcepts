@@ -27,9 +27,9 @@ function distance(a: string, b: string): number {
   return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
 }
 
-// The brief asks for 0.08, but the mockups' own light response (#b4540a) and blocked (#c22f2b) are 0.077 apart
-// and both are fixed by the approved mockups, so the floor is 0.07.
-const MIN_DISTANCE = 0.07;
+const MIN_DISTANCE = 0.08;
+// Ruling R4: the one exception. Light response and blocked are fixed by the approved mockups and are 0.077 apart.
+const EXCEPTION = { theme: 'light', a: 'response', b: 'blocked', min: 0.07 } as const;
 
 const SITE = [
   'bg', 'bg-soft', 'card', 'card-2', 'tile', 'line', 'line-strong', 'ink', 'ink-strong', 'muted', 'accent', 'accent-ink',
@@ -63,10 +63,16 @@ for (const theme of ['light', 'dark'] as const) {
     for (const k of ['ink', 'ink-strong', 'muted', 'accent', 'here', ...SEMANTIC] as const)
       for (const bg of ['bg', 'card'] as const) expect(contrastRatio(t[k], t[bg]), `${k} on ${bg}`).toBeGreaterThanOrEqual(4.5);
   });
-  test(`${theme}: the eight semantic hues stay apart (OKLab distance >= 0.07)`, () => {
+  test(`${theme}: focus reaches 3:1 on bg`, () => {
+    expect(contrastRatio(t.focus, t.bg)).toBeGreaterThanOrEqual(3);
+  });
+  test(`${theme}: the eight semantic hues stay apart (OKLab distance >= 0.08)`, () => {
     for (let i = 0; i < SEMANTIC.length; i++)
-      for (let j = i + 1; j < SEMANTIC.length; j++)
-        expect(distance(t[SEMANTIC[i]], t[SEMANTIC[j]]), `${SEMANTIC[i]} vs ${SEMANTIC[j]}`).toBeGreaterThanOrEqual(MIN_DISTANCE);
+      for (let j = i + 1; j < SEMANTIC.length; j++) {
+        const [a, b] = [SEMANTIC[i], SEMANTIC[j]];
+        const isException = theme === EXCEPTION.theme && a === EXCEPTION.a && b === EXCEPTION.b;
+        expect(distance(t[a], t[b]), `${a} vs ${b}`).toBeGreaterThanOrEqual(isException ? EXCEPTION.min : MIN_DISTANCE);
+      }
   });
 }
 
@@ -78,7 +84,28 @@ test('blocked is red in both themes', () => {
 test('tokensToCss emits [data-theme="dark"] and a light block that also covers :root', () => {
   const css = tokensToCss();
   expect(css).toMatch(/:root,\s*\[data-theme="light"\]\s*\{/);
-  expect(css).toContain('[data-theme="dark"] {');
+  expect(css).toContain('\n[data-theme="dark"] {');
   for (const theme of ['light', 'dark'] as const)
     for (const [name, value] of Object.entries(tokens[theme])) expect(css).toContain(`--${name}: ${value};`);
+});
+
+// Ruling R5: with no data-theme (JavaScript off) the page follows the system; an explicit data-theme wins both ways.
+test('tokensToCss follows prefers-color-scheme only when data-theme is absent, and data-theme wins', () => {
+  const css = tokensToCss();
+  const block = (theme: 'light' | 'dark') => Object.entries(tokens[theme]).map(([n, v]) => `--${n}: ${v};`).join('\n  ');
+  const lightAt = css.indexOf(':root,\n[data-theme="light"] {');
+  const mediaAt = css.indexOf('@media (prefers-color-scheme: dark) {');
+  const darkAt = css.indexOf('\n[data-theme="dark"] {');
+  // Order matters: the explicit dark block comes last so it beats the media rule at equal specificity.
+  expect(lightAt).toBe(0);
+  expect(mediaAt).toBeGreaterThan(lightAt);
+  expect(darkAt).toBeGreaterThan(mediaAt);
+  // No data-theme + dark preference: the media rule is scoped to :root:not([data-theme]) and carries the dark values.
+  const media = css.slice(mediaAt, darkAt);
+  expect(media).toContain(':root:not([data-theme]) {');
+  expect(media).toContain('color-scheme: dark;');
+  for (const [n, v] of Object.entries(tokens.dark)) expect(media).toContain(`--${n}: ${v};`);
+  // data-theme="light" with a dark preference: the media rule cannot match it, so the light block stands.
+  expect(css.slice(lightAt, mediaAt)).toContain(block('light'));
+  expect(css.slice(darkAt)).toContain(block('dark'));
 });

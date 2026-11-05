@@ -120,10 +120,18 @@ function declarations(theme: Theme): string {
 }
 
 /**
- * CSS custom properties for both themes, keyed the way the mockups key them:
- * the light block also covers `:root`, so a page with no `data-theme` is light,
- * and `data-theme` on the root element (set by the boot script or the toggle) wins.
+ * CSS custom properties for both themes, keyed the way the mockups key them
+ * (light on `:root` and `[data-theme="light"]`, dark on `[data-theme="dark"]`).
+ * With no `data-theme` (JavaScript off) the page follows `prefers-color-scheme`;
+ * an explicit `data-theme` (boot script or toggle) wins in both directions: the
+ * media rule only matches `:root:not([data-theme])`, and the explicit dark block
+ * comes last.
  */
 export function tokensToCss(): string {
-  return [`:root,\n[data-theme="light"] {\n${declarations('light')}\n}`, `[data-theme="dark"] {\n${declarations('dark')}\n}`].join('\n');
+  const dark = declarations('dark');
+  return [
+    `:root,\n[data-theme="light"] {\n${declarations('light')}\n}`,
+    `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme]) {\n${dark.replace(/^/gm, '  ')}\n  }\n}`,
+    `[data-theme="dark"] {\n${dark}\n}`,
+  ].join('\n');
 }
