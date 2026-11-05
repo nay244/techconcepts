@@ -12,12 +12,16 @@ export type LessonSummary =
       url: string;
       number: number;
       title: string;
+      subtitle: string;
       partTitle: string;
       summary: string;
       minutes: number;
       certTags: CertTag[];
+      /** Watch steps in every unit together. */
       stepCount: number;
-      /** The last position in the lesson: Overview, steps, Try it, Check yourself, Recap. */
+      /** How many units the lesson has: 1 for most, one per protocol in How the Internet Works. */
+      units: number;
+      /** The last position in the lesson: the last unit's Practice. */
       maxPosition: number;
     }
   | {
@@ -31,6 +35,15 @@ export type LessonSummary =
     };
 
 export type AvailableSummary = Extract<LessonSummary, { available: true }>;
+
+/**
+ * Each unit has an Overview, its Watch steps, Learn and Practice, so a unit of
+ * n steps has n + 3 positions, and the last position is one less than them all.
+ * Interim: the timeline's `slotsFor` replaces this.
+ */
+function lastPosition(lesson: Lesson): number {
+  return lesson.units.reduce((sum, u) => sum + u.steps.length + 3, 0) - 1;
+}
 
 /**
  * One entry per lesson the track plans, in track order, numbered from 1 across
@@ -69,11 +82,13 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
               available: true,
               ...base,
               url: `/${track.id}/${planned.slug}`,
+              subtitle: lesson.subtitle,
               summary: lesson.summary,
               minutes: estimateMinutes(lesson),
               certTags: lesson.certTags,
-              stepCount: lesson.steps.length,
-              maxPosition: lesson.steps.length + 3,
+              stepCount: lesson.units.reduce((sum, u) => sum + u.steps.length, 0),
+              units: lesson.units.length,
+              maxPosition: lastPosition(lesson),
             },
       );
     }
@@ -100,7 +115,7 @@ export function neighbors(
   return { prev, next, nextPlanned: following !== undefined && !following.available };
 }
 
-/** `planned` counts every entry in the track (the "of 19" in "7 of 19 complete"). */
+/** `planned` counts every entry in the track (the "of 20" in "4 of 20 complete"). */
 export function trackTotals(entries: LessonSummary[]): { available: number; planned: number; minutes: number } {
   const available = entries.filter((e): e is AvailableSummary => e.available);
   return {
@@ -133,7 +148,9 @@ export function groupLessonModules(modules: Record<string, Lesson>): Record<stri
   return grouped;
 }
 
-// Test files sit beside the lessons they cover, so they are excluded here.
+// Test files sit beside the lessons they cover, so they are excluded here. Only
+// files directly in a track's folder are lessons: a lesson's own parts (lesson
+// 1's protocols in lessons/networking/how-the-internet-works/) are not.
 const modules = import.meta.glob<Lesson>(['./lessons/*/*.ts', '!./lessons/*/*.test.ts'], {
   eager: true,
   import: 'default',

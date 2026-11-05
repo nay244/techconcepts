@@ -17,7 +17,7 @@ import { analyticsToken } from '../lib/analytics';
 
     <section aria-labelledby="how">
       <h2 id="how">How lessons are made</h2>
-      <p>Every lesson has the same shape: an overview, four to six steps, something to try, a few questions to check yourself, and a short recap. A lesson takes 15 minutes or less. The explanation starts with an everyday comparison, then gives you the precise term.</p>
+      <p>Every lesson has the same shape: Watch, Learn, Practice. You watch a real process play out one step at a time, learn what it was in plain words, then answer a few questions that are just for you. Most lessons take 15 minutes or less. The explanation starts with an everyday comparison, then gives you the precise term.</p>
       <p>The example networks use addresses reserved for documentation and private use, so nothing in a lesson points at a real machine.</p>
     </section>
 
@@ -28,7 +28,7 @@ import { analyticsToken } from '../lib/analytics';
 
     <section aria-labelledby="privacy">
       <h2 id="privacy">Your progress stays with you</h2>
-      <p>TechConcepts remembers which lessons you have started and finished, and whether you prefer the light or dark theme. This is saved only in this browser, on this device. TechConcepts never sends your progress or theme choice to a server. There are no accounts. Your answers to the check questions are not saved at all.</p>
+      <p>TechConcepts remembers which lessons you have started and finished, and whether you prefer the light or dark theme. This is saved only in this browser, on this device. TechConcepts never sends your progress or theme choice to a server. There are no accounts. Your Practice answers are not saved at all.</p>
       {analyticsToken?.trim() && <p>The site counts page views with privacy-friendly analytics that use no cookies and know nothing about your progress.</p>}
       <p>If you would like to start fresh, you can clear it here. Clearing your browser data does the same.</p>
       <ResetProgress client:load />

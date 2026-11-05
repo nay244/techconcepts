@@ -2,8 +2,8 @@
 import { render, screen, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import type { TableDef } from '../../content/schema';
-import { FIREWALL_COLUMNS, ruleRows, type FirewallRule } from '../../engine/net/firewall';
-import type { TableState } from '../../engine/timeline';
+import { ruleRows, type FirewallRule } from '../../engine/net/firewall';
+import type { TableState } from '../../engine/tables';
 import { contrastRatio, hexToRgb } from '../../lib/contrast';
 import { tokens } from '../../styles/tokens';
 import DeviceTablePanel from './DeviceTablePanel';
@@ -16,11 +16,18 @@ const rules: FirewallRule[] = [
 
 const table: TableDef = {
   id: 'rules',
-  actor: 'fw',
   title: 'Rules',
-  columns: [...FIREWALL_COLUMNS],
+  columns: [
+    { key: '#', label: '#' },
+    { key: 'action', label: 'Action' },
+    { key: 'protocol', label: 'Protocol' },
+    { key: 'port', label: 'Port' },
+    { key: 'source', label: 'Source' },
+    { key: 'note', label: "What it's for" },
+  ],
   keyColumn: '#',
   initialRows: [],
+  empty: 'No rules yet.',
 };
 
 const stateOf = (highlight: TableState['highlight'] = null, rows = ruleRows(rules)): TableState => ({ rows, highlight });
@@ -95,7 +102,6 @@ test.each([
 test('finds the highlighted row by the key column, not by position', () => {
   const dhcp: TableDef = {
     id: 'leases',
-    actor: 'server',
     title: 'Lease table',
     columns: [
       { key: 'ip', label: 'IP address' },
@@ -103,6 +109,7 @@ test('finds the highlighted row by the key column, not by position', () => {
     ],
     keyColumn: 'mac',
     initialRows: [],
+    empty: 'No leases yet.',
   };
   const rows = [
     { ip: '192.168.1.50', mac: '00:00:5E:00:53:0A' },

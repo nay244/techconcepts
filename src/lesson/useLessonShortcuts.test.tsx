@@ -1,13 +1,18 @@
 // @vitest-environment jsdom
 import { fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { useLessonShortcuts, type LessonShortcutsOptions } from './useLessonShortcuts';
+import { useLessonShortcuts } from './useLessonShortcuts';
 
-function setup(options: Partial<LessonShortcutsOptions> = {}) {
-  const dispatch = vi.fn();
-  const closeInspector = vi.fn();
-  renderHook(() => useLessonShortcuts({ dispatch, canPlay: true, inspectorOpen: false, closeInspector, ...options }));
-  return { dispatch, closeInspector };
+/** Records every call in one list, in order, as 'toggle', 'next' or 'prev'. */
+function setup() {
+  const calls: string[] = [];
+  const actions = {
+    toggle: vi.fn(() => void calls.push('toggle')),
+    next: vi.fn(() => void calls.push('next')),
+    prev: vi.fn(() => void calls.push('prev')),
+  };
+  const hook = renderHook(() => useLessonShortcuts(actions));
+  return { calls, actions, hook };
 }
 
 /** Puts `html` on the page and returns its first element. */
@@ -31,101 +36,98 @@ afterEach(() => {
 });
 
 test('Space toggles playback and is kept from scrolling the page; the arrows move between positions', () => {
-  const { dispatch } = setup();
+  const { calls } = setup();
   expect(fireEvent.keyDown(document.body, { key: ' ' })).toBe(false);
   fireEvent.keyDown(document.body, { key: 'ArrowRight' });
   fireEvent.keyDown(document.body, { key: 'ArrowLeft' });
-  expect(dispatch.mock.calls).toEqual([[{ type: 'toggle' }], [{ type: 'next' }], [{ type: 'prev' }]]);
+  expect(calls).toEqual(['toggle', 'next', 'prev']);
 });
 
 test('a held Space toggles once', () => {
-  const { dispatch } = setup();
+  const { actions } = setup();
   fireEvent.keyDown(document.body, { key: ' ' });
   fireEvent.keyDown(document.body, { key: ' ', repeat: true });
-  expect(dispatch).toHaveBeenCalledTimes(1);
+  expect(actions.toggle).toHaveBeenCalledTimes(1);
 });
 
-test('in a playground Space is left to the page, and the arrows still move between positions', () => {
-  const { dispatch } = setup({ canPlay: false });
-  expect(fireEvent.keyDown(document.body, { key: ' ' })).toBe(true);
-  fireEvent.keyDown(document.body, { key: 'ArrowRight' });
-  expect(dispatch.mock.calls).toEqual([[{ type: 'next' }]]);
-});
-
-test('Escape closes an open inspector from anywhere, its own buttons included', () => {
-  const { closeInspector } = setup({ inspectorOpen: true });
-  fireEvent.keyDown(place('<button type="button">Next packet</button>'), { key: 'Escape' });
-  fireEvent.keyDown(document.body, { key: 'Escape' });
-  expect(closeInspector).toHaveBeenCalledTimes(2);
-});
-
-test('Escape does nothing while the inspector is closed', () => {
-  const { dispatch, closeInspector } = setup();
-  fireEvent.keyDown(document.body, { key: 'Escape' });
-  expect(closeInspector).not.toHaveBeenCalled();
-  expect(dispatch).not.toHaveBeenCalled();
+test('Escape and other keys do nothing', () => {
+  const { calls } = setup();
+  for (const key of ['Escape', 'Enter', 'ArrowUp', 'a']) expect(fireEvent.keyDown(document.body, { key })).toBe(true);
+  expect(calls).toEqual([]);
 });
 
 test('nothing fires inside the outline drawer, a modal dialog with keys of its own', () => {
-  const { dispatch, closeInspector } = setup({ inspectorOpen: true });
+  const { calls } = setup();
   const inside = place('<dialog open><p tabindex="-1">Contents</p></dialog>').querySelector('p')!;
-  for (const key of [' ', 'ArrowRight', 'Escape']) fireEvent.keyDown(inside, { key });
-  expect(dispatch).not.toHaveBeenCalled();
-  expect(closeInspector).not.toHaveBeenCalled();
+  for (const key of [' ', 'ArrowRight', 'ArrowLeft']) fireEvent.keyDown(inside, { key });
+  expect(calls).toEqual([]);
 });
 
 test('a modifier leaves the key to the browser', () => {
-  const { dispatch } = setup();
+  const { calls } = setup();
   for (const modifier of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey'])
     fireEvent.keyDown(document.body, { key: 'ArrowRight', [modifier]: true });
-  expect(dispatch).not.toHaveBeenCalled();
+  expect(calls).toEqual([]);
 });
 
 test('a key another handler has already taken is left alone', () => {
-  const { dispatch } = setup();
+  const { calls } = setup();
   const text = place('<p tabindex="-1">text</p>');
   text.addEventListener('keydown', (event) => event.preventDefault());
   fireEvent.keyDown(text, { key: 'ArrowRight' });
-  expect(dispatch).not.toHaveBeenCalled();
+  expect(calls).toEqual([]);
 });
 
-test('form controls and buttons keep their keys', () => {
-  const { dispatch } = setup();
+test('form controls, buttons and links keep their keys', () => {
+  const { calls } = setup();
   fireEvent.keyDown(place('<input type="range" />'), { key: 'ArrowRight' });
   fireEvent.keyDown(place('<button type="button">Go</button>'), { key: ' ' });
-  expect(dispatch).not.toHaveBeenCalled();
+  fireEvent.keyDown(place('<a href="/networking">Track</a>'), { key: 'ArrowLeft' });
+  expect(calls).toEqual([]);
 });
 
 test('a region that scrolls sideways keeps the arrows; Space there still plays', () => {
-  const { dispatch } = setup();
+  const { calls } = setup();
   const log = scrollRegion({ x: true });
   fireEvent.keyDown(log, { key: 'ArrowRight' });
   fireEvent.keyDown(log, { key: 'ArrowLeft' });
-  expect(dispatch).not.toHaveBeenCalled();
+  expect(calls).toEqual([]);
   expect(fireEvent.keyDown(log, { key: ' ' })).toBe(false);
-  expect(dispatch.mock.calls).toEqual([[{ type: 'toggle' }]]);
+  expect(calls).toEqual(['toggle']);
 });
 
 test('a region that scrolls downwards keeps Space, unprevented so it pages down; the arrows still move', () => {
-  const { dispatch } = setup();
+  const { calls } = setup();
   const explanation = scrollRegion({ y: true });
   expect(fireEvent.keyDown(explanation, { key: ' ' })).toBe(true);
   fireEvent.keyDown(explanation, { key: 'ArrowRight' });
-  expect(dispatch.mock.calls).toEqual([[{ type: 'next' }]]);
+  expect(calls).toEqual(['next']);
 });
 
 test('a focusable region with nothing to scroll leaves every key to the lesson', () => {
-  const { dispatch } = setup();
+  const { calls } = setup();
   const panel = scrollRegion({});
   fireEvent.keyDown(panel, { key: ' ' });
   fireEvent.keyDown(panel, { key: 'ArrowRight' });
-  expect(dispatch.mock.calls).toEqual([[{ type: 'toggle' }], [{ type: 'next' }]]);
+  expect(calls).toEqual(['toggle', 'next']);
+});
+
+test('calls the latest callbacks after a re-render, without listening twice', () => {
+  const first = { toggle: vi.fn(), next: vi.fn(), prev: vi.fn() };
+  const second = { toggle: vi.fn(), next: vi.fn(), prev: vi.fn() };
+  const add = vi.spyOn(window, 'addEventListener');
+  const { rerender } = renderHook((actions) => useLessonShortcuts(actions), { initialProps: first });
+  rerender(second);
+  fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+  expect(first.next).not.toHaveBeenCalled();
+  expect(second.next).toHaveBeenCalledTimes(1);
+  expect(add.mock.calls.filter(([type]) => type === 'keydown')).toHaveLength(1);
+  add.mockRestore();
 });
 
 test('stops listening when the console goes away', () => {
-  const dispatch = vi.fn();
-  const { unmount } = renderHook(() => useLessonShortcuts({ dispatch, canPlay: true, inspectorOpen: false, closeInspector: vi.fn() }));
-  unmount();
+  const { actions, hook } = setup();
+  hook.unmount();
   fireEvent.keyDown(document.body, { key: 'ArrowRight' });
-  expect(dispatch).not.toHaveBeenCalled();
+  expect(actions.next).not.toHaveBeenCalled();
 });

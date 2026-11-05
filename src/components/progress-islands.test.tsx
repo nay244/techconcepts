@@ -1,15 +1,24 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { getEntries, trackTotals } from '../content/registry';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { validateLesson } from '../content/define';
+import { buildEntries, trackTotals } from '../content/registry';
 import type { AvailableSummary } from '../content/registry';
+import { makeLesson } from '../content/test-fixtures';
+import { networkingTrack } from '../content/tracks';
 import { PROGRESS_KEY } from '../progress/store';
-import { ContinueCard } from './ContinueCard';
 import { ResetProgress } from './ResetProgress';
 import { TrackLessonList } from './TrackLessonList';
 
-const entries = getEntries('networking');
+// No lesson files exist yet, so DHCP and Firewalls are built from fixtures, which
+// need the stand-in figure parts to validate.
+vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+
+const entries = buildEntries(networkingTrack, {
+  dhcp: validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP', certTags: ['network-plus', 'ccna'] })).lesson,
+  firewalls: validateLesson(makeLesson({ slug: 'firewalls', title: 'Firewalls', certTags: ['network-plus', 'security-plus'] })).lesson,
+});
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const { planned } = trackTotals(entries);
 const dhcp = available.find((e) => e.slug === 'dhcp')!;
@@ -25,35 +34,6 @@ beforeEach(() => {
 });
 afterEach(() => {
   window.history.replaceState(null, '', '/');
-});
-
-describe('ContinueCard', () => {
-  test('renders nothing with empty progress', () => {
-    const { container } = render(<ContinueCard entries={available} planned={planned} />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  test('names the lesson, the step and the track progress, and links to the step', () => {
-    save({ [dhcp.key]: { status: 'in-progress', furthestPosition: 2 } }, dhcp.key);
-    render(<ContinueCard entries={available} planned={planned} />);
-    const link = screen.getByRole('link', { name: /Continue: DHCP · step 2 of 5/ });
-    expect(link).toHaveAttribute('href', `${dhcp.url}?step=2`);
-    expect(screen.getByText(`0 of ${planned} complete`)).toBeInTheDocument();
-  });
-
-  test('a finished last lesson has no step and no query', () => {
-    save({ [dhcp.key]: { status: 'finished', furthestPosition: dhcp.maxPosition } }, dhcp.key);
-    render(<ContinueCard entries={available} planned={planned} />);
-    const link = screen.getByRole('link', { name: /^Continue: DHCP\s*1 of/ });
-    expect(link).toHaveAttribute('href', dhcp.url);
-    expect(screen.getByText(`1 of ${planned} complete`)).toBeInTheDocument();
-  });
-
-  test('renders nothing when the last lesson is unknown', () => {
-    save({}, 'networking/nope');
-    const { container } = render(<ContinueCard entries={available} planned={planned} />);
-    expect(container).toBeEmptyDOMElement();
-  });
 });
 
 describe('TrackLessonList', () => {
@@ -148,24 +128,5 @@ describe('ResetProgress', () => {
     expect(window.localStorage.getItem(PROGRESS_KEY)).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveFocus();
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
-  });
-});
-
-// Last on purpose: a read that throws marks the shared storage as failed for the rest of the file.
-describe('blocked storage', () => {
-  test('ContinueCard renders nothing', () => {
-    const real = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      get() {
-        throw new DOMException('blocked', 'SecurityError');
-      },
-    });
-    try {
-      const { container } = render(<ContinueCard entries={available} planned={planned} />);
-      expect(container).toBeEmptyDOMElement();
-    } finally {
-      Object.defineProperty(window, 'localStorage', real);
-    }
   });
 });

@@ -1,5 +1,5 @@
 import type { TableDef } from '../../content/schema';
-import type { TableState } from '../../engine/timeline';
+import type { TableState } from '../../engine/tables';
 import './table.css';
 
 export interface DeviceTablePanelProps {

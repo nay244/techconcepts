@@ -4,7 +4,6 @@ import { getEntries, trackTotals, type AvailableSummary } from '../content/regis
 import { comingSoonTracks, tracks } from '../content/tracks';
 import { levelLabel } from '../lib/entries';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ContinueCard from '../components/ContinueCard';
 import TrackProgress from '../components/TrackProgress';
 import '../components/site.css';
 
@@ -12,8 +11,8 @@ const track = tracks[0]!;
 const entries = getEntries(track.id);
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const { planned, minutes } = trackTotals(entries);
-// Lesson 1 may not be written yet: start at the first one that is.
-const first = available[0]!;
+// Start at the first lesson that is written, or at the track page while none is.
+const startUrl = available[0]?.url ?? `/${track.id}`;
 
 const present = new Set(available.flatMap((e) => e.certTags));
 const certTags = (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.has(tag));
@@ -21,20 +20,19 @@ const certTags = (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.h
 const level = levelLabel(track.level);
 
 const steps = [
-  { name: 'Watch', line: 'Follow each step as devices send messages to one another, with a plain-English explanation beside it.' },
-  { name: 'Try', line: 'Change something yourself, like an address or a rule, and see what happens next.' },
-  { name: 'Check', line: 'Answer a few questions to see what stuck. They are for you, so nothing is scored or saved.' },
+  { name: 'Watch', line: 'See it happen. Devices send messages to one another, one step at a time, and you can go forward and back at your own pace.' },
+  { name: 'Learn', line: 'Find out what happened and why, in plain words. Each idea comes first, then its technical name, and a Go deeper section holds the exam-level detail.' },
+  { name: 'Practice', line: 'Answer a few questions to see what stuck. They are just for you: nothing is scored or saved.' },
 ];
 ---
 
-<BaseLayout title="TechConcepts" description="Short, visual lessons that show how technology works, starting with networking. Watch it happen, try it yourself, and check what you learned.">
+<BaseLayout title="TechConcepts" description="Short, visual lessons that show how technology works, starting with networking. Watch it happen, learn what it is called, then practice.">
   <div class="container home">
     <section class="hero" aria-labelledby="hero-title">
       <h1 id="hero-title">See how technology works, one short lesson at a time.</h1>
-      <p class="hero__lede">Watch a network do its job, try changing it yourself, then check what stuck. Each lesson takes 15 minutes or less, and there is nothing to sign up for.</p>
+      <p class="hero__lede">Watch a network do its job, learn what each part is called, then check what stuck. Most lessons take 15 minutes or less, and there is nothing to sign up for.</p>
       <div class="hero__actions">
-        <ContinueCard client:load entries={available} planned={planned} />
-        <a class="btn btn--primary hero__start" href={first.url}>Start with {track.title}</a>
+        <a class="btn btn--primary hero__start" href={startUrl}>Start with {track.title}</a>
       </div>
     </section>
 
@@ -115,27 +113,13 @@ const steps = [
     max-width: var(--measure);
     font-size: var(--text-lg);
   }
-  /* Room for the Continue card, so nothing moves when it fills in after load. */
   .hero__actions {
     display: flex;
     flex-wrap: wrap;
     align-items: stretch;
     gap: var(--space-3);
-    min-height: 9.5rem;
     margin-top: var(--space-5);
     align-content: flex-start;
-  }
-  @media (min-width: 40rem) {
-    .hero__actions {
-      min-height: 4.75rem;
-    }
-  }
-  /* With a Continue card present, the start link steps back to a secondary button. */
-  .hero__actions:has(.continue-card) .hero__start {
-    border-color: var(--line-strong);
-    background: var(--card-2);
-    color: var(--ink-strong);
-    align-self: center;
   }
   .cards {
     display: grid;

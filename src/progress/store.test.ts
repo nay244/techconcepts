@@ -174,7 +174,7 @@ describe('recordVisit', () => {
     expect(d.lessons['networking/dhcp']).toEqual({ status: 'in-progress', furthestPosition: 1, lastOpened: now.toISOString() });
   });
 
-  test('jumping straight to the Recap finishes the lesson', () => {
+  test('jumping straight to the last position (Practice) finishes the lesson', () => {
     const d = recordVisit(emptyProgress(), 'networking/dhcp', 8, 8, now);
     expect(d.lessons['networking/dhcp']).toEqual({ status: 'finished', furthestPosition: 8, lastOpened: now.toISOString() });
   });

@@ -40,29 +40,6 @@
   font-size: 15px;
 }
 
-/* ---- Continue card ---- */
-.continue-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: min(100%, 18rem);
-  padding: var(--space-3) var(--space-5);
-  border: 1px solid var(--ink-strong);
-  border-radius: var(--radius);
-  background: var(--ink-strong);
-  color: var(--bg);
-  text-decoration: none;
-}
-.continue-card:hover {
-  background: var(--ink);
-}
-.continue-card__title {
-  font-weight: 600;
-}
-.continue-card__meta {
-  font-size: var(--text-sm);
-}
-
 /* ---- Progress line: a text line and a segmented bar ---- */
 .progress-line {
   display: flex;
