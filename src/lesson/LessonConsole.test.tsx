@@ -271,7 +271,7 @@ describe('top bar', () => {
     expect(within(bar).getByRole('heading', { level: 1, name: 'Fixture lesson' })).toBeInTheDocument();
     expect(bar.querySelector('.topbar__crumbs')).toHaveTextContent('Demo track › Fixture lesson');
     expect(within(bar).getByText('Lesson 1 of 3')).toBeInTheDocument();
-    expect(within(bar).getByRole('group', { name: 'Color theme' })).toBeInTheDocument();
+    expect(within(bar).getByRole('button', { name: /^Switch to (light|dark) theme$/ })).toBeInTheDocument();
   });
 
   test('fills one step segment for each step reached', async () => {

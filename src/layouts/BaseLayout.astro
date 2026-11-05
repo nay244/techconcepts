@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import '../art/lumen.css';
+import LumenDefs from '../components/LumenDefs.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { analyticsBeacon, analyticsToken } from '../lib/analytics';
@@ -17,10 +19,12 @@ interface Props {
    * main region with id="main" for the skip link.
    */
   chrome?: boolean;
+  /** Which header link is the current section (marked aria-current="page"). */
+  current?: 'tracks' | 'how' | 'about';
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png', chrome = true } = Astro.props;
+const { title, description, image = '/og-default.png', chrome = true, current } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -51,11 +55,12 @@ const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
+    <LumenDefs />
     <a class="skip-link" href="#main">Skip to content</a>
     {
       chrome ? (
         <>
-          <SiteHeader />
+          <SiteHeader current={current} />
           <main id="main">
             <slot />
           </main>

@@ -84,7 +84,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, position, 
         )}
       </div>
       <div className="topbar__theme">
-        <ThemeToggle compact />
+        <ThemeToggle />
       </div>
     </header>
   );

@@ -21,7 +21,7 @@ const { planned, available, minutes } = trackTotals(entries);
 const level = levelLabel(track.level);
 ---
 
-<BaseLayout title={track.title} description={track.description}>
+<BaseLayout title={track.title} current="tracks" description={track.description}>
   <div class="container track">
     <nav aria-label="Breadcrumb" class="track__crumbs"><a href="/">Home</a></nav>
     <h1>{track.title}</h1>
