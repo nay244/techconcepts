@@ -8,3 +8,6 @@ playwright-report
 
 # wrangler dev keeps local state here
 .wrangler/
+
+# git worktrees made for builds
+.claude/worktrees/
