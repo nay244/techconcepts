@@ -1,6 +1,8 @@
 // The home hero's movement, run against HeroWeb.astro's own markup. The component is rendered with Astro's container
 // (which needs this file's default node environment) and parsed with jsdom; the browser APIs the hero uses are stand-ins
 // the test drives: a fake IntersectionObserver, animation frames on Vitest's fake clock, and matchMedia.
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
@@ -236,6 +238,22 @@ test('a browser with no IntersectionObserver plays it at once, and once', () => 
 test('a hero with no data says so by name', () => {
   delete root.dataset.hero;
   expect(() => startHero(root)).toThrow('The hero has no data-hero.');
+  // Not started, so the stylesheet's safety net still brings the figure in.
+  expect(root.hasAttribute('data-started')).toBe(false);
+});
+
+test('starting marks the hero started, so the safety net stands aside for the script', () => {
+  expect(root.hasAttribute('data-started')).toBe(false);
+  startHero(root);
+  expect(root.dataset.started).toBe('');
+});
+
+test('a figure whose script never starts still shows: its parts come in after 4s unless the hero is started', () => {
+  // Vitest drops stylesheet contents, so the rules are read from the component itself.
+  const css = readFileSync('src/components/HeroWeb.astro', 'utf8');
+  expect(css).toMatch(/\.js \.hero \.hin \{\s*opacity: 0;\s*\}/);
+  expect(css).toMatch(/\.js \.hero:not\(\[data-started\]\) \.hin \{\s*animation: hin-show 0s 4s forwards;\s*\}/);
+  expect(css).toMatch(/@keyframes hin-show \{\s*to \{\s*opacity: 1;\s*\}\s*\}/);
 });
 
 test('Play or Pause pressed before the hero is seen is not overridden when it comes into view', () => {

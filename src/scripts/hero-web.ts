@@ -220,6 +220,10 @@ export function startHero(root: HTMLElement): HeroControls {
   }
 
   // ---------- Start ----------
+  // Before the first frame: from here the script sets the figure's opacity, so the stylesheet's safety net (which
+  // shows the figure after 4s when no script has started) stands aside. Set only once every part has been found, so
+  // a hero whose markup is missing parts is left to the net.
+  root.dataset.started = '';
   button.addEventListener('click', onClick);
   button.hidden = false;
   if (reduced) {

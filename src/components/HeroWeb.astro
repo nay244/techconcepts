@@ -108,9 +108,19 @@ const ticks = HERO_WEB.STEPS.length - 2;
     overflow: visible;
   }
   /* With JavaScript the figure draws in part by part, so its parts start hidden from the first paint (BaseLayout's
-     head script sets .js); hero-web.ts then sets each one's opacity. Without JavaScript it shows in full. */
+     head script sets .js); hero-web.ts then sets each one's opacity. Without JavaScript it shows in full. If the hero
+     script never starts (it failed to load, or threw first), the parts show anyway after 4s. The gate matters: once
+     the script has marked the hero started, no animation may override the opacity it sets. */
   .js .hero .hin {
     opacity: 0;
+  }
+  .js .hero:not([data-started]) .hin {
+    animation: hin-show 0s 4s forwards;
+  }
+  @keyframes hin-show {
+    to {
+      opacity: 1;
+    }
   }
 
   /* The caption: what is happening now, and the button. */
