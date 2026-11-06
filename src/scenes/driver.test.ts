@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import type { Lesson } from '../content/schema';
 import { makeTwoUnitLesson } from '../content/test-fixtures';
 import { deriveState, positionOf, type SlotKind } from '../engine/timeline';
-import { landedEvent, sceneViewOf } from './driver';
+import { landedEvent, marksOf, sceneViewOf } from './driver';
 
 /** The two-unit fixture, with its first unit's steps 2 and 4 setting the laptop's status as they start. */
 function lessonWithStatuses(): Lesson {
@@ -74,6 +74,24 @@ test('landed is the latest message or note of the step so far: a table event it 
   // The panel reads it from the derived state alone.
   const derived = deriveState(lesson, positionOf(lesson, 0, 'step', 2), 2);
   expect(landedEvent(derived)).toBe(message);
+});
+
+test('marksOf: the rules before the one that fits do not fit, that one does what it says, and the rest are never read', () => {
+  expect(marksOf({ table: 'rules', read: 1, match: 1, action: 'allow' })).toEqual([{ row: 0, state: 'allow' }]);
+  expect(marksOf({ table: 'rules', read: 3, match: 3, action: 'deny' })).toEqual([
+    { row: 0, state: 'miss' },
+    { row: 1, state: 'miss' },
+    { row: 2, state: 'deny' },
+  ]);
+  expect(marksOf({ table: 'rules', read: 2, match: 2, action: 'allow' })).toEqual([
+    { row: 0, state: 'miss' },
+    { row: 1, state: 'allow' },
+  ]);
+  // Nothing fits: every rule read is a miss.
+  expect(marksOf({ table: 'rules', read: 2, match: null, action: 'deny' })).toEqual([
+    { row: 0, state: 'miss' },
+    { row: 1, state: 'miss' },
+  ]);
 });
 
 test('the start is the unit’s own at every position, Overview to Practice, and not among the cues that have played', () => {

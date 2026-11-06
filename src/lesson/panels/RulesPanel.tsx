@@ -1,8 +1,8 @@
 import { useId, useRef, useState } from 'react';
 import type { Panel, Row, SceneEvent } from '../../content/schema';
 import type { TableState } from '../../engine/tables';
-import type { PanelMark } from '../../scenes/driver';
-import { useFocusAcrossRemounts } from './TablePanel';
+import { marksOf, type PanelMark } from '../../scenes/driver';
+import { useFocusAcrossRemounts } from './useFocusAcrossRemounts';
 import './rules.css';
 
 type MarkState = PanelMark['state'];
@@ -23,26 +23,21 @@ export interface RulesPanelProps {
 }
 
 /** What the Check column says for each mark, in the mockup's words. */
-const CHECK_TEXT: Record<MarkState, string> = { check: 'Checking…', miss: 'Doesn’t fit', allow: 'Fits → allow', deny: 'Fits → deny' };
+const CHECK_TEXT: Record<MarkState, string> = { check: 'Checking', miss: 'Doesn’t fit', allow: 'Fits → allow', deny: 'Fits → deny' };
 /** The Check column's width, the mockup's. */
 const CHECK_WIDTH = 118;
 const KNOWN_TEXT = 'Known: reply allowed';
 
 /**
  * Each rule's mark: the latest the driver has reported for it while a visit
- * plays, or, with no play reporting, the ones the landed visit's check works
- * out. A visit reads from the top: each rule before the one that fits does not
- * fit, and the rules below it are never read.
+ * plays, or, with no play reporting, the ones the landed visit's check leaves
+ * (`marksOf`). The rules below the one that fits are never read.
  */
 function rowStates(count: number, marks: readonly PanelMark[], active: SceneEvent | null, tableId: string): (MarkState | null)[] {
   const states: (MarkState | null)[] = Array.from({ length: count }, () => null);
-  if (marks.length > 0) {
-    for (const { row, state } of marks) if (row < count) states[row] = state;
-    return states;
-  }
-  const check = active?.type === 'message' ? active.check : undefined;
-  if (check === undefined || check.table !== tableId) return states;
-  for (let i = 0; i < Math.min(check.read, count); i++) states[i] = i === (check.match ?? 0) - 1 ? check.action : 'miss';
+  const check = active?.type === 'message' && active.check?.table === tableId ? active.check : undefined;
+  const shown = marks.length > 0 ? marks : check === undefined ? [] : marksOf(check);
+  for (const { row, state } of shown) if (row < count) states[row] = state;
   return states;
 }
 
@@ -53,7 +48,7 @@ function rowStates(count: number, marks: readonly PanelMark[], active: SceneEven
  * remembers, as chips.
  *
  * While a visit plays, each rule shows the mark the driver reports as it reads
- * it: the rule being read is current (its row marked in marigold, "Checking…",
+ * it: the rule being read is current (its row marked in marigold, "Checking",
  * and aria-current), a rule that does not fit is muted ("Doesn’t fit"), and
  * the one that fits says what it does ("Fits → allow" or "Fits → deny", its row
  * marked in the allowed green or the blocked red). Once the visit has landed,

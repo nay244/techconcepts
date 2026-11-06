@@ -1,5 +1,5 @@
-import type { Panel, SceneEvent } from '../../content/schema';
-import type { DerivedState } from '../../engine/timeline';
+import type { Panel, SceneEvent, TableEvent } from '../../content/schema';
+import { appliedEvents, type DerivedState } from '../../engine/timeline';
 import { landedEvent, type PanelMark } from '../../scenes/driver';
 import { BitsBoard } from './BitsBoard';
 import { RulesPanel } from './RulesPanel';
@@ -16,18 +16,13 @@ export interface UnitPanelProps {
 }
 
 /**
- * The id of the latest event of the current step that touched `tableId`, among
- * those applied so far. Keying a table's panel on it remounts the panel for
- * each such event, so its row pulses again even when two events in a row mark
- * the same row.
+ * The latest event of the current step that touched `tableId`, among those
+ * applied so far, or null. Keying a table's panel on its id remounts the panel
+ * for each such event, so its row pulses again even when two events in a row
+ * mark the same row.
  */
-function lastTableEvent(derived: DerivedState, tableId: string): string {
-  const played = derived.active === null ? 0 : derived.events.indexOf(derived.active) + 1;
-  for (let i = played - 1; i >= 0; i -= 1) {
-    const event = derived.events[i]!;
-    if (event.type === 'table' && event.table === tableId) return event.id;
-  }
-  return 'none';
+function lastTableEvent(derived: DerivedState, tableId: string): TableEvent | null {
+  return appliedEvents(derived).findLast((e): e is TableEvent => e.type === 'table' && e.table === tableId) ?? null;
 }
 
 /**
@@ -49,10 +44,9 @@ function lastTableEvent(derived: DerivedState, tableId: string): string {
 export function UnitPanel({ panel, derived, marks, playing = null }: UnitPanelProps) {
   if (panel?.type === 'rules') {
     const shown = playing?.type === 'message' || playing?.type === 'note' ? null : landedEvent(derived);
-    const key = lastTableEvent(derived, panel.rules.id);
-    const changed = derived.events.find((e) => e.id === key);
-    const moved = playing !== null && changed?.type === 'table' && changed.op === 'replace';
-    return <RulesPanel key={`${panel.rules.id}:${key}`} panel={panel} tables={derived.tables} marks={marks} active={shown} moved={moved} />;
+    const changed = lastTableEvent(derived, panel.rules.id);
+    const moved = playing !== null && changed?.op === 'replace';
+    return <RulesPanel key={`${panel.rules.id}:${changed?.id ?? 'none'}`} panel={panel} tables={derived.tables} marks={marks} active={shown} moved={moved} />;
   }
   if (panel?.type === 'bits') {
     const { slot } = derived;
@@ -62,5 +56,5 @@ export function UnitPanel({ panel, derived, marks, playing = null }: UnitPanelPr
   if (panel?.type !== 'table') return null;
   const state = Object.hasOwn(derived.tables, panel.table.id) ? derived.tables[panel.table.id]! : null;
   if (state === null) return null;
-  return <TablePanel key={`${panel.table.id}:${lastTableEvent(derived, panel.table.id)}`} def={panel.table} state={state} />;
+  return <TablePanel key={`${panel.table.id}:${lastTableEvent(derived, panel.table.id)?.id ?? 'none'}`} def={panel.table} state={state} />;
 }

@@ -1,7 +1,7 @@
 import type { FirewallSceneData } from '../../art/scenes/firewall';
 import type { MessageEvent, NoteEvent, Row, SceneEvent, TableEvent } from '../../content/schema';
 import { applyTableEvent } from '../../engine/tables';
-import type { DriverModule, PanelMark, PlayOptions, SceneDriver, SceneView } from '../driver';
+import { type DriverModule, marksOf, type PanelMark, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
 import { along, animate, easeInOut, wait } from '../motion';
 
 /**
@@ -254,7 +254,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       if (match !== null && match > read) throw new Error(`Visit "${e.id}" matches rule ${match}, after the ${read} it read.`);
       const tag = tagFor(e.tag);
       const way = rideNamed(e.from);
-      for (let i = 0; i < read; i++) rows[i] = i === (match ?? 0) - 1 ? action : 'miss';
+      for (const m of marksOf(e.check)) rows[m.row] = m.state;
       if (action === 'deny') {
         return { ...NOTHING, rows, tag, at: pose(way, 1), trail: { points: way.flat, deny: true }, bar: 'deny', stop: true };
       }
@@ -305,7 +305,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   }
 
   async function playVisit(e: Visit, end: Picture, o: PlayOptions): Promise<void> {
-    const { read, match, action } = e.check;
+    const { action } = e.check;
     const way = rideNamed(e.from);
     const tag = end.tag!;
     clear();
@@ -314,21 +314,15 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     fade(trail, TRAIL_OPACITY);
     await ride(tag, way, [], o);
     if (o.signal.aborted) return;
-    // At the gate: the rules are read from the top until one fits.
+    // At the gate: the rules are read from the top until one fits, each one current while it is read.
     focus('firewall');
-    const hit = (match ?? 0) - 1;
-    for (let i = 0; i < read; i++) {
-      markRow(i, 'check');
-      o.onMark?.({ row: i, state: 'check' });
+    for (const mark of marksOf(e.check)) {
+      markRow(mark.row, 'check');
+      o.onMark?.({ row: mark.row, state: 'check' });
       await wait(READ_MS / o.speed, o.signal);
       if (o.signal.aborted) return;
-      if (i === hit) continue;
-      markRow(i, 'miss');
-      o.onMark?.({ row: i, state: 'miss' });
-    }
-    if (hit >= 0) {
-      markRow(hit, action);
-      o.onMark?.({ row: hit, state: action });
+      markRow(mark.row, mark.state);
+      o.onMark?.(mark);
     }
     lightBar(action);
     if (action === 'allow') {

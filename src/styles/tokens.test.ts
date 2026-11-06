@@ -1,6 +1,17 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { contrastRatio, hexToRgb } from '../lib/contrast';
 import { tokens, tokensToCss } from './tokens';
+
+const lumenCss: string = readFileSync(new URL('../art/lumen.css', import.meta.url), 'utf8');
+
+/** The figures' background in a theme, from lumen.css: the ground a figure's callouts sit on. */
+function figBg(theme: 'light' | 'dark'): string {
+  const match = new RegExp(`\\[data-theme="${theme}"\\]\\s*\\{[^}]*--fig-bg:\\s*(#[0-9a-f]{3,6})`, 'i').exec(lumenCss);
+  if (match === null) throw new Error(`No --fig-bg for ${theme} in lumen.css.`);
+  return match[1]!;
+}
 
 const SEMANTIC = ['request', 'response', 'control', 'broadcast', 'allowed', 'blocked', 'encrypted', 'selected'] as const;
 
@@ -53,7 +64,7 @@ test('every theme defines the same tokens, including the eight semantic ones', (
 });
 
 test('the mockup palette is used as given', () => {
-  expect(tokens.light).toMatchObject({ bg: '#ffffff', 'ink-strong': '#0b1a33', accent: '#1f63c0', here: '#a66900', allowed: '#23824a', request: '#1f63c0', response: '#b4540a', broadcast: '#b23a8e' });
+  expect(tokens.light).toMatchObject({ bg: '#ffffff', 'ink-strong': '#0b1a33', accent: '#1f63c0', here: '#9b6200', allowed: '#23824a', request: '#1f63c0', response: '#b4540a', broadcast: '#b23a8e' });
   expect(tokens.dark).toMatchObject({ bg: '#060c17', 'ink-strong': '#f2f7ff', accent: '#5aa9ff', here: '#f5b83d', allowed: '#5fd68a', request: '#5aa9ff', response: '#ff9f5a', broadcast: '#ff7fc4' });
 });
 
@@ -62,6 +73,10 @@ for (const theme of ['light', 'dark'] as const) {
   test(`${theme}: ink, muted, accent, here and every semantic token reach 4.5:1 on bg and card`, () => {
     for (const k of ['ink', 'ink-strong', 'muted', 'accent', 'here', ...SEMANTIC] as const)
       for (const bg of ['bg', 'card'] as const) expect(contrastRatio(t[k], t[bg]), `${k} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+  });
+  // Ruling R1, amended: a figure's current callout name is drawn in `here` on the figures' background.
+  test(`${theme}: here reaches 4.5:1 on the figures' background (lumen.css --fig-bg)`, () => {
+    expect(contrastRatio(t.here, figBg(theme)), `here on ${figBg(theme)}`).toBeGreaterThanOrEqual(4.5);
   });
   test(`${theme}: focus reaches 3:1 on bg`, () => {
     expect(contrastRatio(t.focus, t.bg)).toBeGreaterThanOrEqual(3);

@@ -1,7 +1,9 @@
 import { expect, test } from 'vitest';
 import { evaluateRules } from '../../engine/net/firewall';
 import type { MessageEvent, NoteEvent, TableEvent } from '../schema';
-import { ADDR, RULES, RULESETS, change, reply, ruleTableRows, visit } from './firewall-events';
+import { ADDR, RULES, RULESETS, change, ruleTableRows, visits } from './firewall-events';
+
+const { visit, reply } = visits();
 
 test('the addresses, the rules and the two orders are the mockup’s', () => {
   expect(ADDR).toEqual({ visitor: '203.0.113.50', admin: '198.51.100.7', web: '10.0.0.10' });
@@ -63,8 +65,10 @@ test('a denied visit stops at the firewall, blocked, with the rule that turned i
 });
 
 test('a visit reads the rules until the first that fits, in the order in force', () => {
+  // Each visit has an id of its own.
+  let made = 0;
   const read = (who: 'visitor' | 'admin', port: number, rules: 'base' | 'shadow') =>
-    (visit({ id: `${who}-${port}-${rules}`, who, tag: 'T', port, svc: 'S', sport: 50000, rules, plain: 'p' })[0] as MessageEvent).check;
+    (visit({ id: `read-${(made += 1)}`, who, tag: 'T', port, svc: 'S', sport: 50000, rules, plain: 'p' })[0] as MessageEvent).check;
   expect(read('admin', 22, 'base')).toEqual({ table: 'rules', read: 2, match: 2, action: 'allow' });
   expect(read('visitor', 23, 'base')).toEqual({ table: 'rules', read: 3, match: 3, action: 'deny' });
   expect(read('visitor', 443, 'shadow')).toEqual({ table: 'rules', read: 1, match: 1, action: 'deny' });
@@ -96,7 +100,38 @@ test('a reply goes back from the web server to the visitor, let through by the c
 test('a reply needs a visit the firewall let in', () => {
   visit({ id: 'login-1', who: 'visitor', tag: 'SSH 22', port: 22, svc: 'SSH', sport: 50433, rules: 'base', plain: 'Out.' });
   expect(() => reply({ id: 'r2', of: 'login-1', tag: 'REPLY 22', plain: 'p' })).toThrow(/"login-1".*was denied/);
-  expect(() => reply({ id: 'r3', of: 'nothing', tag: 'REPLY 22', plain: 'p' })).toThrow(/"nothing", which is not a visit/);
+  expect(() => reply({ id: 'r3', of: 'nothing', tag: 'REPLY 22', plain: 'p' })).toThrow(/"nothing", which is not a visit made yet/);
+});
+
+test('a reply written before its visit says to write the visit first', () => {
+  expect(() => reply({ id: 'early-reply', of: 'late-visit', tag: 'REPLY 443', plain: 'p' })).toThrow(
+    /The reply "early-reply" answers "late-visit", which is not a visit made yet: write visit\(\{ id: "late-visit", … \}\) before the reply\./,
+  );
+  // Once the visit is made, the same reply works.
+  visit({ id: 'late-visit', who: 'visitor', tag: 'HTTPS 443', port: 443, svc: 'HTTPS', sport: 50432, rules: 'base', plain: 'In.' });
+  expect(reply({ id: 'early-reply', of: 'late-visit', tag: 'REPLY 443', plain: 'p' })[0]).toMatchObject({ known: { table: 'conns', key: 'visitor:443' } });
+});
+
+test('a visit id is made once: a second visit with the same id throws, and the first one stands', () => {
+  visit({ id: 'twice', who: 'admin', tag: 'SSH 22', port: 22, svc: 'SSH', sport: 51876, rules: 'base', plain: 'In.' });
+  expect(() => visit({ id: 'twice', who: 'visitor', tag: 'SSH 22', port: 22, svc: 'SSH', sport: 50433, rules: 'base', plain: 'Out.' })).toThrow(
+    /The visit "twice" is made twice: each visit needs an id of its own\./,
+  );
+  // The reply still answers the admin's visit, the one made first.
+  expect(reply({ id: 'twice-reply', of: 'twice', tag: 'REPLY 22', plain: 'p' })[0]).toMatchObject({ to: 'admin', known: { key: 'admin:22' } });
+});
+
+test('each set of visits remembers its own: a lesson module that runs again, as the dev server runs it after an edit, makes its visits afresh', () => {
+  const first = visits();
+  first.visit({ id: 'again', who: 'visitor', tag: 'HTTPS 443', port: 443, svc: 'HTTPS', sport: 50432, rules: 'base', plain: 'In.' });
+  const second = visits();
+  // The second set has made no visit yet, so a reply waits for its own.
+  expect(() => second.reply({ id: 'again-reply', of: 'again', tag: 'REPLY 443', plain: 'p' })).toThrow(/"again", which is not a visit made yet/);
+  // The same id is made once in each.
+  expect(() => second.visit({ id: 'again', who: 'admin', tag: 'SSH 22', port: 22, svc: 'SSH', sport: 51876, rules: 'base', plain: 'In.' })).not.toThrow();
+  expect(() => second.visit({ id: 'again', who: 'admin', tag: 'SSH 22', port: 22, svc: 'SSH', sport: 51876, rules: 'base', plain: 'In.' })).toThrow(/made twice/);
+  expect(first.reply({ id: 'again-reply', of: 'again', tag: 'REPLY 443', plain: 'p' })[0]).toMatchObject({ to: 'visitor', known: { key: 'visitor:443' } });
+  expect(second.reply({ id: 'again-reply', of: 'again', tag: 'REPLY 22', plain: 'p' })[0]).toMatchObject({ to: 'admin', known: { key: 'admin:22' } });
 });
 
 test('a change puts the new order in the rule list, forgets every connection, then says so in the log', () => {

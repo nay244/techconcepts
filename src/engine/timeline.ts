@@ -144,6 +144,14 @@ export interface DerivedState {
 }
 
 /**
+ * The current step's events applied so far, in order: `events` up to and
+ * including `active`, and none before the first one or off a step.
+ */
+export function appliedEvents(derived: DerivedState): SceneEvent[] {
+  return derived.active === null ? [] : derived.events.slice(0, derived.events.indexOf(derived.active) + 1);
+}
+
+/**
  * The events that play at a position: a step's own events, and none at an
  * Overview, Learn or Practice. Read-only: it is the lesson's own array.
  */

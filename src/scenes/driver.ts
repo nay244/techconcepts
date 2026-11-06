@@ -1,6 +1,6 @@
 import type { Board, Cue, MessageEvent, NoteEvent, SceneEvent, Unit } from '../content/schema';
 import type { TableState } from '../engine/tables';
-import type { AppliedCue, DerivedState } from '../engine/timeline';
+import { type AppliedCue, appliedEvents, type DerivedState } from '../engine/timeline';
 
 /**
  * What a figure shows at a moment of the lesson, settled: the unit's layers and
@@ -45,12 +45,7 @@ export interface SceneView {
 
 /** The latest message or note of the current step that has been applied, or null (`SceneView.landed`). */
 export function landedEvent(derived: DerivedState): MessageEvent | NoteEvent | null {
-  const played = derived.active === null ? 0 : derived.events.indexOf(derived.active) + 1;
-  for (let i = played - 1; i >= 0; i -= 1) {
-    const event = derived.events[i]!;
-    if (event.type !== 'table') return event;
-  }
-  return null;
+  return appliedEvents(derived).findLast((e): e is MessageEvent | NoteEvent => e.type !== 'table') ?? null;
 }
 
 /** The scene view for a unit at a derived moment. */
@@ -103,6 +98,17 @@ export interface SceneDriver {
 export interface PanelMark {
   row: number;
   state: 'check' | 'miss' | 'allow' | 'deny';
+}
+
+/**
+ * Where a visit's check leaves each rule it read, in reading order: the rules
+ * are read from the top, each one before the rule that fits does not fit, and
+ * that rule does what it says. A check that nothing fits leaves every rule it
+ * read as not fitting. The driver reads the rules this way, and the rule list
+ * shows these marks once the visit has landed.
+ */
+export function marksOf(check: NonNullable<MessageEvent['check']>): PanelMark[] {
+  return Array.from({ length: check.read }, (_, row) => ({ row, state: row === (check.match ?? 0) - 1 ? check.action : 'miss' }));
 }
 
 export interface PlayOptions {

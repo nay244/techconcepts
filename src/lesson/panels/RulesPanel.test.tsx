@@ -10,6 +10,7 @@ import { contrastRatio, hexToRgb } from '../../lib/contrast';
 import { landedEvent, type PanelMark } from '../../scenes/driver';
 import { tokens } from '../../styles/tokens';
 import { RulesPanel } from './RulesPanel';
+import { UnitPanel } from './UnitPanel';
 
 const unit = firewalls.units[0]!;
 const panel = unit.scene.panel as Extract<Panel, { type: 'rules' }>;
@@ -51,16 +52,16 @@ test('RulesPanel shows the rule list with its own words, and a Check column afte
   expect(states(container)).toEqual(['', '', '']);
 });
 
-test('RulesPanel shows Checking…, Doesn’t fit and Fits → deny as marks arrive, and the same marks once applied', () => {
+test('RulesPanel shows Checking, Doesn’t fit and Fits → deny as marks arrive, and the same marks once applied', () => {
   // Step 4: the Telnet visit reads all three rules, and the last one turns it away.
   const { container, rerender } = render(panelAt(4, { played: 0, marks: [{ row: 0, state: 'check' }] }));
-  expect(checks(container)).toEqual(['Checking…', '', '']);
+  expect(checks(container)).toEqual(['Checking', '', '']);
   expect(states(container)).toEqual(['check', '', '']);
   // The row being read is the current one.
   expect(ruleRows(container)[0]).toHaveAttribute('aria-current', 'true');
 
   rerender(panelAt(4, { played: 0, marks: [{ row: 0, state: 'check' }, { row: 0, state: 'miss' }, { row: 1, state: 'check' }] }));
-  expect(checks(container)).toEqual(['Doesn’t fit', 'Checking…', '']);
+  expect(checks(container)).toEqual(['Doesn’t fit', 'Checking', '']);
   expect(ruleRows(container)[0]).not.toHaveAttribute('aria-current');
 
   const all: PanelMark[] = [
@@ -90,7 +91,7 @@ test('an allowed visit fits its rule, and the rules below it are never read', ()
 test('while a visit plays, the rows show only its own marks, not the visit before', () => {
   // Step 6, its visit playing after the change: the change left nothing read.
   const { container } = render(panelAt(6, { played: 3, active: null, marks: [{ row: 0, state: 'check' }] }));
-  expect(checks(container)).toEqual(['Checking…', '', '']);
+  expect(checks(container)).toEqual(['Checking', '', '']);
 });
 
 test('the connections it remembers: none, then one chip per visit it let in, the newest pulsing', () => {
@@ -135,12 +136,33 @@ test('after the change the rows come in once in their new order, and no connecti
   expect(container.querySelector('.rpanel__chip')).toBeNull();
   expect(screen.getByText('None yet. Each allowed visit is remembered here.')).toBeInTheDocument();
   // Moved is how the panel came in: the rows came in once, and a later render does not bring them in again.
+  const firstRow = ruleRows(container)[0];
   rerender(panelAt(6, { played: 3, moved: false }));
   expect(container.querySelector('tbody')).toHaveAttribute('data-moved');
+  // The visit after the change lands: the same rows, still as they came in, now with its marks.
   rerender(panelAt(6, { played: 4, moved: true }));
+  expect(container.querySelector('tbody')).toHaveAttribute('data-moved');
+  expect(ruleRows(container)[0]).toBe(firstRow);
+  expect(checks(container)).toEqual(['Fits → deny', '', '']);
   // A panel that came in settled never moves.
   const settled = render(panelAt(6, { played: 3 }));
   expect(settled.container.querySelector('tbody')).not.toHaveAttribute('data-moved');
+});
+
+test('the rule list keeps the focus across the remount that a change’s replace causes', () => {
+  const [replace, clear] = unit.steps[5]!.events;
+  expect(replace).toMatchObject({ type: 'table', table: 'rules', op: 'replace' });
+  // The change is about to replace the rules, and the learner has the rule list focused.
+  const { rerender } = render(<UnitPanel panel={unit.scene.panel} derived={at(6, 0)} marks={[]} playing={replace!} />);
+  const before = screen.getByRole('region', { name: 'Rule list' });
+  before.focus();
+  expect(document.activeElement).toBe(before);
+  // The replace lands: the panel is remounted so its new rows come in, and the new panel has the focus.
+  rerender(<UnitPanel panel={unit.scene.panel} derived={at(6, 1)} marks={[]} playing={clear!} />);
+  const after = screen.getByRole('region', { name: 'Rule list' });
+  expect(after).not.toBe(before);
+  expect(after.querySelector('tbody')).toHaveAttribute('data-moved');
+  expect(document.activeElement).toBe(after);
 });
 
 // ---------------------------------------------------------------- styling
@@ -160,18 +182,24 @@ function rule(selector: string): string {
   return found[1]!;
 }
 
-test('the colours sit where the CSS puts them: words in ink, colour in tints and marks, marigold only for the row being read', () => {
+test('the colours sit where the CSS puts them: DENY in red, the other words in ink, colour in tints and marks, marigold only for the row being read', () => {
   // A row's tint is its state's colour at 12% over the card, with a 3px bar of it down the left edge.
   for (const [state, token] of [['check', 'here'], ['allow', 'allowed'], ['deny', 'blocked']] as const) {
     expect(rule(`.rpanel tr[data-state='${state}']`)).toMatch(new RegExp(`--state:\\s*var\\(--${token}\\)`));
   }
   expect(rule('.rpanel tr[data-state]')).toMatch(/background:\s*color-mix\(in srgb, var\(--state\) 12%, transparent\)/);
   expect(rule('.rpanel tr[data-state]')).toMatch(/box-shadow:\s*inset 3px 0 0 var\(--state\)/);
-  // The words stay in ink; a rule that was read and did not fit is muted, never faded.
+  // ALLOW, "Fits → allow" and "Checking" stay in ink; a rule that was read and did not fit is muted, never faded.
   expect(rule('.rpanel__check')).toMatch(/color:\s*var\(--ink-strong\)/);
   expect(rule('.rpanel__act')).toMatch(/color:\s*var\(--ink-strong\)/);
+  expect(rule(".rpanel__act[data-action='allow']")).not.toMatch(/(?:^|[^-])color:/);
   expect(rule(".rpanel tr[data-state='miss'] td")).toMatch(/color:\s*var\(--muted\)/);
   expect(rulesCss).not.toMatch(/opacity:\s*0?\.\d/);
+  // DENY and "Fits → deny" are in the blocked red, as the spec and the mockup have them.
+  expect(rule(".rpanel__act[data-action='deny']")).toMatch(/(?:^|[^-])color:\s*var\(--blocked\)/);
+  expect(rule(".rpanel tr[data-state='deny'] .rpanel__check")).toMatch(/color:\s*var\(--blocked\)/);
+  // A DENY rule that was read and did not fit is muted like the rest of its row: that rule is the more specific one.
+  expect(rulesCss).toMatch(/\n\.rpanel tr\[data-state='miss'\] \.rpanel__act,\s*\n\.rpanel tr\[data-state='miss'\] \.rpanel__check\s*\{\s*color:\s*var\(--muted\);/);
   // The marks carry the colours beside the words.
   expect(rule(".rpanel__act[data-action='allow']")).toMatch(/--mark:\s*var\(--allowed\)/);
   expect(rule(".rpanel__act[data-action='deny']")).toMatch(/--mark:\s*var\(--blocked\)/);
@@ -189,6 +217,9 @@ test.each(['light', 'dark'] as const)('every word on the rule list reaches 4.5:1
     // The marks: the row's bar and the action's square.
     for (const mark of ['here', 'allowed', 'blocked'] as const) expect(contrastRatio(t[mark], ground), `${mark} mark on ${name}`).toBeGreaterThanOrEqual(3);
   }
+  // DENY sits on an unmarked row, on the row being read, and on the row that turns a visit away; "Fits → deny" on the last.
+  for (const name of ['none', 'check', 'deny'] as const) expect(contrastRatio(t.blocked, grounds[name]), `DENY on ${name}`).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t.blocked, grounds.deny), 'Fits → deny').toBeGreaterThanOrEqual(4.5);
   // A chip sits on the second card colour; a known chip's tint is the allowed colour at 12% over it.
   for (const ground of [t['card-2'], mix(t.allowed, t['card-2'], 12)]) {
     expect(contrastRatio(t['ink-strong'], ground)).toBeGreaterThanOrEqual(4.5);

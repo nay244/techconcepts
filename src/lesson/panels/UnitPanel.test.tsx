@@ -19,7 +19,7 @@ test('a rules panel shows the rule list, with the marks of the visit that played
   // While the Telnet visit plays, the driver's marks.
   const { container, rerender } = render(<UnitPanel panel={unit.scene.panel} derived={at(4, 0)} marks={marks} playing={unit.steps[3]!.events[0]!} />);
   expect(container.querySelector('[data-panel="rules"]')).not.toBeNull();
-  expect(checks(container)).toEqual(['Checking…', '', '']);
+  expect(checks(container)).toEqual(['Checking', '', '']);
   // Once it has landed, the marks its check works out.
   rerender(<UnitPanel panel={unit.scene.panel} derived={at(4)} marks={[]} playing={null} />);
   expect(checks(container)).toEqual(['Doesn’t fit', 'Doesn’t fit', 'Fits → deny']);
@@ -27,13 +27,15 @@ test('a rules panel shows the rule list, with the marks of the visit that played
 
 test('while the table event a visit brings lands, its marks stay; while the next visit plays, they go', () => {
   // Step 1: the visit has landed, and the connection it brings is about to be remembered.
-  const [visit, remembered] = unit.steps[0]!.events;
-  const { container, rerender } = render(<UnitPanel panel={unit.scene.panel} derived={at(1, 1)} marks={[]} playing={remembered!} />);
+  const remembered = unit.steps[0]!.events[1]!;
+  expect(remembered).toMatchObject({ type: 'table', id: 'visit-website-conn', table: 'conns', op: 'add' });
+  const { container, rerender } = render(<UnitPanel panel={unit.scene.panel} derived={at(1, 1)} marks={[]} playing={remembered} />);
   expect(checks(container)).toEqual(['Fits → allow', '', '']);
   // Step 6: the change has landed and the visit after it plays, with no mark yet.
-  rerender(<UnitPanel panel={unit.scene.panel} derived={at(6, 3)} marks={[]} playing={unit.steps[5]!.events[3]!} />);
+  const next = unit.steps[5]!.events[3]!;
+  expect(next).toMatchObject({ type: 'message', id: 'visit-website-again' });
+  rerender(<UnitPanel panel={unit.scene.panel} derived={at(6, 3)} marks={[]} playing={next} />);
   expect(checks(container)).toEqual(['', '', '']);
-  expect(visit!.type).toBe('message');
 });
 
 test('the rule list’s rows come in once when a change replaces them while the step plays, and not when the learner lands there', () => {

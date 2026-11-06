@@ -41,9 +41,12 @@ export type TokenName =
  * with a label, icon or text.
  *
  * Surfaces, ink, accent and the first five hues are the approved mockups'
- * values (home-v6, track-v2, firewalls-v1); `here` is darkened slightly in the
- * light theme so it reaches 4.5:1 on white. The mockups do not define control,
- * encrypted or selected, so those three are chosen here.
+ * values (home-v6, track-v2, firewalls-v1); `here` is darkened in the light
+ * theme so it reaches 4.5:1 on white and on the figures' background (`--fig-bg`
+ * in lumen.css, where a current callout's name sits): the mockups' #a66900 at
+ * the same hue, darker, is #9b6200 (5.07:1 on white, 4.51:1 on #eef2f7). The
+ * mockups do not define control, encrypted or selected, so those three are
+ * chosen here.
  */
 export const tokens: Record<Theme, Record<TokenName, string>> = {
   light: {
@@ -61,7 +64,7 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     'accent-ink': '#ffffff',
     'accent-soft': 'rgba(31, 99, 192, 0.07)',
     'accent-line': 'rgba(31, 99, 192, 0.22)',
-    here: '#a66900',
+    here: '#9b6200',
     'here-soft': 'rgba(214, 146, 20, 0.12)',
     focus: '#0b1a33',
     dot: 'rgba(31, 99, 192, 0.16)',

@@ -4,6 +4,7 @@ import type { Board, Lesson, LessonInput, MessageEvent, SceneEvent } from '../co
 import { makeLesson, makeTwoUnitLesson, makeUnit } from '../content/test-fixtures';
 import { applyTableEvent, initialTables } from './tables';
 import {
+  appliedEvents,
   deriveState,
   parseStepParam,
   positionLabel,
@@ -378,6 +379,17 @@ test('active is the last applied event of the current step, or null', () => {
   expect(deriveState(ONE, 6, 0).active).toBeNull();
   // It is the lesson's own event.
   expect(deriveState(ONE, 1, 1).active).toBe(ONE.units[0]!.steps[0]!.events[0]);
+});
+
+test('appliedEvents are the current step’s events up to and including active, and none before the first or off a step', () => {
+  expect(appliedEvents(deriveState(ONE, 0, 0))).toEqual([]);
+  expect(appliedEvents(deriveState(ONE, 2, 0))).toEqual([]);
+  expect(ids(appliedEvents(deriveState(ONE, 2, 1)))).toEqual(['m2']);
+  expect(ids(appliedEvents(deriveState(ONE, 2, 2)))).toEqual(['m2', 't-add']);
+  expect(ids(appliedEvents(deriveState(ONE, 3, 2)))).toEqual(['t-match', 'n1']);
+  expect(appliedEvents(deriveState(ONE, 6, 0))).toEqual([]);
+  // The lesson's own events.
+  expect(appliedEvents(deriveState(ONE, 1, 1))[0]).toBe(ONE.units[0]!.steps[0]!.events[0]);
 });
 
 test('events are the ones that play at the position', () => {

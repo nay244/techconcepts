@@ -1,5 +1,5 @@
 import { defineLesson } from '../../define';
-import { ADDR, change, checkResults, reply, ruleTableRows, visit } from '../../helpers/firewall-events';
+import { ADDR, change, checkResults, ruleTableRows, visits } from '../../helpers/firewall-events';
 
 /**
  * Firewalls, lesson 17 of 20. A visitor and an admin out on the internet reach
@@ -15,6 +15,9 @@ import { ADDR, change, checkResults, reply, ruleTableRows, visit } from '../../h
  * works them out again from what the lesson shows, so a decision that changes
  * stops the build (spec §7.4).
  */
+
+// This lesson's visits, so each reply can name the visit it answers.
+const { visit, reply } = visits();
 
 const firewalls = defineLesson({
   slug: 'firewalls',

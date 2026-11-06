@@ -80,70 +80,92 @@ function decide(set: RuleSet, sourceIp: string, protocol: 'tcp' | 'udp', port: n
 const decisionText = ({ action, n }: Decision): string => `${action === 'allow' ? 'Allowed' : 'Denied'} · ${n === null ? 'no rule fits' : `rule ${n}`}`;
 const KNOWN_DECISION = 'Allowed · known connection';
 
-/** The visits made so far, by id, so a reply can name the one it answers. */
-const VISITS = new Map<string, { who: Who; port: number; svc: string; sport: number; key: string; allowed: boolean }>();
-
-/**
- * A visit to the web server: one message from a laptop, checked against the
- * rules in force. Allowed, it goes on to the web server and the firewall
- * remembers its connection (a table event keyed `${who}:${port}`); denied, it
- * stops at the firewall, blocked. Its check says how many rules were read
- * and which one decided, as the engine works it out.
- */
-export function visit(o: { id: string; who: Who; tag: string; port: number; svc: string; sport: number; rules: RuleSet; plain: string }): SceneEvent[] {
-  const decision = decide(o.rules, ADDR[o.who], 'tcp', o.port);
-  const allowed = decision.action === 'allow';
-  const from = `${ADDR[o.who]}:${o.sport}`;
-  const to = `${ADDR.web}:${o.port}`;
-  const key = `${o.who}:${o.port}`;
-  VISITS.set(o.id, { who: o.who, port: o.port, svc: o.svc, sport: o.sport, key, allowed });
-  const message: MessageEvent = {
-    type: 'message',
-    id: o.id,
-    from: o.who,
-    to: allowed ? 'web' : 'firewall',
-    tag: o.tag,
-    kind: 'request',
-    ...(allowed ? {} : { outcome: 'blocked' as const }),
-    check: { table: RULES_TABLE, read: decision.read, match: decision.n, action: decision.action },
-    log: { source: from, destination: to, service: `TCP ${o.port} · ${o.svc}`, decision: decisionText(decision) },
-    plain: o.plain,
-  };
-  if (!allowed) return [message];
-  const remembered: TableEvent = {
-    type: 'table',
-    id: `${o.id}-conn`,
-    table: CONNS_TABLE,
-    op: 'add',
-    row: { key, who: WHO_NAME[o.who], port: String(o.port), rule: String(decision.n), from, to },
-    summary: `The firewall remembers the ${WHO_NAME[o.who].toLowerCase()}’s connection to port ${o.port}, let in by rule ${decision.n}.`,
-  };
-  return [message, remembered];
+/** A visit as its reply needs it: who made it, to which port and service, from which port, the connection's key, and whether it was let in. */
+interface Made {
+  who: Who;
+  port: number;
+  svc: string;
+  sport: number;
+  key: string;
+  allowed: boolean;
 }
 
 /**
- * The web server's reply to an allowed visit (`of`, its id): back to the
- * laptop that asked, let through because the firewall remembers the
- * connection, with no rule of its own. Throws for a visit that was denied, or
- * that this module has not made.
+ * A lesson's visits and the replies to them, with one memory of the visits
+ * made so far, by id, so a reply can name the one it answers. A lesson's
+ * events are written in the order they play, so a reply comes after its visit;
+ * each id is made once. The lesson's module makes its own
+ * (`const { visit, reply } = visits()`), so a module that runs again, as the
+ * dev server runs it after an edit, starts with no visits made.
  */
-export function reply(o: { id: string; of: string; tag: string; plain: string }): SceneEvent[] {
-  const v = VISITS.get(o.of);
-  if (v === undefined) throw new Error(`The reply "${o.id}" answers "${o.of}", which is not a visit.`);
-  if (!v.allowed) throw new Error(`The reply "${o.id}" answers "${o.of}", which was denied: there is no connection to answer.`);
-  return [
-    {
+export function visits() {
+  const made = new Map<string, Made>();
+
+  /**
+   * A visit to the web server: one message from a laptop, checked against the
+   * rules in force. Allowed, it goes on to the web server and the firewall
+   * remembers its connection (a table event keyed `${who}:${port}`); denied, it
+   * stops at the firewall, blocked. Its check says how many rules were read
+   * and which one decided, as the engine works it out.
+   */
+  function visit(o: { id: string; who: Who; tag: string; port: number; svc: string; sport: number; rules: RuleSet; plain: string }): SceneEvent[] {
+    const decision = decide(o.rules, ADDR[o.who], 'tcp', o.port);
+    const allowed = decision.action === 'allow';
+    const from = `${ADDR[o.who]}:${o.sport}`;
+    const to = `${ADDR.web}:${o.port}`;
+    const key = `${o.who}:${o.port}`;
+    if (made.has(o.id)) throw new Error(`The visit "${o.id}" is made twice: each visit needs an id of its own.`);
+    made.set(o.id, { who: o.who, port: o.port, svc: o.svc, sport: o.sport, key, allowed });
+    const message: MessageEvent = {
       type: 'message',
       id: o.id,
-      from: 'web',
-      to: v.who,
+      from: o.who,
+      to: allowed ? 'web' : 'firewall',
       tag: o.tag,
-      kind: 'response',
-      known: { table: CONNS_TABLE, key: v.key },
-      log: { source: `${ADDR.web}:${v.port}`, destination: `${ADDR[v.who]}:${v.sport}`, service: `TCP ${v.port} · ${v.svc}`, decision: KNOWN_DECISION },
+      kind: 'request',
+      ...(allowed ? {} : { outcome: 'blocked' as const }),
+      check: { table: RULES_TABLE, read: decision.read, match: decision.n, action: decision.action },
+      log: { source: from, destination: to, service: `TCP ${o.port} · ${o.svc}`, decision: decisionText(decision) },
       plain: o.plain,
-    },
-  ];
+    };
+    if (!allowed) return [message];
+    const remembered: TableEvent = {
+      type: 'table',
+      id: `${o.id}-conn`,
+      table: CONNS_TABLE,
+      op: 'add',
+      row: { key, who: WHO_NAME[o.who], port: String(o.port), rule: String(decision.n), from, to },
+      summary: `The firewall remembers the ${WHO_NAME[o.who].toLowerCase()}’s connection to port ${o.port}, let in by rule ${decision.n}.`,
+    };
+    return [message, remembered];
+  }
+
+  /**
+   * The web server's reply to an allowed visit (`of`, its id): back to the
+   * laptop that asked, let through because the firewall remembers the
+   * connection, with no rule of its own. Throws for a visit that was denied, or
+   * one not made yet: write the visit before its reply.
+   */
+  function reply(o: { id: string; of: string; tag: string; plain: string }): SceneEvent[] {
+    const v = made.get(o.of);
+    if (v === undefined) throw new Error(`The reply "${o.id}" answers "${o.of}", which is not a visit made yet: write visit({ id: "${o.of}", … }) before the reply.`);
+    if (!v.allowed) throw new Error(`The reply "${o.id}" answers "${o.of}", which was denied: there is no connection to answer.`);
+    return [
+      {
+        type: 'message',
+        id: o.id,
+        from: 'web',
+        to: v.who,
+        tag: o.tag,
+        kind: 'response',
+        known: { table: CONNS_TABLE, key: v.key },
+        log: { source: `${ADDR.web}:${v.port}`, destination: `${ADDR[v.who]}:${v.sport}`, service: `TCP ${v.port} · ${v.svc}`, decision: KNOWN_DECISION },
+        plain: o.plain,
+      },
+    ];
+  }
+
+  return { visit, reply };
 }
 
 /**
