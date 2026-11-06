@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { LessonSummary } from '../content/registry';
 import type { Lesson, Unit } from '../content/schema';
-import { positionOf, slotsFor, type Position } from '../engine/timeline';
+import { positionOf, type Position } from '../engine/timeline';
 import { byPart, STATUS_TEXT } from '../lib/entries';
 import type { LessonProgress, ProgressData } from '../progress/store';
 import { LEARN_SUB, LEARN_TITLE } from './Explanation';
@@ -10,6 +10,10 @@ import { questionsTitle } from './Practice';
 export interface OutlineProps {
   lesson: Lesson;
   position: Position;
+  /** The unit at the current position, counting from 0. */
+  current: number;
+  /** The units the learner has opened on this page (always including the current one); kept in memory only. */
+  seen: ReadonlySet<number>;
   onGo(position: Position): void;
   /** Every lesson the track plans, written or not, in track order. */
   entries: LessonSummary[];
@@ -177,13 +181,13 @@ function AllLessons({ entries, currentKey, progress, open, onClose }: AllLessons
  * The left column. A lesson of one unit lists its Overview, its Watch steps
  * (title and plain sub line), Learn and Practice. A lesson of many units (lesson
  * 1's protocols) lists one row per unit, filtered by group, with the current
- * unit opened to show its parts. Below, "All 20 lessons" opens the track's list.
+ * unit opened to show its parts and a check on the others the learner has
+ * opened here. Below, "All 20 lessons" opens the track's list.
  */
-export function Outline({ lesson, position, onGo, entries, currentKey, progress }: OutlineProps) {
+export function Outline({ lesson, position, current, seen, onGo, entries, currentKey, progress }: OutlineProps) {
   const headId = useId();
   const [filter, setFilter] = useState<Filter>('all');
   const [listOpen, setListOpen] = useState(false);
-  const current = slotsFor(lesson)[position]?.unit ?? 0;
   const many = lesson.units.length > 1;
 
   /** One unit's places. In a lesson of many units they sit, shorter, under the unit's row. */
@@ -241,25 +245,30 @@ export function Outline({ lesson, position, onGo, entries, currentKey, progress 
             ))}
           </div>
           <ol className="outline__list outline__list--units">
-            {lesson.units.map((unit, u) =>
+            {lesson.units.map((unit, u) => {
               // A filter never hides the unit the learner is in.
-              filter !== 'all' && unit.group !== filter && u !== current ? null : (
+              if (filter !== 'all' && unit.group !== filter && u !== current) return null;
+              const state = u === current ? 'current' : seen.has(u) ? 'seen' : undefined;
+              return (
                 <li key={unit.id}>
                   <button
                     type="button"
                     className="outline__unit"
-                    aria-expanded={u === current}
-                    data-state={u < current ? 'done' : u === current ? 'current' : undefined}
+                    aria-current={state === 'current' ? 'true' : undefined}
+                    data-state={state}
                     onClick={() => onGo(positionOf(lesson, u, 'overview'))}
                   >
-                    <span className="outline__unit-n">{u < current ? '✓' : String(u + 1).padStart(2, '0')}</span>{' '}
+                    <span className="outline__unit-n" aria-hidden="true">
+                      {state === 'seen' ? '✓' : String(u + 1).padStart(2, '0')}
+                    </span>{' '}
                     <span className="outline__unit-name">{unit.name}</span>{' '}
                     <span className="outline__unit-purpose">{unit.purpose}</span>
+                    {state === 'seen' ? <span className="sr-only">, seen</span> : null}
                   </button>
-                  {u === current ? <ol className="outline__parts">{parts(u)}</ol> : null}
+                  {state === 'current' ? <ol className="outline__parts">{parts(u)}</ol> : null}
                 </li>
-              ),
-            )}
+              );
+            })}
           </ol>
         </>
       ) : (

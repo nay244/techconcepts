@@ -1,12 +1,16 @@
 import type { Dispatch } from 'react';
-import type { Lesson } from '../content/schema';
+import type { Lesson, Unit } from '../content/schema';
 import { playLabel, SPEEDS, type PlaybackAction, type PlaybackState } from '../engine/playback';
-import { slotsFor } from '../engine/timeline';
+import type { Position } from '../engine/timeline';
 
 export interface PlaybackControlsProps {
   lesson: Lesson;
   state: PlaybackState;
   dispatch: Dispatch<PlaybackAction>;
+  /** The unit at the current position. */
+  unit: Unit;
+  /** The lesson's last position (its last unit's Practice). */
+  last: Position;
 }
 
 const ICON = {
@@ -29,10 +33,14 @@ function Icon({ name }: { name: keyof typeof ICON }) {
  * speed button shows the speed and names the next one; Play's words come from
  * `playLabel` (Play, Pause, Replay or Watch again). Presentational: the console
  * owns the keyboard shortcuts.
+ *
+ * Previous and Next say `aria-disabled` at either end rather than `disabled`:
+ * a disabled button drops its focus to the page, and these are pressed again
+ * and again, so the one in hand keeps the focus and simply does nothing.
  */
-export function PlaybackControls({ lesson, state, dispatch }: PlaybackControlsProps) {
-  const slots = slotsFor(lesson);
-  const unit = lesson.units[slots[state.position]?.unit ?? 0]!;
+export function PlaybackControls({ lesson, state, dispatch, unit, last }: PlaybackControlsProps) {
+  const atStart = state.position === 0;
+  const atEnd = state.position >= last;
   const label = playLabel(lesson, state);
   const nextSpeed = SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length];
   const speedLabel = `Speed ${state.speed}×. Click for ${nextSpeed}×`;
@@ -53,8 +61,10 @@ export function PlaybackControls({ lesson, state, dispatch }: PlaybackControlsPr
         className="cbtn"
         aria-label="Previous step"
         title="Previous step"
-        disabled={state.position === 0}
-        onClick={() => dispatch({ type: 'prev' })}
+        aria-disabled={atStart}
+        onClick={() => {
+          if (!atStart) dispatch({ type: 'prev' });
+        }}
       >
         <Icon name="prev" />
       </button>
@@ -73,8 +83,10 @@ export function PlaybackControls({ lesson, state, dispatch }: PlaybackControlsPr
         className="cbtn"
         aria-label="Next step"
         title="Next step"
-        disabled={state.position === slots.length - 1}
-        onClick={() => dispatch({ type: 'next' })}
+        aria-disabled={atEnd}
+        onClick={() => {
+          if (!atEnd) dispatch({ type: 'next' });
+        }}
       >
         <Icon name="next" />
       </button>

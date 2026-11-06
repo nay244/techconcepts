@@ -1,11 +1,11 @@
-import { useSyncExternalStore } from 'react';
 import type { LessonSummary } from '../content/registry';
-import type { Lesson } from '../content/schema';
+import type { Lesson, Unit } from '../content/schema';
 import { holding, type PlaybackState } from '../engine/playback';
-import { positionOf, slotsFor } from '../engine/timeline';
+import { positionOf, type Slot } from '../engine/timeline';
 import { createSafeStorage } from '../lib/storage';
-import { THEME_KEY, applyTheme, readAppliedTheme, type Theme } from '../lib/theme';
+import { THEME_KEY, applyTheme, useTheme, type Theme } from '../lib/theme';
 import type { ProgressData } from '../progress/store';
+import { placeLabel } from './placeLabel';
 
 export interface TopBarProps {
   lesson: Lesson;
@@ -16,6 +16,9 @@ export interface TopBarProps {
   /** Every lesson the track plans, written or not: the "20" in "Lesson 10 of 20". */
   total: number;
   state: PlaybackState;
+  /** What the current position shows, and its unit (the console's derived state). */
+  slot: Slot;
+  unit: Unit;
   /** With less motion asked for, a hold does not fill the next step's segment. */
   reducedMotion: boolean;
   /** Every entry of the track, in order. */
@@ -40,30 +43,10 @@ export function osiHeading(layers: number[]): string | null {
 // Created at module scope, which is safe: storage is only touched when a button is pressed.
 const themeStorage = createSafeStorage();
 
-/** The root element's `data-theme` is the one source of truth, shared with the site header's toggle. */
-function subscribeTheme(onChange: () => void): () => void {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  return () => observer.disconnect();
-}
-
-/** The theme in effect: the one applied to the page, else the system's (dark when unknown). */
-function themeInEffect(): Theme {
-  const applied = readAppliedTheme();
-  if (applied !== null) return applied;
-  try {
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  } catch {
-    return 'dark';
-  }
-}
-
-/** The server cannot know the visitor's theme, so neither button is pressed until the island hydrates. */
-const noThemeOnServer = (): Theme | null => null;
-
 /** Light and Dark as one segmented switch. With no saved choice the page follows the system, and the switch shows that. */
 function ThemeSwitch() {
-  const theme = useSyncExternalStore(subscribeTheme, themeInEffect, noThemeOnServer);
+  // Null on the server, so neither button is pressed until the island hydrates.
+  const theme = useTheme();
   function choose(next: Theme): void {
     applyTheme(next);
     themeStorage.set(THEME_KEY, next);
@@ -101,10 +84,7 @@ function Logo() {
  * OSI layers; the track's progress; and the Light/Dark switch. The segments and
  * the 20 places are drawn for the eye and said in words beside them.
  */
-export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, reducedMotion, entries, currentKey, progress }: TopBarProps) {
-  const slots = slotsFor(lesson);
-  const slot = slots[state.position] ?? slots[0]!;
-  const unit = lesson.units[slot.unit]!;
+export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion, entries, currentKey, progress }: TopBarProps) {
   const start = positionOf(lesson, slot.unit, 'overview');
   const here = state.position - start;
   const hold = reducedMotion ? null : holding(state);
@@ -121,8 +101,6 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, red
   }
 
   const n = unit.steps.length;
-  const where =
-    slot.kind === 'step' ? `Step ${slot.step} of ${n}` : slot.kind === 'overview' ? 'Overview' : slot.kind === 'learn' ? 'Learn' : 'Practice';
   const osi = osiHeading(unit.osiLayers);
   const finished = new Set(
     entries.filter((e) => Object.hasOwn(progress.lessons, e.key) && progress.lessons[e.key]!.status === 'finished').map((e) => e.key),
@@ -142,7 +120,8 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, red
         <div className="topbar__crumb">
           <a href={trackUrl}>{trackTitle}</a>
           <span aria-hidden="true">{' › '}</span>
-          <h1>{lesson.title}</h1>
+          {/* A title too long for the bar is cut short with an ellipsis; the whole of it stays in the heading. */}
+          <h1 title={lesson.title}>{lesson.title}</h1>
           <em>{`Lesson ${number} of ${total}`}</em>
         </div>
         <div className="topbar__steps">
@@ -151,7 +130,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, red
             <span className="topbar__group">{segment(n + 1)}</span>
             <span className="topbar__group">{segment(n + 2)}</span>
           </span>
-          <span className="topbar__where">{where}</span>
+          <span className="topbar__where">{placeLabel(unit, slot)}</span>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { buildEntries } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
+import { slotsFor } from '../engine/timeline';
 import { emptyProgress } from '../progress/store';
 import { Outline } from './Outline';
 
@@ -19,11 +20,14 @@ const TWO: Lesson = validateLesson(
 ).lesson;
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, 'how-the-internet-works': TWO });
 
-function show(lesson: Lesson, position: number, onGo = vi.fn()) {
+function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] = []) {
+  const current = slotsFor(lesson)[position]!.unit;
   return render(
     <Outline
       lesson={lesson}
       position={position}
+      current={current}
+      seen={new Set([...seen, current])}
       onGo={onGo}
       entries={entries}
       currentKey={`networking/${lesson.slug}`}
@@ -65,10 +69,12 @@ test('a multi-unit lesson shows protocol rows with filters, and the current one 
   expect(within(filters).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 
   // One row per unit, with its name and purpose. The current one is open, showing its parts.
-  const alpha = item(/^01\s*Alpha/);
+  const alpha = item(/^Alpha/);
   expect(alpha).toHaveTextContent('How a router remembers who it has heard from.');
-  expect(alpha).toHaveAttribute('aria-expanded', 'true');
-  expect(item(/^02\s*Beta/)).toHaveAttribute('aria-expanded', 'false');
+  // A row goes somewhere, so it says which one is current rather than expanded.
+  expect(alpha).toHaveAttribute('aria-current', 'true');
+  expect(alpha).not.toHaveAttribute('aria-expanded');
+  expect(item(/^Beta/)).not.toHaveAttribute('aria-current');
   const parts = alpha.closest('li')!.querySelector('ol')!;
   expect(within(parts).getByText('Watch · 5')).toBeInTheDocument();
   expect(within(parts).getByText('Learn & Practice')).toBeInTheDocument();
@@ -89,24 +95,34 @@ test('a multi-unit lesson shows protocol rows with filters, and the current one 
   expect(within(filters).getByRole('button', { name: 'Core' })).toHaveAttribute('aria-pressed', 'true');
   expect(screen.queryByRole('button', { name: /Beta/ })).toBeNull();
   await userEvent.click(within(filters).getByRole('button', { name: 'Apps' }));
-  expect(item(/^02\s*Beta/)).toBeInTheDocument();
-  expect(item(/^01\s*Alpha/)).toBeInTheDocument();
+  expect(item(/^Beta/)).toBeInTheDocument();
+  expect(item(/^Alpha/)).toBeInTheDocument();
   await userEvent.click(within(filters).getByRole('button', { name: 'Security' }));
   expect(screen.queryByRole('button', { name: /Beta/ })).toBeNull();
-  expect(item(/^01\s*Alpha/)).toBeInTheDocument();
+  expect(item(/^Alpha/)).toBeInTheDocument();
   await userEvent.click(within(filters).getByRole('button', { name: 'All' }));
 
   // A unit's row goes to its Overview.
-  await userEvent.click(item(/^02\s*Beta/));
+  await userEvent.click(item(/^Beta/));
   expect(onGo).toHaveBeenCalledWith(8);
 });
 
-test('in a later unit, earlier units are done and the current one is open', () => {
+test('a unit the learner has opened is ticked, one only passed over is not, and the current one is open', () => {
+  const { unmount } = show(TWO, 10, vi.fn(), [0]);
+  expect(item(/Alpha/)).toHaveAttribute('data-state', 'seen');
+  // The check is for the eye; the words are for assistive tech.
+  const mark = item(/Alpha/).querySelector('.outline__unit-n')!;
+  expect(mark).toHaveTextContent('✓');
+  expect(mark).toHaveAttribute('aria-hidden', 'true');
+  expect(item(/Alpha/)).toHaveAccessibleName(/, seen$/);
+  unmount();
+
   show(TWO, 10);
-  expect(item(/Alpha/)).toHaveAttribute('data-state', 'done');
-  expect(item(/Alpha/)).toHaveTextContent('✓');
-  expect(item(/^02\s*Beta/)).toHaveAttribute('aria-expanded', 'true');
-  const parts = item(/^02\s*Beta/).closest('li')!.querySelector('ol')!;
+  expect(item(/Alpha/)).not.toHaveAttribute('data-state');
+  expect(item(/Alpha/)).toHaveTextContent(/^01/);
+  expect(item(/Alpha/)).not.toHaveAccessibleName(/seen/);
+  expect(item(/^Beta/)).toHaveAttribute('aria-current', 'true');
+  const parts = item(/^Beta/).closest('li')!.querySelector('ol')!;
   expect(within(parts).getByRole('button', { name: /Neighbor Reply/ })).toHaveAttribute('aria-current', 'step');
   expect(within(parts).getByRole('button', { name: /Neighbor Hello/ })).toHaveAttribute('data-state', 'done');
 });

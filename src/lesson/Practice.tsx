@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId } from 'react';
 import type { Question } from '../content/schema';
 import { Rich } from './Rich';
 
@@ -26,15 +26,23 @@ function splitFeedback(feedback: string, right: boolean): { lead: string | null;
   return { lead: right ? null : NOT_QUITE, rest: feedback };
 }
 
+/** Question id to the index of the option picked. */
+export type Picks = Readonly<Record<string, number>>;
+
+export interface PracticeProps {
+  questions: Question[];
+  picked: Picks;
+  onPick(questionId: string, option: number): void;
+}
+
 /**
  * Practice's questions. Picking an option shows its feedback at once and marks
- * it right or "Not quite"; another pick replaces it. The picks live in this
- * component only: nothing is scored, counted, stored or sent anywhere.
+ * it right or "Not quite"; another pick replaces it. The console holds the picks
+ * in memory, so they are still there after a visit elsewhere in the lesson, and
+ * gone on reload: nothing is scored, counted, stored or sent anywhere.
  */
-export function Practice({ questions }: { questions: Question[] }) {
+export function Practice({ questions, picked, onPick }: PracticeProps) {
   const id = useId();
-  /** Question id to the index of the option picked. */
-  const [picked, setPicked] = useState<Record<string, number>>({});
 
   return (
     <ol className="practice">
@@ -62,7 +70,7 @@ export function Practice({ questions }: { questions: Question[] }) {
                   className="practice__option"
                   aria-pressed={choice === oi}
                   data-result={choice === oi ? (right ? 'right' : 'wrong') : undefined}
-                  onClick={() => setPicked((current) => ({ ...current, [question.id]: oi }))}
+                  onClick={() => onPick(question.id, oi)}
                 >
                   <span className="practice__letter">{LETTERS[oi]}</span>
                   <span>

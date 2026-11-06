@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { usePlayback, type DurationOf } from '../engine/playback';
-import { deriveState, parseStepParam, resumeLabel, type Position } from '../engine/timeline';
+import { deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
@@ -10,6 +10,7 @@ import { Explanation } from './Explanation';
 import { LogPanel } from './LogPanel';
 import { Outline } from './Outline';
 import { PlaybackControls } from './PlaybackControls';
+import type { Picks } from './Practice';
 import { TopBar } from './TopBar';
 import { useLessonShortcuts } from './useLessonShortcuts';
 import { useReducedMotion } from './useReducedMotion';
@@ -38,6 +39,8 @@ const durationOf: DurationOf = () => 1000;
 /** What the log says while it is empty, unless the step says otherwise. */
 const IDLE = 'Nothing has happened yet. Press Play to start.';
 
+const NO_PICKS: Picks = {};
+
 function FinishedMarker() {
   return (
     <p className="explain__finished">
@@ -57,6 +60,10 @@ function FinishedMarker() {
  *
  * Keys (`useLessonShortcuts`): Space plays or pauses, → and ← move. A polite
  * live region says each step's title and, as it plays, its latest message.
+ *
+ * Two things live in memory only, for as long as the page is open: the units
+ * the learner has opened (the outline ticks them) and the Practice picks, per
+ * unit, so a visit elsewhere does not clear them.
  */
 export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, entries, figure }: LessonConsoleProps) {
   const [state, dispatch] = usePlayback(lesson, durationOf);
@@ -64,9 +71,36 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const derived = useMemo(() => deriveState(lesson, position, eventIndex), [lesson, position, eventIndex]);
   const { slot } = derived;
   const unit = lesson.units[derived.unit]!;
+  const last = useMemo(() => positionOf(lesson, lesson.units.length - 1, 'practice'), [lesson]);
   const reducedMotion = useReducedMotion();
   const trackUrl = `/${trackId}`;
   const go = useCallback((target: Position) => dispatch({ type: 'go', position: target }), [dispatch]);
+
+  // A jump whose button leaves with the old position (Resume, the end row's next unit) hands focus to the explanation.
+  const explanation = useRef<HTMLElement>(null);
+  const jump = useCallback(
+    (target: Position) => {
+      go(target);
+      explanation.current?.focus();
+    },
+    [go],
+  );
+
+  // ---------------------------------------------------------------- in memory only
+
+  const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([0]));
+  useEffect(() => {
+    setSeen((before) => (before.has(derived.unit) ? before : new Set(before).add(derived.unit)));
+  }, [derived.unit]);
+
+  /** Unit id to that unit's Practice picks. */
+  const [picks, setPicks] = useState<Readonly<Record<string, Picks>>>({});
+  const unitPicks = Object.hasOwn(picks, unit.id) ? picks[unit.id]! : NO_PICKS;
+  const pick = useCallback(
+    (questionId: string, option: number) =>
+      setPicks((before) => ({ ...before, [unit.id]: { ...(Object.hasOwn(before, unit.id) ? before[unit.id] : {}), [questionId]: option } })),
+    [unit.id],
+  );
 
   useLessonShortcuts({
     toggle: () => dispatch({ type: 'toggle' }),
@@ -87,6 +121,9 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     const target = parseStepParam(window.location.search, lesson);
     if (target === null) return;
     setDeepLinked(true);
+    // The first unit was only on screen for the server's render: the link's unit is the first one seen.
+    // (This runs after the effect above that marks the first unit, so it replaces it.)
+    setSeen(new Set([slotsFor(lesson)[target]!.unit]));
     dispatch({ type: 'go', position: target });
   }, [lesson, dispatch]);
 
@@ -101,7 +138,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   if (record?.status === 'finished') resume = <FinishedMarker />;
   else if (resumeAt !== null) {
     resume = (
-      <button type="button" className="cbtn explain__resume" onClick={() => go(resumeAt)}>
+      <button type="button" className="cbtn explain__resume" onClick={() => jump(resumeAt)}>
         {`Resume at ${resumeLabel(lesson, resumeAt)}`}
       </button>
     );
@@ -126,12 +163,23 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         number={entry.number}
         total={total}
         state={state}
+        slot={slot}
+        unit={unit}
         reducedMotion={reducedMotion}
         entries={entries}
         currentKey={entry.key}
         progress={progress.data}
       />
-      <Outline lesson={lesson} position={position} onGo={go} entries={entries} currentKey={entry.key} progress={progress.data} />
+      <Outline
+        lesson={lesson}
+        position={position}
+        current={derived.unit}
+        seen={seen}
+        onGo={go}
+        entries={entries}
+        currentKey={entry.key}
+        progress={progress.data}
+      />
       <main id="main" className="console__main">
         {/* The scene host (Task 9) replaces this box's contents. */}
         <div className="console__panel console__stage">
@@ -140,6 +188,11 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         <Explanation
           lesson={lesson}
           position={position}
+          slot={slot}
+          unit={unit}
+          panelRef={explanation}
+          picked={unitPicks}
+          onPick={pick}
           resume={resume}
           next={next}
           number={entry.number}
@@ -152,7 +205,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           rows={derived.log}
           idle={idle}
           fresh={fresh?.eventId ?? null}
-          controls={<PlaybackControls lesson={lesson} state={state} dispatch={dispatch} />}
+          controls={<PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} last={last} />}
         />
       </main>
       <p className="sr-only" aria-live="polite" data-announce="">

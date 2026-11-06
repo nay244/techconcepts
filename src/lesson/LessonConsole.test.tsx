@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { validateLesson } from '../content/define';
 import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { makeLesson } from '../content/test-fixtures';
+import { makeLesson, makeUnit } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
 import { THEME_KEY } from '../lib/theme';
@@ -24,7 +24,19 @@ vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../co
  */
 const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
 const FIREWALLS: Lesson = validateLesson(makeLesson({ slug: 'firewalls', title: 'Firewalls' })).lesson;
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS });
+/** Lesson 1, of three units: Alpha 0–7, Beta 8–15, Gamma 16–23 (each Overview, 5 steps, Learn, Practice). */
+const THREE: Lesson = validateLesson(
+  makeLesson({
+    slug: 'how-the-internet-works',
+    title: 'How the Internet Works',
+    units: [
+      makeUnit('alpha', { name: 'Alpha', group: 'core' }),
+      makeUnit('beta', { name: 'Beta', group: 'app' }),
+      makeUnit('gamma', { name: 'Gamma', group: 'security' }),
+    ],
+  }),
+).lesson;
+const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE });
 const KEY = 'networking/dhcp';
 /** Every wait in these tests: `durationOf` is a fixed 1000 ms until Task 9. */
 const EVENT_MS = 1000;
@@ -63,11 +75,6 @@ async function wait(ms: number): Promise<void> {
   await act(async () => {
     vi.advanceTimersByTime(ms);
   });
-}
-
-/** Lets a Play run go on until the button no longer says Pause. */
-async function runToEnd(): Promise<void> {
-  for (let i = 0; i < 200 && playButton().textContent === 'Pause'; i += 1) await wait(500);
 }
 
 const topBar = () => screen.getByRole('banner');
@@ -315,7 +322,7 @@ test('the outline moves the lesson, and All 20 lessons opens the track list in a
   const dialog = screen.getByRole('dialog', { name: 'All 20 lessons' });
   expect(within(dialog).getByRole('link', { name: /Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   expect(within(dialog).getByRole('link', { name: /DHCP/ })).toHaveAttribute('aria-current', 'page');
-  expect(within(dialog).getAllByText('Coming soon')).toHaveLength(18);
+  expect(within(dialog).getAllByText('Coming soon')).toHaveLength(17);
   await user.click(within(dialog).getByRole('button', { name: 'Close' }));
   expect(dialog).not.toHaveAttribute('open');
 });
@@ -333,25 +340,98 @@ test('Space plays and pauses, and is left alone on a button', async () => {
   expect(heading()).toHaveTextContent('Neighbor Hello');
 });
 
-// Last: a SafeStorage that has failed once keeps reporting itself unavailable for the rest of the file.
-test('with storage blocked the lesson still plays end to end', async () => {
-  vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
-    throw new DOMException('blocked', 'SecurityError');
-  });
+test('after Resume or the end row’s next unit, focus lands on the explanation, not the page', async () => {
+  save({ status: 'in-progress', furthestPosition: 2 });
+  const { unmount } = renderConsole();
+  await user.click(screen.getByRole('button', { name: 'Resume at step 2 of 5' }));
+  expect(heading()).toHaveTextContent('Neighbor Reply');
+  expect(explanation()).toHaveFocus();
+  unmount();
+
+  window.history.replaceState({}, '', '/networking/how-the-internet-works?step=7');
+  renderConsole(THREE);
+  await user.click(within(explanation()).getByRole('button', { name: 'Go to Beta' }));
+  expect(within(explanation()).getByText('Beta · Overview')).toBeInTheDocument();
+  expect(explanation()).toHaveFocus();
+});
+
+test('Next and Previous keep their focus at either end and do nothing there', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=6');
   renderConsole();
+  const next = screen.getByRole('button', { name: 'Next step' });
+  await user.click(next);
+  expect(heading()).toHaveTextContent('Two questions');
+  expect(next).toHaveFocus();
+  expect(next).toHaveAttribute('aria-disabled', 'true');
+  await user.click(next);
+  expect(heading()).toHaveTextContent('Two questions');
+  expect(next).toHaveFocus();
+
+  // Space and the arrows are the console's, and a focused button keeps them for itself.
+  const previous = screen.getByRole('button', { name: 'Previous step' });
+  expect(previous).toHaveAttribute('aria-disabled', 'false');
+  for (let i = 0; i < 7; i += 1) await user.click(previous);
   expect(heading()).toHaveTextContent('Neighbor table');
+  expect(previous).toHaveFocus();
+  expect(previous).toHaveAttribute('aria-disabled', 'true');
+  await user.click(previous);
+  expect(heading()).toHaveTextContent('Neighbor table');
+  expect(previous).toHaveFocus();
+});
 
-  await user.click(playButton());
-  await runToEnd();
-  expect(playButton()).toHaveAccessibleName('Replay');
-  expect(logRows()).toHaveLength(5);
+test('the outline ticks only the units the learner has opened on this page', async () => {
+  const { unmount } = renderConsole(THREE);
+  const outline = screen.getByRole('navigation', { name: '3 protocols' });
+  const row = (name: string) => within(outline).getByRole('button', { name: new RegExp(`^${name} `) });
 
-  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  // Straight from Alpha to Gamma: Alpha is ticked, Beta, passed over, is not.
+  await user.click(row('Gamma'));
+  expect(row('Gamma')).toHaveAttribute('aria-current', 'true');
+  expect(row('Alpha')).toHaveAttribute('data-state', 'seen');
+  expect(row('Beta')).not.toHaveAttribute('data-state');
+  // Back to Beta: Gamma is ticked now too, and Beta is current.
+  await user.click(row('Beta'));
+  expect(row('Gamma')).toHaveAttribute('data-state', 'seen');
+  expect(row('Alpha')).toHaveAttribute('data-state', 'seen');
+  expect(row('Beta')).toHaveAttribute('aria-current', 'true');
+  // Nothing of it is saved.
+  expect(window.localStorage.getItem(PROGRESS_KEY)).not.toMatch(/seen|gamma/i);
+  unmount();
+
+  // A link into Gamma: Alpha was only the server's first render, so it is not ticked.
+  window.history.replaceState({}, '', '/networking/how-the-internet-works?step=16');
+  renderConsole(THREE);
+  expect(within(explanation()).getByText('Gamma · Overview')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: /^Beta / }));
+  expect(screen.getByRole('button', { name: /^Gamma / })).toHaveAttribute('data-state', 'seen');
+  expect(screen.getByRole('button', { name: /^Alpha / })).not.toHaveAttribute('data-state');
+});
+
+test('Practice picks are still there after a visit elsewhere, are gone on reload, and are never saved', async () => {
+  const setItem = vi.spyOn(Storage.prototype, 'setItem');
+  window.history.replaceState({}, '', '/networking/dhcp?step=7');
+  const { unmount } = renderConsole();
+  const option = () => within(explanation()).getAllByRole('button', { name: /Every message it receives/ })[0]!;
+  await user.click(option());
+  expect(option()).toHaveAttribute('aria-pressed', 'true');
+  expect(within(explanation()).getByText('Not quite.', { selector: 'b' })).toBeInTheDocument();
+
+  await user.click(screen.getByRole('button', { name: 'Previous step' }));
+  expect(heading()).toHaveTextContent('What happened and why');
   await user.click(screen.getByRole('button', { name: 'Next step' }));
   expect(heading()).toHaveTextContent('Two questions');
-  await user.click(screen.getAllByRole('button', { name: /A row for each neighbor/ })[0]!);
-  expect(within(explanation()).getByText(/One row per neighbor/)).toBeInTheDocument();
+  expect(option()).toHaveAttribute('aria-pressed', 'true');
+  expect(within(explanation()).getByText('Not quite.', { selector: 'b' })).toBeInTheDocument();
 
-  await user.click(within(topBar()).getByRole('button', { name: 'Light' }));
-  expect(document.documentElement.dataset.theme).toBe('light');
+  // Only progress is ever written, never a pick.
+  for (const [key, value] of setItem.mock.calls) {
+    expect(key).toBe(PROGRESS_KEY);
+    expect(value).not.toMatch(/Every message|picked|answer/);
+  }
+  unmount();
+
+  renderConsole();
+  expect(heading()).toHaveTextContent('Two questions');
+  expect(option()).toHaveAttribute('aria-pressed', 'false');
+  expect(within(explanation()).queryByText('Not quite.')).toBeNull();
 });

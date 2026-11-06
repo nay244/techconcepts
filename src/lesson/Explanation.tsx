@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Source, Unit } from '../content/schema';
-import { positionOf, slotsFor, type Position, type Slot } from '../engine/timeline';
+import { positionOf, type Position, type Slot } from '../engine/timeline';
 import { wrapAtDots } from '../lib/wrapAtDots';
-import { Practice, questionsTitle } from './Practice';
+import { placeLabel } from './placeLabel';
+import { Practice, questionsTitle, type Picks } from './Practice';
 import { Rich } from './Rich';
 
 /** Learn's title and sub line; the outline lists Learn by them too. */
@@ -13,6 +14,9 @@ export const LEARN_SUB = 'In plain words, then the names';
 export interface ExplanationProps {
   lesson: Lesson;
   position: Position;
+  /** What the position shows, and its unit (the console's derived state). */
+  slot: Slot;
+  unit: Unit;
   /** Shown on the lesson's first Overview: the "Resume at …" button or the "Finished" marker. */
   resume?: ReactNode;
   /** The next ready lesson in the track, or null when this is the last one. */
@@ -22,18 +26,16 @@ export interface ExplanationProps {
   total: number;
   trackUrl: string;
   onGo(position: Position): void;
+  /** The current unit's Practice picks, which the console keeps in memory. */
+  picked: Picks;
+  onPick(questionId: string, option: number): void;
+  /** The panel itself, so the console can move focus to it after a jump. */
+  panelRef?: RefObject<HTMLElement | null>;
 }
 
 /** 'Watch · Step 2 of 5', 'Overview'; in a lesson of many units the unit's name leads: 'DNS · Step 2 of 5'. */
 function kicker(lesson: Lesson, unit: Unit, slot: Slot): string {
-  const where =
-    slot.kind === 'step'
-      ? `Step ${slot.step} of ${unit.steps.length}`
-      : slot.kind === 'overview'
-        ? 'Overview'
-        : slot.kind === 'learn'
-          ? 'Learn'
-          : 'Practice';
+  const where = placeLabel(unit, slot);
   if (lesson.units.length > 1) return `${unit.name} · ${where}`;
   return slot.kind === 'step' ? `Watch · ${where}` : where;
 }
@@ -116,15 +118,17 @@ function asClause(purpose: string): string {
   return /[.!?]$/.test(clause) ? clause : `${clause}.`;
 }
 
-interface EndRowProps extends Pick<ExplanationProps, 'lesson' | 'next' | 'number' | 'total' | 'trackUrl' | 'onGo'> {
+interface EndRowProps extends Pick<ExplanationProps, 'lesson' | 'next' | 'number' | 'total' | 'trackUrl'> {
   unit: number;
+  /** Goes to the next unit; the button that did it leaves with the old position. */
+  onJump(position: Position): void;
 }
 
 /**
  * The way on from Practice: the next unit in a lesson of many, else the next
  * ready lesson in the track, else back to the track.
  */
-function EndRow({ lesson, unit, next, number, total, trackUrl, onGo }: EndRowProps) {
+function EndRow({ lesson, unit, next, number, total, trackUrl, onJump }: EndRowProps) {
   const following = lesson.units[unit + 1];
   if (following !== undefined) {
     return (
@@ -132,7 +136,7 @@ function EndRow({ lesson, unit, next, number, total, trackUrl, onGo }: EndRowPro
         <p>
           Next: <b>{following.name}</b>, {asClause(following.purpose)}
         </p>
-        <button type="button" className="cbtn" onClick={() => onGo(positionOf(lesson, unit + 1, 'overview'))}>
+        <button type="button" className="cbtn" onClick={() => onJump(positionOf(lesson, unit + 1, 'overview'))}>
           {`Go to ${following.name}`}
         </button>
       </div>
@@ -169,16 +173,21 @@ function EndRow({ lesson, unit, next, number, total, trackUrl, onGo }: EndRowPro
  * new position. Go deeper is closed until the learner opens it, and stays as
  * they left it from one position to the next.
  */
-export function Explanation({ lesson, position, resume, next, number, total, trackUrl, onGo }: ExplanationProps) {
-  const slots = slotsFor(lesson);
-  const slot = slots[Math.min(Math.max(position, 0), slots.length - 1)]!;
-  const unit = lesson.units[slot.unit]!;
+export function Explanation(props: ExplanationProps) {
+  const { lesson, position, slot, unit, resume, next, number, total, trackUrl, onGo, picked, onPick, panelRef } = props;
   const [deeperOpen, setDeeperOpen] = useState(false);
 
-  const panel = useRef<HTMLElement>(null);
+  const ownPanel = useRef<HTMLElement>(null);
+  const panel = panelRef ?? ownPanel;
   useEffect(() => {
     if (panel.current !== null) panel.current.scrollTop = 0;
-  }, [position]);
+  }, [panel, position]);
+
+  /** After the end row's jump, focus lands on this panel, not on the page. */
+  function jump(target: Position): void {
+    onGo(target);
+    panel.current?.focus();
+  }
 
   let body: ReactNode;
   if (slot.kind === 'overview') {
@@ -271,9 +280,8 @@ export function Explanation({ lesson, position, resume, next, number, total, tra
       <>
         <h2 className="explain__title">{questionsTitle(unit.practice.length)}</h2>
         <p className="explain__sub">Just for you. Nothing is scored or saved.</p>
-        {/* A new unit's questions start unanswered. */}
-        <Practice key={unit.id} questions={unit.practice} />
-        <EndRow lesson={lesson} unit={slot.unit} next={next} number={number} total={total} trackUrl={trackUrl} onGo={onGo} />
+        <Practice questions={unit.practice} picked={picked} onPick={onPick} />
+        <EndRow lesson={lesson} unit={slot.unit} next={next} number={number} total={total} trackUrl={trackUrl} onJump={jump} />
       </>
     );
   }

@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from 'react';
+
 export type Theme = 'light' | 'dark';
 
 export const THEME_KEY = 'techconcepts:theme';
@@ -15,6 +17,36 @@ export function applyTheme(theme: Theme): void {
 export function readAppliedTheme(): Theme | null {
   const value = document.documentElement.dataset.theme;
   return isTheme(value) ? value : null;
+}
+
+/** The root element's `data-theme` is the one source of truth; every theme control subscribes to it. */
+function subscribeTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  return () => observer.disconnect();
+}
+
+/** The theme in effect: the one applied to the page, else the system's (dark when unknown). */
+function themeInEffect(): Theme {
+  const applied = readAppliedTheme();
+  if (applied !== null) return applied;
+  try {
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+/** The server cannot know the visitor's theme. */
+const noThemeOnServer = (): Theme | null => null;
+
+/**
+ * The theme in effect, kept in step with the page however it changes: the
+ * applied `data-theme`, else the system preference (so with no saved choice the
+ * page follows the OS). Null while server rendering and hydrating.
+ */
+export function useTheme(): Theme | null {
+  return useSyncExternalStore(subscribeTheme, themeInEffect, noThemeOnServer);
 }
 
 /**

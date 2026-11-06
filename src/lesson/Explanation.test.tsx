@@ -7,6 +7,7 @@ import { buildEntries, neighbors } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
+import { slotsFor } from '../engine/timeline';
 import { Explanation } from './Explanation';
 import { Rich } from './Rich';
 
@@ -21,10 +22,15 @@ const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS
 
 function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
   const entry = entries.find((e) => e.slug === lesson.slug)!;
+  const slot = slotsFor(lesson)[position]!;
   return render(
     <Explanation
       lesson={lesson}
       position={position}
+      slot={slot}
+      unit={lesson.units[slot.unit]!}
+      picked={{}}
+      onPick={vi.fn()}
       next={neighbors(entries, lesson.slug).next}
       number={entry.number}
       total={entries.length}

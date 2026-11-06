@@ -1,12 +1,19 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Question } from '../content/schema';
 import { makeUnit } from '../content/test-fixtures';
-import { Practice } from './Practice';
+import { Practice, type Picks } from './Practice';
 
 const questions = makeUnit().practice as Question[];
+
+/** Practice with its picks held the way the console holds them: in memory. */
+function Harness({ questions: qs }: { questions: Question[] }) {
+  const [picked, setPicked] = useState<Picks>({});
+  return <Practice questions={qs} picked={picked} onPick={(id, option) => setPicked((p) => ({ ...p, [id]: option }))} />;
+}
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -21,7 +28,7 @@ const question = (prompt: RegExp) => screen.getByText(prompt).closest('li')!;
 
 test('Practice shows the chosen option’s feedback, and nothing is saved', async () => {
   const setItem = vi.spyOn(Storage.prototype, 'setItem');
-  const { container } = render(<Practice questions={questions} />);
+  const { container } = render(<Harness questions={questions} />);
   const q1 = question(/^What does the router store/);
   const options = within(q1).getAllByRole('button');
   expect(options.map((o) => o.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false']);
@@ -61,7 +68,7 @@ test('a wrong pick always reads Not quite, even when its feedback does not start
       answer: 1,
     },
   ];
-  render(<Practice questions={custom} />);
+  render(<Harness questions={custom} />);
   await userEvent.click(screen.getByRole('button', { name: /The phone/ }));
   expect(screen.getByText('Not quite.', { selector: 'b' })).toBeInTheDocument();
   expect(screen.getByText(/The phone only uses addresses\./)).toBeInTheDocument();

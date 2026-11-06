@@ -1,6 +1,5 @@
-import { useSyncExternalStore } from 'react';
 import { createSafeStorage } from '../lib/storage';
-import { THEME_KEY, applyTheme, readAppliedTheme } from '../lib/theme';
+import { THEME_KEY, applyTheme, useTheme } from '../lib/theme';
 import type { Theme } from '../lib/theme';
 import './ThemeToggle.css';
 
@@ -8,37 +7,16 @@ import './ThemeToggle.css';
 // touched when the button is pressed, never while rendering on the server.
 const storage = createSafeStorage();
 
-/**
- * The root element's `data-theme` is the single source of truth. Every toggle
- * on the page subscribes to it, so they stay in sync however the theme changed.
- */
-function subscribe(onChange: () => void): () => void {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  return () => observer.disconnect();
-}
-
-/** The theme in force: the one applied to the page, else the system preference (dark when unknown). */
-function currentTheme(): Theme {
-  const applied = readAppliedTheme();
-  if (applied) return applied;
-  try {
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-  } catch {
-    return 'dark';
-  }
-}
-
-// The server cannot know the visitor's theme. The icon is keyed to the root
-// attribute in ThemeToggle.css, so it is right before this island hydrates.
-const getServerSnapshot = (): Theme | null => null;
+// The server cannot know the visitor's theme (useTheme gives null until hydrated). The icon is
+// keyed to the root attribute in ThemeToggle.css, so it is right before this island hydrates.
 
 /** The mockups' 40 x 40 icon button: a moon in the light theme, a sun in the dark one. */
 export default function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, currentTheme, getServerSnapshot);
+  const theme = useTheme();
 
   function flip(): void {
-    const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark';
+    // Unknown counts as dark, as it does for the page.
+    const next: Theme = theme === 'light' ? 'dark' : 'light';
     applyTheme(next);
     storage.set(THEME_KEY, next);
   }

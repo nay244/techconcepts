@@ -10,9 +10,12 @@
    names map onto them like this: panel → --card, panel-2 → --tile, line →
    --line-strong, line-soft → --line, here-tint → --here-soft, iso-line →
    --accent, and text on marigold or on the accent uses the page's --bg.
-   Marigold (--here) means only "you are here": the current step, segment,
-   lesson and outline place. Blocked and lost things use --blocked, and say so
-   in words too. */
+   Marigold (--here) means only "you are here": the current step and its
+   segment (and the next one filling during a hold), the current lesson and
+   outline place, the kicker that names the place, and the log row that has
+   just played. Everything else that needs a colour, the Play button and the
+   hook's rule among them, takes the accent. Blocked and lost things use
+   --blocked, and say so in words too. */
 
 .console {
   display: grid;
@@ -99,11 +102,13 @@
 .cbtn:active {
   transform: scale(0.97);
 }
-.cbtn:disabled {
+.cbtn:disabled,
+.cbtn[aria-disabled='true'] {
   opacity: 0.4;
   cursor: default;
 }
-.cbtn:disabled:active {
+.cbtn:disabled:active,
+.cbtn[aria-disabled='true']:active {
   transform: none;
 }
 .cbtn svg {
@@ -147,28 +152,45 @@
   font: 400 12px/1.2 var(--sans);
 }
 
+/* It gives way first when the bar is short of room, down to 340px, so the
+   blocks after it (the theme switch last) are never pushed out of sight. */
 .topbar__now {
   gap: 6px;
   min-width: 340px;
 }
+/* One line: the track, the lesson's title, which ends in an ellipsis when it
+   has to (its whole text stays in the heading and its title), and the number. */
 .topbar__crumb {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
   color: var(--ink-strong);
   font: 500 14px/1.2 var(--sans);
   white-space: nowrap;
+}
+.topbar__crumb > * {
+  flex: none;
 }
 .topbar__crumb a,
 .topbar__crumb > span {
   color: var(--muted);
   text-decoration: none;
 }
+/* Its spaces are its own; a flex item would drop them. */
+.topbar__crumb > span {
+  white-space: pre;
+}
 .topbar__crumb a:hover {
   text-decoration: underline;
 }
-.topbar__crumb h1 {
-  display: inline;
+.topbar__crumb > h1 {
+  flex: 0 1 auto;
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   color: inherit;
   font: inherit;
+  text-overflow: ellipsis;
   /* The site's headings balance their lines, which would let the title wrap here. */
   white-space: nowrap;
 }
@@ -466,7 +488,7 @@
 .outline__unit[data-state='current'] .outline__unit-n {
   color: var(--here);
 }
-.outline__unit[data-state='done'] .outline__unit-n {
+.outline__unit[data-state='seen'] .outline__unit-n {
   color: var(--allowed);
 }
 .outline__unit-name {
@@ -650,7 +672,7 @@ a.outline__lesson:hover {
 .explain__hook {
   margin-bottom: 22px;
   padding-inline-start: 14px;
-  border-inline-start: 3px solid var(--here);
+  border-inline-start: 3px solid var(--accent);
   color: var(--ink-strong);
 }
 .explain__resume {
@@ -938,8 +960,9 @@ a.outline__lesson:hover {
   color: var(--ink);
   font: 400 14px/1.5 var(--sans);
 }
+/* Empty, it takes no room but stays in the accessibility tree, so the first pick is announced. */
 .practice__feedback:empty {
-  display: none;
+  margin: 0;
 }
 .practice__feedback b {
   color: var(--allowed);
@@ -1002,8 +1025,8 @@ a.outline__lesson:hover {
 .cbtn--play {
   min-width: 112px;
   padding: 0 16px;
-  border-color: var(--here);
-  background: var(--here);
+  border-color: var(--accent);
+  background: var(--accent);
   color: var(--bg);
   font: 700 13px/1 var(--mono);
   letter-spacing: 0.06em;
