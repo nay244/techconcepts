@@ -426,28 +426,34 @@ test('a table event marks its row as a miss only when it adds or changes that ro
 test('a panel table’s key column is one of its columns, and a rules panel’s two tables differ', () => {
   const key = makeLesson();
   (unit(key).scene.panel as any).table.keyColumn = 'vlan';
-  expect(joined(key)).toMatch(/key column "vlan"/);
+  expect(joined(key)).toMatch(/table "t" key column "vlan" is not one of its columns\./);
   const same = withRulesPanel();
   (unit(same).scene.panel as any).conns.id = 'rules';
   expect(joined(same)).toMatch(/Duplicate table id "rules"/);
 });
 
-test('a key no column shows is a field every row of its table carries', () => {
-  // When no shown column tells the rows apart, the key is a field of each row that no column shows.
-  const hidden = (rows: Record<string, string>[], initialRows: Record<string, string>[] = []) => {
+test('a table that says its key is hidden keys on a field every row carries and no column shows', () => {
+  // For a table whose shown columns cannot tell its rows apart. Rows here start in the table or come with step 3.
+  type Fields = { keyColumn: string; hiddenKey?: unknown; rows?: Record<string, string>[]; initialRows?: Record<string, string>[] };
+  const keyed = ({ rows = [], ...def }: Fields) => {
     const l = makeLesson();
-    Object.assign((unit(l).scene.panel as any).table, { keyColumn: 'id', initialRows });
+    Object.assign((unit(l).scene.panel as any).table, { initialRows: [], ...def });
     unit(l).steps[1]!.events = unit(l).steps[1]!.events.filter((e) => e.type !== 'table');
     unit(l).steps[2]!.events = rows.map((row, i) => ({ type: 'table', id: `x${i}`, table: 't', op: 'add', row, summary: 'S' }) as never);
     return joined(l);
   };
-  const row = (id: string | undefined) => ({ ...(id === undefined ? {} : { id }), ip: '192.168.1.10', mac: '00:00:5E:00:53:0A' });
-  expect(hidden([row('a'), row('b')])).toBe('');
-  expect(hidden([row('b')], [row('a')])).toBe('');
-  expect(hidden([row('a'), row(undefined)])).toMatch(/table "t" key column "id" is not one of its columns, and not a field every row carries/);
-  expect(hidden([], [row(undefined)])).toMatch(/key column "id"/);
-  // With no rows at all there is nothing to carry it, so a misspelt key still fails.
-  expect(hidden([])).toMatch(/key column "id"/);
+  const row = (id?: string) => ({ ...(id === undefined ? {} : { id }), ip: '192.168.1.10', mac: '00:00:5E:00:53:0A' });
+  expect(keyed({ keyColumn: 'id', hiddenKey: true, rows: [row('a'), row('b')] })).toBe('');
+  expect(keyed({ keyColumn: 'id', hiddenKey: true, rows: [row('b')], initialRows: [row('a')] })).toBe('');
+  // A row without it, whether a step adds it or the table starts with it.
+  expect(keyed({ keyColumn: 'id', hiddenKey: true, rows: [row('a'), row()] })).toMatch(/table "t" hides its key column "id", and not every row carries it\./);
+  expect(keyed({ keyColumn: 'id', hiddenKey: true, initialRows: [row()] })).toMatch(/table "t" hides its key column "id"/);
+  // A hidden key is not one the table shows.
+  expect(keyed({ keyColumn: 'ip', hiddenKey: true, rows: [row('a')] })).toMatch(/table "t" hides its key, and key column "ip" is one of its columns\./);
+  // Without the flag a misspelt key fails, whatever the rows carry: here every row has a field by that name.
+  expect(keyed({ keyColumn: 'id', rows: [row('a'), row('b')] })).toMatch(/table "t" key column "id" is not one of its columns\./);
+  // The flag is only ever true.
+  expect(keyed({ keyColumn: 'id', hiddenKey: false, rows: [row('a')] })).toMatch(/scene\.panel\.table\.hiddenKey/);
 });
 
 test('a column may be prose and have a width in px; any other key is still rejected', () => {

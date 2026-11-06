@@ -5,7 +5,7 @@ import type { TableDef, Unit } from '../../../schema';
  * UDP, protocol 4 of How the Internet Works’ 14. In a voice call, the laptop sends a slice of sound every 20
  * milliseconds with no handshake and no checking. Packet 5 is lost and nobody sends it again; Sam’s voice comes back
  * the same way, and the call app, not UDP, copes with the gap. Both ways count their packets from 1, so the table
- * tells its rows apart by the mockup’s own names for them, in a field no column shows.
+ * hides its key: it tells its rows apart by the mockup’s own names for them, in a field no column shows.
  *
  * The words are the approved mockup's (internet-v2.html, from FIGS/protocols-core.mjs), ported as written.
  */
@@ -23,6 +23,7 @@ const voice: TableDef = {
     { key: 'status', label: 'Status', prose: true },
   ],
   keyColumn: 'id',
+  hiddenKey: true,
   initialRows: [],
   empty: 'Nothing yet. The call hasn’t started.',
 };

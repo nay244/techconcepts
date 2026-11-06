@@ -119,21 +119,22 @@ test('each row a message brings adds a row to the table, and a row it brings aga
   });
 });
 
-test('a table whose shown columns cannot tell its rows apart is keyed on the mockup’s own names for them', () => {
-  // UDP's voice packets: both ways count from 1, so no column the table shows is unique. Its key is a field of
-  // each row that no column shows, holding the mockup's own name for the row.
-  const voice: TableDef = {
-    id: 'voice',
-    title: 'Voice packets',
-    columns: [
-      { key: 'packet', label: 'Packet' },
-      { key: 'way', label: 'Way', prose: true },
-      { key: 'status', label: 'Status', prose: true },
-    ],
-    keyColumn: 'id',
-    initialRows: [],
-    empty: 'Nothing yet.',
-  };
+/** UDP's voice packets: both ways count from 1, so no column the table shows is unique, and it says its key is hidden. */
+const voice: TableDef = {
+  id: 'voice',
+  title: 'Voice packets',
+  columns: [
+    { key: 'packet', label: 'Packet' },
+    { key: 'way', label: 'Way', prose: true },
+    { key: 'status', label: 'Status', prose: true },
+  ],
+  keyColumn: 'id',
+  hiddenKey: true,
+  initialRows: [],
+  empty: 'Nothing yet.',
+};
+
+test('a table that hides its key is keyed on the mockup’s own name for each row, in a field no column shows', () => {
   const msg = messagesFor(voice);
   const yours = msg(mockup({ rows: [{ key: 'y1', cells: ['1', 'You → server', 'Arrived'] }] }));
   const sams = msg(mockup({ rows: [{ key: 's1', cells: ['1', 'Server → you', 'Arrived'] }] }));
@@ -149,6 +150,13 @@ test('a table whose shown columns cannot tell its rows apart is keyed on the moc
   // A row it brings again changes that row, found by its own name.
   const again = msg(mockup({ rows: [{ key: 'y1', cells: ['1', 'You → server', 'Lost'], miss: true }] }));
   expect(again[1]).toMatchObject({ op: 'update', key: 'y1', row: { id: 'y1', status: 'Lost' }, miss: true });
+});
+
+test('a key no column shows needs the table to say it is hidden, and a hidden key is no column', () => {
+  // A misspelt key is not filled with the mockup's names: the table fails before any message.
+  expect(() => messagesFor({ ...pieces, keyColumn: 'pice' })).toThrow('The table "pieces" keys on "pice", which is not one of its columns.');
+  expect(() => messagesFor({ ...voice, keyColumn: 'packet' })).toThrow('The table "voice" hides its key, and "packet" is one of its columns.');
+  expect(() => messagesFor({ ...voice, hiddenKey: undefined })).toThrow(/keys on "id", which is not one of its columns/);
 });
 
 test('msg fails loudly for what the map or the table cannot show', () => {

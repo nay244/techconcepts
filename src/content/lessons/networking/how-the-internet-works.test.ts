@@ -85,8 +85,8 @@ test('the protocol files are parts of the lesson, not lessons of their own', () 
   expect(getLesson('networking', 'how-the-internet-works')).toBe(internet);
 });
 
-test('the DHCP part and lesson 10, DHCP, overlap but stay apart: each validates, and neither’s ids reach the other', () => {
-  // Their overlap stays as it is (owner: deferred). Both call their unit "dhcp", and nothing keys on a unit id
+test('the DHCP part and lesson 10, DHCP, both call their unit "dhcp", and each validates under its own lesson key and figure', () => {
+  // Their overlap stays as it is (owner: deferred). Sharing the unit id is safe because nothing keys on a unit id
   // across lessons: progress is kept by lesson key, ?step= counts positions, and Practice picks live in each
   // page's own console.
   const lesson10 = getLesson('networking', 'dhcp')!;
@@ -95,8 +95,7 @@ test('the DHCP part and lesson 10, DHCP, overlap but stay apart: each validates,
   expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({ key: 'networking/how-the-internet-works' });
   expect(() => validateLesson(lesson10)).not.toThrow();
   expect(() => validateLesson(internet)).not.toThrow();
-  expect(lesson10.units.map((u) => u.id)).toEqual(['dhcp']);
-  expect(lesson10.units[0]).not.toBe(part);
+  expect([lesson10.units.map((u) => u.id), part.id]).toEqual([['dhcp'], 'dhcp']);
   expect(lesson10.figure).toBe('dhcp');
   // The part plays on the network map, at home, with no server plate of its own.
   expect([internet.figure, part.scene.layers]).toEqual(['net-map', []]);
@@ -385,7 +384,7 @@ test('each table takes the mockup’s words: its title, who keeps it, its column
       'voice',
       'Voice packets',
       'in both directions',
-      // Both ways count from 1, so no column it shows tells its rows apart: it is keyed on a field none shows.
+      // Both ways count from 1, so no column it shows tells its rows apart: it hides its key, a field none shows.
       'id',
       [['Packet', false], ['Way', true], ['Status', true]],
       'Nothing yet. The call hasn’t started.',
@@ -432,6 +431,8 @@ test('each table takes the mockup’s words: its title, who keeps it, its column
       'Not sent yet. The letter is still on the laptop.',
     ],
   ]);
+  // Only UDP's says its key is hidden; every other table keys on a column it shows.
+  expect(tables.filter((t) => t?.hiddenKey === true).map((t) => t!.id)).toEqual(['voice']);
 });
 
 test('the log is the packet log of internet-v2.html, with its widths, and the parties are each map’s places', () => {
@@ -733,6 +734,36 @@ test('ICMP: each probe that stops on a router lights that router as it lands, an
     }
     // Hop by hop: your router, your provider's, the core, example.net's; then the ping to .99 stops at example.net's.
     expect(stops).toEqual(['TTL 1 > router', 'TTL 2 > isp', 'TTL 3 > b', 'TTL 4 > c', 'ECHO REQUEST > c']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('ICMP in motion: a probe’s router lights when the probe lands there, not as it sets off or on the way', async () => {
+  // Animation frames and the clock they read are faked with the timers, so the tween and the rest keep one time.
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame', 'performance'] });
+  try {
+    const { root, data, driver } = mountMap();
+    const p = positionOf(internet, indexOf('icmp'), 'step', 5);
+    const n = stepEvents(internet, p).findIndex((e) => e.type === 'message' && e.tag === 'TTL 3');
+    const probe = stepEvents(internet, p)[n] as MessageEvent;
+    expect(`${probe.tag} > ${probe.to}`).toBe('TTL 3 > b');
+    const lit = () => root.querySelector(`#nm-busy-${probe.to}`)!.classList.contains('on');
+    const total = netMapDriver.duration(probe, data);
+    const before = viewAt(p, n);
+    driver.show(before);
+    const played = driver.play(probe, before, { speed: 1, reducedMotion: false, signal: new AbortController().signal });
+    expect(lit()).toBe(false);
+    // Halfway through its time the probe is still on the cables: its rest at the far end is under half of it.
+    await vi.advanceTimersByTimeAsync(total / 2);
+    expect(lit()).toBe(false);
+    // By the end of its time it has landed, and its router is lit for the rest.
+    await vi.advanceTimersByTimeAsync(total / 2 - 1);
+    expect(lit()).toBe(true);
+    // Then the rest is over, a frame or so later, and the map lets go.
+    await vi.advanceTimersByTimeAsync(20);
+    await played;
+    expect(lit()).toBe(false);
   } finally {
     vi.useRealTimers();
   }

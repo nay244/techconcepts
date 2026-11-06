@@ -165,6 +165,11 @@ export const tableDefSchema = z.strictObject({
   by: text.optional(),
   columns: columnsSchema,
   keyColumn: text,
+  /**
+   * The key column is a field every row carries that no column shows, for a table whose shown columns cannot
+   * tell its rows apart (UDP's voice packets, whose two ways both count from 1). Without it the key is a column.
+   */
+  hiddenKey: z.literal(true).optional(),
   initialRows: z.array(rowSchema),
   /** What the table says while it has no rows. */
   empty: text,
