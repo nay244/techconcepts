@@ -35,6 +35,9 @@ const beacon = analyticsBeacon(analyticsToken);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
 // The page's own absolute address on the live site, in the slash-less form it is served at.
 const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
+// The one inline head script: the theme, then a `js` class on the root, so CSS can start hidden the parts a script
+// will bring in (Home's hero) from the first paint, and show them in full when there is no JavaScript.
+const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("js");`;
 ---
 
 <!doctype html>
@@ -43,7 +46,7 @@ const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {/* Before anything paints: the theme boot script, then the tokens it selects between. */}
-    <script is:inline set:html={themeBootScript} />
+    <script is:inline set:html={bootScript} />
     <style is:inline set:html={tokensToCss()} />
     <noscript><style>.theme-toggle { display: none; } :root .site-head[data-over-hero] { border-bottom-color: var(--line); background: var(--bg); }</style></noscript>
     <title>{fullTitle}</title>

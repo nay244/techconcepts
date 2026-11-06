@@ -47,6 +47,8 @@ const links = [
 </header>
 
 <script>
+  import { solidOnScroll } from '../scripts/site-head';
+
   // The narrow-screen menu. Without JavaScript the button does nothing and the panel stays hidden.
   const button = document.getElementById('menu');
   const panel = document.getElementById('menu-panel');
@@ -69,11 +71,7 @@ const links = [
 
   // Home's header turns solid once the page has scrolled a little. Without JavaScript it is solid throughout.
   const head = document.querySelector<HTMLElement>('.site-head[data-over-hero]');
-  if (head) {
-    const onScroll = () => head.classList.toggle('solid', window.scrollY > 24);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  }
+  if (head) solidOnScroll(head);
 </script>
 
 <style is:global>

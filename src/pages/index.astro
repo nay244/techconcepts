@@ -7,10 +7,10 @@ import { spot } from '../art/figures/spots';
 import { cropViewBox } from '../art/ids';
 import { CERT_TAGS, type CertTag } from '../content/certs';
 import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
-import type { Lesson } from '../content/schema';
+import type { Lesson, MessageKind } from '../content/schema';
 import { comingSoonTracks, tracks } from '../content/tracks';
-import { deriveState, positionOf, resumeLabel, slotsFor } from '../engine/timeline';
 import { knownFrom, levelLabel } from '../lib/entries';
+import { firstSentence, logSample, resumePlaces } from '../lib/home';
 import { tokens } from '../styles/tokens';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCta, { type ResumeLesson } from '../components/HeroCta';
@@ -30,45 +30,38 @@ function lessonOf(entry: AvailableSummary): Lesson {
   return lesson;
 }
 
+function readyEntry(slug: string): AvailableSummary {
+  const entry = available.find((e) => e.slug === slug);
+  if (entry === undefined) throw new Error(`Home needs the ${track.id}/${slug} lesson, and it is not ready.`);
+  return entry;
+}
+
+// Each ready lesson's last position, for both progress islands.
+const known = knownFrom(entries);
+
 // ---------- Hero: lesson 1 to start; each ready lesson can say where a returning visitor is ----------
 const start = available[0]!;
-const resumeLessons: ResumeLesson[] = available.map((entry) => {
-  const lesson = lessonOf(entry);
-  return { key: entry.key, title: entry.title, url: entry.url, places: slotsFor(lesson).map((_, p) => resumeLabel(lesson, p)) };
-});
+const resumeLessons: ResumeLesson[] = available.map((entry) => ({
+  key: entry.key,
+  title: entry.title,
+  url: entry.url,
+  places: resumePlaces(lessonOf(entry)),
+}));
 
 // ---------- The exams strip: the tags that have lessons, in their usual order ----------
 const present = new Set(available.flatMap((e) => e.certTags));
 const certTags = (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.has(tag));
 
 // ---------- The big card: the first rows of DHCP's log as it stands at Learn, the last one current ----------
-const SAMPLE_ROWS = 4;
-const dhcpEntry = available.find((e) => e.slug === 'dhcp')!;
-const dhcp = lessonOf(dhcpEntry);
-const dhcpUnit = dhcp.units[0]!;
-const dhcpLog = deriveState(dhcp, positionOf(dhcp, 0, 'learn'), 0).log;
+const dhcpEntry = readyEntry('dhcp');
+const sample = logSample(lessonOf(dhcpEntry));
+// The log sample sits on a dark console in both themes, so its tags take the dark theme's message colours.
+const tagColour = (kind: MessageKind): string => tokens.dark[kind];
 const two = (n: number): string => String(n).padStart(2, '0');
-const party = (place: string | null): string => dhcpUnit.scene.parties.find((p) => p.place === place)?.label ?? String(place);
-const stepOf = (eventId: string) => dhcpUnit.steps.findIndex((s) => s.events.some((e) => e.id === eventId)) + 1;
-const sample = dhcpLog.slice(0, SAMPLE_ROWS).map((row, i) => ({
-  n: two(row.n),
-  from: party(row.from),
-  // A broadcast goes to everyone on the network, whichever device answers it.
-  to: row.kind === 'broadcast' ? 'everyone' : party(row.to),
-  tag: row.tag ?? '',
-  // The log sample sits on a dark console in both themes, so its tags take the dark theme's message colours.
-  colour: row.kind === null ? 'inherit' : tokens.dark[row.kind],
-  plain: row.plain,
-  current: i === SAMPLE_ROWS - 1,
-}));
-const sampleStep = stepOf(dhcpLog[SAMPLE_ROWS - 1]!.eventId);
-// What comes after the sample, in the step's plain words.
-const after = dhcpLog[SAMPLE_ROWS];
-const later = after === undefined ? null : { n: two(after.n), sub: dhcpUnit.steps[stepOf(after.eventId) - 1]!.sub };
 
 // ---------- Tracks ----------
 // The card carries the first sentence of the track's description, as the mockup does.
-const networkingBlurb = track.description.slice(0, track.description.indexOf('. ') + 1) || track.description;
+const networkingBlurb = firstSentence(track.description);
 const cardCover = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
 
 // ---------- How a lesson works ----------
@@ -102,7 +95,7 @@ const EYE = parts[0].icon;
   overHero
 >
   <HeroWeb>
-    <HeroCta client:load lessons={resumeLessons} startUrl={start.url} lessonsUrl={`/${track.id}`}>
+    <HeroCta client:load lessons={resumeLessons} known={known} startUrl={start.url}>
       <h1 id="hero-title">See how technology <span class="accent">really works.</span></h1>
       <p class="lede">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
     </HeroCta>
@@ -140,29 +133,29 @@ const EYE = parts[0].icon;
         <div class="log-sample">
           <div class="log-sample-bar">
             <span id="sample-title">{dhcpEntry.title}: how a device gets its address</span>
-            <span id="sample-where">Step {sampleStep} of {dhcpEntry.stepCount}</span>
+            <span id="sample-where">Step {sample.step} of {sample.steps}</span>
           </div>
           <ol aria-labelledby="sample-title sample-where">
             {
-              sample.map((row) => (
+              sample.rows.map((row) => (
                 <li class={row.current ? 'here' : undefined} aria-current={row.current ? 'step' : undefined}>
                   <span class="num">{row.n}</span>
                   <span class="who">
                     {row.from} <span aria-hidden="true">→</span>
                     <span class="sr-only">to</span> {row.to}
                   </span>
-                  <span class="msg" style={`color: ${row.colour}`}>{row.tag}</span>
+                  {row.tag === null ? <span /> : <span class="msg" style={`color: ${tagColour(row.kind)}`}>{row.tag}</span>}
                   <span class="say">{row.plain}</span>
                 </li>
               ))
             }
             {
-              later && (
+              sample.later && (
                 <li class="later">
-                  <span class="num">{later.n}</span>
+                  <span class="num">{sample.later.n}</span>
                   <span class="who">Later</span>
                   <span />
-                  <span class="say">{later.sub}</span>
+                  <span class="say">{sample.later.sub}</span>
                 </li>
               )
             }
@@ -220,13 +213,13 @@ const EYE = parts[0].icon;
     <ul class="tracks">
       <li>
         <a class="card track ready" href={`/${track.id}`}>
-          <div class="art" set:html={cardCover('networking')} />
+          <div class="art" aria-hidden="true" set:html={cardCover('networking')} />
           <div class="body">
             <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(track.level)}</span></div>
             <h3>{track.title}</h3>
             <p>{networkingBlurb}</p>
             <div class="foot">
-              <TrackCardProgress client:load known={knownFrom(entries)} totals={totals} />
+              <TrackCardProgress client:load known={known} totals={totals} />
             </div>
           </div>
         </a>
@@ -608,9 +601,6 @@ const EYE = parts[0].icon;
     }
     .exams ul {
       gap: 10px 26px;
-    }
-    .exams a {
-      font-size: 17px;
     }
     .section {
       padding-top: 88px;

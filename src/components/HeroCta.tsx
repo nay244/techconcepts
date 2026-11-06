@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import './site.css';
@@ -8,7 +8,10 @@ export interface ResumeLesson {
   key: string;
   title: string;
   url: string;
-  /** `resumeLabel(lesson, p)` for every position p, worked out at build time: 'step 3 of 5', 'DNS, Learn'. */
+  /**
+   * Where each position is, worded to follow "You’re on": 'step 3 of 5', 'the Learn part', 'the DNS Overview'
+   * (`resumePlaces(lesson)`, worked out at build time).
+   */
   places: string[];
 }
 
@@ -16,26 +19,26 @@ const RING = 2 * Math.PI * 7.5;
 
 /**
  * The hero's eyebrow and buttons, around the page's own words (`children`). A first visit, and the server render,
- * get "Free visual lessons, no sign-up", "Start learning" and "See the lessons". A returning visitor, whose last
- * lesson has saved progress, gets where they are and "Continue <lesson>" first (launch spec §10.1).
+ * get "Free visual lessons, no sign-up", "Start learning" and "How a lesson works". Once this browser has saved
+ * progress in a ready lesson, a visitor whose last lesson is ready gets where they are in it, "You’re on <place> in
+ * <lesson>", and "Continue <lesson>" first (launch spec §10.1). `known` is the page's `knownFrom(entries)`.
  */
 export function HeroCta({
   lessons,
+  known,
   startUrl,
-  lessonsUrl,
   children,
 }: {
   lessons: ResumeLesson[];
+  known: Record<string, number>;
   startUrl: string;
-  lessonsUrl: string;
   children?: ReactNode;
 }) {
-  const known = useMemo(() => Object.fromEntries(lessons.map((l) => [l.key, l.places.length - 1])), [lessons]);
   const { ready, available, data } = useProgress(known);
-  const last = ready && available ? lessons.find((l) => l.key === data.lastLesson) : undefined;
-  const record = last !== undefined && Object.hasOwn(data.lessons, last.key) ? data.lessons[last.key] : undefined;
+  const saved = ready && available && Object.keys(data.lessons).length > 0;
+  const last = saved ? lessons.find((l) => l.key === data.lastLesson) : undefined;
 
-  if (last === undefined || record === undefined) {
+  if (last === undefined) {
     return (
       <>
         <span className="eyebrow">
@@ -49,18 +52,19 @@ export function HeroCta({
           <a className="btn btn--primary" href={startUrl}>
             Start learning
           </a>
-          <a className="btn" href={lessonsUrl}>
-            See the lessons
+          <a className="btn" href="#how">
+            How a lesson works
           </a>
         </div>
       </>
     );
   }
 
-  // A finished lesson has no step to resume: it is continued from its start, and its ring is full.
-  const position = resumePosition(data, last.key);
-  const where = position === null ? `You finished ${last.title}` : `You’re on ${last.places[position]} in ${last.title}`;
-  const share = (position ?? last.places.length - 1) / (last.places.length - 1);
+  // Where they are: the step to resume at; a finished lesson, where it ended; a lesson only opened, its Overview.
+  const record = Object.hasOwn(data.lessons, last.key) ? data.lessons[last.key] : undefined;
+  const position = record === undefined ? 0 : (resumePosition(data, last.key) ?? record.furthestPosition);
+  // `last` is in `known`: useProgress reads any other last lesson as none.
+  const share = position / known[last.key]!;
   return (
     <>
       <span className="eyebrow back">
@@ -78,11 +82,11 @@ export function HeroCta({
             strokeLinecap="round"
           />
         </svg>
-        {where}
+        {`You’re on ${last.places[position]} in ${last.title}`}
       </span>
       {children}
       <div className="actions">
-        <a className="btn btn--primary" href={position === null ? last.url : `${last.url}?step=${position}`}>
+        <a className="btn btn--primary" href={position === 0 ? last.url : `${last.url}?step=${position}`}>
           {`Continue ${last.title}`}
         </a>
         <a className="btn" href="#tracks">

@@ -43,7 +43,9 @@ function must<E extends Element>(root: ParentNode, selector: string): E {
  * the page tears itself down on its next frame.
  */
 export function startHero(root: HTMLElement): HeroControls {
-  const { DRAW, T, PATH, ZERO, TAG_DY, STEPS } = JSON.parse(root.dataset.hero ?? '') as HeroWebData;
+  const raw = root.dataset.hero;
+  if (raw === undefined) throw new Error('The hero has no data-hero.');
+  const { DRAW, T, PATH, ZERO, TAG_DY, STEPS } = JSON.parse(raw) as HeroWebData;
   const figure = must<SVGSVGElement>(root, 'svg.lm-hero');
   const drawIn = [...figure.querySelectorAll<SVGGElement>('.hin')].map((el) => ({ el, at: Number(el.dataset.in) }));
   const cart = must<SVGGElement>(figure, '[data-part="cart"]');

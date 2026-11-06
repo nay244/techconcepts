@@ -223,6 +223,21 @@ test('under reduced motion it shows the last frame and a Play it button, and pla
   expect(vi.getTimerCount()).toBe(0);
 });
 
+test('a browser with no IntersectionObserver plays it at once, and once', () => {
+  vi.stubGlobal('IntersectionObserver', undefined);
+  startHero(root);
+  expect(label()).toBe('Pause');
+  vi.advanceTimersByTime(T.end + 1000);
+  expect(caption()).toEqual(LAST);
+  expect(label()).toBe('Replay');
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+test('a hero with no data says so by name', () => {
+  delete root.dataset.hero;
+  expect(() => startHero(root)).toThrow('The hero has no data-hero.');
+});
+
 test('Play or Pause pressed before the hero is seen is not overridden when it comes into view', () => {
   startHero(root);
   button().click();

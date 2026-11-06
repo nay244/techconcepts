@@ -107,6 +107,11 @@ const ticks = HERO_WEB.STEPS.length - 2;
     height: auto;
     overflow: visible;
   }
+  /* With JavaScript the figure draws in part by part, so its parts start hidden from the first paint (BaseLayout's
+     head script sets .js); hero-web.ts then sets each one's opacity. Without JavaScript it shows in full. */
+  .js .hero .hin {
+    opacity: 0;
+  }
 
   /* The caption: what is happening now, and the button. */
   .hud {
