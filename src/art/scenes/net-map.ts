@@ -8,7 +8,7 @@
 // the parts. Its ids carry an `nm-` prefix, so they stay unique on the page.
 import type { DrawnFigure } from './types';
 import { k, G, S, L, D, n1, tubePieces, tubeSvg } from '../common.ts';
-import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAYERS } from './net-map-layers';
+import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_TAG_MAX } from './net-map-layers';
 import './net-map.css';
 
 /** What the driver reads: the figure's camera, where the broadcast ring spreads, and every route along the cables. */
@@ -27,9 +27,6 @@ export interface NetMapData {
    */
   routes: Record<string, [number, number, number][]>;
 }
-
-/** The longest tag label the map has a tag for. A longer one rides on the widest tag. */
-export const NET_MAP_TAG_MAX = 16;
 
 const PLATE_H = 7, FOOT_H = 3, FLOOR = -PLATE_H - FOOT_H;
 const IP = { x: -52, y: -44, w: 104, d: 88, r: 9 };
@@ -340,7 +337,7 @@ function buildBase() {
 // resolver's and the internet's, and the home router's, hidden until a unit's labels give it its lines.
 function baseCallouts() {
   return [
-    { anchor: [LB.x + 2, LB.y + 1, LZ + LID_H - 2], at: [-64, 30], lines: [{ cls: "nm-name", text: "Your laptop" }, { cls: "nm-addr", text: "192.168.1.100", id: `${ID}-lapAddr` }, { cls: "nm-state", text: "", id: `${ID}-lapState` }] },
+    { anchor: [LB.x + 2, LB.y + 1, LZ + LID_H - 2], at: [-64, 30], lines: [{ cls: "nm-name", text: "Your laptop" }, { cls: "nm-addr", text: NET_MAP_LAPTOP_ADDR, id: `${ID}-lapAddr` }, { cls: "nm-state", text: "", id: `${ID}-lapState` }] },
     { anchor: [CB.x + CB.w, CB.y, CB_H], at: [190, -30], align: "end", lines: [{ cls: "nm-name", text: "DNS resolver" }, { cls: "nm-sub", text: "turns names into numbers" }, { cls: "nm-addr", text: "192.0.2.53" }] },
     { anchor: [N.d[0] + 4, N.d[1] + PUCK_R, 1], at: [200, 232], align: "end", lines: [{ cls: "nm-name", text: "The internet" }, { cls: "nm-sub", text: "routers pass messages along" }] },
     { anchor: [HR.x + HR.w, HR.y + HR.d, RT], at: [-64, 262], lines: [{ cls: "nm-name", text: "Your router" }, { cls: "nm-addr", text: "", id: `${ID}-router-1` }, { cls: "nm-addr", text: "", id: `${ID}-router-2` }] },

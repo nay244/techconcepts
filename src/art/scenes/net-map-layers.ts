@@ -2,7 +2,7 @@
 // protocol and server, keyed `<protocol>:<site>`. Each is the `scene.servers` entry of its protocol in the approved
 // mockup's FIGS/protocols.mjs, protocols-core.mjs and protocols-apps.mjs, word for word. The map draws every layer,
 // hidden; a unit's `scene.layers` names the ones it shows. This file is data only, so the lesson validator can read
-// the map's places and layers (parts.ts) without drawing it.
+// the map's places and layers (parts.ts), and the driver the few facts it shares with the drawing, without drawing it.
 
 /** A line of a server's callout: its name, or an address. */
 export interface CalloutLine {
@@ -39,6 +39,12 @@ export type ServerPlate =
 
 /** The root servers, the servers for .app, and the site's own name server, as the names plate draws them. */
 export const NAME_SERVER_SITES = ['root', 'tld', 'auth'];
+
+/** The longest tag label the map has a tag for. A longer one rides on the widest tag. */
+export const NET_MAP_TAG_MAX = 16;
+
+/** The laptop's address as the map draws it, before a unit's labels or an `addr` cue change it. */
+export const NET_MAP_LAPTOP_ADDR = '192.168.1.100';
 
 /** The places every protocol's map has: home (the laptop and its router), the resolver, and the internet's five routers. */
 export const NET_MAP_BASE_PLACES = ['laptop', 'router', 'resolver', 'isp', 'a', 'b', 'c', 'd'];

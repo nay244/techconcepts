@@ -4,7 +4,7 @@ import { formatIPv4, parseIPv4 } from '../../engine/net/ipv4';
 import { subnetInfo } from '../../engine/net/subnet';
 import type { AppliedCue } from '../../engine/timeline';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
-import { animate, easeInOut } from '../motion';
+import { animate, easeInOut, wait } from '../motion';
 
 /**
  * Moves the Subnetting figure (src/art/scenes/subnet.ts), as the approved
@@ -71,20 +71,6 @@ function duration(event: SceneEvent, data: unknown): number {
   const route = argOf(cues, 'route');
   if (route !== undefined) return RIDE_MS + RIDE_MS_PER_UNIT * lengthOf(routeOf(data as SubnetSceneData, route)) + REST_MS;
   return CALC_MS + CALC_REST_MS;
-}
-
-/** Waits `ms`, or less if `signal` aborts first. Unlike a tween it also waits under reduced motion, so a step keeps its pace. */
-function wait(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal.aborted) return resolve();
-    const done = (): void => {
-      clearTimeout(timer);
-      signal.removeEventListener('abort', done);
-      resolve();
-    };
-    const timer = setTimeout(done, ms);
-    signal.addEventListener('abort', done);
-  });
 }
 
 /** A route as the tag rides it: its points, how far along each one is, and where it passes the router (or null). */

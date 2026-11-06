@@ -474,11 +474,13 @@ test('played in full, each event leaves the figure as show would after it', asyn
     played.driver.show(before);
     let done = false;
     const p = played.driver.play(event, before, options({ speed: 2 })).then(() => (done = true));
-    // The clock runs on from the last event's, so every tween starts at the time it is asked for.
-    for (let t = now; !done && t < now + 5000; t += 50) {
+    // The clock runs on from the last event's, so every tween starts at the time it is asked for. A play that is
+    // still going after 5 s (100 steps of 50 ms) is stuck, and fails here rather than timing the test out.
+    for (let step = 0, t = now; !done && step < 100; step++, t += 50) {
       frameAt(t);
       await vi.advanceTimersByTimeAsync(50);
     }
+    expect(done, `${event.id} still playing after 5 s`).toBe(true);
     await p;
     shown.driver.show(after(before, event));
     expect(looks(played.root), event.id).toBe(looks(shown.root));
@@ -525,6 +527,57 @@ test('show settles at once: the browser takes its styles while the figure’s fa
   expect(flushes).toEqual([true]);
   expect(root.hasAttribute('data-settling')).toBe(false);
   expect(mapCss).toMatch(/\.nm\[data-settling\] \* \{ transition: none !important; \}/);
+});
+
+test('a play on a signal already aborted returns without touching the figure', async () => {
+  const { root, driver } = mount();
+  const before = view({ cues: [{ cue: 'conn', arg: 'open laptop>web' }] });
+  driver.show(before);
+  const frozen = looks(root);
+  const controller = new AbortController();
+  controller.abort();
+  const events: SceneEvent[] = [
+    msg({ tag: 'GET /', over: 'TCP', cues: [{ cue: 'status', arg: 'Waiting for the page' }] }),
+    msg({ tag: 'LOST', outcome: 'dropped', dropAt: 0.5 }),
+    msg({ to: 'router', tag: 'WHO HAS?', kind: 'broadcast' }),
+    { type: 'note', id: 'note', log: {}, plain: 'A note.', cues: [{ cue: 'status', arg: 'Waiting' }] },
+  ];
+  for (const event of events) {
+    await driver.play(event, before, options({ signal: controller.signal }));
+    expect(waiting.size, event.id).toBe(0);
+    expect(vi.getTimerCount(), event.id).toBe(0);
+    expect(looks(root), event.id).toBe(frozen);
+  }
+});
+
+test('a bad router label throws before show changes anything, and leaves no data-settling behind', () => {
+  const { root, driver } = mount();
+  driver.show(view({ layers: ['http:web'], labels: { router: 'Your router\n192.168.1.1' } }));
+  const frozen = looks(root);
+  expect(() => driver.show(view({ layers: ['ftp:files'], labels: { router: 'one\ntwo\nthree' } }))).toThrow(
+    "The network map's router label has at most 2 lines, not 3.",
+  );
+  expect(root.hasAttribute('data-settling')).toBe(false);
+  expect(looks(root)).toBe(frozen);
+});
+
+test('a driver made again on a figure already painted still knows the laptop’s own address', () => {
+  const { root, driver } = mount();
+  driver.show(view({ cues: [{ cue: 'addr', arg: '10.0.0.7' }] }));
+  expect(part(root, 'nm-lapAddr').textContent).toBe('10.0.0.7');
+  driver.destroy();
+  // The console makes a new driver on the same figure, for example after a lesson's units change.
+  const again = netMapDriver.create(root, data);
+  again.show(view());
+  expect(part(root, 'nm-lapAddr').textContent).toBe('192.168.1.100');
+});
+
+test('the driver takes only types from the drawing module, so the drawing code stays out of the page', () => {
+  // Read from the project root: under jsdom import.meta.url is not a file URL.
+  const source: string = readFileSync('src/scenes/drivers/net-map.ts', 'utf8');
+  const fromDrawing = source.split('\n').filter((l) => /from '\.\.\/\.\.\/art\/scenes\/net-map'/.test(l));
+  expect(fromDrawing.length).toBeGreaterThan(0);
+  for (const l of fromDrawing) expect(l).toMatch(/^import type /);
 });
 
 test('an aborted play stops touching the figure, and show then settles it', async () => {

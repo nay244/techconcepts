@@ -1,8 +1,9 @@
+// Only types from the drawing module: its code is for the build, and stays out of the page.
 import type { NetMapData } from '../../art/scenes/net-map';
-import { NET_MAP_TAG_MAX } from '../../art/scenes/net-map';
+import { NET_MAP_LAPTOP_ADDR, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
 import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
-import { animate, easeInOut } from '../motion';
+import { animate, easeInOut, wait } from '../motion';
 
 /**
  * Moves How the Internet Works' network map (src/art/scenes/net-map.ts), as the approved mockup's `send`,
@@ -97,20 +98,6 @@ function duration(event: SceneEvent, data: unknown): number {
   return travel + paceOf(event).rest;
 }
 
-/** Waits `ms`, or less if `signal` aborts first. Unlike a tween it also waits under reduced motion, so a step keeps its pace. */
-function wait(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal.aborted) return resolve();
-    const done = (): void => {
-      clearTimeout(timer);
-      signal.removeEventListener('abort', done);
-      resolve();
-    };
-    const timer = setTimeout(done, ms);
-    signal.addEventListener('abort', done);
-  });
-}
-
 /** Quick at first, slowing to a stop: how a lost message runs out of road. */
 const easeOut = (x: number): number => 1 - (1 - x) ** 2;
 
@@ -192,7 +179,6 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   const layers = [...root.querySelectorAll<SVGGElement>('[data-layer]')];
   const status = part('nm-lapState');
   const addr = part('nm-lapAddr');
-  const drawnAddr = addr.textContent ?? '';
   const url = part('nm-url');
   const router = part('nm-router');
   const routerLines = [part('nm-router-1'), part('nm-router-2')];
@@ -240,7 +226,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     const s: MapState = {
       status: labels.laptop ?? '',
       style: '',
-      addr: labels.laptopAddr ?? drawnAddr,
+      addr: labels.laptopAddr ?? NET_MAP_LAPTOP_ADDR,
       url: labels.url ?? '',
       conns: new Map(),
       page: '',
@@ -323,20 +309,28 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     light(homeLeds, false);
   }
 
-  /** The home router's callout, from the unit's labels: hidden without them. */
-  function paintRouter(label: string | undefined): void {
-    const lines = label === undefined ? [] : label.split('\n');
+  /** The home router's callout, read from the unit's label: none without one. Throws for more lines than it has. */
+  function routerOf(label: string | undefined): string[] | null {
+    if (label === undefined) return null;
+    const lines = label.split('\n');
     if (lines.length > routerLines.length) throw new Error(`The network map's router label has at most ${routerLines.length} lines, not ${lines.length}.`);
-    if (label === undefined) router.setAttribute('display', 'none');
+    return lines;
+  }
+
+  /** The home router's callout: hidden without lines. */
+  function paintRouter(lines: string[] | null): void {
+    if (lines === null) router.setAttribute('display', 'none');
     else router.removeAttribute('display');
     routerLines.forEach((el, i) => {
-      const text = lines[i] ?? '';
+      const text = lines?.[i] ?? '';
       el.textContent = text;
       el.setAttribute('class', text !== '' && !/\d/.test(text) ? 'nm-sub' : 'nm-addr');
     });
   }
 
   async function play(event: SceneEvent, view: SceneView, o: PlayOptions): Promise<void> {
+    // Aborted before it starts: the panel's show has settled the figure already, and has the last word.
+    if (o.signal.aborted) return;
     const own = event.type === 'table' ? [] : (event.cues ?? []).map((c) => ({ ...c, eventId: event.id }));
     // Worked out first, so a cue the map cannot show fails before anything moves.
     const landed = settle([...view.cues, ...own], view.labels);
@@ -435,18 +429,24 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       // Settled means no motion: the lights, the trays and the page change at once, not over their fades.
       // The browser takes the new styles while data-settling turns the fades off (net-map.css);
       // after that they are back on, so a play still fades its lights in and out.
+      // Everything show paints is worked out first, so a mistake in the lesson throws before the figure changes.
       const settled = settle(view.cues, view.labels);
+      const routerLabel = routerOf(view.labels.router);
       root.setAttribute('data-settling', '');
-      const shown = new Set(view.layers);
-      for (const g of layers) {
-        if (shown.has(g.getAttribute('data-layer') ?? '')) g.removeAttribute('display');
-        else g.setAttribute('display', 'none');
+      try {
+        const shown = new Set(view.layers);
+        for (const g of layers) {
+          if (shown.has(g.getAttribute('data-layer') ?? '')) g.removeAttribute('display');
+          else g.setAttribute('display', 'none');
+        }
+        paintRouter(routerLabel);
+        clear();
+        paint(settled);
+        void root.getBoundingClientRect();
+      } finally {
+        // Whatever happens, the fades come back on.
+        root.removeAttribute('data-settling');
       }
-      paintRouter(view.labels.router);
-      clear();
-      paint(settled);
-      void root.getBoundingClientRect();
-      root.removeAttribute('data-settling');
     },
     play,
     // Nothing to let go of: a play's timers and listeners end with its signal, which the panel aborts first.

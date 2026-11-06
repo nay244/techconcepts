@@ -2,7 +2,7 @@ import type { DhcpSceneData } from '../../art/scenes/dhcp';
 import type { Row, SceneEvent, TableEvent } from '../../content/schema';
 import { applyTableEvent } from '../../engine/tables';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
-import { animate, easeInOut } from '../motion';
+import { animate, easeInOut, wait } from '../motion';
 
 /**
  * Moves the DHCP figure (src/art/scenes/dhcp.ts), as the approved mockup's
@@ -31,20 +31,6 @@ const DEVICE = 'device';
 function duration(event: SceneEvent): number {
   // A table event has nothing to move, so it lands at once, with the message before it.
   return event.type === 'message' ? RIDE_MS + REST_MS + GAP_MS : 0;
-}
-
-/** Waits `ms`, or less if `signal` aborts first. Unlike a tween it also waits under reduced motion, so a step keeps its pace. */
-function wait(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal.aborted) return resolve();
-    const done = (): void => {
-      clearTimeout(timer);
-      signal.removeEventListener('abort', done);
-      resolve();
-    };
-    const timer = setTimeout(done, ms);
-    signal.addEventListener('abort', done);
-  });
 }
 
 /** The lease rows once `event` has landed. The figure has no table definition, only the key it knows the lease table by. */

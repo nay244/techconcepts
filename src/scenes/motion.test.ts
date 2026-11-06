@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { along, animate, easeInOut } from './motion';
+import { along, animate, easeInOut, wait } from './motion';
 
 /** Animation frames run only when a test says so: `frameAt(ms)` runs the waiting callbacks at that time. */
 let waiting = new Map<number, FrameRequestCallback>();
@@ -181,4 +181,45 @@ test('along always returns a new point, never one of the path’s own', () => {
   expect(along(path, 0)).not.toBe(path[0]);
   const single: [number, number][] = [[4, 5]];
   expect(along(single, 0.5)).not.toBe(single[0]);
+});
+
+test('wait resolves after its time, and not before', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+    const p = wait(450, new AbortController().signal);
+    await vi.advanceTimersByTimeAsync(449);
+    expect(await settled(p)).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await settled(p)).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('wait resolves at once on an abort, and leaves no timer behind', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+    const controller = new AbortController();
+    const p = wait(1000, controller.signal);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(await settled(p)).toBe(false);
+    controller.abort();
+    expect(await settled(p)).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('wait on a signal already aborted resolves at once and sets no timer', async () => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  try {
+    const controller = new AbortController();
+    controller.abort();
+    const p = wait(1000, controller.signal);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(await settled(p)).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
 });

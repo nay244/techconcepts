@@ -70,3 +70,23 @@ export function animate(ms: number, frame: (k: number) => void, o: { reducedMoti
     signal.addEventListener('abort', abort);
   });
 }
+
+/**
+ * Resolves after `ms`, or at once when `signal` aborts first, and it never rejects. Unlike a tween it also waits
+ * under reduced motion, so a step keeps its pace.
+ *
+ * - Started on a signal that is already aborted, it sets no timer and resolves at once.
+ * - An abort during the wait clears its timer and resolves.
+ */
+export function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve();
+    const done = (): void => {
+      clearTimeout(timer);
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener('abort', done);
+  });
+}

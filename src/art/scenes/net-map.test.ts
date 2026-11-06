@@ -2,8 +2,8 @@
 import { expect, test } from 'vitest';
 import { normaliseFigure, sha256 } from '../../test/figure-hash';
 import { drawFigure } from './index';
-import { drawNetMap, NET_MAP_TAG_MAX, type NetMapData } from './net-map';
-import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from './net-map-layers';
+import { drawNetMap, type NetMapData } from './net-map';
+import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_TAG_MAX, plateSites } from './net-map-layers';
 
 // SHA-256 of the mockup's map, recorded once by a one-off script (never read by this test). FIGS/net-map.mjs has no
 // buildMap(): FIGS/lesson-internet2.mjs builds internet-v2.html's map from its buildBase(), buildScene(), frameOf() and
@@ -86,7 +86,7 @@ test('a route exists between every pair of places a protocol uses', () => {
   }
 });
 
-test('a message from the laptop to the web server rides over the home router, the provider and router c', () => {
+test('a message from the laptop to the web server rides over the home router, the provider, router b and router c', () => {
   const { routes } = drawNetMap().data as NetMapData;
   // Routers are hopped over: the tag climbs above each one it passes (6.2 high), and rides the cables (2.6) between.
   const hops = routes['laptop>web']!.filter(([, , z]) => z > 5);
