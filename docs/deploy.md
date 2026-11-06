@@ -1,6 +1,6 @@
 # Deploying TechConcepts to a Cloudflare preview
 
-TechConcepts is a fully static site: `npm run build` writes everything to `dist/`, and there is no server code. This page covers the preview deployment (Plan 1). Connecting `techconcepts.app` comes later (Plan 2).
+TechConcepts is a fully static site: `npm run build` writes everything to `dist/`, and there is no server code. Before deploying, `npm run budgets` checks the built pages against their size budgets. This page covers the preview deployment (Plan 1). Connecting `techconcepts.app` comes later (Plan 2).
 
 ## Which Cloudflare product, and why
 
@@ -22,7 +22,7 @@ Facts from the docs that matter here:
 
 You do these once. Nothing here needs a password pasted into any tool; you sign in to GitHub and Cloudflare yourself.
 
-1. **Put the code on GitHub.** Create a new GitHub repository (private is fine). The work currently lives on the branch `feat/foundation-pilots`, so it is merged into `main` first (your assistant will arrange that with you). Then push `main` to the new repository. Cloudflare builds from `main`.
+1. **Put the code on GitHub.** Create a new GitHub repository (private is fine) and push `main` to it. Cloudflare builds from `main`. Work happens on other branches and is merged into `main` only with your OK (your assistant will arrange that with you).
 2. **Create the Cloudflare project.** In the Cloudflare dashboard open **Workers & Pages**, choose **Create application**, then **Import a repository** (connect GitHub when asked), and pick the repository. Use these settings:
    - Project name: `techconcepts` (it must match `name` in `wrangler.jsonc`)
    - Production branch: `main`
@@ -37,7 +37,8 @@ You do these once. Nothing here needs a password pasted into any tool; you sign 
 
 ## What to check on the preview
 
-- The `https://` address loads Home, `/networking`, all three lessons (Subnetting, DHCP, Firewalls), `/about`, and a made-up address such as `/nothing-here` shows the 404 page.
-- On a phone-sized screen, stepping through DHCP all the way to the Recap works.
+- The `https://` address loads Home, `/networking`, all four lessons (How the Internet Works, Subnetting, DHCP, Firewalls), `/about`, and a made-up address such as `/nothing-here` shows the 404 page.
+- Each lesson steps through Overview, Watch, Learn and Practice, and Play runs its Watch steps.
+- On a phone-sized screen every page loads and scrolls. Phone layouts are not designed yet, so they only need to work.
 - The browser console shows no errors.
 - If you set the analytics token: the About page has the sentence about privacy-friendly page-view counts. If you did not, it does not.

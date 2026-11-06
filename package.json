@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "test": "vitest run",
     "e2e": "playwright test",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "budgets": "node scripts/check-budgets.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.2",
