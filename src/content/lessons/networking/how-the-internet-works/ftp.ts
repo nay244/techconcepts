@@ -5,8 +5,7 @@ import type { TableDef, Unit } from '../../../schema';
  * FTP, protocol 12 of How the Internet Works’ 14. Commands go on the control connection to port 21, in plain text,
  * password included. After PASV the laptop opens a second, data connection to port 50000, drawn dashed just above
  * the first; report.pdf crosses on it, and closing it marks the end of the file. QUIT closes the control line too.
- * The mockup marks the table’s password and file rows as misses (it paints them amber). Here a miss is something
- * looked for and not there, and those rows are exposed, not missing, so they are ported without the mark.
+ * The table marks the password and the file, as the mockup does: look here. Its mark says "exposed".
  *
  * The words are the approved mockup's (internet-v2.html, from FIGS/protocols-apps.mjs), ported as written.
  */
@@ -25,6 +24,7 @@ const readable: TableDef = {
     { key: 'reads', label: 'They can read', prose: true },
   ],
   keyColumn: 'message',
+  markLabel: 'exposed',
   initialRows: [],
   empty: 'Nothing yet. Nothing has been sent.',
 };
@@ -44,6 +44,7 @@ const ftp: Unit = {
     views: ['network', 'sequence'],
     layers: ['ftp:files'],
     labels: { laptop: 'Uploading report.pdf', url: 'Files' },
+    start: [],
     panel: { type: 'table', table: readable },
     log: eventLog(),
     parties: [
@@ -202,7 +203,7 @@ const ftp: Unit = {
           size: '18 B',
           sum: 'PASS sunflower7. In plain text, for anyone on the way to read.',
           info: 'PASS sunflower7',
-          rows: [{ key: 'pass', cells: ['PASS', 'your password: sunflower7'] }],
+          rows: [{ key: 'pass', cells: ['PASS', 'your password: sunflower7'], miss: true }],
         }),
         ...msg({
           tag: '230',
@@ -391,7 +392,7 @@ const ftp: Unit = {
           sum: 'report.pdf, all 2.4 MB of it, on the data line.',
           info: 'Data connection: report.pdf, 2.4 MB',
           st: 'Uploading',
-          rows: [{ key: 'file', cells: ['The file', 'all of report.pdf'] }],
+          rows: [{ key: 'file', cells: ['The file', 'all of report.pdf'], miss: true }],
         }),
         ...msg({
           tag: 'FIN',

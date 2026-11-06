@@ -119,6 +119,24 @@ test('each row a message brings adds a row to the table, and a row it brings aga
   });
 });
 
+test('a marked row on a table with its own mark word says that word in its summary, as the panel does', () => {
+  // FTP's password: exposed, not missing.
+  const readable: TableDef = {
+    id: 'readable',
+    title: 'What someone watching can read',
+    columns: [
+      { key: 'message', label: 'Message' },
+      { key: 'reads', label: 'They can read', prose: true },
+    ],
+    keyColumn: 'message',
+    markLabel: 'exposed',
+    initialRows: [],
+    empty: 'Nothing yet.',
+  };
+  const [, pass] = messagesFor(readable)(mockup({ tag: 'PASS', rows: [{ key: 'pass', cells: ['PASS', 'your password: sunflower7'], miss: true }] }));
+  expect(pass).toMatchObject({ op: 'add', miss: true, summary: 'Added to What someone watching can read: PASS, your password: sunflower7. Exposed.' });
+});
+
 /** UDP's voice packets: both ways count from 1, so no column the table shows is unique, and it says its key is hidden. */
 const voice: TableDef = {
   id: 'voice',

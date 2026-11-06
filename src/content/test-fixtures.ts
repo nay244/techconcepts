@@ -20,17 +20,18 @@ import type { LessonInput } from './schema';
 
 /**
  * A stand-in for `FIGURE_PARTS`: every figure has the fixture's places, a flag
- * cue (`glow`), a text cue (`status`) and two layers; only `subnet` takes a board.
+ * cue (`glow`), a text cue (`status`) and two layers; only `subnet` takes a
+ * board, and only `net-map` a scene's start, as in the real figures.
  */
 export const FIXTURE_PARTS: Record<FigureId, FigureParts> = {
-  dhcp: fixtureParts(false),
-  subnet: fixtureParts(true),
-  firewall: fixtureParts(false),
-  'net-map': fixtureParts(false),
+  dhcp: fixtureParts({ board: false, start: false }),
+  subnet: fixtureParts({ board: true, start: false }),
+  firewall: fixtureParts({ board: false, start: false }),
+  'net-map': fixtureParts({ board: false, start: true }),
 };
 
-function fixtureParts(board: boolean): FigureParts {
-  return { places: ['laptop', 'router', 'phone'], cues: { glow: 'flag', status: 'text' }, layers: ['web', 'mail'], board };
+function fixtureParts({ board, start }: { board: boolean; start: boolean }): FigureParts {
+  return { places: ['laptop', 'router', 'phone'], cues: { glow: 'flag', status: 'text' }, layers: ['web', 'mail'], board, start };
 }
 
 /**
@@ -55,6 +56,7 @@ export function withFixtureParts(real: Record<FigureId, FigureParts>): Record<Fi
       cues: { ...fixture.cues, ...own.cues },
       layers: [...new Set([...own.layers, ...fixture.layers])],
       board: own.board || fixture.board,
+      start: own.start || fixture.start,
     };
   };
   return { dhcp: merged('dhcp'), subnet: merged('subnet'), firewall: merged('firewall'), 'net-map': merged('net-map') };
@@ -76,6 +78,7 @@ export function makeUnit(id = 'neighbors', overrides: Partial<UnitInput> = {}): 
       views: ['network', 'sequence'],
       layers: [],
       labels: {},
+      start: [],
       panel: {
         type: 'table',
         table: {

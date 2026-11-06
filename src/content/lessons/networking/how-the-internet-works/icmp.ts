@@ -43,6 +43,7 @@ const icmp: Unit = {
     views: ['network', 'sequence'],
     layers: ['icmp:web'],
     labels: { laptop: 'Running ping', url: 'Terminal' },
+    start: [],
     panel: { type: 'table', table: answers },
     log: eventLog(),
     parties: [

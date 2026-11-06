@@ -43,6 +43,7 @@ const udp: Unit = {
     views: ['network', 'sequence'],
     layers: ['udp:call'],
     labels: { laptop: 'In a call with Sam', url: 'Call' },
+    start: [],
     panel: { type: 'table', table: voice },
     log: eventLog({ kind: 'dropped', label: 'Lost on the way' }),
     parties: [

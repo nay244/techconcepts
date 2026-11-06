@@ -45,7 +45,7 @@ export function sceneViewOf(unit: Unit, derived: DerivedState): SceneView {
     unit: derived.unit,
     layers: unit.scene.layers,
     labels: unit.scene.labels,
-    start: unit.scene.start ?? [],
+    start: unit.scene.start,
     status,
     cues: derived.cues,
     tables: derived.tables,

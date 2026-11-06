@@ -177,6 +177,8 @@ test('conn open, then seal, then close leaves no lit connection', async () => {
 });
 
 test('FTP’s data line is dashed and drawn above the control line, and closes on its own', () => {
+  // The data line's class is the dashed one.
+  expect(mapCss).toMatch(/\.nm \.nm-conn\.alt \{[^}]*stroke-dasharray: 5 4/);
   const { root, driver } = mount();
   const control = { cue: 'conn', arg: 'open laptop>files' };
   const dataLine = { cue: 'conn', arg: 'open laptop>files data' };

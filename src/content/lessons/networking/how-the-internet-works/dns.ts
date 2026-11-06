@@ -46,6 +46,7 @@ const dns: Unit = {
     views: ['network', 'sequence'],
     layers: ['dns:names'],
     labels: { laptop: 'Wants techconcepts.app', url: 'techconcepts.app' },
+    start: [],
     panel: { type: 'table', table: learned },
     log: eventLog(),
     parties: [

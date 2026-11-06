@@ -41,6 +41,7 @@ const tcp: Unit = {
     views: ['network', 'sequence'],
     layers: ['tcp:web'],
     labels: { laptop: 'Wants a page', url: 'example.net' },
+    start: [],
     panel: { type: 'table', table: pieces },
     log: eventLog({ kind: 'dropped', label: 'Lost on the way' }),
     parties: [

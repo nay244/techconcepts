@@ -46,6 +46,7 @@ const dhcp: Unit = {
     views: ['network', 'sequence'],
     layers: [],
     labels: { laptop: 'Joining the Wi-Fi', laptopAddr: 'no address yet', url: 'No network', router: '192.168.1.1\nhands out addresses' },
+    start: [],
     panel: { type: 'table', table: settings },
     log: eventLog({ kind: 'broadcast', label: 'Broadcast to everyone' }),
     parties: [

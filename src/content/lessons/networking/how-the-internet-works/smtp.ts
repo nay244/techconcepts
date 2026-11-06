@@ -44,6 +44,7 @@ const smtp: Unit = {
     views: ['network', 'sequence'],
     layers: ['smtp:out', 'smtp:in'],
     labels: { laptop: 'Sending to sam@example.org', url: 'Mail' },
+    start: [],
     panel: { type: 'table', table: trip },
     log: eventLog(),
     parties: [

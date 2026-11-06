@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
@@ -132,4 +134,13 @@ test('a unit the learner has opened is ticked, one only passed over is not, and 
   const parts = item(/^Beta/).closest('li')!.querySelector('ol')!;
   expect(within(parts).getByRole('button', { name: /Neighbor Reply/ })).toHaveAttribute('aria-current', 'step');
   expect(within(parts).getByRole('button', { name: /Neighbor Hello/ })).toHaveAttribute('data-state', 'done');
+});
+
+test('the outline is the positioned box its hidden ", seen" words sit in, so a row below the fold never stretches the page', () => {
+  // Vitest drops stylesheet contents, so the rule is read from the file itself. A visually hidden span is
+  // absolutely positioned: it is clipped by the scroll box only when that box is its containing block.
+  const css = readFileSync('src/lesson/console.css', 'utf8');
+  const outline = /(?:^|\n)\.console__outline \{([^}]*)\}/.exec(css)?.[1] ?? '';
+  expect(outline).toMatch(/overflow: auto;/);
+  expect(outline).toMatch(/position: relative;/);
 });

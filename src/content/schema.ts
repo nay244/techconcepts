@@ -132,8 +132,9 @@ export const tableEventSchema = z.strictObject({
   /** May be '' for a `match` that found nothing. */
   key: z.string().optional(),
   /**
-   * An `add` or `update` only: the row it leaves is a miss, something looked for
-   * and not there, such as a piece of data that never arrived. The row keeps the
+   * An `add` or `update` only: the row it leaves is marked. The mark is a miss,
+   * something looked for and not there, such as a piece of data that never
+   * arrived, unless the table names its own (`markLabel`). The row keeps the
    * mark until an event changes it again without one.
    */
   miss: z.boolean().optional(),
@@ -170,6 +171,11 @@ export const tableDefSchema = z.strictObject({
    * tell its rows apart (UDP's voice packets, whose two ways both count from 1). Without it the key is a column.
    */
   hiddenKey: z.literal(true).optional(),
+  /**
+   * The word a marked row says (an event's `miss`), for a table whose marks are not misses: FTP's 'exposed', on
+   * the password and the file anyone watching can read. Without it the word is 'miss'.
+   */
+  markLabel: text.optional(),
   initialRows: z.array(rowSchema),
   /** What the table says while it has no rows. */
   empty: text,
@@ -207,8 +213,9 @@ export const unitSceneSchema = z.strictObject({
   /**
    * Cues already in place as the unit starts, as though they had played before its first event, from the
    * Overview on: TLS's line, open before its handshake, and the letters waiting in POP3's and IMAP's mailbox.
+   * Only a figure that shows one takes it (`FigureParts.start`), and it sets no status: each step sets its own.
    */
-  start: z.array(cueSchema).optional(),
+  start: z.array(cueSchema).default(() => []),
   panel: panelSchema.nullable(),
   log: logDefSchema,
   parties: z.array(partySchema),

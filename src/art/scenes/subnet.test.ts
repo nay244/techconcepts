@@ -90,6 +90,7 @@ test('FIGURE_PARTS.subnet lists the places, the mockup’s fx as cues, and the b
     },
     layers: [],
     board: true,
+    start: false,
   });
 });
 

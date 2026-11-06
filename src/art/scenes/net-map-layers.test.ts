@@ -83,5 +83,6 @@ test('FIGURE_PARTS["net-map"] lists home, the internet, the resolver and every s
     },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
+    start: true,
   });
 });

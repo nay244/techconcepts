@@ -302,19 +302,42 @@ test('cues must be the figure’s, with an arg exactly when they take text', () 
   expect(joined(noteCue)).toMatch(/note "n1".*cue "status" needs an arg/);
 });
 
-test('a scene’s start is cues the figure has, checked as an event’s are', () => {
-  const ok = makeLesson();
-  unit(ok).scene.start = [{ cue: 'glow' }, { cue: 'status', arg: 'Waiting' }];
+test('a scene’s start is cues the figure has, checked as an event’s are, on a figure that takes one', () => {
+  // The fixture's net-map takes a start, as the real one does.
+  const ok = makeLesson({ figure: 'net-map' });
+  unit(ok).scene.start = [{ cue: 'glow' }];
   expect(issuesOf(ok)).toEqual([]);
-  const unknown = makeLesson();
+  const unknown = makeLesson({ figure: 'net-map' });
   unit(unknown).scene.start = [{ cue: 'sparkle' }];
-  expect(issuesOf(unknown)).toEqual([expect.stringMatching(/^Unit "neighbors": the scene's start: cue "sparkle" is not one the dhcp figure has\.$/)]);
-  const noArg = makeLesson();
-  unit(noArg).scene.start = [{ cue: 'status' }];
-  expect(joined(noArg)).toMatch(/the scene's start: cue "status" needs an arg/);
-  const flagArg = makeLesson();
+  expect(issuesOf(unknown)).toEqual([expect.stringMatching(/^Unit "neighbors": the scene's start: cue "sparkle" is not one the net-map figure has\.$/)]);
+  const flagArg = makeLesson({ figure: 'net-map' });
   unit(flagArg).scene.start = [{ cue: 'glow', arg: 'bright' }];
   expect(joined(flagArg)).toMatch(/the scene's start: cue "glow" is a flag and takes no arg/);
+  // A figure whose driver never reads a start would show nothing of it, so it is refused, as a board is.
+  const dhcp = makeLesson();
+  unit(dhcp).scene.start = [{ cue: 'glow' }];
+  expect(issuesOf(dhcp)).toEqual(['Unit "neighbors": the scene has a start, but the dhcp figure takes none.']);
+  const subnet = makeLesson({ figure: 'subnet' });
+  unit(subnet).scene.start = [{ cue: 'glow' }];
+  expect(issuesOf(subnet)).toEqual(['Unit "neighbors": the scene has a start, but the subnet figure takes none.']);
+});
+
+test('a start sets no status: each step’s own status comes after it, and a status cue in the start would beat them all', () => {
+  for (const cue of [{ cue: 'status', arg: 'Waiting' }, { cue: 'status-known' }, { cue: 'status-done' }]) {
+    const l = makeLesson({ figure: 'net-map' });
+    unit(l).scene.start = [{ cue: 'glow' }, cue];
+    expect(issuesOf(l), cue.cue).toContain(
+      `Unit "neighbors": the scene's start: cue "${cue.cue}" sets the status, and a start may not; each step sets its own.`,
+    );
+  }
+});
+
+test('a scene with no start is given an empty one, as its layers and labels are', () => {
+  const l = makeLesson();
+  delete (unit(l).scene as { start?: unknown }).start;
+  delete (unit(l).scene as { layers?: unknown }).layers;
+  const { lesson } = validateLesson(l);
+  expect([lesson.units[0]!.scene.start, lesson.units[0]!.scene.layers]).toEqual([[], []]);
 });
 
 test('scene layers must be layers the figure has', () => {

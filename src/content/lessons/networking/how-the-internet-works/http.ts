@@ -45,6 +45,7 @@ const http: Unit = {
     views: ['network', 'sequence'],
     layers: ['http:web'],
     labels: { laptop: 'Wants example.net', url: 'example.net' },
+    start: [],
     panel: { type: 'table', table: files },
     log: eventLog(),
     parties: [

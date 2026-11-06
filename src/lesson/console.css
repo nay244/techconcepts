@@ -344,7 +344,10 @@
 
 /* ---------------------------------------------------------------- outline */
 
+/* Positioned, so the visually hidden ", seen" on a row below the fold is clipped with the row and never
+   stretches the page. */
 .console__outline {
+  position: relative;
   grid-column: 1;
   grid-row: 2;
   display: flex;

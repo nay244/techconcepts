@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-// @ts-expect-error - no @types/node in this project; vitest runs under node
-import { readFileSync } from 'node:fs';
 import { afterEach, expect, test, vi } from 'vitest';
 import { drawNetMap } from '../../../art/scenes/net-map';
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from '../../../art/scenes/net-map-layers';
@@ -24,7 +22,6 @@ const indexOf = (id: string): number => internet.units.findIndex((u) => u.id ===
 const messagesOf = (u: Unit): MessageEvent[] => u.steps.flatMap((s) => s.events).filter((e): e is MessageEvent => e.type === 'message');
 const minutesOf = (u: Unit): number => estimateUnitMinutes(u, PRACTICE_MINUTES_PER_UNIT);
 // Read from the project root: under jsdom import.meta.url is not a file URL.
-const mapCss: string = readFileSync('src/art/scenes/net-map.css', 'utf8');
 
 /** A unit's table once its step `n` has played in full (or, without `n`, at its Learn). */
 function tableAfter(id: string, table: string, n?: number) {
@@ -57,7 +54,7 @@ test('the lesson takes 96 minutes', () => {
   expect(estimateMinutes(internet)).toBe(96);
   // As FIGS/minutes.mjs counts the whole lesson: 9,829 words read, 78 steps, half a minute of Practice for each of 14.
   expect(internet.units.reduce((n, u) => n + countUnitWords(u), 0)).toBe(9829);
-  expect(Math.ceil(9829 / 200 + 0.5 * 78 + PRACTICE_MINUTES_PER_UNIT * 14)).toBe(96);
+  expect(PRACTICE_MINUTES_PER_UNIT).toBe(0.5);
 });
 
 test('the lesson is lesson 1, How the Internet Works, on the network map', () => {
@@ -431,8 +428,10 @@ test('each protocol’s table ends with the mockup’s rows', () => {
     ['STOR', 'the file’s name: report.pdf'],
     ['The file', 'all of report.pdf'],
   ]);
-  // The mockup paints the password and the file amber; they are exposed, not missing, so neither is a miss here.
-  expect(tableAfter('ftp', 'readable').missed).toEqual([]);
+  // The mockup marks the password and the file: look here. They are exposed, not missing, and the table says so.
+  expect(tableAfter('ftp', 'readable').missed).toEqual(['PASS', 'The file']);
+  const marked = internet.units.flatMap((u) => (u.scene.panel?.type === 'table' && u.scene.panel.table.markLabel !== undefined ? [u.scene.panel.table] : []));
+  expect(marked.map((t) => [t.id, t.markLabel])).toEqual([['readable', 'exposed']]);
   expect(cells('ssh', 'agreed')).toEqual([
     ['Version', 'SSH 2.0'],
     ['Key exchange', 'sntrup761x25519-sha512'],
@@ -873,7 +872,7 @@ test('POP3 and IMAP start with letters waiting, and TLS with its line open, from
   };
   const conns = () => mapState(root).conns.map(([cls]) => cls);
   // The mockup's hold0 and conn0, as each scene's start; no other unit has one.
-  expect(internet.units.filter((u) => u.scene.start !== undefined).map((u) => [u.id, u.scene.start])).toEqual([
+  expect(internet.units.filter((u) => u.scene.start.length > 0).map((u) => [u.id, u.scene.start])).toEqual([
     ['pop3', [{ cue: 'tray', arg: 'mail on' }]],
     ['imap', [{ cue: 'tray', arg: 'mail on' }]],
     ['tls', [{ cue: 'conn', arg: 'open laptop>web' }]],
@@ -927,9 +926,7 @@ test('FTP draws its data line dashed and closes it; SSH and TLS seal their conne
   };
   /** The lit lines: each one's classes, and whether it is drawn above the cable. */
   const lines = () => [...root.querySelector('#nm-conns')!.children].map((line) => [line.getAttribute('class'), line.getAttribute('transform')]);
-  // The data line's class is the dashed one.
-  expect(mapCss).toMatch(/\.nm \.nm-conn\.alt \{[^}]*stroke-dasharray: 5 4/);
-
+  // The data line's class is the dashed one (net-map.test.ts holds the CSS to it).
   // FTP: the control line, then a second, data line beside it, dashed and drawn just above.
   expect(applied('ftp', 'step', 1)).toEqual(['open laptop>files']);
   expect(lines()).toEqual([['nm-conn', null]]);

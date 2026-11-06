@@ -11,7 +11,7 @@ import type { Cue, LogDef, MessageEvent, SceneEvent, TableDef, TableEvent } from
 export interface MockupRow {
   key: string;
   cells: string[];
-  /** The row is a miss: something looked for and not there. */
+  /** The row is marked: a miss, something looked for and not there, or the table's own mark (`markLabel`). */
   miss?: boolean;
 }
 
@@ -99,7 +99,8 @@ export function messagesFor(table: TableDef | null): (m: MockupMessage) => Scene
     if (before !== undefined) rowOf.delete(before);
     keyOf.set(r.key, key);
     rowOf.set(key, r.key);
-    const words = `${r.cells.join(', ')}.${r.miss === true ? ' A miss.' : ''}`;
+    const mark = table.markLabel === undefined ? ' A miss.' : ` ${table.markLabel[0]!.toUpperCase()}${table.markLabel.slice(1)}.`;
+    const words = `${r.cells.join(', ')}.${r.miss === true ? mark : ''}`;
     const id = `${table.id}-${++changes}`;
     const miss = r.miss === true ? { miss: true } : {};
     return before === undefined

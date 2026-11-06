@@ -44,6 +44,7 @@ const ssh: Unit = {
     views: ['network', 'sequence'],
     layers: ['ssh:host'],
     labels: { laptop: 'Opening a terminal', url: 'Terminal' },
+    start: [],
     panel: { type: 'table', table: agreed },
     log: eventLog(),
     parties: [

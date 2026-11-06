@@ -48,6 +48,7 @@ const ip: Unit = {
     views: ['network', 'sequence'],
     layers: ['ip:web'],
     labels: { laptop: 'Sending a packet', url: 'example.net', router: '192.168.1.1 inside\n198.51.100.23 outside' },
+    start: [],
     panel: { type: 'table', table: written },
     log: eventLog({ kind: 'broadcast', label: 'Broadcast to everyone' }),
     parties: [

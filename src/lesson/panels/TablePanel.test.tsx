@@ -193,6 +193,28 @@ test('a row marked as a miss says “miss” in words, beside its first cell, wh
   expect(rows[0]!).not.toHaveTextContent('miss');
 });
 
+test('a table that names its own mark says that word on a marked row, in the same neutral tag; one that names none says “miss”', () => {
+  // FTP's password and file: exposed, not missing.
+  const exposed = render(<TablePanel def={{ ...def, markLabel: 'exposed' }} state={{ ...stateOf(), missed: ['2'] }} />);
+  const rows = bodyRows(exposed.container);
+  const label = within(rows[1]!).getByText('exposed');
+  expect(label).toHaveClass('tpanel__miss');
+  expect(label).not.toHaveClass('sr-only');
+  expect(rows[1]!.querySelector('td')).toHaveTextContent(/^2 ?exposed$/);
+  expect(exposed.container).not.toHaveTextContent(/miss/i);
+  exposed.unmount();
+  const plain = render(<TablePanel def={def} state={{ ...stateOf(), missed: ['2'] }} />);
+  expect(within(bodyRows(plain.container)[1]!).getByText('miss')).toHaveClass('tpanel__miss');
+});
+
+test('the panel is the positioned box its hidden "(new)" words sit in, so they scroll with it and never stretch the page', () => {
+  // Vitest drops stylesheet contents, so the rule is read from the file itself.
+  const css = readFileSync('src/lesson/panels/table.css', 'utf8');
+  const panel = /(?:^|\n)\.tpanel \{([^}]*)\}/.exec(css)?.[1] ?? '';
+  expect(panel).toMatch(/overflow: auto;/);
+  expect(panel).toMatch(/position: relative;/);
+});
+
 test('the miss mark is neutral: never marigold, which means “current”, nor the blocked red of a lost message', () => {
   // Vitest drops stylesheet contents, so the rules are read from the file itself.
   const css = readFileSync('src/lesson/panels/table.css', 'utf8');

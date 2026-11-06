@@ -159,7 +159,7 @@ function checkScene(c: UnitContext, at: string): void {
   for (const layer of scene.layers) {
     if (!parts.layers.includes(layer)) issues.push(`${at}: layer "${layer}" is not one the ${figure} figure has.`);
   }
-  checkCues(scene.start, `${at}: the scene's start`, c);
+  checkStart(c, at);
   if (figure === 'net-map' && scene.title.length > MAX_NET_MAP_TITLE) {
     issues.push(`${at}: the scene title is ${scene.title.length} characters; the limit is ${MAX_NET_MAP_TITLE} on the net-map figure.`);
   }
@@ -188,6 +188,27 @@ function checkScene(c: UnitContext, at: string): void {
     if (packet.size !== total) {
       issues.push(`${at}: Packet "${id}" size ${packet.size} does not equal the sum of its layer sizes (${total}).`);
     }
+  }
+}
+
+/** The status cues: a start may not carry one, since it is settled before each step's own status and would beat it. */
+const STATUS_CUES: readonly string[] = ['status', 'status-known', 'status-done'];
+
+/**
+ * A scene's start: only on a figure whose driver shows one (as a board is), then cues the figure has, and no
+ * status, which is each step's own.
+ */
+function checkStart(c: UnitContext, at: string): void {
+  const { start } = c.unit.scene;
+  if (start.length === 0) return;
+  if (!c.parts.start) {
+    c.issues.push(`${at}: the scene has a start, but the ${c.figure} figure takes none.`);
+    return;
+  }
+  const where = `${at}: the scene's start`;
+  checkCues(start, where, c);
+  for (const { cue } of start) {
+    if (STATUS_CUES.includes(cue)) c.issues.push(`${where}: cue "${cue}" sets the status, and a start may not; each step sets its own.`);
   }
 }
 

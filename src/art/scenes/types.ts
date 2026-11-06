@@ -11,6 +11,8 @@ export interface FigureParts {
   layers: readonly string[];
   /** True when the figure accepts a note's `board` (subnet only). */
   board: boolean;
+  /** True when the figure's driver shows a scene's `start`, the cues in place as a unit starts (net-map only). */
+  start: boolean;
 }
 
 /** A figure drawn at build time: its SVG markup, and the data its driver reads (JSON). */

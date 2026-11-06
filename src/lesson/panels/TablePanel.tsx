@@ -28,13 +28,15 @@ let focusLostBy: string | null = null;
  * A device's table (leases, a cache, a MAC table) as it stands at this moment
  * of the lesson, under the scene. The row the latest event of the current step
  * points at is marked, pulses once, and is announced as new, changed or
- * matched, so colour is never the only signal. A row marked as a miss says
- * "miss" in a small neutral tag after its first cell, for as long as the mark
- * lasts. The panel is a labelled region a keyboard user can focus and scroll.
+ * matched, so colour is never the only signal. A marked row says the table's
+ * mark word ("miss" unless the table names its own, such as FTP's "exposed") in
+ * a small neutral tag after its first cell, for as long as the mark lasts. The
+ * panel is a labelled region a keyboard user can focus and scroll.
  */
 export function TablePanel({ def, state }: TablePanelProps) {
   const { rows, highlight } = state;
   const missed = new Set(state.missed);
+  const markLabel = def.markLabel ?? 'miss';
   const region = useRef<HTMLDivElement>(null);
   // A match that found nothing carries an empty key. It points at no row, even one whose key cell is empty.
   const target = highlight !== null && !(highlight.type === 'matched' && highlight.key === '') ? highlight : null;
@@ -92,7 +94,7 @@ export function TablePanel({ def, state }: TablePanelProps) {
                       {miss && c === 0 ? (
                         <>
                           {' '}
-                          <span className="tpanel__miss">miss</span>
+                          <span className="tpanel__miss">{markLabel}</span>
                         </>
                       ) : null}
                       {mark !== null && c === 0 ? <span className="sr-only"> {HIGHLIGHT_TEXT[mark]}</span> : null}

@@ -55,11 +55,11 @@ test('a scene view carries the unit’s layers, labels and start with the derive
 
 test('the start is the unit’s own at every position, Overview to Practice, and not among the cues that have played', () => {
   const lesson = lessonWithStatuses();
-  lesson.units[0]!.scene.start = [{ cue: 'status', arg: 'Waiting already' }];
+  lesson.units[0]!.scene.start = [{ cue: 'tray', arg: 'mail on' }];
   for (const [kind, step] of [['overview', 1], ['step', 1], ['step', 5], ['learn', 1], ['practice', 1]] as const) {
     const view = viewAt(lesson, 0, kind, step);
-    expect(view.start, `${kind} ${step}`).toEqual([{ cue: 'status', arg: 'Waiting already' }]);
-    expect(view.cues.some((c) => c.arg === 'Waiting already'), `${kind} ${step}`).toBe(false);
+    expect(view.start, `${kind} ${step}`).toEqual([{ cue: 'tray', arg: 'mail on' }]);
+    expect(view.cues.some((c) => c.cue === 'tray'), `${kind} ${step}`).toBe(false);
   }
   // A unit that gives none starts with nothing.
   expect(viewAt(lesson, 1, 'overview').start).toEqual([]);

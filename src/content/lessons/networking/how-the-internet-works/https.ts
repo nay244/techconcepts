@@ -44,6 +44,7 @@ const https: Unit = {
     views: ['network', 'sequence'],
     layers: ['https:web'],
     labels: { laptop: 'Wants techconcepts.app', url: 'techconcepts.app' },
+    start: [],
     panel: { type: 'table', table: seen },
     log: eventLog(),
     parties: [

@@ -3,11 +3,11 @@ import type { FigureId, FigureParts } from './types';
 
 /**
  * The places, cues and layers each scene figure supports, and whether it takes
- * a board. Every figure starts empty; each lesson's task fills its own figure
+ * a board or a scene's start. Every figure starts empty; each lesson's task fills its own figure
  * as the figure is built, so the validator only accepts what the figure can show.
  */
 export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
-  dhcp: { places: ['laptop', 'router', 'phone'], cues: {}, layers: [], board: false },
+  dhcp: { places: ['laptop', 'router', 'phone'], cues: {}, layers: [], board: false, start: false },
   subnet: {
     places: ['laptop', 'printer', 'pc', 'router', 'provider'],
     // The mockup's fx, by name: what lights, pulses, rides or spreads while a note plays (src/scenes/drivers/subnet.ts).
@@ -24,8 +24,9 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     },
     layers: [],
     board: true,
+    start: false,
   },
-  firewall: { places: [], cues: {}, layers: [], board: false },
+  firewall: { places: [], cues: {}, layers: [], board: false, start: false },
   'net-map': {
     places: [...new Set([...NET_MAP_BASE_PLACES, ...Object.values(NET_MAP_LAYERS).flatMap(plateSites)])],
     // What a message leaves on the map once it lands (src/scenes/drivers/net-map.ts): the laptop's status line and its
@@ -44,5 +45,7 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
+    // Its driver settles a unit's start under the cues that have played.
+    start: true,
   },
 };
