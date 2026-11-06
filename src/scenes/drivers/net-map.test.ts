@@ -59,10 +59,11 @@ function mount(): { root: SVGSVGElement; driver: SceneDriver } {
 
 /** A cue as an event of the lesson carries it, and as the scene view lists it once that event has played. */
 type CueOf = Cue & { eventId?: string };
-function view(o: { layers?: string[]; labels?: Record<string, string>; status?: string; cues?: CueOf[] } = {}): SceneView {
+function view(o: { layers?: string[]; labels?: Record<string, string>; start?: Cue[]; status?: string; cues?: CueOf[] } = {}): SceneView {
   const cues: AppliedCue[] = (o.cues ?? []).map(({ eventId, ...c }, i) => ({ ...c, eventId: eventId ?? `e${i}`, current: true }));
   const status = o.status ?? null;
-  return { unit: 0, layers: o.layers ?? ['http:web'], labels: o.labels ?? {}, status, cues, tables: {}, board: null, active: null };
+  const start = o.start ?? [];
+  return { unit: 0, layers: o.layers ?? ['http:web'], labels: o.labels ?? {}, start, status, cues, tables: {}, board: null, active: null };
 }
 
 function msg(o: Partial<MessageEvent> = {}): MessageEvent {
@@ -186,6 +187,36 @@ test('FTP’s data line is dashed and drawn above the control line, and closes o
   ]);
   driver.show(view({ layers: ['ftp:files'], cues: [control, dataLine, { cue: 'conn', arg: 'close laptop>files data' }] }));
   expect(conns(root)).toEqual([['nm-conn', null]]);
+});
+
+test('a unit’s start is in place before any cue plays: a line already open, letters already waiting', () => {
+  const { root, driver } = mount();
+  const open = { cue: 'conn', arg: 'open laptop>web' };
+  const letters = { cue: 'tray', arg: 'mail on' };
+  // TLS's line is open before anything has played, and its handshake may seal it and close it.
+  driver.show(view({ layers: ['tls:web'], start: [open] }));
+  expect(conns(root)).toEqual([['nm-conn', null]]);
+  driver.show(view({ layers: ['tls:web'], start: [open], cues: [{ cue: 'conn', arg: 'seal laptop>web' }] }));
+  expect(conns(root)).toEqual([['nm-conn sealed', null]]);
+  driver.show(view({ layers: ['tls:web'], start: [open], cues: [{ cue: 'conn', arg: 'seal laptop>web' }, { cue: 'conn', arg: 'close laptop>web' }] }));
+  expect(conns(root)).toEqual([]);
+
+  // POP3's letters are waiting on the mailbox's tray, until a cue that plays takes them away.
+  driver.show(view({ layers: ['pop3:mail'], start: [letters] }));
+  expect(lit(root, 'nm-pop3-hold-mail')).toBe(true);
+  driver.show(view({ layers: ['pop3:mail'], start: [letters], cues: [{ cue: 'tray', arg: 'mail off' }] }));
+  expect(lit(root, 'nm-pop3-hold-mail')).toBe(false);
+
+  // A scene with no start of its own shows none of another's.
+  driver.show(view({ layers: ['imap:mail'], start: [letters] }));
+  driver.show(view({ layers: ['tls:web'], start: [open] }));
+  expect(lit(root, 'nm-imap-hold-mail')).toBe(false);
+  driver.show(view({ layers: ['http:web'] }));
+  expect(conns(root)).toEqual([]);
+
+  // A start the map cannot show is a mistake in the lesson, as a cue that plays is.
+  expect(() => driver.show(view({ start: [{ cue: 'conn', arg: 'seal laptop>web' }] }))).toThrow(/seals laptop>web, which is not open/);
+  expect(() => driver.show(view({ start: [{ cue: 'tray', arg: 'web on' }] }))).toThrow(/no tray "web"/);
 });
 
 test.each([
@@ -467,15 +498,31 @@ function scenarios(): { event: SceneEvent; before: SceneView }[] {
     msg({ id: 'data', to: 'files', tag: 'ACK', cues: [{ cue: 'conn', arg: 'open laptop>files data' }] }),
     msg({ id: 'fin', to: 'files', tag: 'FIN', cues: [{ cue: 'conn', arg: 'close laptop>files data' }] }),
   ];
-  const run = (layers: string[], events: SceneEvent[]) => {
-    let before = view({ layers, labels: { laptop: 'Wants a page', url: 'example.net' } });
+  // Scenes that start with something in place: TLS's open line, POP3's waiting letters.
+  const sealed: SceneEvent[] = [
+    msg({ id: 'hello', tag: 'CLIENT HELLO' }),
+    msg({ id: 'finished', tag: 'FINISHED', cues: [{ cue: 'conn', arg: 'seal laptop>web' }] }),
+    msg({ id: 'bye', from: 'web', to: 'laptop', tag: 'CLOSE NOTIFY', cues: [{ cue: 'conn', arg: 'close laptop>web' }] }),
+  ];
+  const collected: SceneEvent[] = [
+    msg({ id: 'retr', to: 'mail', tag: 'RETR 1' }),
+    msg({ id: 'goodbye', from: 'mail', to: 'laptop', tag: '+OK BYE', kind: 'response', cues: [{ cue: 'tray', arg: 'mail off' }] }),
+  ];
+  const run = (layers: string[], events: SceneEvent[], start: Cue[] = []) => {
+    let before = view({ layers, labels: { laptop: 'Wants a page', url: 'example.net' }, start });
     return events.map((event) => {
       const at = { event, before };
       before = after(before, event);
       return at;
     });
   };
-  return [...run(['http:web'], web), ...run(['smtp:out', 'smtp:in'], mail), ...run(['ftp:files'], files)];
+  return [
+    ...run(['http:web'], web),
+    ...run(['smtp:out', 'smtp:in'], mail),
+    ...run(['ftp:files'], files),
+    ...run(['tls:web'], sealed, [{ cue: 'conn', arg: 'open laptop>web' }]),
+    ...run(['pop3:mail'], collected, [{ cue: 'tray', arg: 'mail on' }]),
+  ];
 }
 
 test('under reduced motion, play leaves the figure exactly as show would after each event', async () => {

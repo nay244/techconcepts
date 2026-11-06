@@ -33,20 +33,34 @@ test('the status is the latest one a step has set as it starts: none at the Over
   expect(viewAt(lesson, 1, 'step', 4).status).toBeNull();
 });
 
-test('a scene view carries the unit’s layers and labels with the derived moment', () => {
+test('a scene view carries the unit’s layers, labels and start with the derived moment', () => {
   const lesson = lessonWithStatuses();
   const unit = lesson.units[0]!;
   unit.scene.layers = ['web'];
   unit.scene.labels = { laptop: 'Wants a page' };
+  unit.scene.start = [{ cue: 'glow' }];
   const derived = deriveState(lesson, positionOf(lesson, 0, 'step', 2), 1);
   expect(sceneViewOf(unit, derived)).toEqual({
     unit: 0,
     layers: ['web'],
     labels: { laptop: 'Wants a page' },
+    start: [{ cue: 'glow' }],
     status: 'Asking',
     cues: derived.cues,
     tables: derived.tables,
     board: derived.board,
     active: derived.active,
   });
+});
+
+test('the start is the unit’s own at every position, Overview to Practice, and not among the cues that have played', () => {
+  const lesson = lessonWithStatuses();
+  lesson.units[0]!.scene.start = [{ cue: 'status', arg: 'Waiting already' }];
+  for (const [kind, step] of [['overview', 1], ['step', 1], ['step', 5], ['learn', 1], ['practice', 1]] as const) {
+    const view = viewAt(lesson, 0, kind, step);
+    expect(view.start, `${kind} ${step}`).toEqual([{ cue: 'status', arg: 'Waiting already' }]);
+    expect(view.cues.some((c) => c.arg === 'Waiting already'), `${kind} ${step}`).toBe(false);
+  }
+  // A unit that gives none starts with nothing.
+  expect(viewAt(lesson, 1, 'overview').start).toEqual([]);
 });

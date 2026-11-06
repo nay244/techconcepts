@@ -26,6 +26,9 @@ import { animate, easeInOut, wait } from '../motion';
  *
  * A unit's labels give the words before any cue: `laptop` (the status line), `laptopAddr`, `url`, and `router`,
  * the home router's callout in one or two lines (a line with a number is an address, a line of words a note).
+ * A unit's start (`view.start`) is cues already in place before any has played, at every position of the unit:
+ * TLS's line, already open (`conn open laptop>web`), and the letters waiting in POP3's and IMAP's mailbox
+ * (`tray mail on`). The cues that play go on from there, so TLS's handshake seals the line its start opened.
  * A step's own status (`view.status`, from `step.status`) takes over the status line from the `laptop` label as the
  * step starts, plain; a status cue that has played wins over both.
  * A cue the map cannot show, such as a connection with no route, is a mistake in the lesson: it throws.
@@ -224,12 +227,13 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   const wants = (state: MapState, el: SVGElement): boolean => state.page === 'full' || (state.page === 'text' && el.dataset.part === 'text');
 
   /**
-   * The map once `cues` have played, in order, over the unit's labels and the step's own status (which takes over
-   * from the `laptop` label). Throws for a cue it cannot show.
+   * The map once the unit's start and then `played` have played, in order, over the unit's labels and the step's
+   * own status (which takes over from the `laptop` label). Throws for a cue it cannot show.
    */
-  function settle(cues: readonly PlayedCue[], labels: Record<string, string>, status: string | null): MapState {
+  function settle(view: SceneView, played: readonly PlayedCue[]): MapState {
+    const { labels } = view;
     const s: MapState = {
-      status: status ?? labels.laptop ?? '',
+      status: view.status ?? labels.laptop ?? '',
       style: '',
       addr: labels.laptopAddr ?? NET_MAP_LAPTOP_ADDR,
       url: labels.url ?? '',
@@ -238,11 +242,16 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       lock: false,
       trays: new Map(),
     };
-    // One event's cues at a time, so a status and its style go together whatever their order.
-    for (let start = 0; start < cues.length; ) {
-      let end = start;
-      while (end < cues.length && cues[end]!.eventId === cues[start]!.eventId) end++;
-      const own = cues.slice(start, end);
+    // The start first, as though it had played before the first event; then one event's cues at a time, so a status
+    // and its style go together whatever their order.
+    const groups: (readonly Cue[])[] = [view.start];
+    for (let from = 0; from < played.length; ) {
+      let end = from;
+      while (end < played.length && played[end]!.eventId === played[from]!.eventId) end++;
+      groups.push(played.slice(from, end));
+      from = end;
+    }
+    for (const own of groups) {
       for (const { cue, arg = '' } of own) {
         if (cue === 'status') [s.status, s.style] = [arg, ''];
         else if (cue === 'addr') s.addr = arg;
@@ -259,7 +268,6 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       }
       if (own.some((c) => c.cue === 'status-done')) s.style = 'done';
       else if (own.some((c) => c.cue === 'status-known')) s.style = 'known';
-      start = end;
     }
     return s;
   }
@@ -338,7 +346,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     if (o.signal.aborted) return;
     const own = event.type === 'table' ? [] : (event.cues ?? []).map((c) => ({ ...c, eventId: event.id }));
     // Worked out first, so a cue the map cannot show fails before anything moves.
-    const landed = settle([...view.cues, ...own], view.labels, view.status);
+    const landed = settle(view, [...view.cues, ...own]);
     if (event.type !== 'message') {
       paint(landed);
       return;
@@ -435,7 +443,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       // The browser takes the new styles while data-settling turns the fades off (net-map.css);
       // after that they are back on, so a play still fades its lights in and out.
       // Everything show paints is worked out first, so a mistake in the lesson throws before the figure changes.
-      const settled = settle(view.cues, view.labels, view.status);
+      const settled = settle(view, view.cues);
       const routerLabel = routerOf(view.labels.router);
       root.setAttribute('data-settling', '');
       try {

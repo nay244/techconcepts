@@ -1,4 +1,4 @@
-import type { Board, SceneEvent, Unit } from '../content/schema';
+import type { Board, Cue, SceneEvent, Unit } from '../content/schema';
 import type { TableState } from '../engine/tables';
 import type { AppliedCue, DerivedState } from '../engine/timeline';
 
@@ -15,6 +15,12 @@ export interface SceneView {
   layers: string[];
   /** Words the figure shows on its parts, by part id (`unit.scene.labels`). */
   labels: Record<string, string>;
+  /**
+   * Cues already in place as the unit starts (`unit.scene.start`), the same at
+   * every position of the unit: the figure shows them under the cues that have
+   * played. Empty for a unit that gives none.
+   */
+  start: Cue[];
   /**
    * What the latest step so far says the scene is doing as it starts
    * (`step.status`), or null: none at the Overview, or before any step sets one.
@@ -39,6 +45,7 @@ export function sceneViewOf(unit: Unit, derived: DerivedState): SceneView {
     unit: derived.unit,
     layers: unit.scene.layers,
     labels: unit.scene.labels,
+    start: unit.scene.start ?? [],
     status,
     cues: derived.cues,
     tables: derived.tables,

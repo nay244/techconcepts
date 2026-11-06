@@ -204,6 +204,11 @@ export const unitSceneSchema = z.strictObject({
   layers: z.array(text).default(() => []),
   /** Words the figure shows on its parts, by part id. */
   labels: z.record(z.string(), z.string()).default(() => ({})),
+  /**
+   * Cues already in place as the unit starts, as though they had played before its first event, from the
+   * Overview on: TLS's line, open before its handshake, and the letters waiting in POP3's and IMAP's mailbox.
+   */
+  start: z.array(cueSchema).optional(),
   panel: panelSchema.nullable(),
   log: logDefSchema,
   parties: z.array(partySchema),

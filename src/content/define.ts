@@ -159,6 +159,7 @@ function checkScene(c: UnitContext, at: string): void {
   for (const layer of scene.layers) {
     if (!parts.layers.includes(layer)) issues.push(`${at}: layer "${layer}" is not one the ${figure} figure has.`);
   }
+  checkCues(scene.start, `${at}: the scene's start`, c);
   if (figure === 'net-map' && scene.title.length > MAX_NET_MAP_TITLE) {
     issues.push(`${at}: the scene title is ${scene.title.length} characters; the limit is ${MAX_NET_MAP_TITLE} on the net-map figure.`);
   }

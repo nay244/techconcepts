@@ -100,6 +100,7 @@ test('ScenePanel calls show on every change, and aborts the running play when th
     unit: 0,
     layers: [],
     labels: {},
+    start: [],
     status: null,
     cues: [],
     tables: { t: { rows: [], highlight: null, missed: [] } },

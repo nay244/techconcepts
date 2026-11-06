@@ -30,6 +30,7 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     places: [...new Set([...NET_MAP_BASE_PLACES, ...Object.values(NET_MAP_LAYERS).flatMap(plateSites)])],
     // What a message leaves on the map once it lands (src/scenes/drivers/net-map.ts): the laptop's status line and its
     // style, an open connection, the page on its screen, the padlock, a letter on a tray, and its address texts.
+    // A unit's scene may also start with some in place (`scene.start`): TLS's open line, POP3's and IMAP's letters.
     cues: {
       status: 'text',
       conn: 'text',

@@ -302,6 +302,21 @@ test('cues must be the figure’s, with an arg exactly when they take text', () 
   expect(joined(noteCue)).toMatch(/note "n1".*cue "status" needs an arg/);
 });
 
+test('a scene’s start is cues the figure has, checked as an event’s are', () => {
+  const ok = makeLesson();
+  unit(ok).scene.start = [{ cue: 'glow' }, { cue: 'status', arg: 'Waiting' }];
+  expect(issuesOf(ok)).toEqual([]);
+  const unknown = makeLesson();
+  unit(unknown).scene.start = [{ cue: 'sparkle' }];
+  expect(issuesOf(unknown)).toEqual([expect.stringMatching(/^Unit "neighbors": the scene's start: cue "sparkle" is not one the dhcp figure has\.$/)]);
+  const noArg = makeLesson();
+  unit(noArg).scene.start = [{ cue: 'status' }];
+  expect(joined(noArg)).toMatch(/the scene's start: cue "status" needs an arg/);
+  const flagArg = makeLesson();
+  unit(flagArg).scene.start = [{ cue: 'glow', arg: 'bright' }];
+  expect(joined(flagArg)).toMatch(/the scene's start: cue "glow" is a flag and takes no arg/);
+});
+
 test('scene layers must be layers the figure has', () => {
   const l = makeLesson();
   unit(l).scene.layers = ['web', 'pizza'];

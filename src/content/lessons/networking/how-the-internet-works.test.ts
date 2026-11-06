@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { afterEach, expect, test, vi } from 'vitest';
 import { drawNetMap } from '../../../art/scenes/net-map';
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from '../../../art/scenes/net-map-layers';
@@ -21,6 +23,8 @@ const unitById = (id: string): Unit => internet.units.find((u) => u.id === id)!;
 const indexOf = (id: string): number => internet.units.findIndex((u) => u.id === id);
 const messagesOf = (u: Unit): MessageEvent[] => u.steps.flatMap((s) => s.events).filter((e): e is MessageEvent => e.type === 'message');
 const minutesOf = (u: Unit): number => estimateUnitMinutes(u, PRACTICE_MINUTES_PER_UNIT);
+// Read from the project root: under jsdom import.meta.url is not a file URL.
+const mapCss: string = readFileSync('src/art/scenes/net-map.css', 'utf8');
 
 /** A unit's table once its step `n` has played in full (or, without `n`, at its Learn). */
 function tableAfter(id: string, table: string, n?: number) {
@@ -38,11 +42,22 @@ function mountMap() {
   return { root, data, driver: netMapDriver.create(root, data) };
 }
 
-test('units follow UNIT_ORDER', () => {
+test('all 14 protocols are present, in UNIT_ORDER', () => {
   // Protocol Explorer's order (owner): its structure and order only.
   expect(UNIT_ORDER).toEqual(['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls']);
-  // Only the protocols written so far, in that order.
-  expect(internet.units.map((u) => u.id)).toEqual(['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp']);
+  expect(internet.units.map((u) => u.id)).toEqual([...UNIT_ORDER]);
+});
+
+test('78 Watch steps in all, 28 questions', () => {
+  expect(internet.units.reduce((n, u) => n + u.steps.length, 0)).toBe(78);
+  expect(internet.units.reduce((n, u) => n + u.practice.length, 0)).toBe(28);
+});
+
+test('the lesson takes 96 minutes', () => {
+  expect(estimateMinutes(internet)).toBe(96);
+  // As FIGS/minutes.mjs counts the whole lesson: 9,829 words read, 78 steps, half a minute of Practice for each of 14.
+  expect(internet.units.reduce((n, u) => n + countUnitWords(u), 0)).toBe(9829);
+  expect(Math.ceil(9829 / 200 + 0.5 * 78 + PRACTICE_MINUTES_PER_UNIT * 14)).toBe(96);
 });
 
 test('the lesson is lesson 1, How the Internet Works, on the network map', () => {
@@ -59,9 +74,9 @@ test('the lesson is lesson 1, How the Internet Works, on the network map', () =>
   expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({
     number: 1,
     available: true,
-    units: 9,
-    stepCount: 50,
-    minutes: estimateMinutes(internet),
+    units: 14,
+    stepCount: 78,
+    minutes: 96,
   });
   expect(internet.units.map((u) => [u.name, u.fullName, u.purpose, u.group, u.osiLayers])).toEqual([
     ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', [7]],
@@ -73,6 +88,11 @@ test('the lesson is lesson 1, How the Internet Works, on the network map', () =>
     ['DHCP', 'Dynamic Host Configuration Protocol', 'Getting an address', 'app', [7]],
     ['ICMP', 'Internet Control Message Protocol', 'Network check-ups', 'core', [3]],
     ['SMTP', 'Simple Mail Transfer Protocol', 'Sending email', 'app', [7]],
+    ['POP3', 'Post Office Protocol, version 3', 'Downloading email', 'app', [7]],
+    ['IMAP', 'Internet Message Access Protocol', 'Email kept in sync', 'app', [7]],
+    ['FTP', 'File Transfer Protocol', 'Moving files', 'app', [7]],
+    ['SSH', 'Secure Shell', 'Remote control, sealed', 'security', [7]],
+    ['TLS/SSL', 'Transport Layer Security (SSL is its old name)', 'The seal itself', 'security', [6]],
   ]);
 });
 
@@ -81,7 +101,9 @@ test('the protocol files are parts of the lesson, not lessons of their own', () 
   // (DNS, DHCP and TLS also have lessons of their own, 14, 10 and 16, under the same slugs as their units here.)
   const available = getEntries('networking').filter((e) => e.available).map((e) => e.slug);
   expect(available).toContain('how-the-internet-works');
-  for (const id of ['http', 'https', 'tcp', 'udp', 'ip', 'icmp', 'smtp']) expect(getLesson('networking', id), id).toBeUndefined();
+  for (const id of ['http', 'https', 'tcp', 'udp', 'ip', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh']) {
+    expect(getLesson('networking', id), id).toBeUndefined();
+  }
   expect(getLesson('networking', 'how-the-internet-works')).toBe(internet);
 });
 
@@ -110,7 +132,7 @@ test('each protocol validates, has 5–6 steps and 2 questions, and takes at mos
     expect(minutesOf(u), u.id).toBeLessThanOrEqual(MAX_MINUTES);
   }
   // The mockup's words, all of them, counted as FIGS/minutes.mjs counts them: steps, words read and minutes, each
-  // as minutes.mjs gives it for that protocol. (The whole lesson's 96 is pinned once all 14 are written.)
+  // as minutes.mjs gives it for that protocol. (The whole lesson's 96 is pinned above.)
   expect(internet.units.map((u) => [u.id, u.steps.length, countUnitWords(u), minutesOf(u)])).toEqual([
     ['http', 5, 737, 7],
     ['https', 6, 814, 8],
@@ -121,6 +143,11 @@ test('each protocol validates, has 5–6 steps and 2 questions, and takes at mos
     ['dhcp', 6, 679, 7],
     ['icmp', 6, 725, 8],
     ['smtp', 6, 685, 7],
+    ['pop3', 5, 578, 6],
+    ['imap', 5, 645, 7],
+    ['ftp', 6, 682, 7],
+    ['ssh', 6, 797, 8],
+    ['tls', 6, 779, 8],
   ]);
 });
 
@@ -176,7 +203,34 @@ test('HTTP: step titles are Client Request, DNS Resolution, TCP Connection, HTTP
     'Server Relay and STARTTLS',
     'Message Delivery',
   ]);
-  // Learn's pattern box, in Title Case (the box sets it in capitals). SMTP's are its commands and a reply code, as written.
+  expect(titles('pop3')).toEqual(['TLS Connection', 'Authentication', 'Mailbox Status', 'Message Retrieval', 'Delete and Quit']);
+  expect(titles('imap')).toEqual(['TLS Connection', 'Authentication', 'Folder Selection', 'Fetch and Flag', 'IDLE Push']);
+  expect(titles('ftp')).toEqual([
+    'Control Connection',
+    'Plaintext Login',
+    'Passive Mode',
+    'Data Connection',
+    'File Transfer',
+    'Session Close',
+  ]);
+  expect(titles('ssh')).toEqual([
+    'Version Exchange',
+    'Algorithm Negotiation',
+    'Key Exchange and Host Key Check',
+    'Public-Key Authentication',
+    'Channel Open',
+    'Interactive Session',
+  ]);
+  expect(titles('tls')).toEqual([
+    'ClientHello',
+    'ServerHello',
+    'Certificate Verification',
+    'Handshake Finished',
+    'Encrypted Application Data',
+    'Close Notify',
+  ]);
+  // Learn's pattern box, in Title Case (the box sets it in capitals). Commands stay as written: SMTP's and a reply
+  // code, POP3's and IMAP's, and FTP's PASV and QUIT. TLS's messages are spelt as its step titles spell them.
   expect(internet.units.map((u) => u.learn.pattern.names)).toEqual([
     ['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render'],
     ['DNS Resolution', 'TCP Connection', 'TLS Handshake', 'Encrypted HTTP'],
@@ -187,6 +241,11 @@ test('HTTP: step titles are Client Request, DNS Resolution, TCP Connection, HTTP
     ['Discover', 'Offer', 'Request', 'Acknowledge'],
     ['Echo Request', 'Echo Reply', 'Time Exceeded', 'Unreachable'],
     ['EHLO', 'MAIL FROM', 'RCPT TO', 'DATA', '250'],
+    ['USER', 'PASS', 'STAT', 'RETR', 'DELE', 'QUIT'],
+    ['LOGIN', 'SELECT', 'FETCH', 'STORE', 'IDLE'],
+    ['Control Connection', 'Login', 'PASV', 'Data Connection', 'Transfer', 'QUIT'],
+    ['Version Exchange', 'Negotiation', 'Key Exchange', 'Authentication', 'Channel'],
+    ['ClientHello', 'ServerHello', 'Certificate', 'Finished', 'Application Data'],
   ]);
 });
 
@@ -216,6 +275,11 @@ test('every message names places the map has, and every unit’s layers exist', 
     [],
     ['icmp:web'],
     ['smtp:out', 'smtp:in'],
+    ['pop3:mail'],
+    ['imap:mail'],
+    ['ftp:files'],
+    ['ssh:host'],
+    ['tls:web'],
   ]);
   for (const u of internet.units) {
     for (const layer of u.scene.layers) expect(parts.layers, `${u.id}: ${layer}`).toContain(layer);
@@ -231,7 +295,7 @@ test('every message names places the map has, and every unit’s layers exist', 
     }
     for (const party of u.scene.parties) expect(shown.has(party.place), `${u.id}: ${party.place}`).toBe(true);
   }
-  expect(internet.units.map((u) => messagesOf(u).length)).toEqual([11, 13, 14, 11, 7, 8, 6, 14, 34]);
+  expect(internet.units.map((u) => messagesOf(u).length)).toEqual([11, 13, 14, 11, 7, 8, 6, 14, 34, 24, 24, 20, 25, 10]);
 });
 
 test('TCP’s lost piece is dropped with dropAt, and its row is marked missing', () => {
@@ -349,6 +413,44 @@ test('each protocol’s table ends with the mockup’s rows', () => {
     ['Lookup', 'smtp.example.net', 'DNS resolver', 'MX: mx.example.org'],
     ['2', 'smtp.example.net', 'mx.example.org', '250 delivered'],
   ]);
+  // Deleted at QUIT: POP3 leaves the mailbox empty, and its letters on the laptop.
+  expect(cells('pop3', 'mailbox')).toEqual([
+    ['1', '4.1 KB', 'Deleted'],
+    ['2', '18 KB', 'Deleted'],
+  ]);
+  expect(cells('imap', 'inbox')).toEqual([
+    ['1', 'news@example.com', 'This week’s tips', '\\Seen'],
+    ['2', 'sam@example.org', 'Re: Saturday?', '\\Seen'],
+    ['3', 'jo@example.org', 'Photos from Saturday', 'unread'],
+  ]);
+  expect(cells('ftp', 'readable')).toEqual([
+    ['Greeting', 'the server’s name and software'],
+    ['USER', 'your user name: alex'],
+    ['PASS', 'your password: sunflower7'],
+    ['227 reply', 'the data port, 50000'],
+    ['STOR', 'the file’s name: report.pdf'],
+    ['The file', 'all of report.pdf'],
+  ]);
+  // The mockup paints the password and the file amber; they are exposed, not missing, so neither is a miss here.
+  expect(tableAfter('ftp', 'readable').missed).toEqual([]);
+  expect(cells('ssh', 'agreed')).toEqual([
+    ['Version', 'SSH 2.0'],
+    ['Key exchange', 'sntrup761x25519-sha512'],
+    ['Cipher', 'chacha20-poly1305'],
+    ['Host key', 'ssh-ed25519, matches known_hosts'],
+    ['Login', 'alex, with a key'],
+    ['Channel', 'session 0, a shell'],
+  ]);
+  expect(cells('tls', 'handshake')).toEqual([
+    ['Name asked for', 'techconcepts.app'],
+    ['Version', 'TLS 1.3'],
+    ['Cipher suite', 'TLS_AES_128_GCM_SHA256'],
+    ['Key exchange', 'X25519'],
+    ['Name on certificate', 'techconcepts.app ✓'],
+    ['Signed by', 'a CA the laptop trusts ✓'],
+    ['Server owns that key', 'yes ✓'],
+    ['Handshake', 'complete and untouched ✓'],
+  ]);
 });
 
 test('each table takes the mockup’s words: its title, who keeps it, its columns, and words where its cells are words', () => {
@@ -430,6 +532,46 @@ test('each table takes the mockup’s words: its title, who keeps it, its column
       [['Leg', false], ['From', true], ['To', true], ['Result', false]],
       'Not sent yet. The letter is still on the laptop.',
     ],
+    [
+      'mailbox',
+      'Your mailbox on the server',
+      'as POP3 sees it',
+      'letter',
+      [['Letter', false], ['Size', false], ['Status', true]],
+      'Not checked yet. The app hasn’t asked what’s there.',
+    ],
+    [
+      'inbox',
+      'Your inbox, on the server',
+      'the same from every device',
+      'number',
+      [['#', false], ['From', true], ['Subject', true], ['Flags', true]],
+      'Not opened yet. The app hasn’t looked in the inbox.',
+    ],
+    [
+      'readable',
+      'What someone watching can read',
+      'FTP has no seal',
+      'message',
+      [['Message', false], ['They can read', true]],
+      'Nothing yet. Nothing has been sent.',
+    ],
+    [
+      'agreed',
+      'What the two sides agreed',
+      'for this session',
+      'item',
+      [['Item', false], ['Agreed', false]],
+      'Nothing yet. The two sides haven’t spoken.',
+    ],
+    [
+      'handshake',
+      'The handshake so far',
+      'what each side has said and checked',
+      'item',
+      [['Item', false], ['Value', true]],
+      'Nothing yet. The TCP line is open, but neither side has said hello.',
+    ],
   ]);
   // Only UDP's says its key is hidden; every other table keys on a column it shows.
   expect(tables.filter((t) => t?.hiddenKey === true).map((t) => t!.id)).toEqual(['voice']);
@@ -470,6 +612,12 @@ test('the log is the packet log of internet-v2.html, with its widths, and the pa
       'example.net 203.0.113.80',
     ],
     ['Laptop 192.168.1.100', 'DNS resolver 192.0.2.53', 'Your mail server 203.0.113.60', 'Sam’s mail server 198.51.100.88'],
+    ['Laptop 192.168.1.100', 'Your mailbox 203.0.113.70'],
+    // The new letter comes in from the internet, from the address its delivery is logged from.
+    ['Laptop 192.168.1.100', 'Your mailbox 203.0.113.70', 'The internet 198.51.100.88'],
+    ['Laptop 192.168.1.100', 'File server 203.0.113.21'],
+    ['Laptop 192.168.1.100', 'Server 203.0.113.22'],
+    ['Laptop 192.168.1.100', 'Web server 198.51.100.7'],
   ]);
   expect(internet.units.map((u) => [u.scene.title, u.scene.labels])).toEqual([
     ['Your browser asks a web server for a page', { laptop: 'Wants example.net', url: 'example.net' }],
@@ -487,6 +635,11 @@ test('the log is the packet log of internet-v2.html, with its widths, and the pa
     ],
     ['Ping and traceroute check the way to example.net', { laptop: 'Running ping', url: 'Terminal' }],
     ['Your letter goes to your mail server, then to Sam’s', { laptop: 'Sending to sam@example.org', url: 'Mail' }],
+    ['Your mail app empties the mailbox onto your laptop', { laptop: 'Checking mail', url: 'Mail' }],
+    ['Your mail stays on the server, in sync', { laptop: 'Checking mail', url: 'Mail' }],
+    ['One line for commands, another for the file', { laptop: 'Uploading report.pdf', url: 'Files' }],
+    ['A sealed line for typing on a faraway server', { laptop: 'Opening a terminal', url: 'Terminal' }],
+    ['The handshake that seals a line, step by step', { laptop: 'Wants a sealed line', url: 'techconcepts.app' }],
   ]);
 });
 
@@ -506,6 +659,12 @@ test('every glyph the log shows has a word in its legend: a lost message, a broa
     [{ kind: 'broadcast', label: 'Broadcast to everyone' }],
     [],
     [{ kind: 'broadcast', label: 'Broadcast to everyone' }],
+    [],
+    [],
+    // POP3, IMAP, FTP, SSH and TLS send only requests and replies.
+    [],
+    [],
+    [],
     [],
     [],
   ]);
@@ -554,12 +713,28 @@ test('each protocol’s sources are the RFCs its facts name', () => {
     [{ label: 'RFC 2131: Dynamic Host Configuration Protocol', url: 'https://www.rfc-editor.org/rfc/rfc2131' }],
     [{ label: 'RFC 792: Internet Control Message Protocol', url: 'https://www.rfc-editor.org/rfc/rfc792' }],
     [{ label: 'RFC 5321: Simple Mail Transfer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc5321' }],
+    [{ label: 'RFC 1939: Post Office Protocol, Version 3', url: 'https://www.rfc-editor.org/rfc/rfc1939' }],
+    [{ label: 'RFC 9051: Internet Message Access Protocol (IMAP), Version 4rev2', url: 'https://www.rfc-editor.org/rfc/rfc9051' }],
+    [{ label: 'RFC 959: File Transfer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc959' }],
+    [
+      { label: 'RFC 4251: The Secure Shell (SSH) Protocol Architecture', url: 'https://www.rfc-editor.org/rfc/rfc4251' },
+      { label: 'RFC 4253: The Secure Shell (SSH) Transport Layer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc4253' },
+    ],
+    [{ label: 'RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3', url: 'https://www.rfc-editor.org/rfc/rfc8446' }],
   ]);
-  // Two RFCs the facts name are not among the sources the plan drafted: HTTPS's RFC 8446 (TLS 1.3, the TLS part's
-  // own source) and IP's RFC 8200 (IPv6). The owner reviews the sources with the built lesson.
-  const uncited: Record<string, string[]> = { https: ['RFC 8446'], ip: ['RFC 8200'] };
+  // Some RFCs the facts name are not among the sources the plan drafted: HTTPS's RFC 8446 (TLS 1.3, the TLS part's
+  // own source), IP's RFC 8200 (IPv6), and the two of SSH's "RFC 4251 to 4254" it does not cite, 4252 (logging in)
+  // and 4254 (channels). The owner reviews the sources with the built lesson.
+  const uncited: Record<string, string[]> = { https: ['RFC 8446'], ip: ['RFC 8200'], ssh: ['RFC 4252', 'RFC 4254'] };
+  /** Each RFC a fact names, a range ("RFC 4251 to 4254") one by one. */
+  const rfcsIn = (value: string) =>
+    [...value.matchAll(/RFC (\d+)(?: to (\d+))?/g)].flatMap(([, from, to = from]) =>
+      Array.from({ length: Number(to) - Number(from) + 1 }, (_, i) => `RFC ${Number(from) + i}`),
+    );
+  expect(rfcsIn('RFC 4251 to 4254, RFC 9110')).toEqual(['RFC 4251', 'RFC 4252', 'RFC 4253', 'RFC 4254', 'RFC 9110']);
   for (const u of internet.units) {
-    const named = u.learn.facts.find((f) => f.label === 'Defined in')!.value.match(/RFC \d+/g)!;
+    const named = rfcsIn(u.learn.facts.find((f) => f.label === 'Defined in')!.value);
+    expect(named.length, u.id).toBeGreaterThan(0);
     const missing = named.filter((rfc) => !u.references.some((r) => r.label.startsWith(`${rfc}:`)));
     expect(missing, u.id).toEqual(uncited[u.id] ?? []);
   }
@@ -640,10 +815,10 @@ test('show draws every position backwards too, and a jump from the last position
   expect(first).toMatchObject({ layers: ['http:web'], lit: [], conns: [], status: ['Wants example.net', 'nm-state'] });
   expect(first.router[0]).toBe('none');
 
-  // SMTP's Practice, the last position, shows its own layers, its lit tray and its lines' end state.
+  // TLS's Practice, the last position, shows its own layer, its page, and its line closed after close_notify.
   driver.show(viewAt(positions - 1));
   const last = mapState(root);
-  expect(last.layers).toEqual(['smtp:out', 'smtp:in']);
+  expect(last).toMatchObject({ layers: ['tls:web'], conns: [], status: ['Closed safely', 'nm-state done'] });
   expect(last).not.toEqual(first);
   // Straight back to the first position: the same map as the fresh driver's, down to the markup.
   driver.show(viewAt(0, 0));
@@ -656,6 +831,140 @@ test('show draws every position backwards too, and a jump from the last position
     driver.show(viewAt(0, 0));
     expect(mapState(root), `from position ${p}`).toEqual(first);
   }
+
+  // Each unit's Overview shows its own start and nothing else, whichever position was shown before it: letters
+  // waiting for POP3 and IMAP, TLS's open line, and nothing for the other eleven.
+  const starts = internet.units.map((u, i) => {
+    const overview = positionOf(internet, i, 'overview');
+    const seen = [overview - 1, positions - 1, 0].filter((p) => p >= 0).map((before) => {
+      driver.show(viewAt(before));
+      driver.show(viewAt(overview, 0));
+      return { lit: shownLit(root), conns: mapState(root).conns.map(([cls]) => cls) };
+    });
+    fresh.driver.show(viewAt(overview, 0));
+    expect(seen, u.id).toEqual(seen.map(() => ({ lit: shownLit(fresh.root), conns: mapState(fresh.root).conns.map(([cls]) => cls) })));
+    return [u.id, seen[0]];
+  });
+  expect(Object.fromEntries(starts.filter(([, s]) => JSON.stringify(s) !== JSON.stringify({ lit: [], conns: [] })))).toEqual({
+    pop3: { lit: ['nm-pop3-hold-mail'], conns: [] },
+    imap: { lit: ['nm-imap-hold-mail'], conns: [] },
+    tls: { lit: [], conns: ['nm-conn'] },
+  });
+});
+
+/** The trays and padlock lit on the plates the map shows (a hidden layer's tray may share a lit site). */
+const shownLit = (root: SVGSVGElement): string[] =>
+  [...root.querySelectorAll<SVGElement>('.nm-hold.on')].filter((el) => el.closest('[data-layer][display="none"]') === null).map((el) => el.id);
+
+/** How many of position `p`'s events have played once its first message tagged `tag` has. */
+function playedThrough(p: number, tag: string): number {
+  const at = stepEvents(internet, p).findIndex((e) => e.type === 'message' && e.tag === tag);
+  if (at === -1) throw new Error(`No message "${tag}" at position ${p}.`);
+  return at + 1;
+}
+
+test('POP3 and IMAP start with letters waiting, and TLS with its line open, from the Overview on; leaving clears them', () => {
+  const { root, driver } = mountMap();
+  const showAt = (id: string, kind: 'overview' | 'step' | 'learn' | 'practice', step = 1, through?: string) => {
+    const p = positionOf(internet, indexOf(id), kind, step);
+    const view = sceneViewOf(unitById(id), deriveState(internet, p, through === undefined ? 0 : playedThrough(p, through)));
+    driver.show(view);
+    return view;
+  };
+  const conns = () => mapState(root).conns.map(([cls]) => cls);
+  // The mockup's hold0 and conn0, as each scene's start; no other unit has one.
+  expect(internet.units.filter((u) => u.scene.start !== undefined).map((u) => [u.id, u.scene.start])).toEqual([
+    ['pop3', [{ cue: 'tray', arg: 'mail on' }]],
+    ['imap', [{ cue: 'tray', arg: 'mail on' }]],
+    ['tls', [{ cue: 'conn', arg: 'open laptop>web' }]],
+  ]);
+
+  // At the Overview nothing has played, so what the map shows is the start alone.
+  for (const id of ['pop3', 'imap']) {
+    const view = showAt(id, 'overview');
+    expect([view.cues, view.start], id).toEqual([[], [{ cue: 'tray', arg: 'mail on' }]]);
+    expect(shownLit(root), id).toEqual([`nm-${id}-hold-mail`]);
+  }
+  // POP3's letters wait, marked for deleting, until the server's goodbye after QUIT; IMAP's stay on the server.
+  showAt('pop3', 'step', 5, 'QUIT');
+  expect(shownLit(root)).toEqual(['nm-pop3-hold-mail']);
+  showAt('pop3', 'step', 5, '+OK BYE');
+  expect(shownLit(root)).toEqual([]);
+  showAt('pop3', 'learn');
+  expect(shownLit(root)).toEqual([]);
+  showAt('imap', 'practice');
+  expect(shownLit(root)).toEqual(['nm-imap-hold-mail']);
+  // FTP, next, has no letters.
+  showAt('ftp', 'overview');
+  expect(root.querySelectorAll('.nm-hold.on')).toHaveLength(0);
+
+  // TLS's line is open before its ClientHello, unsealed.
+  expect(showAt('tls', 'overview').cues).toEqual([]);
+  expect(conns()).toEqual(['nm-conn']);
+  showAt('tls', 'step', 1, 'CLIENT HELLO');
+  expect(conns()).toEqual(['nm-conn']);
+  // Its seal needs no open of its own: the start opened the line.
+  expect(deriveState(internet, positionOf(internet, indexOf('tls'), 'learn'), 0).cues.filter((c) => c.cue === 'conn').map((c) => c.arg)).toEqual([
+    'seal laptop>web',
+    'close laptop>web',
+  ]);
+  // SSH, before it, and HTTP, the first, start with no line.
+  showAt('ssh', 'overview');
+  expect(conns()).toEqual([]);
+  showAt('tls', 'step', 1);
+  driver.show(viewAt(0, 0));
+  expect(conns()).toEqual([]);
+});
+
+test('FTP draws its data line dashed and closes it; SSH and TLS seal their connections', () => {
+  const { root, driver } = mountMap();
+  /** The conn cues the derived state has applied, through the message tagged `through` (all the step's, by default), once shown. */
+  const applied = (id: string, kind: 'step' | 'learn', step = 1, through?: string) => {
+    const p = positionOf(internet, indexOf(id), kind, step);
+    const derived = deriveState(internet, p, through === undefined ? stepEvents(internet, p).length : playedThrough(p, through));
+    driver.show(sceneViewOf(unitById(id), derived));
+    return derived.cues.filter((c) => c.cue === 'conn').map((c) => c.arg);
+  };
+  /** The lit lines: each one's classes, and whether it is drawn above the cable. */
+  const lines = () => [...root.querySelector('#nm-conns')!.children].map((line) => [line.getAttribute('class'), line.getAttribute('transform')]);
+  // The data line's class is the dashed one.
+  expect(mapCss).toMatch(/\.nm \.nm-conn\.alt \{[^}]*stroke-dasharray: 5 4/);
+
+  // FTP: the control line, then a second, data line beside it, dashed and drawn just above.
+  expect(applied('ftp', 'step', 1)).toEqual(['open laptop>files']);
+  expect(lines()).toEqual([['nm-conn', null]]);
+  expect(applied('ftp', 'step', 4)).toEqual(['open laptop>files', 'open laptop>files data']);
+  expect(lines()).toEqual([
+    ['nm-conn', null],
+    ['nm-conn alt', 'translate(0 -6)'],
+  ]);
+  // The file crosses, and closing the data line marks its end: the control line stays for the 226.
+  expect(applied('ftp', 'step', 5, 'FILE')).toEqual(['open laptop>files', 'open laptop>files data']);
+  expect(lines()).toHaveLength(2);
+  expect(applied('ftp', 'step', 5, 'FIN').at(-1)).toBe('close laptop>files data');
+  expect(lines()).toEqual([['nm-conn', null]]);
+  // QUIT closes the control line too.
+  expect(applied('ftp', 'learn').at(-1)).toBe('close laptop>files');
+  expect(lines()).toEqual([]);
+
+  // SSH: open from the TCP hello; the laptop's NEWKEYS leaves it as it is, the server's seals it, and it stays sealed.
+  expect(applied('ssh', 'step', 3, 'NEWKEYS')).toEqual(['open laptop>host']);
+  expect(lines()).toEqual([['nm-conn', null]]);
+  expect(applied('ssh', 'step', 3)).toEqual(['open laptop>host', 'seal laptop>host']);
+  expect(lines()).toEqual([['nm-conn sealed', null]]);
+  expect(applied('ssh', 'learn')).toEqual(['open laptop>host', 'seal laptop>host']);
+  expect(lines()).toEqual([['nm-conn sealed', null]]);
+
+  // TLS: the line it starts with is sealed by the browser's Finished, stays sealed for the page, and closes after
+  // close_notify both ways.
+  expect(applied('tls', 'step', 4, 'FINISHED')).toEqual([]);
+  expect(lines()).toEqual([['nm-conn', null]]);
+  expect(applied('tls', 'step', 4)).toEqual(['seal laptop>web']);
+  expect(lines()).toEqual([['nm-conn sealed', null]]);
+  expect(applied('tls', 'step', 5)).toEqual(['seal laptop>web']);
+  expect(lines()).toEqual([['nm-conn sealed', null]]);
+  expect(applied('tls', 'learn')).toEqual(['seal laptop>web', 'close laptop>web']);
+  expect(lines()).toEqual([]);
 });
 
 test('HTTP’s laptop says what it is doing from the first step, until a message says more', () => {
