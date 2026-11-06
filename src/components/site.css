@@ -98,7 +98,8 @@
   background: var(--here-soft);
   color: var(--here);
 }
-/* A track's progress: one segment per lesson, done in green, in progress in marigold (current). */
+/* A track's progress: one segment per planned lesson, finished in the accent (as everywhere a track's bar is
+   shown), in progress in marigold (current). */
 .segbar {
   display: flex;
   gap: 2px;
@@ -111,7 +112,7 @@
   background: var(--line);
 }
 .segbar i.done {
-  background: var(--allowed);
+  background: var(--accent);
 }
 .segbar i.prog {
   background: var(--here);

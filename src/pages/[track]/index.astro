@@ -103,6 +103,7 @@ const figures = available.map((entry) => {
 
   <div class="wrap t-body" id="lessons">
     <TrackSidebar client:load lessons={planned} known={known}>
+      {/* Contract with TrackLessons: its scroll-spy marks these links, the sidebar's (.toc) links to #part-N. */}
       <nav aria-label="Parts of this track">
         <p class="toc-h">Parts</p>
         <ol>
@@ -318,9 +319,15 @@ const figures = available.map((entry) => {
   .pg-title:focus {
     outline: none;
   }
+  /* Focus lands here after Clear; the keyboard sees where it went. */
+  .pg-title:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
   .pg-title b {
     margin-inline-end: 2px;
-    color: var(--allowed);
+    color: var(--accent);
     font: 700 22px/1 var(--mono);
   }
   .pg-note {
@@ -331,10 +338,6 @@ const figures = available.map((entry) => {
   }
   .pg .segbar {
     margin: 12px 0 10px;
-  }
-  /* Finished lessons in the accent, as the lesson console's own bar has them. */
-  .pg .segbar i.done {
-    background: var(--accent);
   }
   .link-btn {
     margin-top: 12px;
@@ -440,6 +443,8 @@ const figures = available.map((entry) => {
 
   /* ---------- The exam chips ---------- */
   .toolbar {
+    /* Holds the sr-only filter status. */
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;

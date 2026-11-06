@@ -45,6 +45,9 @@ beforeEach(() => {
 afterEach(() => {
   window.history.replaceState(null, '', '/');
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  // Anything a test put on the page outside the island (the spy test's parts list).
+  for (const el of document.querySelectorAll('[data-fixture]')) el.remove();
 });
 
 test('every lesson is listed by part: ready ones as cards that link, the rest as rows that do not', () => {
@@ -135,7 +138,12 @@ test('the chips are the exams some lesson helps with, and All is pressed to begi
     'SOC Analyst',
   ]);
   expect(pressed()).toEqual(['All']);
-  expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  // The live region is on the page from the start, empty, so its first message is announced; the line the eye
+  // reads is hidden from assistive technology, so the sentence is heard once.
+  const status = screen.getByRole('status');
+  expect(status).toBeEmptyDOMElement();
+  expect(status).toHaveClass('sr-only');
+  expect(document.querySelector('.showing')).toHaveAttribute('aria-hidden', 'true');
 });
 
 test('a chip filters to the lessons for that exam and keeps the URL in step without adding history', async () => {
@@ -149,6 +157,7 @@ test('a chip filters to the lessons for that exam and keeps the URL in step with
   expect(screen.queryByText('OSI Model')).toBeNull();
   expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['The big picture', 'Protecting & scaling traffic']);
   expect(screen.getByRole('status')).toHaveTextContent('Showing 2 lessons for CompTIA Security+.');
+  expect(document.querySelector('.showing')).toHaveTextContent('Showing 2 lessons for CompTIA Security+.');
   expect(chip('CompTIA Security+')).toHaveFocus();
 
   await userEvent.click(chip('SOC Analyst'));
@@ -232,35 +241,43 @@ function reading(id: string): void {
 test('the parts list beside the lessons follows the part being read, among the parts shown', async () => {
   Spy.all = [];
   vi.stubGlobal('IntersectionObserver', Spy);
-  // The page's own parts list, static HTML outside the island.
-  const nav = document.createElement('nav');
-  nav.innerHTML = networkingTrack.parts.map((_, i) => `<a href="#part-${i + 1}">Part ${i + 1}</a>`).join('');
-  document.body.append(nav);
-  const link = (n: number) => nav.querySelector(`a[href="#part-${n}"]`)!;
+  // The page's own parts list, static HTML outside the island in the sidebar (.toc), and another link to a part
+  // elsewhere on the page, which the spy leaves alone.
+  const aside = document.createElement('aside');
+  aside.className = 'toc';
+  aside.dataset.fixture = '';
+  aside.innerHTML = `<nav>${networkingTrack.parts.map((_, i) => `<a href="#part-${i + 1}">Part ${i + 1}</a>`).join('')}</nav>`;
+  const elsewhere = document.createElement('a');
+  elsewhere.href = '#part-3';
+  elsewhere.dataset.fixture = '';
+  document.body.append(aside, elsewhere);
+  const link = (n: number) => aside.querySelector(`a[href="#part-${n}"]`)!;
 
   const { unmount } = render(lessons());
   const first = Spy.all.at(-1)!;
   expect(first.options?.rootMargin).toBe('-35% 0px -55% 0px');
   expect(first.targets.map((t) => t.id)).toEqual(['part-1', 'part-2', 'part-3', 'part-4', 'part-5', 'part-6']);
-  expect(nav.querySelector('[aria-current]')).toBeNull();
+  expect(aside.querySelector('[aria-current]')).toBeNull();
 
   reading('part-3');
   expect(link(3)).toHaveAttribute('aria-current', 'location');
   expect(link(3)).toHaveClass('on');
+  expect(elsewhere).not.toHaveAttribute('aria-current');
   reading('part-1');
   expect(link(1)).toHaveAttribute('aria-current', 'location');
   expect(link(3)).not.toHaveAttribute('aria-current');
   expect(link(3)).not.toHaveClass('on');
 
-  // Filtered, it watches only the parts still shown.
+  // Filtered, it watches only the parts still shown, and a part it hides is no longer marked.
+  reading('part-3');
   await userEvent.click(chip('CompTIA Security+'));
   expect(first.connected).toBe(false);
   expect(Spy.all.at(-1)!.targets.map((t) => t.id)).toEqual(['part-1', 'part-6']);
+  expect(link(3)).not.toHaveAttribute('aria-current');
+  expect(link(3)).not.toHaveClass('on');
 
   unmount();
   expect(Spy.all.every((s) => !s.connected)).toBe(true);
-  nav.remove();
-  vi.unstubAllGlobals();
 });
 
 // Last in the file: once the shared storage has failed it keeps saying so for as long as its module lives.

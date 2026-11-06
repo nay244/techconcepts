@@ -13,7 +13,8 @@ type Focus = 'confirm' | 'button' | 'title' | null;
  * (finished in the accent, in progress in marigold: current), which lessons are in progress, and "Clear my
  * progress". Clear asks "Clear all progress on this device?" first, with Clear and Keep it. Focus moves as
  * ResetProgress's does: to the question when it opens, and back to the button on Keep it. Clear leaves no button to
- * go back to, so focus goes to the card's title, and "Progress cleared" is announced.
+ * go back to, so focus goes to the card's title, and "Progress cleared" is announced. Progress cleared elsewhere
+ * (another tab) closes an open question too, and focus lost with it goes to the title.
  *
  * `lessons` is every planned lesson in track order; `known` is the page's `knownFrom(entries)`.
  */
@@ -46,6 +47,13 @@ export function TrackSidebar({
     lessons.map((l) => l.key),
   );
   const saved = ready && available && finished + inProgress > 0;
+
+  // Progress cleared elsewhere (another tab) closes an open question; if focus went with it, it goes to the title.
+  useEffect(() => {
+    if (saved || !confirming) return;
+    setConfirming(false);
+    if (document.activeElement === null || document.activeElement === document.body) setFocus('title');
+  }, [saved, confirming]);
   const status = (key: string) => (Object.hasOwn(data.lessons, key) ? data.lessons[key]!.status : null);
   const going = lessons.filter((l) => status(l.key) === 'in-progress').map((l) => l.title);
 

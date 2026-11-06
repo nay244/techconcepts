@@ -42,7 +42,10 @@ export function startRouterCover(root: HTMLElement): RouterCover {
   const stage = must<HTMLElement>(root, '[data-stage]');
   const hint = must<HTMLElement>(root, '[data-hint]');
   const readout = must<HTMLElement>(root, '[data-readout]');
+  const description = must<HTMLElement>(root, '[data-description]');
   const packets = [...root.querySelectorAll<SVGGElement>('.lm-pkt')];
+  // With nothing to send, a press would queue packets that never leave.
+  if (packets.length === 0) throw new Error('The router cover has no .lm-pkt.');
   const leds = [...root.querySelectorAll<SVGElement>('[data-part="rleds"] .lm-led')];
   const calm = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
 
@@ -155,6 +158,8 @@ export function startRouterCover(root: HTMLElement): RouterCover {
   stage.setAttribute('role', 'button');
   stage.setAttribute('tabindex', '0');
   stage.setAttribute('aria-label', LABEL);
+  // A button's contents are not read out, so the figure's description goes with it.
+  stage.setAttribute('aria-describedby', description.id);
   stage.addEventListener('click', send);
   stage.addEventListener('keydown', onKey);
   hint.hidden = false;

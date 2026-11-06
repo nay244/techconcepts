@@ -103,6 +103,7 @@ test('the markup: the live cover in its plate, with the corners, and no button o
   // Without the script the figure is only a figure.
   expect(stage().hasAttribute('role')).toBe(false);
   expect(stage().hasAttribute('tabindex')).toBe(false);
+  expect(stage().hasAttribute('aria-describedby')).toBe(false);
   expect($('[data-hint]').hidden).toBe(true);
   expect($('[data-readout]').hidden).toBe(true);
   expect($('[data-readout]').getAttribute('aria-live')).toBe('polite');
@@ -113,6 +114,11 @@ test('starting makes the figure a button that says what it does, and shows the h
   expect(stage().getAttribute('role')).toBe('button');
   expect(stage().getAttribute('tabindex')).toBe('0');
   expect(stage().getAttribute('aria-label')).toBe('Click to send packets');
+  // A button's contents are not read out, so the figure's own description is kept as the button's description.
+  const description = doc.getElementById(stage().getAttribute('aria-describedby')!)!;
+  expect(description.textContent).toBe(root.querySelector('svg.lm-router')!.getAttribute('aria-label'));
+  expect(description.textContent).toMatch(/^A home router on a plate/);
+  expect(description.hidden).toBe(true);
   expect($('[data-hint]').hidden).toBe(false);
   expect($('[data-hint]').textContent).toBe('Click to send packets');
   expect($('[data-readout]').hidden).toBe(false);
@@ -276,4 +282,11 @@ test('a cover with no path says so by name, and is left as a plain figure', () =
   delete root.dataset.routerCover;
   expect(() => startRouterCover(root)).toThrow('The router cover has no data-router-cover path.');
   expect(stage().hasAttribute('role')).toBe(false);
+});
+
+test('a cover with no packets says so by name, and is left as a plain figure', () => {
+  for (const p of packets()) p.remove();
+  expect(() => startRouterCover(root)).toThrow('The router cover has no .lm-pkt.');
+  expect(stage().hasAttribute('role')).toBe(false);
+  expect(vi.getTimerCount()).toBe(0);
 });

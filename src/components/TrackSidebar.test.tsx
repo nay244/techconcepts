@@ -129,6 +129,30 @@ test('the keyboard can ask, keep, ask again and clear', async () => {
   expect(container.querySelector('.pg-title')).toHaveFocus();
 });
 
+test('a question left open when another tab clears progress is closed, and does not come back with new progress', async () => {
+  save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
+  const { container } = render(sidebar());
+  await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
+  expect(screen.getByRole('group', { name: 'Clear all progress on this device?' })).toHaveFocus();
+
+  // Another tab clears it.
+  act(() => {
+    window.localStorage.removeItem(PROGRESS_KEY);
+    window.dispatchEvent(new StorageEvent('storage', { key: PROGRESS_KEY }));
+  });
+  expectFirstVisit(container);
+  // Focus went with the question, so it goes to the card's title, as after Clear.
+  expect(container.querySelector('.pg-title')).toHaveFocus();
+
+  // Progress saved again elsewhere brings back the button, not the old question.
+  act(() => {
+    save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 4 } }, key('dhcp'));
+    window.dispatchEvent(new StorageEvent('storage', { key: PROGRESS_KEY }));
+  });
+  expect(screen.getByRole('button', { name: 'Clear my progress' })).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Clear all progress on this device?' })).toBeNull();
+});
+
 test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {
   save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } });
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});

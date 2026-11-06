@@ -16,6 +16,8 @@ const CHECK = (
   </svg>
 );
 const NOT_STARTED: CardPlace = { parts: ['', '', ''], note: '' };
+/** The page's parts list: the sidebar's links to each part (`#part-N`), which follow the part being read. */
+const PARTS_LINKS = '.toc a[href^="#part-"]';
 const WLP = ['Watch', 'Learn', 'Practice'] as const;
 
 interface Props {
@@ -37,8 +39,9 @@ interface Props {
  * cannot see the query, so the server render (and the first render here, which must match it) shows everything; the
  * tag is applied once the island has started. An unknown tag shows everything.
  *
- * While the page scrolls, any link on it to a part shown here (the page's own parts list) is marked as the current
- * one while that part is in the middle of the window.
+ * While the page scrolls, the sidebar's link to a part shown here (the page's parts list, `.toc` links to `#part-N`)
+ * is marked as the current one while that part is in the middle of the window; a part the filter hides loses its
+ * mark. A live region, on the page from the start, says how many lessons a filter shows.
  */
 export function TrackLessons(props: Props) {
   const { parts, tags, known } = props;
@@ -64,26 +67,30 @@ export function TrackLessons(props: Props) {
     .filter(({ items }) => items.length > 0);
   const shown = shownParts.reduce((sum, { items }) => sum + items.filter((l) => l.ready).length, 0);
   const shownIds = shownParts.map(({ part }) => `part-${part.n}`).join(' ');
+  const sentence = filter === null ? '' : `Showing ${shown} ${shown === 1 ? 'lesson' : 'lessons'} for ${CERT_TAGS[filter]}.`;
 
   // The parts list follows the part being read, as the mockup's does; it watches only the parts shown.
+  // Contract with the page: its parts list is the sidebar's (.toc) links to #part-N.
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
-    const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="#part-"]')];
+    const links = [...document.querySelectorAll<HTMLAnchorElement>(PARTS_LINKS)];
+    const mark = (a: HTMLAnchorElement, on: boolean): void => {
+      a.classList.toggle('on', on);
+      if (on) a.setAttribute('aria-current', 'location');
+      else a.removeAttribute('aria-current');
+    };
+    // A part the filter has just hidden is no longer the one being read.
+    const ids = new Set(shownIds.split(' '));
+    for (const a of links) if (!ids.has(a.hash.slice(1))) mark(a, false);
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          for (const a of links) {
-            const on = a.getAttribute('href') === `#${entry.target.id}`;
-            a.classList.toggle('on', on);
-            if (on) a.setAttribute('aria-current', 'location');
-            else a.removeAttribute('aria-current');
-          }
+          if (entry.isIntersecting) for (const a of links) mark(a, a.hash === `#${entry.target.id}`);
         }
       },
       { rootMargin: '-35% 0px -55% 0px' },
     );
-    for (const id of shownIds.split(' ')) {
+    for (const id of ids) {
       const section = document.getElementById(id);
       if (section !== null) observer.observe(section);
     }
@@ -105,8 +112,12 @@ export function TrackLessons(props: Props) {
             </li>
           ))}
         </ul>
-        <p className="showing" role="status">
-          {filter === null ? '' : `Showing ${shown} ${shown === 1 ? 'lesson' : 'lessons'} for ${CERT_TAGS[filter]}.`}
+        {/* The line the eye reads; the live region beside it, always on the page, says the same to assistive tech. */}
+        <p className="showing" aria-hidden="true">
+          {sentence}
+        </p>
+        <p className="sr-only" role="status">
+          {sentence}
         </p>
       </div>
       {shownParts.map(({ part, items }) => {

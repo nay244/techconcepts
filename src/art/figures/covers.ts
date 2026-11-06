@@ -343,14 +343,27 @@ const frame = (id: string, label: string, body: string, aria: string): string =>
   return k.figureSvg({ width: W, height: H, label: aria, body: `${plate.under}<g>${plate.over}${body}</g>`, className: `lm-svg lm-${id}` });
 };
 
-const DRAW: Record<CoverId, () => string> = {
-  networking: () => frame('router', 'LAN · 192.168.1.1', router().svg, "A home router on a plate, with two antennas and a row of lights. A cable runs across the plate from a modem into the router's first port."),
-  web: () => frame('web', 'HTTP · GET / · 200', web().svg, "A laptop on a plate, its screen showing an empty browser window. A small track with one bend runs from the laptop to a server cabinet at the back, and a shuttle waits at the laptop's end."),
-  crypto: () => frame('lock', 'KEY 0x2F · 128-BIT', padlock(), 'A padlock made of stacked steel plates, its shackle closed. Its key waits on a small stand in front of the keyhole.'),
-  ai: () => frame('ai', 'MODEL · 16 WEIGHTS', sorter(), 'A boxy machine with a grid of lights on top and three dials on the front. A belt carries a card into its left side, and another belt leads out of its right side to two trays, one marked with a circle and one with a triangle.'),
-  privesc: () => frame('lift', 'ACCESS · LEVEL 1', lift(), 'A three-storey building with a lift on its front and an alarm light on the roof. In front stands a badge reader with a light for each floor, and a level 1 badge waits in its holder.'),
-  tvm: () => frame('scan', 'SCAN · 15 PANELS', scanner(), 'A wall of fifteen panels, three of them cracked. A scanner head hangs from a rail along the top of the wall, and a console in front lists what it finds.'),
+/** What each cover shows, in words: the figure's own label, and the description a page can give it elsewhere. */
+const DESCRIBE: Record<CoverId, string> = {
+  networking: "A home router on a plate, with two antennas and a row of lights. A cable runs across the plate from a modem into the router's first port.",
+  web: "A laptop on a plate, its screen showing an empty browser window. A small track with one bend runs from the laptop to a server cabinet at the back, and a shuttle waits at the laptop's end.",
+  crypto: 'A padlock made of stacked steel plates, its shackle closed. Its key waits on a small stand in front of the keyhole.',
+  ai: 'A boxy machine with a grid of lights on top and three dials on the front. A belt carries a card into its left side, and another belt leads out of its right side to two trays, one marked with a circle and one with a triangle.',
+  privesc: 'A three-storey building with a lift on its front and an alarm light on the roof. In front stands a badge reader with a light for each floor, and a level 1 badge waits in its holder.',
+  tvm: 'A wall of fifteen panels, three of them cracked. A scanner head hangs from a rail along the top of the wall, and a console in front lists what it finds.',
 };
+
+const DRAW: Record<CoverId, () => string> = {
+  networking: () => frame('router', 'LAN · 192.168.1.1', router().svg, DESCRIBE.networking),
+  web: () => frame('web', 'HTTP · GET / · 200', web().svg, DESCRIBE.web),
+  crypto: () => frame('lock', 'KEY 0x2F · 128-BIT', padlock(), DESCRIBE.crypto),
+  ai: () => frame('ai', 'MODEL · 16 WEIGHTS', sorter(), DESCRIBE.ai),
+  privesc: () => frame('lift', 'ACCESS · LEVEL 1', lift(), DESCRIBE.privesc),
+  tvm: () => frame('scan', 'SCAN · 15 PANELS', scanner(), DESCRIBE.tvm),
+};
+
+/** A cover's description in words, the same as its figure's label. */
+export const coverDescription = (id: CoverId): string => DESCRIBE[id];
 
 /** The cover as drawn in the mockup, with its `data-part` hooks, so a page can animate it. */
 export const cover = (id: CoverId): string => DRAW[id]();
