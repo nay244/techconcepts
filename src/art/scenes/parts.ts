@@ -1,3 +1,4 @@
+import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from './net-map-layers';
 import type { FigureId, FigureParts } from './types';
 
 /**
@@ -25,5 +26,22 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     board: true,
   },
   firewall: { places: [], cues: {}, layers: [], board: false },
-  'net-map': { places: [], cues: {}, layers: [], board: false },
+  'net-map': {
+    places: [...new Set([...NET_MAP_BASE_PLACES, ...Object.values(NET_MAP_LAYERS).flatMap(plateSites)])],
+    // What a message leaves on the map once it lands (src/scenes/drivers/net-map.ts): the laptop's status line and its
+    // style, an open connection, the page on its screen, the padlock, a letter on a tray, and its address texts.
+    cues: {
+      status: 'text',
+      conn: 'text',
+      page: 'text',
+      lock: 'flag',
+      tray: 'text',
+      'status-known': 'flag',
+      'status-done': 'flag',
+      addr: 'text',
+      url: 'text',
+    },
+    layers: Object.keys(NET_MAP_LAYERS),
+    board: false,
+  },
 };

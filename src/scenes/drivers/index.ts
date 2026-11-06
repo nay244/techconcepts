@@ -1,6 +1,7 @@
 import type { FigureId } from '../../art/scenes/types';
 import type { DriverModule } from '../driver';
 import { dhcpDriver } from './dhcp';
+import { netMapDriver } from './net-map';
 import { subnetDriver } from './subnet';
 
 /**
@@ -19,5 +20,5 @@ export const DRIVERS: Record<FigureId, DriverModule> = {
   dhcp: dhcpDriver,
   subnet: subnetDriver,
   firewall: stillDriver(),
-  'net-map': stillDriver(),
+  'net-map': netMapDriver,
 };
