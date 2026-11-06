@@ -15,6 +15,13 @@ export interface SceneView {
   layers: string[];
   /** Words the figure shows on its parts, by part id (`unit.scene.labels`). */
   labels: Record<string, string>;
+  /**
+   * What the latest step so far says the scene is doing as it starts
+   * (`step.status`), or null: none at the Overview, or before any step sets one.
+   * A step that sets none keeps the one before it. A status cue that has played
+   * wins over it.
+   */
+  status: string | null;
   cues: AppliedCue[];
   tables: Record<string, TableState>;
   board: Board | null;
@@ -24,10 +31,15 @@ export interface SceneView {
 
 /** The scene view for a unit at a derived moment. */
 export function sceneViewOf(unit: Unit, derived: DerivedState): SceneView {
+  const { kind, step } = derived.slot;
+  // The steps that have started: none at the Overview, every one at Learn and Practice.
+  const started = kind === 'overview' ? 0 : kind === 'step' ? step : unit.steps.length;
+  const status = unit.steps.slice(0, started).reduce<string | null>((latest, s) => s.status ?? latest, null);
   return {
     unit: derived.unit,
     layers: unit.scene.layers,
     labels: unit.scene.labels,
+    status,
     cues: derived.cues,
     tables: derived.tables,
     board: derived.board,

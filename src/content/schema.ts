@@ -131,6 +131,12 @@ export const tableEventSchema = z.strictObject({
   rows: z.array(rowSchema).optional(),
   /** May be '' for a `match` that found nothing. */
   key: z.string().optional(),
+  /**
+   * An `add` or `update` only: the row it leaves is a miss, something looked for
+   * and not there, such as a piece of data that never arrived. The row keeps the
+   * mark until an event changes it again without one.
+   */
+  miss: z.boolean().optional(),
   summary: text,
 });
 

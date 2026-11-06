@@ -6,7 +6,11 @@
    strongest tint (the pulse's first frame) is the one the contrast test checks.
    Colour is not the only signal: the row also carries data-highlight and a
    visually hidden "(new)", "(changed)" or "(matched)". The pulse only runs when
-   the learner has not asked for less motion. */
+   the learner has not asked for less motion. A row marked as a miss carries a
+   small "miss" tag after its first cell. The tag is neutral on purpose: the
+   marigold of --here means "current", and the red of --blocked is a lost
+   message's. It sits on the card colour, so its muted words keep their
+   contrast on a highlighted row too. */
 
 .tpanel {
   --tint: color-mix(in srgb, var(--selected) 16%, transparent);
@@ -92,6 +96,21 @@
   to {
     background-color: var(--tint);
   }
+}
+
+/* Something looked for and not there, such as a piece of data that never arrived. */
+.tpanel__miss {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--card);
+  color: var(--muted);
+  font: 700 10.5px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: 1px;
 }
 
 /* Its focus outline sits inside the panel, which the stage's edge would clip.

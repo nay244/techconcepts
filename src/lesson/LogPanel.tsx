@@ -106,8 +106,9 @@ export interface LogPanelProps {
 export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelProps) {
   const titleId = useId();
   const noteKind = log.legend.find((entry) => entry.kind === 'note' || entry.kind === 'change')?.kind ?? 'note';
-  // The outcome's word goes in the plain-words column, or the last one when there is none.
-  const flagColumn = log.columns.some((c) => c.key === 'plain') ? 'plain' : log.columns.at(-1)!.key;
+  // The outcome's word goes in the plain-words column, or else the first column of words, where it can wrap;
+  // the last column when there is neither.
+  const flagColumn = log.columns.some((c) => c.key === 'plain') ? 'plain' : (log.columns.find(isProse) ?? log.columns.at(-1)!).key;
 
   const scroller = useRef<HTMLDivElement>(null);
   useEffect(() => {

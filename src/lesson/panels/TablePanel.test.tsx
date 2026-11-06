@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import type { TableDef } from '../../content/schema';
@@ -31,7 +33,7 @@ const def: TableDef = {
   empty: 'No rules yet.',
 };
 
-const stateOf = (highlight: TableState['highlight'] = null, rows = ruleRows(rules)): TableState => ({ rows, highlight });
+const stateOf = (highlight: TableState['highlight'] = null, rows = ruleRows(rules)): TableState => ({ rows, highlight, missed: [] });
 const bodyRows = (container: HTMLElement) => [...container.querySelectorAll<HTMLElement>('tbody tr')];
 
 test('TablePanel shows its empty text, highlights the matched row, and keeps focus across a remount', () => {
@@ -162,7 +164,7 @@ test('finds the highlighted row by the key column, not by position', () => {
     { ip: '192.168.1.50', mac: '00:00:5E:00:53:0A' },
     { ip: '192.168.1.51', mac: '00:00:5E:00:53:0B' },
   ];
-  const { container } = render(<TablePanel def={leases} state={{ rows, highlight: { key: '00:00:5E:00:53:0B', type: 'added' } }} />);
+  const { container } = render(<TablePanel def={leases} state={{ rows, highlight: { key: '00:00:5E:00:53:0B', type: 'added' }, missed: [] }} />);
   expect(bodyRows(container).map((r) => r.getAttribute('data-highlight'))).toEqual([null, 'added']);
 });
 
@@ -174,6 +176,29 @@ test('a match that found nothing (empty key) highlights no row', () => {
 test('a highlight whose key matches no row highlights nothing', () => {
   const { container } = render(<TablePanel def={def} state={stateOf({ key: '9', type: 'updated' })} />);
   expect(container.querySelector('[data-highlight]')).toBeNull();
+});
+
+test('a row marked as a miss says “miss” in words, beside its first cell, whether or not it is highlighted', () => {
+  const { container } = render(<TablePanel def={def} state={{ ...stateOf({ key: '3', type: 'added' }), missed: ['2', '3'] }} />);
+  const rows = bodyRows(container);
+  expect(rows.map((r) => r.hasAttribute('data-miss'))).toEqual([false, true, true]);
+  // Visible words, not hidden ones: colour is never the only sign.
+  const label = within(rows[1]!).getByText('miss');
+  expect(label).toHaveClass('tpanel__miss');
+  expect(label).not.toHaveClass('sr-only');
+  expect(rows[1]!.querySelector('td')).toHaveTextContent(/^2 ?miss$/);
+  // A row can be both: the one the latest event added, and a miss.
+  expect(rows[2]).toHaveAttribute('data-highlight', 'added');
+  expect(within(rows[2]!).getByText('miss')).toBeInTheDocument();
+  expect(rows[0]!).not.toHaveTextContent('miss');
+});
+
+test('the miss mark is neutral: never marigold, which means “current”, nor the blocked red of a lost message', () => {
+  // Vitest drops stylesheet contents, so the rules are read from the file itself.
+  const css = readFileSync('src/lesson/panels/table.css', 'utf8');
+  const rules = [...css.matchAll(/([^{}]*tpanel__miss[^{}]*|[^{}]*data-miss[^{}]*)\{([^}]*)\}/g)].map((m) => m[2]!);
+  expect(rules.length).toBeGreaterThan(0);
+  for (const body of rules) expect(body).not.toMatch(/--here|--blocked/);
 });
 
 test('an empty table says its empty text in a row spanning every column, and keeps its headers', () => {
@@ -200,4 +225,10 @@ test.each(['dark', 'light'] as const)('a highlighted row keeps its text at 4.5:1
   const t = tokens[theme];
   expect(contrastRatio(t['ink-strong'], mix(t.selected, t.card, 40))).toBeGreaterThanOrEqual(4.5);
   expect(contrastRatio(t.selected, t.card)).toBeGreaterThanOrEqual(3);
+});
+
+// The miss tag sits on its own card-coloured ground, so a highlight behind its row does not touch its words.
+test.each(['dark', 'light'] as const)('the miss tag keeps its words at 4.5:1 in the %s theme', (theme) => {
+  const t = tokens[theme];
+  expect(contrastRatio(t.muted, t.card)).toBeGreaterThanOrEqual(4.5);
 });

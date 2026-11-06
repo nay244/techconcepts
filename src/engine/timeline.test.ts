@@ -154,7 +154,7 @@ test('the Overview applies nothing: tables at their starting rows, no log, cues,
     unit: 0,
     slot: { unit: 0, kind: 'overview', step: 0 },
     log: [],
-    tables: { t: { rows: [], highlight: null } },
+    tables: { t: { rows: [], highlight: null, missed: [] } },
     cues: [],
     board: null,
     active: null,
@@ -232,7 +232,7 @@ test('units never share state: unit 2 starts from initial rows and an empty log'
 
   const overview = deriveState(TWO, 8, 0);
   expect(overview).toMatchObject({ unit: 1, slot: { unit: 1, kind: 'overview', step: 0 }, log: [], cues: [], board: null, active: null });
-  expect(overview.tables).toEqual({ t: { rows: [PHONE_ROW], highlight: null } });
+  expect(overview.tables).toEqual({ t: { rows: [PHONE_ROW], highlight: null, missed: [] } });
 
   // Unit 2's own steps number its log from 1 and build on its own starting rows.
   const first = deriveState(TWO, 9, 1);
@@ -247,7 +247,7 @@ test('Learn and Practice show every step applied', () => {
     const d = deriveState(ONE, p, 0);
     expect(d.log.map((row) => row.eventId)).toEqual(['m1', 'm2', 'n1', 'm3', 'm4']);
     expect(d.log).toEqual(end.log);
-    expect(d.tables).toEqual({ t: { rows: [LAPTOP_ROW], highlight: null } });
+    expect(d.tables).toEqual({ t: { rows: [LAPTOP_ROW], highlight: null, missed: [] } });
     // No step is current there: nothing is highlighted, active or marked current.
     expect(d.active).toBeNull();
     expect(d.events).toEqual([]);
@@ -271,7 +271,7 @@ test('only the current step highlights a table row', () => {
   expect(deriveState(ONE, 2, 1).tables.t.highlight).toBeNull();
   expect(deriveState(ONE, 2, 2).tables.t.highlight).toEqual({ key: '192.168.1.10', type: 'added' });
   // Step 3: the add belongs to step 2 now, so the row is there but not highlighted until t-match plays.
-  expect(deriveState(ONE, 3, 0).tables.t).toEqual({ rows: [LAPTOP_ROW], highlight: null });
+  expect(deriveState(ONE, 3, 0).tables.t).toEqual({ rows: [LAPTOP_ROW], highlight: null, missed: [] });
   expect(deriveState(ONE, 3, 1).tables.t.highlight).toEqual({ key: '192.168.1.10', type: 'matched' });
   // A note after it leaves the highlight where it was.
   expect(deriveState(ONE, 3, 2).tables.t.highlight).toEqual({ key: '192.168.1.10', type: 'matched' });
@@ -291,12 +291,12 @@ test('a unit’s tables are its panel’s: one for a table, rules and conns for 
   unit.steps[2]!.events[0] = { type: 'table', id: 't-match', table: 'rules', op: 'match', key: '1', summary: 'Rule 1 matches.' };
   const R = build(rules);
   expect(deriveState(R, 0, 0).tables).toEqual({
-    rules: { rows: [{ n: '1' }], highlight: null },
-    conns: { rows: [], highlight: null },
+    rules: { rows: [{ n: '1' }], highlight: null, missed: [] },
+    conns: { rows: [], highlight: null, missed: [] },
   });
   expect(deriveState(R, 3, 1).tables).toEqual({
-    rules: { rows: [{ n: '1' }], highlight: { key: '1', type: 'matched' } },
-    conns: { rows: [{ who: 'laptop' }], highlight: null },
+    rules: { rows: [{ n: '1' }], highlight: { key: '1', type: 'matched' }, missed: [] },
+    conns: { rows: [{ who: 'laptop' }], highlight: null, missed: [] },
   });
 
   const withoutTables = (panel: LessonInput['units'][number]['scene']['panel']): Lesson => {

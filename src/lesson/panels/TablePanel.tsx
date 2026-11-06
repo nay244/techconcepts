@@ -28,11 +28,13 @@ let focusLostBy: string | null = null;
  * A device's table (leases, a cache, a MAC table) as it stands at this moment
  * of the lesson, under the scene. The row the latest event of the current step
  * points at is marked, pulses once, and is announced as new, changed or
- * matched, so colour is never the only signal. The panel is a labelled region
- * a keyboard user can focus and scroll.
+ * matched, so colour is never the only signal. A row marked as a miss says
+ * "miss" in a small neutral tag after its first cell, for as long as the mark
+ * lasts. The panel is a labelled region a keyboard user can focus and scroll.
  */
 export function TablePanel({ def, state }: TablePanelProps) {
   const { rows, highlight } = state;
+  const missed = new Set(state.missed);
   const region = useRef<HTMLDivElement>(null);
   // A match that found nothing carries an empty key. It points at no row, even one whose key cell is empty.
   const target = highlight !== null && !(highlight.type === 'matched' && highlight.key === '') ? highlight : null;
@@ -80,11 +82,19 @@ export function TablePanel({ def, state }: TablePanelProps) {
           ) : (
             rows.map((row, i) => {
               const mark = target !== null && row[def.keyColumn] === target.key ? target.type : null;
+              const key = row[def.keyColumn];
+              const miss = key !== undefined && missed.has(key);
               return (
-                <tr key={row[def.keyColumn] ?? i} data-highlight={mark ?? undefined}>
+                <tr key={key ?? i} data-highlight={mark ?? undefined} data-miss={miss ? '' : undefined}>
                   {def.columns.map((column, c) => (
                     <td key={column.key} className={column.prose === true ? 'tpanel__prose' : undefined}>
                       {row[column.key] ?? ''}
+                      {miss && c === 0 ? (
+                        <>
+                          {' '}
+                          <span className="tpanel__miss">miss</span>
+                        </>
+                      ) : null}
                       {mark !== null && c === 0 ? <span className="sr-only"> {HIGHLIGHT_TEXT[mark]}</span> : null}
                     </td>
                   ))}

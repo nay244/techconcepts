@@ -208,6 +208,10 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
     for (const field of TABLE_OP_FIELDS[e.op]) {
       if (e[field] === undefined) issues.push(`${where} (${e.op}) needs "${field}".`);
     }
+    // Only a row an event adds or changes can be marked as a miss.
+    if (e.miss !== undefined && e.op !== 'add' && e.op !== 'update') {
+      issues.push(`${where} (${e.op}) has "miss"; only an add or an update marks its row as a miss.`);
+    }
     return;
   }
 

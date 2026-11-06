@@ -59,9 +59,10 @@ function mount(): { root: SVGSVGElement; driver: SceneDriver } {
 
 /** A cue as an event of the lesson carries it, and as the scene view lists it once that event has played. */
 type CueOf = Cue & { eventId?: string };
-function view(o: { layers?: string[]; labels?: Record<string, string>; cues?: CueOf[] } = {}): SceneView {
+function view(o: { layers?: string[]; labels?: Record<string, string>; status?: string; cues?: CueOf[] } = {}): SceneView {
   const cues: AppliedCue[] = (o.cues ?? []).map(({ eventId, ...c }, i) => ({ ...c, eventId: eventId ?? `e${i}`, current: true }));
-  return { unit: 0, layers: o.layers ?? ['http:web'], labels: o.labels ?? {}, cues, tables: {}, board: null, active: null };
+  const status = o.status ?? null;
+  return { unit: 0, layers: o.layers ?? ['http:web'], labels: o.labels ?? {}, status, cues, tables: {}, board: null, active: null };
 }
 
 function msg(o: Partial<MessageEvent> = {}): MessageEvent {
@@ -409,6 +410,34 @@ test('the labels set the laptop’s first words and the router’s callout', () 
     ['192.168.1.1', 'nm-addr'],
     ['hands out addresses', 'nm-sub'],
   ]);
+});
+
+test('a step’s own status takes over from the label as the step starts, and any status a message has set wins over it', () => {
+  const { root, driver } = mount();
+  const state = part(root, 'nm-lapState');
+  const labels = { laptop: 'Wants example.net' };
+  driver.show(view({ labels }));
+  expect(state.textContent).toBe('Wants example.net');
+  // The step says what the laptop is doing before any message: plain, as a status of its own.
+  driver.show(view({ labels, status: 'Preparing a request' }));
+  expect([state.textContent, state.getAttribute('class')]).toEqual(['Preparing a request', 'nm-state']);
+  const lookup = { cue: 'status', arg: 'Looking up example.net', eventId: 'lookup' };
+  const found: CueOf[] = [lookup, { cue: 'status', arg: 'Found 203.0.113.80', eventId: 'answer' }, { cue: 'status-known', eventId: 'answer' }];
+  driver.show(view({ labels, status: 'Preparing a request', cues: [lookup] }));
+  expect(state.textContent).toBe('Looking up example.net');
+  driver.show(view({ labels, status: 'Preparing a request', cues: found }));
+  expect([state.textContent, state.getAttribute('class')]).toEqual(['Found 203.0.113.80', 'nm-state known']);
+});
+
+test('a message that sets no status leaves the step’s own on the laptop as it plays and lands', async () => {
+  const { root, driver } = mount();
+  const before = view({ labels: { laptop: 'Wants example.net' }, status: 'Preparing a request' });
+  const event = msg({ id: 'syn', tag: 'SYN', fast: true });
+  driver.show(before);
+  const p = driver.play(event, before, options({ reducedMotion: true }));
+  await vi.runAllTimersAsync();
+  await p;
+  expect(part(root, 'nm-lapState').textContent).toBe('Preparing a request');
 });
 
 /** Events that use every cue, every kind of trip and every outcome, each with the scene before it. */

@@ -96,7 +96,16 @@ test('ScenePanel calls show on every change, and aborts the running play when th
   expect(fake.module.create).toHaveBeenCalledTimes(1);
   expect(fake.module.create).toHaveBeenCalledWith(container.querySelector('svg[data-figure="dhcp"]'), DATA);
   expect(order).toEqual(['show', 'play']);
-  expect(shown()[0]).toEqual({ unit: 0, layers: [], labels: {}, cues: [], tables: { t: { rows: [], highlight: null } }, board: null, active: null });
+  expect(shown()[0]).toEqual({
+    unit: 0,
+    layers: [],
+    labels: {},
+    status: null,
+    cues: [],
+    tables: { t: { rows: [], highlight: null, missed: [] } },
+    board: null,
+    active: null,
+  });
   const [event, view, options] = lastPlay();
   expect(event).toBe(pendingEvent(LESSON, s1));
   expect(view).toBe(shown()[0]);

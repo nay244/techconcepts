@@ -40,7 +40,7 @@ const [first, second] = def.initialRows as [Row, Row];
 test('initialTables starts every table at its own copy of its initial rows, with no highlight', () => {
   const other: TableDef = { ...def, id: 'u', initialRows: [] };
   const tables = initialTables([def, other]);
-  expect(tables).toEqual({ t: { rows: def.initialRows, highlight: null }, u: { rows: [], highlight: null } });
+  expect(tables).toEqual({ t: { rows: def.initialRows, highlight: null, missed: [] }, u: { rows: [], highlight: null, missed: [] } });
   tables.t!.rows[0]!.mac = 'ZZ';
   tables.t!.rows.push({ ip: 'x' });
   expect(def.initialRows).toEqual([first, second]);
@@ -108,4 +108,42 @@ test('remove, clear and replace leave no single row to highlight', () => {
   expect(highlightFor(def, event('remove', { key: '10.0.0.1' }))).toBeNull();
   expect(highlightFor(def, event('clear'))).toBeNull();
   expect(highlightFor(def, event('replace', { rows: [] }))).toBeNull();
+});
+
+// ---------------------------------------------------------------- misses
+
+/** The table's state after `events`, applied in order to its starting rows. */
+function stateAfter(...events: TableEvent[]): TableState {
+  const state = initialTables([def]).t!;
+  for (const e of events) applyTableEvent(state, def, e);
+  return state;
+}
+
+const missing = event('add', { row: { ip: '10.0.0.3', mac: '?' }, miss: true });
+
+test('initialTables starts every table with no row marked as a miss', () => {
+  expect(initialTables([def]).t!.missed).toEqual([]);
+});
+
+test('an add or update with miss marks its row, by key, until the row changes again without it', () => {
+  expect(stateAfter(missing).missed).toEqual(['10.0.0.3']);
+  // Another row coming in leaves the mark where it is.
+  expect(stateAfter(missing, event('add', { row: { ip: '10.0.0.4', mac: 'DD' } })).missed).toEqual(['10.0.0.3']);
+  // The row filled in at last: the mark goes, as the mockup's new row replaces the old one.
+  expect(stateAfter(missing, event('update', { key: '10.0.0.3', row: { mac: 'CC' } })).missed).toEqual([]);
+  // An update can mark a row that was not a miss, and a renamed row keeps its mark under its new key.
+  expect(stateAfter(event('update', { key: '10.0.0.2', row: { mac: '?' }, miss: true })).missed).toEqual(['10.0.0.2']);
+  expect(stateAfter(missing, event('update', { key: '10.0.0.3', row: { ip: '10.0.0.9' }, miss: true })).missed).toEqual(['10.0.0.9']);
+});
+
+test('a mark goes with its row: removed, cleared or replaced rows keep none, and an update that finds no row marks nothing', () => {
+  expect(stateAfter(missing, event('remove', { key: '10.0.0.3' })).missed).toEqual([]);
+  expect(stateAfter(missing, event('clear')).missed).toEqual([]);
+  expect(stateAfter(missing, event('replace', { rows: [{ ip: '10.0.0.3', mac: 'CC' }] })).missed).toEqual([]);
+  expect(stateAfter(missing, event('match', { key: '10.0.0.3' })).missed).toEqual(['10.0.0.3']);
+  expect(stateAfter(event('update', { key: 'nobody', row: { mac: '?' }, miss: true })).missed).toEqual([]);
+});
+
+test('a miss is a mark of its own, not a highlight: the row it adds is still highlighted as added', () => {
+  expect(highlightFor(def, missing)).toEqual({ key: '10.0.0.3', type: 'added' });
 });

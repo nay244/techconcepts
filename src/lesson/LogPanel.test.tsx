@@ -111,6 +111,30 @@ test('a column marked prose is set as words, plain is prose unless it says other
   expect(second.at(-1)).not.toHaveClass('log__prose');
 });
 
+test('with no plain column, a lost row says so in its first column of words, where the word can wrap, not in a narrow one', () => {
+  // How the Internet Works' packet log: Info is its only column of words, and Size is 76 px of figures.
+  const log: LogDef = {
+    title: 'Event log',
+    columns: [
+      { key: 'source', label: 'Source', width: 176 },
+      { key: 'info', label: 'Info', prose: true },
+      { key: 'size', label: 'Size', width: 76 },
+    ],
+    legend: [],
+  };
+  const lost = { ...message(1, 'response', 'dropped', 'Lost on the way.'), cells: { source: '203.0.113.80:80', info: 'seq 1461', size: '1.5 KB' } };
+  render(<LogPanel log={log} rows={[lost]} idle="Nothing yet." />);
+  const [, source, info, size] = within(screen.getByRole('region', { name: 'Event log' })).getAllByRole('cell');
+  expect(info).toHaveTextContent(/^Dropped seq 1461$/);
+  expect(size).toHaveTextContent(/^1\.5 KB$/);
+  expect(source).not.toHaveTextContent('Dropped');
+
+  // With no column of words at all, the word goes in the last column, as before.
+  const figures: LogDef = { ...log, title: 'Figures', columns: [log.columns[0]!, log.columns[2]!] };
+  render(<LogPanel log={figures} rows={[lost]} idle="Nothing yet." />);
+  expect(within(screen.getByRole('region', { name: 'Figures' })).getAllByRole('cell').at(-1)).toHaveTextContent(/^Dropped 1\.5 KB$/);
+});
+
 test('the legend explains each glyph in words', () => {
   render(<LogPanel log={LOG} rows={ROWS} idle="Nothing yet." />);
   const legend = screen.getByRole('list', { name: 'Legend' });

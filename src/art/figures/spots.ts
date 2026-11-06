@@ -102,7 +102,7 @@ function practice() {
   return figure("practice", "PRACTICE · 3 QUESTIONS", out.join(""), "A standing board with a question at the top and three answers. The middle answer is raised and lit, with a tick beside it.");
 }
 
-// ---------- Lesson 07, Subnetting: one network cut into four smaller ones ----------
+// ---------- Lesson 08, Subnetting: one network cut into four smaller ones ----------
 function subnet() {
   const out = [];
   const pads = [[-80, -52], [6, -52], [-80, 6], [6, 6]].map(([x, y]) => ({ x, y, w: 74, d: 46, r: 4 }));
@@ -122,7 +122,7 @@ function subnet() {
   return figure("subnet", "192.168.1.0/24 → 4 × /26", out.join(""), "Four small networks, each on its own pad with five devices, joined by cables to one router in the middle. One device on the back left pad is lit.");
 }
 
-// ---------- Lesson 09, DHCP: the router hands the laptop its address ----------
+// ---------- Lesson 10, DHCP: the router hands the laptop its address ----------
 function dhcp() {
   const out = [];
   out.push(router({ x: 22, y: -56, w: 58, d: 32, r: 5 }, { lit: [0, 1, 2] }));
@@ -138,7 +138,7 @@ function dhcp() {
   return figure("dhcp", "DHCP · 192.168.1.100", out.join(""), "A Wi-Fi router at the back and a laptop at the front. Between them, a lit tag with the address 192.168.1.100 floats along a dotted arc toward the laptop.");
 }
 
-// ---------- Lesson 16, Firewalls: a wall with a gate, a list of rules, one packet let through ----------
+// ---------- Lesson 17, Firewalls: a wall with a gate, a list of rules, one packet let through ----------
 function firewall() {
   const out = [];
   const brick = (Wl) => {

@@ -35,7 +35,7 @@ function duration(event: SceneEvent): number {
 
 /** The lease rows once `event` has landed. The figure has no table definition, only the key it knows the lease table by. */
 function rowsAfter(rows: Row[], event: TableEvent): Row[] {
-  const state = { rows: rows.map((row) => ({ ...row })), highlight: null };
+  const state = { rows: rows.map((row) => ({ ...row })), highlight: null, missed: [] };
   applyTableEvent(state, { keyColumn: IP }, event);
   return state.rows;
 }

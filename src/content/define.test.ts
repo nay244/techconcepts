@@ -408,6 +408,21 @@ test('table events carry the fields their op needs', () => {
   expect(table({ op: 'clear' })).toBe('');
 });
 
+test('a table event marks its row as a miss only when it adds or changes that row', () => {
+  const table = (fields: Record<string, unknown>) => {
+    const l = makeLesson();
+    unit(l).steps[2]!.events = [{ type: 'table', id: 'x', table: 't', summary: 'S', miss: true, ...fields } as never];
+    return joined(l);
+  };
+  const row = { ip: '192.168.1.10', mac: '?' };
+  expect(table({ op: 'add', row })).toBe('');
+  expect(table({ op: 'update', key: '192.168.1.10', row })).toBe('');
+  for (const op of [{ op: 'remove', key: '192.168.1.10' }, { op: 'match', key: '' }, { op: 'clear' }, { op: 'replace', rows: [] }]) {
+    expect(table(op)).toMatch(new RegExp(`table event "x" \\(${op.op}\\) has "miss"`));
+  }
+  expect(table({ op: 'add', row, miss: 'yes' })).toMatch(/miss/);
+});
+
 test('a panel table’s key column is one of its columns, and a rules panel’s two tables differ', () => {
   const key = makeLesson();
   (unit(key).scene.panel as any).table.keyColumn = 'vlan';
