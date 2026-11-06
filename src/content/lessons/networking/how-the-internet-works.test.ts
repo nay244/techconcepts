@@ -7,6 +7,7 @@ import { deriveState, positionOf, slotsFor, stepEvents } from '../../../engine/t
 import { sceneViewOf } from '../../../scenes/driver';
 import { netMapDriver } from '../../../scenes/drivers/net-map';
 import { lessonNumbers, lessonTitles, misnamedLessons, textsOf } from '../../../test/lesson-references';
+import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
 import { countUnitWords, estimateMinutes, estimateUnitMinutes, MAX_MINUTES, PRACTICE_MINUTES_PER_UNIT } from '../../estimate';
 import { getEntries, getLesson } from '../../registry';
@@ -759,19 +760,11 @@ test('no prose is left with the mockup’s markup: bold is **term**, and no tag 
 
 // ---------------------------------------------------------------- the map, as the console shows it
 
-test('show draws every position of the lesson, at every event of its step, without throwing', () => {
-  const { driver } = mountMap();
-  let shown = 0;
-  slotsFor(internet).forEach((slot, p) => {
-    const unit = internet.units[slot.unit]!;
-    for (let n = 0; n <= stepEvents(internet, p).length; n++) {
-      expect(() => driver.show(sceneViewOf(unit, deriveState(internet, p, n))), `${unit.id} position ${p}, event ${n}`).not.toThrow();
-      shown++;
-    }
-  });
+// The sweep shows the map about 1,100 times and compares it with a fresh copy at 198 moments: some 8 s under jsdom.
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', { timeout: 60_000 }, () => {
   // Every position (each unit's steps, plus its Overview, Learn and Practice) and every event of every step once more.
   const events = internet.units.reduce((sum, u) => sum + u.steps.reduce((n, s) => n + s.events.length, 0), 0);
-  expect(shown).toBe(slotsFor(internet).length + events);
+  expect(showSweep(internet)).toBe(slotsFor(internet).length + events);
 });
 
 /** The view at position `p` once `n` of its events have played (all of them when `n` is left out). */
@@ -797,15 +790,9 @@ function mapState(root: SVGSVGElement) {
   };
 }
 
-test('show draws every position backwards too, and a jump from the last position to the first leaves nothing behind', () => {
+test('the first position shows HTTP alone, and the last TLS closed; each unit’s Overview shows its own start', () => {
   const { root, driver } = mountMap();
   const positions = slotsFor(internet).length;
-  // Backwards on the same driver: from the last position's last event to the first position.
-  for (let p = positions - 1; p >= 0; p--) {
-    for (let n = stepEvents(internet, p).length; n >= 0; n--) {
-      expect(() => driver.show(viewAt(p, n)), `position ${p}, event ${n}`).not.toThrow();
-    }
-  }
 
   // The first position, as a driver that has shown nothing else draws it.
   const fresh = mountMap();
@@ -819,17 +806,9 @@ test('show draws every position backwards too, and a jump from the last position
   const last = mapState(root);
   expect(last).toMatchObject({ layers: ['tls:web'], conns: [], status: ['Closed safely', 'nm-state done'] });
   expect(last).not.toEqual(first);
-  // Straight back to the first position: the same map as the fresh driver's, down to the markup.
+  // Straight back to the first position: the same map as the fresh driver's (the sweep compares the markup).
   driver.show(viewAt(0, 0));
   expect(mapState(root)).toEqual(first);
-  expect(root.outerHTML).toBe(fresh.root.outerHTML);
-
-  // And from the end of every other position, too.
-  for (let p = 1; p < positions; p++) {
-    driver.show(viewAt(p));
-    driver.show(viewAt(0, 0));
-    expect(mapState(root), `from position ${p}`).toEqual(first);
-  }
 
   // Each unit's Overview shows its own start and nothing else, whichever position was shown before it: letters
   // waiting for POP3 and IMAP, TLS's open line, and nothing for the other eleven.

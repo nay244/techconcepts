@@ -1,8 +1,10 @@
+// @vitest-environment jsdom
 import { expect, test } from 'vitest';
 import { drawDhcp } from '../../../art/scenes/dhcp';
 import { deriveState, positionOf, stepEvents } from '../../../engine/timeline';
 import { formatBytes } from '../../../lib/format';
 import { lessonNumbers, misnamedLessons } from '../../../test/lesson-references';
+import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
 import { countUnitWords, estimateMinutes } from '../../estimate';
 import type { MessageEvent } from '../../schema';
@@ -110,4 +112,9 @@ const TOPIC: Record<string, string> = {
 test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
   expect(lessonNumbers(dhcp)).toHaveLength(4);
   expect(misnamedLessons(dhcp, TOPIC)).toEqual([]);
+});
+
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', () => {
+  // Each position (the Overview, 5 steps, Learn, Practice) and each event of each step once more.
+  expect(showSweep(dhcp)).toBe(8 + unit.steps.flatMap((s) => s.events).length);
 });

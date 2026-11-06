@@ -7,6 +7,7 @@ import { deriveState, positionOf, slotsFor, stepEvents } from '../../../engine/t
 import { sceneViewOf } from '../../../scenes/driver';
 import { firewallDriver } from '../../../scenes/drivers/firewall';
 import { lessonNumbers, misnamedLessons, textsOf } from '../../../test/lesson-references';
+import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
 import { countUnitWords, estimateMinutes } from '../../estimate';
 import { checkResults, RULES, RULESETS } from '../../helpers/firewall-events';
@@ -321,18 +322,6 @@ function viewAt(p: number, n = stepEvents(firewalls, p).length) {
   return sceneViewOf(unit, deriveState(firewalls, p, n));
 }
 
-/**
- * The figure's markup, with each inline style written out the one way the
- * browser writes it. jsdom leaves a style attribute as the figure wrote it
- * ("opacity:0") until a different value is set, so a part that was changed
- * and changed back reads "opacity: 0;": the same style, in other words.
- */
-function markup(root: SVGSVGElement): string {
-  const copy = root.cloneNode(true) as SVGSVGElement;
-  for (const el of copy.querySelectorAll<SVGElement>('[style]')) el.setAttribute('style', el.style.cssText);
-  return copy.outerHTML;
-}
-
 /** What show leaves on the figure: the board, the marks, the lights, where each tag is, and the trail. */
 function figureState(root: SVGSVGElement) {
   const q = (id: string) => root.querySelector<SVGElement>(`#${id}`)!;
@@ -347,26 +336,15 @@ function figureState(root: SVGSVGElement) {
   };
 }
 
-test('show draws every position of the lesson, at every event of its step, forwards and backwards, and a jump back to the start leaves nothing behind', () => {
-  const { root, driver } = mount();
-  const positions = slotsFor(firewalls).length;
-  let shown = 0;
-  for (let p = 0; p < positions; p++)
-    for (let n = 0; n <= stepEvents(firewalls, p).length; n++) {
-      expect(() => driver.show(viewAt(p, n)), `position ${p}, event ${n}`).not.toThrow();
-      shown++;
-    }
-  expect(shown).toBe(positions + events.length);
-  for (let p = positions - 1; p >= 0; p--)
-    for (let n = stepEvents(firewalls, p).length; n >= 0; n--) {
-      expect(() => driver.show(viewAt(p, n)), `back at position ${p}, event ${n}`).not.toThrow();
-    }
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', () => {
+  // Each position (the Overview, 6 steps, Learn, Practice) and each event of each step once more.
+  expect(showSweep(firewalls)).toBe(slotsFor(firewalls).length + events.length);
+});
 
-  // The first position, as a driver that has shown nothing else draws it: the base list on the board, nothing lit.
-  const fresh = mount();
-  fresh.driver.show(viewAt(0, 0));
-  const first = figureState(fresh.root);
-  expect(first).toEqual({
+test('the first position shows the base list on the board, the gate shut, and nothing lit or on its way', () => {
+  const { root, driver } = mount();
+  driver.show(viewAt(0, 0));
+  expect(figureState(root)).toEqual({
     board: [
       ['1  ALLOW 443  ANY', 'fw-brow'],
       ['2  ALLOW 22   ADMIN', 'fw-brow'],
@@ -384,14 +362,6 @@ test('show draws every position of the lesson, at every event of its step, forwa
     ],
     trail: ['fw-trail', '0'],
   });
-  expect(markup(root)).toBe(markup(fresh.root));
-
-  // From the end of every position straight back to the first: the same figure, down to the markup.
-  for (let p = 1; p < positions; p++) {
-    driver.show(viewAt(p));
-    driver.show(viewAt(0, 0));
-    expect(markup(root), `from position ${p}`).toBe(markup(fresh.root));
-  }
 });
 
 test('the end of each step shows where its last visit or reply ended up, and the rule that decided', () => {

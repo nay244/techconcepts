@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
@@ -9,6 +10,7 @@ import { deriveState, positionOf } from '../../../engine/timeline';
 import { BitsBoard } from '../../../lesson/panels/BitsBoard';
 import { ScenePanel } from '../../../lesson/ScenePanel';
 import { lessonNumbers, lessonTitles } from '../../../test/lesson-references';
+import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
 import { countUnitWords, estimateMinutes } from '../../estimate';
 import { checkStated, learnerProse } from '../../helpers/subnet-events';
@@ -143,6 +145,11 @@ test('each event carries the mockup’s fx as cues, and the figure has every par
   for (const { cue, arg } of notes.flatMap((e) => e.cues ?? [])) {
     if (arg !== undefined) expect(ids.has(partFor[cue]!(arg)), `${cue} ${arg}`).toBe(true);
   }
+});
+
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', () => {
+  // Each position (the Overview, 6 steps, Learn, Practice) and each of the 17 events once more.
+  expect(showSweep(subnetting)).toBe(9 + 17);
 });
 
 test('the log is “Working”, with the mockup’s columns: words where it has words, and its widths', () => {
