@@ -4,6 +4,7 @@ import { deriveState, positionOf, stepEvents } from '../../../engine/timeline';
 import { formatBytes } from '../../../lib/format';
 import { validateLesson } from '../../define';
 import { estimateMinutes } from '../../estimate';
+import { getEntries } from '../../registry';
 import type { MessageEvent } from '../../schema';
 import dhcp from './dhcp';
 
@@ -62,6 +63,20 @@ test('the board reads the lease table the figure expects: "leases", keyed on the
   expect(panel.table.keyColumn).toBe('ip');
   expect(panel.table.columns.map((c) => c.label)).toEqual(['IP address', 'MAC address', 'Device', 'Expires']);
   expect(panel.table.columns.map((c) => c.key)).toEqual(['ip', 'mac', 'device', 'expires']);
+  // As lesson-v3 sets them: the device and its expiry are words, the addresses data.
+  expect(panel.table.columns.map((c) => c.prose ?? false)).toEqual([false, false, true, true]);
+});
+
+test('the log takes lesson-v3’s column widths, with Info as the prose column that takes the rest', () => {
+  const columns = unit.scene.log.columns;
+  expect(columns.map((c) => [c.key, c.width ?? null, c.prose ?? false])).toEqual([
+    ['time', 100, false],
+    ['source', 150, false],
+    ['destination', 172, false],
+    ['protocol', 84, false],
+    ['info', null, true],
+    ['size', 64, false],
+  ]);
 });
 
 test('the log and the parties are the console’s packet log and the figure’s three places', () => {
@@ -80,4 +95,35 @@ test('the log and the parties are the console’s packet log and the figure’s 
     ['phone', 'Phone'],
   ]);
   expect(unit.scene.views).toEqual(['network', 'sequence']);
+});
+
+/** Every string in the lesson, wherever it sits. */
+function textsOf(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(textsOf);
+  if (typeof value === 'object' && value !== null) return Object.values(value).flatMap(textsOf);
+  return [];
+}
+
+/** The words a sentence uses for each lesson it may point at. */
+const TOPIC: Record<string, string> = {
+  subnetting: 'subnet mask',
+  ports: 'ports',
+  'tcp-udp': 'UDP',
+  dns: 'DNS',
+};
+
+test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
+  const entries = getEntries('networking');
+  const references = textsOf(dhcp).flatMap((text) =>
+    [...text.matchAll(/\blessons? (\d+)(?: and (\d+))?/gi)].flatMap((m) =>
+      [m[1], m[2]].filter((n) => n !== undefined).map((n) => ({ text, n: Number(n) })),
+    ),
+  );
+  expect(references).toHaveLength(4);
+  for (const { text, n } of references) {
+    const slug = entries[n - 1]?.slug ?? `nothing (the track has ${entries.length} lessons)`;
+    expect(Object.hasOwn(TOPIC, slug), `“lesson ${n}” is ${slug}, which “${text}” is not about`).toBe(true);
+    expect(text, `lesson ${n} is ${slug}`).toContain(TOPIC[slug]);
+  }
 });

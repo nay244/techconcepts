@@ -81,6 +81,36 @@ test('the log has # plus the unit’s columns, and a blocked row says Blocked in
   expect(within(note).getAllByRole('cell').map((td) => td.textContent)).toEqual(['3', 'Admin', '', '', 'The admin adds a rule.']);
 });
 
+test('a column marked prose is set as words, plain is prose unless it says otherwise, and the columns take their widths', () => {
+  const log: LogDef = {
+    title: 'Event log',
+    columns: [
+      { key: 'source', label: 'Source', width: 150 },
+      { key: 'info', label: 'Info', prose: true },
+      { key: 'size', label: 'Size', width: 64 },
+      { key: 'plain', label: 'In plain words' },
+    ],
+    legend: [],
+  };
+  const row = {
+    ...message(1, 'request', 'delivered', 'A visitor opens the web page.'),
+    cells: { source: '203.0.113.5', info: 'GET /', size: '60 B' },
+  };
+  render(<LogPanel log={log} rows={[row]} idle="Nothing yet." />);
+  const events = within(screen.getByRole('region', { name: 'Event log' })).getByRole('table');
+  const cells = within(events).getAllByRole('cell');
+  expect(cells.map((td) => td.classList.contains('log__prose'))).toEqual([false, false, true, false, true]);
+
+  // # is the console's own 56 px column; a column without a width takes the rest.
+  const cols = [...events.querySelectorAll('colgroup > col')] as HTMLElement[];
+  expect(cols.map((col) => col.style.width)).toEqual(['56px', '150px', '', '64px', '']);
+
+  const plainNotProse: LogDef = { ...log, title: 'Second log', columns: [{ key: 'plain', label: 'In plain words', prose: false }] };
+  render(<LogPanel log={plainNotProse} rows={[row]} idle="Nothing yet." />);
+  const second = within(screen.getByRole('region', { name: 'Second log' })).getAllByRole('cell');
+  expect(second.at(-1)).not.toHaveClass('log__prose');
+});
+
 test('the legend explains each glyph in words', () => {
   render(<LogPanel log={LOG} rows={ROWS} idle="Nothing yet." />);
   const legend = screen.getByRole('list', { name: 'Legend' });

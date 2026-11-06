@@ -83,7 +83,7 @@ export function TablePanel({ def, state }: TablePanelProps) {
               return (
                 <tr key={row[def.keyColumn] ?? i} data-highlight={mark ?? undefined}>
                   {def.columns.map((column, c) => (
-                    <td key={column.key}>
+                    <td key={column.key} className={column.prose === true ? 'tpanel__prose' : undefined}>
                       {row[column.key] ?? ''}
                       {mark !== null && c === 0 ? <span className="sr-only"> {HIGHLIGHT_TEXT[mark]}</span> : null}
                     </td>

@@ -178,8 +178,9 @@ function AllLessons({ entries, currentKey, progress, open, onClose }: AllLessons
 // ---------------------------------------------------------------- the outline
 
 /**
- * The left column. A lesson of one unit lists its Overview, its Watch steps
- * (title and plain sub line), Learn and Practice. A lesson of many units (lesson
+ * The left column. A lesson of one unit lists its Overview (its sub line is the
+ * unit's purpose), its Watch steps (title and plain sub line), Learn and
+ * Practice. A lesson of many units (lesson
  * 1's protocols) lists one row per unit, filtered by group, with the current
  * unit opened to show its parts and a check on the others the learner has
  * opened here. Below, "All 20 lessons" opens the track's list.
@@ -219,7 +220,7 @@ export function Outline({ lesson, position, current, seen, onGo, entries, curren
     }
     return (
       <>
-        <Item {...item} target={at('overview')} title="Overview" sub={lesson.subtitle} />
+        <Item {...item} target={at('overview')} title="Overview" sub={unit.purpose} />
         <Group label={`Watch · ${unit.steps.length} ${unit.steps.length === 1 ? 'step' : 'steps'}`} />
         {steps}
         <Group label="Learn" />

@@ -16,10 +16,12 @@ export function initialTables(defs: TableDef[]): Record<string, TableState> {
 
 /**
  * Changes `state.rows` the way the event says, in place. Rows are matched on
- * the table's key column. `match` only looks, so it changes nothing. The rows
- * it adds are copies, so the lesson itself is never changed.
+ * the table's key column, which is all it needs of the table, so a scene
+ * driver that knows only the key can use it too. `match` only looks, so it
+ * changes nothing. The rows it adds are copies, so the lesson itself is never
+ * changed.
  */
-export function applyTableEvent(state: TableState, def: TableDef, e: TableEvent): void {
+export function applyTableEvent(state: TableState, def: Pick<TableDef, 'keyColumn'>, e: TableEvent): void {
   const keyOf = (row: Row): string | undefined => row[def.keyColumn];
   const patch = e.row;
   switch (e.op) {

@@ -32,6 +32,22 @@ test('the figure carries no grain and no closing tag an HTML parser would act on
   expect(svg).not.toMatch(/<\/(script|style|body|html|head)/i);
 });
 
+// The checksum renames ids, so it would not notice two tags swapping places: each id must carry its own word.
+test.each([
+  ['discover', 'DISCOVER'],
+  ['offer', 'OFFER'],
+  ['request', 'REQUEST'],
+  ['ack', 'ACK'],
+  ['renew', 'RENEW'],
+])('#dh-tag-%s carries the word %s', (id, word) => {
+  const { svg } = drawDhcp();
+  const start = svg.indexOf(` id="dh-tag-${id}"`);
+  expect(start).toBeGreaterThan(-1);
+  const end = svg.indexOf(' id="dh-tag-', start + 1);
+  const group = svg.slice(start, end === -1 ? undefined : end);
+  expect([...group.matchAll(/<text class="dh-tag-t"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1])).toEqual([word]);
+});
+
 test('drawFigure draws the DHCP scene', () => {
   expect(drawFigure('dhcp')).toEqual(drawDhcp());
 });

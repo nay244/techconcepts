@@ -43,7 +43,9 @@ test('a one-unit lesson lists Overview, the Watch steps with their subs, Learn a
   show(DHCP, 2, onGo);
   const nav = screen.getByRole('navigation', { name: 'This lesson' });
   expect(within(nav).getByText('Watch · 5 steps')).toBeInTheDocument();
-  expect(item(/^Overview/)).toHaveTextContent('A small lesson used only by tests');
+  // The Overview's sub line is the unit's purpose, as lesson-v3's overviewSub, not the lesson's subtitle.
+  expect(item(/^Overview/)).toHaveTextContent('How a router remembers who it has heard from.');
+  expect(item(/^Overview/)).not.toHaveTextContent('A small lesson used only by tests');
   expect(item(/^Neighbor Hello/)).toHaveTextContent('The laptop speaks first');
   expect(item(/^What happened and why/)).toHaveTextContent('In plain words, then the names');
   expect(item(/^Two questions/)).toHaveTextContent('Just for you, nothing is scored');

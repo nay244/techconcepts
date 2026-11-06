@@ -77,6 +77,12 @@ function glyphFor(row: LogRow, noteKind: GlyphKind): GlyphKind {
   return row.kind;
 }
 
+/** The width of the console's own `#` column, in px. */
+const NUMBER_WIDTH = 56;
+
+/** A column of words: one marked `prose`, or the `plain` column unless it says otherwise. */
+const isProse = (column: LogDef['columns'][number]): boolean => column.prose ?? column.key === 'plain';
+
 export interface LogPanelProps {
   log: LogDef;
   rows: LogRow[];
@@ -91,7 +97,9 @@ export interface LogPanelProps {
 /**
  * The log under the scene: its title, its legend and the playback controls,
  * over a real table of `#` plus the unit's own columns. A column keyed `plain`
- * shows each event's plain words. Blocked and lost messages are drawn in the
+ * shows each event's plain words. The table's layout is fixed: each column
+ * takes its own width, and those without one share the rest; a prose column's
+ * words wrap there. Blocked and lost messages are drawn in the
  * blocked colour and say so in words. The table scrolls inside itself and
  * keeps the latest row in view.
  */
@@ -127,11 +135,15 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
       </div>
       <div ref={scroller} className="log__scroll" role="region" aria-labelledby={titleId} tabIndex={0}>
         <table className="log__table" aria-labelledby={titleId}>
+          <colgroup>
+            <col style={{ width: NUMBER_WIDTH }} />
+            {log.columns.map((column) => (
+              <col key={column.key} style={column.width === undefined ? undefined : { width: column.width }} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
-              <th scope="col" className="log__n">
-                #
-              </th>
+              <th scope="col">#</th>
               {log.columns.map((column) => (
                 <th key={column.key} scope="col">
                   {column.label}
@@ -161,7 +173,7 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
                       const plain = column.key === 'plain';
                       const text = plain ? row.plain : Object.hasOwn(row.cells, column.key) ? row.cells[column.key] : '';
                       return (
-                        <td key={column.key} className={plain ? 'log__prose' : undefined}>
+                        <td key={column.key} className={isProse(column) ? 'log__prose' : undefined}>
                           {missed !== null && column.key === flagColumn ? (
                             <>
                               <span className="log__flag">{OUTCOME_WORD[missed]}</span>{' '}

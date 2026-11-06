@@ -1063,9 +1063,12 @@ a.outline__lesson:hover {
   min-height: 0;
   overflow: auto;
 }
+/* Fixed layout: the <colgroup> gives each column its width (# is 56 px), and
+   the columns without one share the rest, where prose wraps. */
 .log__table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 .log__table th {
   padding: 7px 10px;
@@ -1077,9 +1080,6 @@ a.outline__lesson:hover {
   text-transform: uppercase;
   white-space: nowrap;
 }
-.log__table th.log__n {
-  width: 56px;
-}
 .log__table td {
   padding: 7px 10px;
   border-bottom: 1px solid var(--line);
@@ -1090,7 +1090,6 @@ a.outline__lesson:hover {
   white-space: nowrap;
 }
 .log__table td.log__prose {
-  width: 100%;
   font: 400 13.5px/1.4 var(--sans);
   white-space: normal;
 }

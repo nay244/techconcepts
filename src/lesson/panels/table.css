@@ -57,6 +57,10 @@
   text-align: start;
   vertical-align: top;
 }
+/* A column of words, such as a device's name or when its lease expires. */
+.tpanel td.tpanel__prose {
+  font: 400 13.5px/1.4 var(--sans);
+}
 .tpanel td.tpanel__empty {
   padding: 10px;
   border-bottom: 0;

@@ -278,8 +278,8 @@ export default defineLesson({
             columns: [
               { key: 'ip', label: 'IP address' },
               { key: 'mac', label: 'MAC address' },
-              { key: 'device', label: 'Device' },
-              { key: 'expires', label: 'Expires' },
+              { key: 'device', label: 'Device', prose: true },
+              { key: 'expires', label: 'Expires', prose: true },
             ],
             keyColumn: 'ip',
             initialRows: [],
@@ -289,12 +289,12 @@ export default defineLesson({
         log: {
           title: 'Event log',
           columns: [
-            { key: 'time', label: 'Time' },
-            { key: 'source', label: 'Source' },
-            { key: 'destination', label: 'Destination' },
-            { key: 'protocol', label: 'Protocol' },
-            { key: 'info', label: 'Info' },
-            { key: 'size', label: 'Size' },
+            { key: 'time', label: 'Time', width: 100 },
+            { key: 'source', label: 'Source', width: 150 },
+            { key: 'destination', label: 'Destination', width: 172 },
+            { key: 'protocol', label: 'Protocol', width: 84 },
+            { key: 'info', label: 'Info', prose: true },
+            { key: 'size', label: 'Size', width: 64 },
           ],
           legend: [
             { kind: 'broadcast', label: 'Broadcast to everyone' },
@@ -329,7 +329,7 @@ export default defineLesson({
           sub: 'The laptop asks: is anyone there?',
           narrative:
             'Your laptop just joined the Wi-Fi, but it has no address yet. It doesn’t know who to ask, so it shouts to everyone on the network at once: “Can anyone give me an address?” That shout is called a **Discover**. Every device hears it. The phone hears it too, but it isn’t the one that hands out addresses, so it ignores it.',
-          deep: 'The shout is a broadcast to 255.255.255.255, sent from 0.0.0.0 (“I have no address yet”) to UDP port 67, where DHCP servers listen. Lessons 10 and 11 cover ports and UDP.',
+          deep: 'The shout is a broadcast to 255.255.255.255, sent from 0.0.0.0 (“I have no address yet”) to UDP port 67, where DHCP servers listen. Lessons 11 and 12 cover ports and UDP.',
           facts: [
             { label: 'From', value: '0.0.0.0, UDP port 68' },
             { label: 'To', value: '255.255.255.255, UDP port 67' },
@@ -358,7 +358,7 @@ export default defineLesson({
           sub: 'The router offers a free address',
           narrative:
             'The router is the one that hands out addresses. It hears the shout, picks a free address, 192.168.1.100, and offers it to the laptop. With it come a few other settings the laptop will need, and a time limit: it can keep the address for 24 hours. That’s the **Offer**.',
-          deep: 'Along with the address, the Offer carries a subnet mask, a default gateway and a DNS server (lessons 7 and 13). It names the laptop’s MAC address, which is how the phone knows the Offer isn’t for it.',
+          deep: 'Along with the address, the Offer carries a subnet mask, a default gateway and a DNS server (lessons 8 and 14). It names the laptop’s MAC address, which is how the phone knows the Offer isn’t for it.',
           facts: [
             { label: 'Address offered', value: '192.168.1.100' },
             { label: 'Subnet mask', value: '255.255.255.0' },

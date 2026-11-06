@@ -22,5 +22,7 @@
 .dh .dh-tag-t { font: 700 4.6px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .03em; }
 .dh .dh-ring { fill: none; stroke: var(--lit-a); stroke-width: 2.6px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--lit-b)); }
 .dh .dh-ring.soft { stroke-width: 1.2px; opacity: .55; filter: none; }
+/* While the driver's show settles the figure, the lights and the note change at once (src/scenes/drivers/dhcp.ts). */
+.dh[data-settling] .dh-glow, .dh[data-settling] .dh-ignore { transition: none; }
 /* Reduced motion keeps every light and note, and only drops the fades. */
 @media (prefers-reduced-motion: reduce) { .dh .dh-ignore, .dh .dh-glow { transition: none; } }

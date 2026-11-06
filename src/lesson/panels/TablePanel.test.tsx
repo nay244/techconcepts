@@ -110,6 +110,18 @@ test('renders one row per table row with a cell for each column, in column order
   expect([...rows[2]!.querySelectorAll('td')].map((td) => td.textContent)).toEqual(['3', 'DENY', 'ANY', 'any', 'any', 'Block everything else']);
 });
 
+test('a column marked prose sets its cells as words, and the others stay data', () => {
+  const words: TableDef = { ...def, columns: def.columns.map((c) => (c.key === 'note' ? { ...c, prose: true } : c)) };
+  const { container } = render(<TablePanel def={words} state={stateOf()} />);
+  for (const row of bodyRows(container)) {
+    const prose = [...row.querySelectorAll('td')].map((td) => td.classList.contains('tpanel__prose'));
+    expect(prose).toEqual([false, false, false, false, false, true]);
+  }
+  // The empty text is not a column's cell.
+  const { container: empty } = render(<TablePanel def={words} state={stateOf(null, [])} />);
+  expect(empty.querySelector('td')).not.toHaveClass('tpanel__prose');
+});
+
 test('leaves a cell empty when a row has no value for the column', () => {
   const { container } = render(<TablePanel def={def} state={stateOf(null, [{ '#': '1', action: 'ALLOW' }])} />);
   const cells = [...bodyRows(container)[0]!.querySelectorAll('td')];

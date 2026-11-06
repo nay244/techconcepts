@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawDhcp } from '../../art/scenes/dhcp';
 import type { SceneEvent } from '../../content/schema';
@@ -42,6 +44,8 @@ afterEach(() => {
 });
 
 const unit = dhcp.units[0]!;
+// Read from the project root: under jsdom import.meta.url is not a file URL.
+const sceneCss: string = readFileSync('src/art/scenes/dhcp.css', 'utf8');
 
 /** A fresh copy of the figure on the page, and its driver. */
 function mount(): { root: SVGSVGElement; driver: SceneDriver } {
@@ -177,6 +181,40 @@ test('show paints the lease table on the board, the laptop’s screen and its ca
   driver.show(viewAt(1, 0));
   expect(opacity(part(root, 'dh-lease-row'))).toBe('0');
   expect(part(root, 'dh-laptop-ip').textContent).toBe('No IP address yet');
+});
+
+test('show settles at once: the browser takes its styles while the figure’s fades are off', () => {
+  const { root, driver } = mount();
+  const before = viewAt(1, 0);
+  driver.show(before);
+  // A broadcast past 55 %: the laptop's screen, the phone and its note are lit, and would fade out.
+  void driver.play(eventById('msg-discover'), before, options({ signal: new AbortController().signal }));
+  frameAt(0);
+  frameAt(1000);
+  const lit = ['dh-lap-glow', 'dh-ph-glow', 'dh-ignore'].map((id) => part(root, id));
+  expect(lit.every((el) => el.classList.contains('on'))).toBe(true);
+
+  // Reading the figure's box makes the browser take the new styles there and then.
+  const flushes: { settling: boolean; unlit: boolean }[] = [];
+  vi.spyOn(root, 'getBoundingClientRect').mockImplementation(() => {
+    flushes.push({ settling: root.hasAttribute('data-settling'), unlit: lit.every((el) => !el.classList.contains('on')) });
+    return new DOMRect();
+  });
+  driver.show(viewAt(1, 1));
+  expect(flushes).toEqual([{ settling: true, unlit: true }]);
+  // After that the fades are back on, for the next play.
+  expect(root.hasAttribute('data-settling')).toBe(false);
+
+  // A play leaves the fades on: nothing settles while the laptop shouts.
+  flushes.length = 0;
+  void driver.play(eventById('msg-discover'), before, options());
+  expect(flushes).toEqual([]);
+  expect(root.hasAttribute('data-settling')).toBe(false);
+});
+
+test('while it settles, the figure’s CSS turns off the fades of its glows and its note', () => {
+  const rule = /\.dh\[data-settling\] \.dh-glow,\s*\.dh\[data-settling\] \.dh-ignore\s*\{\s*transition:\s*none;?\s*\}/;
+  expect(sceneCss).toMatch(rule);
 });
 
 test('under reduced motion, play leaves the figure exactly as show would after each event', async () => {

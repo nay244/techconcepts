@@ -417,6 +417,26 @@ test('a panel table’s key column is one of its columns, and a rules panel’s 
   expect(joined(same)).toMatch(/Duplicate table id "rules"/);
 });
 
+test('a column may be prose and have a width in px; any other key is still rejected', () => {
+  const set = makeLesson();
+  const columns = unit(set).scene.log.columns;
+  columns[0] = { ...columns[0]!, width: 150 };
+  columns[1] = { ...columns[1]!, prose: true };
+  (unit(set).scene.panel as any).table.columns[0].prose = true;
+  expect(issuesOf(set)).toEqual([]);
+
+  const zero = makeLesson();
+  (unit(zero).scene.log.columns[0] as any).width = 0;
+  expect(joined(zero)).toMatch(/scene\.log\.columns\[0\]\.width/);
+
+  const typo = makeLesson();
+  (unit(typo).scene.log.columns[0] as any).widht = 150;
+  (unit(typo).scene.panel as any).table.columns[0].wrap = true;
+  const issues = joined(typo);
+  expect(issues).toMatch(/scene\.log\.columns\[0\]: .*Unrecognized key.*"widht"/);
+  expect(issues).toMatch(/scene\.panel\.table\.columns\[0\]: .*Unrecognized key.*"wrap"/);
+});
+
 test('packet names a packet whose size matches', () => {
   const unknown = makeLesson();
   ev(unknown, 0, 0).packet = 'p404';

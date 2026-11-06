@@ -138,7 +138,19 @@ export const sceneEventSchema = z.discriminatedUnion('type', [messageEventSchema
 
 // ---------------------------------------------------------------- scene
 
-const columnsSchema = z.array(z.strictObject({ key: text, label: text })).min(1);
+/**
+ * A column of a panel table or the log. A `prose` column holds words: it is set
+ * in the sans face, at normal weight, and wraps (a log column keyed `plain` is
+ * prose unless it says otherwise). `width` is in CSS px; a column without one
+ * takes the rest of the room.
+ */
+const columnSchema = z.strictObject({
+  key: text,
+  label: text,
+  prose: z.boolean().optional(),
+  width: z.number().positive().optional(),
+});
+const columnsSchema = z.array(columnSchema).min(1);
 
 export const tableDefSchema = z.strictObject({
   id: text,

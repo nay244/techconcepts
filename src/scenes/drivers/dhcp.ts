@@ -1,5 +1,5 @@
 import type { DhcpSceneData } from '../../art/scenes/dhcp';
-import type { Row, SceneEvent, TableDef, TableEvent } from '../../content/schema';
+import type { Row, SceneEvent, TableEvent } from '../../content/schema';
 import { applyTableEvent } from '../../engine/tables';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
 import { animate, easeInOut } from '../motion';
@@ -50,7 +50,7 @@ function wait(ms: number, signal: AbortSignal): Promise<void> {
 /** The lease rows once `event` has landed. The figure has no table definition, only the key it knows the lease table by. */
 function rowsAfter(rows: Row[], event: TableEvent): Row[] {
   const state = { rows: rows.map((row) => ({ ...row })), highlight: null };
-  applyTableEvent(state, { keyColumn: IP } as TableDef, event);
+  applyTableEvent(state, { keyColumn: IP }, event);
   return state.rows;
 }
 
@@ -176,8 +176,14 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
 
   return {
     show(view) {
+      // Settled means no motion: the glows and the note change at once, not over their fades.
+      // The browser takes the new styles while data-settling turns the fades off (dhcp.css);
+      // after that they are back on, so a play still fades its lights in and out.
+      root.setAttribute('data-settling', '');
       clear();
       paintLeases(leasesOf(view));
+      void root.getBoundingClientRect();
+      root.removeAttribute('data-settling');
     },
     play,
     // Nothing to let go of: a play's timers and listeners end with its signal, which the panel aborts first.
