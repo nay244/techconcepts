@@ -1,4 +1,5 @@
 import { drawDhcp } from './dhcp';
+import { drawFirewall } from './firewall';
 import { drawNetMap } from './net-map';
 import { drawSubnet } from './subnet';
 import type { DrawnFigure, FigureId } from './types';
@@ -7,6 +8,7 @@ import type { DrawnFigure, FigureId } from './types';
 const DRAW: Partial<Record<FigureId, () => DrawnFigure>> = {
   dhcp: drawDhcp,
   subnet: drawSubnet,
+  firewall: drawFirewall,
   'net-map': drawNetMap,
 };
 

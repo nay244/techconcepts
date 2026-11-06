@@ -1,7 +1,8 @@
 import type { Panel, SceneEvent } from '../../content/schema';
 import type { DerivedState } from '../../engine/timeline';
-import type { PanelMark } from '../../scenes/driver';
+import { landedEvent, type PanelMark } from '../../scenes/driver';
 import { BitsBoard } from './BitsBoard';
+import { RulesPanel } from './RulesPanel';
 import { TablePanel } from './TablePanel';
 
 export interface UnitPanelProps {
@@ -30,15 +31,29 @@ function lastTableEvent(derived: DerivedState, tableId: string): string {
 }
 
 /**
- * What sits below the scene: a device's table, or Subnetting's bits board.
- * Task 16 adds the rule list, which reads `marks`.
+ * What sits below the scene: a device's table, Subnetting's bits board, or a
+ * firewall's rule list and the connections it remembers.
  *
  * The bits board shows the latest board a note has set, and while a note
  * plays, that note's board: the bits change as the figure starts the note, as
  * in the mockup, not once it has played. It is remounted for each step, so a
  * step's board starts out settled and only the changes within the step come in.
+ *
+ * The rule list shows the marks the driver reports while a visit plays. With
+ * none reported, it shows the marks of the visit or reply that landed last,
+ * which stay while the table events that visit brings land after it, and go
+ * once the next visit or note starts to play. It is remounted for each event
+ * that changes the rules; when a change replaces them while the step plays,
+ * the new rows come in once.
  */
-export function UnitPanel({ panel, derived, playing = null }: UnitPanelProps) {
+export function UnitPanel({ panel, derived, marks, playing = null }: UnitPanelProps) {
+  if (panel?.type === 'rules') {
+    const shown = playing?.type === 'message' || playing?.type === 'note' ? null : landedEvent(derived);
+    const key = lastTableEvent(derived, panel.rules.id);
+    const changed = derived.events.find((e) => e.id === key);
+    const moved = playing !== null && changed?.type === 'table' && changed.op === 'replace';
+    return <RulesPanel key={`${panel.rules.id}:${key}`} panel={panel} tables={derived.tables} marks={marks} active={shown} moved={moved} />;
+  }
   if (panel?.type === 'bits') {
     const { slot } = derived;
     const board = playing?.type === 'note' && playing.board !== undefined ? playing.board : derived.board;

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { expect, test } from 'vitest';
+import firewalls from '../content/lessons/networking/firewalls';
 import type { Party } from '../content/schema';
-import type { LogRow } from '../engine/timeline';
+import { deriveState, positionOf, type LogRow } from '../engine/timeline';
 import { ROW_H, SequenceView } from './SequenceView';
 
 const PARTIES: Party[] = [
@@ -144,4 +145,38 @@ test('a long note is cut to fit its box, and the whole sentence stays with it', 
   expect(row(render(<SequenceView parties={PARTIES} rows={ROWS} current={null} />).container, 'n1')).toHaveTextContent(
     'Block everything else moves to the top.',
   );
+});
+
+test('the Sequence view stops denied visits at the firewall with their rule', () => {
+  // The Firewalls lesson as it stands at Learn: every visit, the reply and the change.
+  const unit = firewalls.units[0]!;
+  const { log } = deriveState(firewalls, positionOf(firewalls, 0, 'learn'), 0);
+  const { container } = render(<SequenceView parties={unit.scene.parties} rows={log} current={null} />);
+  const x = lifelines(container);
+  expect(Object.keys(x)).toEqual(['visitor', 'admin', 'firewall', 'web']);
+
+  const denied = ['visit-login', 'visit-telnet', 'visit-website-again'];
+  expect(log.filter((r) => r.outcome === 'blocked').map((r) => r.eventId)).toEqual(denied);
+  for (const [id, words] of [['visit-login', 'Denied · rule 3'], ['visit-telnet', 'Denied · rule 3'], ['visit-website-again', 'Denied · rule 1']] as const) {
+    const drawn = row(container, id);
+    expect(drawn.dataset.outcome, id).toBe('blocked');
+    // It stops at the firewall's lifeline with a ✕, short of the web server, and says which rule turned it away.
+    expect(Number(drawn.querySelector('[data-stop] circle')!.getAttribute('cx')), id).toBe(x.firewall);
+    expect(Number(drawn.querySelector('line')!.getAttribute('x2')), id).toBeLessThan(x.firewall!);
+    expect(drawn.querySelector('[data-head]'), id).toBeNull();
+    expect(drawn.querySelector('.seq__decision'), id).toHaveTextContent(words);
+  }
+  // The visits let in go on to the web server, with their rule.
+  for (const [id, from, words] of [['visit-website', 'visitor', 'Allowed · rule 1'], ['admin-login', 'admin', 'Allowed · rule 2']] as const) {
+    const drawn = row(container, id);
+    expect(Number(drawn.querySelector('line')!.getAttribute('x1')), id).toBe(x[from]);
+    expect(drawn.querySelector('[data-head]'), id).not.toBeNull();
+    expect(drawn.querySelector('.seq__decision'), id).toHaveTextContent(words);
+  }
+  // The reply goes back from the web server to the visitor; the change is a note across the firewall.
+  expect(row(container, 'reply-website').dataset.dir).toBe('left');
+  expect(row(container, 'reply-website').querySelector('.seq__decision')).toHaveTextContent('Allowed · known connection');
+  const note = row(container, 'move-catch-all').querySelector('rect')!;
+  expect(Number(note.getAttribute('x')) + Number(note.getAttribute('width')) / 2).toBe(x.firewall);
+  expect(row(container, 'move-catch-all')).toHaveTextContent('Block everything else moves to the top.');
 });

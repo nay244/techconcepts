@@ -106,6 +106,7 @@ test('ScenePanel calls show on every change, and aborts the running play when th
     tables: { t: { rows: [], highlight: null, missed: [] } },
     board: null,
     active: null,
+    landed: null,
   });
   const [event, view, options] = lastPlay();
   expect(event).toBe(pendingEvent(LESSON, s1));

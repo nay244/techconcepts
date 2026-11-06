@@ -63,7 +63,7 @@ function view(o: { layers?: string[]; labels?: Record<string, string>; start?: C
   const cues: AppliedCue[] = (o.cues ?? []).map(({ eventId, ...c }, i) => ({ ...c, eventId: eventId ?? `e${i}`, current: true }));
   const status = o.status ?? null;
   const start = o.start ?? [];
-  return { unit: 0, layers: o.layers ?? ['http:web'], labels: o.labels ?? {}, start, status, cues, tables: {}, board: null, active: null };
+  return { unit: 0, layers: o.layers ?? ['http:web'], labels: o.labels ?? {}, start, status, cues, tables: {}, board: null, active: null, landed: null };
 }
 
 function msg(o: Partial<MessageEvent> = {}): MessageEvent {

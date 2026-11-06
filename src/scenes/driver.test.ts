@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import type { Lesson } from '../content/schema';
 import { makeTwoUnitLesson } from '../content/test-fixtures';
 import { deriveState, positionOf, type SlotKind } from '../engine/timeline';
-import { sceneViewOf } from './driver';
+import { landedEvent, sceneViewOf } from './driver';
 
 /** The two-unit fixture, with its first unit's steps 2 and 4 setting the laptop's status as they start. */
 function lessonWithStatuses(): Lesson {
@@ -50,7 +50,30 @@ test('a scene view carries the unit’s layers, labels and start with the derive
     tables: derived.tables,
     board: derived.board,
     active: derived.active,
+    landed: unit.steps[1]!.events[0],
   });
+});
+
+test('landed is the latest message or note of the step so far: a table event it brings does not take its place', () => {
+  const lesson = makeTwoUnitLesson() as Lesson;
+  const steps = lesson.units[0]!.steps;
+  const landed = (step: number, played: number) => viewAt(lesson, 0, 'step', step, played).landed;
+  // Step 2: a message, then the table event it brings. The message stays the one that landed.
+  const [message, table] = steps[1]!.events;
+  expect(table!.type).toBe('table');
+  expect(landed(2, 0)).toBeNull();
+  expect(landed(2, 1)).toBe(message);
+  expect(landed(2, 2)).toBe(message);
+  expect(viewAt(lesson, 0, 'step', 2, 2).active).toBe(table);
+  // Step 3: a table event first lands nothing; the note after it does.
+  expect(landed(3, 1)).toBeNull();
+  expect(landed(3, 2)).toBe(steps[2]!.events[1]);
+  // A step starts with nothing landed, whatever the step before it left; off a step nothing is.
+  expect(landed(4, 0)).toBeNull();
+  for (const kind of ['overview', 'learn', 'practice'] as const) expect(viewAt(lesson, 0, kind).landed, kind).toBeNull();
+  // The panel reads it from the derived state alone.
+  const derived = deriveState(lesson, positionOf(lesson, 0, 'step', 2), 2);
+  expect(landedEvent(derived)).toBe(message);
 });
 
 test('the start is the unit’s own at every position, Overview to Practice, and not among the cues that have played', () => {

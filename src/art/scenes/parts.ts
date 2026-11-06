@@ -26,7 +26,15 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     board: true,
     start: false,
   },
-  firewall: { places: [], cues: {}, layers: [], board: false, start: false },
+  firewall: {
+    places: ['visitor', 'admin', 'firewall', 'web'],
+    // A change to the rule list names the order it puts in (src/content/helpers/firewall-events.ts); the figure's board
+    // reads the rule list itself, so the cue only says which order is in force.
+    cues: { rules: 'text' },
+    layers: [],
+    board: false,
+    start: false,
+  },
   'net-map': {
     places: [...new Set([...NET_MAP_BASE_PLACES, ...Object.values(NET_MAP_LAYERS).flatMap(plateSites)])],
     // What a message leaves on the map once it lands (src/scenes/drivers/net-map.ts): the laptop's status line and its

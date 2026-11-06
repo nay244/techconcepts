@@ -1,4 +1,4 @@
-import type { Board, Cue, SceneEvent, Unit } from '../content/schema';
+import type { Board, Cue, MessageEvent, NoteEvent, SceneEvent, Unit } from '../content/schema';
 import type { TableState } from '../engine/tables';
 import type { AppliedCue, DerivedState } from '../engine/timeline';
 
@@ -33,6 +33,24 @@ export interface SceneView {
   board: Board | null;
   /** The last applied event of the current step, or null. */
   active: SceneEvent | null;
+  /**
+   * The latest message or note of the current step that has been applied, or
+   * null: what the scene shows as having just happened. A table event a
+   * message brings with it (Firewalls' remembered connection) does not take
+   * its place: while that table event lands, `active` is the table event and
+   * `landed` is still the message.
+   */
+  landed: MessageEvent | NoteEvent | null;
+}
+
+/** The latest message or note of the current step that has been applied, or null (`SceneView.landed`). */
+export function landedEvent(derived: DerivedState): MessageEvent | NoteEvent | null {
+  const played = derived.active === null ? 0 : derived.events.indexOf(derived.active) + 1;
+  for (let i = played - 1; i >= 0; i -= 1) {
+    const event = derived.events[i]!;
+    if (event.type !== 'table') return event;
+  }
+  return null;
 }
 
 /** The scene view for a unit at a derived moment. */
@@ -51,6 +69,7 @@ export function sceneViewOf(unit: Unit, derived: DerivedState): SceneView {
     tables: derived.tables,
     board: derived.board,
     active: derived.active,
+    landed: landedEvent(derived),
   };
 }
 

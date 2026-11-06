@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { type RefObject, useLayoutEffect, useRef } from 'react';
 import type { TableDef } from '../../content/schema';
 import type { TableState } from '../../engine/tables';
 import './table.css';
@@ -24,6 +24,26 @@ const HIGHLIGHT_TEXT = { added: '(new)', updated: '(changed)', matched: '(matche
  */
 let focusLostBy: string | null = null;
 
+/** Keeps the focus on a panel's region across the remounts the scene host makes, for the table `id` (see `focusLostBy`). */
+export function useFocusAcrossRemounts(region: RefObject<HTMLElement | null>, id: string): void {
+  useLayoutEffect(() => {
+    const element = region.current;
+    if (focusLostBy === id) {
+      focusLostBy = null;
+      const active = document.activeElement;
+      if (active === null || active === document.body) element?.focus({ preventScroll: true });
+    }
+    return () => {
+      // Runs before the element leaves the page, while it can still have the focus.
+      if (element === null || document.activeElement !== element) return;
+      focusLostBy = id;
+      queueMicrotask(() => {
+        if (focusLostBy === id) focusLostBy = null;
+      });
+    };
+  }, [region, id]);
+}
+
 /**
  * A device's table (leases, a cache, a MAC table) as it stands at this moment
  * of the lesson, under the scene. The row the latest event of the current step
@@ -40,23 +60,7 @@ export function TablePanel({ def, state }: TablePanelProps) {
   const region = useRef<HTMLDivElement>(null);
   // A match that found nothing carries an empty key. It points at no row, even one whose key cell is empty.
   const target = highlight !== null && !(highlight.type === 'matched' && highlight.key === '') ? highlight : null;
-
-  useLayoutEffect(() => {
-    const element = region.current;
-    if (focusLostBy === def.id) {
-      focusLostBy = null;
-      const active = document.activeElement;
-      if (active === null || active === document.body) element?.focus({ preventScroll: true });
-    }
-    return () => {
-      // Runs before the element leaves the page, while it can still have the focus.
-      if (element === null || document.activeElement !== element) return;
-      focusLostBy = def.id;
-      queueMicrotask(() => {
-        if (focusLostBy === def.id) focusLostBy = null;
-      });
-    };
-  }, [def.id]);
+  useFocusAcrossRemounts(region, def.id);
 
   return (
     <div ref={region} className="tpanel" data-table={def.id} role="region" aria-label={def.title} tabIndex={0}>
