@@ -1,0 +1,88 @@
+// @vitest-environment jsdom
+import { act, render, screen } from '@testing-library/react';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { getEntries, trackTotals } from '../content/registry';
+import { knownFrom } from '../lib/entries';
+import { PROGRESS_KEY, type LessonProgress } from '../progress/store';
+import { TrackCardProgress } from './TrackCardProgress';
+
+// The real track, as Home builds the card from it.
+const entries = getEntries('networking');
+const known = knownFrom(entries);
+const totals = trackTotals(entries);
+
+const card = () => <TrackCardProgress known={known} totals={totals} />;
+
+function save(lessons: Record<string, Pick<LessonProgress, 'status' | 'furthestPosition'>>): void {
+  const full = Object.fromEntries(Object.entries(lessons).map(([k, v]) => [k, { ...v, lastOpened: '2026-11-05T12:00:00Z' }]));
+  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, lessons: full, lastLesson: null }));
+}
+
+const segments = (container: HTMLElement) => [...container.querySelectorAll('.segbar i')].map((i) => i.className || 'none');
+
+function expectFirstVisit(container: HTMLElement): void {
+  expect(screen.getByText('4 of 20 lessons ready, 124 min')).toBeInTheDocument();
+  expect(screen.getByText('Open track')).toBeInTheDocument();
+  expect(container.querySelector('.segbar')).toBeNull();
+}
+
+beforeEach(() => window.localStorage.clear());
+afterEach(() => vi.restoreAllMocks());
+
+test('a first visit reads the ready lessons and their minutes, counted from the track', () => {
+  expect(totals).toEqual({ available: 4, planned: 20, minutes: 124 });
+  const { container } = render(card());
+  expectFirstVisit(container);
+});
+
+test('a returning visitor sees done and in progress, with one bar segment per lesson', () => {
+  save({
+    'networking/dhcp': { status: 'finished', furthestPosition: 7 },
+    'networking/subnetting': { status: 'in-progress', furthestPosition: 2 },
+    'networking/firewalls': { status: 'in-progress', furthestPosition: 1 },
+  });
+  const { container } = render(card());
+  expect(screen.getByText('1 of 20 done, 2 in progress')).toBeInTheDocument();
+  expect(screen.getByText('Continue')).toBeInTheDocument();
+  expect(screen.queryByText('4 of 20 lessons ready, 124 min')).toBeNull();
+  // Done first, then in progress, then the rest; the bar repeats the words, so it is hidden from screen readers.
+  expect(segments(container)).toEqual(['done', 'prog', 'prog', ...Array<string>(17).fill('none')]);
+  expect(container.querySelector('.segbar')).toHaveAttribute('aria-hidden', 'true');
+});
+
+test('progress saved only for lessons the track does not have is still a first visit', () => {
+  save({ 'networking/osi-model': { status: 'finished', furthestPosition: 4 } });
+  const { container } = render(card());
+  expectFirstVisit(container);
+});
+
+test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {
+  save({ 'networking/dhcp': { status: 'in-progress', furthestPosition: 3 } });
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const container = document.createElement('div');
+  container.innerHTML = renderToString(card());
+  document.body.append(container);
+  expectFirstVisit(container);
+
+  let root!: ReturnType<typeof hydrateRoot>;
+  await act(async () => {
+    root = hydrateRoot(container, card());
+  });
+  expect(screen.getByText('0 of 20 done, 1 in progress')).toBeInTheDocument();
+  expect(segments(container)).toHaveLength(20);
+  expect(errors).not.toHaveBeenCalled();
+
+  act(() => root.unmount());
+  container.remove();
+});
+
+// Last in the file: once the shared storage has failed it keeps saying so for as long as its module lives.
+test('with storage blocked it shows the first visit', () => {
+  vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+    throw new DOMException('blocked', 'SecurityError');
+  });
+  const { container } = render(card());
+  expectFirstVisit(container);
+});

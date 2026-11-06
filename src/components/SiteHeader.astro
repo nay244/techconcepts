@@ -6,9 +6,11 @@ import './site.css';
 interface Props {
   /** The section the page belongs to; its link gets aria-current="page". */
   current?: 'tracks' | 'how' | 'about';
+  /** Home: the header sits over the hero, clear at the top of the page and solid once it scrolls (home-v6). */
+  overHero?: boolean;
 }
 
-const { current } = Astro.props;
+const { current, overHero = false } = Astro.props;
 const links = [
   { key: 'tracks', href: '/networking', label: 'Tracks' },
   { key: 'how', href: '/#how', label: 'How it works' },
@@ -16,7 +18,7 @@ const links = [
 ] as const;
 ---
 
-<header class="site-head">
+<header class="site-head" data-over-hero={overHero ? '' : undefined}>
   <div class="wrap">
     <a class="brand" href="/" aria-label="TechConcepts home">
       <svg width="34" height="30" viewBox="0 0 34 30" aria-hidden="true">
@@ -63,6 +65,14 @@ const links = [
         button.focus();
       }
     });
+  }
+
+  // Home's header turns solid once the page has scrolled a little. Without JavaScript it is solid throughout.
+  const head = document.querySelector<HTMLElement>('.site-head[data-over-hero]');
+  if (head) {
+    const onScroll = () => head.classList.toggle('solid', window.scrollY > 24);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
   }
 </script>
 
@@ -120,6 +130,30 @@ const links = [
   .menu-btn,
   .menu-panel {
     display: none;
+  }
+  .site-head[data-over-hero] {
+    position: fixed;
+    inset: 0 0 auto;
+    border-bottom-color: transparent;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition:
+      background-color 200ms ease,
+      border-color 200ms ease;
+  }
+  .site-head[data-over-hero].solid,
+  .site-head[data-over-hero]:has(.menu-panel:not([hidden])) {
+    border-bottom-color: var(--line);
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .site-head[data-over-hero] .icon-btn {
+    background: color-mix(in srgb, var(--card) 70%, transparent);
+  }
+  .site-head[data-over-hero] .icon-btn:hover {
+    background: var(--bg-soft);
   }
 
   @media (max-width: 720px) {

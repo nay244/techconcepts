@@ -21,10 +21,12 @@ interface Props {
   chrome?: boolean;
   /** Which header link is the current section (marked aria-current="page"). */
   current?: 'tracks' | 'how' | 'about';
+  /** Home: the header sits over the hero until the page scrolls. */
+  overHero?: boolean;
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png', chrome = true, current } = Astro.props;
+const { title, description, image = '/og-default.png', chrome = true, current, overHero = false } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -43,7 +45,7 @@ const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
     {/* Before anything paints: the theme boot script, then the tokens it selects between. */}
     <script is:inline set:html={themeBootScript} />
     <style is:inline set:html={tokensToCss()} />
-    <noscript><style>.theme-toggle { display: none; }</style></noscript>
+    <noscript><style>.theme-toggle { display: none; } :root .site-head[data-over-hero] { border-bottom-color: var(--line); background: var(--bg); }</style></noscript>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={fullTitle} />
@@ -60,7 +62,7 @@ const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
     {
       chrome ? (
         <>
-          <SiteHeader current={current} />
+          <SiteHeader current={current} overHero={overHero} />
           <main id="main">
             <slot />
           </main>

@@ -40,6 +40,71 @@
   font-size: 15px;
 }
 
+/* ---- Parts the page mockups share (home-v6, track-v2, about-v1) ---- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 11px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 13.5px/1.2 var(--sans);
+}
+.eyebrow svg {
+  width: 14px;
+  height: 10px;
+}
+.accent {
+  color: var(--accent);
+}
+.card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 12.5px/1 var(--sans);
+  white-space: nowrap;
+}
+.badge svg {
+  width: 11px;
+  height: 11px;
+}
+.badge.soon {
+  border-color: var(--line-strong);
+  background: var(--bg-soft);
+  color: var(--muted);
+}
+/* A track's progress: one segment per lesson, done in green, in progress in marigold (current). */
+.segbar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+}
+.segbar i {
+  flex: 1;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.segbar i.done {
+  background: var(--allowed);
+}
+.segbar i.prog {
+  background: var(--here);
+}
+
 /* ---- Progress line: a text line and a segmented bar ---- */
 .progress-line {
   display: flex;

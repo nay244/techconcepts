@@ -71,6 +71,9 @@ test('tracks and coming-soon tracks', () => {
     'How the Web Works', 'Cryptography', 'AI Concepts', 'Privilege Escalation', 'Threat & Vulnerability Management',
   ]);
   expect(comingSoonTracks.every((t) => t.blurb.length > 10)).toBe(true);
+  // Home's cards: each wears its approved cover (the Networking card wears 'networking') under its kind of track.
+  expect(comingSoonTracks.map((t) => t.cover)).toEqual(['web', 'crypto', 'ai', 'privesc', 'tvm']);
+  expect(comingSoonTracks.map((t) => t.kind)).toEqual(['The web', 'Security', 'AI', 'Security', 'Security']);
 });
 
 test('cert tags', () => {

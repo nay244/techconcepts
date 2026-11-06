@@ -1,0 +1,272 @@
+---
+// The home hero (spec §6.1, mockup home-v6): the How the Web Works figure on the right, the page's words on the
+// left (the default slot), and the caption card with Pause, Play and Replay. src/scripts/hero-web.ts moves it.
+// Before that script runs, and without JavaScript, it shows the first frame's caption and no button.
+import { HERO_WEB, heroWebSvg } from '../art/figures/hero-web';
+
+const [first] = HERO_WEB.STEPS;
+// One tick per plain-words step: every line but the opening one and the closing one.
+const ticks = HERO_WEB.STEPS.length - 2;
+---
+
+<section class="hero" aria-labelledby="hero-title" data-hero={JSON.stringify(HERO_WEB)}>
+  <figure class="scene" set:html={heroWebSvg()} />
+  <div class="intro">
+    <slot />
+  </div>
+  <div class="hud" data-hud>
+    <div class="hud-top">
+      <span class="hud-step" data-hud-step>{first![0]}</span>
+      <span class="ticks" data-hud-ticks aria-hidden="true">{Array.from({ length: ticks }, () => <i />)}</span>
+      <button type="button" class="play" data-hud-play hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true" data-hud-icon></svg>
+        <span data-hud-label>Play</span>
+      </button>
+    </div>
+    <p class="hud-text" data-hud-text aria-live="polite">{first![1]}</p>
+  </div>
+</section>
+
+<script>
+  import { startHero } from '../scripts/hero-web';
+
+  const root = document.querySelector<HTMLElement>('[data-hero]');
+  if (root) startHero(root);
+</script>
+
+<style is:global>
+  /* Small windows stack the parts: words, then the figure, then the caption. */
+  .hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-top: 68px;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--hero-bg);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(ellipse 60% 55% at 62% 40%, var(--hero-glow), transparent 70%);
+  }
+  .hero .intro {
+    order: 1;
+    max-width: 680px;
+    padding: 40px 24px 12px;
+  }
+  .hero h1 {
+    margin: 18px 0 16px;
+    color: var(--ink-strong);
+    font: 700 clamp(38px, 1.4rem + 2.4vw, 56px) / 1.04 var(--sans);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  .hero h1 .accent {
+    display: block;
+  }
+  .hero .lede {
+    max-width: 32em;
+    margin: 0 0 26px;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  .hero .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .hero .btn:not(.btn--primary) {
+    background: color-mix(in srgb, var(--card) 70%, transparent);
+  }
+  .hero .btn:not(.btn--primary):hover {
+    background: var(--bg-soft);
+  }
+  /* A returning visitor's eyebrow says where they left off. */
+  .eyebrow.back {
+    border-color: color-mix(in srgb, var(--here) 50%, transparent);
+    background: var(--here-soft);
+    color: var(--ink-strong);
+  }
+  .eyebrow.back svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hero .scene {
+    order: 2;
+    position: relative;
+    margin: 0;
+    padding: 8px 12px 0;
+  }
+  .hero .scene svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* The caption: what is happening now, and the button. */
+  .hud {
+    order: 3;
+    margin: 8px 24px 40px;
+    padding: 14px 16px 16px;
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-lg);
+  }
+  .hud-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 34px;
+  }
+  .hud-step {
+    color: var(--muted);
+    font: 700 11.5px/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .hud.done .hud-step {
+    color: var(--allowed);
+  }
+  .ticks {
+    display: flex;
+    gap: 3px;
+  }
+  .ticks i {
+    width: 18px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-strong);
+    transition: background-color 300ms ease;
+  }
+  .ticks i.done {
+    background: var(--accent);
+  }
+  .ticks i.on {
+    background: var(--here);
+  }
+  .play {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 34px;
+    margin-inline-start: auto;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--ink-strong);
+    font: 600 13.5px/1 var(--sans);
+    cursor: pointer;
+    transition:
+      transform 120ms var(--ease-out),
+      background-color 150ms ease;
+  }
+  .play[hidden] {
+    display: none;
+  }
+  .play:hover {
+    background: var(--bg-soft);
+  }
+  .play:active {
+    transform: scale(0.97);
+  }
+  .play svg {
+    width: 14px;
+    height: 14px;
+  }
+  .hud-text {
+    min-height: 2.9em;
+    margin: 10px 0 0;
+    color: var(--ink-strong);
+    font: 500 16px/1.45 var(--sans);
+  }
+
+  /* The figure's callouts and the shuttle's tag (hero-web.mjs heroCss). */
+  .lm-hero .hl-call .hl-name {
+    fill: var(--ink-strong);
+    font: 700 12.5px/1 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .lm-hero .hl-call .hl-sub {
+    fill: var(--muted);
+    font: 500 14px/1 var(--sans);
+  }
+  .lm-hero .hl-lead {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1px;
+  }
+  .lm-hero .hl-lead-dot {
+    fill: var(--muted);
+  }
+  .lm-hero .hw-tag rect {
+    fill: #dfe6ef;
+    stroke: rgba(0, 0, 0, 0.35);
+    stroke-width: 0.6px;
+  }
+  .lm-hero .hw-tag text {
+    fill: #1a1e26;
+    font: 700 8.4px var(--mono);
+    letter-spacing: 0.05em;
+  }
+  .lm-hero [data-part='cart'],
+  .lm-hero .hw-tag {
+    will-change: transform;
+  }
+
+  /* Desktop: the figure fills the hero on the right, the words sit on the left level with it, the caption below. */
+  @media (min-width: 1200px) and (min-height: 620px) {
+    .hero {
+      display: block;
+      height: clamp(620px, 100svh, 940px);
+      padding: 0;
+    }
+    .hero::before {
+      background: radial-gradient(ellipse 46% 52% at 72% 44%, var(--hero-glow), transparent 70%);
+    }
+    /* The figure's box is capped at 1760px and centred, so wide screens keep it clear of the words. */
+    .hero .scene {
+      position: absolute;
+      top: 68px;
+      right: max(0px, calc((100% - 1760px) / 2));
+      bottom: 0;
+      left: max(0px, calc((100% - 1760px) / 2));
+      max-width: 1760px;
+      margin: 0 auto;
+      padding: 0;
+    }
+    .hero .scene svg {
+      height: 100%;
+    }
+    .hero .intro {
+      position: absolute;
+      top: calc(68px + (100% - 68px) * 0.47);
+      left: max(24px, calc((100% - 1132px) / 2));
+      z-index: 2;
+      width: min(540px, 42vw);
+      padding: 0;
+      transform: translateY(-50%);
+    }
+    .hero h1 {
+      font-size: clamp(36px, 5.6vh, 56px);
+    }
+    .hud {
+      position: absolute;
+      right: max(24px, calc((100% - 1132px) / 2));
+      bottom: clamp(32px, 6vh, 60px);
+      z-index: 2;
+      width: 380px;
+      margin: 0;
+    }
+  }
+</style>
