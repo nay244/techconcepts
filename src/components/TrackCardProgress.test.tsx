@@ -5,7 +5,7 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { getEntries, trackTotals } from '../content/registry';
 import { knownFrom } from '../lib/entries';
-import { PROGRESS_KEY, type LessonProgress } from '../progress/store';
+import { seedProgress } from '../test/progress';
 import { TrackCardProgress } from './TrackCardProgress';
 
 // The real track, as Home builds the card from it.
@@ -14,11 +14,6 @@ const known = knownFrom(entries);
 const totals = trackTotals(entries);
 
 const card = () => <TrackCardProgress known={known} totals={totals} />;
-
-function save(lessons: Record<string, Pick<LessonProgress, 'status' | 'furthestPosition'>>): void {
-  const full = Object.fromEntries(Object.entries(lessons).map(([k, v]) => [k, { ...v, lastOpened: '2026-11-05T12:00:00Z' }]));
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, lessons: full, lastLesson: null }));
-}
 
 const segments = (container: HTMLElement) => [...container.querySelectorAll('.segbar i')].map((i) => i.className || 'none');
 
@@ -38,7 +33,7 @@ test('a first visit reads the ready lessons and their minutes, counted from the 
 });
 
 test('a returning visitor sees done and in progress, with one bar segment per lesson', () => {
-  save({
+  seedProgress({
     'networking/dhcp': { status: 'finished', furthestPosition: 7 },
     'networking/subnetting': { status: 'in-progress', furthestPosition: 2 },
     'networking/firewalls': { status: 'in-progress', furthestPosition: 1 },
@@ -53,13 +48,13 @@ test('a returning visitor sees done and in progress, with one bar segment per le
 });
 
 test('progress saved only for lessons the track does not have is still a first visit', () => {
-  save({ 'networking/osi-model': { status: 'finished', furthestPosition: 4 } });
+  seedProgress({ 'networking/osi-model': { status: 'finished', furthestPosition: 4 } });
   const { container } = render(card());
   expectFirstVisit(container);
 });
 
 test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {
-  save({ 'networking/dhcp': { status: 'in-progress', furthestPosition: 3 } });
+  seedProgress({ 'networking/dhcp': { status: 'in-progress', furthestPosition: 3 } });
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   const container = document.createElement('div');
   container.innerHTML = renderToString(card());

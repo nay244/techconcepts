@@ -11,6 +11,7 @@ import { networkingTrack } from '../content/tracks';
 import { knownFrom } from '../lib/entries';
 import { presentTags, trackParts } from '../lib/track';
 import { PROGRESS_KEY } from '../progress/store';
+import { seedProgress } from '../test/progress';
 import { ResetProgress } from './ResetProgress';
 import { TrackLessons } from './TrackLessons';
 import { TrackSidebar } from './TrackSidebar';
@@ -34,11 +35,6 @@ const known = knownFrom(entries);
 const parts = trackParts(networkingTrack, entries, (e) => lessons[e.slug]!);
 const dhcp = available.find((e) => e.slug === 'dhcp')!;
 
-function save(records: Record<string, { status: 'in-progress' | 'finished'; furthestPosition: number }>, lastLesson: string | null): void {
-  const full = Object.fromEntries(Object.entries(records).map(([k, v]) => [k, { ...v, lastOpened: '2026-11-03T12:00:00Z' }]));
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, lessons: full, lastLesson }));
-}
-
 beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
@@ -56,7 +52,7 @@ describe('the track page', () => {
   const dhcpCard = () => screen.getByRole('link', { name: 'DHCP' }).closest('li')!;
 
   test('ResetProgress beside the track clears its progress card and lesson cards at once', async () => {
-    save({ [dhcp.key]: { status: 'finished', furthestPosition: dhcp.maxPosition } }, dhcp.key);
+    seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: dhcp.maxPosition } }, dhcp.key);
     const { container } = render(page());
     expect(complete(container)).toBe(`1 of ${planned} complete`);
     expect(within(dhcpCard()).getByText('Finished')).toBeInTheDocument();
@@ -68,7 +64,7 @@ describe('the track page', () => {
   });
 
   test('Clear in the sidebar clears the lesson cards beside it at once', async () => {
-    save({ 'networking/firewalls': { status: 'in-progress', furthestPosition: 2 } }, 'networking/firewalls');
+    seedProgress({ 'networking/firewalls': { status: 'in-progress', furthestPosition: 2 } }, 'networking/firewalls');
     render(page());
     expect(screen.getByText('In progress')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
@@ -95,7 +91,7 @@ describe('ResetProgress', () => {
   });
 
   test('asks first, then clears techconcepts:v1 and announces it', async () => {
-    save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
     render(<ResetProgress />);
     await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
     expect(screen.getByRole('group', { name: 'Reset all progress on this device?' })).toHaveFocus();
@@ -107,7 +103,7 @@ describe('ResetProgress', () => {
   });
 
   test('Cancel keeps progress and returns focus to the button', async () => {
-    save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
     render(<ResetProgress />);
     await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -117,7 +113,7 @@ describe('ResetProgress', () => {
   });
 
   test('its row has About’s look: a small button, then the question in words, with Reset as the primary button', async () => {
-    save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
     const { container } = render(<ResetProgress />);
     expect(container.firstElementChild).toHaveClass('a-reset');
     expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveClass('btn', 'btn--small');
@@ -138,7 +134,7 @@ describe('ResetProgress', () => {
   });
 
   test('its live region is on the page from the start and stays while the question is open', async () => {
-    save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
     render(<ResetProgress />);
     const status = screen.getByRole('status');
     await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));

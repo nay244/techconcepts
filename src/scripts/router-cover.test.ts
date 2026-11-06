@@ -7,38 +7,8 @@ import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { JSDOM } from 'jsdom';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import NetworkingCover from '../components/NetworkingCover.astro';
+import { FakeObserver, view } from '../test/fake-io';
 import { startRouterCover } from './router-cover';
-
-/** An IntersectionObserver the test drives: `view(seen)` tells each connected one whether its targets are in view. */
-class FakeObserver {
-  static all: FakeObserver[] = [];
-  targets: Element[] = [];
-  connected = true;
-  constructor(
-    readonly callback: IntersectionObserverCallback,
-    readonly options?: IntersectionObserverInit,
-  ) {
-    FakeObserver.all.push(this);
-  }
-  observe(target: Element): void {
-    this.targets.push(target);
-  }
-  unobserve(): void {}
-  disconnect(): void {
-    this.connected = false;
-  }
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-}
-
-/** `late`: also the disconnected ones, as a callback the browser had already queued would. */
-function view(seen = true, { late = false } = {}): void {
-  for (const o of FakeObserver.all.filter((x) => late || x.connected)) {
-    const entries = o.targets.map((target) => ({ target, isIntersecting: seen, intersectionRatio: seen ? 1 : 0 }) as unknown as IntersectionObserverEntry);
-    o.callback(entries, o as unknown as IntersectionObserver);
-  }
-}
 
 // One packet takes 1.8 s along the cable and the next leaves 0.5 s later, so three are in by about 2.8 s.
 const TRIP_MS = 1800;

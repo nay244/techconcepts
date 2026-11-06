@@ -12,6 +12,7 @@ import { networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
 import { THEME_KEY } from '../lib/theme';
 import { PROGRESS_KEY } from '../progress/store';
+import { seedProgress, type SeedLesson } from '../test/progress';
 import LessonConsole from './LessonConsole';
 
 // The lessons these tests play are fixtures, while the real lessons load too (through the registry), so the figure
@@ -75,10 +76,8 @@ function stored(): { lessons: Record<string, { status: string; furthestPosition:
   return JSON.parse(window.localStorage.getItem(PROGRESS_KEY) ?? 'null');
 }
 
-function save(record: { status: 'in-progress' | 'finished'; furthestPosition: number }): void {
-  const data = { version: 1, lessons: { [KEY]: { ...record, lastOpened: '2026-11-01T09:00:00.000Z' } }, lastLesson: KEY };
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
-}
+/** DHCP's saved progress, opened last. */
+const save = (record: SeedLesson) => seedProgress({ [KEY]: record }, KEY);
 
 /**
  * Lets the playback timers run for `ms`. Each wait is its own act(): React

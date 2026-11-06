@@ -9,42 +9,15 @@ import { JSDOM } from 'jsdom';
 import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { HERO_WEB } from '../art/figures/hero-web';
 import HeroWeb from '../components/HeroWeb.astro';
+import { FakeObserver, view } from '../test/fake-io';
 import { startHero } from './hero-web';
 
 const { T, STEPS } = HERO_WEB;
 const FIRST = STEPS[0]!;
 const LAST = STEPS.at(-1)!;
 
-/** An IntersectionObserver the test drives: `enter()` tells each connected one that its targets came into view. */
-class FakeObserver {
-  static all: FakeObserver[] = [];
-  targets: Element[] = [];
-  connected = true;
-  constructor(
-    readonly callback: IntersectionObserverCallback,
-    readonly options?: IntersectionObserverInit,
-  ) {
-    FakeObserver.all.push(this);
-  }
-  observe(target: Element): void {
-    this.targets.push(target);
-  }
-  unobserve(): void {}
-  disconnect(): void {
-    this.connected = false;
-  }
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-}
-
-/** `late`: also the disconnected ones, as a callback the browser had already queued would. */
-function enter({ late = false } = {}): void {
-  for (const o of FakeObserver.all.filter((x) => late || x.connected)) {
-    const entries = o.targets.map((target) => ({ target, isIntersecting: true, intersectionRatio: 1 }) as unknown as IntersectionObserverEntry);
-    o.callback(entries, o as unknown as IntersectionObserver);
-  }
-}
+/** Tells each connected observer that its targets came into view; `late`: the disconnected ones too. */
+const enter = ({ late = false } = {}) => view(true, { late });
 
 let html = '';
 let root: HTMLElement;

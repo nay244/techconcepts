@@ -8,7 +8,8 @@ import { getEntries, getLesson, type AvailableSummary } from '../content/registr
 import { networkingTrack } from '../content/tracks';
 import { knownFrom } from '../lib/entries';
 import { presentTags, trackParts } from '../lib/track';
-import { PROGRESS_KEY, type LessonProgress } from '../progress/store';
+import { FakeObserver } from '../test/fake-io';
+import { seedProgress } from '../test/progress';
 import { TrackLessons } from './TrackLessons';
 
 // The real track, as the page builds the island's props from it.
@@ -22,11 +23,6 @@ const key = (slug: string) => entries.find((e) => e.slug === slug)!.key;
 const lessons = () => (
   <TrackLessons parts={parts} tags={tags} known={known} art1={<svg data-testid="art-1" />} art8={<svg data-testid="art-8" />} />
 );
-
-function save(records: Record<string, Pick<LessonProgress, 'status' | 'furthestPosition'>>): void {
-  const full = Object.fromEntries(Object.entries(records).map(([k, v]) => [k, { ...v, lastOpened: '2026-11-06T12:00:00Z' }]));
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, lessons: full, lastLesson: null }));
-}
 
 const chip = (name: string) => screen.getByRole('button', { name });
 const card = (title: string) => screen.getByRole('link', { name: title }).closest('li')!;
@@ -100,7 +96,7 @@ test('a first visit shows each ready lesson as not started', () => {
 });
 
 test('a returning visitor sees Finished and In progress, with Watch, Learn and Practice and where they are', () => {
-  save({
+  seedProgress({
     [key('subnetting')]: { status: 'finished', furthestPosition: 8 },
     [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 },
   });
@@ -191,7 +187,7 @@ test('an unknown ?for= shows everything, with no exam chip pressed', () => {
 
 test('the server renders everything; a page opened with ?for= hydrates without a mismatch, then filters', async () => {
   window.history.replaceState(null, '', '/networking?for=security-plus');
-  save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } });
+  seedProgress({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } });
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   const container = document.createElement('div');
   container.innerHTML = renderToString(lessons());
@@ -211,36 +207,19 @@ test('the server renders everything; a page opened with ?for= hydrates without a
   container.remove();
 });
 
-/** An IntersectionObserver the test drives: `reading(id)` says that part is in the middle of the window. */
-class Spy {
-  static all: Spy[] = [];
-  targets: Element[] = [];
-  connected = true;
-  constructor(
-    readonly callback: IntersectionObserverCallback,
-    readonly options?: IntersectionObserverInit,
-  ) {
-    Spy.all.push(this);
-  }
-  observe(target: Element): void {
-    this.targets.push(target);
-  }
-  unobserve(): void {}
-  disconnect(): void {
-    this.connected = false;
-  }
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-}
+/**
+ * Says that part is in the middle of the window, to the latest observer still connected, with that part alone: the
+ * parts list watches every part and marks the one it is told about, which the shared `view` cannot single out.
+ */
 function reading(id: string): void {
-  const spy = Spy.all.filter((s) => s.connected).at(-1)!;
-  spy.callback([{ target: document.getElementById(id)!, isIntersecting: true } as unknown as IntersectionObserverEntry], spy as unknown as IntersectionObserver);
+  const observer = FakeObserver.all.filter((o) => o.connected).at(-1)!;
+  const entry = { target: document.getElementById(id)!, isIntersecting: true } as unknown as IntersectionObserverEntry;
+  observer.callback([entry], observer as unknown as IntersectionObserver);
 }
 
 test('the parts list beside the lessons follows the part being read, among the parts shown', async () => {
-  Spy.all = [];
-  vi.stubGlobal('IntersectionObserver', Spy);
+  FakeObserver.all = [];
+  vi.stubGlobal('IntersectionObserver', FakeObserver);
   // The page's own parts list, static HTML outside the island in the sidebar (.toc), and another link to a part
   // elsewhere on the page, which the spy leaves alone.
   const aside = document.createElement('aside');
@@ -254,7 +233,7 @@ test('the parts list beside the lessons follows the part being read, among the p
   const link = (n: number) => aside.querySelector(`a[href="#part-${n}"]`)!;
 
   const { unmount } = render(lessons());
-  const first = Spy.all.at(-1)!;
+  const first = FakeObserver.all.at(-1)!;
   expect(first.options?.rootMargin).toBe('-35% 0px -55% 0px');
   expect(first.targets.map((t) => t.id)).toEqual(['part-1', 'part-2', 'part-3', 'part-4', 'part-5', 'part-6']);
   expect(aside.querySelector('[aria-current]')).toBeNull();
@@ -272,12 +251,12 @@ test('the parts list beside the lessons follows the part being read, among the p
   reading('part-3');
   await userEvent.click(chip('CompTIA Security+'));
   expect(first.connected).toBe(false);
-  expect(Spy.all.at(-1)!.targets.map((t) => t.id)).toEqual(['part-1', 'part-6']);
+  expect(FakeObserver.all.at(-1)!.targets.map((t) => t.id)).toEqual(['part-1', 'part-6']);
   expect(link(3)).not.toHaveAttribute('aria-current');
   expect(link(3)).not.toHaveClass('on');
 
   unmount();
-  expect(Spy.all.every((s) => !s.connected)).toBe(true);
+  expect(FakeObserver.all.every((s) => !s.connected)).toBe(true);
 });
 
 // Last in the file: once the shared storage has failed it keeps saying so for as long as its module lives.

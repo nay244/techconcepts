@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { PROGRESS_KEY, type LessonProgress } from '../progress/store';
+import { seedProgress } from '../test/progress';
 import { HeroCta, type ResumeLesson } from './HeroCta';
 
 // What Home hands the island: each ready lesson with the words for each of its positions (resumePlaces, at build time).
@@ -41,11 +41,6 @@ function cta() {
   );
 }
 
-function save(lessons: Record<string, Pick<LessonProgress, 'status' | 'furthestPosition'>>, lastLesson: string | null): void {
-  const full = Object.fromEntries(Object.entries(lessons).map(([k, v]) => [k, { ...v, lastOpened: '2026-11-05T12:00:00Z' }]));
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, lessons: full, lastLesson }));
-}
-
 const link = (name: string) => screen.getByRole('link', { name });
 
 function expectFirstVisit(): void {
@@ -77,7 +72,7 @@ test('a first visit starts lesson 1 or shows how a lesson works, under the free-
 });
 
 test('a returning visitor continues the last lesson at its saved step, in the mockup’s words', () => {
-  save({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, DHCP.key);
+  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, DHCP.key);
   render(cta());
   expectReturning('You’re on step 3 of 5 in DHCP', 'DHCP', '/networking/dhcp?step=3');
 });
@@ -91,7 +86,7 @@ test('every place reads as one sentence: "You’re on <place> in <lesson>"', () 
     [INTERNET.key, 6, 'You’re on DNS step 1 of 1 in How the Internet Works'],
   ];
   for (const [key, position, words] of cases) {
-    save({ [key]: { status: 'in-progress', furthestPosition: position } }, key);
+    seedProgress({ [key]: { status: 'in-progress', furthestPosition: position } }, key);
     const { unmount } = render(cta());
     const lesson = LESSONS.find((l) => l.key === key)!;
     expectReturning(words, lesson.title, `${lesson.url}?step=${position}`);
@@ -100,7 +95,7 @@ test('every place reads as one sentence: "You’re on <place> in <lesson>"', () 
 });
 
 test('a finished last lesson says so, with the ring full, and is continued from its Overview', () => {
-  save({ [DHCP.key]: { status: 'finished', furthestPosition: 7 } }, DHCP.key);
+  seedProgress({ [DHCP.key]: { status: 'finished', furthestPosition: 7 } }, DHCP.key);
   const { container } = render(cta());
   expectReturning('You finished DHCP', 'DHCP', '/networking/dhcp');
   expect(screen.queryByText(/You’re on/)).toBeNull();
@@ -110,7 +105,7 @@ test('a finished last lesson says so, with the ring full, and is continued from 
 
 test('a last lesson only opened, while another has progress, is continued from its Overview', () => {
   // Lesson 1 finished, then DHCP's Overview opened and left: DHCP is the last lesson but has no record.
-  save({ [INTERNET.key]: { status: 'finished', furthestPosition: 8 } }, DHCP.key);
+  seedProgress({ [INTERNET.key]: { status: 'finished', furthestPosition: 8 } }, DHCP.key);
   const { container } = render(cta());
   expectReturning('You’re on the Overview in DHCP', 'DHCP', '/networking/dhcp');
   const ring = container.querySelectorAll('.eyebrow circle')[1]!;
@@ -119,25 +114,25 @@ test('a last lesson only opened, while another has progress, is continued from i
 
 test('with no saved lesson progress it is a first visit, whatever lesson was last opened', () => {
   // Progress only for a lesson the site does not have.
-  save({ 'networking/osi-model': { status: 'in-progress', furthestPosition: 2 } }, 'networking/osi-model');
+  seedProgress({ 'networking/osi-model': { status: 'in-progress', furthestPosition: 2 } }, 'networking/osi-model');
   const first = render(cta());
   expectFirstVisit();
   first.unmount();
 
   // Opened at the Overview and left, with nothing else saved.
-  save({}, DHCP.key);
+  seedProgress({}, DHCP.key);
   render(cta());
   expectFirstVisit();
 });
 
 test('progress with no last lesson on the site is a first visit', () => {
-  save({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'networking/osi-model');
+  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'networking/osi-model');
   render(cta());
   expectFirstVisit();
 });
 
 test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {
-  save({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, DHCP.key);
+  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, DHCP.key);
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   const container = document.createElement('div');
   container.innerHTML = renderToString(cta());

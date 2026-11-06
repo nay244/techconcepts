@@ -6,7 +6,8 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { getEntries } from '../content/registry';
 import { knownFrom } from '../lib/entries';
-import { PROGRESS_KEY, type LessonProgress } from '../progress/store';
+import { PROGRESS_KEY } from '../progress/store';
+import { seedProgress } from '../test/progress';
 import { TrackSidebar } from './TrackSidebar';
 
 // The real track: twenty places, four of them ready.
@@ -23,11 +24,6 @@ const sidebar = () => (
     </nav>
   </TrackSidebar>
 );
-
-function save(records: Record<string, Pick<LessonProgress, 'status' | 'furthestPosition'>>, lastLesson: string | null = null): void {
-  const full = Object.fromEntries(Object.entries(records).map(([k, v]) => [k, { ...v, lastOpened: '2026-11-06T12:00:00Z' }]));
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, lessons: full, lastLesson }));
-}
 
 const segments = (container: HTMLElement) => [...container.querySelectorAll('.segbar i')].map((i) => i.className || 'none');
 const title = (container: HTMLElement) => container.querySelector('.pg-title')!.textContent;
@@ -53,7 +49,7 @@ test('a first visit says progress is kept in this browser, above the parts', () 
 });
 
 test('a returning visitor sees how many of the twenty are complete, a bar with each lesson in its place, and what is in progress', () => {
-  save({
+  seedProgress({
     [key('subnetting')]: { status: 'finished', furthestPosition: 9 },
     [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 },
   });
@@ -68,7 +64,7 @@ test('a returning visitor sees how many of the twenty are complete, a bar with e
 });
 
 test('several in progress are named in track order; none in progress, no line', () => {
-  save({
+  seedProgress({
     [key('firewalls')]: { status: 'in-progress', furthestPosition: 2 },
     [key('subnetting')]: { status: 'in-progress', furthestPosition: 2 },
   });
@@ -77,14 +73,14 @@ test('several in progress are named in track order; none in progress, no line', 
   expect(title(first.container)).toBe('0 of 20 complete');
   first.unmount();
 
-  save({ [key('dhcp')]: { status: 'finished', furthestPosition: 7 } });
+  seedProgress({ [key('dhcp')]: { status: 'finished', furthestPosition: 7 } });
   const second = render(sidebar());
   expect(title(second.container)).toBe('1 of 20 complete');
   expect(second.container.querySelector('.pg-note')).toBeNull();
 });
 
 test('Clear asks first; Keep it keeps everything and goes back to the button', async () => {
-  save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
+  seedProgress({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
   render(sidebar());
   await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
   const question = screen.getByRole('group', { name: 'Clear all progress on this device?' });
@@ -100,7 +96,7 @@ test('Clear asks first; Keep it keeps everything and goes back to the button', a
 });
 
 test('Clear empties progress on this device, says so, and puts focus on the progress card’s title', async () => {
-  save({ [key('dhcp')]: { status: 'finished', furthestPosition: 7 } }, key('dhcp'));
+  seedProgress({ [key('dhcp')]: { status: 'finished', furthestPosition: 7 } }, key('dhcp'));
   const { container } = render(sidebar());
   await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
   await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
@@ -111,7 +107,7 @@ test('Clear empties progress on this device, says so, and puts focus on the prog
 });
 
 test('the keyboard can ask, keep, ask again and clear', async () => {
-  save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
+  seedProgress({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
   const { container } = render(sidebar());
   screen.getByRole('button', { name: 'Clear my progress' }).focus();
   await userEvent.keyboard('{Enter}');
@@ -130,7 +126,7 @@ test('the keyboard can ask, keep, ask again and clear', async () => {
 });
 
 test('a question left open when another tab clears progress is closed, and does not come back with new progress', async () => {
-  save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
+  seedProgress({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } }, key('dhcp'));
   const { container } = render(sidebar());
   await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
   expect(screen.getByRole('group', { name: 'Clear all progress on this device?' })).toHaveFocus();
@@ -146,7 +142,7 @@ test('a question left open when another tab clears progress is closed, and does 
 
   // Progress saved again elsewhere brings back the button, not the old question.
   act(() => {
-    save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 4 } }, key('dhcp'));
+    seedProgress({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 4 } }, key('dhcp'));
     window.dispatchEvent(new StorageEvent('storage', { key: PROGRESS_KEY }));
   });
   expect(screen.getByRole('button', { name: 'Clear my progress' })).toBeInTheDocument();
@@ -154,7 +150,7 @@ test('a question left open when another tab clears progress is closed, and does 
 });
 
 test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {
-  save({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } });
+  seedProgress({ [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 } });
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   const container = document.createElement('div');
   container.innerHTML = renderToString(sidebar());
