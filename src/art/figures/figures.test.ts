@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { sha256, withoutGrain } from '../../test/figure-hash';
-import { COVER_IDS, cover, coverStill } from './covers.ts';
+import { COVER_IDS, cover, coverStill, routerDrawing } from './covers.ts';
 import { HERO_WEB, heroWebSvg } from './hero-web.ts';
 import { internetThumb } from './internet-thumb.ts';
 import { SPOTS, spot } from './spots.ts';
@@ -32,12 +32,20 @@ test('two still copies of the same cover share no ids', () => {
   expect(cover('networking')).toMatch(/data-part="packets"/);
 });
 
+test('the live router cover is the networking cover, with the packets’ path along its cable', () => {
+  const { svg, path } = routerDrawing();
+  expect(cover('networking')).toContain(svg);
+  expect(path.length).toBeGreaterThan(100);
+  path.forEach((p) => expect(p).toHaveLength(2));
+});
+
 // The figures match the mockups. Each value is the SHA-256 of the reference figure after normalise(), recorded once
 // by a one-off script from the approved mockup scripts and pages (never read by this test):
 //   cover:*       the figures embedded in illustrations-v3.html (build3.mjs / covers.mjs)
 //   spot:*        spots.mjs
 //   hero-web*     hero-web.mjs heroSvg() and heroData()
 //   internet-thumb the internet art embedded in track-v2.html (track2.mjs internetArt() over hero.mjs)
+//   router-path   the Networking cover's packet path in its page script (lumen-assets.mjs routerLive, build3.mjs F1.path)
 // withoutGrain() drops film grain (R2); the drawing is otherwise identical.
 const sha = (s: string): Promise<string> => sha256(withoutGrain(s));
 
@@ -57,6 +65,7 @@ const EXPECTED: Record<string, string> = {
   'hero-web': '00847544a78e5bdb839cecc17586f305e1f75fb75416ecd5b0fe2d448c9c81bf',
   'hero-web-data': 'ee57f4896264baaf7022b4b7d0dbe2c63fd8a695216149d1462d99a13b292ea5',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
+  'router-path': '8478e385264220f9d007a9fc1f1c38f71723265a79baf01b7ca0b1eae0900133',
 };
 
 test('the figures match the mockups', async () => {
@@ -67,6 +76,7 @@ test('the figures match the mockups', async () => {
   const { DRAW, T, PATH, ZERO, TAG_DY } = HERO_WEB;
   actual['hero-web-data'] = await sha256(JSON.stringify({ DRAW, T, PATH, ZERO, TAG_DY }));
   actual['internet-thumb'] = await sha(internetThumb());
+  actual['router-path'] = await sha256(JSON.stringify(routerDrawing().path));
   expect(actual).toEqual(EXPECTED);
 });
 

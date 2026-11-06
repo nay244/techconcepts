@@ -1,106 +1,869 @@
 ---
+// A track's page (spec §6.2, mockup track-v2). The words are the mockup's; the numbers, the parts and the cards are
+// worked out from the track and its lessons. Only the hero's buttons, the progress card, the lessons and the cover's
+// packets run in the browser; the rest is static, and without JavaScript the page shows a first visit in full.
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
-import { getEntries, trackTotals } from '../../content/registry';
+import { internetThumb } from '../../art/figures/internet-thumb';
+import { spot } from '../../art/figures/spots';
+import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../../content/registry';
+import type { Lesson } from '../../content/schema';
 import { tracks } from '../../content/tracks';
-import { levelLabel } from '../../lib/entries';
+import { knownFrom, levelLabel } from '../../lib/entries';
+import { resumePlaces } from '../../lib/home';
+import { nextUps, presentTags, trackParts } from '../../lib/track';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import ResetProgress from '../../components/ResetProgress';
-import TrackLessonList from '../../components/TrackLessonList';
+import NetworkingCover from '../../components/NetworkingCover.astro';
+import TrackHeroCta, { type TrackResumeLesson } from '../../components/TrackHeroCta';
+import TrackLessons from '../../components/TrackLessons';
+import TrackSidebar from '../../components/TrackSidebar';
 import '../../components/site.css';
 
 export const getStaticPaths = (() =>
-  tracks.map((track) => ({
+  tracks.map((track, i) => ({
     params: { track: track.id },
-    props: { track, entries: getEntries(track.id) },
+    props: { track, number: i + 1 },
   }))) satisfies GetStaticPaths;
 
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-const { track, entries } = Astro.props;
-const { planned, available, minutes } = trackTotals(entries);
-const level = levelLabel(track.level);
+const { track, number } = Astro.props;
+// Only Networking has a page cover so far; a new track needs its own before it can be built.
+if (track.id !== 'networking') throw new Error(`The ${track.id} track has no cover for its page.`);
+
+const entries = getEntries(track.id);
+const available = entries.filter((e): e is AvailableSummary => e.available);
+const totals = trackTotals(entries);
+const known = knownFrom(entries);
+
+function lessonOf(entry: AvailableSummary): Lesson {
+  const lesson = getLesson(track.id, entry.slug);
+  // An available entry is built from its lesson, so this cannot happen.
+  if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
+  return lesson;
+}
+
+// ---------- Hero: lesson 1 to start; each ready lesson can say where a returning visitor is ----------
+const start = available[0]!;
+const resumeLessons: TrackResumeLesson[] = available.map((entry) => ({
+  key: entry.key,
+  title: entry.title,
+  url: entry.url,
+  places: resumePlaces(lessonOf(entry)),
+  next: nextUps(lessonOf(entry)),
+}));
+const label = `Track ${number}`;
+
+// ---------- Body: the parts, the exam chips, and each ready lesson's figure ----------
+const parts = trackParts(track, entries, lessonOf);
+const tags = presentTags(entries);
+const planned = entries.map((e) => ({ key: e.key, title: e.title }));
+const FIGURES: Record<string, () => string> = {
+  'how-the-internet-works': internetThumb,
+  subnetting: () => spot('subnet'),
+  dhcp: () => spot('dhcp'),
+  firewalls: () => spot('firewall'),
+};
+// Each figure goes to the lessons island as static HTML in a slot named after the lesson's number, so it is not
+// repeated in the island's props.
+const figures = available.map((entry) => {
+  const draw = FIGURES[entry.slug];
+  if (draw === undefined) throw new Error(`The ${entry.key} lesson is ready and has no figure for its card.`);
+  return { slot: `art${entry.number}`, svg: draw() };
+});
 ---
 
 <BaseLayout title={track.title} current="tracks" description={track.description}>
-  <div class="container track">
-    <nav aria-label="Breadcrumb" class="track__crumbs"><a href="/">Home</a></nav>
-    <h1>{track.title}</h1>
-    <p class="track__description">{track.description}</p>
-    <ul class="track__stats" role="list">
-      <li>{available} of {planned} lessons ready</li>
-      <li>{minutes} min in total</li>
-      <li>{level}</li>
-    </ul>
+  <section class="t-hero" aria-labelledby="track-title">
+    <div class="wrap t-hero-grid">
+      <div class="t-intro">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Home</a></li>
+            <li><span aria-current="page">{track.title}</span></li>
+          </ol>
+        </nav>
+        <span class="eyebrow"
+          ><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>{label} · {levelLabel(track.level)}</span
+        >
+        <h1 id="track-title">{track.title}</h1>
+        <p class="lede">{track.description}</p>
+        <dl class="stats">
+          <div><dt>lessons planned</dt><dd>{totals.planned}</dd></div>
+          <div><dt>ready now</dt><dd>{totals.available}</dd></div>
+          <div><dt>minutes in all</dt><dd>{totals.minutes}</dd></div>
+        </dl>
+        <TrackHeroCta client:load lessons={resumeLessons} known={known} start={{ title: start.title, url: start.url }} />
+        <p class="flow">
+          Every lesson: <b>Watch</b><i aria-hidden="true">›</i><b>Learn</b><i aria-hidden="true">›</i><b>Practice</b>
+        </p>
+      </div>
+      <NetworkingCover label={label} />
+    </div>
+  </section>
 
-    <div class="track__body">
-      <ResetProgress client:load />
-      <TrackLessonList client:load trackId={track.id} entries={entries} planned={planned} />
+  <div class="wrap t-body" id="lessons">
+    <TrackSidebar client:load lessons={planned} known={known}>
+      <nav aria-label="Parts of this track">
+        <p class="toc-h">Parts</p>
+        <ol>
+          {
+            parts.map((part) => (
+              <li>
+                <a href={`#part-${part.n}`} class={part.ready > 0 ? 'ready' : undefined}>
+                  <span class="n">{part.n}</span>
+                  <span>{part.title}</span>
+                  {part.ready > 0 ? (
+                    <span class="c">
+                      <span aria-hidden="true">
+                        {part.ready}/{part.lessons.length}
+                      </span>
+                      <span class="sr-only">
+                        {part.ready} of {part.lessons.length} ready
+                      </span>
+                    </span>
+                  ) : (
+                    <span class="c">Soon</span>
+                  )}
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+    </TrackSidebar>
+    <div>
+      <TrackLessons client:load parts={parts} tags={tags} known={known}>
+        {figures.map(({ slot, svg }) => <Fragment slot={slot} set:html={svg} />)}
+      </TrackLessons>
     </div>
   </div>
 </BaseLayout>
 
 <style is:global>
-  .track {
-    padding-block: var(--space-6) var(--space-4);
+  html {
+    scroll-behavior: smooth;
   }
-  .track__crumbs {
-    margin-bottom: var(--space-4);
-    font-size: var(--text-sm);
+
+  /* ---------- Hero ---------- */
+  .t-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 56px 0 0;
   }
-  .track__description {
-    max-width: var(--measure);
-    font-size: var(--text-lg);
+  .t-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 640px;
+    background-image:
+      radial-gradient(var(--dot) 1.2px, transparent 1.4px), radial-gradient(ellipse 60% 60% at 75% 10%, var(--accent-soft), transparent 70%);
+    background-size:
+      24px 24px,
+      100% 100%;
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 60% 10%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 80% at 60% 10%, #000 30%, transparent 75%);
   }
-  .track__stats {
+  .t-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+    gap: 48px;
+    align-items: center;
+  }
+  .crumbs ol {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-5);
-    margin: 0 0 var(--space-6);
+    gap: 8px;
+    margin: 0 0 22px;
     padding: 0;
     list-style: none;
     color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+    font: 500 14.5px/1.3 var(--sans);
   }
-  /* The two islands are display: contents, so their pieces are laid out here:
-     the progress line and Reset side by side, then the chips, then the parts.
-     Reset comes first in the source so keyboard order matches what is shown. */
-  .track__body {
+  .crumbs li + li::before {
+    content: '/';
+    margin-inline-end: 8px;
+    color: var(--line-strong);
+  }
+  .crumbs a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ink-strong);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .crumbs [aria-current] {
+    color: var(--ink-strong);
+  }
+  .t-intro h1 {
+    margin: 18px 0 16px;
+    color: var(--ink-strong);
+    font: 700 clamp(40px, 1.6rem + 2.8vw, 58px) / 1.04 var(--sans);
+    letter-spacing: -0.03em;
+  }
+  .t-intro .lede {
+    max-width: 32em;
+    margin: 0 0 26px;
+    font-size: 18.5px;
+    line-height: 1.6;
+  }
+  .stats {
     display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: var(--space-5);
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: 0;
+    margin: 0 0 28px;
+  }
+  .stats div {
+    display: flex;
+    flex-direction: column-reverse;
+    padding: 0 26px;
+    border-inline-start: 1px solid var(--line-strong);
+  }
+  .stats div:first-child {
+    padding-inline-start: 0;
+    border: 0;
+  }
+  .stats dd {
+    margin: 0;
+    color: var(--ink-strong);
+    font: 700 30px/1.1 var(--mono);
+    letter-spacing: -0.02em;
+  }
+  .stats div:nth-child(2) dd {
+    color: var(--accent);
+  }
+  .stats dt {
+    margin-top: 4px;
+    color: var(--muted);
+    font: 500 14px/1.3 var(--sans);
+  }
+  .t-intro .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .resume {
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 12px;
+    align-items: center;
+    margin: 16px 0 0;
+    padding: 10px 18px 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--here) 45%, transparent);
+    border-radius: 12px;
+    background: var(--here-soft);
+    text-align: start;
+    text-decoration: none;
+  }
+  .resume svg {
+    grid-row: span 2;
+    width: 36px;
+    height: 36px;
+  }
+  .resume b {
+    color: var(--ink-strong);
+    font: 700 15.5px/1.3 var(--sans);
+  }
+  .resume span {
+    color: var(--muted);
+    font: 400 14px/1.3 var(--sans);
+  }
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin: 22px 0 0;
+    color: var(--muted);
+    font: 500 14.5px/1.3 var(--sans);
+  }
+  .flow b {
+    padding: 4px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--ink-strong);
+    font-weight: 600;
+  }
+  .flow i {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  /* ---------- Body: progress and the parts on the left, the lessons on the right ---------- */
+  .t-body {
+    display: grid;
+    grid-template-columns: 252px minmax(0, 1fr);
+    gap: 52px;
     align-items: start;
+    padding-top: 80px;
   }
-  .track__body .reset {
-    grid-column: 2;
-    grid-row: 1;
+  .toc {
+    position: sticky;
+    top: 92px;
+    display: grid;
+    gap: 22px;
   }
-  .track__body .track-progress {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
+  .pg {
+    padding: 18px;
   }
-  .track__body .track-filter,
-  .track__body .track-parts {
-    grid-column: 1 / -1;
+  .pg-title {
+    margin: 0 0 4px;
+    color: var(--ink-strong);
+    font: 600 15px/1.3 var(--sans);
   }
-  .track__body .track-filter {
-    margin-top: var(--space-4);
+  .pg-title:focus {
+    outline: none;
   }
-  .track__body p.sr-only {
-    grid-column: 1;
+  .pg-title b {
+    margin-inline-end: 2px;
+    color: var(--allowed);
+    font: 700 22px/1 var(--mono);
   }
-  @media (max-width: 34rem) {
-    .track__body {
+  .pg-note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .pg .segbar {
+    margin: 12px 0 10px;
+  }
+  /* Finished lessons in the accent, as the lesson console's own bar has them. */
+  .pg .segbar i.done {
+    background: var(--accent);
+  }
+  .link-btn {
+    margin-top: 12px;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: 600 14px/1.3 var(--sans);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .confirm {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg-soft);
+  }
+  .confirm:focus {
+    outline: none;
+  }
+  .confirm:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .confirm p {
+    margin: 0 0 10px;
+    color: var(--ink-strong);
+    font: 600 14px/1.4 var(--sans);
+  }
+  .confirm div {
+    display: flex;
+    gap: 8px;
+  }
+  .confirm .btn {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  .toc-h {
+    margin: 0 0 8px;
+    padding-inline-start: 10px;
+    color: var(--muted);
+    font: 700 12px/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .toc ol {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .toc a {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 9px 10px;
+    border-radius: 10px;
+    color: var(--ink);
+    font: 500 15px/1.3 var(--sans);
+    text-decoration: none;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+  .toc a:hover {
+    background: var(--bg-soft);
+    color: var(--ink-strong);
+  }
+  /* The part being read (TrackLessons marks it). */
+  .toc a.on {
+    background: var(--accent-soft);
+    color: var(--ink-strong);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .toc .n {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 50%;
+    color: var(--muted);
+    font: 700 11.5px/1 var(--mono);
+  }
+  .toc a.ready .n {
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .toc .c {
+    color: var(--muted);
+    font: 500 12.5px/1 var(--mono);
+  }
+  .toc a.ready .c {
+    color: var(--accent);
+  }
+
+  /* ---------- The exam chips ---------- */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-bottom: 40px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--line);
+  }
+  .toolbar-lbl {
+    color: var(--ink-strong);
+    font: 600 14.5px/1.3 var(--sans);
+  }
+  .showing {
+    flex-basis: 100%;
+    margin: 4px 0 0;
+    color: var(--muted);
+    font: 500 14.5px/1.4 var(--sans);
+  }
+  .showing:empty {
+    display: none;
+  }
+
+  /* ---------- The parts and their lessons ---------- */
+  .part {
+    scroll-margin-top: 92px;
+  }
+  .part + .part {
+    margin-top: 64px;
+  }
+  .part-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .part-n {
+    margin: 0;
+    color: var(--accent);
+    font: 700 12.5px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .part.all-soon .part-n {
+    color: var(--muted);
+  }
+  .part-head h2 {
+    margin: 7px 0 0;
+    color: var(--ink-strong);
+    font: 700 26px/1.2 var(--sans);
+    letter-spacing: -0.015em;
+  }
+  .part-c {
+    padding: 7px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    font: 500 13px/1 var(--mono);
+    white-space: nowrap;
+  }
+  .part-c b {
+    color: var(--accent);
+  }
+  .lessons {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lesson {
+    position: relative;
+    display: grid;
+    grid-template-columns: 264px minmax(0, 1fr);
+    overflow: hidden;
+    transition:
+      transform 200ms var(--ease-out),
+      box-shadow 200ms ease,
+      border-color 200ms ease;
+  }
+  .lesson:hover {
+    border-color: var(--accent-line);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+  .lesson:active {
+    transform: translateY(-1px) scale(0.995);
+  }
+  .lesson:has(.l-link:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .l-art {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-inline-end: 1px solid var(--fig-line);
+    background: var(--fig-bg);
+  }
+  .l-art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .l-body {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px 18px;
+  }
+  .l-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 25px;
+    margin-bottom: 6px;
+  }
+  .l-num {
+    color: var(--muted);
+    font: 700 12.5px/1 var(--mono);
+    letter-spacing: 0.06em;
+  }
+  .lesson h3 {
+    margin: 0;
+    color: var(--ink-strong);
+    font: 700 23px/1.25 var(--sans);
+    letter-spacing: -0.01em;
+  }
+  .l-link {
+    color: inherit;
+    text-decoration: none;
+  }
+  /* The whole card is the lesson's link. */
+  .l-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+  }
+  .l-link:focus-visible {
+    outline: none;
+  }
+  .l-sub {
+    margin: 2px 0 10px;
+    color: var(--accent);
+    font: 600 15.5px/1.4 var(--sans);
+  }
+  .l-say {
+    max-width: 40em;
+    margin: 0 0 14px;
+    font-size: 16px;
+  }
+  .l-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+  }
+  .l-meta li {
+    padding: 5px 7px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    color: var(--muted);
+    font: 500 12.5px/1 var(--mono);
+  }
+  .l-meta li:first-child {
+    border-color: var(--line-strong);
+    color: var(--ink-strong);
+  }
+  .l-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .wlp {
+    display: flex;
+    gap: 6px;
+  }
+  .wlp span {
+    display: grid;
+    gap: 6px;
+    width: 76px;
+    color: var(--muted);
+    font: 600 12px/1 var(--sans);
+  }
+  .wlp i {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--line-strong);
+  }
+  .wlp .done i {
+    background: var(--allowed);
+  }
+  .wlp .now i {
+    background: var(--here);
+  }
+  .wlp .now {
+    color: var(--ink-strong);
+  }
+  .wlp-note {
+    color: var(--muted);
+    font: 500 13.5px/1.3 var(--sans);
+  }
+  .l-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: auto;
+    color: var(--accent);
+    font: 700 15px/1 var(--sans);
+  }
+  .l-go svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 200ms var(--ease-out);
+  }
+  .lesson:hover .l-go svg {
+    transform: translateX(3px);
+  }
+  .soon-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 18px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 12px;
+    background: var(--card-2);
+  }
+  .soon-row .num {
+    color: var(--muted);
+    font: 700 13px/1 var(--mono);
+  }
+  .soon-row .t {
+    color: var(--ink);
+    font: 600 16.5px/1.3 var(--sans);
+  }
+  .part.all-soon .part-head {
+    margin-bottom: 14px;
+  }
+  .part.all-soon h2 {
+    margin-top: 5px;
+    color: var(--ink);
+    font-size: 20px;
+  }
+  .part.all-soon + .part,
+  .part + .part.all-soon {
+    margin-top: 44px;
+  }
+  .soon-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0 0 0 60px;
+    list-style: none;
+  }
+  .soon-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 999px;
+    background: var(--card-2);
+    color: var(--ink);
+    font: 600 15px/1.2 var(--sans);
+  }
+  .soon-list .num {
+    color: var(--muted);
+    font: 700 12px/1 var(--mono);
+  }
+
+  /* Lesson 1's figure, the internet thumbnail: its page, its address bar and its blocks (track-v2). */
+  .l-art .lm-hero .hl-url {
+    fill: var(--anatomy-mid);
+    font: 500 2.6px var(--mono);
+    letter-spacing: 0.02em;
+  }
+  .l-art .lm-hero .hl-slot {
+    fill: url(#lm-top);
+  }
+  .l-art .lm-hero .hl-slot-n {
+    fill: color-mix(in srgb, var(--lit-b) 30%, #000);
+    font: 700 6px var(--mono);
+  }
+  .l-art .lm-hero .hl-page-bg {
+    fill: #0b1220;
+  }
+  .l-art .lm-hero .hl-px {
+    fill: var(--lit-a);
+    opacity: 0.85;
+  }
+  .l-art .lm-hero .hl-px.soft {
+    fill: color-mix(in srgb, var(--lit-b) 72%, #000);
+    opacity: 1;
+  }
+  .l-art .lm-hero .hl-num {
+    fill: color-mix(in srgb, var(--lit-b) 30%, #000);
+    font: 700 6.4px var(--mono);
+  }
+  .l-art .lm-hero .hl-req-t {
+    fill: #1a1e26;
+    font: 700 3.6px var(--mono);
+    letter-spacing: 0.04em;
+  }
+  .l-art .lm-hero .hl-req > .iso-top {
+    fill: #dfe6ef;
+  }
+  .l-art .lm-hero .hl-req > .iso-fill,
+  .l-art .lm-hero .hl-req > .iso-shade {
+    fill: #8e99aa;
+  }
+  .l-art .lm-hero .hl-req > .iso-shade[data-shade='0'] {
+    fill: #6f7a8b;
+  }
+  .l-art .lm-hero .hl-trail {
+    fill: none;
+    stroke: var(--lit-a);
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 0 3px var(--lit-b));
+  }
+  .l-art .lm-hero .hl-trail.req {
+    stroke: var(--here);
+    stroke-width: 2.4px;
+    stroke-dasharray: 4 4;
+    filter: none;
+  }
+
+  @media (max-width: 960px) {
+    .t-hero-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+    .t-body {
+      grid-template-columns: 1fr;
+      gap: 28px;
+      padding-top: 64px;
+    }
+    .toc {
+      position: static;
+    }
+    .toc nav {
+      display: none;
+    }
+    .lesson {
+      grid-template-columns: 180px minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 720px) {
+    .t-hero {
+      padding-top: 32px;
+    }
+    .t-intro h1 {
+      font-size: 40px;
+    }
+    .t-intro .lede {
+      font-size: 17.5px;
+    }
+    .stats div {
+      padding: 0 16px;
+    }
+    .stats dd {
+      font-size: 26px;
+    }
+    .t-intro .actions .btn,
+    .resume {
+      width: 100%;
+    }
+    .t-body {
+      padding-top: 48px;
+    }
+    .toolbar {
+      margin-bottom: 32px;
+    }
+    .part + .part {
+      margin-top: 52px;
+    }
+    .part-head {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px 14px;
+    }
+    .part-head h2 {
+      font-size: 22px;
+    }
+    .part-c {
+      justify-self: start;
+      margin-top: 6px;
+    }
+    .lesson {
       grid-template-columns: 1fr;
     }
-    .track__body .reset,
-    .track__body .track-progress {
-      grid-column: 1;
-      grid-row: auto;
+    .l-art {
+      border-inline-end: 0;
+      border-bottom: 1px solid var(--fig-line);
     }
-    .track__body .track-progress {
-      order: -1;
+    .l-art svg {
+      width: auto;
+      max-width: 100%;
+      max-height: 160px;
+    }
+    .l-body {
+      padding: 18px 18px 16px;
+    }
+    .lesson h3 {
+      font-size: 21px;
+    }
+    .wlp span {
+      width: 64px;
+    }
+    .part.all-soon .part-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .soon-list {
+      padding: 0;
     }
   }
 </style>

@@ -1,19 +1,9 @@
 import type { ReactNode } from 'react';
-import { resumePosition } from '../progress/store';
+import { resumeOf, type ResumeLesson } from '../progress/resume';
 import { useProgress } from '../progress/useProgress';
 import './site.css';
 
-/** A ready lesson, as the hero needs it to say where a returning visitor is. */
-export interface ResumeLesson {
-  key: string;
-  title: string;
-  url: string;
-  /**
-   * Where each position is, worded to follow "You’re on": 'step 3 of 5', 'the Learn part', 'the DNS Overview'
-   * (`resumePlaces(lesson)`, worked out at build time).
-   */
-  places: string[];
-}
+export type { ResumeLesson };
 
 const RING = 2 * Math.PI * 7.5;
 
@@ -35,11 +25,9 @@ export function HeroCta({
   startUrl: string;
   children?: ReactNode;
 }) {
-  const { ready, available, data } = useProgress(known);
-  const saved = ready && available && Object.keys(data.lessons).length > 0;
-  const last = saved ? lessons.find((l) => l.key === data.lastLesson) : undefined;
+  const resume = resumeOf(useProgress(known), lessons, known);
 
-  if (last === undefined) {
+  if (resume === null) {
     return (
       <>
         <span className="eyebrow">
@@ -61,14 +49,7 @@ export function HeroCta({
     );
   }
 
-  // Where they are: the step to resume at, or the Overview of a lesson only opened. A finished lesson says so, with
-  // the ring full, and is continued from its Overview.
-  const record = Object.hasOwn(data.lessons, last.key) ? data.lessons[last.key] : undefined;
-  const finished = record?.status === 'finished';
-  const position = finished || record === undefined ? 0 : (resumePosition(data, last.key) ?? 0);
-  // `last` is in `known`: useProgress reads any other last lesson as none.
-  const share = finished ? 1 : position / known[last.key]!;
-  const where = finished ? `You finished ${last.title}` : `You’re on ${last.places[position]} in ${last.title}`;
+  // Where they are, with the ring filled as far as they have come; a finished lesson has it full.
   return (
     <>
       <span className="eyebrow back">
@@ -81,17 +62,17 @@ export function HeroCta({
             fill="none"
             stroke="var(--here)"
             strokeWidth="2.6"
-            strokeDasharray={`${(RING * share).toFixed(1)} 100`}
+            strokeDasharray={`${(RING * resume.share).toFixed(1)} 100`}
             transform="rotate(-90 10 10)"
             strokeLinecap="round"
           />
         </svg>
-        {where}
+        {resume.where}
       </span>
       {children}
       <div className="actions">
-        <a className="btn btn--primary" href={position === 0 ? last.url : `${last.url}?step=${position}`}>
-          {`Continue ${last.title}`}
+        <a className="btn btn--primary" href={resume.href}>
+          {`Continue ${resume.lesson.title}`}
         </a>
         <a className="btn" href="#tracks">
           Browse tracks

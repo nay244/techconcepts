@@ -280,7 +280,7 @@ function router() {
   const path = G.resample(route, 1.2).map((p) => { const s = at([p[0], p[1], p[2] + 1.8]); return [+(s[0] - zero[0]).toFixed(1), +(s[1] - zero[1]).toFixed(1)]; });
   const cube = S(k.slabOf({ x: -2.8, y: -2.8, w: 5.6, d: 5.6, r: 0.8 }, 0, 5.6, P, 3, 0.5), { tone: "hi", lit: true });
   out.push(`<g data-part="packets">${[0, 1, 2].map(() => `<g class="lm-pkt" style="opacity:0">${cube}</g>`).join("")}</g>`);
-  return out.join("");
+  return { svg: out.join(""), path };
 }
 
 
@@ -344,7 +344,7 @@ const frame = (id: string, label: string, body: string, aria: string): string =>
 };
 
 const DRAW: Record<CoverId, () => string> = {
-  networking: () => frame('router', 'LAN · 192.168.1.1', router(), "A home router on a plate, with two antennas and a row of lights. A cable runs across the plate from a modem into the router's first port."),
+  networking: () => frame('router', 'LAN · 192.168.1.1', router().svg, "A home router on a plate, with two antennas and a row of lights. A cable runs across the plate from a modem into the router's first port."),
   web: () => frame('web', 'HTTP · GET / · 200', web().svg, "A laptop on a plate, its screen showing an empty browser window. A small track with one bend runs from the laptop to a server cabinet at the back, and a shuttle waits at the laptop's end."),
   crypto: () => frame('lock', 'KEY 0x2F · 128-BIT', padlock(), 'A padlock made of stacked steel plates, its shackle closed. Its key waits on a small stand in front of the keyhole.'),
   ai: () => frame('ai', 'MODEL · 16 WEIGHTS', sorter(), 'A boxy machine with a grid of lights on top and three dials on the front. A belt carries a card into its left side, and another belt leads out of its right side to two trays, one marked with a circle and one with a triangle.'),
@@ -360,3 +360,6 @@ export const coverStill = (id: CoverId, tag: string): string => scopeIds(cover(i
 
 /** The web cover's body and the shuttle's path on screen (in the cover's own frame); the home hero rides it. */
 export const webDrawing = (): { svg: string; path: number[][] } => web();
+
+/** The router cover's body and the packets' path on screen (in the cover's own frame); the track page sends them along it. */
+export const routerDrawing = (): { svg: string; path: number[][] } => router();

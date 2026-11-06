@@ -1,0 +1,105 @@
+---
+// The Networking track's cover on its page (track-v2): the router on its plate, with the figure's number and name in
+// the top corners. src/scripts/router-cover.ts makes it a button that sends packets along the cable, and shows the
+// hint and the count in the bottom corners; without JavaScript it is only a figure, so those two stay hidden.
+import { cover, routerDrawing } from '../art/figures/covers';
+
+interface Props {
+  /** The top-left corner: which track this is, "Track 1". */
+  label: string;
+}
+
+const { label } = Astro.props;
+// The packets' path along the cable, worked out with the drawing; the script only reads it.
+const path = JSON.stringify(routerDrawing().path);
+---
+
+<figure class="cover" data-router-cover={path}>
+  <div class="plate">
+    <span class="corner c-fig">{label}</span><span class="corner c-title">Networking</span>
+    {/* The stage's own name says this, so the hint is for the eye only. */}
+    <span class="corner c-hint" data-hint aria-hidden="true" hidden>Click to send packets</span>
+    <span class="corner c-read" data-readout aria-live="polite" hidden>0 packets received</span>
+    <div class="stage" data-stage set:html={cover('networking')} />
+  </div>
+</figure>
+
+<script>
+  import { startRouterCover } from '../scripts/router-cover';
+
+  const root = document.querySelector<HTMLElement>('[data-router-cover]');
+  if (root) startRouterCover(root);
+</script>
+
+<style is:global>
+  /* The corners' words on the figure's ground (--fig-bg), AA in both themes. */
+  :root,
+  [data-theme='light'] {
+    --corner: #5a6780;
+    --corner-strong: #0b1a33;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --corner: #7f93b2;
+      --corner-strong: #dbe6f5;
+    }
+  }
+  [data-theme='dark'] {
+    --corner: #7f93b2;
+    --corner-strong: #dbe6f5;
+  }
+  .cover {
+    margin: 0;
+  }
+  .cover .plate {
+    position: relative;
+    overflow: hidden;
+    padding: 44px 16px 40px;
+    border: 1px solid var(--fig-line);
+    border-radius: 16px;
+    background: var(--fig-bg);
+    box-shadow: var(--shadow-lg);
+  }
+  .cover .corner {
+    position: absolute;
+    z-index: 1;
+    color: var(--corner);
+    font: 500 11px/1 var(--mono);
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .cover .c-fig {
+    top: 18px;
+    left: 18px;
+    color: var(--corner-strong);
+  }
+  .cover .c-title {
+    top: 18px;
+    right: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .cover .c-hint {
+    bottom: 16px;
+    left: 18px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .cover .c-read {
+    right: 18px;
+    bottom: 16px;
+    color: var(--corner-strong);
+    font-variant-numeric: tabular-nums;
+  }
+  .cover .stage {
+    border-radius: 10px;
+  }
+  .cover .stage[role='button'] {
+    cursor: pointer;
+  }
+  .cover .stage:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+</style>

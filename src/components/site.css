@@ -86,6 +86,18 @@
   background: var(--bg-soft);
   color: var(--muted);
 }
+.badge.done {
+  border-color: color-mix(in srgb, var(--allowed) 40%, transparent);
+  background: color-mix(in srgb, var(--allowed) 10%, transparent);
+  /* The green moved a little toward the strongest ink, so it stays AA on its own tint in both themes. */
+  color: color-mix(in srgb, var(--allowed) 85%, var(--ink-strong));
+}
+/* In progress is where the visitor is: marigold, the current colour. */
+.badge.prog {
+  border-color: color-mix(in srgb, var(--here) 45%, transparent);
+  background: var(--here-soft);
+  color: var(--here);
+}
 /* A track's progress: one segment per lesson, done in green, in progress in marigold (current). */
 .segbar {
   display: flex;
@@ -105,140 +117,41 @@
   background: var(--here);
 }
 
-/* ---- Progress line: a text line and a segmented bar ---- */
-.progress-line {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-height: 3rem;
-}
-.progress-line[data-shown='false'] {
-  visibility: hidden;
-}
-.progress-line__text {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--text-sm);
-}
-.progress-bar {
-  display: flex;
-  gap: 3px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.progress-bar li {
-  flex: 1 1 0;
-  height: 0.5rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 2px;
-}
-.progress-bar li[data-status='finished'] {
-  border-color: var(--ink-strong);
-  background: var(--ink-strong);
-}
-.progress-bar li[data-status='in-progress'] {
-  border-color: var(--muted);
-  background: repeating-linear-gradient(135deg, var(--muted) 0 2px, transparent 2px 4px);
-}
-
-/* ---- Filter chips ---- */
+/* ---- Filter chips: the one pressed is in the accent ---- */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.25rem;
-  padding: var(--space-1) var(--space-4);
+  min-height: 36px;
+  padding: 0 14px;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  background: transparent;
+  background: var(--card);
   color: var(--ink);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-decoration: none;
+  font: 600 14px/1 var(--sans);
   cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 120ms var(--ease-out);
 }
 .chip:hover {
-  border-color: var(--muted);
+  background: var(--bg-soft);
+  color: var(--ink-strong);
+}
+.chip:active {
+  transform: scale(0.97);
 }
 .chip[aria-pressed='true'] {
-  border-color: var(--ink-strong);
-  background: var(--ink-strong);
-  color: var(--bg);
-  font-weight: 600;
-}
-
-/* ---- Track lesson list ---- */
-.track-part {
-  margin-top: var(--space-6);
-}
-.track-part__title {
-  font-size: var(--text-xl);
-}
-.lesson-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--line);
-}
-.lesson-row {
-  display: grid;
-  grid-template-columns: 2rem 1fr;
-  column-gap: var(--space-3);
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--line);
-}
-.lesson-row__num {
-  padding-top: 0.15rem;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-.lesson-row__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-4);
-}
-.lesson-row__title {
-  margin: 0;
-  font-size: var(--text-lg);
-}
-.lesson-row__marker {
-  min-height: 1.4em;
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-.lesson-row__marker[data-status='finished'] {
-  color: var(--ink-strong);
-  font-weight: 600;
-}
-.lesson-row__summary {
-  margin: var(--space-1) 0 var(--space-2);
-  max-width: var(--measure);
-}
-.lesson-row__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-.lesson-row[data-available='false'] .lesson-row__title,
-.lesson-row[data-available='false'] .lesson-row__num {
-  color: var(--muted);
-  font-weight: 500;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 /* ---- Reset progress ---- */
