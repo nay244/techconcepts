@@ -1,3 +1,4 @@
+import { slotsFor } from '../engine/timeline';
 import { estimateMinutes } from './estimate';
 import type { CertTag } from './certs';
 import type { Lesson, Track } from './schema';
@@ -35,15 +36,6 @@ export type LessonSummary =
     };
 
 export type AvailableSummary = Extract<LessonSummary, { available: true }>;
-
-/**
- * Each unit has an Overview, its Watch steps, Learn and Practice, so a unit of
- * n steps has n + 3 positions, and the last position is one less than them all.
- * Interim: the timeline's `slotsFor` replaces this.
- */
-function lastPosition(lesson: Lesson): number {
-  return lesson.units.reduce((sum, u) => sum + u.steps.length + 3, 0) - 1;
-}
 
 /**
  * One entry per lesson the track plans, in track order, numbered from 1 across
@@ -88,7 +80,7 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
               certTags: lesson.certTags,
               stepCount: lesson.units.reduce((sum, u) => sum + u.steps.length, 0),
               units: lesson.units.length,
-              maxPosition: lastPosition(lesson),
+              maxPosition: slotsFor(lesson).length - 1,
             },
       );
     }
