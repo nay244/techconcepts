@@ -1,0 +1,357 @@
+// @vitest-environment jsdom
+import { act, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { validateLesson } from '../content/define';
+import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
+import type { Lesson } from '../content/schema';
+import { makeLesson } from '../content/test-fixtures';
+import { networkingTrack } from '../content/tracks';
+import { HOLD_MS } from '../engine/playback';
+import { THEME_KEY } from '../lib/theme';
+import { PROGRESS_KEY } from '../progress/store';
+import LessonConsole from './LessonConsole';
+
+// No lesson files exist yet, so the lessons are fixtures, which validate against the stand-in figure parts.
+vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+
+/**
+ * The fixture unit, filed as DHCP (lesson 10) and Firewalls (lesson 17) in the
+ * networking track. Positions: 0 Overview, 1–5 the steps (Neighbor Hello,
+ * Neighbor Reply, Table Lookup, Lost Message, Retransmission), 6 Learn, 7 Practice.
+ */
+const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
+const FIREWALLS: Lesson = validateLesson(makeLesson({ slug: 'firewalls', title: 'Firewalls' })).lesson;
+const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS });
+const KEY = 'networking/dhcp';
+/** Every wait in these tests: `durationOf` is a fixed 1000 ms until Task 9. */
+const EVENT_MS = 1000;
+
+function consoleFor(lesson: Lesson = DHCP) {
+  const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === lesson.slug)!;
+  return (
+    <LessonConsole
+      trackId="networking"
+      trackTitle="Networking Concepts"
+      lesson={lesson}
+      entry={entry}
+      total={entries.length}
+      next={neighbors(entries, lesson.slug).next}
+      entries={entries}
+    />
+  );
+}
+
+const renderConsole = (lesson: Lesson = DHCP) => render(consoleFor(lesson));
+
+function stored(): { lessons: Record<string, { status: string; furthestPosition: number }>; lastLesson: string | null } {
+  return JSON.parse(window.localStorage.getItem(PROGRESS_KEY) ?? 'null');
+}
+
+function save(record: { status: 'in-progress' | 'finished'; furthestPosition: number }): void {
+  const data = { version: 1, lessons: { [KEY]: { ...record, lastOpened: '2026-11-01T09:00:00.000Z' } }, lastLesson: KEY };
+  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
+}
+
+/**
+ * Lets the playback timers run for `ms`. Each wait is its own act(): React
+ * schedules the next timer only once the render a timer caused has committed.
+ */
+async function wait(ms: number): Promise<void> {
+  await act(async () => {
+    vi.advanceTimersByTime(ms);
+  });
+}
+
+/** Lets a Play run go on until the button no longer says Pause. */
+async function runToEnd(): Promise<void> {
+  for (let i = 0; i < 200 && playButton().textContent === 'Pause'; i += 1) await wait(500);
+}
+
+const topBar = () => screen.getByRole('banner');
+const explanation = () => screen.getByRole('region', { name: 'Explanation' });
+const heading = () => within(explanation()).getByRole('heading', { level: 2 });
+const playButton = () => screen.getByRole('button', { name: /^(Play|Pause|Replay|Watch again)$/ });
+/** The log's rows, without its header row. A lone "nothing yet" row counts as none. */
+function logRows(): HTMLElement[] {
+  const table = within(screen.getByRole('region', { name: 'Event log' })).getByRole('table');
+  return within(table)
+    .getAllByRole('row')
+    .slice(1)
+    .filter((row) => row.querySelector('[data-idle]') === null);
+}
+
+let user: ReturnType<typeof userEvent.setup>;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  // Testing Library drains pending timers after each user-event call only when it sees Jest's fake
+  // timers; with Vitest's it would wait forever. This tells it how to advance Vitest's clock.
+  vi.stubGlobal('jest', { advanceTimersByTime: (ms: number) => vi.advanceTimersByTime(ms) });
+  user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  window.localStorage.clear();
+  window.history.replaceState({}, '', '/networking/dhcp');
+  document.documentElement.dataset.theme = 'dark';
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  window.history.replaceState({}, '', '/');
+});
+
+test('renders the Overview first, then follows ?step= after mount', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=3');
+  const errors = vi.spyOn(console, 'error');
+
+  // The server's render, which a ?step= link cannot change: the Overview.
+  const container = document.createElement('div');
+  container.innerHTML = renderToString(consoleFor());
+  document.body.append(container);
+  expect(within(container).getByRole('heading', { level: 2, name: 'Neighbor table' })).toBeInTheDocument();
+  expect(within(container).queryByRole('heading', { name: 'Table Lookup' })).toBeNull();
+
+  // Hydrated, it matches that render, then moves to step 3.
+  let root!: ReturnType<typeof hydrateRoot>;
+  await act(async () => {
+    root = hydrateRoot(container, consoleFor());
+  });
+  expect(within(container).getByRole('heading', { level: 2, name: 'Table Lookup' })).toBeInTheDocument();
+  expect(errors).not.toHaveBeenCalled();
+
+  act(() => root.unmount());
+  container.remove();
+});
+
+test('the top bar says Step 2 of 5, never the step title', async () => {
+  renderConsole();
+  expect(within(topBar()).getByText('Overview')).toBeInTheDocument();
+  await user.keyboard('{ArrowRight}{ArrowRight}');
+  expect(heading()).toHaveTextContent('Neighbor Reply');
+  expect(within(topBar()).getByText('Step 2 of 5')).toBeInTheDocument();
+  expect(within(topBar()).queryByText(/Neighbor Reply/)).toBeNull();
+  // Breadcrumb, lesson number and the unit's OSI layer.
+  expect(within(topBar()).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
+  expect(within(topBar()).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
+  expect(within(topBar()).getByText('Lesson 10 of 20')).toBeInTheDocument();
+  expect(within(topBar()).getByText('OSI layer 2, Data link')).toBeInTheDocument();
+});
+
+test('ArrowRight walks Overview → steps → Learn → Practice and records progress; Practice finishes the lesson', async () => {
+  renderConsole();
+  expect(heading()).toHaveTextContent('Neighbor table');
+  // Opening the lesson records it as the last one, without starting it.
+  expect(stored().lastLesson).toBe(KEY);
+  expect(stored().lessons[KEY]).toBeUndefined();
+
+  const titles = ['Neighbor Hello', 'Neighbor Reply', 'Table Lookup', 'Lost Message', 'Retransmission'];
+  for (const [i, title] of titles.entries()) {
+    await user.keyboard('{ArrowRight}');
+    expect(heading()).toHaveTextContent(title);
+    expect(within(explanation()).getByText(`Watch · Step ${i + 1} of 5`)).toBeInTheDocument();
+    expect(stored().lessons[KEY]).toMatchObject({ status: 'in-progress', furthestPosition: i + 1 });
+  }
+
+  await user.keyboard('{ArrowRight}');
+  expect(heading()).toHaveTextContent('What happened and why');
+  expect(within(topBar()).getByText('Learn')).toBeInTheDocument();
+  expect(stored().lessons[KEY]).toMatchObject({ status: 'in-progress', furthestPosition: 6 });
+
+  await user.keyboard('{ArrowRight}');
+  expect(heading()).toHaveTextContent('Two questions');
+  expect(within(topBar()).getByText('Practice')).toBeInTheDocument();
+  expect(stored().lessons[KEY]).toMatchObject({ status: 'finished', furthestPosition: 7 });
+
+  // ← goes back, and the lesson stays finished.
+  await user.keyboard('{ArrowLeft}');
+  expect(heading()).toHaveTextContent('What happened and why');
+  expect(stored().lessons[KEY]).toMatchObject({ status: 'finished' });
+});
+
+test('Play runs the steps: the log fills step by step and the button says Pause, then Replay', async () => {
+  renderConsole();
+  expect(playButton()).toHaveAccessibleName('Play');
+  expect(logRows()).toHaveLength(0);
+
+  await user.click(playButton());
+  expect(playButton()).toHaveAccessibleName('Pause');
+  expect(heading()).toHaveTextContent('Neighbor Hello');
+
+  // Step 1 plays m1, then holds before step 2.
+  await wait(EVENT_MS);
+  expect(logRows()).toHaveLength(1);
+  await wait(HOLD_MS);
+  expect(heading()).toHaveTextContent('Neighbor Reply');
+  expect(playButton()).toHaveAccessibleName('Pause');
+  // Step 2: m2, then a table change that adds no row, then the hold.
+  await wait(EVENT_MS);
+  expect(logRows()).toHaveLength(2);
+  await wait(EVENT_MS);
+  expect(logRows()).toHaveLength(2);
+  await wait(HOLD_MS);
+  // Step 3: a table match, then the note n1.
+  expect(heading()).toHaveTextContent('Table Lookup');
+  await wait(EVENT_MS);
+  await wait(EVENT_MS);
+  expect(logRows()).toHaveLength(3);
+  // Step 4: m3, which is lost on the way.
+  await wait(HOLD_MS);
+  await wait(EVENT_MS);
+  expect(logRows()).toHaveLength(4);
+  // Step 5, the last: m4, and the run ends.
+  await wait(HOLD_MS);
+  await wait(EVENT_MS);
+  expect(heading()).toHaveTextContent('Retransmission');
+  expect(logRows()).toHaveLength(5);
+  expect(playButton()).toHaveAccessibleName('Replay');
+});
+
+test('on Learn the button says Watch again', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=6');
+  renderConsole();
+  expect(heading()).toHaveTextContent('What happened and why');
+  expect(playButton()).toHaveAccessibleName('Watch again');
+  // It runs the unit's steps from the first.
+  await user.click(playButton());
+  expect(heading()).toHaveTextContent('Neighbor Hello');
+  expect(playButton()).toHaveAccessibleName('Pause');
+});
+
+test('the speed button cycles and names the next speed', async () => {
+  renderConsole();
+  const speed = () => screen.getByRole('button', { name: /^Speed / });
+  expect(speed()).toHaveTextContent('1×');
+  expect(speed()).toHaveAccessibleName('Speed 1×. Click for 1.5×');
+  await user.click(speed());
+  expect(speed()).toHaveTextContent('1.5×');
+  expect(speed()).toHaveAccessibleName('Speed 1.5×. Click for 2×');
+  await user.click(speed());
+  expect(speed()).toHaveAccessibleName('Speed 2×. Click for 0.5×');
+  await user.click(speed());
+  expect(speed()).toHaveAccessibleName('Speed 0.5×. Click for 1×');
+  await user.click(speed());
+  expect(speed()).toHaveAccessibleName('Speed 1×. Click for 1.5×');
+});
+
+test('the end row names the next ready lesson, or says the last ready one for now', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=7');
+  const { unmount } = renderConsole();
+  expect(within(explanation()).getByText(/Next ready lesson:/)).toHaveTextContent(
+    'That’s the whole lesson. Next ready lesson: Firewalls, lesson 17.',
+  );
+  expect(within(explanation()).getByRole('link', { name: 'Go to Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
+  unmount();
+
+  window.history.replaceState({}, '', '/networking/firewalls?step=7');
+  renderConsole(FIREWALLS);
+  expect(within(explanation()).getByText(/last ready one/)).toHaveTextContent(
+    'That’s the whole lesson, and the last ready one for now. Lessons 18 to 20 are coming soon.',
+  );
+  expect(within(explanation()).getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
+});
+
+test('a saved lesson offers Resume at its furthest step; a finished one says Finished', async () => {
+  save({ status: 'in-progress', furthestPosition: 2 });
+  const { unmount } = renderConsole();
+  await user.click(screen.getByRole('button', { name: 'Resume at step 2 of 5' }));
+  expect(heading()).toHaveTextContent('Neighbor Reply');
+  unmount();
+
+  save({ status: 'finished', furthestPosition: 7 });
+  renderConsole();
+  expect(within(explanation()).getByText('Finished')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /^Resume at/ })).toBeNull();
+});
+
+test('a ?step= link hides the resume button', () => {
+  save({ status: 'in-progress', furthestPosition: 2 });
+  window.history.replaceState({}, '', '/networking/dhcp?step=0');
+  renderConsole();
+  expect(heading()).toHaveTextContent('Neighbor table');
+  expect(screen.queryByRole('button', { name: /^Resume at/ })).toBeNull();
+});
+
+test('a polite live region announces the step title and the latest message in plain words', async () => {
+  renderConsole();
+  const live = document.querySelector('[aria-live="polite"][data-announce]')!;
+  expect(live).toHaveTextContent('Overview');
+  await user.keyboard('{ArrowRight}');
+  expect(live).toHaveTextContent(/^Neighbor Hello\.?$/);
+  await wait(EVENT_MS);
+  expect(live).toHaveTextContent('Neighbor Hello. The laptop says hello to the router.');
+  // Step 2 starts without step 1's message.
+  await user.keyboard('{ArrowRight}');
+  expect(live).not.toHaveTextContent('The laptop says hello');
+});
+
+test('the Light/Dark switch shows the theme in effect and saves a choice', async () => {
+  renderConsole();
+  const group = within(topBar()).getByRole('group', { name: 'Theme' });
+  expect(within(group).getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
+  expect(within(group).getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'false');
+  await user.click(within(group).getByRole('button', { name: 'Light' }));
+  expect(document.documentElement.dataset.theme).toBe('light');
+  expect(window.localStorage.getItem(THEME_KEY)).toBe('light');
+  expect(within(group).getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('the track progress counts finished lessons out of 20', () => {
+  save({ status: 'finished', furthestPosition: 7 });
+  renderConsole();
+  expect(within(topBar()).getByText('1 of 20 complete')).toBeInTheDocument();
+});
+
+test('the outline moves the lesson, and All 20 lessons opens the track list in a dialog', async () => {
+  renderConsole();
+  const outline = screen.getByRole('navigation', { name: 'This lesson' });
+  await user.click(within(outline).getByRole('button', { name: /^Table Lookup/ }));
+  expect(heading()).toHaveTextContent('Table Lookup');
+  expect(within(outline).getByRole('button', { name: /^Table Lookup/ })).toHaveAttribute('aria-current', 'step');
+
+  await user.click(within(outline).getByRole('button', { name: 'All 20 lessons' }));
+  const dialog = screen.getByRole('dialog', { name: 'All 20 lessons' });
+  expect(within(dialog).getByRole('link', { name: /Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
+  expect(within(dialog).getByRole('link', { name: /DHCP/ })).toHaveAttribute('aria-current', 'page');
+  expect(within(dialog).getAllByText('Coming soon')).toHaveLength(18);
+  await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+  expect(dialog).not.toHaveAttribute('open');
+});
+
+test('Space plays and pauses, and is left alone on a button', async () => {
+  renderConsole();
+  await user.keyboard(' ');
+  expect(playButton()).toHaveAccessibleName('Pause');
+  await user.keyboard(' ');
+  expect(playButton()).toHaveAccessibleName('Play');
+  expect(heading()).toHaveTextContent('Neighbor Hello');
+
+  screen.getByRole('button', { name: /^Speed / }).focus();
+  await user.keyboard('{ArrowRight}');
+  expect(heading()).toHaveTextContent('Neighbor Hello');
+});
+
+// Last: a SafeStorage that has failed once keeps reporting itself unavailable for the rest of the file.
+test('with storage blocked the lesson still plays end to end', async () => {
+  vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+    throw new DOMException('blocked', 'SecurityError');
+  });
+  renderConsole();
+  expect(heading()).toHaveTextContent('Neighbor table');
+
+  await user.click(playButton());
+  await runToEnd();
+  expect(playButton()).toHaveAccessibleName('Replay');
+  expect(logRows()).toHaveLength(5);
+
+  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  expect(heading()).toHaveTextContent('Two questions');
+  await user.click(screen.getAllByRole('button', { name: /A row for each neighbor/ })[0]!);
+  expect(within(explanation()).getByText(/One row per neighbor/)).toBeInTheDocument();
+
+  await user.click(within(topBar()).getByRole('button', { name: 'Light' }));
+  expect(document.documentElement.dataset.theme).toBe('light');
+});
