@@ -70,6 +70,12 @@ function panelTables(u: Unit): TableDef[] {
   return [];
 }
 
+/** The rows a unit's table events give the table `id`, whole: each row an add brings, and each a replace brings. */
+function rowsGivenTo(u: Unit, id: string): Row[] {
+  const events = u.steps.flatMap((step) => step.events).filter((e): e is TableEvent => e.type === 'table' && e.table === id);
+  return events.flatMap((e) => (e.op === 'add' ? [e.row ?? {}] : e.op === 'replace' ? (e.rows ?? []) : []));
+}
+
 /** Which optional table-event fields each op reads. `clear` reads none. */
 const TABLE_OP_FIELDS: Record<TableEvent['op'], ('row' | 'rows' | 'key')[]> = {
   add: ['row'],
@@ -159,8 +165,14 @@ function checkScene(c: UnitContext, at: string): void {
 
   for (const id of duplicates(c.tables.map((t) => t.id))) issues.push(`${at}: Duplicate table id "${id}".`);
   for (const table of c.tables) {
-    if (!table.columns.some((column) => column.key === table.keyColumn)) {
-      issues.push(`${at}: table "${table.id}" key column "${table.keyColumn}" is not one of its columns.`);
+    // Rows are told apart by the key column: one of the table's columns or, when none it shows can tell them apart,
+    // a field every row carries that no column shows. A table with no rows at all must key on a column.
+    if (table.columns.some((column) => column.key === table.keyColumn)) continue;
+    const rows = [...table.initialRows, ...rowsGivenTo(u, table.id)];
+    if (rows.length === 0 || rows.some((row) => row[table.keyColumn] === undefined)) {
+      issues.push(
+        `${at}: table "${table.id}" key column "${table.keyColumn}" is not one of its columns, and not a field every row carries.`,
+      );
     }
   }
 

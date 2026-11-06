@@ -119,6 +119,38 @@ test('each row a message brings adds a row to the table, and a row it brings aga
   });
 });
 
+test('a table whose shown columns cannot tell its rows apart is keyed on the mockup’s own names for them', () => {
+  // UDP's voice packets: both ways count from 1, so no column the table shows is unique. Its key is a field of
+  // each row that no column shows, holding the mockup's own name for the row.
+  const voice: TableDef = {
+    id: 'voice',
+    title: 'Voice packets',
+    columns: [
+      { key: 'packet', label: 'Packet' },
+      { key: 'way', label: 'Way', prose: true },
+      { key: 'status', label: 'Status', prose: true },
+    ],
+    keyColumn: 'id',
+    initialRows: [],
+    empty: 'Nothing yet.',
+  };
+  const msg = messagesFor(voice);
+  const yours = msg(mockup({ rows: [{ key: 'y1', cells: ['1', 'You → server', 'Arrived'] }] }));
+  const sams = msg(mockup({ rows: [{ key: 's1', cells: ['1', 'Server → you', 'Arrived'] }] }));
+  expect(yours[1]).toEqual({
+    type: 'table',
+    id: 'voice-1',
+    table: 'voice',
+    op: 'add',
+    row: { id: 'y1', packet: '1', way: 'You → server', status: 'Arrived' },
+    summary: 'Added to Voice packets: 1, You → server, Arrived.',
+  });
+  expect(sams[1]).toMatchObject({ op: 'add', row: { id: 's1', packet: '1', way: 'Server → you' } });
+  // A row it brings again changes that row, found by its own name.
+  const again = msg(mockup({ rows: [{ key: 'y1', cells: ['1', 'You → server', 'Lost'], miss: true }] }));
+  expect(again[1]).toMatchObject({ op: 'update', key: 'y1', row: { id: 'y1', status: 'Lost' }, miss: true });
+});
+
 test('msg fails loudly for what the map or the table cannot show', () => {
   const msg = messagesFor(pieces);
   expect(() => messagesFor(null)(mockup({ rows: [{ key: '1', cells: ['1', '1–1460', 'Arrived'] }] }))).toThrow(/no table/);

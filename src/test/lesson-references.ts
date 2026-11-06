@@ -39,7 +39,7 @@ export function misnamedLessons(lesson: Lesson, topics: Record<string, string>, 
   });
 }
 
-/** Each "the X lesson" in a lesson's text: lessons named by their title, not their number. */
+/** Each "The X lesson" in a lesson's text, at the start of a sentence or in it: lessons named by their title, not their number. */
 export function lessonTitles(lesson: Lesson): string[] {
-  return textsOf(lesson).flatMap((text) => [...text.matchAll(/\bThe ([A-Z][\w/]*(?: [A-Z][\w/]*)*) lesson\b/g)].map((m) => m[1]!));
+  return textsOf(lesson).flatMap((text) => [...text.matchAll(/\b[Tt]he ([A-Z][\w/]*(?: [A-Z][\w/]*)*) lesson\b/g)].map((m) => m[1]!));
 }

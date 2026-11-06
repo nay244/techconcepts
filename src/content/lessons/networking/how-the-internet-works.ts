@@ -1,9 +1,14 @@
 import { defineLesson } from '../../define';
 import type { Unit } from '../../schema';
+import dhcp from './how-the-internet-works/dhcp';
 import dns from './how-the-internet-works/dns';
 import http from './how-the-internet-works/http';
+import https from './how-the-internet-works/https';
+import icmp from './how-the-internet-works/icmp';
+import ip from './how-the-internet-works/ip';
 import smtp from './how-the-internet-works/smtp';
 import tcp from './how-the-internet-works/tcp';
+import udp from './how-the-internet-works/udp';
 
 /**
  * How the Internet Works, lesson 1 of 20: the 14 protocols the internet runs on, on one network map, each with its
@@ -15,7 +20,7 @@ import tcp from './how-the-internet-works/tcp';
 export const UNIT_ORDER = ['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls'] as const;
 
 /** The protocols written so far. The lesson shows those, in UNIT_ORDER. */
-const written: Unit[] = [http, dns, tcp, smtp];
+const written: Unit[] = [http, https, tcp, udp, ip, dns, dhcp, icmp, smtp];
 
 const order = (u: Unit): number => {
   const at = (UNIT_ORDER as readonly string[]).indexOf(u.id);

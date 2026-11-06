@@ -61,7 +61,9 @@ export interface MockupMessage {
 /**
  * A unit's `msg`, for the panel table `table` (or null for a unit with none). Each message takes the unit's next
  * id (m1, m2, …) and each table event the table's (files-1, files-2, …). A row the mockup has brought before changes
- * that row; a new one is added. Throws for what the map or the table cannot show.
+ * that row; a new one is added. A table whose key column is none of the columns it shows (UDP's, whose two ways
+ * both count from 1) is keyed on the mockup's own name for each row, in that field. Throws for what the map or the
+ * table cannot show.
  */
 export function messagesFor(table: TableDef | null): (m: MockupMessage) => SceneEvent[] {
   let messages = 0;
@@ -76,7 +78,8 @@ export function messagesFor(table: TableDef | null): (m: MockupMessage) => Scene
     if (r.cells.length !== columns.length) {
       throw new Error(`Row "${r.key}" has ${r.cells.length} cells, and the table "${table.id}" has ${columns.length} columns.`);
     }
-    const row = Object.fromEntries(columns.map((c, i) => [c.key, r.cells[i]!]));
+    const shown = columns.some((c) => c.key === keyColumn);
+    const row = Object.fromEntries([...(shown ? [] : [[keyColumn, r.key]]), ...columns.map((c, i) => [c.key, r.cells[i]!])]);
     const key = row[keyColumn]!;
     const owner = rowOf.get(key);
     if (owner !== undefined && owner !== r.key) {
