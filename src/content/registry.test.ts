@@ -14,9 +14,8 @@ import {
 import { makeLesson, makeTwoUnitLesson } from './test-fixtures';
 import { comingSoonTracks, networkingTrack, tracks } from './tracks';
 
-// No lesson files exist yet, so available entries are built from fixtures, which
-// need the stand-in figure parts to validate.
-// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+// These tests build available entries from fixtures, while the real lessons load too (through the registry), so the
+// figure parts are the real ones with the fixture's added: each lesson validates on its own figure.
 vi.mock('../art/scenes/parts', async (importOriginal) => ({
   FIGURE_PARTS: (await import('./test-fixtures')).withFixtureParts(
     (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,

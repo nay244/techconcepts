@@ -14,8 +14,8 @@ import { THEME_KEY } from '../lib/theme';
 import { PROGRESS_KEY } from '../progress/store';
 import LessonConsole from './LessonConsole';
 
-// No lesson files exist yet, so the lessons are fixtures, which validate against the stand-in figure parts.
-// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+// The lessons these tests play are fixtures, while the real lessons load too (through the registry), so the figure
+// parts are the real ones with the fixture's added: each lesson validates on its own figure.
 vi.mock('../art/scenes/parts', async (importOriginal) => ({
   FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
     (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,

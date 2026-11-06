@@ -44,7 +44,10 @@ const ROUTER_NEAR = 0.07;
 /** The one route that goes through the router: a message to another subnet. */
 const THROUGH_ROUTER: RouteName = 'remote';
 
-/** The teams, each on its own pad. The floor is one /24; step 4 cuts it into four /26s, one per pad. */
+/**
+ * The teams, each on its own pad. The floor is one /24; step 4 cuts it into four /26s, one per pad. These are the
+ * lesson's floor and cut: the driver's test checks them, and the callouts' addresses, against the lesson and the engine.
+ */
 const PADS = ['sales', 'design', 'servers', 'guests'] as const;
 const FLOOR_PREFIX = 24;
 const CUT_PREFIX = 26;

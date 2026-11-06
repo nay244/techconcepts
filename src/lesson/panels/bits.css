@@ -129,6 +129,12 @@
 .bits__cell[data-borrowed] {
   box-shadow: inset 0 -2px 0 var(--ink-strong);
 }
+/* A borrowed bit that differs keeps both marks: the underline (borrowed) over the outline (differs). */
+.bits__cell[data-borrowed][data-differs] {
+  box-shadow:
+    inset 0 -2px 0 var(--ink-strong),
+    inset 0 0 0 1px var(--selected);
+}
 
 /* Between the last network bit and the first host bit: past whole octets of 93 px and bits of 11 px, in the middle of
    the gap there (3 px into an octet's gap, 0.5 px into a bit's). It runs down every row up to the last that shows. */

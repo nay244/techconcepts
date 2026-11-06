@@ -11,9 +11,8 @@ import { PROGRESS_KEY } from '../progress/store';
 import { ResetProgress } from './ResetProgress';
 import { TrackLessonList } from './TrackLessonList';
 
-// No lesson files exist yet, so DHCP and Firewalls are built from fixtures, which
-// need the stand-in figure parts to validate.
-// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+// The track here is built from fixtures filed as DHCP and Firewalls, while the real lessons load too (through the
+// registry), so the figure parts are the real ones with the fixture's added: each lesson validates on its own figure.
 vi.mock('../art/scenes/parts', async (importOriginal) => ({
   FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
     (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,

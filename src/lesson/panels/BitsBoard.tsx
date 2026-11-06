@@ -56,6 +56,12 @@ function rowsOf(board: Board): (BitRow | null)[] {
 
 const bitsOf = (value: IPv4): string[] => toOctetBits(value).join('').split('');
 
+/** A row's bits as a screen reader should say them: digit by digit, in four groups of 8 ("1 1 0 0 0 0 0 0, 1 0 1 0 …"), never as one big number. */
+const spoken = (value: IPv4): string =>
+  toOctetBits(value)
+    .map((octet) => octet.split('').join(' '))
+    .join(', ');
+
 /** The marks on bit `i` (from 0) of a row: which part it is in, and whether it is picked, borrowed, or matches the address. */
 function marksOf(
   board: Board,
@@ -234,7 +240,7 @@ export function BitsBoard({ board }: BitsBoardProps) {
                       />
                     ) : null}
                   </span>
-                  <span className="sr-only">{toOctetBits(row.value).join(' ')}</span>
+                  <span className="sr-only">{spoken(row.value)}</span>
                 </td>
                 <td className="bits__dec">{formatIPv4(row.value)}</td>
               </tr>

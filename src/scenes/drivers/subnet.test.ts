@@ -3,8 +3,10 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawSubnet, type SubnetSceneData } from '../../art/scenes/subnet';
-import type { SceneEvent } from '../../content/schema';
+import type { NoteEvent, SceneEvent } from '../../content/schema';
 import subnetting from '../../content/lessons/networking/subnetting';
+import { formatIPv4, parseIPv4 } from '../../engine/net/ipv4';
+import { sameSubnet, subnetInfo } from '../../engine/net/subnet';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
 import { sceneViewOf, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
 import { DRIVERS } from './index';
@@ -160,6 +162,56 @@ test('show lights one line round the floor, then one round each pad once the flo
   driver.show(viewAt(1, 0));
   expect([lit(root, 'sn-onenet'), lit(root, 'sn-link'), ...padlines()]).toEqual(Array(6).fill(false));
   expect(nets(root)).toEqual(Array(4).fill(['192.168.1.0/24', false]));
+});
+
+/**
+ * The figure's words are the FIGS port's (checksummed), and the driver keeps
+ * its own floor and cut prefixes, so this ties both to the lesson: its
+ * addresses, the prefixes its boards play the `one-net`, `cut` and `link` cues
+ * at, and the engine's networks for them.
+ */
+test('the figure’s labels and the driver’s networks are the lesson’s addresses and prefixes, as the engine works them out', () => {
+  const notes = unit.steps.flatMap((s) => s.events).filter((e): e is NoteEvent => e.type === 'note');
+  const withCue = (cue: string): NoteEvent => notes.find((e) => e.cues?.some((c) => c.cue === cue))!;
+  const byId = (id: string): NoteEvent => notes.find((e) => e.id === id)!;
+  const ip = (addr: string): number => {
+    const parsed = parseIPv4(addr);
+    if (!parsed.ok) throw new Error(addr);
+    return parsed.value;
+  };
+  const cidr = (addr: string, prefix: number): string => `${formatIPv4(subnetInfo(ip(addr), prefix).network)}/${prefix}`;
+  const floor = withCue('one-net').board!.prefix!;
+  const cut = withCue('cut').board!.prefix!;
+  const link = withCue('link').board!.prefix!;
+  const laptop = byId('address').board!.addr;
+  const printer = byId('same-subnet').board!.third!.addr;
+  const pc = byId('different-subnet').board!.third!.addr;
+  const officeRouter = withCue('link').board!.addr;
+  const provider = byId('usable-30').board!.third!.addr;
+
+  const { root, driver } = mount();
+  // The callouts name the lesson's devices, and the plate names the lesson's floor, as the scene's title does.
+  const addrs = (callout: string) => [...part(root, `sn-call-${callout}`).querySelectorAll('.sn-addr')].map((el) => el.textContent);
+  expect(addrs('sales')).toEqual([`Laptop ${laptop}`, `Printer ${printer}`]);
+  expect(addrs('design')).toEqual([`PC ${pc}`]);
+  expect(addrs('router')).toEqual([`${officeRouter} on the link`]);
+  expect(addrs('provider')).toEqual([`${provider} on the link`]);
+  expect([...root.querySelectorAll('text')].map((t) => t.textContent)).toContain(`OFFICE · ${cidr(laptop, floor)}`);
+  expect(unit.scene.title).toContain(cidr(laptop, floor));
+  // The link's two ends are on one subnet at the link's prefix.
+  expect(sameSubnet(ip(officeRouter), ip(provider), link)).toBe(true);
+
+  // The driver's networks: each team's device at the floor's prefix, then at the cut's, where pad i holds the floor's i-th subnet.
+  const teams = ['sales', 'design', 'servers', 'guests'];
+  const device = (team: string): string => /\S+$/.exec(addrs(team)[0] ?? '')![0];
+  driver.show(viewAt(1, 2));
+  expect(nets(root)).toEqual(teams.map((team) => [cidr(device(team), floor), false]));
+  driver.show(viewAt(4, 1));
+  expect(nets(root)).toEqual(teams.map((team) => [cidr(device(team), cut), true]));
+  const block = subnetInfo(ip(laptop), cut).totalAddresses;
+  expect(teams.map((team) => subnetInfo(ip(device(team)), cut).network)).toEqual(
+    teams.map((_, i) => subnetInfo(ip(laptop), floor).network + i * block),
+  );
 });
 
 test('a calc lights its screen and its callout’s name, holds 1100 + 700 ms, then clears', async () => {

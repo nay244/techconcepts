@@ -11,9 +11,9 @@ import { ScenePanel } from '../../../lesson/ScenePanel';
 import { lessonNumbers, lessonTitles } from '../../../test/lesson-references';
 import { validateLesson } from '../../define';
 import { countUnitWords, estimateMinutes } from '../../estimate';
-import { checkStated } from '../../helpers/subnet-events';
+import { checkStated, learnerProse } from '../../helpers/subnet-events';
 import { getEntries } from '../../registry';
-import type { Fact, Lesson, NoteEvent, Unit } from '../../schema';
+import type { Lesson, NoteEvent } from '../../schema';
 import subnetting, { STATED } from './subnetting';
 
 const unit = subnetting.units[0]!;
@@ -205,80 +205,169 @@ test('the lesson points at other lessons by name, and each is a lesson of the tr
 
 // ------------------------------------------------------------------ the numbers
 
-/** The words a learner reads, where numbers are stated: everything but ids, data and the engine's own log cells. */
-function proseOf(u: Unit): string[] {
-  const facts = (list: Fact[]) => list.flatMap((f) => [f.label, f.value]);
-  return [
-    u.scene.title,
-    u.overview.hook,
-    u.overview.description,
-    ...facts(u.overview.facts),
-    ...u.steps.flatMap((s) => [
-      s.title,
-      s.sub,
-      s.narrative,
-      s.deep,
-      ...facts(s.facts),
-      ...s.events.flatMap((e) => (e.type === 'table' ? [] : [e.plain])),
-    ]),
-    u.learn.lead,
-    ...u.learn.terms.flatMap((t) => [t.idea, t.name]),
-    ...u.learn.pattern.names,
-    u.learn.pattern.note,
-    u.learn.why,
-    u.learn.deep,
-    ...facts(u.learn.facts),
-    ...u.practice.flatMap((q) => [q.prompt, ...q.options.flatMap((o) => [o.text, o.feedback])]),
-  ];
-}
+/**
+ * The fields that hold a bare value, which the lesson works out with the engine
+ * rather than states in a sentence: the scene's title, the facts, and Practice's
+ * number options. Each is the mockup's value (FIGS/subnet-lesson.mjs), by place.
+ */
+const COMPUTED: Record<string, string> = {
+  'scene.title': 'Office network · 192.168.1.0/24',
+  'overview.facts.0.value': '192.168.1.0/24',
+  'overview.facts.1.value': '255.255.255.0',
+  'overview.facts.2.value': '2 to the power of the host bits, minus 2',
+  'steps.portions.facts.0.value': '192.168.1.10',
+  'steps.portions.facts.1.value': '192.168.1 (the first 24 bits)',
+  'steps.portions.facts.2.value': '10 (the last 8 bits)',
+  'steps.portions.facts.3.value': '32 bits, in four groups of 8',
+  'steps.subnet-mask.facts.0.value': '255.255.255.0',
+  'steps.subnet-mask.facts.1.value': '11111111.11111111.11111111.00000000',
+  'steps.subnet-mask.facts.2.value': '/24 (24 ones)',
+  'steps.subnet-mask.facts.3.value': '192.168.1.10/24',
+  'steps.network-broadcast.facts.0.value': '192.168.1.0',
+  'steps.network-broadcast.facts.1.value': '192.168.1.255',
+  'steps.network-broadcast.facts.2.value': '254 (2⁸ − 2)',
+  'steps.network-broadcast.facts.3.value': '192.168.1.1 to 192.168.1.254',
+  'steps.borrowing-bits.facts.0.value': '255.255.255.192 (/26)',
+  'steps.borrowing-bits.facts.1.label': 'Cut from one /24',
+  'steps.borrowing-bits.facts.1.value': '4 subnets of 64 addresses',
+  'steps.borrowing-bits.facts.2.value': '192.168.1.64 to 192.168.1.127',
+  'steps.borrowing-bits.facts.3.value': '62 (192.168.1.65 to 192.168.1.126)',
+  'steps.local-remote.facts.0.value': '192.168.1.10, in 192.168.1.0/26',
+  'steps.local-remote.facts.1.value': '192.168.1.20: same subnet, sent directly',
+  'steps.local-remote.facts.2.value': '192.168.1.70: in 192.168.1.64/26, sent via the router',
+  'steps.local-remote.facts.3.value': '192.168.1.1',
+  'steps.point-to-point.facts.0.value': '255.255.255.252 (/30)',
+  'steps.point-to-point.facts.1.value': '203.0.113.4 to 203.0.113.7',
+  'steps.point-to-point.facts.2.value': '2 (203.0.113.5 and 203.0.113.6)',
+  'learn.facts.0.label': '/25',
+  'learn.facts.0.value': '128 addresses, 126 usable',
+  'learn.facts.1.label': '/26',
+  'learn.facts.1.value': '64 addresses, 62 usable',
+  'learn.facts.2.label': '/27',
+  'learn.facts.2.value': '32 addresses, 30 usable',
+  'learn.facts.3.label': '/28',
+  'learn.facts.3.value': '16 addresses, 14 usable',
+  'learn.facts.4.label': '/29',
+  'learn.facts.4.value': '8 addresses, 6 usable',
+  'learn.facts.5.label': '/30',
+  'learn.facts.5.value': '4 addresses, 2 usable',
+  'learn.facts.6.value': 'RFC 950 (subnets), RFC 4632 (CIDR), RFC 3021 (/31 links)',
+  'practice.usable-26.options.0.text': '64',
+  'practice.usable-26.options.1.text': '62',
+  'practice.usable-26.options.2.text': '30',
+};
 
-/** Numbers in the text that are not the engine's to work out: a street, standards, the lesson's own steps, named ranges. */
-const NOT_COMPUTED = [
-  '12 Oak Street',
-  'RFC 950',
-  'RFC 4632',
-  'RFC 3021',
-  'Steps 2 and 3',
-  'step 4',
-  'step 6',
-  '192.168.x.x',
-  '203.0.113.x',
+/** Numbers in the words that are not the engine's to work out, by place: a street, standards, the lesson's own steps, named ranges. */
+const NOT_COMPUTED: [string, string][] = [
+  ['steps.portions.narrative', '12 Oak Street'],
+  ['overview.facts.3.value', '192.168.x.x'],
+  ['overview.facts.3.value', '203.0.113.x'],
+  ['overview.facts.4.value', 'RFC 950'],
+  ['overview.facts.4.value', 'RFC 4632'],
+  ['steps.point-to-point.deep', 'RFC 3021'],
+  ['learn.pattern.note', 'Steps 2 and 3'],
 ];
 
-/** The numbers in `text` that no stated phrase (or phrase that is not the engine's) covers. */
-function uncovered(text: string, phrases: string[]): string[] {
-  const covered: [number, number][] = [];
-  for (const phrase of phrases) {
-    for (let at = text.indexOf(phrase); at !== -1; at = text.indexOf(phrase, at + 1)) covered.push([at, at + phrase.length]);
-  }
-  return [...text.matchAll(/\d+(?:\.\d+)*/g)]
-    .filter((m) => !covered.some(([from, to]) => m.index >= from && m.index + m[0].length <= to))
-    .map((m) => `${m[0]} in “${text}”`);
+/**
+ * Every number a learner reads in `lesson` that nothing accounts for, by place:
+ * a computed field must be the mockup's value, and in any other place each
+ * number must sit inside a stated phrase pinned to that place (or a pinned
+ * number that is not the engine's).
+ */
+function uncovered(lesson: Lesson): string[] {
+  return learnerProse(lesson).flatMap(({ place, text }) => {
+    if (Object.hasOwn(COMPUTED, place)) return text === COMPUTED[place] ? [] : [`${place}: “${text}”, not “${COMPUTED[place]}”`];
+    const phrases = [
+      ...STATED.filter((s) => (typeof s.at === 'string' ? [s.at] : s.at).includes(place)).map((s) => s.text),
+      ...NOT_COMPUTED.filter(([at]) => at === place).map(([, phrase]) => phrase),
+    ];
+    const covered: [number, number][] = [];
+    for (const phrase of phrases) {
+      for (let at = text.indexOf(phrase); at !== -1; at = text.indexOf(phrase, at + 1)) covered.push([at, at + phrase.length]);
+    }
+    return [...text.matchAll(/\d+(?:\.\d+)*/g)]
+      .filter((m) => !covered.some(([from, to]) => m.index >= from && m.index + m[0].length <= to))
+      .map((m) => `${place}: ${m[0]} in “${text}”`);
+  });
 }
 
-/** A copy of the lesson with `from` changed to `to` in the one string of `pick`. */
-function changed(pick: (u: Unit) => { parent: Record<string, unknown>; key: string }, from: string, to: string): Lesson {
+/** What the build-time check and the coverage check find wrong in `lesson`. */
+function problemsIn(lesson: Lesson): string[] {
+  const found = uncovered(lesson);
+  try {
+    checkStated(lesson, STATED);
+  } catch (error) {
+    found.push((error as Error).message);
+  }
+  return found;
+}
+
+/** The object and key that hold a `learnerProse` place in the lesson's unit: steps, events and questions by id, the rest by key or index. */
+function holderOf(lesson: Lesson, place: string): { parent: Record<string, unknown>; key: string } {
+  const path = place.split('.');
+  const key = path.pop()!;
+  let node: unknown = lesson.units[0];
+  for (let i = 0; i < path.length; i += 1) {
+    const name = path[i]!;
+    node = (node as Record<string, unknown>)[name];
+    if (name === 'steps' || name === 'events' || name === 'practice') {
+      i += 1;
+      node = (node as { id: string }[]).find((x) => x.id === path[i]);
+    }
+    if (node === undefined) throw new Error(`No ${place} in the lesson.`);
+  }
+  return { parent: node as Record<string, unknown>, key };
+}
+
+/** A copy of the lesson with `from` changed to `to` at `place`. */
+function changed(place: string, from: string, to: string): Lesson {
   const copy = structuredClone(subnetting);
-  const { parent, key } = pick(copy.units[0]!);
+  const { parent, key } = holderOf(copy, place);
   const text = parent[key] as string;
-  expect(text).toContain(from);
+  expect(text, place).toContain(from);
   parent[key] = text.replace(from, to);
   return copy;
 }
 
 test('every number in narratives and facts is one the engine computes', () => {
   expect(() => checkStated(subnetting, STATED)).not.toThrow();
-  // Every number the learner reads is in a stated phrase, so a wrong one stops the build.
-  const phrases = [...STATED.map((s) => s.text), ...NOT_COMPUTED];
-  expect(proseOf(unit).flatMap((text) => uncovered(text, phrases))).toEqual([]);
+  // Every place the check names, and every computed field, is a place the learner reads.
+  const places = learnerProse(subnetting).map((p) => p.place);
+  expect(STATED.flatMap((s) => (typeof s.at === 'string' ? [s.at] : s.at)).filter((at) => !places.includes(at))).toEqual([]);
+  expect(Object.keys(COMPUTED).filter((at) => !places.includes(at))).toEqual([]);
+  // Every number the learner reads is accounted for in its own place.
+  expect(uncovered(subnetting)).toEqual([]);
 
-  // One number changed, in a narrative, a fact, a log row's words or a question: each copy throws.
-  const reserved = (u: Unit) => ({ parent: u.steps[2]! as unknown as Record<string, unknown>, key: 'narrative' });
-  expect(() => checkStated(changed(reserved, '192.168.1.255', '192.168.1.254'), STATED)).toThrow(/192\.168\.1\.255/);
-  const designRange = (u: Unit) => ({ parent: u.steps[3]!.facts[3]! as unknown as Record<string, unknown>, key: 'value' });
-  expect(() => checkStated(changed(designRange, '192.168.1.126', '192.168.1.125'), STATED)).toThrow(/192\.168\.1\.126/);
-  const subnets = (u: Unit) => ({ parent: u.steps[3]!.events[1]! as unknown as Record<string, unknown>, key: 'plain' });
-  expect(() => checkStated(changed(subnets, '.128', '.127'), STATED)).toThrow(/\.128/);
-  const usable = (u: Unit) => ({ parent: u.practice[0]!.options[1]! as unknown as Record<string, unknown>, key: 'feedback' });
-  expect(() => checkStated(changed(usable, '62 are left', '60 are left'), STATED)).toThrow(/62/);
+  // One number changed in a narrative, a log row's plain words or a question's feedback: the build-time check throws.
+  expect(() => checkStated(changed('steps.network-broadcast.narrative', '192.168.1.255', '192.168.1.254'), STATED)).toThrow(
+    /steps\.network-broadcast\.narrative should say “Set every host bit to 1 and you get 192\.168\.1\.255”/,
+  );
+  expect(() => checkStated(changed('steps.borrowing-bits.events.subnets-26.plain', '.128', '.127'), STATED)).toThrow(/\.128/);
+  expect(() => checkStated(changed('practice.usable-26.options.1.feedback', '62 are left', '60 are left'), STATED)).toThrow(/62/);
+});
+
+/**
+ * Wrong numbers that once passed both checks (the review's mutations, the
+ * first seven), and others like them: each swaps one valid number for another.
+ */
+const MUTATIONS: [place: string, from: string, to: string][] = [
+  ['steps.network-broadcast.facts.0.value', '192.168.1.0', '192.168.1.255'],
+  ['steps.network-broadcast.facts.1.value', '192.168.1.255', '192.168.1.0'],
+  ['steps.local-remote.facts.3.value', '192.168.1.1', '192.168.1.0'],
+  ['overview.facts.0.value', '192.168.1.0/24', '192.168.1.0/25'],
+  ['scene.title', '192.168.1.0/24', '192.168.1.0/26'],
+  ['practice.usable-26.options.0.text', '64', '62'],
+  ['practice.usable-26.options.2.text', '30', '64'],
+  ['steps.local-remote.facts.3.value', '192.168.1.1', '192.168.1.2'],
+  ['overview.facts.1.value', '255.255.255.0', '255.255.255.128'],
+  ['steps.portions.facts.0.value', '192.168.1.10', '192.168.1.11'],
+  ['learn.facts.0.label', '/25', '/26'],
+  ['steps.borrowing-bits.facts.3.value', '192.168.1.126', '192.168.1.125'],
+  ['steps.borrowing-bits.deep', '62 of them usable', '64 of them usable'],
+  ['practice.why-30.options.2.text', 'exactly 2 usable', 'exactly 4 usable'],
+];
+
+test.each(MUTATIONS)('a copy with %s changed from %s to %s is caught, at that place', (place, from, to) => {
+  const problems = problemsIn(changed(place, from, to));
+  expect(problems.join('\n')).toContain(place);
 });

@@ -1,6 +1,6 @@
 import { formatIPv4, IPV4_ERROR, parseIPv4, type IPv4 } from '../../engine/net/ipv4';
 import { maskFromPrefix, subnetInfo } from '../../engine/net/subnet';
-import type { Board, Cue, Lesson, NoteEvent } from '../schema';
+import type { Board, Cue, Fact, Lesson, NoteEvent } from '../schema';
 
 /**
  * Builders for the Subnetting lesson's notes, so every number the lesson shows
@@ -104,35 +104,112 @@ function checkThird(id: string, board: Board): void {
 
 /**
  * A note whose log row is worked out by the engine: Worked out (`row`), Value
- * (`shown` of the board) and Prefix (once the board shows the mask).
+ * (`shown` of the board) and Prefix (once the board shows the mask). A board
+ * that shows the mask before it has a prefix throws: the schema allows it, but
+ * there is no mask to show.
  */
 export function calc(o: { id: string; row: string; shown: Shown; plain: string; board: Board; cues?: Cue[] }): NoteEvent {
-  checkThird(o.id, o.board);
+  const { board } = o;
+  if (board.mask && board.prefix === null) throw new Error(`"${o.id}": ${board.who}’s board shows the mask, but it has no prefix yet.`);
+  checkThird(o.id, board);
   return {
     type: 'note',
     id: o.id,
-    log: { worked: o.row, value: subnetValue(o.shown, o.board), prefix: o.board.mask ? `/${o.board.prefix}` : '' },
+    log: { worked: o.row, value: subnetValue(o.shown, board), prefix: board.mask ? `/${board.prefix}` : '' },
     plain: o.plain,
-    board: o.board,
+    board,
     ...(o.cues === undefined ? {} : { cues: o.cues }),
   };
 }
 
-/** A number the lesson's words state, exactly as written, and the engine's own wording of it. */
+/** A place in a lesson where the learner reads words, and the words there. */
+export interface Prose {
+  /** Its path in the unit, by id where there is one: `steps.borrowing-bits.narrative`, `practice.usable-26.options.0.text`. */
+  place: string;
+  text: string;
+}
+
+/**
+ * Every place in the lesson where a learner reads words: the titles, the
+ * overview, each step's words, facts and events' plain words (a table event's
+ * summary), Learn, and Practice's prompts, options and feedback. Not the log's
+ * cells, the boards, ids, cues, urls or the figure's tags: those are the
+ * engine's or the page's, not words a lesson states. A lesson with more than one
+ * unit puts the unit's id before each place: `alpha:steps.hello.narrative`.
+ */
+export function learnerProse(lesson: Lesson): Prose[] {
+  const out: Prose[] = [];
+  const add = (place: string, text: string | undefined): void => {
+    if (text !== undefined) out.push({ place, text });
+  };
+  const addFacts = (at: string, facts: readonly Fact[]): void =>
+    facts.forEach((f, i) => {
+      add(`${at}.facts.${i}.label`, f.label);
+      add(`${at}.facts.${i}.value`, f.value);
+    });
+  add('title', lesson.title);
+  add('subtitle', lesson.subtitle);
+  add('summary', lesson.summary);
+  for (const unit of lesson.units) {
+    const u = lesson.units.length > 1 ? `${unit.id}:` : '';
+    add(`${u}name`, unit.name);
+    add(`${u}fullName`, unit.fullName);
+    add(`${u}purpose`, unit.purpose);
+    add(`${u}scene.title`, unit.scene.title);
+    add(`${u}overview.hook`, unit.overview.hook);
+    add(`${u}overview.description`, unit.overview.description);
+    addFacts(`${u}overview`, unit.overview.facts);
+    for (const step of unit.steps) {
+      const s = `${u}steps.${step.id}`;
+      add(`${s}.title`, step.title);
+      add(`${s}.sub`, step.sub);
+      add(`${s}.narrative`, step.narrative);
+      add(`${s}.deep`, step.deep);
+      add(`${s}.status`, step.status);
+      add(`${s}.idle`, step.idle);
+      addFacts(s, step.facts);
+      for (const e of step.events) {
+        if (e.type === 'table') add(`${s}.events.${e.id}.summary`, e.summary);
+        else add(`${s}.events.${e.id}.plain`, e.plain);
+      }
+    }
+    const { learn } = unit;
+    add(`${u}learn.lead`, learn.lead);
+    learn.terms.forEach((t, i) => {
+      add(`${u}learn.terms.${i}.idea`, t.idea);
+      add(`${u}learn.terms.${i}.name`, t.name);
+    });
+    learn.pattern.names.forEach((name, i) => add(`${u}learn.pattern.names.${i}`, name));
+    add(`${u}learn.pattern.note`, learn.pattern.note);
+    add(`${u}learn.why`, learn.why);
+    add(`${u}learn.deep`, learn.deep);
+    addFacts(`${u}learn`, learn.facts);
+    for (const q of unit.practice) {
+      const p = `${u}practice.${q.id}`;
+      add(`${p}.prompt`, q.prompt);
+      q.options.forEach((o, i) => {
+        add(`${p}.options.${i}.text`, o.text);
+        add(`${p}.options.${i}.feedback`, o.feedback);
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * A number the lesson's words state, pinned to where it is written: the
+ * phrase as written, with enough of its sentence round the number to stand
+ * for that place, and the engine's own wording of the same phrase.
+ */
 export interface Stated {
+  /** The place it is written (a `Prose` place), or every place it stands for. */
+  at: string | readonly string[];
   text: string;
   value: () => string;
 }
 
-/** Every string in a value, wherever it sits. */
-function stringsOf(value: unknown): string[] {
-  if (typeof value === 'string') return [value];
-  if (Array.isArray(value)) return value.flatMap(stringsOf);
-  if (typeof value === 'object' && value !== null) return Object.values(value).flatMap(stringsOf);
-  return [];
-}
-
 const DIGIT = /\d/;
+const NUMBER = /\d+(?:\.\d+)*/g;
 
 /** True when `text` sits in `s` as a whole number: not inside a longer number on either side. */
 function containsWhole(s: string, text: string): boolean {
@@ -147,16 +224,28 @@ function containsWhole(s: string, text: string): boolean {
 }
 
 /**
- * Throws, listing every problem, when a stated number is not in the lesson's
- * text as a whole number, or is not what the engine works out.
+ * Throws, listing every problem, unless each stated phrase is the engine's
+ * wording and is written, whole, in each place it names and in no other place
+ * the learner reads (`learnerProse`). Log cells, boards and ids are never
+ * searched, so a number the engine put in the log cannot stand in for one the
+ * words state.
  */
-export function checkStated(lesson: Lesson, stated: Stated[]): void {
-  const strings = stringsOf(lesson);
-  const problems = stated.flatMap(({ text, value }) => {
+export function checkStated(lesson: Lesson, stated: readonly Stated[]): void {
+  const prose = learnerProse(lesson);
+  const textAt = new Map(prose.map((p) => [p.place, p.text]));
+  const problems = stated.flatMap(({ at, text, value }) => {
     const found: string[] = [];
+    const places: readonly string[] = typeof at === 'string' ? [at] : at;
     const engine = value();
     if (engine !== text) found.push(`“${text}” is stated, but the engine works out “${engine}”.`);
-    if (!strings.some((s) => containsWhole(s, text))) found.push(`“${text}” is not in the lesson’s text.`);
+    const numbers = (text.match(NUMBER) ?? []).join(', ');
+    for (const place of places) {
+      const written = textAt.get(place);
+      if (written === undefined) found.push(`${place}: the lesson has no such place for “${text}”.`);
+      else if (!containsWhole(written, text)) found.push(`${place} should say “${text}”, with the engine’s ${numbers}, and does not.`);
+    }
+    const elsewhere = prose.filter((p) => !places.includes(p.place) && containsWhole(p.text, text)).map((p) => p.place);
+    if (elsewhere.length > 0) found.push(`“${text}” is also in ${elsewhere.join(', ')}: name each place it stands for.`);
     return found;
   });
   if (problems.length > 0)

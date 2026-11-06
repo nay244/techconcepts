@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import type { Board } from '../../content/schema';
@@ -7,6 +9,8 @@ import { BitsBoard } from './BitsBoard';
 import { UnitPanel } from './UnitPanel';
 
 const LAPTOP = { addr: '192.168.1.10', who: 'Laptop' };
+// Read from the project root: under jsdom import.meta.url is not a file URL.
+const bitsCss: string = readFileSync('src/lesson/panels/bits.css', 'utf8');
 
 /** The board's rows that show, each as its label, its 32 bits (as the cells read) and its dotted address. */
 function rows(): { label: string; bits: string; dec: string }[] {
@@ -69,8 +73,9 @@ test('an address with no prefix yet shows its 32 bits in four groups of 8, with 
   expect(rows()).toEqual([{ label: 'Laptop', bits: '11000000101010000000000100001010', dec: '192.168.1.10' }]);
   expect(line()).toBeNull();
   expect(cellsWith(0, 'data-part')).toEqual([]);
-  // The bits read as four groups of 8 to a screen reader too.
-  expect(screen.getByText('11000000 10101000 00000001 00001010')).toBeTruthy();
+  // A screen reader reads the bits digit by digit, in four groups of 8: "11000000" would be read as eleven million.
+  expect(screen.getByText('1 1 0 0 0 0 0 0, 1 0 1 0 1 0 0 0, 0 0 0 0 0 0 0 1, 0 0 0 0 1 0 1 0')).toBeTruthy();
+  expect([...document.querySelectorAll('.sr-only')].map((el) => el.textContent).join(' ')).not.toMatch(/[01]{2}/);
 });
 
 test('a pick lights the network part, the host part or the mask', () => {
@@ -114,6 +119,31 @@ test('a compared address marks the network bits that match and those that differ
   // .10 is 00|001010 and .70 is 01|000110: within the network part only bit 26 differs.
   expect(cellsWith(2, 'data-differs')).toEqual([26]);
   expect(cellsWith(2, 'data-matches')).toEqual(Array.from({ length: 25 }, (_, i) => i + 1));
+});
+
+test('a borrowed bit that differs keeps both its outline and its underline, so colour is never the only mark', () => {
+  const style = document.createElement('style');
+  style.textContent = bitsCss;
+  document.head.append(style);
+  try {
+    render(
+      <BitsBoard
+        board={{ ...LAPTOP, prefix: 26, borrow: 24, mask: true, third: { who: 'Design PC', addr: '192.168.1.70', mode: 'cmp' } }}
+      />,
+    );
+    const row = screen.getAllByRole('row').filter((r) => r.closest('tbody') !== null)[2]!;
+    const cells = [...row.querySelectorAll<HTMLElement>('.bits__cell')];
+    const shadow = (bit: number): string => getComputedStyle(cells[bit - 1]!).boxShadow;
+    // Bit 26 is borrowed and differs: the outline says it differs, the underline says it is borrowed.
+    expect(cells[25]!.hasAttribute('data-borrowed') && cells[25]!.hasAttribute('data-differs')).toBe(true);
+    expect(shadow(26)).toContain('var(--selected)');
+    expect(shadow(26)).toContain('var(--ink-strong)');
+    // Bit 25 is borrowed and matches: the underline alone.
+    expect(shadow(25)).toContain('var(--ink-strong)');
+    expect(shadow(25)).not.toContain('var(--selected)');
+  } finally {
+    style.remove();
+  }
 });
 
 test('the board is a real table: a caption, column headers and a header for each row', () => {
