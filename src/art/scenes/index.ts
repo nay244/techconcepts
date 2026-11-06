@@ -1,9 +1,11 @@
 import { drawDhcp } from './dhcp';
+import { drawSubnet } from './subnet';
 import type { DrawnFigure, FigureId } from './types';
 
 /** How each scene figure is drawn. Each lesson's task adds its own (Tasks 10–16). */
 const DRAW: Partial<Record<FigureId, () => DrawnFigure>> = {
   dhcp: drawDhcp,
+  subnet: drawSubnet,
 };
 
 /**

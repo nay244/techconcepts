@@ -2,9 +2,9 @@ import { expect, test } from 'vitest';
 import { drawDhcp } from '../../../art/scenes/dhcp';
 import { deriveState, positionOf, stepEvents } from '../../../engine/timeline';
 import { formatBytes } from '../../../lib/format';
+import { lessonNumbers, misnamedLessons } from '../../../test/lesson-references';
 import { validateLesson } from '../../define';
 import { estimateMinutes } from '../../estimate';
-import { getEntries } from '../../registry';
 import type { MessageEvent } from '../../schema';
 import dhcp from './dhcp';
 
@@ -97,14 +97,6 @@ test('the log and the parties are the console’s packet log and the figure’s 
   expect(unit.scene.views).toEqual(['network', 'sequence']);
 });
 
-/** Every string in the lesson, wherever it sits. */
-function textsOf(value: unknown): string[] {
-  if (typeof value === 'string') return [value];
-  if (Array.isArray(value)) return value.flatMap(textsOf);
-  if (typeof value === 'object' && value !== null) return Object.values(value).flatMap(textsOf);
-  return [];
-}
-
 /** The words a sentence uses for each lesson it may point at. */
 const TOPIC: Record<string, string> = {
   subnetting: 'subnet mask',
@@ -114,16 +106,6 @@ const TOPIC: Record<string, string> = {
 };
 
 test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
-  const entries = getEntries('networking');
-  const references = textsOf(dhcp).flatMap((text) =>
-    [...text.matchAll(/\blessons? (\d+)(?: and (\d+))?/gi)].flatMap((m) =>
-      [m[1], m[2]].filter((n) => n !== undefined).map((n) => ({ text, n: Number(n) })),
-    ),
-  );
-  expect(references).toHaveLength(4);
-  for (const { text, n } of references) {
-    const slug = entries[n - 1]?.slug ?? `nothing (the track has ${entries.length} lessons)`;
-    expect(Object.hasOwn(TOPIC, slug), `“lesson ${n}” is ${slug}, which “${text}” is not about`).toBe(true);
-    expect(text, `lesson ${n} is ${slug}`).toContain(TOPIC[slug]);
-  }
+  expect(lessonNumbers(dhcp)).toHaveLength(4);
+  expect(misnamedLessons(dhcp, TOPIC)).toEqual([]);
 });

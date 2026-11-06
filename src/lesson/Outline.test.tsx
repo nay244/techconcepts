@@ -11,7 +11,12 @@ import { slotsFor } from '../engine/timeline';
 import { emptyProgress } from '../progress/store';
 import { Outline } from './Outline';
 
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+vi.mock('../art/scenes/parts', async (importOriginal) => ({
+  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
+    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+  ),
+}));
 
 const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
 /** Alpha (core): 0 Overview, 1–5 steps, 6 Learn, 7 Practice. Beta (app): 8 Overview, 9–13 steps, 14 Learn, 15 Practice. */

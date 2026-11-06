@@ -12,7 +12,12 @@ import LessonConsole from './LessonConsole';
 // A file of its own: a SafeStorage that has failed keeps saying so for as long as its module
 // lives, and each test file gets fresh modules, so no other test sees this one's blocked storage.
 
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+vi.mock('../art/scenes/parts', async (importOriginal) => ({
+  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
+    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+  ),
+}));
 
 const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
 const entries = buildEntries(networkingTrack, { dhcp: DHCP });

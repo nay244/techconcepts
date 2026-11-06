@@ -1,0 +1,38 @@
+/* The Subnetting scene's own parts (src/art/scenes/subnet.ts), from the approved mockup's sceneCss (FIGS/subnet-scene.mjs).
+   The callouts sit on the page's figure background, so they take the site's ink and line tokens and follow the theme;
+   the parts on the plate take the lumen finish's tokens and stay the same in both themes. A team's network turns the
+   accent once the floor is cut; the name of the place the current event is about turns marigold (--here), the colour
+   of "current". */
+.sn .sn-call .sn-name { font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--ink-strong); transition: fill 250ms ease; }
+.sn .sn-call .sn-sub { font: 400 13px/1 var(--sans); fill: var(--muted); }
+.sn .sn-call .sn-addr { font: 500 12.5px/1 var(--mono); fill: var(--ink); }
+.sn .sn-call .sn-net { font: 700 12.5px/1 var(--mono); fill: var(--muted); transition: fill 300ms ease; }
+.sn .sn-call .sn-net.cut { fill: var(--accent); }
+.sn .sn-call .sn-net.new { animation: sn-new 1100ms ease; }
+@keyframes sn-new { 0%, 100% { opacity: 1; } 30% { opacity: .25; } }
+.sn .sn-call.focus .sn-name { fill: var(--here); }
+.sn .sn-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; }
+.sn .sn-lead-dot { fill: var(--muted); }
+.sn .sn-glow { fill: var(--lit-b); opacity: 0; transition: opacity 300ms ease; }
+.sn .sn-glow.on { opacity: .5; }
+.sn .sn-busy { opacity: 0; transition: opacity 250ms ease; }
+.sn .sn-busy.on { opacity: 1; }
+.sn .sn-scr { font: 700 4.4px var(--mono); fill: var(--anatomy-mid); letter-spacing: .04em; }
+.sn .sn-line { fill: none; stroke: var(--lit-a); stroke-width: 1.8px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px var(--lit-b)); opacity: 0; transition: opacity 400ms ease; }
+.sn .sn-line.on { opacity: .9; }
+.sn .sn-line.pulse { animation: sn-pulse 900ms ease; }
+@keyframes sn-pulse { 0%, 100% { opacity: .9; } 40% { opacity: .2; } }
+.sn .sn-link { fill: none; stroke: var(--lit-a); stroke-width: 3px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 2px var(--lit-b)); opacity: 0; transition: opacity 400ms ease; }
+.sn .sn-link.on { opacity: .85; }
+.sn .sn-link.pulse { animation: sn-pulse 900ms ease; }
+.sn .sn-ring { fill: none; stroke: var(--lit-a); stroke-width: 2.6px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--lit-b)); }
+.sn .sn-ring.soft { stroke-width: 1.2px; opacity: .55; filter: none; }
+.sn .sn-trail { fill: none; stroke: var(--lit-a); stroke-width: 1.6px; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.sn .sn-tag { will-change: transform; }
+.sn .sn-tag-t { font: 700 4.6px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .03em; }
+/* Reduced motion keeps every light and line, and only drops the fades and the pulses (the driver adds no pulse then). */
+@media (prefers-reduced-motion: reduce) {
+  .sn .sn-call .sn-name, .sn .sn-call .sn-net, .sn .sn-glow, .sn .sn-busy, .sn .sn-line, .sn .sn-link, .sn .lm-led { transition: none; }
+}
+/* While the driver's show settles the figure, every part changes at once, not over its fade (src/scenes/drivers/subnet.ts). */
+.sn[data-settling] * { transition: none !important; }

@@ -15,7 +15,12 @@ import { PROGRESS_KEY } from '../progress/store';
 import LessonConsole from './LessonConsole';
 
 // No lesson files exist yet, so the lessons are fixtures, which validate against the stand-in figure parts.
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+vi.mock('../art/scenes/parts', async (importOriginal) => ({
+  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
+    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+  ),
+}));
 
 // Every figure's driver gives every event the same second, so these tests time the console, not a figure.
 const still = vi.hoisted(() => ({

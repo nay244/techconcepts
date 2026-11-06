@@ -5,8 +5,9 @@ import type { LessonInput } from './schema';
  * Valid lessons for tests. Every call builds a fresh object, so a test can
  * change any part of it without affecting the next test.
  *
- * The real `FIGURE_PARTS` stays empty until each lesson's figure is built, so a
- * test that validates these fixtures swaps in `FIXTURE_PARTS`:
+ * The real `FIGURE_PARTS` only holds what each figure built so far can show,
+ * so a test that validates these fixtures swaps in `FIXTURE_PARTS`, or, if it
+ * also loads the real lessons, `withFixtureParts` (below):
  *
  *   vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./test-fixtures')).FIXTURE_PARTS }));
  *
@@ -30,6 +31,33 @@ export const FIXTURE_PARTS: Record<FigureId, FigureParts> = {
 
 function fixtureParts(board: boolean): FigureParts {
   return { places: ['laptop', 'router', 'phone'], cues: { glow: 'flag', status: 'text' }, layers: ['web', 'mail'], board };
+}
+
+/**
+ * The real `FIGURE_PARTS` with the fixture's parts added, for a test that
+ * validates these fixtures and also loads the real lessons (through the
+ * registry): each real lesson must still validate on its own figure. Where a
+ * figure's real cue has the same name as a fixture cue, the real one wins, so
+ * a fixture on such a figure (Subnetting's `glow` takes an arg) needs
+ * `FIXTURE_PARTS` instead.
+ *
+ *   vi.mock('../art/scenes/parts', async (importOriginal) => ({
+ *     FIGURE_PARTS: (await import('./test-fixtures')).withFixtureParts(
+ *       (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+ *     ),
+ *   }));
+ */
+export function withFixtureParts(real: Record<FigureId, FigureParts>): Record<FigureId, FigureParts> {
+  const merged = (id: FigureId): FigureParts => {
+    const [own, fixture] = [real[id], FIXTURE_PARTS[id]];
+    return {
+      places: [...new Set([...own.places, ...fixture.places])],
+      cues: { ...fixture.cues, ...own.cues },
+      layers: [...new Set([...own.layers, ...fixture.layers])],
+      board: own.board || fixture.board,
+    };
+  };
+  return { dhcp: merged('dhcp'), subnet: merged('subnet'), firewall: merged('firewall'), 'net-map': merged('net-map') };
 }
 
 export type UnitInput = LessonInput['units'][number];

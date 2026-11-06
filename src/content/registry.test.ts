@@ -16,7 +16,12 @@ import { comingSoonTracks, networkingTrack, tracks } from './tracks';
 
 // No lesson files exist yet, so available entries are built from fixtures, which
 // need the stand-in figure parts to validate.
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./test-fixtures')).FIXTURE_PARTS }));
+// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+vi.mock('../art/scenes/parts', async (importOriginal) => ({
+  FIGURE_PARTS: (await import('./test-fixtures')).withFixtureParts(
+    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+  ),
+}));
 
 const lessonFor = (slug: string, title: string) => validateLesson(makeLesson({ slug, title })).lesson;
 

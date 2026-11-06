@@ -1,6 +1,7 @@
 import type { FigureId } from '../../art/scenes/types';
 import type { DriverModule } from '../driver';
 import { dhcpDriver } from './dhcp';
+import { subnetDriver } from './subnet';
 
 /**
  * A driver that moves nothing, and gives every event a second. Each figure
@@ -16,7 +17,7 @@ function stillDriver(): DriverModule {
 /** The driver for each scene figure. */
 export const DRIVERS: Record<FigureId, DriverModule> = {
   dhcp: dhcpDriver,
-  subnet: stillDriver(),
+  subnet: subnetDriver,
   firewall: stillDriver(),
   'net-map': stillDriver(),
 };

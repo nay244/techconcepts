@@ -1,6 +1,7 @@
-import type { Panel } from '../../content/schema';
+import type { Panel, SceneEvent } from '../../content/schema';
 import type { DerivedState } from '../../engine/timeline';
 import type { PanelMark } from '../../scenes/driver';
+import { BitsBoard } from './BitsBoard';
 import { TablePanel } from './TablePanel';
 
 export interface UnitPanelProps {
@@ -9,6 +10,8 @@ export interface UnitPanelProps {
   derived: DerivedState;
   /** The rows the driver has read so far while the current event plays, in reading order. */
   marks: readonly PanelMark[];
+  /** The event playing now, not yet applied, or null when none is. */
+  playing?: SceneEvent | null;
 }
 
 /**
@@ -27,10 +30,20 @@ function lastTableEvent(derived: DerivedState, tableId: string): string {
 }
 
 /**
- * What sits below the scene: a device's table. Tasks 11 and 16 add the bits
- * board and the rule list, which reads `marks`.
+ * What sits below the scene: a device's table, or Subnetting's bits board.
+ * Task 16 adds the rule list, which reads `marks`.
+ *
+ * The bits board shows the latest board a note has set, and while a note
+ * plays, that note's board: the bits change as the figure starts the note, as
+ * in the mockup, not once it has played. It is remounted for each step, so a
+ * step's board starts out settled and only the changes within the step come in.
  */
-export function UnitPanel({ panel, derived }: UnitPanelProps) {
+export function UnitPanel({ panel, derived, playing = null }: UnitPanelProps) {
+  if (panel?.type === 'bits') {
+    const { slot } = derived;
+    const board = playing?.type === 'note' && playing.board !== undefined ? playing.board : derived.board;
+    return <BitsBoard key={`${slot.unit}:${slot.kind}:${slot.step}`} board={board} />;
+  }
   if (panel?.type !== 'table') return null;
   const state = Object.hasOwn(derived.tables, panel.table.id) ? derived.tables[panel.table.id]! : null;
   if (state === null) return null;

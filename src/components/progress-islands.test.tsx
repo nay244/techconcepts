@@ -13,7 +13,12 @@ import { TrackLessonList } from './TrackLessonList';
 
 // No lesson files exist yet, so DHCP and Firewalls are built from fixtures, which
 // need the stand-in figure parts to validate.
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
+vi.mock('../art/scenes/parts', async (importOriginal) => ({
+  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
+    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+  ),
+}));
 
 const entries = buildEntries(networkingTrack, {
   dhcp: validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP', certTags: ['network-plus', 'ccna'] })).lesson,

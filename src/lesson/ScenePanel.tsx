@@ -150,7 +150,7 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
         </div>
         {view === 'sequence' ? <SequenceView parties={unit.scene.parties} rows={derived.log} current={current} /> : null}
       </div>
-      <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} />
+      <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} playing={pending} />
     </section>
   );
 }
