@@ -125,7 +125,9 @@ test('msg fails loudly for what the map or the table cannot show', () => {
   expect(() => msg(mockup({ tag: 'X', rows: [{ key: '1', cells: ['1', 'Arrived'] }] }))).toThrow(/2 cells.*3 columns/);
   // Two rows the mockup tells apart must differ in the table's key column, or an update could not find its row.
   msg(mockup({ rows: [{ key: 'y1', cells: ['1', '1–1460', 'Arrived'] }] }));
-  expect(() => msg(mockup({ rows: [{ key: 's1', cells: ['1', '1–1460', 'Arrived'] }] }))).toThrow(/"s1".*piece "1".*"y1"/);
+  expect(() => msg(mockup({ rows: [{ key: 's1', cells: ['1', '1–1460', 'Arrived'] }] }))).toThrow(
+    'duplicate key in column "Piece": row "s1" has "1", and so does row "y1".',
+  );
   // Known and done style the status the same message sets.
   expect(() => msg(mockup({ known: true }))).toThrow(/known.*st/);
   expect(() => msg(mockup({ done: true }))).toThrow(/done.*st/);

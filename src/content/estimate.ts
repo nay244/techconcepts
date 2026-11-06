@@ -13,9 +13,13 @@ export const MAX_MINUTES = 15;
 /** A one-unit lesson longer than this builds, but warns. */
 export const WARN_MINUTES = 12;
 
-/** Words are whitespace-separated tokens; `**` marks a key term and is not a word. */
+/**
+ * Words are whitespace-separated tokens. `**` marks a key term and is not a
+ * word: it counts as a space, as FIGS/minutes.mjs (the spec's method) counts a
+ * tag, so the punctuation after a key term ("**client**,") is a word of its own.
+ */
 export function countWords(text: string): number {
-  const trimmed = text.replaceAll('**', '').trim();
+  const trimmed = text.replaceAll('**', ' ').trim();
   return trimmed === '' ? 0 : trimmed.split(/\s+/).length;
 }
 

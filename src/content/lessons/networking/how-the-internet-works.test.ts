@@ -88,14 +88,13 @@ test('each protocol validates, has 5–6 steps and 2 questions, and takes at mos
     expect(u.practice, u.id).toHaveLength(2);
     expect(minutesOf(u), u.id).toBeLessThanOrEqual(MAX_MINUTES);
   }
-  // The mockup's words, all of them: steps, words read and minutes. FIGS/minutes.mjs counts 737, 680, 636 and 685 words:
-  // it turns each <b> tag into a space, so the punctuation after a bold term ("**client**,") counts as a word of its own.
-  // The site counts the same words as below. Each protocol takes 7 minutes, and the four together 27.
+  // The mockup's words, all of them, counted as FIGS/minutes.mjs counts them: steps, words read and minutes.
+  // Each protocol takes 7 minutes, and the four together 27.
   expect(internet.units.map((u) => [u.id, u.steps.length, countUnitWords(u), minutesOf(u)])).toEqual([
-    ['http', 5, 723, 7],
-    ['tcp', 6, 670, 7],
-    ['dns', 5, 627, 7],
-    ['smtp', 6, 675, 7],
+    ['http', 5, 737, 7],
+    ['tcp', 6, 680, 7],
+    ['dns', 5, 636, 7],
+    ['smtp', 6, 685, 7],
   ]);
   expect(estimateMinutes(internet)).toBe(27);
 });
@@ -329,6 +328,58 @@ test('show draws every position of the lesson, at every event of its step, witho
   // Every position (4 × (steps + 3)) and every event of every step once more.
   const events = internet.units.reduce((sum, u) => sum + u.steps.reduce((n, s) => n + s.events.length, 0), 0);
   expect(shown).toBe(slotsFor(internet).length + events);
+});
+
+/** The view at position `p` once `n` of its events have played (all of them when `n` is left out). */
+function viewAt(p: number, n = stepEvents(internet, p).length) {
+  return sceneViewOf(internet.units[slotsFor(internet)[p]!.unit]!, deriveState(internet, p, n));
+}
+
+/** What show leaves on the map: the layers shown, the trays and padlock lit, the lines, and the laptop's words. */
+function mapState(root: SVGSVGElement) {
+  return {
+    // Each layer is drawn in a group per slot of the figure (under the cables, the bodies, the callouts).
+    layers: [...new Set([...root.querySelectorAll<SVGElement>('[data-layer]')].filter((g) => g.getAttribute('display') !== 'none').map((g) => g.dataset.layer))],
+    lit: [...root.querySelectorAll<SVGElement>('.nm-hold.on')].map((el) => el.id),
+    conns: [...root.querySelector('#nm-conns')!.children].map((line) => [line.getAttribute('class'), line.getAttribute('points')]),
+    status: [root.querySelector('#nm-lapState')!.textContent, root.querySelector('#nm-lapState')!.getAttribute('class')],
+    addr: root.querySelector('#nm-lapAddr')!.textContent,
+    url: root.querySelector('#nm-url')!.textContent,
+  };
+}
+
+test('show draws every position backwards too, and a jump from the last position to the first leaves nothing behind', () => {
+  const { root, driver } = mountMap();
+  const positions = slotsFor(internet).length;
+  // Backwards on the same driver: from the last position's last event to the first position.
+  for (let p = positions - 1; p >= 0; p--) {
+    for (let n = stepEvents(internet, p).length; n >= 0; n--) {
+      expect(() => driver.show(viewAt(p, n)), `position ${p}, event ${n}`).not.toThrow();
+    }
+  }
+
+  // The first position, as a driver that has shown nothing else draws it.
+  const fresh = mountMap();
+  fresh.driver.show(viewAt(0, 0));
+  const first = mapState(fresh.root);
+  expect(first).toMatchObject({ layers: ['http:web'], lit: [], conns: [], status: ['Wants example.net', 'nm-state'] });
+
+  // SMTP's Practice, the last position, shows its own layers, its lit tray and its lines' end state.
+  driver.show(viewAt(positions - 1));
+  const last = mapState(root);
+  expect(last.layers).toEqual(['smtp:out', 'smtp:in']);
+  expect(last).not.toEqual(first);
+  // Straight back to the first position: the same map as the fresh driver's, down to the markup.
+  driver.show(viewAt(0, 0));
+  expect(mapState(root)).toEqual(first);
+  expect(root.outerHTML).toBe(fresh.root.outerHTML);
+
+  // And from the end of every other position, too.
+  for (let p = 1; p < positions; p++) {
+    driver.show(viewAt(p));
+    driver.show(viewAt(0, 0));
+    expect(mapState(root), `from position ${p}`).toEqual(first);
+  }
 });
 
 test('HTTP’s laptop says what it is doing from the first step, until a message says more', () => {

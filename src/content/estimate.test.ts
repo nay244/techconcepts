@@ -58,6 +58,9 @@ test('countWords ignores ** markers', () => expect(countWords('a **Discover** b.
 
 test('a ** marker on its own is not a word', () => expect(countWords('a ** b **')).toBe(2));
 
+// FIGS/minutes.mjs, the spec's method, turns each tag into a space, so the punctuation after a bold term is a word.
+test('a ** marker counts as a space, as FIGS/minutes.mjs counts a tag', () => expect(countWords('**client**,')).toBe(2));
+
 test('countUnitWords counts exactly the read fields', () => {
   const unit = parse(makeLesson()).units[0]!;
   const fifty = w(50);

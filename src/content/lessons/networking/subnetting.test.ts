@@ -33,9 +33,8 @@ test('Subnetting validates and takes 10 minutes', () => {
   expect(events).toHaveLength(17);
   expect(unit.practice).toHaveLength(3);
   expect(estimateMinutes(subnetting)).toBe(10);
-  // The mockup's words, all of them. FIGS/minutes.mjs counts 1178: it turns each <b> tag into a space, so the
-  // punctuation after 9 bold terms ("**subnet mask**:") counts as a word of its own. The site counts the same words as 1169.
-  expect(countUnitWords(unit)).toBe(1169);
+  // The mockup's words, all of them, counted as FIGS/minutes.mjs counts them.
+  expect(countUnitWords(unit)).toBe(1178);
 });
 
 test('the lesson is lesson 8, Subnetting, on the office figure with the bits board', () => {

@@ -4,7 +4,7 @@ import { deriveState, positionOf, stepEvents } from '../../../engine/timeline';
 import { formatBytes } from '../../../lib/format';
 import { lessonNumbers, misnamedLessons } from '../../../test/lesson-references';
 import { validateLesson } from '../../define';
-import { estimateMinutes } from '../../estimate';
+import { countUnitWords, estimateMinutes } from '../../estimate';
 import type { MessageEvent } from '../../schema';
 import dhcp from './dhcp';
 
@@ -23,6 +23,8 @@ test('DHCP validates, has 5 steps, 3 questions and takes 8 minutes', () => {
   expect(unit.steps).toHaveLength(5);
   expect(unit.practice).toHaveLength(3);
   expect(estimateMinutes(dhcp)).toBe(8);
+  // The words a learner reads, counted as FIGS/minutes.mjs counts them.
+  expect(countUnitWords(unit)).toBe(816);
 });
 
 test('step titles are the technical terms, in order', () => {

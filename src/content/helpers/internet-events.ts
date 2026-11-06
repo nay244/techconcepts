@@ -80,7 +80,8 @@ export function messagesFor(table: TableDef | null): (m: MockupMessage) => Scene
     const key = row[keyColumn]!;
     const owner = rowOf.get(key);
     if (owner !== undefined && owner !== r.key) {
-      throw new Error(`Row "${r.key}" has ${keyColumn} "${key}", which row "${owner}" has: the rows need different ${keyColumn}s.`);
+      const label = columns.find((c) => c.key === keyColumn)?.label ?? keyColumn;
+      throw new Error(`duplicate key in column "${label}": row "${r.key}" has "${key}", and so does row "${owner}".`);
     }
     const before = keyOf.get(r.key);
     if (before !== undefined) rowOf.delete(before);
