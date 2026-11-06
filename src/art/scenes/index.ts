@@ -1,7 +1,10 @@
+import { drawDhcp } from './dhcp';
 import type { DrawnFigure, FigureId } from './types';
 
 /** How each scene figure is drawn. Each lesson's task adds its own (Tasks 10–16). */
-const DRAW: Partial<Record<FigureId, () => DrawnFigure>> = {};
+const DRAW: Partial<Record<FigureId, () => DrawnFigure>> = {
+  dhcp: drawDhcp,
+};
 
 /**
  * Draws a scene figure at build time: its SVG markup and the data its driver

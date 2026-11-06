@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { sha256, withoutGrain } from '../../test/figure-hash';
 import { COVER_IDS, cover, coverStill } from './covers.ts';
 import { HERO_WEB, heroWebSvg } from './hero-web.ts';
 import { internetThumb } from './internet-thumb.ts';
@@ -37,15 +38,8 @@ test('two still copies of the same cover share no ids', () => {
 //   spot:*        spots.mjs
 //   hero-web*     hero-web.mjs heroSvg() and heroData()
 //   internet-thumb the internet art embedded in track-v2.html (track2.mjs internetArt() over hero.mjs)
-// normalise() drops film grain (R2); the drawing is otherwise identical.
-const normalise = (svg: string): string =>
-  svg
-    .replace(/<filter id="lm-grain"[\s\S]*?<\/filter>/g, '')
-    .replace(/ filter="url\(#lm-grain\)"/g, '')
-    .replace(/<g class="lm-grain">/g, '<g>');
-const digest = async (s: string): Promise<string> =>
-  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, '0')).join('');
-const sha = (s: string): Promise<string> => digest(normalise(s));
+// withoutGrain() drops film grain (R2); the drawing is otherwise identical.
+const sha = (s: string): Promise<string> => sha256(withoutGrain(s));
 
 const EXPECTED: Record<string, string> = {
   'cover:networking': '8be680954b9566dc0a465d828a79c3595dcc33329452055b2f642265f84aac9a',
@@ -71,7 +65,7 @@ test('the figures match the mockups', async () => {
   for (const kind of SPOTS) actual[`spot:${kind}`] = await sha(spot(kind));
   actual['hero-web'] = await sha(heroWebSvg());
   const { DRAW, T, PATH, ZERO, TAG_DY } = HERO_WEB;
-  actual['hero-web-data'] = await digest(JSON.stringify({ DRAW, T, PATH, ZERO, TAG_DY }));
+  actual['hero-web-data'] = await sha256(JSON.stringify({ DRAW, T, PATH, ZERO, TAG_DY }));
   actual['internet-thumb'] = await sha(internetThumb());
   expect(actual).toEqual(EXPECTED);
 });
