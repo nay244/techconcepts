@@ -1,39 +1,48 @@
 ---
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
-import { getEntries, getLesson, type AvailableSummary } from '../../content/registry';
+import { drawFigure } from '../../art/scenes';
+import { getEntries, getLesson, neighbors, type AvailableSummary } from '../../content/registry';
 import { tracks } from '../../content/tracks';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import '../../components/site.css';
+import LessonConsole from '../../lesson/LessonConsole';
 
 /** One page for every lesson that has been written, in every track. */
 export const getStaticPaths = (() =>
-  tracks.flatMap((track) =>
-    getEntries(track.id)
+  tracks.flatMap((track) => {
+    const entries = getEntries(track.id);
+    return entries
       .filter((entry): entry is AvailableSummary => entry.available)
       .map((entry) => {
         const lesson = getLesson(track.id, entry.slug);
         // An available entry is built from its lesson, so this cannot happen.
         if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
-        return { params: { track: track.id, lesson: entry.slug }, props: { track, lesson } };
-      }),
-  )) satisfies GetStaticPaths;
+        return {
+          params: { track: track.id, lesson: entry.slug },
+          props: { track, entry, entries, lesson, next: neighbors(entries, entry.slug).next },
+        };
+      });
+  })) satisfies GetStaticPaths;
 
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-// A plain page until the Watch, Learn, Practice console arrives.
-const { track, lesson } = Astro.props;
+const { track, entry, entries, lesson, next } = Astro.props;
+// Drawn here, at build time: the island gets the SVG as static markup and its driver's data as a prop.
+const { svg, data } = drawFigure(lesson.figure);
+// The console has its own top bar and <main id="main">, so the layout adds no header, main or footer.
 ---
 
-<BaseLayout title={lesson.title} description={lesson.summary}>
-  <div class="wrap lesson-placeholder">
-    <h1>{lesson.title}</h1>
-    <p>{lesson.subtitle}</p>
-    <p><a href={`/${track.id}`}>Back to {track.title}</a></p>
-  </div>
+<BaseLayout title={lesson.title} description={lesson.summary} chrome={false}>
+  <LessonConsole
+    client:load
+    trackId={track.id}
+    trackTitle={track.title}
+    lesson={lesson}
+    entry={entry}
+    total={entries.length}
+    next={next}
+    entries={entries}
+    figureData={data}
+  >
+    <Fragment slot="figure" set:html={svg} />
+  </LessonConsole>
 </BaseLayout>
-
-<style is:global>
-  .lesson-placeholder {
-    padding-block: var(--space-8);
-  }
-</style>

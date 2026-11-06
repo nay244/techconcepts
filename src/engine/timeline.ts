@@ -108,6 +108,8 @@ export interface LogRow {
   /** The places a message travels between; null for a note. */
   from: string | null;
   to: string | null;
+  /** The words on a message's tag, which the Sequence view's arrow carries; null for a note. */
+  tag: string | null;
   /** The event's `log` row as written, by column key. The console adds `#`; the `plain` column reads `plain`. */
   cells: Row;
   plain: string;
@@ -169,7 +171,7 @@ function unitTables(u: Unit): TableDef[] {
 function logRow(e: Exclude<SceneEvent, { type: 'table' }>, n: number): LogRow {
   const cells = { ...e.log };
   if (e.type === 'note') {
-    return { n, eventId: e.id, type: 'note', kind: null, outcome: null, from: null, to: null, cells, plain: e.plain };
+    return { n, eventId: e.id, type: 'note', kind: null, outcome: null, from: null, to: null, tag: null, cells, plain: e.plain };
   }
   return {
     n,
@@ -179,6 +181,7 @@ function logRow(e: Exclude<SceneEvent, { type: 'table' }>, n: number): LogRow {
     outcome: e.outcome ?? 'delivered',
     from: e.from,
     to: e.to,
+    tag: e.tag,
     cells,
     plain: e.plain,
   };

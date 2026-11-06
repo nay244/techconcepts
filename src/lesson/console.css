@@ -313,9 +313,10 @@
   border-inline-end: 0;
 }
 
-/* A segmented switch: the theme's Light and Dark, and the outline's filters. */
+/* A segmented switch: the theme's Light and Dark, the outline's filters, and the scene's views. */
 .topbar__seg,
-.outline__filters {
+.outline__filters,
+.stage__views {
   display: inline-flex;
   gap: 2px;
   padding: 2px;
@@ -323,7 +324,8 @@
   border-radius: 3px;
 }
 .topbar__seg button,
-.outline__filters button {
+.outline__filters button,
+.stage__views button {
   padding: 5px 10px;
   border: 0;
   border-radius: 2px;
@@ -333,7 +335,8 @@
   cursor: pointer;
 }
 .topbar__seg button[aria-pressed='true'],
-.outline__filters button[aria-pressed='true'] {
+.outline__filters button[aria-pressed='true'],
+.stage__views button[aria-pressed='true'] {
   background: var(--tile);
   color: var(--ink-strong);
   box-shadow: inset 0 0 0 1px var(--line-strong);
@@ -610,16 +613,38 @@ a.outline__lesson:hover {
   flex-direction: column;
   overflow: hidden;
 }
+/* The Network / Sequence switch on the left, the scene's title on the right. */
+.stage__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  min-height: 50px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.stage__title {
+  overflow: hidden;
+  margin-inline-start: auto;
+  text-overflow: ellipsis;
+}
 .console__scene {
   position: relative;
   flex: 1;
   min-height: 0;
   background: var(--fig-bg);
 }
+.stage__figure {
+  position: absolute;
+  inset: 0;
+}
+.stage__figure[hidden] {
+  display: none;
+}
 /* Big screens: the figure stops growing at about 1.4 times, so its labels stay near the page's own text size. */
 /* Astro hands a named slot to the island inside an <astro-slot> (display: contents). */
-.console__scene > svg,
-.console__scene > astro-slot > svg {
+.stage__figure > svg,
+.stage__figure > astro-slot > svg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -627,6 +652,150 @@ a.outline__lesson:hover {
   max-width: 940px;
   max-height: 440px;
   margin: auto;
+}
+/* Its outline would be clipped by the stage's edge. */
+.tpanel:focus-visible {
+  outline-offset: -2px;
+}
+
+/* ---------------------------------------------------------------- sequence view
+   The same rows as the log, as arrows between the parties (renderSeq in
+   firewalls-v1.html). The names stay in their own header while the rows scroll
+   under them; both reserve the same scrollbar gutter, so they stay lined up.
+   Blocked and lost messages are drawn in --blocked and say so in words. */
+
+.seq {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 10px 16px 0;
+}
+.seq__head,
+.seq__body {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+.seq__head {
+  flex: none;
+  overflow: hidden;
+}
+.seq__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.seq svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.seq__name {
+  fill: var(--ink-strong);
+  font: 700 11.5px/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.seq__addr {
+  fill: var(--muted);
+  font: 500 12px/1 var(--mono);
+}
+.seq__life {
+  stroke: var(--line-strong);
+  stroke-width: 1px;
+  stroke-dasharray: 3 4;
+}
+.seq__n {
+  fill: var(--muted);
+  font: 600 11px/1 var(--mono);
+}
+.seq__row {
+  --c: var(--ink);
+}
+.seq__row[data-kind='request'] {
+  --c: var(--request);
+}
+.seq__row[data-kind='response'] {
+  --c: var(--response);
+}
+.seq__row[data-kind='control'] {
+  --c: var(--control);
+}
+.seq__row[data-kind='broadcast'] {
+  --c: var(--broadcast);
+}
+.seq__row[data-kind='encrypted'] {
+  --c: var(--encrypted);
+}
+.seq__row[data-outcome='blocked'],
+.seq__row[data-outcome='dropped'] {
+  --c: var(--blocked);
+}
+.seq__line {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 2px;
+  transform-box: fill-box;
+  transform-origin: 0 50%;
+}
+.seq__row[data-dir='left'] .seq__line {
+  transform-origin: 100% 50%;
+}
+.seq__row[data-outcome='dropped'] .seq__line {
+  stroke-dasharray: 5 4;
+}
+.seq__arrow {
+  fill: var(--c);
+}
+.seq__stop circle {
+  fill: var(--blocked);
+}
+.seq__stop path {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+.seq__tag {
+  fill: var(--ink);
+  font: 600 12px/1 var(--mono);
+}
+.seq__decision {
+  fill: var(--allowed);
+  font: 600 11.5px/1 var(--mono);
+}
+.seq__row[data-outcome='blocked'] .seq__decision,
+.seq__row[data-outcome='dropped'] .seq__decision {
+  fill: var(--blocked);
+}
+.seq__note {
+  fill: var(--tile);
+  stroke: var(--line-strong);
+}
+.seq__note-text {
+  fill: var(--ink-strong);
+  font: 500 12px/1 var(--sans);
+}
+/* The row that has just played draws in once: its line grows from the sender, then the rest fades in. */
+@media (prefers-reduced-motion: no-preference) {
+  .seq__row[data-current] > :not(.seq__n) {
+    animation: seq-in 300ms var(--ease-out) 450ms both;
+  }
+  .seq__row[data-current] > .seq__line {
+    animation: seq-draw 600ms var(--ease-out) both;
+  }
+}
+@keyframes seq-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes seq-draw {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 /* ---------------------------------------------------------------- explanation */

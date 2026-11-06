@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { usePlayback, type DurationOf } from '../engine/playback';
+import { usePlayback } from '../engine/playback';
 import { deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
+import { DRIVERS } from '../scenes/drivers';
 import { Explanation } from './Explanation';
 import { LogPanel } from './LogPanel';
 import { Outline } from './Outline';
 import { PlaybackControls } from './PlaybackControls';
 import type { Picks } from './Practice';
+import { ScenePanel } from './ScenePanel';
 import { TopBar } from './TopBar';
 import { useLessonShortcuts } from './useLessonShortcuts';
 import { useReducedMotion } from './useReducedMotion';
@@ -29,12 +31,9 @@ export interface LessonConsoleProps {
   entries: LessonSummary[];
   /** The scene's figure, drawn at build time (the page's named slot). */
   figure?: ReactNode;
-  /** What the figure's driver needs at runtime. Unused until the scene host arrives (Task 9). */
+  /** What the figure's driver needs at runtime (`DrawnFigure.data`). */
   figureData?: unknown;
 }
-
-/** Every event takes a second until the scene's driver says how long it really takes (Task 9). */
-const durationOf: DurationOf = () => 1000;
 
 /** What the log says while it is empty, unless the step says otherwise. */
 const IDLE = 'Nothing has happened yet. Press Play to start.';
@@ -65,8 +64,9 @@ function FinishedMarker() {
  * the learner has opened (the outline ticks them) and the Practice picks, per
  * unit, so a visit elsewhere does not clear them.
  */
-export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, entries, figure }: LessonConsoleProps) {
-  const [state, dispatch] = usePlayback(lesson, durationOf);
+export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, entries, figure, figureData }: LessonConsoleProps) {
+  // Each event waits as long as the figure's driver takes to play it.
+  const [state, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
   const { position, eventIndex } = state;
   const derived = useMemo(() => deriveState(lesson, position, eventIndex), [lesson, position, eventIndex]);
   const { slot } = derived;
@@ -181,10 +181,14 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         progress={progress.data}
       />
       <main id="main" className="console__main">
-        {/* The scene host (Task 9) replaces this box's contents. */}
-        <div className="console__panel console__stage">
-          <div className="console__scene">{figure ?? null}</div>
-        </div>
+        <ScenePanel
+          unit={unit}
+          figure={figure ?? null}
+          figureData={figureData}
+          derived={derived}
+          playback={state}
+          reducedMotion={reducedMotion}
+        />
         <Explanation
           lesson={lesson}
           position={position}

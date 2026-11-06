@@ -324,6 +324,7 @@ test('message and note events add log rows numbered from 1; table events add non
     outcome: 'delivered',
     from: 'laptop',
     to: 'router',
+    tag: 'Hello',
     cells: { source: '192.168.1.10', destination: '192.168.1.1', size: '34 B' },
     plain: 'The laptop says hello to the router.',
   });
@@ -336,6 +337,7 @@ test('message and note events add log rows numbered from 1; table events add non
     outcome: null,
     from: null,
     to: null,
+    tag: null,
     cells: { source: '192.168.1.1' },
     plain: 'The router already knows the laptop.',
   });

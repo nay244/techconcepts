@@ -1,0 +1,91 @@
+/* A device's table under the scene, as the lease table in lesson-v3.html: a
+   small title with who keeps it, then a table in the console's data style.
+   The row an event is about is marked in --selected: a bar down its left edge,
+   a tint behind the cells, and a pulse that fades once. Those are marks, which
+   only need 3:1 against the panel; the text stays in an ink token, and the
+   strongest tint (the pulse's first frame) is the one the contrast test checks.
+   Colour is not the only signal: the row also carries data-highlight and a
+   visually hidden "(new)", "(changed)" or "(matched)". The pulse only runs when
+   the learner has not asked for less motion. */
+
+.tpanel {
+  --tint: color-mix(in srgb, var(--selected) 16%, transparent);
+  --tint-peak: color-mix(in srgb, var(--selected) 40%, transparent);
+  flex: none;
+  max-height: 45%;
+  overflow: auto;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.tpanel__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tpanel caption {
+  margin-bottom: 4px;
+  text-align: start;
+}
+.tpanel__title {
+  color: var(--muted);
+  font: 700 11.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.tpanel__by {
+  margin-inline-start: 6px;
+  color: var(--muted);
+  font: 400 12.5px/1 var(--sans);
+}
+
+.tpanel th {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font: 700 11px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+  text-align: start;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tpanel td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font: 500 13px/1.35 var(--mono);
+  text-align: start;
+  vertical-align: top;
+}
+.tpanel td.tpanel__empty {
+  padding: 10px;
+  border-bottom: 0;
+  color: var(--muted);
+  font: 400 13.5px/1.4 var(--sans);
+  text-align: center;
+}
+
+.tpanel tr[data-highlight] > td {
+  background-color: var(--tint);
+  color: var(--ink-strong);
+}
+.tpanel tr[data-highlight] > td:first-child {
+  background-image: linear-gradient(var(--selected), var(--selected));
+  background-repeat: no-repeat;
+  background-size: 3px 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tpanel tr[data-highlight] > td {
+    animation: tpanel-pulse 900ms var(--ease-out) 1;
+  }
+}
+
+@keyframes tpanel-pulse {
+  from {
+    background-color: var(--tint-peak);
+  }
+  to {
+    background-color: var(--tint);
+  }
+}

@@ -30,6 +30,7 @@ function message(n: number, kind: LogRow['kind'], outcome: LogRow['outcome'], pl
     outcome,
     from: 'visitor',
     to: 'server',
+    tag: 'Visit',
     cells: { source: '203.0.113.5', destination: '10.0.0.10', decision: outcome === 'blocked' ? 'Denied · rule 3' : 'Allowed' },
     plain,
   };
@@ -38,7 +39,7 @@ function message(n: number, kind: LogRow['kind'], outcome: LogRow['outcome'], pl
 const ROWS: LogRow[] = [
   message(1, 'request', 'delivered', 'A visitor opens the web page.'),
   message(2, 'request', 'blocked', 'Someone tries to log in from outside.'),
-  { n: 3, eventId: 'e3', type: 'note', kind: null, outcome: null, from: null, to: null, cells: { source: 'Admin' }, plain: 'The admin adds a rule.' },
+  { n: 3, eventId: 'e3', type: 'note', kind: null, outcome: null, from: null, to: null, tag: null, cells: { source: 'Admin' }, plain: 'The admin adds a rule.' },
   message(4, 'response', 'dropped', 'The reply is lost on the way.'),
 ];
 

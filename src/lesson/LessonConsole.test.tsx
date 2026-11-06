@@ -17,6 +17,13 @@ import LessonConsole from './LessonConsole';
 // No lesson files exist yet, so the lessons are fixtures, which validate against the stand-in figure parts.
 vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
 
+// Every figure's driver gives every event the same second, so these tests time the console, not a figure.
+const still = vi.hoisted(() => ({
+  create: () => ({ show() {}, play: async () => {}, destroy() {} }),
+  duration: vi.fn((): number => 1000),
+}));
+vi.mock('../scenes/drivers', () => ({ DRIVERS: { dhcp: still, subnet: still, firewall: still, 'net-map': still } }));
+
 /**
  * The fixture unit, filed as DHCP (lesson 10) and Firewalls (lesson 17) in the
  * networking track. Positions: 0 Overview, 1–5 the steps (Neighbor Hello,
@@ -38,10 +45,10 @@ const THREE: Lesson = validateLesson(
 ).lesson;
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE });
 const KEY = 'networking/dhcp';
-/** Every wait in these tests: `durationOf` is a fixed 1000 ms until Task 9. */
+/** Every event's wait in these tests: the stand-in drivers' duration. */
 const EVENT_MS = 1000;
 
-function consoleFor(lesson: Lesson = DHCP) {
+function consoleFor(lesson: Lesson = DHCP, figureData?: unknown) {
   const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === lesson.slug)!;
   return (
     <LessonConsole
@@ -52,6 +59,7 @@ function consoleFor(lesson: Lesson = DHCP) {
       total={entries.length}
       next={neighbors(entries, lesson.slug).next}
       entries={entries}
+      figureData={figureData}
     />
   );
 }
@@ -93,6 +101,7 @@ function logRows(): HTMLElement[] {
 let user: ReturnType<typeof userEvent.setup>;
 
 beforeEach(() => {
+  still.duration.mockReset().mockReturnValue(EVENT_MS);
   vi.useFakeTimers();
   // Testing Library drains pending timers after each user-event call only when it sees Jest's fake
   // timers; with Vitest's it would wait forever. This tells it how to advance Vitest's clock.
@@ -214,6 +223,18 @@ test('Play runs the steps: the log fills step by step and the button says Pause,
   expect(heading()).toHaveTextContent('Retransmission');
   expect(logRows()).toHaveLength(5);
   expect(playButton()).toHaveAccessibleName('Replay');
+});
+
+test('each event waits as long as the figure’s driver takes to play it', async () => {
+  const data = { routes: {} };
+  still.duration.mockReturnValue(2500);
+  render(consoleFor(DHCP, data));
+  await user.click(playButton());
+  expect(still.duration).toHaveBeenLastCalledWith(DHCP.units[0]!.steps[0]!.events[0], data);
+  await wait(2400);
+  expect(logRows()).toHaveLength(0);
+  await wait(100);
+  expect(logRows()).toHaveLength(1);
 });
 
 test('on Learn the button says Watch again', async () => {
