@@ -21,7 +21,8 @@ const RING = 2 * Math.PI * 7.5;
  * The hero's eyebrow and buttons, around the page's own words (`children`). A first visit, and the server render,
  * get "Free visual lessons, no sign-up", "Start learning" and "How a lesson works". Once this browser has saved
  * progress in a ready lesson, a visitor whose last lesson is ready gets where they are in it, "You’re on <place> in
- * <lesson>", and "Continue <lesson>" first (launch spec §10.1). `known` is the page's `knownFrom(entries)`.
+ * <lesson>" ("You finished <lesson>" once it is finished), and "Continue <lesson>" first (launch spec §10.1).
+ * `known` is the page's `knownFrom(entries)`.
  */
 export function HeroCta({
   lessons,
@@ -60,11 +61,14 @@ export function HeroCta({
     );
   }
 
-  // Where they are: the step to resume at; a finished lesson, where it ended; a lesson only opened, its Overview.
+  // Where they are: the step to resume at, or the Overview of a lesson only opened. A finished lesson says so, with
+  // the ring full, and is continued from its Overview.
   const record = Object.hasOwn(data.lessons, last.key) ? data.lessons[last.key] : undefined;
-  const position = record === undefined ? 0 : (resumePosition(data, last.key) ?? record.furthestPosition);
+  const finished = record?.status === 'finished';
+  const position = finished || record === undefined ? 0 : (resumePosition(data, last.key) ?? 0);
   // `last` is in `known`: useProgress reads any other last lesson as none.
-  const share = position / known[last.key]!;
+  const share = finished ? 1 : position / known[last.key]!;
+  const where = finished ? `You finished ${last.title}` : `You’re on ${last.places[position]} in ${last.title}`;
   return (
     <>
       <span className="eyebrow back">
@@ -82,7 +86,7 @@ export function HeroCta({
             strokeLinecap="round"
           />
         </svg>
-        {`You’re on ${last.places[position]} in ${last.title}`}
+        {where}
       </span>
       {children}
       <div className="actions">

@@ -99,10 +99,11 @@ test('every place reads as one sentence: "You’re on <place> in <lesson>"', () 
   }
 });
 
-test('a finished last lesson is where it ended, with the ring full', () => {
+test('a finished last lesson says so, with the ring full, and is continued from its Overview', () => {
   save({ [DHCP.key]: { status: 'finished', furthestPosition: 7 } }, DHCP.key);
   const { container } = render(cta());
-  expectReturning('You’re on the Practice part in DHCP', 'DHCP', '/networking/dhcp?step=7');
+  expectReturning('You finished DHCP', 'DHCP', '/networking/dhcp');
+  expect(screen.queryByText(/You’re on/)).toBeNull();
   const ring = container.querySelectorAll('.eyebrow circle')[1]!;
   expect(ring.getAttribute('stroke-dasharray')).toBe('47.1 100');
 });
