@@ -7,8 +7,8 @@
 // Sizes are gzip at its default level, one file at a time; 1 KB is 1,000 bytes.
 //
 // Run `npm run build`, then `npm run budgets` (or `node scripts/check-budgets.mjs [dist]`). It prints a table and
-// exits with 1 when any page is over a budget.
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+// exits with 1 when any page is over a budget, or when the build has no lesson page for the JS budget to check.
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -61,19 +61,23 @@ function htmlFiles(root, dir = root) {
 }
 
 /**
- * Every page in `dist`, sorted by route. A lesson page is one whose route is `/<track>/<lesson>/` under a track
- * page, `/<track>/`, that is itself built: the site's lessons live there, and nothing else does.
+ * Every page in `dist`, sorted by route. A lesson page is one at `/<track>/<lesson>` under a track page,
+ * `/<track>`, that is itself built: the site's lessons live there, and nothing else does. Either may be built as a
+ * folder (`networking/dhcp/index.html`, `/networking/dhcp/`) or as a file (`networking/dhcp.html`,
+ * `/networking/dhcp`), as Astro's `build.format` says.
  * @param {string} dist
  * @returns {Page[]}
  */
 export function listPages(dist) {
   const files = htmlFiles(dist);
-  const routes = new Set(files.map(routeOf));
+  /** A route's folders and name: `/networking/dhcp/` and `/networking/dhcp` are both `networking`, `dhcp`. */
+  const partsOf = (/** @type {string} */ route) => route.split('/').filter(Boolean);
+  const tracks = new Set(files.map((file) => partsOf(routeOf(file))).flatMap((parts) => (parts.length === 1 ? [parts[0]] : [])));
   return files
     .map((file) => {
       const route = routeOf(file);
-      const parts = route.split('/').filter(Boolean);
-      const lesson = route.endsWith('/') && parts.length === 2 && routes.has(`/${parts[0]}/`);
+      const parts = partsOf(route);
+      const lesson = parts.length === 2 && tracks.has(parts[0]);
       return { file, route, lesson };
     })
     .sort((a, b) => (a.route < b.route ? -1 : a.route > b.route ? 1 : 0));
@@ -249,25 +253,48 @@ export function formatReport(rows, breaches, budgets = BUDGETS) {
 }
 
 /**
- * Measures every page in `dist` against `budgets`.
+ * Measures every page in `dist` against `budgets`. Throws when no page is a lesson page: the JS budget would
+ * check nothing, and a change to how pages are built or found should not pass for one that fits.
  * @param {string} dist
  * @param {Budgets} budgets
  */
 export function checkBudgets(dist, budgets = BUDGETS) {
-  const rows = listPages(dist).map((page) => measurePage(dist, page));
+  const pages = listPages(dist);
+  if (!pages.some((page) => page.lesson)) {
+    throw new Error(
+      `No lesson page in ${dist}, so the lesson JS budget would check nothing. A lesson page is /<track>/<lesson>, under a built /<track> page.`,
+    );
+  }
+  const rows = pages.map((page) => measurePage(dist, page));
   const breaches = findBreaches(rows, budgets);
   return { rows, breaches, text: formatReport(rows, breaches, budgets) };
 }
 
-// The command: a thin wrapper that prints the report and sets the exit code.
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+/**
+ * Whether node was asked to run this file, rather than a test importing it. Node runs a module from its real path,
+ * so the path it was given is followed through any symlink (a linked bin, a symlinked checkout) before comparing.
+ */
+function isCommand() {
+  const given = process.argv[1];
+  if (given === undefined || !existsSync(given)) return false;
+  return import.meta.url === pathToFileURL(realpathSync(given)).href;
+}
+
+// The command: a thin wrapper that prints the report, or why there is none, and sets the exit code.
+if (isCommand()) {
   const dist = resolve(process.argv[2] ?? fileURLToPath(new URL('../dist', import.meta.url)));
   if (!existsSync(join(dist, 'index.html'))) {
     console.error(`No built site at ${dist}. Run npm run build first.`);
     process.exitCode = 1;
   } else {
-    const { breaches, text } = checkBudgets(dist);
-    (breaches.length === 0 ? console.log : console.error)(text);
-    process.exitCode = breaches.length === 0 ? 0 : 1;
+    try {
+      const { breaches, text } = checkBudgets(dist);
+      (breaches.length === 0 ? console.log : console.error)(text);
+      process.exitCode = breaches.length === 0 ? 0 : 1;
+    } catch (error) {
+      // A page that loads a file the build did not write, an import the build did not bundle, or no lesson page.
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
   }
 }

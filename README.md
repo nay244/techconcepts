@@ -42,7 +42,7 @@ Node 22 or newer is required (`.node-version` pins 24).
 - `src/scenes/` what moves a figure in the browser: `driver.ts` (the driver contract), `drivers/` (one driver per figure), `motion.ts` (tweens and waits) and the Sequence view
 - `src/lesson/` the lesson console: the top bar, the outline, the explanation (Overview, each Watch step, Learn, Go deeper), Practice, the playback controls, the scene and its log, `panels/` (a table, a firewall's rules, the bits board) and the keyboard shortcuts
 - `src/progress/` saved progress (`techconcepts:v1`), the hook that reads it, and where a returning visitor picks up
-- `src/lib/` plain TypeScript helpers: safe storage, the theme, contrast maths (for the colour tests), analytics, formatting, and the data Home, the track page and About show
+- `src/lib/` small helpers, mostly plain TypeScript: safe storage, the theme, contrast maths (for the colour tests), analytics, formatting, page addresses, the data Home, the track page and About show, and `wrapAtDots.tsx`, a React helper that lets an address wrap only at its dots
 - `src/scripts/` small page scripts that run without React: Home's hero and header, the track cover's packets, About's "On this page" list
 - `src/styles/` colour tokens (`tokens.ts`) and base CSS (`global.css`)
 - `src/test/` helpers the tests share
@@ -94,7 +94,7 @@ Prose fields mark key terms with `**term**`. Nothing else is markup: the console
 
 A step's events play in order. There are three kinds:
 
-- **`message`**: something travels `from` one place on the figure `to` another, wearing a `tag`. Its `kind` (request, response, control, broadcast or encrypted) picks its mark and colour in the log and the Sequence view, and a broadcast spreads across the figure. It may be `dropped` on the way (with `dropAt`) or `blocked` by a firewall. A firewall's `check` says how many rules it read and which one matched, and `known` marks a reply let through because the firewall remembers the connection. A message may also point at one of the scene's `packets` (DHCP keeps its packets).
+- **`message`**: something travels `from` one place on the figure `to` another, wearing a `tag`. Its `kind` (request, response, control, broadcast or encrypted) picks its mark and colour in the log and the Sequence view, and a broadcast spreads across the figure. Its `outcome` may be `'dropped'` (lost on the way, at `dropAt`) or `'blocked'` by a firewall; it defaults to `'delivered'`. A firewall's `check` says how many rules it read and which one matched, and `known` marks a reply let through because the firewall remembers the connection. A message may also point at one of the scene's `packets` (DHCP keeps its packets).
 - **`note`**: something happens in one place, such as a calculation. On the Subnetting figure a note can carry a `board` for the bits board.
 - **`table`**: a row of the unit's panel table is added, updated, removed, matched, replaced or cleared.
 
@@ -143,7 +143,7 @@ Each lesson has a test file beside it. Look at `firewalls.test.ts` for a full on
 - the lesson validates, with its number of steps and questions, and its minutes (`estimateMinutes`)
 - the step titles are the technical terms, in order
 - every message goes between places the figure has. Where the figure draws its tags ahead of time (DHCP, Firewalls), each message rides one of them.
-- the **show sweep** passes. The test draws the figure into the page and makes its driver. It calls `show` for every position of the lesson, after each of that position's events in turn, first forwards and then backwards, and expects nothing to throw. Then it jumps from every position straight back to the first one, and checks that the figure's markup is exactly what a fresh driver draws there. This catches a driver that leaves something behind, or one that cannot draw a moment that playing forward would reach. `firewalls.test.ts` and `how-the-internet-works.test.ts` have one to copy.
+- the **show sweep** passes: `expect(showSweep(lesson)).toBe(<positions + events>)`, from `src/test/show-sweep.ts`, in a test file that starts with `// @vitest-environment jsdom`. The helper draws the lesson's figure into the page and makes one driver for it. It calls `show` for every position of the lesson, Overview, each step, Learn and Practice, unit after unit, after each of the step's events in turn, first forwards and then back again to the first Overview. Then it jumps from the first Overview to the end of every position and straight back. At each position's first and last moment, every time, it checks that the figure's markup is exactly what a fresh driver shown only that moment draws (style attributes and the order of attributes are written one way first, since jsdom writes them differently once a driver has set them; classes, text, transforms and hidden flags are compared as they are). The moments in the middle of a step are shown but not compared: a fresh network map and its driver take about 30 ms under jsdom, and comparing all 429 of lesson 1's moments would triple the time the whole suite takes. A difference fails with the position, the direction and the markup around it. This catches a driver that leaves something behind, or one that cannot draw a moment that playing forward would reach. It returns the number of moments it showed, which the test checks.
 
 ### Minutes
 

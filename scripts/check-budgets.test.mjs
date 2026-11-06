@@ -1,6 +1,6 @@
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,15 @@ import { afterEach, expect, test } from 'vitest';
 import { BUDGETS, checkBudgets, findBreaches, gzipSize, listPages, measurePage, scriptsIn, staticImports } from './check-budgets.mjs';
 
 const SCRIPT = fileURLToPath(new URL('./check-budgets.mjs', import.meta.url));
+
+/**
+ * Runs `node` with `args`: the command, then its own arguments.
+ * @param {string[]} args
+ */
+function run(args) {
+  const { status, stdout, stderr } = spawnSync(process.execPath, args, { encoding: 'utf8' });
+  return { status, stdout, stderr };
+}
 
 /** @type {string[]} */
 let dirs = [];
@@ -71,6 +80,29 @@ test('every page is listed with its route, in route order, and only a page under
     { file: 'networking/dhcp/index.html', route: '/networking/dhcp/', lesson: true },
     { file: 'networking/subnetting/index.html', route: '/networking/subnetting/', lesson: true },
     { file: 'notes/2026/index.html', route: '/notes/2026/', lesson: false },
+  ]);
+});
+
+test('a lesson page is found whether the build writes each page as a folder or as a file', () => {
+  const dist = fixture({
+    'index.html': page('home'),
+    'networking.html': page('a track page as a file'),
+    'networking/dhcp.html': page('a lesson page as a file'),
+    'cloud/index.html': page('a track page as a folder'),
+    'cloud/vpc.html': page('a lesson page as a file'),
+    'security.html': page('a track page as a file'),
+    'security/tls/index.html': page('a lesson page as a folder'),
+    'notes/2026.html': page('a page one folder down, with no page above it'),
+  });
+  expect(listPages(dist).map((p) => [p.route, p.lesson])).toEqual([
+    ['/', false],
+    ['/cloud/', false],
+    ['/cloud/vpc', true],
+    ['/networking', false],
+    ['/networking/dhcp', true],
+    ['/notes/2026', false],
+    ['/security', false],
+    ['/security/tls/', true],
   ]);
 });
 
@@ -221,9 +253,20 @@ test('checkBudgets measures every page of a dist and finds no breach in one that
   expect(text).toContain('Every page is within budget (3 pages).');
 });
 
+test('a build with no lesson page stops the check, since the JS budget would check nothing', () => {
+  const dist = fixture({ 'index.html': page('home'), 'networking/index.html': page('track'), 'notes/2026/index.html': page('no track page above it') });
+  const message = `No lesson page in ${dist}, so the lesson JS budget would check nothing. A lesson page is /<track>/<lesson>, under a built /<track> page.`;
+  expect(() => checkBudgets(dist)).toThrow(message);
+  expect(run([SCRIPT, dist])).toEqual({ status: 1, stdout: '', stderr: `${message}\n` });
+});
+
+/** A small site that fits: Home, a track page and one lesson. */
+const SMALL = { 'index.html': page('small'), 'networking/index.html': page('track'), 'networking/dhcp/index.html': page('lesson') };
+
 test('the command exits 0 on a dist that fits, and 1 with each breach named on one that does not', () => {
-  const fits = fixture({ 'index.html': page('small') });
-  expect(execFileSync(process.execPath, [SCRIPT, fits], { encoding: 'utf8' })).toContain('Every page is within budget (1 page).');
+  const fits = run([SCRIPT, fixture(SMALL)]);
+  expect(fits.status).toBe(0);
+  expect(fits.stdout).toContain('Every page is within budget (3 pages).');
 
   // 300,000 random bytes as base64 gzip to about 300 KB: past 250 KB of HTML, and past a lesson page's 200 KB of JS.
   const over = fixture({
@@ -234,18 +277,25 @@ test('the command exits 0 on a dist that fits, and 1 with each breach named on o
     '_astro/Big.js': `export default "${noise(300_000)}";`,
     '_astro/client.js': 'export {};',
   });
-  let status = 0;
-  let output = '';
-  try {
-    execFileSync(process.execPath, [SCRIPT, over], { encoding: 'utf8', stdio: 'pipe' });
-  } catch (error) {
-    status = error.status;
-    output = error.stdout + error.stderr;
-  }
+  const { status, stdout, stderr } = run([SCRIPT, over]);
   expect(status).toBe(1);
+  const output = stdout + stderr;
   expect(output).toMatch(/\/networking\/big\/: HTML is [\d.]+ KB gzipped; the budget is 250 KB\./);
   expect(output).toMatch(/\/networking\/heavy\/: JS is [\d.]+ KB gzipped; the budget is 200 KB\./);
   // Home loads the same script, but Home is not a lesson page.
   expect(output).not.toMatch(/^\s*\/: JS/m);
   expect(output).toContain('Over budget (2):');
+});
+
+test('the command exits 1, saying so, when there is no built site', () => {
+  const missing = join(fixture({}), 'dist');
+  expect(run([SCRIPT, missing])).toEqual({ status: 1, stdout: '', stderr: `No built site at ${missing}. Run npm run build first.\n` });
+});
+
+test('the command runs when node is given a symlink to it, as a linked bin or a symlinked checkout does', () => {
+  const link = join(fixture({}), 'check-budgets.mjs');
+  symlinkSync(SCRIPT, link);
+  const { status, stdout } = run([link, fixture(SMALL)]);
+  expect(status).toBe(0);
+  expect(stdout).toContain('Every page is within budget (3 pages).');
 });
