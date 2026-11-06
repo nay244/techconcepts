@@ -121,3 +121,27 @@ test('with no rows it still draws the lifelines', () => {
   expect(container.querySelector('[data-row]')).toBeNull();
   expect(container.querySelectorAll('[data-party]')).toHaveLength(4);
 });
+
+test('a long note is cut to fit its box, and the whole sentence stays with it', () => {
+  const plain =
+    'The firewall reads its rules from the top, stops at the first one that matches, and that rule alone decides what happens to the visit.';
+  expect(plain.length).toBeGreaterThan(130);
+  const note: LogRow = { n: 1, eventId: 'n9', type: 'note', kind: null, outcome: null, from: null, to: null, tag: null, cells: {}, plain };
+  const { container } = render(<SequenceView parties={PARTIES} rows={[note]} current={null} />);
+  const box = row(container, 'n9').querySelector('rect')!;
+  const [x, width] = [Number(box.getAttribute('x')), Number(box.getAttribute('width'))];
+  // The box stays inside the 720-wide view, clear of the row numbers.
+  expect(x).toBeGreaterThan(28);
+  expect(x + width).toBeLessThanOrEqual(720);
+  // Its words fit inside it: at about 6.6 units a character, with room at each end.
+  const words = row(container, 'n9').querySelector('text.seq__note-text')!.textContent!;
+  expect(words.endsWith('…')).toBe(true);
+  expect(words.length * 6.6 + 24).toBeLessThanOrEqual(width);
+  expect(plain.startsWith(words.slice(0, -1).trimEnd())).toBe(true);
+  // The whole sentence is the box's title (the log under the scene has it too).
+  expect(row(container, 'n9').querySelector('title')).toHaveTextContent(plain);
+  // A short note is not cut.
+  expect(row(render(<SequenceView parties={PARTIES} rows={ROWS} current={null} />).container, 'n1')).toHaveTextContent(
+    'Block everything else moves to the top.',
+  );
+});

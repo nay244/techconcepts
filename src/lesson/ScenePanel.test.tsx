@@ -48,13 +48,13 @@ const at = (position: number, eventIndex: number, mode: PlaybackState['mode'], s
 });
 
 /** The panel as the console renders it: the derived state is worked out again only when the position or event changes. */
-function Harness({ s, lesson, reducedMotion }: { s: PlaybackState; lesson: Lesson; reducedMotion: boolean }) {
+function Harness({ s, lesson, reducedMotion, data }: { s: PlaybackState; lesson: Lesson; reducedMotion: boolean; data: unknown }) {
   const derived = useMemo(() => deriveState(lesson, s.position, s.eventIndex), [lesson, s.position, s.eventIndex]);
   return (
     <ScenePanel
       unit={lesson.units[derived.unit]!}
       figure={FIGURE}
-      figureData={DATA}
+      figureData={data}
       derived={derived}
       playback={s}
       reducedMotion={reducedMotion}
@@ -62,18 +62,23 @@ function Harness({ s, lesson, reducedMotion }: { s: PlaybackState; lesson: Lesso
   );
 }
 
-const panel = (s: PlaybackState, lesson: Lesson = LESSON, reducedMotion = false) => (
-  <Harness s={s} lesson={lesson} reducedMotion={reducedMotion} />
+const panel = (s: PlaybackState, lesson: Lesson = LESSON, reducedMotion = false, data: unknown = DATA) => (
+  <Harness s={s} lesson={lesson} reducedMotion={reducedMotion} data={data} />
 );
 
 const shown = (): SceneView[] => fake.driver.show.mock.calls.map(([view]) => view as SceneView);
 const plays = () => fake.driver.play.mock.calls as [unknown, SceneView, PlayOptions][];
 const lastPlay = () => plays().at(-1)!;
 const marksOnPanel = (): readonly PanelMark[] => vi.mocked(UnitPanel).mock.lastCall![0].marks;
+/** The marks on the panel in each render since `from` renders had been made. */
+const marksSince = (from: number): (readonly PanelMark[])[] => vi.mocked(UnitPanel).mock.calls.slice(from).map(([props]) => props.marks);
 const sequence = () => screen.queryByRole('img', { name: 'The messages so far, as a sequence' });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Each test starts from the plain stand-in: no implementation a test set is left behind.
+  for (const fn of [fake.driver.show, fake.driver.play, fake.driver.destroy, fake.module.create]) fn.mockReset();
+  fake.module.create.mockImplementation(() => fake.driver);
   fake.driver.play.mockResolvedValue(undefined);
 });
 
@@ -146,10 +151,12 @@ test('marks a driver reports reach the panel while the event plays and clear whe
     { row: 1, state: 'deny' },
   ]);
 
-  // The tick applies the event: its marks go, and a late mark from its play is ignored.
+  // The tick applies the event: its marks go in the very render that applies it, and a late mark from its play is ignored.
+  const renders = vi.mocked(UnitPanel).mock.calls.length;
   rerender(panel(at(3, 1, 'step')));
   expect(signal.aborted).toBe(true);
-  expect(marksOnPanel()).toEqual([]);
+  expect(marksSince(renders).length).toBeGreaterThan(0);
+  for (const marks of marksSince(renders)) expect(marks).toEqual([]);
   act(() => onMark!({ row: 2, state: 'check' }));
   expect(marksOnPanel()).toEqual([]);
 });
@@ -220,10 +227,68 @@ test('without a figure there is no driver, and the rest still shows', () => {
   expect(screen.getByRole('region', { name: 'Neighbor table' })).toBeInTheDocument();
 });
 
-test('leaving the page aborts the play and lets the driver go', () => {
+test('leaving the page aborts the play, then lets the driver go', () => {
+  const order: string[] = [];
+  fake.driver.play.mockImplementation(async (_event: unknown, _view: SceneView, o: PlayOptions) => {
+    o.signal.addEventListener('abort', () => order.push('abort'));
+  });
+  fake.driver.destroy.mockImplementation(() => order.push('destroy'));
   const { unmount } = render(panel(at(1, 0, 'step')));
   const playing = lastPlay()[2];
   unmount();
   expect(playing.signal.aborted).toBe(true);
-  expect(fake.driver.destroy).toHaveBeenCalledTimes(1);
+  expect(order).toEqual(['abort', 'destroy']);
+});
+
+test('new figure data aborts the play, remakes the driver and shows the scene as it stands, without a replay', () => {
+  const order: string[] = [];
+  fake.driver.show.mockImplementation(() => order.push('show'));
+  fake.driver.play.mockImplementation(async (_event: unknown, _view: SceneView, o: PlayOptions) => {
+    order.push('play');
+    o.signal.addEventListener('abort', () => order.push('abort'));
+  });
+  fake.driver.destroy.mockImplementation(() => order.push('destroy'));
+  fake.module.create.mockImplementation(() => {
+    order.push('create');
+    return fake.driver;
+  });
+
+  const s = at(2, 1, 'step');
+  const { rerender, container } = render(panel(s));
+  expect(order).toEqual(['create', 'show', 'play']);
+  const playing = lastPlay()[2];
+  order.length = 0;
+
+  const next = { routes: { b: [[1, 1]] } };
+  rerender(panel(s, LESSON, false, next));
+  expect(playing.signal.aborted).toBe(true);
+  expect(order).toEqual(['abort', 'destroy', 'create', 'show']);
+  expect(fake.module.create).toHaveBeenLastCalledWith(container.querySelector('svg[data-figure="dhcp"]'), next);
+  // The state as it stands: m2 applied, t-add still to come.
+  expect(shown().at(-1)).toBe(shown().at(-2));
+  expect(shown().at(-1)!.active).toBe(LESSON.units[0]!.steps[1]!.events[0]);
+  expect(plays()).toHaveLength(1);
+});
+
+test('a driver whose play fails is caught, and the panel carries on', async () => {
+  const error = new Error('The figure has no such part.');
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  fake.driver.play.mockRejectedValueOnce(error);
+  const { rerender } = render(panel(at(1, 0, 'step')));
+  await act(async () => {});
+  expect(logged).toHaveBeenCalledWith(expect.any(String), error);
+
+  // A play that throws before it returns a promise is caught too.
+  fake.driver.play.mockImplementationOnce(() => {
+    throw error;
+  });
+  rerender(panel(at(2, 0, 'step')));
+  await act(async () => {});
+  expect(logged).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole('region', { name: 'Neighbor table' })).toBeInTheDocument();
+
+  // The next event plays as usual.
+  rerender(panel(at(2, 1, 'step')));
+  expect(plays()).toHaveLength(3);
+  logged.mockRestore();
 });

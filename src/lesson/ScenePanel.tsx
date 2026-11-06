@@ -1,9 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { FigureId } from '../art/scenes/types';
-import type { Unit } from '../content/schema';
+import type { SceneEvent, Unit } from '../content/schema';
 import type { PlaybackState } from '../engine/playback';
 import type { DerivedState } from '../engine/timeline';
-import { sceneViewOf, type PanelMark, type SceneDriver } from '../scenes/driver';
+import { sceneViewOf, type PanelMark, type PlayOptions, type SceneDriver, type SceneView } from '../scenes/driver';
 import { DRIVERS } from '../scenes/drivers';
 import { SequenceView } from '../scenes/SequenceView';
 import { UnitPanel } from './panels/UnitPanel';
@@ -21,7 +21,28 @@ export interface ScenePanelProps {
 
 type View = 'network' | 'sequence';
 
-const NO_MARKS: readonly PanelMark[] = [];
+/** The marks a play has reported, with the playback state that play was started for. */
+interface Marks {
+  for: PlaybackState | null;
+  list: readonly PanelMark[];
+}
+
+const NO_MARK_LIST: readonly PanelMark[] = [];
+const NO_MARKS: Marks = { for: null, list: NO_MARK_LIST };
+
+/** Says what went wrong in a driver, while the site is being built; the learner's page carries on either way. */
+function report(error: unknown): void {
+  if (import.meta.env.DEV) console.error('The scene driver could not play an event.', error);
+}
+
+/** Starts a play, catching a driver that fails, whether it throws or its promise rejects: the scene stays as `show` left it. */
+function playSafely(d: SceneDriver, event: SceneEvent, view: SceneView, o: PlayOptions): void {
+  try {
+    d.play(event, view, o).catch(report);
+  } catch (error) {
+    report(error);
+  }
+}
 
 /**
  * The scene: its title, the Network / Sequence switch when the unit has both
@@ -34,17 +55,23 @@ const NO_MARKS: readonly PanelMark[] = [];
  * first, because it also restarts that wait. The Sequence view leaves the
  * hidden figure alone; coming back to Network shows it settled as it now stands,
  * and the event in flight is not replayed.
+ *
+ * A play is always stopped before its driver goes: when the console leaves the
+ * page, and when new figure data remakes the driver (which then shows the
+ * scene as it stands, again without a replay).
  */
 export function ScenePanel({ unit, figure, figureData, derived, playback, reducedMotion }: ScenePanelProps) {
   const titleId = useId();
   const [chosen, setChosen] = useState<View>('network');
   const hasSequence = unit.scene.views.length > 1;
   const view: View = hasSequence ? chosen : 'network';
-  const [marks, setMarks] = useState<readonly PanelMark[]>(NO_MARKS);
+  const [marks, setMarks] = useState<Marks>(NO_MARKS);
 
   // The figure's driver, made once the figure is on the page and let go when it leaves.
   const figureBox = useRef<HTMLDivElement>(null);
   const driver = useRef<SceneDriver | null>(null);
+  // The running play's controller, so the driver's cleanup can stop it first: React runs this effect's cleanup before the play effect's.
+  const running = useRef<AbortController | null>(null);
   useEffect(() => {
     const svg = figureBox.current?.querySelector<SVGSVGElement>('svg[data-figure]');
     const id = svg?.getAttribute('data-figure');
@@ -52,6 +79,7 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
     const made = DRIVERS[id as FigureId].create(svg, figureData);
     driver.current = made;
     return () => {
+      running.current?.abort();
       driver.current = null;
       made.destroy();
     };
@@ -62,6 +90,7 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   const pending = playback.mode === 'step' || playback.mode === 'run' ? (derived.events[playback.eventIndex] ?? null) : null;
 
   // The playback state the latest play was started for. A play starts once per state, so a return to Network does not replay.
+  // `figureData` is here because new data remakes the driver (the effect above), and the new driver must show the scene too.
   const playedFor = useRef<PlaybackState | null>(null);
   useEffect(() => {
     const isNew = playedFor.current !== playback;
@@ -73,20 +102,26 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
 
     const controller = new AbortController();
     const { signal } = controller;
-    void d.play(pending, scene, {
+    running.current = controller;
+    playSafely(d, pending, scene, {
       speed: playback.speed,
       reducedMotion,
       signal,
       onMark: (mark) => {
-        if (!signal.aborted) setMarks((list) => [...list, mark]);
+        if (signal.aborted) return;
+        setMarks((m) => ({ for: playback, list: m.for === playback ? [...m.list, mark] : [mark] }));
       },
     });
     return () => {
       controller.abort();
-      // The event's marks go with its play: it has been applied, or the learner has moved on.
+      if (running.current === controller) running.current = null;
       setMarks(NO_MARKS);
     };
-  }, [view, scene, playback, pending, reducedMotion]);
+  }, [view, scene, playback, pending, reducedMotion, figureData]);
+
+  // The event's marks go with its play: they show only while that very play is on, so the render that applies the event
+  // (or moves the learner on) already has none, before the cleanup above has cleared them.
+  const shownMarks = view === 'network' && marks.for === playback ? marks.list : NO_MARK_LIST;
 
   // The row that has just played, if this step played it (as the log's fresh row).
   const latest = derived.log.at(-1);
@@ -115,7 +150,7 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
         </div>
         {view === 'sequence' ? <SequenceView parties={unit.scene.parties} rows={derived.log} current={current} /> : null}
       </div>
-      <UnitPanel panel={unit.scene.panel} derived={derived} marks={marks} />
+      <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} />
     </section>
   );
 }

@@ -48,6 +48,11 @@ export function sceneViewOf(unit: Unit, derived: DerivedState): SceneView {
  *   motion nothing travels or pulses, but the event's end state still shows.
  *   Once `signal` aborts, play must not touch the figure again: it resolves,
  *   and `show` follows. It never rejects on an abort.
+ *   After every `await`, play returns at once if `o.signal.aborted`, and
+ *   never touches the figure after that.
+ *   The one write an abort still makes is `animate`'s own `frame(1)` for the
+ *   tween it cuts short, which runs inside the abort itself, before `show`.
+ *   An `animate` started on a signal that is already aborted calls nothing.
  * - `destroy` lets go of the figure when the console leaves the page.
  */
 export interface SceneDriver {

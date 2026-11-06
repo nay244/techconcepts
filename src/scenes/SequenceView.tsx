@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { Party } from '../content/schema';
 import type { LogRow } from '../engine/timeline';
+import './sequence.css';
 
 /** Both drawings are 720 units wide, so the names above line up with the lifelines below. */
 const WIDTH = 720;
@@ -19,6 +20,12 @@ const OUTCOME_WORD = { blocked: 'Blocked', dropped: 'Dropped' } as const;
 
 /** About how wide a line of 12px text is, per character, for sizing a note's box. */
 const CHAR_WIDTH = 6.6;
+/** The widest a box of words can be: the whole width, less the number gutter and a margin at each side. */
+const MAX_BOX = WIDTH - GUTTER - 8;
+/** The room a box leaves around its words. */
+const BOX_PAD = 24;
+/** The most characters that fit on one line in the widest box. */
+const MAX_CHARS = Math.floor((MAX_BOX - BOX_PAD) / CHAR_WIDTH);
 
 export interface SequenceViewProps {
   parties: Party[];
@@ -33,17 +40,32 @@ function lifelineXs(parties: Party[]): Map<string, number> {
   return new Map(parties.map((p, i) => [p.place, GUTTER + span * (i + 0.5)]));
 }
 
-/** A box of words across the middle lifeline: a note, or a message between places that have no lifeline. */
+/** `text` as it is when it has at most `max` characters, or else cut at a word to fit, ending in "…". */
+function fit(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const room = text.slice(0, max - 1);
+  const space = room.lastIndexOf(' ');
+  return `${(space > max / 2 ? room.slice(0, space) : room).trimEnd()}…`;
+}
+
+/**
+ * A box of words across the middle lifeline: a note, or a message between
+ * places that have no lifeline. A row keeps its height, so words too long for
+ * one line are cut with "…"; the box's title holds them all, and the log
+ * under the scene has the whole sentence too.
+ */
 function noteBox(text: string, middle: number): ReactNode {
-  const width = Math.min(Math.max(text.length * CHAR_WIDTH + 24, 120), WIDTH - GUTTER - 8);
+  const words = fit(text, MAX_CHARS);
+  const width = Math.min(Math.max(words.length * CHAR_WIDTH + BOX_PAD, 120), MAX_BOX);
   const x = Math.min(Math.max(middle - width / 2, GUTTER + 4), WIDTH - 4 - width);
   return (
-    <>
+    <g>
+      {words === text ? null : <title>{text}</title>}
       <rect className="seq__note" x={x} y={-13} width={width} height={26} rx={3} />
       <text className="seq__note-text" x={x + width / 2} y={4} textAnchor="middle">
-        {text}
+        {words}
       </text>
-    </>
+    </g>
   );
 }
 

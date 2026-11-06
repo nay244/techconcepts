@@ -66,14 +66,67 @@ test('an aborted animate settles on frame(1)', async () => {
   expect(frame.mock.calls.length).toBe(calls);
 });
 
-test('an animate started on an aborted signal settles on frame(1) at once', async () => {
-  const frame = vi.fn();
+test('an animate started on an aborted signal calls nothing and resolves at once', async () => {
   const controller = new AbortController();
   controller.abort();
-  const p = animate(1000, frame, { reducedMotion: false, signal: controller.signal });
+  // The panel has already settled the figure with show, so a late frame(1) would paint over it.
+  for (const reducedMotion of [false, true]) {
+    const frame = vi.fn();
+    const p = animate(1000, frame, { reducedMotion, signal: controller.signal });
+    expect(frame).not.toHaveBeenCalled();
+    expect(waiting.size).toBe(0);
+    expect(await settled(p)).toBe(true);
+  }
+});
+
+test('animate with no time calls frame(1) once and resolves at once', async () => {
+  const frame = vi.fn();
+  const p = animate(0, frame, { reducedMotion: false, signal: new AbortController().signal });
   expect(frame.mock.calls).toEqual([[1]]);
   expect(waiting.size).toBe(0);
   expect(await settled(p)).toBe(true);
+});
+
+/** A play written as the driver contract asks: two tweens, then the part lands, returning at once after each await once aborted. */
+async function contractPlay(writes: string[], o: { reducedMotion: boolean; signal: AbortSignal }): Promise<void> {
+  await animate(100, (k) => writes.push(`a ${k}`), o);
+  if (o.signal.aborted) return;
+  await animate(100, (k) => writes.push(`b ${k}`), o);
+  if (o.signal.aborted) return;
+  writes.push('land');
+}
+
+test('a play that follows the contract writes nothing once it is aborted, mid-tween or between two awaits', async () => {
+  // Aborted mid-tween: the tween ends on frame(1) inside the abort itself, before show runs, and nothing follows.
+  const mid: string[] = [];
+  const first = new AbortController();
+  now = 0;
+  const p = contractPlay(mid, { reducedMotion: false, signal: first.signal });
+  frameAt(0);
+  frameAt(50);
+  first.abort();
+  expect(mid).toEqual(['a 0', 'a 0.5', 'a 1']);
+  await p;
+  frameAt(500);
+  expect(mid).toEqual(['a 0', 'a 0.5', 'a 1']);
+
+  // Aborted after the first tween has finished, before the play has gone on to the second.
+  const between: string[] = [];
+  const second = new AbortController();
+  now = 1000;
+  const q = contractPlay(between, { reducedMotion: false, signal: second.signal });
+  frameAt(1050);
+  frameAt(1100);
+  second.abort();
+  await q;
+  frameAt(2000);
+  expect(between).toEqual(['a 0.5', 'a 1']);
+  expect(waiting.size).toBe(0);
+
+  // Not aborted, it runs to the end.
+  const whole: string[] = [];
+  await contractPlay(whole, { reducedMotion: true, signal: new AbortController().signal });
+  expect(whole).toEqual(['a 1', 'b 1', 'land']);
 });
 
 test('animate runs from 0 to 1 over its time, frame by frame, then resolves', async () => {
@@ -115,4 +168,17 @@ test('along finds the point a share of the way along a path, by length', () => {
   expect(along(path, -1)).toEqual([0, 0]);
   expect(along([[4, 5]], 0.5)).toEqual([4, 5]);
   expect(() => along([], 0.5)).toThrow(RangeError);
+});
+
+test('along always returns a new point, never one of the path’s own', () => {
+  const path: [number, number][] = [
+    [0, 0],
+    [30, 0],
+  ];
+  const end = along(path, 1);
+  expect(end).toEqual([30, 0]);
+  expect(end).not.toBe(path[1]);
+  expect(along(path, 0)).not.toBe(path[0]);
+  const single: [number, number][] = [[4, 5]];
+  expect(along(single, 0.5)).not.toBe(single[0]);
 });

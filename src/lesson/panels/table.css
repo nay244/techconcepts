@@ -89,3 +89,9 @@
     background-color: var(--tint);
   }
 }
+
+/* Its focus outline sits inside the panel, which the stage's edge would clip.
+   [data-table] makes this beat the console's own focus offset, which loads after this file. */
+.tpanel[data-table]:focus-visible {
+  outline-offset: -2px;
+}

@@ -18,7 +18,8 @@ export function along(path: [number, number][], t: number): [number, number] {
     }
     left -= length;
   }
-  return path.at(-1)!;
+  const [x, y] = path.at(-1)!;
+  return [x, y];
 }
 
 /** Cubic ease in and out, as the mockups move their tags: slow at both ends. `t` is held between 0 and 1. */
@@ -29,13 +30,20 @@ export function easeInOut(t: number): number {
 
 /**
  * Calls `frame(k)` once an animation frame, with `k` running from 0 to 1 over
- * `ms`, and resolves after `frame(1)`. Under reduced motion it skips straight
- * to `frame(1)` and resolves at once. An abort, before or during, also ends on
- * `frame(1)` and resolves; nothing is called after that. It never rejects.
+ * `ms`, and resolves after `frame(1)`. It never rejects.
+ *
+ * - Under reduced motion, or with no time to take, it skips straight to
+ *   `frame(1)` and resolves at once.
+ * - An abort during the tween ends it on `frame(1)`, inside the abort itself,
+ *   and resolves; nothing is called after that. The abort comes before the
+ *   panel's `show`, so `show` has the last word.
+ * - Started on a signal that is already aborted, it calls nothing and resolves
+ *   at once: `show` has already settled the figure, and must not be painted over.
  */
 export function animate(ms: number, frame: (k: number) => void, o: { reducedMotion: boolean; signal: AbortSignal }): Promise<void> {
   const { reducedMotion, signal } = o;
-  if (reducedMotion || signal.aborted || !(ms > 0)) {
+  if (signal.aborted) return Promise.resolve();
+  if (reducedMotion || !(ms > 0)) {
     frame(1);
     return Promise.resolve();
   }
