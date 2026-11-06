@@ -100,4 +100,46 @@ describe('ResetProgress', () => {
     expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveFocus();
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
+
+  test('its row has About’s look: a small button, then the question in words, with Reset as the primary button', async () => {
+    save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    const { container } = render(<ResetProgress />);
+    expect(container.firstElementChild).toHaveClass('a-reset');
+    expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveClass('btn', 'btn--small');
+    expect(screen.getByRole('button', { name: 'Reset progress' })).not.toHaveClass('btn--primary');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
+    const group = screen.getByRole('group', { name: 'Reset all progress on this device?' });
+    // The words are seen once and heard once: the group's name says them, so the line itself is hidden from AT.
+    const question = within(group).getByText('Reset all progress on this device?');
+    expect(question).toHaveClass('q');
+    expect(question).toHaveAttribute('aria-hidden', 'true');
+    const [reset, cancel] = within(group).getAllByRole('button');
+    expect(reset).toHaveTextContent('Reset');
+    expect(reset).toHaveClass('btn', 'btn--small', 'btn--primary');
+    expect(cancel).toHaveTextContent('Cancel');
+    expect(cancel).toHaveClass('btn', 'btn--small');
+    expect(cancel).not.toHaveClass('btn--primary');
+  });
+
+  test('its live region is on the page from the start and stays while the question is open', async () => {
+    save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    render(<ResetProgress />);
+    const status = screen.getByRole('status');
+    await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
+    expect(screen.getByRole('status')).toBe(status);
+    await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toHaveTextContent('Progress cleared');
+  });
+});
+
+// Last in the file: once the shared storage has failed it keeps saying so for as long as its module lives.
+test('ResetProgress offers nothing while storage is blocked, and its live region stays empty', () => {
+  vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+    throw new DOMException('blocked', 'SecurityError');
+  });
+  render(<ResetProgress />);
+  expect(screen.queryByRole('button')).toBeNull();
+  expect(screen.getByRole('status')).toBeEmptyDOMElement();
 });

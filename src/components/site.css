@@ -117,6 +117,15 @@
 .segbar i.prog {
   background: var(--here);
 }
+/* The small heading over a list at the side of a page: the track's Parts, About's On this page. */
+.toc-h {
+  margin: 0 0 8px;
+  padding-inline-start: 10px;
+  color: var(--muted);
+  font: 700 12px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 
 /* ---- Filter chips: the one pressed is in the accent ---- */
 .chips {
@@ -153,30 +162,4 @@
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
-}
-
-/* ---- Reset progress ---- */
-.reset {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  min-height: 2.75rem;
-}
-.reset__confirm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-}
-.reset__confirm:focus {
-  outline: none;
-}
-.reset__confirm:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 4px;
-}
-.reset__question {
-  margin: 0;
-  font-weight: 500;
 }

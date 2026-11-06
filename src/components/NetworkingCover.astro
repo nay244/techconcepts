@@ -3,6 +3,7 @@
 // the top corners. src/scripts/router-cover.ts makes it a button that sends packets along the cable, and shows the
 // hint and the count in the bottom corners; without JavaScript it is only a figure, so those two stay hidden.
 import { cover, coverDescription, routerDrawing } from '../art/figures/covers';
+import './page-hero.css';
 
 interface Props {
   /** The top-left corner: which track this is, "Track 1". */
@@ -34,68 +35,12 @@ const path = JSON.stringify(routerDrawing().path);
 </script>
 
 <style is:global>
-  /* The corners' words on the figure's ground (--fig-bg), AA in both themes. */
-  :root,
-  [data-theme='light'] {
-    --corner: #5a6780;
-    --corner-strong: #0b1a33;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-      --corner: #7f93b2;
-      --corner-strong: #dbe6f5;
-    }
-  }
-  [data-theme='dark'] {
-    --corner: #7f93b2;
-    --corner-strong: #dbe6f5;
-  }
-  .cover {
-    margin: 0;
-  }
-  .cover .plate {
-    position: relative;
-    overflow: hidden;
-    padding: 44px 16px 40px;
-    border: 1px solid var(--fig-line);
-    border-radius: 16px;
-    background: var(--fig-bg);
-    box-shadow: var(--shadow-lg);
-  }
-  .cover .corner {
-    position: absolute;
-    z-index: 1;
-    color: var(--corner);
-    font: 500 11px/1 var(--mono);
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  .cover .c-fig {
-    top: 18px;
-    left: 18px;
-    color: var(--corner-strong);
-  }
-  .cover .c-title {
-    top: 18px;
-    right: 18px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
-  .cover .c-hint {
-    bottom: 16px;
-    left: 18px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-  }
+  /* The plate and its corners are page-hero.css's; these are the parts only this live cover has. */
   .cover .c-read {
     right: 18px;
     bottom: 16px;
     color: var(--corner-strong);
     font-variant-numeric: tabular-nums;
-  }
-  .cover .stage {
-    border-radius: 10px;
   }
   .cover .stage[role='button'] {
     cursor: pointer;

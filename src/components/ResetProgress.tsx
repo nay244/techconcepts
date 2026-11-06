@@ -9,9 +9,10 @@ const NO_LESSONS: Record<string, number> = {};
 type Focus = 'confirm' | 'button' | null;
 
 /**
- * "Reset progress", then an inline "Reset all progress on this device?" with
- * Reset and Cancel. Focus moves to the question, and back to the button
- * afterwards. Nothing shows while storage is blocked: there is no progress.
+ * About's reset row (about-v1; the About page styles `.a-reset`): "Reset progress", then an inline "Reset all
+ * progress on this device?" with Reset and Cancel. Focus moves to the question, and back to the button afterwards.
+ * The live region stays on the page throughout and says "Progress cleared" after a reset. Nothing is offered while
+ * storage is blocked: there is no progress.
  */
 export function ResetProgress() {
   const { ready, available, reset } = useProgress(NO_LESSONS);
@@ -29,7 +30,7 @@ export function ResetProgress() {
 
   const show = ready && available;
   return (
-    <div className="reset">
+    <div className="a-reset">
       {show && !confirming ? (
         <button
           ref={buttonRef}
@@ -45,8 +46,8 @@ export function ResetProgress() {
         </button>
       ) : null}
       {show && confirming ? (
-        <div ref={confirmRef} className="reset__confirm" role="group" aria-label="Reset all progress on this device?" tabIndex={-1}>
-          <p className="reset__question" aria-hidden="true">
+        <div ref={confirmRef} role="group" aria-label="Reset all progress on this device?" tabIndex={-1}>
+          <p className="q" aria-hidden="true">
             Reset all progress on this device?
           </p>
           <button
@@ -73,9 +74,7 @@ export function ResetProgress() {
           </button>
         </div>
       ) : null}
-      <span role="status" className={message === '' ? undefined : 'reset__message'}>
-        {message}
-      </span>
+      <span role="status">{message}</span>
     </div>
   );
 }

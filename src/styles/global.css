@@ -33,8 +33,6 @@
   --space-8: 4.5rem;
 
   --radius: 6px;
-  --gutter: clamp(1rem, 4vw, 2rem);
-  --page-width: 72rem;
   --measure: 68ch;
 }
 
@@ -156,11 +154,6 @@ table.data {
   max-width: 1180px;
   margin: 0 auto;
   padding: 0 24px;
-}
-
-.container {
-  width: min(100% - 2 * var(--gutter), var(--page-width));
-  margin-inline: auto;
 }
 
 /* Hidden until focused, then the first thing a keyboard user sees. */
