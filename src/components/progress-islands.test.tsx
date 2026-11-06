@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { validateLesson } from '../content/define';
 import { buildEntries, trackTotals } from '../content/registry';
 import type { AvailableSummary } from '../content/registry';
@@ -40,6 +40,7 @@ function save(records: Record<string, { status: 'in-progress' | 'finished'; furt
 }
 
 beforeEach(() => window.localStorage.clear());
+afterEach(() => vi.restoreAllMocks());
 
 // The track page's islands and About's ResetProgress share one progress store: a change made in one shows in the
 // others at once.
@@ -79,6 +80,20 @@ describe('the track page', () => {
 });
 
 describe('ResetProgress', () => {
+  // First in its block, so the run itself shows the rest do not depend on it. Once the shared storage has failed it
+  // keeps saying so for as long as its module lives, so this test renders a ResetProgress of its own, from fresh
+  // modules, and the afterEach restores localStorage for the tests that follow.
+  test('offers nothing while storage is blocked, and its live region stays empty', async () => {
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError');
+    });
+    vi.resetModules();
+    const { ResetProgress: Blocked } = await import('./ResetProgress');
+    render(<Blocked />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
   test('asks first, then clears techconcepts:v1 and announces it', async () => {
     save({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
     render(<ResetProgress />);
@@ -132,14 +147,4 @@ describe('ResetProgress', () => {
     expect(screen.getByRole('status')).toBe(status);
     expect(status).toHaveTextContent('Progress cleared');
   });
-});
-
-// Last in the file: once the shared storage has failed it keeps saying so for as long as its module lives.
-test('ResetProgress offers nothing while storage is blocked, and its live region stays empty', () => {
-  vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
-    throw new DOMException('blocked', 'SecurityError');
-  });
-  render(<ResetProgress />);
-  expect(screen.queryByRole('button')).toBeNull();
-  expect(screen.getByRole('status')).toBeEmptyDOMElement();
 });

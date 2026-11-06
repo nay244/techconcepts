@@ -18,8 +18,8 @@ beforeAll(async () => {
   html = await container.renderToString(About);
 });
 
-/** A jsdom window: its own Event, which its dispatchEvent needs, besides the usual window. */
-type PageWindow = Window & { Event: typeof Event };
+/** A jsdom window: its own Event, which its dispatchEvent needs, and MutationObserver, besides the usual window. */
+type PageWindow = Window & { Event: typeof Event; MutationObserver: typeof MutationObserver };
 
 interface Page {
   win: PageWindow;
@@ -123,7 +123,56 @@ test('at the bottom of the page the last link is marked, though its section neve
   expect(at(3200)).toEqual(['Your progress']);
 });
 
-test('following the page marks a link at once and on every scroll, and stopping leaves no listener behind', () => {
+test('with no sections there is nothing to mark, and following a list with no links does nothing', () => {
+  const p = page();
+  const { nav, links } = p;
+  lay(p, TOPS);
+  expect(() => markSectionInView(links, [])).not.toThrow();
+  expect(marked(links)).toEqual([]);
+
+  nav.querySelector('ol')!.replaceChildren();
+  const stop = followSections(nav);
+  expect(nav.querySelectorAll('[aria-current]')).toHaveLength(0);
+  stop();
+});
+
+test('a page short enough to fit the window marks its last link at once, as the mockup does', () => {
+  const p = page();
+  const { nav, links } = p;
+  // A 1080px window over a page no taller than it: the page cannot scroll, so its foot is already in view.
+  lay(p, [120, 300, 500, 700, 900], 1080, 1080);
+  const stop = followSections(nav);
+  expect(marked(links)).toEqual(['Your progress']);
+  stop();
+});
+
+test('a scroll that stays in the same section leaves the mark alone; moving on writes it once', () => {
+  const p = page();
+  const { win, nav, links } = p;
+  const scroll = lay(p, TOPS);
+  const stop = followSections(nav);
+  const observer = new win.MutationObserver(() => {});
+  observer.observe(nav, { subtree: true, attributeFilter: ['aria-current'], attributeOldValue: true });
+  const writes = (): [string, string | null][] => observer.takeRecords().map((r) => [(r.target as HTMLAnchorElement).hash, r.oldValue]);
+
+  scroll(10);
+  scroll(1400 - 141);
+  expect(writes()).toEqual([]);
+  // Into the second section: the mark comes off the first link and goes on the second, and nothing else is written.
+  scroll(1400 - 140);
+  expect(writes()).toEqual([
+    ['#what', 'location'],
+    ['#lessons', null],
+  ]);
+  scroll(1500);
+  expect(writes()).toEqual([]);
+  expect(marked(links)).toEqual(['How a lesson works']);
+
+  observer.disconnect();
+  stop();
+});
+
+test('following the page marks a link at once and on every scroll, and stopping leaves no listener or mark behind', () => {
   const p = page();
   const { win, nav, links } = p;
   const scroll = lay(p, TOPS);
@@ -143,9 +192,10 @@ test('following the page marks a link at once and on every scroll, and stopping 
   for (const [type, listener] of added.mock.calls) {
     expect(removed.mock.calls.some(([t, l]) => t === type && l === listener)).toBe(true);
   }
-  // Stopped, it no longer follows the page.
+  // Stopped, it takes its mark off and no longer follows the page.
+  expect(marked(links)).toEqual([]);
   scroll(0);
-  expect(marked(links)).toEqual(['Your progress']);
+  expect(marked(links)).toEqual([]);
 });
 
 test('a link to a section that is not on the page is named, and nothing is marked', () => {
