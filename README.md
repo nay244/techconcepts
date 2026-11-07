@@ -2,7 +2,7 @@
 
 Short visual lessons that teach how technology works, starting with networking. Each lesson runs Overview, Watch, Learn, Practice: you watch a small scene play, read what happened in plain words, then try a few questions. It is a fully static [Astro](https://astro.build) site with React islands for the interactive parts, served at `techconcepts.app` (HTTPS only).
 
-Node 22 or newer is required (`.node-version` pins 24).
+Node 22.18 or newer is required (`.node-version` pins 24).
 
 ## Commands
 

@@ -1,5 +1,6 @@
 // Renders public/og-default.png (1200x630): the TechConcepts wordmark and a short rule on the dark
 // background token, in Atkinson Hyperlegible Next 600. Regenerate with: node scripts/generate-og-image.mjs
+// It imports tokens.ts directly, so it relies on Node's type stripping (on by default from Node 22.18).
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
