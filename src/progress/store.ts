@@ -108,10 +108,14 @@ export function migrateV1(raw: string | null): ProgressData {
   const value = parseJson(raw);
   if (!isObject(value) || value.version !== 1 || !isObject(value.lessons)) return emptyProgress();
 
-  let lessons: Record<string, LessonProgress> = {};
+  // A Map, so a lesson named `__proto__` stays an ordinary entry; two tracks' records of one lesson merge in place.
+  const merged = new Map<string, LessonProgress>();
   for (const [key, record] of parseLessons(value.lessons)) {
-    lessons = mergeLessons(lessons, Object.fromEntries([[splitV1Key(key).slug, record]]));
+    const slug = splitV1Key(key).slug;
+    const have = merged.get(slug);
+    merged.set(slug, have === undefined ? record : mergeRecords(have, record));
   }
+  const lessons = Object.fromEntries(merged);
   if (typeof value.lastLesson !== 'string') return { version: 2, lessons, lastLesson: null, lastTrack: null };
   const { slug, track } = splitV1Key(value.lastLesson);
   return { version: 2, lessons, lastLesson: slug, lastTrack: track };
@@ -155,7 +159,7 @@ function lessonOf(d: ProgressData, key: string): LessonProgress | undefined {
 
 /**
  * Fits saved data to the lessons that exist now. `known` maps each lesson slug to its last step (`maxPosition`).
- * A position outside `[1, max]` is clamped for a known lesson. A record for a lesson no track lists yet is kept
+ * A position outside `[1, max]` is clamped for a known lesson. A record for a lesson not in `known` is kept
  * exactly as it is, because unlisted is not gone. An unknown `lastLesson` becomes null, with its `lastTrack`.
  */
 export function sanitizeProgress(d: ProgressData, known: Record<string, number>): ProgressData {
@@ -244,7 +248,10 @@ export function loadProgress(s: SafeStorage): ProgressData {
   return combineProgress(parseProgress(s.get(PROGRESS_KEY)), migrateV1(s.get(LEGACY_PROGRESS_KEY)));
 }
 
-/** True only when the v2 record was actually stored. v1 is removed only after that, so a failed write loses nothing. */
+/**
+ * True only when the v2 record was actually stored. v1 is removed only after that, so a failed write loses nothing.
+ * `d` must come from `loadProgress` (merged with v1), because a successful save removes v1.
+ */
 export function saveProgress(s: SafeStorage, d: ProgressData): boolean {
   if (!s.set(PROGRESS_KEY, JSON.stringify(d))) return false;
   s.remove(LEGACY_PROGRESS_KEY);

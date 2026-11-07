@@ -37,8 +37,8 @@ type Snapshot = Pick<UseProgress, 'ready' | 'available' | 'data'>;
 /**
  * Browser-only learning progress. `known` maps each lesson key (its slug) to its last step
  * (`{ [entry.key]: entry.maxPosition }`). Saved positions of those lessons are
- * clamped to it. Saved records for other lessons (not listed by any
- * track yet) stay in `data` as they are and are never dropped: `update` leaves them in storage exactly as they
+ * clamped to it. Saved records for other lessons (not in `known`)
+ * stay in `data` as they are and are never dropped: `update` leaves them in storage exactly as they
  * were, and `reset` is the only thing that clears them. `known` is read when progress
  * loads or changes, so passing a fresh object each render is fine.
  *

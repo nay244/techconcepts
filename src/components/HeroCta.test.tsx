@@ -128,6 +128,12 @@ test('with no saved lesson progress it is a first visit, whatever lesson was las
   expectFirstVisit();
 });
 
+test('a record for an unlisted lesson alone is a first visit, even when the last lesson is a ready one', () => {
+  seedProgress({ 'osi-model': { status: 'in-progress', furthestPosition: 2 } }, DHCP.key);
+  render(cta());
+  expectFirstVisit();
+});
+
 test('progress with no last lesson on the site is a first visit', () => {
   seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'osi-model');
   render(cta());

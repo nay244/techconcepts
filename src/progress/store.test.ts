@@ -576,11 +576,25 @@ describe('progress storage across v1 and v2', () => {
   });
 
   test('clearing removes both keys, even when one removal throws', () => {
-    const s = memoryStorage();
-    s.set(PROGRESS_KEY, '{}');
-    s.set(LEGACY_PROGRESS_KEY, V1);
-    clearProgress(s);
-    expect([...s.values.keys()]).toEqual([]);
+    const values = new Map<string, string>([
+      [PROGRESS_KEY, '{}'],
+      [LEGACY_PROGRESS_KEY, V1],
+    ]);
+    let first = true;
+    const raw = {
+      getItem: (k: string) => values.get(k) ?? null,
+      setItem: (k: string, v: string) => void values.set(k, v),
+      removeItem: (k: string) => {
+        if (first) {
+          first = false;
+          throw new Error('remove denied');
+        }
+        values.delete(k);
+      },
+    } as unknown as Storage;
+    expect(() => clearProgress(createSafeStorage(() => raw))).not.toThrow();
+    // The first removal (v2) threw; the old record is still removed.
+    expect(values.has(LEGACY_PROGRESS_KEY)).toBe(false);
   });
 
   test('malformed v1 reads as nothing and leaves v2 alone', () => {

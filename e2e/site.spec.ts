@@ -206,10 +206,12 @@ test.describe('desktop', () => {
     await expect(lessonCard(page, 'dhcp')).toContainText('Finished');
 
     await open(page, '/networking/subnetting?step=1');
-    await expect.poll(() => page.evaluate(() => window.localStorage.getItem('techconcepts:v1'))).toBeNull();
+    await expect
+      .poll(() => page.evaluate(() => JSON.parse(window.localStorage.getItem('techconcepts:v2') ?? '{}').lessons?.subnetting?.status))
+      .toBe('in-progress');
+    expect(await page.evaluate(() => window.localStorage.getItem('techconcepts:v1'))).toBeNull();
     const v2 = JSON.parse((await page.evaluate(() => window.localStorage.getItem('techconcepts:v2')))!);
     expect(v2.lessons.dhcp.status).toBe('finished');
-    expect(v2.lessons.subnetting.status).toBe('in-progress');
     expect(v2.lastTrack).toBe('networking');
   });
 
