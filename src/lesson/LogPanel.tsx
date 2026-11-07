@@ -100,6 +100,9 @@ export interface LogPanelProps {
   controls?: ReactNode;
 }
 
+/** What the empty log says instead of its idle words when JavaScript is off (BaseLayout's no-script style hides them). */
+export const NO_SCRIPT_NOTE = 'This lesson needs JavaScript to play.';
+
 /**
  * The log under the scene: its title, its legend and the playback controls,
  * over a real table of `#` plus the unit's own columns. A column keyed `plain`
@@ -108,6 +111,11 @@ export interface LogPanelProps {
  * words wrap there. Blocked and lost messages are drawn in the
  * blocked colour and say so in words. The table scrolls inside itself and
  * keeps the latest row in view.
+ *
+ * The server draws the empty log, so its idle row also holds a `<noscript>`
+ * note: with JavaScript off it stands where the log would say "Press Play".
+ * React never draws a `<noscript>`'s children in the browser, so with
+ * JavaScript on the note is never there.
  */
 export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelProps) {
   const titleId = useId();
@@ -162,7 +170,10 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
             {rows.length === 0 ? (
               <tr>
                 <td className="log__idle" colSpan={log.columns.length + 1} data-idle="">
-                  {idle}
+                  <span className="log__idle-words">{idle}</span>
+                  <noscript>
+                    <span className="log__nojs">{NO_SCRIPT_NOTE}</span>
+                  </noscript>
                 </td>
               </tr>
             ) : (

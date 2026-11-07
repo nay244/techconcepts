@@ -359,3 +359,23 @@ test.describe('lesson specifics', () => {
     }
   });
 });
+
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('every lesson says it needs JavaScript to play, and shows no control that cannot work', async ({ page }) => {
+    for (const lesson of LESSONS) {
+      await page.goto(lesson.path);
+      const where = lesson.title;
+      await expect(page.locator('.console__log').getByText('This lesson needs JavaScript to play.'), where).toBeVisible();
+      await expect(page.locator('.console__log .log__idle-words'), where).toBeHidden();
+      // No button works without JavaScript, so none shows: the theme and view switches, playback, the outline's places.
+      await expect(page.locator('button:visible'), where).toHaveCount(0);
+      // The Overview's words, the figure and the way back to the track stay.
+      await expect(page.locator('.console__explain .explain__title'), where).toBeVisible();
+      await expect(page.locator('.console__stage svg[data-figure]'), where).toBeVisible();
+      await expect(page.locator('.topbar__crumb a'), where).toBeVisible();
+      expect(await overflowAt(page, where)).toBeNull();
+    }
+  });
+});
