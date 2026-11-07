@@ -2,432 +2,393 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import { validateLesson } from '../content/define';
-import { fixtureLesson, fixturePlaygroundLesson } from '../content/test-fixtures';
+import type { Lesson, SceneEvent } from '../content/schema';
+import { makeTwoUnitLesson } from '../content/test-fixtures';
 import {
   createPlaybackReducer,
-  EVENT_DURATION_MS,
+  HOLD_MS,
+  holding,
   initialPlayback,
+  pendingEvent,
+  playLabel,
+  SPEEDS,
   usePlayback,
   type PlaybackAction,
   type PlaybackState,
 } from './playback';
-import { deriveState, sectionsFor } from './timeline';
+import { deriveState, stepEvents } from './timeline';
 
-const L = validateLesson(fixtureLesson()).lesson;
-const S = sectionsFor(4);
+// The real FIGURE_PARTS stays empty until each figure is built, so the fixtures
+// validate against the stand-in parts.
+vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
+
+/**
+ * Two units of five steps. Alpha keeps the fixture's events: step 1 m1; 2 m2,
+ * t-add; 3 t-match, n1; 4 m3; 5 m4. Beta's first and last steps have none, as
+ * lesson 1's first steps have none. Positions: alpha 0 Overview, 1–5 steps,
+ * 6 Learn, 7 Practice; beta 8 Overview, 9–13 steps, 14 Learn, 15 Practice.
+ */
+function fixture(): Lesson {
+  const input = makeTwoUnitLesson();
+  const beta = input.units[1]!;
+  beta.steps[0]!.events = [];
+  beta.steps[4]!.events = [];
+  return validateLesson(input).lesson;
+}
+
+const L = fixture();
 const r = createPlaybackReducer(L);
 
 /** Applies actions in order, starting from `from`. */
-const run = (from: PlaybackState, ...actions: PlaybackAction[]): PlaybackState => actions.reduce(r, from);
+const apply = (from: PlaybackState, ...actions: PlaybackAction[]): PlaybackState => actions.reduce(r, from);
+const go = (position: number): PlaybackAction => ({ type: 'go', position });
+const tick = (s: PlaybackState): PlaybackAction => ({ type: 'tick', position: s.position, eventIndex: s.eventIndex });
+const toggle: PlaybackAction = { type: 'toggle' };
+const cycleSpeed: PlaybackAction = { type: 'cycleSpeed' };
+
+/** 'run 2:1' for a run at position 2 with one event applied. */
+const at = (s: PlaybackState) => `${s.mode} ${s.position}:${s.eventIndex}`;
+
+/**
+ * Lets every wait end, as the hook would: ticks the pending event or ends the
+ * hold until nothing is waiting. Returns where it stopped and every state on the way.
+ */
+function playOut(from: PlaybackState): { end: PlaybackState; trace: string[] } {
+  let s = from;
+  const trace = [at(s)];
+  for (;;) {
+    if (holding(s) !== null) s = r(s, { type: 'holdDone', position: s.position });
+    else if (pendingEvent(L, s) !== null) s = r(s, tick(s));
+    else return { end: s, trace };
+    trace.push(at(s));
+  }
+}
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
-// ---------------------------------------------------------------- brief scenarios
+// ---------------------------------------------------------------- the reducer
 
-test('stale tick is ignored', () => {
-  let s = r(initialPlayback(), { type: 'next' }); // position 1, playing
-  s = r(s, { type: 'jump', position: 3 });
-  expect(r(s, { type: 'tick', position: 1 })).toEqual(s);
+test('playback starts at the Overview, idle, at 1×', () => {
+  expect(initialPlayback()).toEqual({ position: 0, eventIndex: 0, mode: 'idle', ended: false, speed: 1 });
+  expect(playLabel(L, initialPlayback())).toBe('Play');
 });
 
-test('tick advances and pauses at the step boundary', () => {
-  let s = r(initialPlayback(), { type: 'next' });
-  s = r(s, { type: 'tick', position: 1 });
-  expect(s).toMatchObject({ position: 1, eventIndex: 1, playing: false });
-});
+test('go plays that step once, then idles', () => {
+  const s = apply(initialPlayback(), go(2));
+  expect(s).toEqual({ position: 2, eventIndex: 0, mode: 'step', ended: false, speed: 1 });
+  const { end, trace } = playOut(s);
+  expect(trace).toEqual(['step 2:0', 'step 2:1', 'idle 2:2']);
+  expect(end).toMatchObject({ ended: false });
+  expect(playLabel(L, end)).toBe('Play');
 
-test('mashing next/prev clamps and matches fresh derivation', () => {
-  let s = initialPlayback();
-  for (let i = 0; i < 20; i++) s = r(s, { type: 'next' });
-  expect(s.position).toBe(7);
-  for (let i = 0; i < 20; i++) s = r(s, { type: 'prev' });
-  expect(s.position).toBe(0);
-  s = r(s, { type: 'jump', position: 2 });
-  s = r(s, { type: 'prev' });
-  expect(deriveState(L, s.position, s.eventIndex, s.tryItChoice)).toEqual(deriveState(L, 1, 1, null));
-});
-
-test('play at a step boundary moves on', () =>
-  expect(r(initialPlayback(), { type: 'play' })).toMatchObject({ position: 1, playing: true }));
-
-test('try-it choice only at try-it position and resets on leave', () => {
-  expect(r(initialPlayback(), { type: 'chooseTryIt', choiceId: 'c1' }).tryItChoice).toBeNull();
-  let s = r(initialPlayback(), { type: 'jump', position: 5 });
-  s = r(s, { type: 'chooseTryIt', choiceId: 'c1' });
-  expect(s).toMatchObject({ tryItChoice: 'c1', playing: true });
-  expect(r(s, { type: 'next' }).tryItChoice).toBeNull();
-});
-
-// ---------------------------------------------------------------- initial state
-
-test('playback starts at the overview, paused, at normal speed, with no choice', () => {
-  expect(initialPlayback()).toEqual({ position: 0, eventIndex: 0, playing: false, speed: 1, tryItChoice: null });
-});
-
-test('every call to initialPlayback gives a fresh object', () => {
-  expect(initialPlayback()).not.toBe(initialPlayback());
-});
-
-// ---------------------------------------------------------------- play, pause, toggle
-
-test('play inside a step resumes where it stopped', () => {
-  const mid = { ...initialPlayback(), position: 2, eventIndex: 1 };
-  expect(r(mid, { type: 'play' })).toEqual({ ...mid, playing: true });
-});
-
-test('play when the step is finished moves to the next position and starts it', () => {
-  const finished = { ...initialPlayback(), position: 1, eventIndex: 1 };
-  expect(r(finished, { type: 'play' })).toMatchObject({ position: 2, eventIndex: 0, playing: true });
-});
-
-test('play at the last position does nothing', () => {
-  const end = run(initialPlayback(), { type: 'jump', position: S.max });
-  expect(r(end, { type: 'play' })).toEqual(end);
-});
-
-test('play at Try it before a choice moves on, because there is nothing to play', () => {
-  const tryIt = run(initialPlayback(), { type: 'jump', position: S.tryIt });
-  expect(r(tryIt, { type: 'play' })).toMatchObject({ position: S.check, playing: false });
-});
-
-test('pause stops playing and keeps the place', () => {
-  const playing = run(initialPlayback(), { type: 'jump', position: 2 }, { type: 'tick', position: 2 });
-  expect(playing).toMatchObject({ playing: true, eventIndex: 1 });
-  expect(r(playing, { type: 'pause' })).toEqual({ ...playing, playing: false });
-});
-
-test('toggle pauses when playing and plays when paused', () => {
-  const playing = run(initialPlayback(), { type: 'jump', position: 2 });
-  const paused = r(playing, { type: 'toggle' });
-  expect(paused).toEqual({ ...playing, playing: false });
-  expect(r(paused, { type: 'toggle' })).toEqual(playing);
-});
-
-test('toggle on a finished step moves on, as play does', () => {
-  const finished = { ...initialPlayback(), position: 1, eventIndex: 1 };
-  expect(r(finished, { type: 'toggle' })).toEqual(r(finished, { type: 'play' }));
-});
-
-// ---------------------------------------------------------------- tick
-
-test('tick steps through a multi-event step and pauses only after the last event', () => {
-  let s = run(initialPlayback(), { type: 'jump', position: 2 }); // three events
-  const seen: [number, boolean][] = [[s.eventIndex, s.playing]];
-  for (let i = 0; i < 3; i++) {
-    s = r(s, { type: 'tick', position: 2 });
-    seen.push([s.eventIndex, s.playing]);
+  // The Overview, Learn and Practice have nothing to play.
+  for (const position of [0, 6, 7, 8]) {
+    expect(apply(s, go(position))).toEqual({ position, eventIndex: 0, mode: 'idle', ended: false, speed: 1 });
   }
-  expect(seen).toEqual([
-    [0, true],
-    [1, true],
-    [2, true],
-    [3, false],
+});
+
+test('go, next and prev move by one and keep to the lesson', () => {
+  const s = apply(initialPlayback(), go(3));
+  expect(apply(s, { type: 'next' })).toMatchObject({ position: 4, eventIndex: 0, mode: 'step' });
+  expect(apply(s, { type: 'prev' })).toMatchObject({ position: 2, eventIndex: 0, mode: 'step' });
+  expect(apply(s, go(99))).toMatchObject({ position: 15, mode: 'idle' });
+  expect(apply(s, go(-4))).toMatchObject({ position: 0, mode: 'idle' });
+  expect(apply(s, go(15), { type: 'next' })).toMatchObject({ position: 15, mode: 'idle' });
+  expect(apply(s, go(0), { type: 'prev' })).toMatchObject({ position: 0, mode: 'idle' });
+  // A position that is not a whole number is read as the timeline reads it.
+  expect(apply(s, go(2.7))).toMatchObject({ position: 2, mode: 'step' });
+  expect(apply(s, go(Number.NaN))).toMatchObject({ position: 0, mode: 'idle' });
+});
+
+test('toggle from idle runs every step of the unit with a hold between, then ends with Replay', () => {
+  const started = apply(initialPlayback(), toggle);
+  expect(started).toEqual({ position: 1, eventIndex: 0, mode: 'run', ended: false, speed: 1 });
+  expect(playLabel(L, started)).toBe('Pause');
+
+  const { end, trace } = playOut(started);
+  expect(trace).toEqual([
+    'run 1:0', 'hold 1:1',
+    'run 2:0', 'run 2:1', 'hold 2:2',
+    'run 3:0', 'run 3:1', 'hold 3:2',
+    'run 4:0', 'hold 4:1',
+    'run 5:0', 'idle 5:1',
   ]);
+  // The run stops at the unit's last step: it never moves on to Learn.
+  expect(end).toEqual({ position: 5, eventIndex: 1, mode: 'idle', ended: true, speed: 1 });
+  expect(playLabel(L, end)).toBe('Replay');
+
+  // A hold names the step it leads to and lasts HOLD_MS at 1×.
+  const held = apply(started, tick(started));
+  expect(held.mode).toBe('hold');
+  expect(playLabel(L, held)).toBe('Pause');
+  expect(holding(held)).toEqual({ next: 2, ms: 2600 });
+  expect(HOLD_MS).toBe(2600);
+
+  // Replay runs the unit again from its first step.
+  expect(apply(end, toggle)).toEqual(started);
 });
 
-test('tick is ignored while paused', () => {
-  const paused = { ...initialPlayback(), position: 2, eventIndex: 1 };
-  expect(r(paused, { type: 'tick', position: 2 })).toBe(paused);
+test('toggle during a run pauses with the current step complete', () => {
+  const started = apply(initialPlayback(), toggle);
+  const midStep = apply(started, tick(started), { type: 'holdDone', position: 1 }); // run 2:0
+  const oneIn = apply(midStep, tick(midStep));
+  expect(at(oneIn)).toBe('run 2:1');
+
+  const paused = apply(oneIn, toggle);
+  expect(paused).toEqual({ position: 2, eventIndex: 2, mode: 'idle', ended: false, speed: 1 });
+  expect(playLabel(L, paused)).toBe('Play');
+  expect(pendingEvent(L, paused)).toBeNull();
+
+  // Pausing in a hold keeps the step that just finished.
+  const held = apply(oneIn, tick(oneIn));
+  expect(at(held)).toBe('hold 2:2');
+  expect(apply(held, toggle)).toEqual(paused);
+  expect(holding(apply(held, toggle))).toBeNull();
+
+  // Play again runs on from the start of that step.
+  expect(apply(paused, toggle)).toEqual({ position: 2, eventIndex: 0, mode: 'run', ended: false, speed: 1 });
+  // And Play during a hand-played step starts a run from it.
+  expect(apply(initialPlayback(), go(3), toggle)).toMatchObject({ position: 3, eventIndex: 0, mode: 'run' });
 });
 
-test('tick never runs past the end of the step', () => {
-  const end = { ...initialPlayback(), position: 1, eventIndex: 1, playing: true };
-  expect(r(end, { type: 'tick', position: 1 })).toMatchObject({ eventIndex: 1, playing: false });
+test('toggle on Learn runs from step 1 and the label was Watch again', () => {
+  for (const position of [6, 7]) {
+    const s = apply(initialPlayback(), go(position));
+    expect(playLabel(L, s)).toBe('Watch again');
+    expect(apply(s, toggle)).toEqual({ position: 1, eventIndex: 0, mode: 'run', ended: false, speed: 1 });
+  }
+  // In the second unit, it runs that unit's own first step.
+  expect(apply(initialPlayback(), go(14), toggle)).toMatchObject({ position: 9 });
+  // The Overview says Play.
+  expect(playLabel(L, apply(initialPlayback(), go(8)))).toBe('Play');
 });
 
-test('tick keeps the speed and the Try it choice', () => {
-  const s = run(
-    initialPlayback(),
-    { type: 'speed', speed: 2 },
-    { type: 'jump', position: S.tryIt },
-    { type: 'chooseTryIt', choiceId: 'c2' },
-    { type: 'tick', position: S.tryIt },
-  );
-  expect(s).toMatchObject({ speed: 2, tryItChoice: 'c2', eventIndex: 1, playing: false });
+test('a hand move during a hold stops the run, and the late holdDone is ignored', () => {
+  const started = apply(initialPlayback(), toggle);
+  const held = apply(started, tick(started));
+  expect(at(held)).toBe('hold 1:1');
+
+  const moved = apply(held, { type: 'next' });
+  expect(moved).toEqual({ position: 2, eventIndex: 0, mode: 'step', ended: false, speed: 1 });
+  expect(r(moved, { type: 'holdDone', position: 1 })).toBe(moved);
+
+  // Going back by hand stops it too.
+  const back = apply(held, { type: 'prev' });
+  expect(at(back)).toBe('idle 0:0');
+  expect(r(back, { type: 'holdDone', position: 1 })).toBe(back);
+
+  // holdDone outside a hold, or for another position, changes nothing.
+  expect(r(held, { type: 'holdDone', position: 2 })).toBe(held);
+  expect(r(started, { type: 'holdDone', position: 1 })).toBe(started);
 });
 
-// ---------------------------------------------------------------- next, jump, prev
+test('a stale tick from another position or eventIndex is ignored', () => {
+  const s = apply(initialPlayback(), go(2), { type: 'tick', position: 2, eventIndex: 0 });
+  expect(at(s)).toBe('step 2:1');
+  expect(r(s, { type: 'tick', position: 1, eventIndex: 1 })).toBe(s);
+  expect(r(s, { type: 'tick', position: 3, eventIndex: 1 })).toBe(s);
+  expect(r(s, { type: 'tick', position: 2, eventIndex: 0 })).toBe(s);
+  expect(r(s, { type: 'tick', position: 2, eventIndex: 2 })).toBe(s);
 
-test('next enters a step with events playing, and a section without events paused', () => {
-  expect(r(initialPlayback(), { type: 'next' })).toMatchObject({ position: 1, eventIndex: 0, playing: true });
-  const lastStep = run(initialPlayback(), { type: 'jump', position: 4 });
-  expect(r(lastStep, { type: 'next' })).toMatchObject({ position: S.tryIt, eventIndex: 0, playing: false });
-  expect(r(r(lastStep, { type: 'next' }), { type: 'next' })).toMatchObject({ position: S.check, playing: false });
+  // Nothing is waiting in idle or a hold, so a tick there is stale as well.
+  const idle = apply(s, tick(s));
+  expect(at(idle)).toBe('idle 2:2');
+  expect(r(idle, { type: 'tick', position: 2, eventIndex: 2 })).toBe(idle);
+  const started = apply(initialPlayback(), toggle);
+  const held = apply(started, tick(started));
+  expect(r(held, { type: 'tick', position: 1, eventIndex: 1 })).toBe(held);
 });
 
-test('next restarts the position from its first event', () => {
-  const mid = { ...initialPlayback(), position: 1, eventIndex: 1, speed: 0.5 as const };
-  expect(r(mid, { type: 'next' })).toEqual({ ...mid, position: 2, eventIndex: 0, playing: true });
+test('cycleSpeed goes 1 → 1.5 → 2 → 0.5 → 1 and leaves the run alone', () => {
+  expect(SPEEDS).toEqual([0.5, 1, 1.5, 2]);
+  const started = apply(initialPlayback(), toggle);
+  const s = apply(started, tick(started), { type: 'holdDone', position: 1 }, { type: 'tick', position: 2, eventIndex: 0 });
+  expect(at(s)).toBe('run 2:1');
+
+  const speeds = [s.speed];
+  let next = s;
+  for (let i = 0; i < 4; i++) {
+    next = r(next, cycleSpeed);
+    speeds.push(next.speed);
+    expect(next).toEqual({ ...s, speed: next.speed });
+  }
+  expect(speeds).toEqual([1, 1.5, 2, 0.5, 1]);
+
+  // A hold keeps going too, and gets shorter at a faster speed.
+  const held = apply(s, tick(s));
+  expect(holding(apply(held, cycleSpeed, cycleSpeed))).toEqual({ next: 3, ms: 1300 });
 });
 
-test('next at the last position stays there', () => {
-  const end = run(initialPlayback(), { type: 'jump', position: S.max });
-  expect(r(end, { type: 'next' })).toMatchObject({ position: S.max, eventIndex: 0, playing: false });
+test('the pending event is the one not yet applied, and null between steps', () => {
+  const [m2, tAdd] = stepEvents(L, 2);
+  let s = apply(initialPlayback(), go(2));
+  expect(pendingEvent(L, s)).toBe(m2);
+  expect(deriveState(L, s.position, s.eventIndex).log.map((row) => row.eventId)).not.toContain('m2');
+
+  s = r(s, tick(s));
+  expect(pendingEvent(L, s)).toBe(tAdd);
+  expect(deriveState(L, s.position, s.eventIndex).log.map((row) => row.eventId)).toContain('m2');
+
+  s = r(s, tick(s));
+  expect(at(s)).toBe('idle 2:2');
+  expect(pendingEvent(L, s)).toBeNull();
+
+  // In a run, nothing is pending during a hold, at the end, or off a step.
+  const started = apply(initialPlayback(), toggle);
+  expect(pendingEvent(L, started)).toBe(stepEvents(L, 1)[0]);
+  expect(pendingEvent(L, apply(started, tick(started)))).toBeNull();
+  expect(pendingEvent(L, playOut(started).end)).toBeNull();
+  for (const position of [0, 6, 7]) expect(pendingEvent(L, apply(initialPlayback(), go(position)))).toBeNull();
 });
 
-test('jump goes straight to a position and clamps into range', () => {
-  expect(r(initialPlayback(), { type: 'jump', position: 3 })).toMatchObject({ position: 3, eventIndex: 0, playing: true });
-  expect(r(initialPlayback(), { type: 'jump', position: 999 })).toMatchObject({ position: S.max, playing: false });
-  expect(r(initialPlayback(), { type: 'jump', position: -4 })).toMatchObject({ position: 0, playing: false });
+test('a step with no events completes at once in a run', () => {
+  // Beta's first step has no events: the run holds on it, then carries on.
+  const started = apply(initialPlayback(), go(8), toggle);
+  expect(started).toEqual({ position: 9, eventIndex: 0, mode: 'hold', ended: false, speed: 1 });
+  expect(holding(started)).toEqual({ next: 10, ms: 2600 });
+
+  // Its last step has none either: the run ends the moment it gets there.
+  const { end, trace } = playOut(started);
+  expect(trace).toEqual([
+    'hold 9:0',
+    'run 10:0', 'run 10:1', 'hold 10:2',
+    'run 11:0', 'run 11:1', 'hold 11:2',
+    'run 12:0', 'hold 12:1',
+    'idle 13:0',
+  ]);
+  expect(end).toMatchObject({ ended: true });
+  expect(playLabel(L, end)).toBe('Replay');
+
+  // By hand, such a step simply shows, idle.
+  expect(apply(initialPlayback(), go(9))).toEqual({ position: 9, eventIndex: 0, mode: 'idle', ended: false, speed: 1 });
 });
 
-test('jump to the overview, Check or Recap does not start playing', () => {
-  for (const position of [0, S.check, S.recap]) {
-    expect(r(run(initialPlayback(), { type: 'jump', position: 2 }), { type: 'jump', position })).toMatchObject({
-      position,
-      playing: false,
-    });
+test('toggle in a unit with no steps changes nothing', () => {
+  // Validation never lets this through (a unit needs 4–6 steps), so it is built by hand.
+  const empty: Lesson = { ...L, units: [{ ...L.units[0]!, steps: [] }] };
+  const re = createPlaybackReducer(empty);
+  for (const position of [0, 1, 2]) {
+    const s = re(initialPlayback(), go(position));
+    expect(re(s, toggle)).toBe(s);
   }
 });
 
-test('prev lands at the end of the previous position, paused', () => {
-  const s = run(initialPlayback(), { type: 'jump', position: 3 }, { type: 'prev' });
-  expect(s).toMatchObject({ position: 2, eventIndex: 3, playing: false });
-});
+// ---------------------------------------------------------------- the hook
 
-test('prev from the first step shows the overview, and prev at the overview stays there', () => {
-  const overview = run(initialPlayback(), { type: 'jump', position: 1 }, { type: 'prev' });
-  expect(overview).toMatchObject({ position: 0, eventIndex: 0, playing: false });
-  expect(r(overview, { type: 'prev' })).toEqual(overview);
-});
-
-test('prev from Check shows Try it with no choice, because choices reset when you leave', () => {
-  let s = run(initialPlayback(), { type: 'jump', position: S.tryIt }, { type: 'chooseTryIt', choiceId: 'c1' });
-  s = run(s, { type: 'next' }, { type: 'prev' });
-  expect(s).toMatchObject({ position: S.tryIt, eventIndex: 0, playing: false, tryItChoice: null });
-});
-
-test('prev from Try it lands at the end of the last step', () => {
-  const s = run(initialPlayback(), { type: 'jump', position: S.tryIt }, { type: 'prev' });
-  expect(s).toMatchObject({ position: 4, eventIndex: 1, playing: false });
-});
-
-test('every reachable state derives without error and the event index stays in range', () => {
-  let s = initialPlayback();
-  const actions: PlaybackAction[] = [
-    { type: 'next' },
-    { type: 'tick', position: 1 },
-    { type: 'jump', position: 2 },
-    { type: 'tick', position: 2 },
-    { type: 'prev' },
-    { type: 'play' },
-    { type: 'replay' },
-    { type: 'jump', position: S.tryIt },
-    { type: 'chooseTryIt', choiceId: 'c2' },
-    { type: 'tick', position: S.tryIt },
-    { type: 'next' },
-    { type: 'prev' },
-    { type: 'toggle' },
-    { type: 'jump', position: 99 },
-  ];
-  for (const a of actions) {
-    s = r(s, a);
-    expect(() => deriveState(L, s.position, s.eventIndex, s.tryItChoice)).not.toThrow();
-    expect(s.position).toBeGreaterThanOrEqual(0);
-    expect(s.position).toBeLessThanOrEqual(S.max);
-  }
-});
-
-// ---------------------------------------------------------------- replay
-
-test('replay restarts the current position and plays it', () => {
-  const done = { ...initialPlayback(), position: 2, eventIndex: 3 };
-  expect(r(done, { type: 'replay' })).toEqual({ ...done, eventIndex: 0, playing: true });
-});
-
-test('replay where there is nothing to play stays paused', () => {
-  expect(r(initialPlayback(), { type: 'replay' })).toEqual(initialPlayback());
-});
-
-test('replay at Try it plays the chosen variant again and keeps the choice', () => {
-  let s = run(initialPlayback(), { type: 'jump', position: S.tryIt }, { type: 'chooseTryIt', choiceId: 'c1' });
-  s = run(s, { type: 'tick', position: S.tryIt }, { type: 'replay' });
-  expect(s).toMatchObject({ tryItChoice: 'c1', eventIndex: 0, playing: true });
-});
-
-// ---------------------------------------------------------------- speed
-
-test('speed changes only the speed', () => {
-  const mid = { ...initialPlayback(), position: 2, eventIndex: 1, playing: true };
-  expect(r(mid, { type: 'speed', speed: 0.5 })).toEqual({ ...mid, speed: 0.5 });
-  expect(r(mid, { type: 'speed', speed: 2 })).toEqual({ ...mid, speed: 2 });
-});
-
-// ---------------------------------------------------------------- Try it
-
-test('choosing a variant starts it from the beginning', () => {
-  const atTryIt = run(initialPlayback(), { type: 'jump', position: S.tryIt });
-  expect(r(atTryIt, { type: 'chooseTryIt', choiceId: 'c2' })).toEqual({
-    ...atTryIt,
-    tryItChoice: 'c2',
-    eventIndex: 0,
-    playing: true,
-  });
-});
-
-test('choosing again after one finished switches to the new variant and plays it', () => {
-  let s = run(initialPlayback(), { type: 'jump', position: S.tryIt }, { type: 'chooseTryIt', choiceId: 'c1' });
-  s = run(s, { type: 'tick', position: S.tryIt });
-  expect(s).toMatchObject({ playing: false, eventIndex: 1 });
-  expect(r(s, { type: 'chooseTryIt', choiceId: 'c2' })).toMatchObject({ tryItChoice: 'c2', eventIndex: 0, playing: true });
-});
-
-test('an unknown choice id is ignored', () => {
-  const atTryIt = run(initialPlayback(), { type: 'jump', position: S.tryIt });
-  expect(r(atTryIt, { type: 'chooseTryIt', choiceId: 'nope' })).toBe(atTryIt);
-});
-
-test('choosing is ignored anywhere but the Try it position', () => {
-  for (const position of [0, 1, 4, S.check, S.recap]) {
-    const s = run(initialPlayback(), { type: 'jump', position });
-    expect(r(s, { type: 'chooseTryIt', choiceId: 'c1' })).toBe(s);
-  }
-});
-
-test('leaving Try it by any route forgets the choice', () => {
-  const chosen = run(initialPlayback(), { type: 'jump', position: S.tryIt }, { type: 'chooseTryIt', choiceId: 'c1' });
-  for (const action of [{ type: 'next' }, { type: 'prev' }, { type: 'jump', position: 1 }] as PlaybackAction[]) {
-    expect(r(chosen, action).tryItChoice).toBeNull();
-  }
-});
-
-test('jumping to the Try it position you are already on replays the chosen variant', () => {
-  const chosen = run(initialPlayback(), { type: 'jump', position: S.tryIt }, { type: 'chooseTryIt', choiceId: 'c1' });
-  const done = r(chosen, { type: 'tick', position: S.tryIt });
-  expect(r(done, { type: 'jump', position: S.tryIt })).toMatchObject({ tryItChoice: 'c1', eventIndex: 0, playing: true });
-});
-
-test('a playground lesson has no choices and nothing to play in its steps', () => {
-  const P = validateLesson(fixturePlaygroundLesson()).lesson;
-  const rp = createPlaybackReducer(P);
-  let s = rp(initialPlayback(), { type: 'jump', position: 2 });
-  expect(s).toMatchObject({ position: 2, playing: false });
-  s = rp(s, { type: 'jump', position: sectionsFor(4).tryIt });
-  expect(rp(s, { type: 'chooseTryIt', choiceId: 'c1' })).toBe(s);
-  expect(rp(s, { type: 'play' })).toMatchObject({ position: sectionsFor(4).check, playing: false });
-});
-
-// ---------------------------------------------------------------- usePlayback
-
-test('event durations', () => expect(EVENT_DURATION_MS).toEqual({ message: 1200, table: 700 }));
-
-test('while playing, a message event ticks after its duration', () => {
+/** Renders the hook with fake timers and every event lasting 1000 ms at 1×. */
+function renderPlayback() {
   vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'next' })); // step 1: one message
-  expect(result.current[0]).toMatchObject({ position: 1, playing: true, eventIndex: 0 });
+  const durationOf = vi.fn((_: SceneEvent) => 1000);
+  const hook = renderHook(() => usePlayback(L, durationOf));
+  return {
+    ...hook,
+    durationOf,
+    state: () => hook.result.current[0],
+    where: () => at(hook.result.current[0]),
+    dispatch: (a: PlaybackAction) => act(() => hook.result.current[1](a)),
+    wait: (ms: number) => act(() => vi.advanceTimersByTime(ms)),
+  };
+}
+
+test('timers: each event waits durationOf(event)/speed ms and a hold waits 2600/speed', () => {
+  const { dispatch, wait, where, state, durationOf, unmount } = renderPlayback();
+  expect(where()).toBe('idle 0:0');
+
+  dispatch(toggle);
+  expect(where()).toBe('run 1:0');
+  expect(durationOf).toHaveBeenLastCalledWith(stepEvents(L, 1)[0]);
+  wait(999);
+  expect(where()).toBe('run 1:0');
+  wait(1);
+  expect(where()).toBe('hold 1:1');
+  wait(2599);
+  expect(where()).toBe('hold 1:1');
+  wait(1);
+  expect(where()).toBe('run 2:0');
+
+  // At 2×: 500 ms an event, 1300 ms a hold.
+  dispatch(cycleSpeed);
+  dispatch(cycleSpeed);
+  expect(state().speed).toBe(2);
+  wait(499);
+  expect(where()).toBe('run 2:0');
+  wait(1);
+  expect(where()).toBe('run 2:1');
+  expect(durationOf).toHaveBeenLastCalledWith(stepEvents(L, 2)[1]);
+  wait(500);
+  expect(where()).toBe('hold 2:2');
+  wait(1299);
+  expect(where()).toBe('hold 2:2');
+  wait(1);
+  expect(where()).toBe('run 3:0');
+
+  // At 0.5×: 2000 ms an event, 5200 ms a hold.
+  dispatch(cycleSpeed);
+  expect(state().speed).toBe(0.5);
+  wait(1999);
+  expect(where()).toBe('run 3:0');
+  wait(1);
+  expect(where()).toBe('run 3:1');
+  wait(2000);
+  expect(where()).toBe('hold 3:2');
+  wait(5199);
+  expect(where()).toBe('hold 3:2');
+  wait(1);
+  expect(where()).toBe('run 4:0');
+
+  // A hand move cancels the wait and starts the new step's own.
+  wait(1500);
+  dispatch(go(2));
   expect(vi.getTimerCount()).toBe(1);
+  wait(1999);
+  expect(where()).toBe('step 2:0');
+  wait(1);
+  expect(where()).toBe('step 2:1');
 
-  act(() => {
-    vi.advanceTimersByTime(EVENT_DURATION_MS.message - 1);
-  });
-  expect(result.current[0].eventIndex).toBe(0);
-  act(() => {
-    vi.advanceTimersByTime(1);
-  });
-  expect(result.current[0]).toMatchObject({ eventIndex: 1, playing: false });
+  // Nothing waits when idle, and unmounting clears a pending wait.
+  dispatch(toggle);
+  dispatch(toggle);
+  expect(where()).toBe('idle 2:2');
   expect(vi.getTimerCount()).toBe(0);
-});
-
-test('a table event waits for its own, shorter duration', () => {
-  vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'jump', position: 3 })); // step 3: one table event
-  act(() => {
-    vi.advanceTimersByTime(EVENT_DURATION_MS.table - 1);
-  });
-  expect(result.current[0].eventIndex).toBe(0);
-  act(() => {
-    vi.advanceTimersByTime(1);
-  });
-  expect(result.current[0]).toMatchObject({ eventIndex: 1, playing: false });
-});
-
-test('speed divides the wait', () => {
-  vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'speed', speed: 2 }));
-  act(() => result.current[1]({ type: 'next' }));
-  act(() => {
-    vi.advanceTimersByTime(EVENT_DURATION_MS.message / 2);
-  });
-  expect(result.current[0].eventIndex).toBe(1);
-
-  act(() => result.current[1]({ type: 'speed', speed: 0.5 }));
-  act(() => result.current[1]({ type: 'jump', position: 3 }));
-  act(() => {
-    vi.advanceTimersByTime(EVENT_DURATION_MS.table * 2 - 1);
-  });
-  expect(result.current[0].eventIndex).toBe(0);
-  act(() => {
-    vi.advanceTimersByTime(1);
-  });
-  expect(result.current[0].eventIndex).toBe(1);
-});
-
-test('it keeps playing through a multi-event step, one timer at a time', () => {
-  vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'jump', position: 2 })); // message, message, table
-  for (const [wait, index, playing] of [
-    [EVENT_DURATION_MS.message, 1, true],
-    [EVENT_DURATION_MS.message, 2, true],
-    [EVENT_DURATION_MS.table, 3, false],
-  ] as const) {
-    expect(vi.getTimerCount()).toBe(1);
-    act(() => {
-      vi.advanceTimersByTime(wait);
-    });
-    expect(result.current[0]).toMatchObject({ eventIndex: index, playing });
-  }
-  expect(vi.getTimerCount()).toBe(0);
-});
-
-test('pausing cancels the pending tick', () => {
-  vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'next' }));
-  act(() => result.current[1]({ type: 'pause' }));
-  expect(vi.getTimerCount()).toBe(0);
-  act(() => {
-    vi.advanceTimersByTime(10_000);
-  });
-  expect(result.current[0]).toMatchObject({ eventIndex: 0, playing: false });
-});
-
-test('any state change restarts the wait, so an old timer never fires into the new position', () => {
-  vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'next' })); // timer for step 1
-  act(() => {
-    vi.advanceTimersByTime(EVENT_DURATION_MS.message - 100);
-  });
-  act(() => result.current[1]({ type: 'jump', position: 4 })); // fresh timer for step 4
-  act(() => {
-    vi.advanceTimersByTime(200); // the step-1 timer would have fired here
-  });
-  expect(result.current[0]).toMatchObject({ position: 4, eventIndex: 0, playing: true });
-  expect(vi.getTimerCount()).toBe(1);
-  act(() => {
-    vi.advanceTimersByTime(EVENT_DURATION_MS.message);
-  });
-  expect(result.current[0]).toMatchObject({ position: 4, eventIndex: 1, playing: false });
-});
-
-test('unmounting cancels the pending tick', () => {
-  vi.useFakeTimers();
-  const { result, unmount } = renderHook(() => usePlayback(L));
-  act(() => result.current[1]({ type: 'next' }));
+  dispatch(toggle);
   expect(vi.getTimerCount()).toBe(1);
   unmount();
   expect(vi.getTimerCount()).toBe(0);
 });
 
-test('nothing is scheduled while paused', () => {
+test('a re-render with a new durationOf keeps the current wait and times the next one', () => {
   vi.useFakeTimers();
-  const { result } = renderHook(() => usePlayback(L));
-  expect(result.current[0]).toEqual(initialPlayback());
-  expect(vi.getTimerCount()).toBe(0);
+  const hook = renderHook(({ ms }) => usePlayback(L, () => ms), { initialProps: { ms: 1000 } });
+  const where = () => at(hook.result.current[0]);
+  act(() => hook.result.current[1](toggle));
+  act(() => vi.advanceTimersByTime(600));
+  hook.rerender({ ms: 1000 });
+  act(() => vi.advanceTimersByTime(400));
+  expect(where()).toBe('hold 1:1');
+
+  hook.rerender({ ms: 400 });
+  act(() => vi.advanceTimersByTime(2600));
+  expect(where()).toBe('run 2:0');
+  act(() => vi.advanceTimersByTime(400));
+  expect(where()).toBe('run 2:1');
+});
+
+test('reduced motion leaves every duration unchanged', () => {
+  // The hook takes the lesson and the durations, and nothing about motion.
+  expect(usePlayback.length).toBe(2);
+
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('prefers-reduced-motion'), media: q }));
+  const { dispatch, wait, where } = renderPlayback();
+  dispatch(toggle);
+  wait(999);
+  expect(where()).toBe('run 1:0');
+  wait(1);
+  expect(where()).toBe('hold 1:1');
+  wait(2599);
+  expect(where()).toBe('hold 1:1');
+  wait(1);
+  expect(where()).toBe('run 2:0');
 });

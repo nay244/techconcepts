@@ -1,487 +1,405 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import {
+  clippingContainers,
+  collectErrors,
+  expectLessonShape,
+  figureSnapshot,
+  kicker,
+  logRows,
+  moveBy,
+  nextButton,
+  open,
+  pageOverflow,
+  playButton,
+  position,
+  pressKey,
+  readyLessons,
+  requireLessons,
+  setSpeed,
+  settledFrame,
+  stepCount,
+  viewSwitch,
+  type Position,
+  type ReadyLesson,
+} from './support';
 
-/** Every lesson page to check. Later pilots append themselves here. */
-const LESSONS: { path: string; kind: 'flow' | 'playground' }[] = [
-  { path: '/networking/dhcp', kind: 'flow' },
-  { path: '/networking/subnetting', kind: 'playground' },
-  { path: '/networking/firewalls', kind: 'flow' },
-];
+/** The ready lessons, as the built track page links to them. Every check below runs for each of them. */
+const LESSONS = readyLessons();
+requireLessons(LESSONS);
 
-/** The console is one island: once Astro drops its `ssr` marker, React is listening. */
-async function openLesson(page: Page, path: string): Promise<void> {
-  await page.goto(path);
-  await page.locator('astro-island:not([ssr])').first().waitFor({ state: 'attached' });
+/** Subnetting's Watch is about the address itself, so it has no Network / Sequence switch (spec §6.3, §12). */
+const NO_SEQUENCE = new Set(['subnetting']);
+
+/** How long a Play run may take: the longest first unit runs about 46 s at 1× and 23 s at 2×. */
+const RUN_TIMEOUT = 120_000;
+
+/**
+ * The checks of how playback behaves (switching views mid-run, storage blocked) do not depend on the window's size,
+ * so they run once with motion and once with reduced motion. Everything about layout runs at every desktop size.
+ */
+const BEHAVIOUR_PROJECTS = new Set(['d1440-dark', 'reduced-motion']);
+const behaviourOnly = (projectName: string): void =>
+  test.skip(!BEHAVIOUR_PROJECTS.has(projectName), 'Playback behaviour is checked in d1440-dark and reduced-motion.');
+
+/** How many units the lesson has: a lesson of many lists one outline row per unit, a lesson of one lists its parts. */
+async function unitCount(page: Page): Promise<number> {
+  return Math.max(1, await page.locator('.console__outline .outline__unit').count());
 }
 
-/** Shortcuts are ignored on buttons by design, so nothing may hold focus when an arrow key is pressed. */
-async function blurFocus(page: Page): Promise<void> {
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+/** Plays the first unit at 2× from where the page is, and waits for the run to end on Replay. */
+async function playToReplay(page: Page): Promise<void> {
+  await setSpeed(page, '2×');
+  await playButton(page).click();
+  await expect(playButton(page)).toHaveText('Pause');
+  await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
 }
 
-const playButton = (page: Page) => page.getByRole('button', { name: /^(Play|Pause) \(Space\)$/ });
-const previousStep = (page: Page) => page.getByRole('button', { name: 'Previous step' });
-const nextStep = (page: Page) => page.getByRole('button', { name: 'Next step' });
-
-/** Moves forward with the step button, which every lesson kind has on every screen. */
-async function advance(page: Page, times: number): Promise<void> {
-  for (let i = 0; i < times; i += 1) await nextStep(page).click();
+/** What the page shows that is too big for the window, at the kicker's position; null when nothing is. */
+async function overflowAt(page: Page, where: string): Promise<string | null> {
+  const { down, sideways } = await pageOverflow(page);
+  return down === 0 && sideways === 0 ? null : `${where}: the page scrolls ${down}px down and ${sideways}px sideways`;
 }
-
-/** Moves to the Try it step of a playground lesson, where its controls come alive. */
-async function goToTryIt(page: Page): Promise<void> {
-  const tryIt = page.getByRole('heading', { level: 2, name: 'Try it' });
-  for (let i = 0; i < 12 && !(await tryIt.isVisible()); i += 1) await nextStep(page).click();
-  await expect(tryIt).toBeVisible();
-}
-
-/** The scroll containers above an element that hide any part of it: inside the viewport is not enough if a scrolling panel clips it. */
-function clippingContainers(target: Locator): Promise<string[]> {
-  return target.evaluate((el) => {
-    const box = el.getBoundingClientRect();
-    const clipped: string[] = [];
-    for (let node = el.parentElement; node !== null; node = node.parentElement) {
-      const { overflowX, overflowY } = getComputedStyle(node);
-      if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden')) continue;
-      const room = node.getBoundingClientRect();
-      if (box.top < room.top || box.bottom > room.bottom || box.left < room.left || box.right > room.right) {
-        clipped.push(node.className || node.tagName);
-      }
-    }
-    return clipped;
-  });
-}
-
-/** The least a device's label and its addresses may measure on screen, in CSS pixels (ruling R28). */
-const MIN_LABEL_PX = 12;
-const MIN_ADDRESS_PX = 11;
 
 for (const lesson of LESSONS) {
-  test.describe(lesson.path, () => {
-    test('has no page errors, and ArrowRight walks it to the Recap', async ({ page }) => {
-      const errors: Error[] = [];
-      page.on('pageerror', (error) => errors.push(error));
-      await openLesson(page, lesson.path);
+  test.describe(lesson.title, () => {
+    test.describe.configure({ timeout: 180_000 });
 
-      const recap = page.getByRole('heading', { level: 2, name: 'Recap' });
-      for (let i = 0; i < 12 && !(await recap.isVisible()); i += 1) {
-        await blurFocus(page);
-        await page.keyboard.press('ArrowRight');
+    test('→ walks Overview, every step, Learn and Practice, ← walks back, and the page never scrolls', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page, lesson.path);
+      const units = await unitCount(page);
+      const sequence = !NO_SEQUENCE.has(lesson.slug);
+
+      const problems: string[] = [];
+      /** At every position: the page fits the window, and the scene's view switch is there or not, as the lesson has it. */
+      const check = (at: Position): Position => {
+        if (at.down > 0 || at.sideways > 0) problems.push(`${at.kicker}: the page scrolls ${at.down}px down and ${at.sideways}px sideways`);
+        if (at.viewSwitches !== (sequence ? 1 : 0)) problems.push(`${at.kicker}: the Network / Sequence switch is ${sequence ? 'missing' : 'there'}`);
+        return at;
+      };
+      let at = check(await position(page));
+      const forward = [at.kicker];
+      while (!at.atEnd) {
+        at = check(await pressKey(page, 'ArrowRight'));
+        forward.push(at.kicker);
+        expect(forward.length, 'the walk ends').toBeLessThan(400);
       }
-      await expect(recap).toBeVisible();
-      await expect(page.getByRole('navigation', { name: 'Lesson navigation' })).toContainText(/Back to the track|Next/);
+      expect(expectLessonShape(forward)).toBe(units);
+
+      const back = [at.kicker];
+      while (!at.atStart) {
+        at = check(await pressKey(page, 'ArrowLeft'));
+        back.push(at.kicker);
+        expect(back.length, 'the walk back ends').toBeLessThanOrEqual(forward.length);
+      }
+      expect(back).toEqual([...forward].reverse());
+      expect(problems).toEqual([]);
       expect(errors).toEqual([]);
     });
 
-    test('Play fills the event log', async ({ page }) => {
-      test.skip(lesson.kind !== 'flow', 'Only flow lessons have an event log.');
-      await openLesson(page, lesson.path);
+    test('the outline reaches every place, and so does the next button, in the same order', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page, lesson.path);
+      const outline = page.locator('.console__outline');
+      const units = outline.locator('.outline__unit');
+      const unitTotal = await units.count();
+
+      const visited = [(await kicker(page).textContent()) ?? ''];
+      /** Clicks each place of the open unit after its Overview, which is where the walk already is. */
+      const clickParts = async (items: ReturnType<Page['locator']>): Promise<void> => {
+        const count = await items.count();
+        await expect(items.first()).toHaveAttribute('aria-current', 'step');
+        for (let i = 1; i < count; i += 1) {
+          visited.push((await moveBy(page, () => items.nth(i).click())).kicker);
+          await expect(items.nth(i)).toHaveAttribute('aria-current', 'step');
+        }
+      };
+      if (unitTotal === 0) {
+        await clickParts(outline.locator('.outline__list .outline__item'));
+      } else {
+        for (let u = 0; u < unitTotal; u += 1) {
+          if (u > 0) visited.push((await moveBy(page, () => units.nth(u).click())).kicker);
+          await expect(units.nth(u)).toHaveAttribute('aria-current', 'true');
+          await clickParts(outline.locator('.outline__parts .outline__item'));
+        }
+      }
+      expect(expectLessonShape(visited)).toBe(Math.max(1, unitTotal));
+
+      await open(page, lesson.path);
+      let at = await position(page);
+      const byNext = [at.kicker];
+      while (!at.atEnd) {
+        at = await moveBy(page, () => nextButton(page).click());
+        byNext.push(at.kicker);
+        expect(byNext.length, 'the walk ends').toBeLessThanOrEqual(visited.length);
+      }
+      expect(byNext).toEqual(visited);
+      expect(errors).toEqual([]);
+    });
+
+    test('Play runs every step of the unit to the last, then says Replay, with the log filled', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page, lesson.path);
+      const steps = await stepCount(page);
+      await expect(logRows(page)).toHaveCount(0);
+      await playToReplay(page);
+      await expect(kicker(page)).toContainText(`Step ${steps} of ${steps}`);
+      // Every step's segment is passed, and the last is current.
+      const segments = page.locator('.topbar__segments .topbar__group').first().locator('.topbar__step');
+      for (let i = 0; i < steps - 1; i += 1) await expect(segments.nth(i)).toHaveAttribute('data-state', 'done');
+      await expect(segments.nth(steps - 1)).toHaveAttribute('data-state', 'current');
+      expect(await logRows(page).count()).toBeGreaterThanOrEqual(steps);
+      await expect(page.locator('.console__log td[data-idle]')).toHaveCount(0);
+      // The scene at its fullest, with every row its tables get, still fits the window.
+      expect(await overflowAt(page, 'the end of the run')).toBeNull();
+      expect(errors).toEqual([]);
+    });
+
+    test('fits one screen, and the explanation scrolls inside itself', async ({ page }) => {
+      await open(page, lesson.path);
+      const explanation = page.getByRole('region', { name: 'Explanation' });
+      expect(['auto', 'scroll']).toContain(await explanation.evaluate((el) => getComputedStyle(el).overflowY));
+      expect(await overflowAt(page, 'Overview')).toBeNull();
+
+      // Learn with Go deeper open is the longest explanation: it scrolls inside its panel, and the page does not.
+      const steps = await stepCount(page);
+      await open(page, `${lesson.path}?step=${steps + 1}`);
+      await expect(kicker(page)).toContainText('Learn');
+      await explanation.locator('summary', { hasText: 'Go deeper' }).click();
+      await expect(explanation.locator('.explain__sources')).toBeVisible();
+      const room = await explanation.evaluate((el) => ({ content: el.scrollHeight, box: el.clientHeight }));
+      expect(room.content, 'Learn with Go deeper open is taller than its panel').toBeGreaterThan(room.box);
+      await explanation.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+      await expect.poll(() => explanation.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+      expect(await overflowAt(page, 'Learn, Go deeper open')).toBeNull();
+
+      // The track's whole list, open over the console, does not make the page scroll either.
+      await page.getByRole('button', { name: /^All \d+ lessons$/ }).click();
+      await expect(page.getByRole('dialog', { name: /^All \d+ lessons$/ })).toBeVisible();
+      expect(await overflowAt(page, 'All lessons open')).toBeNull();
+    });
+
+    test(`the Network / Sequence switch is ${NO_SEQUENCE.has(lesson.slug) ? 'hidden' : 'there, and switching views mid-run and back leaves the scene settled'}`, async ({
+      page,
+      context,
+    }, testInfo) => {
+      const errors = collectErrors(page);
+      await open(page, lesson.path);
+      if (NO_SEQUENCE.has(lesson.slug)) {
+        await expect(viewSwitch(page)).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Sequence', exact: true })).toHaveCount(0);
+        return;
+      }
+      await expect(viewSwitch(page)).toHaveCount(1);
+      behaviourOnly(testInfo.project.name);
+      const network = viewSwitch(page).getByRole('button', { name: 'Network', exact: true });
+      const sequence = viewSwitch(page).getByRole('button', { name: 'Sequence', exact: true });
+      const figure = page.locator('.stage__figure');
+      await expect(network).toHaveAttribute('aria-pressed', 'true');
+
+      // Mid-run: the first message has landed and the run is still going.
+      await setSpeed(page, '2×');
       await playButton(page).click();
-      const rows = page.getByRole('region', { name: 'Event log' }).locator('tbody tr[data-outcome]');
-      await expect(rows.first()).toBeVisible({ timeout: 5_000 });
+      await expect(logRows(page).first()).toBeVisible({ timeout: RUN_TIMEOUT });
+      await expect(playButton(page)).toHaveText('Pause');
+      const landed = await logRows(page).count();
+      await sequence.click();
+      await expect(sequence).toHaveAttribute('aria-pressed', 'true');
+      await expect(figure).toBeHidden();
+      await expect(page.locator('.console__scene .seq')).toBeVisible();
+      // The run goes on while the Sequence view shows it.
+      await expect.poll(() => logRows(page).count(), { timeout: RUN_TIMEOUT }).toBeGreaterThan(landed);
+      await network.click();
+      await expect(figure).toBeVisible();
+      await expect(page.locator('.console__scene .seq')).toHaveCount(0);
+      await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+      await settledFrame(page);
+      const switched = await figureSnapshot(page);
+
+      // A run of the last step on a page that never switched views ends on the same scene.
+      const steps = await stepCount(page);
+      const fresh = await context.newPage();
+      const freshErrors = collectErrors(fresh);
+      await open(fresh, `${lesson.path}?step=${steps}`);
+      await expect(kicker(fresh)).toContainText(`Step ${steps} of ${steps}`);
+      await playToReplay(fresh);
+      await expect(logRows(fresh)).toHaveCount(await logRows(page).count());
+      await settledFrame(fresh);
+      expect(switched).toEqual(await figureSnapshot(fresh));
+      expect([...errors, ...freshErrors]).toEqual([]);
     });
 
-    test('at 1200 px and wider it fits one screen, and the explanation scrolls inside itself', async ({ page }) => {
-      const size = page.viewportSize();
-      test.skip(size === null || size.width < 1200, 'Narrower screens scroll the page by design.');
-      await openLesson(page, lesson.path);
-      const overflowY = await page.getByRole('region', { name: 'Explanation' }).evaluate((el) => getComputedStyle(el).overflowY);
-      expect(['auto', 'scroll']).toContain(overflowY);
-      const fits = () => page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
-      expect(await fits()).toBe(true);
-
-      // Taller content stays inside its panel: the full lesson list, and a packet in the inspector.
-      await page.getByText('All lessons').click();
-      expect(await fits()).toBe(true);
-      if (lesson.kind === 'flow') {
-        await playButton(page).click();
-        await page.getByRole('button', { name: 'Details' }).first().click();
-        await expect(page.getByRole('region', { name: 'Packet inspector' })).toBeVisible();
-        expect(await fits()).toBe(true);
-      } else {
-        // A playground's tallest state: Try it with a message under the address field.
-        await goToTryIt(page);
-        await page.getByLabel('IP address').fill('300.1.1.1');
-        await expect(page.getByText(/^Not a valid IPv4 address/)).toBeVisible();
-        expect(await fits()).toBe(true);
-      }
-    });
-
-    test('desktop: a focused lease table keeps focus when playback adds a row to it', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'desktop-dark' || lesson.path !== '/networking/dhcp');
-      // Step 4 plays messages, then a table event that remounts the lease table.
-      await openLesson(page, `${lesson.path}?step=4`);
-      const table = page.getByRole('region', { name: /^DHCP lease table/ });
-      await table.focus();
-      await expect(table.getByRole('cell', { name: '192.168.1.100' })).toBeVisible({ timeout: 15_000 });
-      await expect(table).toBeFocused();
-    });
-
-    test('short desktop: the playback controls are on screen', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'short-desktop');
-      await openLesson(page, lesson.path);
-      // A flow lesson plays; a playground has only the step buttons (ruling R29).
-      const controls = lesson.kind === 'flow' ? [playButton(page)] : [previousStep(page), nextStep(page)];
-      for (const control of controls) await expect(control).toBeInViewport({ ratio: 1 });
-    });
-
-    test('phone: the playback bar is on screen at the top of the page', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'phone');
-      await openLesson(page, lesson.path);
-      expect(await page.evaluate(() => window.scrollY)).toBe(0);
-      const steps = [previousStep(page), nextStep(page)];
-      for (const button of steps) await expect(button).toBeInViewport({ ratio: 1 });
-      if (lesson.kind === 'flow') {
-        await expect(playButton(page)).toBeInViewport({ ratio: 1 });
-      } else {
-        // A playground has nothing to play: the bar is the step buttons alone (ruling R29), and they work.
-        await expect(playButton(page)).toHaveCount(0);
-        await steps[1]!.click();
-        await expect(page.getByText(/^STEP 1 OF \d+$/)).toBeVisible();
-      }
-    });
-
-    test('phone: the step buttons stay on screen while the page scrolls', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'phone');
-      await openLesson(page, lesson.path);
-      const controls = lesson.kind === 'flow' ? [playButton(page), previousStep(page), nextStep(page)] : [previousStep(page), nextStep(page)];
-      const height = await page.evaluate(() => document.documentElement.scrollHeight);
-      for (const y of [height / 3, (2 * height) / 3, height]) {
-        await page.evaluate((top) => window.scrollTo(0, top), y);
-        for (const control of controls) await expect(control).toBeInViewport({ ratio: 1 });
-      }
-      expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-    });
-
-    test('the text under each device reads at 12 px (labels) and 11 px (addresses) at least, and none of it overlaps', async ({ page }) => {
-      test.skip(lesson.kind !== 'flow', 'Only flow lessons draw devices.');
-      await openLesson(page, lesson.path);
-      const measure = () =>
-        page.evaluate(() => {
-          const svg = document.querySelector<SVGSVGElement>('.flow-network__svg')!;
-          const scale = svg.getScreenCTM()!.a;
-          const read = (selector: string) =>
-            [...svg.querySelectorAll<SVGTextElement>(selector)].map((text) => ({
-              text: text.textContent ?? '',
-              px: Math.round(parseFloat(getComputedStyle(text).fontSize) * scale * 100) / 100,
-              box: text.getBoundingClientRect().toJSON() as DOMRect,
-            }));
-          return { labels: read('.flow-device__label'), addresses: read('.flow-device__address') };
-        });
-      // The view sizes its text once it has measured itself, just after it hydrates.
-      await expect.poll(async () => Math.min(...(await measure()).labels.map((label) => label.px))).toBeGreaterThanOrEqual(MIN_LABEL_PX);
-      const measured = await measure();
-      expect(measured.labels.length).toBeGreaterThan(0);
-      for (const label of measured.labels) expect(label.px, label.text).toBeGreaterThanOrEqual(MIN_LABEL_PX);
-      for (const address of measured.addresses) expect(address.px, address.text).toBeGreaterThanOrEqual(MIN_ADDRESS_PX);
-
-      const all = [...measured.labels, ...measured.addresses];
-      const overlapping = all.flatMap((a, i) =>
-        all
-          .slice(i + 1)
-          .filter((b) => a.box.left < b.box.right && b.box.left < a.box.right && a.box.top < b.box.bottom && b.box.top < a.box.bottom)
-          .map((b) => `${a.text} / ${b.text}`),
-      );
-      expect(overlapping).toEqual([]);
-    });
-
-    test('the form and the 32 bits fit inside the canvas: nothing clipped, nothing scrolling sideways', async ({ page }) => {
-      test.skip(lesson.kind !== 'playground', 'Only playgrounds have a form and a bit row.');
-      await openLesson(page, lesson.path);
-      // The tallest and widest state: Try it, with a message under the address field.
-      await goToTryIt(page);
-      await page.getByLabel('IP address').fill('300.1.1.1');
-      await expect(page.getByText(/^Not a valid IPv4 address/)).toBeVisible();
-
-      const canvas = page.getByRole('region', { name: 'Subnet playground' });
-      const room = await canvas.evaluate((el) => ({
-        sideways: el.scrollWidth - el.clientWidth,
-        down: el.scrollHeight - el.clientHeight,
-        page: document.documentElement.scrollWidth - window.innerWidth,
-      }));
-      expect(room).toEqual({ sideways: 0, down: 0, page: 0 });
-
-      const width = page.viewportSize()!.width;
-      const parts = [page.getByLabel('IP address'), page.getByLabel('Prefix length'), canvas.getByRole('img')];
-      for (const part of parts) {
-        const box = (await part.boundingBox())!;
-        expect(box.x).toBeGreaterThanOrEqual(0);
-        expect(box.x + box.width).toBeLessThanOrEqual(width);
-      }
-    });
-
-    test('phone: the outline opens in a drawer and jumps', async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'phone');
-      await openLesson(page, lesson.path);
-      await page.getByRole('button', { name: 'Contents' }).click();
-      const drawer = page.getByRole('dialog', { name: 'Contents' });
-      await expect(drawer).toBeVisible();
-      await drawer.getByRole('button', { name: 'Check yourself' }).click();
-      await expect(drawer).toBeHidden();
-      await expect(page.getByRole('heading', { level: 2, name: 'Check yourself' })).toBeVisible();
-    });
-  });
-}
-
-test.describe('/networking/subnetting: the playground', () => {
-  const address = (page: Page) => page.getByLabel('IP address');
-  const prefix = (page: Page) => page.getByLabel('Prefix length');
-  const compare = (page: Page) => page.getByLabel('Compare with');
-
-  test('the steps are read-only, Try it is editable, and its edits are dropped when the learner leaves', async ({ page }) => {
-    await openLesson(page, '/networking/subnetting');
-    for (const field of [address(page), prefix(page), compare(page)]) await expect(field).toBeDisabled();
-    await expect(page.getByText('You can change these in Try it.')).toBeVisible();
-
-    await advance(page, 7);
-    await expect(page.getByRole('heading', { level: 2, name: 'Try it' })).toBeVisible();
-    // Try it starts from the last step's preset.
-    await expect(address(page)).toHaveValue('10.0.0.5');
-    await expect(prefix(page)).toHaveValue('30');
-    for (const field of [address(page), prefix(page), compare(page)]) await expect(field).toBeEnabled();
-
-    await address(page).fill('172.16.5.9');
-    await prefix(page).fill('20');
-    await expect(page.getByText('172.16.0.0', { exact: true })).toBeVisible();
-
-    await previousStep(page).click();
-    await expect(address(page)).toBeDisabled();
-    await expect(address(page)).toHaveValue('10.0.0.5');
-    await nextStep(page).click();
-    await expect(address(page)).toHaveValue('10.0.0.5');
-    await expect(prefix(page)).toHaveValue('30');
-  });
-
-  test('step 5 compares 192.168.1.10 with 192.168.1.70 at /26 and says they are in different subnets', async ({ page }) => {
-    await openLesson(page, '/networking/subnetting');
-    await advance(page, 4);
-    await expect(page.getByRole('status')).toHaveText('');
-    await nextStep(page).click();
-    await expect(page.getByText('STEP 5 OF 6')).toBeVisible();
-    await expect(address(page)).toHaveValue('192.168.1.10');
-    await expect(prefix(page)).toHaveValue('26');
-    await expect(compare(page)).toHaveValue('192.168.1.70');
-    await expect(page.getByRole('status')).toHaveText('Different subnets: traffic between them goes through a router');
-    // The next step has no comparison, so the old result does not linger.
-    await nextStep(page).click();
-    await expect(page.getByRole('status')).toHaveText('');
-  });
-
-  // Step 5's whole point is this result, so it has to be there when the learner arrives, not behind a scroll bar.
-  for (const [width, height] of [
-    [1280, 650],
-    [1024, 768],
-  ] as const) {
-    test(`step 5's result is in view, and not clipped by its panel, at ${width}x${height}`, async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'short-desktop', 'Sets its own desktop viewport; one project is enough.');
-      await page.setViewportSize({ width, height });
-      await openLesson(page, '/networking/subnetting');
-      await advance(page, 5);
-      const result = page.getByRole('status');
-      await expect(result).toHaveText('Different subnets: traffic between them goes through a router');
-      await expect(compare(page)).toBeInViewport({ ratio: 1 });
-      await expect(result).toBeInViewport({ ratio: 1 });
-
-      // Inside the viewport is not enough if a scrolling panel is hiding part of it: it has to sit inside every scroll container above it.
-      const clippedBy = await clippingContainers(result);
-      expect(clippedBy).toEqual([]);
-    });
-  }
-
-  test('phone: step 5 shows the result right under the form, above the step buttons', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'phone');
-    await openLesson(page, '/networking/subnetting');
-    await advance(page, 5);
-    await page.evaluate(() => window.scrollTo(0, 0));
-    const result = page.getByRole('status');
-    await expect(result).toHaveText('Different subnets: traffic between them goes through a router');
-    const [resultBox, barBox] = await Promise.all([result.boundingBox(), nextStep(page).boundingBox()]);
-    expect(resultBox!.y + resultBox!.height).toBeLessThanOrEqual(barBox!.y);
-    // It follows the compare field directly: nothing but the field and a gap sits between them.
-    const fieldBox = (await compare(page).boundingBox())!;
-    expect(resultBox!.y - (fieldBox.y + fieldBox.height)).toBeLessThan(40);
-  });
-
-  test('a fact value breaks its line only after a dot or at a space, never inside a group of digits', async ({ page }) => {
-    await openLesson(page, '/networking/subnetting');
-    // Step 2 has the binary mask, the longest unbroken value; steps 4 to 6 have addresses with text around them.
-    for (const step of [2, 4, 5, 6]) {
-      await page.goto('/networking/subnetting');
-      await page.locator('astro-island:not([ssr])').first().waitFor({ state: 'attached' });
-      await advance(page, step);
-      const wrapped = await page.locator('.explain__fact dd').evaluateAll((values) =>
-        values.map((dd) => {
-          const full = dd.textContent ?? '';
-          const rects: { index: number; top: number }[] = [];
-          const walker = document.createTreeWalker(dd, NodeFilter.SHOW_TEXT);
-          let index = 0;
-          for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
-            const text = node.textContent ?? '';
-            for (let i = 0; i < text.length; i += 1) {
-              const range = document.createRange();
-              range.setStart(node, i);
-              range.setEnd(node, i + 1);
-              const rect = range.getClientRects()[0];
-              if (rect !== undefined && !/\s/.test(text[i]!)) rects.push({ index: index + i, top: Math.round(rect.top) });
-            }
-            index += text.length;
-          }
-          // A line ends where the next visible character sits lower; it may do so after a dot, or before a space.
-          const badEnds: string[] = [];
-          for (let i = 0; i + 1 < rects.length; i += 1) {
-            if (rects[i + 1]!.top <= rects[i]!.top + 2) continue;
-            const at = rects[i]!.index;
-            const next = rects[i + 1]!.index;
-            const afterDot = full[at] === '.';
-            const atSpace = /\s/.test(full.slice(at + 1, next));
-            if (!afterDot && !atSpace) badEnds.push(full.slice(Math.max(0, at - 6), at + 1) + '|' + full.slice(next, next + 6));
-          }
-          return { full, lines: new Set(rects.map((r) => r.top)).size, badEnds };
+    test('with localStorage throwing, the lesson still plays end to end', async ({ page }, testInfo) => {
+      behaviourOnly(testInfo.project.name);
+      await page.addInitScript(() =>
+        Object.defineProperty(window, 'localStorage', {
+          get() {
+            throw new DOMException('blocked', 'SecurityError');
+          },
         }),
       );
-      for (const value of wrapped) expect(value.badEnds, `step ${step}: ${value.full}`).toEqual([]);
-      if (step === 2) {
-        const binary = wrapped.find((value) => value.full.startsWith('11111111'))!;
-        // Wrapping must really happen here, or the check above proves nothing.
-        expect(binary.lines).toBeGreaterThan(1);
+      const errors = collectErrors(page);
+      await open(page, lesson.path);
+      expect(
+        await page.evaluate(() => {
+          try {
+            return window.localStorage === null;
+          } catch {
+            return 'throws';
+          }
+        }),
+      ).toBe('throws');
+      await playToReplay(page);
+      expect(await logRows(page).count()).toBeGreaterThan(0);
+      let at = await position(page);
+      for (let moves = 0; !at.atEnd; moves += 1) {
+        at = await pressKey(page, 'ArrowRight');
+        expect(moves, 'the walk ends').toBeLessThan(400);
       }
-    }
-  });
-
-  test('Try it opens with its three things to notice showing', async ({ page }) => {
-    await openLesson(page, '/networking/subnetting');
-    await goToTryIt(page);
-    const notice = page.locator('details.tryit__notice');
-    await expect(notice).toHaveAttribute('open', '');
-    await expect(page.getByText(/^Three things to notice\./)).toBeVisible();
-    await notice.getByText('What to notice').click();
-    await expect(page.getByText(/^Three things to notice\./)).toBeHidden();
-  });
-
-  test('Space does nothing, because there is nothing to play, and the page is left to handle it', async ({ page }) => {
-    await openLesson(page, '/networking/subnetting');
-    await advance(page, 2);
-    await blurFocus(page);
-    // Nothing visible changes if Space is mishandled in a playground, so check the contract itself: the console
-    // does not cancel the key. The listener goes on the window before the key is pressed, and runs after the console's own.
-    await page.evaluate(() => {
-      (window as unknown as { spaceCancelled: Promise<boolean> }).spaceCancelled = new Promise((resolve) => {
-        window.addEventListener('keydown', (event) => {
-          if (event.code === 'Space') resolve(event.defaultPrevented);
-        });
-      });
+      await expect(kicker(page)).toContainText('Practice');
+      // Practice still answers.
+      await page.locator('.console__explain .practice__option').first().click();
+      await expect(page.locator('.console__explain .practice__feedback').first()).not.toBeEmpty();
+      expect(errors).toEqual([]);
     });
-    await page.keyboard.press('Space');
-    const cancelled = await page.evaluate(() => (window as unknown as { spaceCancelled: Promise<boolean> }).spaceCancelled);
-    expect(cancelled).toBe(false);
-    await expect(page.getByText('STEP 2 OF 6')).toBeVisible();
   });
-
-  test('the usable-hosts numbers the lesson states are the ones the page shows', async ({ page }) => {
-    await openLesson(page, '/networking/subnetting');
-    const usable = page.locator('.subnet-readout__item', { hasText: 'Usable hosts' }).locator('dd');
-    await advance(page, 3);
-    await expect(usable).toHaveText('254');
-    await nextStep(page).click();
-    await expect(usable).toHaveText('62');
-    await advance(page, 2);
-    await expect(usable).toHaveText('2');
-  });
-});
-
-test.describe('/networking/firewalls: the rule list', () => {
-  // The rule list is this lesson's teaching surface: the row a step matched has to be seen, not hidden below the stage or in a scroll area.
-  for (const [width, height] of [
-    [1280, 650],
-    [1024, 768],
-  ] as const) {
-    test(`the matched rule row is visible at every step at ${width}x${height}`, async ({ page }, testInfo) => {
-      test.skip(testInfo.project.name !== 'short-desktop', 'Sets its own desktop viewport; one project is enough.');
-      await page.setViewportSize({ width, height });
-      await openLesson(page, '/networking/firewalls');
-      const expected = ['1', '3', '2', '3'];
-      for (const [i, rule] of expected.entries()) {
-        // Moving to a step starts it playing.
-        await nextStep(page).click();
-        const row = page.locator('.device-table[data-table="rules"] tr[data-highlight="matched"]');
-        await expect(row).toHaveCount(1, { timeout: 8_000 });
-        await expect(row.locator('td').first()).toContainText(rule);
-        await expect(row, `step ${i + 1}`).toBeInViewport({ ratio: 1 });
-        expect(await clippingContainers(row), `step ${i + 1}`).toEqual([]);
-      }
-    });
-  }
-});
-
-/** Every row of a device table, fully inside both the viewport and the centre panel that holds it. */
-async function expectRowsFullyVisible(page: Page, tableId: string, rows: number, where: string): Promise<void> {
-  await expect(page.locator(`.device-table[data-table="${tableId}"] tbody tr`), where).toHaveCount(rows, { timeout: 20_000 });
-  const outside = await page.evaluate((id) => {
-    const centre = document.querySelector('.console__center')!.getBoundingClientRect();
-    return [...document.querySelectorAll(`.device-table[data-table="${id}"] tbody tr`)]
-      .map((tr) => tr.getBoundingClientRect())
-      .map((r, i) => ({ i, ok: r.top >= centre.top && r.bottom <= centre.bottom && r.top >= 0 && r.bottom <= window.innerHeight }))
-      .filter((r) => !r.ok)
-      .map((r) => r.i + 1);
-  }, tableId);
-  expect(outside, `${where}: rows not fully visible`).toEqual([]);
 }
 
-test.describe('the whole rule list and lease table show at 1440x900 (ruling R37)', () => {
-  test.beforeEach(({}, testInfo) => test.skip(testInfo.project.name !== 'desktop-light', 'Sets its own desktop viewport; one project is enough.'));
+test.describe('lesson specifics', () => {
+  test.describe.configure({ timeout: 180_000 });
 
-  test('Firewalls: every rule row beside the stage, at every step and every Try it choice', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await openLesson(page, '/networking/firewalls');
-    for (let step = 1; step <= 5; step += 1) {
-      await nextStep(page).click();
-      await expectRowsFullyVisible(page, 'rules', 3, `step ${step}`);
+  /** A lesson the brief names, found among the ready ones. */
+  function lessonNamed(slug: string): ReadyLesson {
+    const lesson = LESSONS.find((l) => l.slug === slug);
+    if (lesson === undefined) throw new Error(`${slug} is not among the ready lessons the track page links to.`);
+    return lesson;
+  }
+
+  test('reduced motion: a Play run takes as long as it does with motion (the shortest lesson)', async ({ browser, page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'reduced-motion', 'Compares the reduced-motion project with a normal run.');
+    const shortest = [...LESSONS].sort((a, b) => a.minutes - b.minutes)[0]!;
+    /** One run of the lesson's first unit at 1×, from Play to Replay, measured in the page. */
+    async function runTime(p: Page): Promise<number> {
+      await open(p, shortest.path);
+      await p.evaluate(() => {
+        const button = document.querySelector('.console__controls .cbtn--play')!;
+        const w = window as unknown as { runStart: number; runEnd: Promise<number> };
+        w.runEnd = new Promise((resolve) => {
+          new MutationObserver(() => {
+            if (button.textContent?.includes('Replay')) resolve(performance.now());
+          }).observe(button, { subtree: true, characterData: true, childList: true });
+        });
+        button.addEventListener('click', () => (w.runStart = performance.now()), { once: true, capture: true });
+      });
+      await playButton(p).click();
+      await expect(playButton(p)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+      return p.evaluate(async () => {
+        const w = window as unknown as { runStart: number; runEnd: Promise<number> };
+        return Math.round((await w.runEnd) - w.runStart);
+      });
     }
-    await nextStep(page).click();
-    const choices: [string, number][] = [
-      ["Move 'Block everything else' to the top", 3],
-      ["Add 'Allow TCP 80' above the last rule", 4],
-      ['Remove the admin SSH rule', 2],
-    ];
-    for (const [label, rows] of choices) {
-      await page.getByRole('button', { name: label }).click();
-      await expectRowsFullyVisible(page, 'rules', rows, label);
-      // The stage is still drawn at a size the labels read at (ruling R28); the label check above covers the exact sizes.
-      expect((await page.locator('.console__stage').boundingBox())!.height).toBeGreaterThanOrEqual(256);
-    }
+    const { baseURL, viewport } = testInfo.project.use;
+    const normalContext = await browser.newContext({ baseURL, viewport, reducedMotion: 'no-preference' });
+    const normalPage = await normalContext.newPage();
+    expect(await normalPage.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false);
+    expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+    const normal = await runTime(normalPage);
+    await normalContext.close();
+    const reduced = await runTime(page);
+    const note = `${shortest.title}'s first unit, Play to Replay at 1×: ${normal} ms with motion, ${reduced} ms with reduced motion`;
+    testInfo.annotations.push({ type: 'run time', description: note });
+    // As long as normal: within a quarter either way.
+    expect(Math.abs(reduced - normal) / normal).toBeLessThanOrEqual(0.25);
   });
 
-  test('DHCP: the lease rows are fully visible at the last step and at Try it', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await openLesson(page, '/networking/dhcp');
-    await advance(page, 5);
-    await expectRowsFullyVisible(page, 'leases', 1, 'last step');
-    await nextStep(page).click();
-    await page.getByRole('button', { name: 'Connect the phone', exact: true }).click();
-    await expectRowsFullyVisible(page, 'leases', 2, 'Connect the phone');
+  test('DHCP: a focused lease table keeps focus while playback adds a row to it', async ({ page }) => {
+    const dhcp = lessonNamed('dhcp');
+    // Step 4 plays the Acknowledge, then a table event that remounts the lease table with its new row.
+    await open(page, `${dhcp.path}?step=4`);
+    const table = page.getByRole('region', { name: 'DHCP lease table' });
+    const lease = table.getByRole('cell', { name: '192.168.1.100' });
+    // The row must arrive after the focus, or the remount is never tested.
+    await expect(lease).toHaveCount(0);
+    await table.focus();
+    await expect(lease).toBeVisible({ timeout: 30_000 });
+    await expect(table).toBeFocused();
+  });
+
+  test("DHCP: the Acknowledge step, once played, announces the ACK's words and then the lease table's change", async ({ page }) => {
+    const dhcp = lessonNamed('dhcp');
+    // Step 4 plays the Acknowledge, then the table change, which the real driver gives no time.
+    await open(page, `${dhcp.path}?step=4`);
+    await expect(page.locator('[aria-live="polite"][data-announce]')).toHaveText(
+      'DHCP Acknowledge. The router confirms: 192.168.1.100 is the laptop’s for 24 hours. ' +
+        'The router writes down that 192.168.1.100 belongs to the laptop for 24 hours.',
+      { timeout: 30_000 },
+    );
+  });
+
+  test('Firewalls: the matched rule row is in view at every step', async ({ page }) => {
+    const firewalls = lessonNamed('firewalls');
+    // Each step's visit and the rule that decides it (the list is reordered before step 6); step 5's reply is let
+    // through as a connection the firewall remembers, without reading the rules.
+    const expected: ({ rule: string; state: 'allow' | 'deny' } | 'known')[] = [
+      { rule: '1', state: 'allow' },
+      { rule: '3', state: 'deny' },
+      { rule: '2', state: 'allow' },
+      { rule: '3', state: 'deny' },
+      'known',
+      { rule: '1', state: 'deny' },
+    ];
+    await open(page, firewalls.path);
+    expect(await stepCount(page)).toBe(expected.length);
+    await setSpeed(page, '2×');
+    for (const [i, match] of expected.entries()) {
+      const where = `step ${i + 1}`;
+      // Moving to a step plays it.
+      await moveBy(page, () => nextButton(page).click());
+      const target =
+        match === 'known'
+          ? page.locator('.rpanel .rpanel__chip[data-known]')
+          : page.locator('.rpanel tbody tr[data-state="allow"], .rpanel tbody tr[data-state="deny"]');
+      await expect(target, where).toHaveCount(1, { timeout: 30_000 });
+      if (match !== 'known') {
+        await expect(target, where).toHaveAttribute('data-state', match.state);
+        await expect(target.locator('td').first(), where).toHaveText(match.rule);
+      }
+      await expect(target, where).toBeInViewport({ ratio: 1 });
+      expect(await clippingContainers(target), where).toEqual([]);
+      expect(await overflowAt(page, where)).toBeNull();
+    }
   });
 });
 
-test('Firewalls: while the inspector hides the scene the console does not try to scroll the centre panel', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'short-desktop', 'Needs a short screen, where the centre scrolls.');
-  await openLesson(page, '/networking/firewalls');
-  await nextStep(page).click();
-  const row = page.locator('.device-table tr[data-highlight="matched"]');
-  await expect(row).toHaveCount(1, { timeout: 8_000 });
-  const centre = page.locator('.console__center');
-  // With the scene hidden its rows have no position; a scroll aimed at them would be aimed at nothing.
-  await centre.evaluate((el) => {
-    (window as unknown as { scrolls: number }).scrolls = 0;
-    const original = el.scrollTo.bind(el);
-    el.scrollTo = ((...args: unknown[]) => {
-      (window as unknown as { scrolls: number }).scrolls += 1;
-      return (original as (...a: unknown[]) => void)(...args);
-    }) as typeof el.scrollTo;
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test('every lesson says it needs JavaScript to play, and shows no control that cannot work', async ({ page }) => {
+    for (const lesson of LESSONS) {
+      await page.goto(lesson.path);
+      const where = lesson.title;
+      // Found by its class: Playwright's text matching skips what is inside a <noscript>.
+      const note = page.locator('.console__log td[data-idle] noscript .log__nojs');
+      await expect(note, where).toBeVisible();
+      await expect(note, where).toHaveText('This lesson needs JavaScript to play.');
+      await expect(page.locator('.console__log .log__idle-words'), where).toBeHidden();
+      // No button works without JavaScript, so none shows: the theme and view switches, playback, the outline's places.
+      await expect(page.locator('button:visible'), where).toHaveCount(0);
+      // The outline goes whole, so no empty "This lesson" landmark is left, but it keeps its cell in the grid.
+      const outline = page.locator('nav.console__outline');
+      await expect(outline, where).toBeHidden();
+      await expect(page.getByRole('navigation', { name: /^(This lesson|\d+ protocols)$/ }), where).toHaveCount(0);
+      expect((await outline.boundingBox())?.width ?? 0, `${where}: the outline's cell`).toBeGreaterThan(100);
+      // The Overview's words, the figure and the way back to the track stay.
+      await expect(page.locator('.console__explain .explain__title'), where).toBeVisible();
+      await expect(page.locator('.console__stage svg[data-figure]'), where).toBeVisible();
+      await expect(page.locator('.topbar__crumb a'), where).toBeVisible();
+      // The page does not scroll. (Measured at once: with JavaScript off no frame callback runs, so overflowAt cannot wait.)
+      const overflow = await page.evaluate(() => {
+        const root = document.scrollingElement ?? document.documentElement;
+        return [root.scrollHeight - window.innerHeight, root.scrollWidth - window.innerWidth].map((n) => Math.max(0, n));
+      });
+      expect(overflow, `${where}: [down, sideways]`).toEqual([0, 0]);
+    }
   });
-  await page.getByRole('button', { name: 'Details' }).first().click();
-  await expect(page.getByRole('region', { name: 'Packet inspector' })).toBeVisible();
-  await page.waitForTimeout(400);
-  expect(await page.evaluate(() => (window as unknown as { scrolls: number }).scrolls)).toBe(0);
-  // Closing it brings the matched row back into view.
-  await page.getByRole('button', { name: 'Close inspector' }).click();
-  await expect(row).toBeInViewport({ ratio: 1 });
 });

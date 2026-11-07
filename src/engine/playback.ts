@@ -1,122 +1,164 @@
-import { useEffect, useMemo, useReducer, type Dispatch } from 'react';
-import type { Lesson } from '../content/schema';
-import { currentEvents, sectionsFor, type Position } from './timeline';
+import { useEffect, useEffectEvent, useMemo, useReducer, type Dispatch } from 'react';
+import type { Lesson, SceneEvent } from '../content/schema';
+import { slotsFor, stepEvents, type Position } from './timeline';
 
-type Speed = 0.5 | 1 | 2;
+/** The speed button's values, in the order a click cycles through them. */
+export const SPEEDS = [0.5, 1, 1.5, 2] as const;
+export type Speed = (typeof SPEEDS)[number];
+
+/** How long a run holds on a finished step before the next one, in ms at 1×. */
+export const HOLD_MS = 2600;
+
+/** How long an event takes to play, in ms at 1×. The lesson's driver supplies it, because scenes time events by route length. */
+export type DurationOf = (e: SceneEvent) => number;
+
+/**
+ * What playback is doing:
+ * - `'idle'`: nothing is playing.
+ * - `'step'`: a step reached by hand plays once.
+ * - `'run'`: Play is running the unit's steps, and this one is playing.
+ * - `'hold'`: the run has finished this step and waits before the next.
+ */
+export type Mode = 'idle' | 'step' | 'run' | 'hold';
 
 export interface PlaybackState {
   position: Position;
-  /** How many of the position's events have played. */
+  /** How many of the step's events have been applied. While a step plays, the next one is pending. */
   eventIndex: number;
-  playing: boolean;
+  mode: Mode;
+  /** A run has finished the unit's last step, so Play reads Replay and starts the unit over. */
+  ended: boolean;
   speed: Speed;
-  /** The Try it variant being shown. Only ever set at the Try it position. */
-  tryItChoice: string | null;
 }
 
 export type PlaybackAction =
-  | { type: 'play' }
-  | { type: 'pause' }
-  | { type: 'toggle' }
-  /** Carries the position the timer was set for, so a late tick from a position the learner has left is ignored. */
-  | { type: 'tick'; position: Position }
+  | { type: 'go'; position: Position }
   | { type: 'next' }
   | { type: 'prev' }
-  | { type: 'jump'; position: Position }
-  | { type: 'replay' }
-  | { type: 'speed'; speed: Speed }
-  | { type: 'chooseTryIt'; choiceId: string };
-
-/** How long each kind of event stays on screen at normal speed. */
-export const EVENT_DURATION_MS = { message: 1200, table: 700 } as const;
+  | { type: 'toggle' }
+  /** Ends the pending event's wait. It names the event it was set for, so a late one is ignored. */
+  | { type: 'tick'; position: Position; eventIndex: number }
+  /** Ends a hold. It names the step it was set for, so a late one is ignored. */
+  | { type: 'holdDone'; position: Position }
+  | { type: 'cycleSpeed' };
 
 export function initialPlayback(): PlaybackState {
-  return { position: 0, eventIndex: 0, playing: false, speed: 1, tryItChoice: null };
+  return { position: 0, eventIndex: 0, mode: 'idle', ended: false, speed: 1 };
 }
 
 /**
- * The rules for moving through a lesson. The state is only a cursor: what the
- * scene shows comes from `deriveState(lesson, position, eventIndex, tryItChoice)`.
+ * The rules for playing a lesson, after the mockups. Moving by hand (`go`,
+ * `next`, `prev`) stops any run and plays that step once. Play (`toggle`) runs
+ * every step of the current unit, from the current step or else the unit's
+ * first, holding between steps; during a run it pauses with the step shown
+ * complete. The state is only a cursor: what the scene shows comes from
+ * `deriveState(lesson, position, eventIndex)`.
  */
 export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: PlaybackAction) => PlaybackState {
-  const sections = sectionsFor(lesson.steps.length);
-  const tryItDef = lesson.tryIt;
-  const eventsAt = (position: Position, choice: string | null) => currentEvents(lesson, position, choice);
+  const slots = slotsFor(lesson);
+  const last = slots.length - 1;
+  const eventCount = (p: Position) => stepEvents(lesson, p).length;
 
-  /** The Try it choice survives only while the learner stays where they are. */
-  const choiceAfterMove = (s: PlaybackState, position: Position) => (position === s.position ? s.tryItChoice : null);
-
-  /** Goes to `target` (kept within range), starts it from its first event, and plays it if it has any. */
-  function moveTo(s: PlaybackState, target: Position): PlaybackState {
-    const position = Math.min(Math.max(0, target), sections.max);
-    const tryItChoice = choiceAfterMove(s, position);
-    return { ...s, position, eventIndex: 0, tryItChoice, playing: eventsAt(position, tryItChoice).length > 0 };
+  /** A hand move. A position out of range (or not a whole number) is read as the nearest one, as the timeline does. */
+  function go(s: PlaybackState, target: Position): PlaybackState {
+    const position = Number.isNaN(target) ? 0 : Math.min(Math.max(Math.trunc(target), 0), last);
+    return { ...s, position, eventIndex: 0, mode: eventCount(position) > 0 ? 'step' : 'idle', ended: false };
   }
 
-  function play(s: PlaybackState): PlaybackState {
-    if (s.eventIndex < eventsAt(s.position, s.tryItChoice).length) return s.playing ? s : { ...s, playing: true };
-    // Nothing left here: carry on to the next position, unless this is the last.
-    return s.position < sections.max ? moveTo(s, s.position + 1) : s;
+  /** The run plays the step at `position` from its first event. */
+  function runFrom(s: PlaybackState, position: Position): PlaybackState {
+    return settle({ ...s, position, eventIndex: 0, mode: 'run', ended: false });
   }
 
-  function pause(s: PlaybackState): PlaybackState {
-    return s.playing ? { ...s, playing: false } : s;
+  /**
+   * Once every event of the step has been applied: a hand-played step idles,
+   * and a run holds before the unit's next step, or ends after its last one.
+   * A step with no events is complete the moment it starts.
+   */
+  function settle(s: PlaybackState): PlaybackState {
+    if (s.eventIndex < eventCount(s.position)) return s;
+    if (s.mode === 'step') return { ...s, mode: 'idle' };
+    const next = slots[s.position + 1];
+    return next?.kind === 'step' && next.unit === slots[s.position]!.unit
+      ? { ...s, mode: 'hold' }
+      : { ...s, mode: 'idle', ended: true };
+  }
+
+  function toggle(s: PlaybackState): PlaybackState {
+    if (s.mode === 'run' || s.mode === 'hold') return { ...s, mode: 'idle', eventIndex: eventCount(s.position) };
+    const slot = slots[s.position]!;
+    if (slot.kind === 'step' && !s.ended) return runFrom(s, s.position);
+    // The Overview, Learn, Practice or a finished run: start from the unit's first step.
+    const first = slots.findIndex((x) => x.unit === slot.unit && x.kind === 'step');
+    return first === -1 ? s : runFrom(s, first);
   }
 
   return (s, a) => {
     switch (a.type) {
-      case 'play':
-        return play(s);
-      case 'pause':
-        return pause(s);
-      case 'toggle':
-        return s.playing ? pause(s) : play(s);
-      case 'tick': {
-        if (!s.playing || a.position !== s.position) return s;
-        const length = eventsAt(s.position, s.tryItChoice).length;
-        const eventIndex = Math.min(s.eventIndex + 1, length);
-        return { ...s, eventIndex, playing: eventIndex < length };
-      }
+      case 'go':
+        return go(s, a.position);
       case 'next':
-        return moveTo(s, s.position + 1);
-      case 'jump':
-        // A position that is not a whole number cannot be meant; leave the cursor where it is.
-        return Number.isInteger(a.position) ? moveTo(s, a.position) : s;
-      case 'prev': {
-        const position = Math.max(0, s.position - 1);
-        const tryItChoice = choiceAfterMove(s, position);
-        // Land on the finished state of the previous position, paused.
-        return { ...s, position, eventIndex: eventsAt(position, tryItChoice).length, tryItChoice, playing: false };
-      }
-      case 'replay':
-        return { ...s, eventIndex: 0, playing: eventsAt(s.position, s.tryItChoice).length > 0 };
-      case 'speed':
-        return { ...s, speed: a.speed };
-      case 'chooseTryIt': {
-        if (s.position !== sections.tryIt || tryItDef.mode !== 'choices') return s;
-        const choice = tryItDef.choices.find((c) => c.id === a.choiceId);
-        if (choice === undefined) return s;
-        return { ...s, tryItChoice: choice.id, eventIndex: 0, playing: choice.events.length > 0 };
-      }
+        return go(s, s.position + 1);
+      case 'prev':
+        return go(s, s.position - 1);
+      case 'toggle':
+        return toggle(s);
+      case 'tick':
+        if ((s.mode !== 'step' && s.mode !== 'run') || a.position !== s.position || a.eventIndex !== s.eventIndex) return s;
+        return settle({ ...s, eventIndex: s.eventIndex + 1 });
+      case 'holdDone':
+        return s.mode === 'hold' && a.position === s.position ? runFrom(s, s.position + 1) : s;
+      case 'cycleSpeed':
+        return { ...s, speed: SPEEDS[(SPEEDS.indexOf(s.speed) + 1) % SPEEDS.length]! };
     }
   };
 }
 
+/** The Play button's label. */
+export function playLabel(lesson: Lesson, s: PlaybackState): 'Play' | 'Pause' | 'Replay' | 'Watch again' {
+  if (s.mode === 'run' || s.mode === 'hold') return 'Pause';
+  const kind = slotsFor(lesson)[s.position]?.kind;
+  if (kind === 'learn' || kind === 'practice') return 'Watch again';
+  return s.ended ? 'Replay' : 'Play';
+}
+
+/** During a hold, the step it leads to and how long it lasts: the top bar fills that step's segment over `ms`. */
+export function holding(s: PlaybackState): { next: Position; ms: number } | null {
+  return s.mode === 'hold' ? { next: s.position + 1, ms: HOLD_MS / s.speed } : null;
+}
+
 /**
- * Playback state for a lesson. While playing it waits out the current event
- * (its duration at the chosen speed) and then ticks. The wait is cancelled and
- * restarted on every state change and cancelled on unmount.
+ * The event playing now: the scene animates it during its wait, and the tick
+ * that ends the wait applies it. Null when nothing is playing.
  */
-export function usePlayback(lesson: Lesson): [PlaybackState, Dispatch<PlaybackAction>] {
+export function pendingEvent(lesson: Lesson, s: PlaybackState): SceneEvent | null {
+  if (s.mode !== 'step' && s.mode !== 'run') return null;
+  return stepEvents(lesson, s.position)[s.eventIndex] ?? null;
+}
+
+/**
+ * Playback state for a lesson. It waits out the pending event
+ * (`durationOf(event) / speed`) and then ticks, and waits out a hold
+ * (`HOLD_MS / speed`) and then ends it. The wait is cancelled and restarted on
+ * every state change and cancelled on unmount. Reduced motion changes no wait:
+ * the scene skips its motion, but a run keeps its pace.
+ */
+export function usePlayback(lesson: Lesson, durationOf: DurationOf): [PlaybackState, Dispatch<PlaybackAction>] {
   const reducer = useMemo(() => createPlaybackReducer(lesson), [lesson]);
   const [state, dispatch] = useReducer(reducer, undefined, initialPlayback);
+  // Read when a wait starts, so a new durationOf on each render does not restart the wait.
+  const msAt1x = useEffectEvent((event: SceneEvent) => durationOf(event));
 
   useEffect(() => {
-    if (!state.playing) return;
-    const next = currentEvents(lesson, state.position, state.tryItChoice)[state.eventIndex];
-    if (next === undefined) return;
-    const position = state.position;
-    const timer = setTimeout(() => dispatch({ type: 'tick', position }), EVENT_DURATION_MS[next.type] / state.speed);
+    const { position, eventIndex, speed } = state;
+    const hold = holding(state);
+    if (hold !== null) {
+      const timer = setTimeout(() => dispatch({ type: 'holdDone', position }), hold.ms);
+      return () => clearTimeout(timer);
+    }
+    const event = pendingEvent(lesson, state);
+    if (event === null) return;
+    const timer = setTimeout(() => dispatch({ type: 'tick', position, eventIndex }), msAt1x(event) / speed);
     return () => clearTimeout(timer);
   }, [lesson, state]);
 

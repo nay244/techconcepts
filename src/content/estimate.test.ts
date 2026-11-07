@@ -1,86 +1,138 @@
 import { expect, test } from 'vitest';
-import { validateLesson } from './define';
-import { countLessonWords, countWords, estimateMinutes } from './estimate';
-import { fixtureLesson } from './test-fixtures';
+import {
+  countUnitWords,
+  countWords,
+  estimateMinutes,
+  estimateUnitMinutes,
+  MAX_MINUTES,
+  MINUTES_PER_STEP,
+  PRACTICE_MINUTES,
+  PRACTICE_MINUTES_PER_UNIT,
+  WARN_MINUTES,
+  WORDS_PER_MINUTE,
+} from './estimate';
+import { lessonSchema, type Lesson, type Unit } from './schema';
+import { makeLesson, makeUnit } from './test-fixtures';
 
-const validated = () => validateLesson(fixtureLesson()).lesson;
+/** Shape-checked only: the estimate reads a Lesson, and these tests break the limits on purpose. */
+const parse = (input: ReturnType<typeof makeLesson>): Lesson => lessonSchema.parse(input);
+const w = (n: number) => 'w '.repeat(n).trim();
+
+/**
+ * A unit with `steps` Watch steps whose counted words total exactly `total`:
+ * every counted field holds one word and the overview description the rest.
+ */
+function unitWith(total: number, steps: number, id = 'u'): Unit {
+  const unit = parse(makeLesson({ units: [makeUnit(id)] })).units[0]!;
+  const template = unit.steps[0]!;
+  unit.steps = Array.from({ length: steps }, (_, i) => ({ ...structuredClone(template), id: `s${i}` }));
+  unit.overview.hook = w(1);
+  for (const step of unit.steps) step.narrative = w(1);
+  unit.learn.lead = w(1);
+  unit.learn.terms = unit.learn.terms.map(() => ({ idea: w(1), name: w(1) }));
+  unit.learn.pattern.note = w(1);
+  unit.learn.why = w(1);
+  for (const q of unit.practice) {
+    q.prompt = w(1);
+    q.options = q.options.map(() => ({ text: w(1), feedback: w(1) }));
+  }
+  unit.overview.description = '';
+  unit.overview.description = w(total - countUnitWords(unit));
+  return unit;
+}
+
+test('the constants', () => {
+  expect([WORDS_PER_MINUTE, MINUTES_PER_STEP, PRACTICE_MINUTES, PRACTICE_MINUTES_PER_UNIT, MAX_MINUTES, WARN_MINUTES]).toEqual([
+    200, 0.5, 1, 0.5, 15, 12,
+  ]);
+});
 
 test('countWords counts whitespace-separated tokens', () => {
   expect(countWords('')).toBe(0);
   expect(countWords('   \n\t ')).toBe(0);
   expect(countWords('one')).toBe(1);
   expect(countWords('  two   words\nand\tmore ')).toBe(4);
-  expect(countWords('word '.repeat(121))).toBe(121);
 });
 
-// fixed overhead = 0.5×steps + 2 (Try it) + 1 (Check yourself)
-test('estimate formula', () => {
-  const l = validated();
-  const w = countLessonWords(l);
-  expect(estimateMinutes(l)).toBe(Math.ceil(w / 200 + 0.5 * l.steps.length + 3));
+test('countWords ignores ** markers', () => expect(countWords('a **Discover** b.')).toBe(3));
+
+test('a ** marker on its own is not a word', () => expect(countWords('a ** b **')).toBe(2));
+
+// FIGS/minutes.mjs, the spec's method, turns each tag into a space, so the punctuation after a bold term is a word.
+test('a ** marker counts as a space, as FIGS/minutes.mjs counts a tag', () => expect(countWords('**client**,')).toBe(2));
+
+test('countUnitWords counts exactly the read fields', () => {
+  const unit = parse(makeLesson()).units[0]!;
+  const fifty = w(50);
+
+  // Read: one word in each.
+  unit.overview.hook = w(1);
+  unit.overview.description = w(1);
+  for (const step of unit.steps) step.narrative = w(1);
+  unit.learn.lead = w(1);
+  unit.learn.terms = [
+    { idea: w(1), name: w(1) },
+    { idea: w(1), name: w(1) },
+    { idea: w(1), name: w(1) },
+  ];
+  unit.learn.pattern.note = w(1);
+  unit.learn.why = w(1);
+  for (const q of unit.practice) {
+    q.prompt = w(1);
+    q.options = q.options.map(() => ({ text: w(1), feedback: w(1) }));
+  }
+
+  // Not read: titles, subs, Go deeper, facts, labels and the log.
+  unit.name = fifty;
+  unit.fullName = fifty;
+  unit.purpose = fifty;
+  unit.references[0]!.label = fifty;
+  unit.scene.title = fifty;
+  unit.scene.log.idle = fifty;
+  unit.overview.facts[0]!.value = fifty;
+  for (const step of unit.steps) {
+    step.title = fifty;
+    step.sub = fifty;
+    step.deep = fifty;
+    step.facts[0]!.value = fifty;
+    step.idle = fifty;
+    step.status = fifty;
+    for (const e of step.events) if (e.type !== 'table') e.plain = fifty;
+  }
+  unit.learn.pattern.names = [fifty, fifty];
+  unit.learn.deep = fifty;
+  unit.learn.facts[0]!.value = fifty;
+
+  const options = unit.practice.reduce((n, q) => n + q.options.length, 0);
+  // hook, description, five narratives, lead, 3 × (idea + name), note, why, then each question and its options.
+  const expected = 2 + 5 + 1 + 6 + 2 + unit.practice.length + 2 * options;
+  expect(countUnitWords(unit)).toBe(expected);
 });
 
-test('estimate rounds up, and grows with steps and words', () => {
-  const l = validated();
-  const base = estimateMinutes(l);
-  l.check[0]!.explanation = 'word '.repeat(400);
-  expect(estimateMinutes(l)).toBeGreaterThanOrEqual(base + 2);
-  expect(Number.isInteger(estimateMinutes(l))).toBe(true);
+test('one unit: ceil(words/200 + 0.5 × steps + 1)', () => {
+  const unit = unitWith(816, 5);
+  expect(countUnitWords(unit)).toBe(816);
+  const lesson: Lesson = { ...parse(makeLesson()), units: [unit] };
+  // 816 / 200 + 2.5 + 1 = 7.58
+  expect(estimateMinutes(lesson)).toBe(8);
+  expect(estimateUnitMinutes(unit, PRACTICE_MINUTES)).toBe(8);
 });
 
-test('the fixture is a realistic short lesson: 180–280 counted words, 160+ outside check[0]', () => {
-  const l = validated();
-  const total = countLessonWords(l);
-  expect(total).toBeGreaterThanOrEqual(180);
-  expect(total).toBeLessThanOrEqual(280);
-  expect(total - countWords(l.check[0]!.explanation)).toBeGreaterThanOrEqual(160);
-  expect(estimateMinutes(l)).toBeLessThan(12);
+test('a unit with half a minute of Practice', () => {
+  // 600 / 200 + 2 + 0.5 = 5.5
+  expect(estimateUnitMinutes(unitWith(600, 4), PRACTICE_MINUTES_PER_UNIT)).toBe(6);
+  // 700 / 200 + 2 + 0.5 = 6: a whole number stays as it is.
+  expect(estimateUnitMinutes(unitWith(700, 4), PRACTICE_MINUTES_PER_UNIT)).toBe(6);
 });
 
-// Every counted part gets its own word count, so the total can only match if
-// each one is included exactly once.
-test('countLessonWords counts exactly the prose a learner reads', () => {
-  const l = validated();
-  if (l.tryIt.mode !== 'choices') throw new Error('fixture must use choices');
-  const words = (n: number) => 'w '.repeat(n).trim();
-
-  l.overview.hook = words(1);
-  l.overview.description = words(2);
-  l.steps.forEach((s, i) => (s.narrative = words(i === 0 ? 3 : 4)));
-  l.tryIt.prompt = words(5);
-  l.tryIt.choices[0]!.explanation = words(6);
-  l.tryIt.choices[1]!.explanation = words(7);
-  l.check[0]!.prompt = words(8);
-  l.check[0]!.options = [words(9), words(10)];
-  l.check[0]!.explanation = words(11);
-  l.check[1]!.prompt = words(12);
-  l.check[1]!.options = [words(13), words(14), words(15)];
-  l.check[1]!.explanation = words(16);
-  l.recap.takeaways = [words(17), words(18), words(19)];
-
-  // Prose that is not counted: titles, labels, facts, summaries.
-  l.title = words(50);
-  l.subtitle = words(50);
-  l.summary = words(50);
-  l.overview.name = words(50);
-  l.overview.fullName = words(50);
-  l.overview.facts[0]!.value = words(50);
-  l.steps[0]!.title = words(50);
-  l.steps[0]!.facts[0]!.value = words(50);
-  l.tryIt.choices[0]!.label = words(50);
-
-  const narratives = 3 + 4 + 4 + 4;
-  const expected = 1 + 2 + narratives + 5 + 6 + 7 + (8 + 9 + 10 + 11) + (12 + 13 + 14 + 15 + 16) + (17 + 18 + 19);
-  expect(countLessonWords(l)).toBe(expected);
-});
-
-test('a free Try it counts its prompt and its explanation', () => {
-  const l = validated();
-  const before = countLessonWords(l);
-  const choiceWords =
-    l.tryIt.mode === 'choices'
-      ? countWords(l.tryIt.prompt) + l.tryIt.choices.reduce((n, c) => n + countWords(c.explanation), 0)
-      : 0;
-  l.tryIt = { mode: 'free', prompt: 'one two three', explanation: 'four five' };
-  expect(countLessonWords(l)).toBe(before - choiceWords + 5);
+test('many units: ceil(Σ/200 + 0.5 × Σsteps + 0.5 × units)', () => {
+  // 14 units, 78 steps (eight of 6 and six of 5), 9829 words: lesson 1's numbers.
+  const units = Array.from({ length: 14 }, (_, i) => unitWith(i === 0 ? 703 : 702, i < 8 ? 6 : 5, `u${i}`));
+  expect(units.reduce((n, u) => n + countUnitWords(u), 0)).toBe(9829);
+  expect(units.reduce((n, u) => n + u.steps.length, 0)).toBe(78);
+  const lesson: Lesson = { ...parse(makeLesson()), units };
+  // 49.145 + 39 + 7 = 95.145
+  expect(estimateMinutes(lesson)).toBe(96);
+  // Rounding each unit up first would overstate it.
+  expect(units.reduce((n, u) => n + estimateUnitMinutes(u, PRACTICE_MINUTES_PER_UNIT), 0)).toBeGreaterThan(96);
 });

@@ -5,7 +5,7 @@ import { getViteConfig } from 'astro/config';
 // import.meta.glob and the React integration behave as they do in the build.
 export default getViteConfig({
   test: {
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.{ts,mjs}'],
     setupFiles: ['./src/test/setup.ts'],
   },
 });

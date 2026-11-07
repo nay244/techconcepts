@@ -1,0 +1,54 @@
+/* The network map's own parts (src/art/scenes/net-map.ts), from the approved mockup's mapCss (FIGS/net-map.mjs).
+   The callouts sit on the page's figure background, so they take the site's ink and line tokens and follow the theme;
+   the parts on the plates take the lumen finish's tokens and stay the same in both themes. Two changes from the
+   mockup (spec §5): a lost message's trail and drop mark are the blocked red, not marigold, which means only "current";
+   and the drop mark says LOST, so colour is never the only sign. */
+.nm .nm-call .nm-name { font: 700 11.5px / 1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--ink-strong); }
+.nm .nm-call .nm-sub { font: 400 13px / 1 var(--sans); fill: var(--muted); }
+.nm .nm-call .nm-addr { font: 500 12.5px / 1 var(--mono); fill: var(--ink); }
+.nm .nm-call .nm-state { font: italic 400 13px / 1 var(--sans); fill: var(--muted); }
+.nm .nm-call .nm-state.known { font-style: normal; font-weight: 500; fill: var(--ink); }
+.nm .nm-call .nm-state.done { font-style: normal; font-weight: 700; fill: var(--allowed-text); }
+.nm .nm-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.nm .nm-lead-dot { fill: var(--muted); }
+.nm .nm-glow { fill: var(--lit-b); opacity: 0; transition: opacity 300ms ease; }
+.nm .nm-glow.on { opacity: .42; }
+.nm .nm-busy, .nm .nm-hold { opacity: 0; transition: opacity 200ms ease; }
+.nm .nm-busy.on, .nm .nm-hold.on { opacity: 1; }
+.nm .nm-band { fill: url(#lm-top); }
+.nm .nm-url { font: 500 2.3px var(--mono); fill: var(--anatomy-mid); letter-spacing: .02em; }
+/* The page's ground on the laptop's screen: a deep blue, from the finish's own blue (the mockup's #0b1220). */
+.nm .nm-page-bg { fill: color-mix(in srgb, var(--lit-b) 14%, #000); }
+.nm .nm-px { fill: var(--lit-a); opacity: .85; }
+.nm .nm-px.soft { fill: color-mix(in srgb, var(--lit-b) 72%, #000); opacity: 1; }
+.nm [data-part] { transition: opacity 200ms ease; }
+.nm .nm-tag { will-change: transform; }
+.nm .nm-tag-t { font: 700 3.9px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .02em; }
+/* The carrier under the tag, outlined in the plates' darkest shade so it reads over a plate or the page. */
+.nm #nm-over { will-change: transform; }
+.nm .nm-over-t { font: 700 3.2px var(--mono); fill: var(--anatomy-hi); letter-spacing: .04em; paint-order: stroke; stroke: var(--anatomy-shade-0); stroke-width: .9px; stroke-linejoin: round; }
+.nm .nm-trail { fill: none; stroke: var(--lit-a); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px var(--lit-b)); }
+/* The lost trail runs over the charcoal plates as well as the page, and the light theme's red is under 3:1 on the
+   plates, so it is drawn over an edge in the figure's own background, 2px wider on each side: beside the red there
+   is always the page's colour. The edge is a plain stroke under the trail, which every engine draws (WebKit has
+   historically ignored CSS filter functions on SVG parts); the driver shows it only under a lost trail, which has
+   no glow. */
+.nm .nm-trail-edge { fill: none; stroke: var(--fig-bg); stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.nm .nm-trail.lost { stroke: var(--blocked); stroke-dasharray: 4 4; filter: none; }
+.nm .nm-drop circle { fill: var(--fig-bg); stroke: var(--blocked); stroke-width: 1.8px; vector-effect: non-scaling-stroke; }
+.nm .nm-drop path { fill: none; stroke: var(--blocked); stroke-width: 2px; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.nm .nm-drop-pill { fill: var(--fig-bg); stroke: var(--blocked); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.nm .nm-drop-t { font: 700 7px / 1 var(--mono); letter-spacing: .08em; fill: var(--blocked); }
+.nm .nm-ring { fill: none; stroke: var(--lit-a); stroke-width: 2px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px var(--lit-b)); }
+.nm .nm-lock { fill: var(--lit-a); }
+.nm .nm-lock-arc { fill: none; stroke: var(--lit-a); stroke-width: .5; }
+/* An open connection stays lit; TLS seals it brighter; FTP's data line is dashed, above its control line. */
+.nm .nm-conn { fill: none; stroke: var(--lit-b); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .5; }
+.nm .nm-conn.sealed { stroke: var(--lit-a); opacity: .8; stroke-width: 3.5px; filter: drop-shadow(0 0 2px var(--lit-b)); }
+.nm .nm-conn.alt { stroke: var(--lit-a); stroke-width: 2px; stroke-dasharray: 5 4; opacity: .85; }
+/* Reduced motion keeps every light, and only drops the fades. */
+@media (prefers-reduced-motion: reduce) {
+  .nm .nm-glow, .nm .nm-busy, .nm .nm-hold, .nm [data-part], .nm .lm-led { transition: none; }
+}
+/* While the driver's show settles the figure, every part changes at once, not over its fade (src/scenes/drivers/net-map.ts). */
+.nm[data-settling] * { transition: none !important; }

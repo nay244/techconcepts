@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import '../art/lumen.css';
+import LumenDefs from '../components/LumenDefs.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { analyticsBeacon, analyticsToken } from '../lib/analytics';
@@ -17,10 +19,14 @@ interface Props {
    * main region with id="main" for the skip link.
    */
   chrome?: boolean;
+  /** Which header link is the current section (marked aria-current="page"). */
+  current?: 'tracks' | 'how' | 'about';
+  /** Home: the header sits over the hero until the page scrolls. */
+  overHero?: boolean;
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png', chrome = true } = Astro.props;
+const { title, description, image = '/og-default.png', chrome = true, current, overHero = false } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -29,6 +35,9 @@ const beacon = analyticsBeacon(analyticsToken);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
 // The page's own absolute address on the live site, in the slash-less form it is served at.
 const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
+// The one inline head script: the theme, then a `js` class on the root, so CSS can start hidden the parts a script
+// will bring in (Home's hero) from the first paint, and show them in full when there is no JavaScript.
+const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("js");`;
 ---
 
 <!doctype html>
@@ -37,9 +46,20 @@ const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {/* Before anything paints: the theme boot script, then the tokens it selects between. */}
-    <script is:inline set:html={themeBootScript} />
+    <script is:inline set:html={bootScript} />
     <style is:inline set:html={tokensToCss()} />
-    <noscript><style>.theme-toggle { display: none; }</style></noscript>
+    {
+      /* Without JavaScript nothing can switch the theme, filter a track or play a lesson, so those controls are
+         hidden: the header's theme toggle; the track page's exam chips, with their label and the line that counts
+         what they show (every lesson stays listed); and in the lesson console its Light/Dark switch, the view
+         switch, the playback controls, and the log's "Press Play" words, where LogPanel's own no-script note says
+         the lesson needs JavaScript. The page's stylesheets load after this one and set these controls' display at
+         the same specificity, so the rules are !important.
+         The lesson's outline is all buttons, so it goes whole, heading and landmark too. It is made invisible rather
+         than removed, so it keeps its cell and the console's grid does not move; nothing inside it sets visibility
+         back. */
+    }
+    <noscript><style>.theme-toggle, .t-body .toolbar, .topbar__seg, .stage__views, .console__controls, .log__idle-words { display: none !important; } .console__outline { visibility: hidden !important; } :root .site-head[data-over-hero] { border-bottom-color: var(--line); background: var(--bg); }</style></noscript>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={fullTitle} />
@@ -51,11 +71,12 @@ const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
+    <LumenDefs />
     <a class="skip-link" href="#main">Skip to content</a>
     {
       chrome ? (
         <>
-          <SiteHeader />
+          <SiteHeader current={current} overHero={overHero} />
           <main id="main">
             <slot />
           </main>

@@ -1,50 +1,547 @@
 ---
+// About (spec §6.4, mockup about-v1). The words are the mockup's; the stats, the tracks still to come, the long
+// lesson's length and the DHCP lesson's sources are worked out from the content. Only Reset progress runs as an
+// island. The "On this page" list is plain links; a small module script marks the section being read.
+import { coverStill } from '../art/figures/covers';
+import { spot } from '../art/figures/spots';
+import { MAX_MINUTES } from '../content/estimate';
+import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
+import type { Lesson } from '../content/schema';
+import { comingSoonTracks, tracks } from '../content/tracks';
+import { comingTracksSentence, sourceRows } from '../lib/about';
+import { analyticsToken } from '../lib/analytics';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ResetProgress from '../components/ResetProgress';
 import '../components/site.css';
-import { analyticsToken } from '../lib/analytics';
+import '../components/page-hero.css';
+
+const track = tracks[0]!;
+
+function readyEntry(slug: string): AvailableSummary {
+  const entry = getEntries(track.id).find((e): e is AvailableSummary => e.available && e.slug === slug);
+  if (entry === undefined) throw new Error(`About needs the ${track.id}/${slug} lesson, and it is not ready.`);
+  return entry;
+}
+
+function lessonOf(entry: AvailableSummary): Lesson {
+  const lesson = getLesson(track.id, entry.slug);
+  // An available entry is built from its lesson, so this cannot happen.
+  if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
+  return lesson;
+}
+
+// ---------- Hero ----------
+const tracksPlanned = tracks.length + comingSoonTracks.length;
+const lessonsReady = trackTotals(tracks.flatMap((t) => getEntries(t.id))).available;
+
+// ---------- Body ----------
+const coming = comingTracksSentence(comingSoonTracks.map((t) => t.title));
+// The one lesson longer than the cap: each of its protocols is a short part of its own.
+const long = readyEntry('how-the-internet-works');
+const dhcp = readyEntry('dhcp');
+const sources = sourceRows(lessonOf(dhcp).units.flatMap((u) => u.references));
 ---
 
-<BaseLayout title="About" description="What TechConcepts is, how its lessons are made, who inspired it, and how it keeps your progress private.">
-  <div class="container about">
-    <h1>About TechConcepts</h1>
+<BaseLayout
+  title="About"
+  current="about"
+  description="What TechConcepts is, how its lessons are made, who inspired it, and how it keeps your progress private."
+>
+  <section class="t-hero a-hero" aria-labelledby="about-title">
+    <div class="wrap t-hero-grid">
+      <div class="t-intro">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <ol>
+            <li><a href="/">Home</a></li>
+            <li><span aria-current="page">About</span></li>
+          </ol>
+        </nav>
+        <span class="eyebrow"
+          ><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>About TechConcepts</span
+        >
+        <h1 id="about-title">Watch it happen, <span class="accent">then learn its name.</span></h1>
+        <p class="lede">
+          TechConcepts is a free site of short, visual lessons on how technology works. You watch a real process play out one step at a time, then
+          read what it was, in plain words.
+        </p>
+        <dl class="stats">
+          <div><dt>tracks planned</dt><dd>{tracksPlanned}</dd></div>
+          <div><dt>lessons ready</dt><dd>{lessonsReady}</dd></div>
+          <div><dt>accounts needed</dt><dd>0</dd></div>
+        </dl>
+        <p class="flow">
+          Every lesson: <b>Watch</b><i aria-hidden="true">›</i><b>Learn</b><i aria-hidden="true">›</i><b>Practice</b>
+        </p>
+      </div>
+      <figure class="cover">
+        <div class="plate">
+          <span class="corner c-fig">TechConcepts</span><span class="corner c-title">How the web works</span>
+          <span class="corner c-hint">One request, one reply</span>
+          <div class="stage" set:html={coverStill('web', 'about')} />
+        </div>
+      </figure>
+    </div>
+  </section>
 
-    <section aria-labelledby="what">
-      <h2 id="what">What TechConcepts is</h2>
-      <p>TechConcepts teaches how technology works through short, visual lessons. Each one shows a real process, such as a laptop asking a network for an address, one step at a time, and explains it in plain language.</p>
-      <p>The first track, Networking Concepts, is written for anyone starting out, including people studying for entry-level IT certifications. You do not need an account, and you can open any lesson in any order.</p>
-    </section>
+  <div class="wrap a-body">
+    <nav class="a-toc" aria-label="On this page">
+      <p class="toc-h">On this page</p>
+      <ol>
+        <li><a href="#what">What it is</a></li>
+        <li><a href="#lessons">How a lesson works</a></li>
+        <li><a href="#facts">Where the facts come from</a></li>
+        <li><a href="#credits">Credits</a></li>
+        <li><a href="#privacy">Your progress</a></li>
+      </ol>
+    </nav>
 
-    <section aria-labelledby="how">
-      <h2 id="how">How lessons are made</h2>
-      <p>Every lesson has the same shape: an overview, four to six steps, something to try, a few questions to check yourself, and a short recap. A lesson takes 15 minutes or less. The explanation starts with an everyday comparison, then gives you the precise term.</p>
-      <p>The example networks use addresses reserved for documentation and private use, so nothing in a lesson points at a real machine.</p>
-    </section>
+    <div>
+      <section class="a-sec" id="what" aria-labelledby="what-h">
+        <h2 id="what-h">What TechConcepts is</h2>
+        <p>
+          TechConcepts teaches how technology works by showing it. Each lesson plays a real process, such as a laptop asking the network for an
+          address, one step at a time, and explains each step in plain words.
+        </p>
+        <p>
+          The first track, {track.title}, is written for anyone starting out, including people studying for entry-level IT certifications. {coming}
+        </p>
+        <p>You don’t need an account, and you can open any lesson in any order.</p>
+      </section>
 
-    <section aria-labelledby="credits">
-      <h2 id="credits">Credits</h2>
-      <p>Protocol Explorer and TryHackMe were an inspiration for TechConcepts: the first for the idea of watching a protocol work, the second for its friendly, guided way of teaching. They are inspiration only. TechConcepts is not affiliated with, endorsed by, or built from either of them.</p>
-    </section>
+      <section class="a-sec" id="lessons" aria-labelledby="lessons-h">
+        <h2 id="lessons-h">How a lesson works</h2>
+        <p>Every lesson has the same three parts, so you always know where you are.</p>
+        <ol class="a-steps">
+          <li class="card">
+            <div class="art" set:html={spot('watch')} />
+            <div class="body">
+              <span class="n">1 · Watch</span>
+              <h3>See it happen</h3>
+              <p>A scene plays the process step by step. Pause it, slow it down, or go back a step whenever you like.</p>
+            </div>
+          </li>
+          <li class="card">
+            <div class="art" set:html={spot('learn')} />
+            <div class="body">
+              <span class="n">2 · Learn</span>
+              <h3>Get the idea, then the name</h3>
+              <p>Each idea starts with an everyday comparison, then gives you the real term. Exam detail waits under Go deeper, closed until you want it.</p>
+            </div>
+          </li>
+          <li class="card">
+            <div class="art" set:html={spot('practice')} />
+            <div class="body">
+              <span class="n">3 · Practice</span>
+              <h3>Check yourself</h3>
+              <p>A few questions, just for you. Each answer says why it’s right or not. Nothing is scored or saved.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="a-note">
+          <svg class="t" viewBox="0 0 24 24" aria-hidden="true"
+            ><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path
+              d="M12 7v5l3.2 2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path></svg
+          >
+          <p>
+            <b>Most lessons take {MAX_MINUTES} minutes or less.</b> Lesson {long.number}, {long.title}, is longer: it follows {long.units} protocols,
+            from HTTP to TLS, in about {long.minutes} minutes in all. Each protocol is its own short part, so you can stop after any one and pick up later.
+          </p>
+        </div>
+        <p>The example networks use addresses set aside for documentation and private use, so nothing in a lesson points at a real machine.</p>
+      </section>
 
-    <section aria-labelledby="privacy">
-      <h2 id="privacy">Your progress stays with you</h2>
-      <p>TechConcepts remembers which lessons you have started and finished, and whether you prefer the light or dark theme. This is saved only in this browser, on this device. TechConcepts never sends your progress or theme choice to a server. There are no accounts. Your answers to the check questions are not saved at all.</p>
-      {analyticsToken?.trim() && <p>The site counts page views with privacy-friendly analytics that use no cookies and know nothing about your progress.</p>}
-      <p>If you would like to start fresh, you can clear it here. Clearing your browser data does the same.</p>
-      <ResetProgress client:load />
-    </section>
+      <section class="a-sec" id="facts" aria-labelledby="facts-h">
+        <h2 id="facts-h">Where the facts come from</h2>
+        <p>
+          Each lesson is checked against the standards that define it, and lists them under Sources at the end of Learn. Every lesson also shows
+          which exams and jobs it helps with, so you can pick the ones you need.
+        </p>
+        <div class="card a-src">
+          <h3>Sources in the {dhcp.title} lesson</h3>
+          <ul>
+            {
+              sources.map((s) => (
+                <li>
+                  <span>{s.standard}</span>
+                  <a href={s.url}>{s.title}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </section>
+
+      <section class="a-sec" id="credits" aria-labelledby="credits-h">
+        <h2 id="credits-h">Credits</h2>
+        <p>
+          Protocol Explorer and TryHackMe inspired TechConcepts: the first for the idea of watching a protocol work, the second for its friendly,
+          guided way of teaching. They are inspiration only. TechConcepts is not affiliated with, endorsed by, or built from either of them.
+        </p>
+        <dl class="a-credits">
+          <dt>Figures</dt>
+          <dd>Drawn for TechConcepts with Anatomy, an open-source isometric kit by wheresryan22, used under the MIT licence.</dd>
+          <dt>Type</dt>
+          <dd>Atkinson Hyperlegible Next and Atkinson Hyperlegible Mono, from the Braille Institute, made to be easy to read.</dd>
+        </dl>
+      </section>
+
+      <section class="a-sec" id="privacy" aria-labelledby="privacy-h">
+        <h2 id="privacy-h">Your progress stays with you</h2>
+        <p>
+          TechConcepts remembers a few things so you can pick up where you left off. They are saved only in this browser, on this device, and
+          never sent to a server. There are no accounts.
+        </p>
+        <table class="a-saved">
+          <caption>What the site remembers</caption>
+          <thead>
+            <tr><th scope="col">What</th><th scope="col">Where it’s kept</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Which lessons you started and finished</th>
+              <td><span class="where"><span class="dot" aria-hidden="true"></span>This browser only</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Light or dark theme</th>
+              <td><span class="where"><span class="dot" aria-hidden="true"></span>This browser only</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Your Practice answers</th>
+              <td><span class="where"><span class="dot off" aria-hidden="true"></span>Not saved at all</span></td>
+            </tr>
+          </tbody>
+        </table>
+        {analyticsToken?.trim() && <p>The site counts page views with privacy-friendly analytics that use no cookies and know nothing about your progress.</p>}
+        <p>To start fresh, reset it here. Clearing your browser data does the same.</p>
+        <ResetProgress client:load />
+      </section>
+    </div>
   </div>
 </BaseLayout>
 
+<script>
+  import { followSections } from '../scripts/about-toc';
+
+  // The list marks the section being read. Without JavaScript its links still work, and nothing is marked.
+  const nav = document.querySelector<HTMLElement>('.a-toc');
+  if (nav) followSections(nav);
+</script>
+
 <style is:global>
-  .about {
-    max-width: 44rem;
-    padding-block: var(--space-7) var(--space-4);
+  html {
+    scroll-behavior: smooth;
   }
-  .about section {
-    margin-top: var(--space-6);
+
+  /* ---------- Hero: the shared parts are page-hero.css's ---------- */
+  .t-hero.a-hero {
+    padding-bottom: 8px;
   }
-  .about h2 {
-    font-size: var(--text-xl);
+  .a-hero .t-hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  }
+  .a-hero .t-intro .lede {
+    max-width: 34em;
+  }
+  .a-hero .cover .stage svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ---------- Body: the list on the left, the sections on the right ---------- */
+  .a-body {
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    gap: 64px;
+    padding-top: 64px;
+    padding-bottom: 104px;
+  }
+  .a-toc {
+    position: sticky;
+    top: 92px;
+    align-self: start;
+  }
+  .a-toc ol {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .a-toc a {
+    display: block;
+    padding: 8px 10px;
+    border-inline-start: 2px solid transparent;
+    border-radius: 8px;
+    color: var(--ink);
+    font: 500 15px/1.3 var(--sans);
+    text-decoration: none;
+  }
+  .a-toc a:hover {
+    background: var(--bg-soft);
+    color: var(--ink-strong);
+  }
+  /* The section being read (about-toc.ts marks it). */
+  .a-toc a[aria-current] {
+    border-inline-start-color: var(--accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--accent-soft);
+    color: var(--ink-strong);
+  }
+  .a-sec {
+    max-width: 780px;
+    margin-bottom: 52px;
+    padding-bottom: 52px;
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 92px;
+  }
+  .a-sec:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  .a-sec h2 {
+    margin: 0 0 16px;
+    color: var(--ink-strong);
+    font: 700 30px/1.2 var(--sans);
+    letter-spacing: -0.02em;
+  }
+  .a-sec p {
+    max-width: 66ch;
+    margin: 0 0 14px;
+  }
+  .a-sec p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* How a lesson works: the three parts, each with its figure. */
+  .a-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 26px 0 22px;
+    padding: 0;
+    list-style: none;
+  }
+  .a-steps li {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .a-steps .art {
+    aspect-ratio: 528 / 372;
+    border-bottom: 1px solid var(--fig-line);
+    background: var(--fig-bg);
+  }
+  .a-steps .art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .a-steps .body {
+    padding: 16px 18px 20px;
+  }
+  .a-steps .n {
+    color: var(--muted);
+    font: 700 12px/1 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .a-steps h3 {
+    margin: 8px 0 6px;
+    color: var(--ink-strong);
+    font: 700 20px/1.2 var(--sans);
+  }
+  .a-steps p {
+    margin: 0;
+    font-size: 15.5px;
+    line-height: 1.55;
+  }
+  /* The note on lesson length: information, so the accent (marigold means only "current"). */
+  .a-note {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    margin: 0 0 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-inline-start: 3px solid var(--accent);
+    border-radius: 12px;
+    background: var(--accent-soft);
+  }
+  .a-note b {
+    color: var(--ink-strong);
+  }
+  .a-note .t {
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    color: var(--accent);
+  }
+  .a-note p {
+    max-width: none;
+    margin: 0;
+  }
+
+  /* Where the facts come from: one lesson's sources. */
+  .a-src {
+    margin: 22px 0 0;
+    padding: 18px 20px;
+  }
+  .a-src h3 {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font: 700 12px/1 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .a-src ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .a-src li {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 12px;
+    font-size: 15.5px;
+    line-height: 1.45;
+  }
+  .a-src li span {
+    color: var(--muted);
+    font: 600 13px/1.6 var(--mono);
+  }
+  .a-src a {
+    color: var(--accent);
+    text-decoration-color: currentColor;
+    text-underline-offset: 3px;
+  }
+
+  /* Credits */
+  .a-credits {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 0;
+    margin: 22px 0 0;
+  }
+  .a-credits dt,
+  .a-credits dd {
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+  .a-credits dt {
+    color: var(--muted);
+    font: 700 12px/1.9 var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .a-credits dd {
+    margin: 0;
+  }
+
+  /* Your progress: what is kept where, then Reset progress. */
+  .a-saved {
+    width: 100%;
+    margin: 22px 0 18px;
+    border-collapse: collapse;
+    font-size: 15.5px;
+  }
+  .a-saved caption {
+    padding: 0 0 10px;
+    color: var(--muted);
+    font: 700 12px/1 var(--mono);
+    letter-spacing: 0.12em;
+    text-align: start;
+    text-transform: uppercase;
+  }
+  .a-saved th,
+  .a-saved td {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+    text-align: start;
+    vertical-align: top;
+  }
+  .a-saved thead th {
+    padding-top: 0;
+    border-top: 0;
+    color: var(--muted);
+    font: 600 13px/1.3 var(--sans);
+  }
+  .a-saved tbody th {
+    width: 42%;
+    color: var(--ink-strong);
+    font-weight: 600;
+  }
+  .a-saved .where {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .a-saved .dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--allowed);
+  }
+  .a-saved .dot.off {
+    border: 1.5px solid var(--muted);
+    background: transparent;
+  }
+  /* ResetProgress's row. */
+  .a-reset {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    margin-top: 18px;
+  }
+  .a-reset .q {
+    margin: 0;
+    color: var(--ink-strong);
+    font-weight: 600;
+  }
+  .a-reset [role='status'] {
+    color: var(--allowed-text);
+    font: 500 15px/1.3 var(--sans);
+  }
+  .a-reset [role='group'] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .a-reset [role='group']:focus {
+    outline: none;
+  }
+  /* Focus lands on the question when it opens; the keyboard sees where it went. */
+  .a-reset [role='group']:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 4px;
+  }
+
+  @media (max-width: 980px) {
+    .a-hero .t-hero-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .a-body {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 32px;
+    }
+    .a-toc {
+      position: static;
+    }
+    .a-steps {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

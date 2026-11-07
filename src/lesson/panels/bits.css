@@ -1,0 +1,212 @@
+/* Subnetting's board under the scene, as "The address in bits" in subnet-v1.html: up to three rows of 32 bits in
+   four octets, the same 32 places in each, and one line where the network part ends.
+
+   The line is marigold (--here), the spec's one exception for this board. The network part takes the accent, the
+   bits an event points at take --selected (or a stronger accent in the network part), and bits borrowed from the
+   host part are underlined in ink. When a compared address's network bits match the address's they take --allowed,
+   and where they differ --selected; the caption says in words whether the network parts match, so colour is never
+   the only signal.
+
+   Each cell is 10 by 18 px, with 1 px between the cells of an octet and 6 px between octets, and the rows are
+   4 px apart: the line's place and height are worked out from those sizes, so it needs no measuring on the page. */
+
+.bits {
+  flex: none;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.bits__table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.bits__col-label {
+  width: 94px;
+}
+.bits__col-bits {
+  width: 376px;
+}
+
+.bits caption {
+  margin-bottom: 7px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: start;
+}
+.bits__title {
+  color: var(--muted);
+  font: 700 11.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bits__note {
+  margin-inline-start: 6px;
+  color: var(--muted);
+  font: 400 12.5px/1 var(--sans);
+}
+
+/* The column headers are for a screen reader: the row takes no height. */
+.bits thead th {
+  padding: 0;
+}
+/* Rows of 18 px cells, 4 px apart. */
+.bits tbody th,
+.bits tbody td {
+  padding: 0;
+  vertical-align: middle;
+}
+.bits tbody tr + tr > * {
+  padding-top: 4px;
+}
+.bits tbody th {
+  padding-inline-end: 10px;
+  text-align: start;
+}
+.bits__label {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font: 400 13px/1.2 var(--sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bits__bits {
+  padding-inline-end: 10px;
+}
+.bits__dec {
+  color: var(--ink-strong);
+  font: 500 13px/1 var(--mono);
+  white-space: nowrap;
+}
+/* A row the board does not show keeps its place. */
+.bits tr[data-off] {
+  visibility: hidden;
+}
+
+.bits__cells {
+  position: relative;
+  display: flex;
+  width: max-content;
+  gap: 6px;
+  direction: ltr;
+}
+.bits__octet {
+  display: inline-flex;
+  gap: 1px;
+}
+.bits__cell {
+  display: grid;
+  width: 10px;
+  height: 18px;
+  place-items: center;
+  border-radius: 2px;
+  background: var(--tile);
+  color: var(--muted);
+  font: 600 11.5px/1 var(--mono);
+  transition:
+    background-color 350ms var(--ease-out),
+    color 350ms var(--ease-out),
+    box-shadow 350ms var(--ease-out);
+}
+.bits__cell[data-part='net'] {
+  background: color-mix(in srgb, var(--accent) 24%, var(--card));
+  color: var(--ink-strong);
+}
+.bits__cell[data-part='net'][data-picked] {
+  background: color-mix(in srgb, var(--accent) 50%, var(--card));
+}
+.bits__cell[data-part='host'][data-picked],
+.bits__cell[data-differs] {
+  background: color-mix(in srgb, var(--selected) 16%, var(--card));
+  color: var(--ink-strong);
+  box-shadow: inset 0 0 0 1px var(--selected);
+}
+.bits__cell[data-matches] {
+  background: color-mix(in srgb, var(--allowed) 28%, var(--card));
+  color: var(--ink-strong);
+}
+.bits__cell[data-borrowed] {
+  box-shadow: inset 0 -2px 0 var(--ink-strong);
+}
+/* A borrowed bit that differs keeps both marks: the underline (borrowed) over the outline (differs). */
+.bits__cell[data-borrowed][data-differs] {
+  box-shadow:
+    inset 0 -2px 0 var(--ink-strong),
+    inset 0 0 0 1px var(--selected);
+}
+
+/* Between the last network bit and the first host bit: past whole octets of 93 px and bits of 11 px, in the middle of
+   the gap there (3 px into an octet's gap, 0.5 px into a bit's). It runs down every row up to the last that shows. */
+.bits__line {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 2px;
+  height: calc(var(--rows) * 22px + 2px);
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--here);
+  pointer-events: none;
+  transform: translateX(calc(var(--octets) * 93px + var(--bits) * 11px - 3px + 2.5px * min(var(--bits), 1)));
+  transition:
+    transform 550ms var(--ease-out),
+    height 300ms var(--ease-out);
+}
+
+/* A row that changes within a step comes in; each change has its own beat, so a second change restarts it. */
+.bits tr[data-fresh='1'] {
+  animation: bits-row-in-1 450ms var(--ease-out);
+}
+.bits tr[data-fresh='2'] {
+  animation: bits-row-in-2 450ms var(--ease-out);
+}
+@keyframes bits-row-in-1 {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+@keyframes bits-row-in-2 {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+.bits__line[data-fresh] {
+  animation: bits-line-in 250ms var(--ease-out);
+}
+.bits__line[data-picked] {
+  animation: bits-line-pick 900ms var(--ease-out);
+}
+.bits__line[data-fresh][data-picked] {
+  animation:
+    bits-line-in 250ms var(--ease-out),
+    bits-line-pick 900ms var(--ease-out);
+}
+@keyframes bits-line-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes bits-line-pick {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  35% {
+    box-shadow: 0 0 0 3px var(--here-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bits__cell,
+  .bits__line {
+    transition: none;
+  }
+  .bits tr[data-fresh],
+  .bits__line[data-fresh],
+  .bits__line[data-picked] {
+    animation: none;
+  }
+}

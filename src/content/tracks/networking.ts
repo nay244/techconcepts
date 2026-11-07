@@ -1,6 +1,9 @@
 import { defineTrack } from '../define';
 
-/** Titles and order follow the launch catalog (spec §8). */
+/**
+ * Titles and order follow the launch catalog (launch spec §8), with How the
+ * Internet Works added as lesson 1 (redesign spec §3, §7.5).
+ */
 export const networkingTrack = defineTrack({
   id: 'networking',
   title: 'Networking Concepts',
@@ -12,6 +15,7 @@ export const networkingTrack = defineTrack({
       id: 'big-picture',
       title: 'The big picture',
       lessons: [
+        { slug: 'how-the-internet-works', title: 'How the Internet Works' },
         { slug: 'osi-model', title: 'OSI Model' },
         { slug: 'packets', title: 'Packets' },
       ],

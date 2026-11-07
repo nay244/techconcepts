@@ -1,63 +1,122 @@
+import type { FigureId, FigureParts } from '../art/scenes/types';
 import type { LessonInput } from './schema';
 
 /**
  * Valid lessons for tests. Every call builds a fresh object, so a test can
  * change any part of it without affecting the next test.
  *
- * Shape that other tests rely on: actors `a` and `b` joined by link `a-b`;
- * table `t` on `b` starts empty; message `m1` goes to a single target; every
- * Try it choice has at least one event.
+ * The real `FIGURE_PARTS` only holds what each figure built so far can show,
+ * so a test that validates these fixtures swaps in `FIXTURE_PARTS`, or, if it
+ * also loads the real lessons, `withFixtureParts` (below):
  *
- * The prose is deliberately short but realistic (272 counted words), so
- * "a lesson over 12 or 15 minutes" tests can add words to a lesson that is
- * otherwise comfortably inside the budget.
+ *   vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./test-fixtures')).FIXTURE_PARTS }));
+ *
+ * Shape that other tests rely on, per unit (figure 'dhcp'): places `laptop`,
+ * `router` and `phone`; parties Laptop and Router, so both views show; a table
+ * panel with table `t` (keyed on `ip`, starting empty); five steps whose events
+ * are `m1` (with packet `p1` and a `glow` cue), `m2` + `t-add`, `t-match` + note
+ * `n1` (a `status` cue), `m3` (dropped) and `m4`; two Practice questions.
  */
-export function fixtureLesson(overrides: Partial<LessonInput> = {}): LessonInput {
-  const lesson: LessonInput = {
-    slug: 'fixture-lesson',
-    title: 'Fixture lesson',
-    subtitle: 'A small lesson used only by tests',
-    level: 'beginner',
+
+/**
+ * A stand-in for `FIGURE_PARTS`: every figure has the fixture's places, a flag
+ * cue (`glow`), a text cue (`status`) and two layers; only `subnet` takes a
+ * board, and only `net-map` a scene's start, as in the real figures.
+ */
+export const FIXTURE_PARTS: Record<FigureId, FigureParts> = {
+  dhcp: fixtureParts({ board: false, start: false }),
+  subnet: fixtureParts({ board: true, start: false }),
+  firewall: fixtureParts({ board: false, start: false }),
+  'net-map': fixtureParts({ board: false, start: true }),
+};
+
+function fixtureParts({ board, start }: { board: boolean; start: boolean }): FigureParts {
+  return { places: ['laptop', 'router', 'phone'], cues: { glow: 'flag', status: 'text' }, layers: ['web', 'mail'], board, start };
+}
+
+/**
+ * The real `FIGURE_PARTS` with the fixture's parts added, for a test that
+ * validates these fixtures and also loads the real lessons (through the
+ * registry): each real lesson must still validate on its own figure. Where a
+ * figure's real cue has the same name as a fixture cue, the real one wins, so
+ * a fixture on such a figure (Subnetting's `glow` takes an arg) needs
+ * `FIXTURE_PARTS` instead.
+ *
+ *   vi.mock('../art/scenes/parts', async (importOriginal) => ({
+ *     FIGURE_PARTS: (await import('./test-fixtures')).withFixtureParts(
+ *       (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
+ *     ),
+ *   }));
+ */
+export function withFixtureParts(real: Record<FigureId, FigureParts>): Record<FigureId, FigureParts> {
+  const merged = (id: FigureId): FigureParts => {
+    const [own, fixture] = [real[id], FIXTURE_PARTS[id]];
+    return {
+      places: [...new Set([...own.places, ...fixture.places])],
+      cues: { ...fixture.cues, ...own.cues },
+      layers: [...new Set([...own.layers, ...fixture.layers])],
+      board: own.board || fixture.board,
+      start: own.start || fixture.start,
+    };
+  };
+  return { dhcp: merged('dhcp'), subnet: merged('subnet'), firewall: merged('firewall'), 'net-map': merged('net-map') };
+}
+
+export type UnitInput = LessonInput['units'][number];
+
+/** One valid unit: an overview, five Watch steps, Learn and two questions. */
+export function makeUnit(id = 'neighbors', overrides: Partial<UnitInput> = {}): UnitInput {
+  const unit: UnitInput = {
+    id,
+    name: 'Neighbor table',
+    fullName: 'Neighbor table (a demonstration)',
+    purpose: 'How a router remembers who it has heard from.',
     osiLayers: [2],
-    certTags: ['network-plus'],
-    summary: 'Two devices exchange messages, and one of them learns who the other is.',
     references: [{ label: 'RFC 826: An Ethernet Address Resolution Protocol', url: 'https://www.rfc-editor.org/rfc/rfc826' }],
-    overview: {
-      hook: 'Think of a front desk that writes down every visitor it sees. The next time that visitor returns, nobody has to ask who they are.',
-      name: 'Neighbor table',
-      fullName: 'Neighbor table (a demonstration)',
-      description:
-        'A device keeps a short list of the neighbors it has heard from. Using the list saves it from asking the same question twice.',
-      facts: [
-        { label: 'OSI layer', value: '2 (data link)' },
-        { label: 'Example address', value: '192.168.1.20' },
-      ],
-    },
     scene: {
-      type: 'flow',
+      title: 'Home network',
       views: ['network', 'sequence'],
-      actors: [
-        { id: 'a', kind: 'laptop', label: 'Laptop', addresses: ['192.168.1.10', '00:00:5E:00:53:0A'], x: 200, y: 300 },
-        { id: 'b', kind: 'server', label: 'Server', addresses: ['192.168.1.20', '00:00:5E:00:53:14'], x: 800, y: 300 },
-      ],
-      links: [{ id: 'a-b', from: 'a', to: 'b', medium: 'wired' }],
-      tables: [
-        {
+      layers: [],
+      labels: {},
+      start: [],
+      panel: {
+        type: 'table',
+        table: {
           id: 't',
-          actor: 'b',
           title: 'Neighbor table',
+          by: 'kept by the router',
           columns: [
             { key: 'ip', label: 'IP address' },
             { key: 'mac', label: 'MAC address' },
           ],
           keyColumn: 'ip',
           initialRows: [],
+          empty: 'Empty. The router has not heard from anyone yet.',
         },
+      },
+      log: {
+        title: 'Event log',
+        columns: [
+          { key: 'source', label: 'Source' },
+          { key: 'destination', label: 'Destination' },
+          { key: 'size', label: 'Size' },
+          { key: 'plain', label: 'In plain words' },
+        ],
+        legend: [
+          { kind: 'request', label: 'Request' },
+          { kind: 'response', label: 'Reply' },
+          { kind: 'dropped', label: 'Lost on the way' },
+          { kind: 'note', label: 'Note' },
+        ],
+      },
+      parties: [
+        { place: 'laptop', label: 'Laptop', addr: '192.168.1.10' },
+        { place: 'router', label: 'Router', addr: '192.168.1.1' },
       ],
       packets: {
         p1: {
           name: 'Hello frame',
-          summary: 'A small frame carrying a hello from the laptop to the server.',
+          summary: 'A small frame carrying a hello from the laptop to the router.',
           size: 34,
           layers: [
             {
@@ -65,7 +124,7 @@ export function fixtureLesson(overrides: Partial<LessonInput> = {}): LessonInput
               size: 14,
               summary: 'Delivers the frame to one device on the local network.',
               fields: [
-                { name: 'Destination MAC', value: '00:00:5E:00:53:14', explain: 'The server.' },
+                { name: 'Destination MAC', value: '00:00:5E:00:53:01', explain: 'The router.' },
                 { name: 'Source MAC', value: '00:00:5E:00:53:0A', explain: 'The laptop.' },
                 { name: 'EtherType', value: '0x0800', explain: 'An IPv4 packet follows.' },
               ],
@@ -76,53 +135,55 @@ export function fixtureLesson(overrides: Partial<LessonInput> = {}): LessonInput
               summary: 'Names the sender and the receiver by IP address.',
               fields: [
                 { name: 'Source IP', value: '192.168.1.10' },
-                { name: 'Destination IP', value: '192.168.1.20' },
+                { name: 'Destination IP', value: '192.168.1.1' },
               ],
             },
           ],
         },
       },
-      legend: [
-        { kind: 'request', label: 'Request' },
-        { kind: 'response', label: 'Response' },
-        { kind: 'dropped', label: 'Dropped' },
+    },
+    overview: {
+      hook: 'Think of a front desk that writes down every visitor it sees. The next time that visitor returns, nobody has to ask who they are.',
+      description:
+        'A router keeps a short list of the devices it has heard from. Using the list saves it from asking the same question twice.',
+      facts: [
+        { label: 'OSI layer', value: '2 (data link)' },
+        { label: 'Example address', value: '192.168.1.10' },
       ],
     },
     steps: [
       {
         id: 'hello',
-        title: 'Say hello',
-        subtitle: 'The laptop speaks first',
-        narrative:
-          'The laptop sends a small hello to the server. The frame carries both addresses, so every device along the way knows where it came from and where it is going.',
+        title: 'Neighbor Hello',
+        sub: 'The laptop speaks first',
+        narrative: 'The laptop sends a small **hello** to the router. The frame carries both addresses, so the router knows who sent it.',
+        deep: 'A real neighbor protocol repeats its hello on a timer, so a silent device is noticed and forgotten.',
         facts: [
           { label: 'Sender', value: 'Laptop' },
           { label: 'Size', value: '34 bytes' },
         ],
+        idle: 'Nothing has happened yet. Press Play to start.',
         events: [
           {
             type: 'message',
             id: 'm1',
-            from: 'a',
-            to: ['b'],
-            src: '192.168.1.10',
-            dst: '192.168.1.20',
-            protocol: 'Demo',
+            from: 'laptop',
+            to: 'router',
+            tag: 'Hello',
             kind: 'request',
-            label: 'Hello',
-            summary: 'The laptop says hello.',
-            size: 34,
-            time: 0,
             packet: 'p1',
+            log: { source: '192.168.1.10', destination: '192.168.1.1', size: '34 B' },
+            plain: 'The laptop says hello to the router.',
+            cues: [{ cue: 'glow' }],
           },
         ],
       },
       {
         id: 'answer',
-        title: 'Get an answer',
-        subtitle: 'The server replies and takes notes',
-        narrative:
-          'The server answers, then writes the laptop into its neighbor table. A second message follows, and the table now has a row to point at.',
+        title: 'Neighbor Reply',
+        sub: 'The router replies and takes notes',
+        narrative: 'The router answers, then writes the laptop into its **neighbor table**. The table now has a row to point at.',
+        deep: 'Entries usually age out after a few minutes without traffic, so the table only lists devices that are still around.',
         facts: [
           { label: 'Replies', value: '1' },
           { label: 'Table rows', value: '1' },
@@ -131,30 +192,12 @@ export function fixtureLesson(overrides: Partial<LessonInput> = {}): LessonInput
           {
             type: 'message',
             id: 'm2',
-            from: 'b',
-            to: ['a'],
-            src: '192.168.1.20',
-            dst: '192.168.1.10',
-            protocol: 'Demo',
+            from: 'router',
+            to: 'laptop',
+            tag: 'Hello back',
             kind: 'response',
-            label: 'Hello back',
-            summary: 'The server answers.',
-            size: 60,
-            time: 1,
-          },
-          {
-            type: 'message',
-            id: 'm3',
-            from: 'a',
-            to: ['b'],
-            src: '192.168.1.10',
-            dst: '192.168.1.20',
-            protocol: 'Demo',
-            kind: 'request',
-            label: 'Thanks',
-            summary: 'The laptop acknowledges.',
-            size: 60,
-            time: 2,
+            log: { source: '192.168.1.1', destination: '192.168.1.10', size: '60 B' },
+            plain: 'The router answers the laptop.',
           },
           {
             type: 'table',
@@ -162,37 +205,37 @@ export function fixtureLesson(overrides: Partial<LessonInput> = {}): LessonInput
             table: 't',
             op: 'add',
             row: { ip: '192.168.1.10', mac: '00:00:5E:00:53:0A' },
-            summary: 'The server remembers the laptop.',
+            summary: 'The router remembers the laptop.',
           },
         ],
       },
       {
         id: 'reuse',
-        title: 'Use the table',
-        subtitle: 'A second visit needs no question',
-        narrative:
-          'When the laptop comes back, the server finds its row at once. Looking up a known neighbor is quick, and it saves a round trip.',
+        title: 'Table Lookup',
+        sub: 'A second visit needs no question',
+        narrative: 'When the laptop comes back, the router finds its row at once. Looking up a known neighbor is quick, and it saves a round trip.',
+        deep: 'A lookup reads the table without changing it, which is why nothing new is added here.',
         facts: [
           { label: 'Lookup', value: 'Hit' },
           { label: 'Question asked', value: 'None' },
         ],
         events: [
+          { type: 'table', id: 't-match', table: 't', op: 'match', key: '192.168.1.10', summary: 'The router finds the laptop in its table.' },
           {
-            type: 'table',
-            id: 't-match',
-            table: 't',
-            op: 'match',
-            key: '192.168.1.10',
-            summary: 'The server finds the laptop in its table.',
+            type: 'note',
+            id: 'n1',
+            log: { source: '192.168.1.1' },
+            plain: 'The router already knows the laptop.',
+            cues: [{ cue: 'status', arg: 'Known neighbor' }],
           },
         ],
       },
       {
         id: 'lost',
-        title: 'When it goes wrong',
-        subtitle: 'A message that never arrives',
-        narrative:
-          'Sometimes a message is lost on the way. The sender gets no reply, and the lesson shows that missing answer as a dropped message.',
+        title: 'Lost Message',
+        sub: 'A message that never arrives',
+        narrative: 'Sometimes a message is lost on the way. The sender gets no reply, and the lesson marks the missing answer as **dropped**.',
+        deep: 'Lost frames are normal on a busy network; the protocols above notice and send them again.',
         facts: [
           { label: 'Outcome', value: 'Dropped' },
           { label: 'Reply', value: 'None' },
@@ -200,166 +243,115 @@ export function fixtureLesson(overrides: Partial<LessonInput> = {}): LessonInput
         events: [
           {
             type: 'message',
-            id: 'm4',
-            from: 'a',
-            to: ['b'],
-            src: '192.168.1.10',
-            dst: '192.168.1.20',
-            protocol: 'Demo',
+            id: 'm3',
+            from: 'laptop',
+            to: 'router',
+            tag: 'Hello',
             kind: 'request',
-            label: 'Lost hello',
-            summary: 'This message never arrives.',
-            size: 34,
-            time: 5,
             outcome: 'dropped',
+            dropAt: 0.5,
+            log: { source: '192.168.1.10', destination: '192.168.1.1', size: '34 B' },
+            plain: 'This hello never reaches the router.',
+          },
+        ],
+      },
+      {
+        id: 'retry',
+        title: 'Retransmission',
+        sub: 'The laptop tries again',
+        narrative: 'With no answer, the laptop simply sends its hello again. This time it arrives, and the router already has its row.',
+        deep: 'Senders wait a little longer after each miss, so a busy network is not flooded with repeats.',
+        facts: [
+          { label: 'Attempts', value: '2' },
+          { label: 'Outcome', value: 'Delivered' },
+        ],
+        events: [
+          {
+            type: 'message',
+            id: 'm4',
+            from: 'laptop',
+            to: 'router',
+            tag: 'Hello again',
+            kind: 'request',
+            over: 'Wi-Fi',
+            log: { source: '192.168.1.10', destination: '192.168.1.1', size: '34 B' },
+            plain: 'The laptop tries again, and the hello arrives.',
           },
         ],
       },
     ],
-    tryIt: {
-      mode: 'choices',
-      prompt: 'Which address should the laptop send to?',
-      choices: [
-        {
-          id: 'c1',
-          label: 'The server',
-          events: [
-            {
-              type: 'message',
-              id: 'c1-hello',
-              from: 'a',
-              to: ['b'],
-              src: '192.168.1.10',
-              dst: '192.168.1.20',
-              protocol: 'Demo',
-              kind: 'request',
-              label: 'Hello',
-              summary: 'Delivered to the server.',
-              size: 34,
-              time: 0,
-            },
-          ],
-          explanation: 'The address matches the server, so the message arrives.',
-        },
-        {
-          id: 'c2',
-          label: 'A device that is not there',
-          events: [
-            {
-              type: 'message',
-              id: 'c2-hello',
-              from: 'a',
-              to: ['b'],
-              src: '192.168.1.10',
-              dst: '192.168.1.99',
-              protocol: 'Demo',
-              kind: 'request',
-              label: 'Hello',
-              summary: 'Nobody has this address.',
-              size: 34,
-              time: 0,
-              outcome: 'dropped',
-            },
-          ],
-          explanation: 'No device owns that address, so the message is dropped.',
-        },
+    learn: {
+      lead: 'A router keeps a list of the devices it has heard from, so it does not have to ask twice.',
+      terms: [
+        { idea: 'Saying who you are', name: 'Hello' },
+        { idea: 'The list of who is nearby', name: 'Neighbor table' },
+        { idea: 'Sending it again after silence', name: 'Retransmission' },
+      ],
+      pattern: { names: ['Neighbor Hello', 'Neighbor Reply', 'Table Lookup'], note: 'Say hello, get an answer, then look it up next time.' },
+      why: 'Helpdesk staff read tables like this one to see which devices a router knows about.',
+      deep: 'Real tables also record when each row was last refreshed.',
+      facts: [
+        { label: 'Lives on', value: 'The router' },
+        { label: 'Rows', value: 'One per neighbor' },
       ],
     },
-    check: [
+    practice: [
       {
         id: 'q1',
-        prompt: 'What does the server store in its neighbor table?',
-        options: ['Every message it receives', 'A row for each neighbor it has heard from', 'Nothing at all'],
+        prompt: 'What does the router store in its neighbor table?',
+        options: [
+          { text: 'Every message it receives', feedback: 'Not quite. It keeps one row per neighbor, not a copy of each message.' },
+          { text: 'A row for each neighbor it has heard from', feedback: 'Right. One row per neighbor.' },
+          { text: 'Nothing at all', feedback: 'Not quite. The table fills as neighbors say hello.' },
+        ],
         answer: 1,
-        explanation: 'The table holds one row per neighbor, not a copy of each message.',
       },
       {
         id: 'q2',
         prompt: 'Why keep a table at all?',
-        options: ['It avoids asking the same question twice', 'It makes messages larger'],
+        options: [
+          { text: 'It avoids asking the same question twice', feedback: 'Right. A known neighbor is found at once.' },
+          { text: 'It makes messages larger', feedback: 'Not quite. The messages stay the same size.' },
+        ],
         answer: 0,
-        explanation: 'A known neighbor can be found at once, with no extra round trip.',
       },
     ],
-    recap: {
-      takeaways: [
-        'A device writes down the neighbors it hears from.',
-        'A known neighbor can be found without asking again.',
-        'A lost message simply gets no answer.',
-      ],
-    },
+  };
+  return { ...unit, ...overrides };
+}
+
+/**
+ * The fixture unit with two table changes in a row in two of its steps. Neighbor Reply plays `m2`, `t-add`, then
+ * `t-check`. Table Lookup plays `t-match`, `t-recheck`, then note `n1`. `t-check`'s summary has no full stop at its end.
+ */
+export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial<UnitInput> = {}): UnitInput {
+  const unit = makeUnit(id, overrides);
+  const answer = unit.steps.find((s) => s.id === 'answer')!;
+  const reuse = unit.steps.find((s) => s.id === 'reuse')!;
+  answer.events.push({ type: 'table', id: 't-check', table: 't', op: 'match', key: '192.168.1.10', summary: 'The router checks the row it wrote' });
+  reuse.events.splice(1, 0, { type: 'table', id: 't-recheck', table: 't', op: 'match', key: '192.168.1.10', summary: 'The row is still there.' });
+  return unit;
+}
+
+/** A valid one-unit lesson on figure 'dhcp'. */
+export function makeLesson(overrides: Partial<LessonInput> = {}): LessonInput {
+  const lesson: LessonInput = {
+    slug: 'fixture-lesson',
+    title: 'Fixture lesson',
+    subtitle: 'A small lesson used only by tests',
+    level: 'beginner',
+    certTags: ['network-plus'],
+    summary: 'A laptop says hello, and the router learns who it is.',
+    figure: 'dhcp',
+    units: [makeUnit()],
   };
   return { ...lesson, ...overrides };
 }
 
-/** A valid playground lesson: four preset steps and a free-form Try it. */
-export function fixturePlaygroundLesson(): LessonInput {
-  const step = (id: string, title: string, address: string, prefix: number, compare?: string) => ({
-    id,
-    title,
-    subtitle: `${title}, step by step`,
-    narrative: `This step shows ${address} with a prefix of ${prefix}. The mask decides how many leading bits name the network.`,
-    facts: [
-      { label: 'Address', value: address },
-      { label: 'Prefix', value: `/${prefix}` },
-    ],
-    events: [],
-    preset: { address, prefix, ...(compare === undefined ? {} : { compare }) },
+/** A valid lesson of two units, `alpha` (core) and `beta` (app), each with five steps and two questions. */
+export function makeTwoUnitLesson(overrides: Partial<LessonInput> = {}): LessonInput {
+  return makeLesson({
+    units: [makeUnit('alpha', { name: 'Alpha', group: 'core' }), makeUnit('beta', { name: 'Beta', group: 'app' })],
+    ...overrides,
   });
-
-  return {
-    slug: 'fixture-playground',
-    title: 'Fixture playground',
-    subtitle: 'A small playground lesson used only by tests',
-    level: 'beginner',
-    osiLayers: [3],
-    certTags: ['network-plus', 'ccna'],
-    summary: 'Slide the prefix and watch an address split into network and host bits.',
-    references: [{ label: 'RFC 4632: Classless Inter-domain Routing', url: 'https://www.rfc-editor.org/rfc/rfc4632' }],
-    overview: {
-      hook: 'A street address has a street and a house number. An IP address has the same two parts.',
-      name: 'Prefix',
-      fullName: 'Network prefix length (a demonstration)',
-      description: 'The prefix tells you how many leading bits name the network and how many name the host.',
-      facts: [
-        { label: 'OSI layer', value: '3 (network)' },
-        { label: 'Example network', value: '192.168.1.0/24' },
-      ],
-    },
-    scene: { type: 'playground', playground: 'subnet' },
-    steps: [
-      step('whole', 'The whole address', '192.168.1.10', 24),
-      step('split', 'Where it splits', '192.168.1.10', 26),
-      step('compare', 'Same subnet?', '192.168.1.10', 24, '192.168.1.200'),
-      step('wide', 'A wider network', '172.16.5.4', 16),
-    ],
-    tryIt: {
-      mode: 'free',
-      prompt: 'Change the prefix and check which addresses share a subnet.',
-      explanation: 'A longer prefix makes the network smaller, so fewer addresses share it.',
-    },
-    check: [
-      {
-        id: 'q1',
-        prompt: 'What does a longer prefix do?',
-        options: ['Makes the network smaller', 'Makes the network larger'],
-        answer: 0,
-        explanation: 'More bits name the network, so fewer bits are left for hosts.',
-      },
-      {
-        id: 'q2',
-        prompt: 'Which prefix gives the most hosts?',
-        options: ['/16', '/24', '/30'],
-        answer: 0,
-        explanation: 'A /16 leaves 16 bits for hosts.',
-      },
-    ],
-    recap: {
-      takeaways: [
-        'An address has a network part and a host part.',
-        'The prefix says where the split is.',
-        'A longer prefix means fewer hosts.',
-      ],
-    },
-  };
 }

@@ -4,218 +4,162 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-5);
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--panel-raised);
+  border-radius: 10px;
+  background: var(--card);
   color: var(--ink-strong);
-  font: inherit;
-  font-weight: 500;
-  line-height: 1.3;
+  font: 600 16px/1.2 var(--sans);
   text-decoration: none;
   cursor: pointer;
+  transition:
+    transform 120ms var(--ease-out),
+    background-color 150ms ease,
+    box-shadow 200ms ease;
 }
 .btn:hover {
-  border-color: var(--ink-muted);
+  background: var(--bg-soft);
+}
+.btn:active {
+  transform: scale(0.97);
 }
 .btn--primary {
-  border-color: var(--ink-strong);
-  background: var(--ink-strong);
-  color: var(--bg);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--btn-shadow);
 }
 .btn--primary:hover {
-  border-color: var(--ink);
-  background: var(--ink);
+  background: color-mix(in srgb, var(--accent) 90%, var(--ink-strong));
 }
 .btn--small {
-  min-height: 2.25rem;
-  padding: var(--space-1) var(--space-4);
-  font-size: var(--text-sm);
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 15px;
 }
 
-/* ---- Continue card ---- */
-.continue-card {
+/* ---- Parts the page mockups share (home-v6, track-v2, about-v1) ---- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 11px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 13.5px/1.2 var(--sans);
+}
+.eyebrow svg {
+  width: 14px;
+  height: 10px;
+}
+.accent {
+  color: var(--accent);
+}
+.card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: 600 12.5px/1 var(--sans);
+  white-space: nowrap;
+}
+.badge svg {
+  width: 11px;
+  height: 11px;
+}
+.badge.soon {
+  border-color: var(--line-strong);
+  background: var(--bg-soft);
+  color: var(--muted);
+}
+.badge.done {
+  border-color: color-mix(in srgb, var(--allowed) 40%, transparent);
+  background: color-mix(in srgb, var(--allowed) 10%, transparent);
+  /* Green words take the green text token, which stays AA on this tint in both themes. */
+  color: var(--allowed-text);
+}
+/* In progress is where the visitor is: marigold, the current colour. */
+.badge.prog {
+  border-color: color-mix(in srgb, var(--here) 45%, transparent);
+  background: var(--here-soft);
+  color: var(--here);
+}
+/* A track's progress: one segment per planned lesson, finished in the accent (as everywhere a track's bar is
+   shown), in progress in marigold (current). */
+.segbar {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: min(100%, 18rem);
-  padding: var(--space-3) var(--space-5);
-  border: 1px solid var(--ink-strong);
-  border-radius: var(--radius);
-  background: var(--ink-strong);
-  color: var(--bg);
-  text-decoration: none;
+  gap: 2px;
+  width: 100%;
 }
-.continue-card:hover {
-  background: var(--ink);
-}
-.continue-card__title {
-  font-weight: 600;
-}
-.continue-card__meta {
-  font-size: var(--text-sm);
-}
-
-/* ---- Progress line: a text line and a segmented bar ---- */
-.progress-line {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  min-height: 3rem;
-}
-.progress-line[data-shown='false'] {
-  visibility: hidden;
-}
-.progress-line__text {
-  margin: 0;
-  color: var(--ink);
-  font-size: var(--text-sm);
-}
-.progress-bar {
-  display: flex;
-  gap: 3px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.progress-bar li {
-  flex: 1 1 0;
-  height: 0.5rem;
-  border: 1px solid var(--line-strong);
+.segbar i {
+  flex: 1;
+  height: 6px;
   border-radius: 2px;
+  background: var(--line);
 }
-.progress-bar li[data-status='finished'] {
-  border-color: var(--ink-strong);
-  background: var(--ink-strong);
+.segbar i.done {
+  background: var(--accent);
 }
-.progress-bar li[data-status='in-progress'] {
-  border-color: var(--ink-muted);
-  background: repeating-linear-gradient(135deg, var(--ink-muted) 0 2px, transparent 2px 4px);
+.segbar i.prog {
+  background: var(--here);
+}
+/* The small heading over a list at the side of a page: the track's Parts, About's On this page. */
+.toc-h {
+  margin: 0 0 8px;
+  padding-inline-start: 10px;
+  color: var(--muted);
+  font: 700 12px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-/* ---- Filter chips ---- */
+/* ---- Filter chips: the one pressed is in the accent ---- */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 .chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.25rem;
-  padding: var(--space-1) var(--space-4);
+  min-height: 36px;
+  padding: 0 14px;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  background: transparent;
+  background: var(--card);
   color: var(--ink);
-  font: inherit;
-  font-size: var(--text-sm);
-  text-decoration: none;
+  font: 600 14px/1 var(--sans);
   cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 120ms var(--ease-out);
 }
 .chip:hover {
-  border-color: var(--ink-muted);
+  background: var(--bg-soft);
+  color: var(--ink-strong);
+}
+.chip:active {
+  transform: scale(0.97);
 }
 .chip[aria-pressed='true'] {
-  border-color: var(--ink-strong);
-  background: var(--ink-strong);
-  color: var(--bg);
-  font-weight: 600;
-}
-
-/* ---- Track lesson list ---- */
-.track-part {
-  margin-top: var(--space-6);
-}
-.track-part__title {
-  font-size: var(--text-xl);
-}
-.lesson-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--line);
-}
-.lesson-row {
-  display: grid;
-  grid-template-columns: 2rem 1fr;
-  column-gap: var(--space-3);
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--line);
-}
-.lesson-row__num {
-  padding-top: 0.15rem;
-  color: var(--ink-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-}
-.lesson-row__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1) var(--space-4);
-}
-.lesson-row__title {
-  margin: 0;
-  font-size: var(--text-lg);
-}
-.lesson-row__marker {
-  min-height: 1.4em;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-.lesson-row__marker[data-status='finished'] {
-  color: var(--ink-strong);
-  font-weight: 600;
-}
-.lesson-row__summary {
-  margin: var(--space-1) 0 var(--space-2);
-  max-width: var(--measure);
-}
-.lesson-row__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-.lesson-row[data-available='false'] .lesson-row__title,
-.lesson-row[data-available='false'] .lesson-row__num {
-  color: var(--ink-muted);
-  font-weight: 500;
-}
-
-/* ---- Reset progress ---- */
-.reset {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  min-height: 2.75rem;
-}
-.reset__confirm {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-}
-.reset__confirm:focus {
-  outline: none;
-}
-.reset__confirm:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 4px;
-}
-.reset__question {
-  margin: 0;
-  font-weight: 500;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
 }

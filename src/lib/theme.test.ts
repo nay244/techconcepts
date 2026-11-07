@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { THEME_KEY, applyTheme, readAppliedTheme, themeBootScript } from './theme';
+import { act, renderHook } from '@testing-library/react';
+import { THEME_KEY, applyTheme, readAppliedTheme, themeBootScript, useTheme } from './theme';
 
 test('the theme key is namespaced', () => {
   expect(THEME_KEY).toBe('techconcepts:theme');
@@ -81,4 +82,26 @@ test('boot script survives window.localStorage throwing on access', () => {
   });
   expect(runBootScript).not.toThrow();
   expect(document.documentElement.dataset.theme).toBe('light');
+});
+
+test('useTheme gives the applied theme and follows every change to it', async () => {
+  applyTheme('dark');
+  const { result } = renderHook(() => useTheme());
+  expect(result.current).toBe('dark');
+  await act(async () => {
+    applyTheme('light');
+    await Promise.resolve();
+  });
+  expect(result.current).toBe('light');
+});
+
+test('useTheme follows the OS while nothing is applied, and is dark when it cannot tell', () => {
+  stubMatchMedia(true);
+  expect(renderHook(() => useTheme()).result.current).toBe('light');
+  stubMatchMedia(false);
+  expect(renderHook(() => useTheme()).result.current).toBe('dark');
+  vi.stubGlobal('matchMedia', () => {
+    throw new Error('no matchMedia');
+  });
+  expect(renderHook(() => useTheme()).result.current).toBe('dark');
 });

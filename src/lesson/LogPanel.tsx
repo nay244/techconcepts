@@ -1,0 +1,215 @@
+import { useEffect, useId, useRef, type ReactNode } from 'react';
+import type { LogDef } from '../content/schema';
+import type { LogRow } from '../engine/timeline';
+
+/** What a glyph can stand for: a message's kind, an outcome that did not get through, a change or a note. */
+type GlyphKind = LogDef['legend'][number]['kind'];
+
+/** Drawn in a 14 × 14 box, each in its own colour, which a word in the legend always explains. */
+const SHAPES: Record<GlyphKind, ReactNode> = {
+  request: <rect x="2.5" y="2.5" width="9" height="9" rx="1" fill="none" stroke="var(--request)" strokeWidth="2" />,
+  response: (
+    <path d="M2 7h8M7 3l4 4-4 4" fill="none" stroke="var(--response)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  ),
+  broadcast: (
+    <>
+      <circle cx="7" cy="7" r="5" fill="none" stroke="var(--broadcast)" strokeWidth="2" />
+      <circle cx="7" cy="7" r="1.6" fill="var(--broadcast)" />
+    </>
+  ),
+  control: <path d="M7 1.8L12.2 7 7 12.2 1.8 7z" fill="none" stroke="var(--control)" strokeWidth="2" strokeLinejoin="round" />,
+  encrypted: (
+    <>
+      <rect x="2.5" y="6.5" width="9" height="6" rx="1" fill="none" stroke="var(--encrypted)" strokeWidth="1.8" />
+      <path d="M4.8 6.5V4.8a2.2 2.2 0 0 1 4.4 0v1.7" fill="none" stroke="var(--encrypted)" strokeWidth="1.8" />
+    </>
+  ),
+  blocked: (
+    <>
+      <circle cx="7" cy="7" r="5" fill="none" stroke="var(--blocked)" strokeWidth="2" />
+      <path d="M5 5l4 4M9 5l-4 4" stroke="var(--blocked)" strokeWidth="1.8" strokeLinecap="round" />
+    </>
+  ),
+  dropped: (
+    <>
+      <circle cx="7" cy="7" r="5" fill="none" stroke="var(--blocked)" strokeWidth="1.6" strokeDasharray="2 2" />
+      <path d="M5 5l4 4M9 5l-4 4" stroke="var(--blocked)" strokeWidth="1.8" strokeLinecap="round" />
+    </>
+  ),
+  change: (
+    <path
+      d="M4 3v8M4 11l-2-2M4 11l2-2M10 11V3M10 3L8 5M10 3l2 2"
+      fill="none"
+      stroke="var(--ink-strong)"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  ),
+  note: (
+    <>
+      <circle cx="7" cy="7" r="5" fill="none" stroke="var(--muted)" strokeWidth="1.6" />
+      <path d="M7 6.3v3.4" stroke="var(--muted)" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="7" cy="4.4" r="0.9" fill="var(--muted)" />
+    </>
+  ),
+};
+
+function Glyph({ kind }: { kind: GlyphKind }) {
+  return (
+    <svg className="log__glyph" viewBox="0 0 14 14" aria-hidden="true" focusable="false" data-glyph={kind}>
+      {SHAPES[kind]}
+    </svg>
+  );
+}
+
+/** The words that say a message did not get through; its colour alone never does. */
+const OUTCOME_WORD = { blocked: 'Blocked', dropped: 'Dropped' } as const;
+
+/**
+ * A message's glyph follows its kind, or its outcome when it did not get
+ * through. A note draws its own glyph when it names one (Subnetting's sent and
+ * broadcast rows), or else the legend's note entry, which a lesson may name as
+ * a change (Firewalls' rule changes are notes).
+ */
+function glyphFor(row: LogRow, noteKind: GlyphKind): GlyphKind {
+  if (row.type === 'note') return row.glyph ?? noteKind;
+  if (row.kind === null) return noteKind;
+  if (row.outcome === 'blocked' || row.outcome === 'dropped') return row.outcome;
+  return row.kind;
+}
+
+/** The width of the console's own `#` column, in px. */
+const NUMBER_WIDTH = 56;
+
+/** A column of words: one marked `prose`, or the `plain` column unless it says otherwise. */
+const isProse = (column: LogDef['columns'][number]): boolean => column.prose ?? column.key === 'plain';
+
+/** A cell's classes: words or figures, and set strong when its column holds the row's main words. */
+const cellClass = (column: LogDef['columns'][number]): string | undefined =>
+  [isProse(column) ? 'log__prose' : '', column.strong ? 'log__strong' : ''].filter(Boolean).join(' ') || undefined;
+
+export interface LogPanelProps {
+  log: LogDef;
+  rows: LogRow[];
+  /** What the log says while it has no rows. */
+  idle: string;
+  /** The row that has just played, which pulses once. */
+  fresh?: string | null;
+  /** The playback controls, which sit in the header. */
+  controls?: ReactNode;
+}
+
+/** What the empty log says instead of its idle words when JavaScript is off (BaseLayout's no-script style hides them). */
+export const NO_SCRIPT_NOTE = 'This lesson needs JavaScript to play.';
+
+/**
+ * The log under the scene: its title, its legend and the playback controls,
+ * over a real table of `#` plus the unit's own columns. A column keyed `plain`
+ * shows each event's plain words. The table's layout is fixed: each column
+ * takes its own width, and those without one share the rest; a prose column's
+ * words wrap there. Blocked and lost messages are drawn in the
+ * blocked colour and say so in words. The table scrolls inside itself and
+ * keeps the latest row in view.
+ *
+ * The server draws the empty log, so its idle row also holds a `<noscript>`
+ * note: with JavaScript off it stands where the log would say "Press Play".
+ * React never draws a `<noscript>`'s children in the browser, so with
+ * JavaScript on the note is never there.
+ */
+export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelProps) {
+  const titleId = useId();
+  const noteKind = log.legend.find((entry) => entry.kind === 'note' || entry.kind === 'change')?.kind ?? 'note';
+  // The outcome's word goes in the plain-words column, or else the first column of words, where it can wrap;
+  // the last column when there is neither.
+  const flagColumn = log.columns.some((c) => c.key === 'plain') ? 'plain' : (log.columns.find(isProse) ?? log.columns.at(-1)!).key;
+
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = scroller.current;
+    if (box !== null) box.scrollTop = box.scrollHeight;
+  }, [rows.length]);
+
+  return (
+    <div className="console__panel console__log">
+      <div className="log__head">
+        <h2 id={titleId} className="console__ptitle">
+          {log.title}
+        </h2>
+        {log.legend.length > 0 ? (
+          <ul className="log__legend" aria-label="Legend">
+            {log.legend.map((entry) => (
+              <li key={entry.kind}>
+                <Glyph kind={entry.kind} />
+                {entry.label}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {controls}
+      </div>
+      <div ref={scroller} className="log__scroll" role="region" aria-labelledby={titleId} tabIndex={0}>
+        <table className="log__table" aria-labelledby={titleId}>
+          <colgroup>
+            <col style={{ width: NUMBER_WIDTH }} />
+            {log.columns.map((column) => (
+              <col key={column.key} style={column.width === undefined ? undefined : { width: column.width }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              {log.columns.map((column) => (
+                <th key={column.key} scope="col">
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td className="log__idle" colSpan={log.columns.length + 1} data-idle="">
+                  <span className="log__idle-words">{idle}</span>
+                  <noscript>
+                    <span className="log__nojs">{NO_SCRIPT_NOTE}</span>
+                  </noscript>
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => {
+                const missed = row.outcome === 'blocked' || row.outcome === 'dropped' ? row.outcome : null;
+                return (
+                  <tr key={row.eventId} data-outcome={missed ?? undefined} data-fresh={row.eventId === fresh ? '' : undefined}>
+                    <td>
+                      <span className="log__num">
+                        <Glyph kind={glyphFor(row, noteKind)} />
+                        {row.n}
+                      </span>
+                    </td>
+                    {log.columns.map((column) => {
+                      const plain = column.key === 'plain';
+                      const text = plain ? row.plain : Object.hasOwn(row.cells, column.key) ? row.cells[column.key] : '';
+                      return (
+                        <td key={column.key} className={cellClass(column)}>
+                          {missed !== null && column.key === flagColumn ? (
+                            <>
+                              <span className="log__flag">{OUTCOME_WORD[missed]}</span>{' '}
+                            </>
+                          ) : null}
+                          {text}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default LogPanel;

@@ -1,215 +1,628 @@
 ---
+// Home (spec §6.1, mockup home-v6). The words are the mockup's; the numbers and the DHCP log sample are worked out
+// from the track and its lessons. Only the hero's buttons, the Networking card's progress and the hero's movement
+// run in the browser; the rest is static.
+import { coverStill, type CoverId } from '../art/figures/covers';
+import { spot } from '../art/figures/spots';
+import { cropViewBox } from '../art/ids';
 import { CERT_TAGS, type CertTag } from '../content/certs';
-import { getEntries, trackTotals, type AvailableSummary } from '../content/registry';
+import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
+import type { Lesson, MessageKind } from '../content/schema';
 import { comingSoonTracks, tracks } from '../content/tracks';
-import { levelLabel } from '../lib/entries';
+import { knownFrom, levelLabel } from '../lib/entries';
+import { firstSentence, logSample, resumePlaces } from '../lib/home';
+import { tokens } from '../styles/tokens';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import ContinueCard from '../components/ContinueCard';
-import TrackProgress from '../components/TrackProgress';
+import HeroCta, { type ResumeLesson } from '../components/HeroCta';
+import HeroWeb from '../components/HeroWeb.astro';
+import TrackCardProgress from '../components/TrackCardProgress';
 import '../components/site.css';
 
 const track = tracks[0]!;
 const entries = getEntries(track.id);
 const available = entries.filter((e): e is AvailableSummary => e.available);
-const { planned, minutes } = trackTotals(entries);
-// Lesson 1 may not be written yet: start at the first one that is.
-const first = available[0]!;
+const totals = trackTotals(entries);
 
+function lessonOf(entry: AvailableSummary): Lesson {
+  const lesson = getLesson(track.id, entry.slug);
+  // An available entry is built from its lesson, so this cannot happen.
+  if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
+  return lesson;
+}
+
+function readyEntry(slug: string): AvailableSummary {
+  const entry = available.find((e) => e.slug === slug);
+  if (entry === undefined) throw new Error(`Home needs the ${track.id}/${slug} lesson, and it is not ready.`);
+  return entry;
+}
+
+// Each ready lesson's last position, for both progress islands.
+const known = knownFrom(entries);
+
+// ---------- Hero: lesson 1 to start; each ready lesson can say where a returning visitor is ----------
+const start = available[0]!;
+const resumeLessons: ResumeLesson[] = available.map((entry) => ({
+  key: entry.key,
+  title: entry.title,
+  url: entry.url,
+  places: resumePlaces(lessonOf(entry)),
+}));
+
+// ---------- The exams strip: the tags that have lessons, in their usual order ----------
 const present = new Set(available.flatMap((e) => e.certTags));
 const certTags = (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.has(tag));
 
-const level = levelLabel(track.level);
+// ---------- The big card: the first rows of DHCP's log as it stands at Learn, the last one current ----------
+const dhcpEntry = readyEntry('dhcp');
+const sample = logSample(lessonOf(dhcpEntry));
+// The log sample sits on a dark console in both themes, so its tags take the dark theme's message colours.
+const tagColour = (kind: MessageKind): string => tokens.dark[kind];
 
-const steps = [
-  { name: 'Watch', line: 'Follow each step as devices send messages to one another, with a plain-English explanation beside it.' },
-  { name: 'Try', line: 'Change something yourself, like an address or a rule, and see what happens next.' },
-  { name: 'Check', line: 'Answer a few questions to see what stuck. They are for you, so nothing is scored or saved.' },
-];
+// ---------- Tracks ----------
+// The card carries the first sentence of the track's description, as the mockup does.
+const networkingBlurb = firstSentence(track.description);
+const cardCover = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
+
+// ---------- How a lesson works ----------
+// Each part's number, two digits: 01, 02, 03.
+const two = (n: number): string => String(n).padStart(2, '0');
+const parts = [
+  {
+    kind: 'watch',
+    name: 'Watch',
+    line: 'See it happen. Devices send messages to one another, one step at a time, and you can go forward and back at your own pace.',
+    icon: '<path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+  },
+  {
+    kind: 'learn',
+    name: 'Learn',
+    line: 'Find out what happened and why, in plain words. Each idea comes first, then its technical name, and a Go deeper section holds the exam-level detail.',
+    icon: '<path d="M3.5 5.5c2.8-1 5.6-.6 8.5 1.3 2.9-1.9 5.7-2.3 8.5-1.3v13c-2.8-1-5.6-.6-8.5 1.3-2.9-1.9-5.7-2.3-8.5-1.3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6.8v13" stroke="currentColor" stroke-width="1.8"/>',
+  },
+  {
+    kind: 'practice',
+    name: 'Practice',
+    line: 'Answer a few questions to see what stuck. They are just for you: nothing is scored or saved.',
+    icon: '<rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.5l2.7 2.7L16 9.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  },
+] as const;
+
+const EYE = parts[0].icon;
 ---
 
-<BaseLayout title="TechConcepts" description="Short, visual lessons that show how technology works, starting with networking. Watch it happen, try it yourself, and check what you learned.">
-  <div class="container home">
-    <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">See how technology works, one short lesson at a time.</h1>
-      <p class="hero__lede">Watch a network do its job, try changing it yourself, then check what stuck. Each lesson takes 15 minutes or less, and there is nothing to sign up for.</p>
-      <div class="hero__actions">
-        <ContinueCard client:load entries={available} planned={planned} />
-        <a class="btn btn--primary hero__start" href={first.url}>Start with {track.title}</a>
-      </div>
-    </section>
+<BaseLayout
+  title="TechConcepts"
+  description="Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words."
+  overHero
+>
+  <HeroWeb>
+    <HeroCta client:load lessons={resumeLessons} known={known} startUrl={start.url}>
+      <h1 id="hero-title">See how technology <span class="accent">really works.</span></h1>
+      <p class="lede">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
+    </HeroCta>
+  </HeroWeb>
 
-    <section aria-labelledby="tracks-title" class="home__section">
-      <h2 id="tracks-title">Tracks</h2>
-      <ul class="cards" role="list">
-        <li class="card">
-          <h3 class="card__title"><a href={`/${track.id}`}>{track.title}</a></h3>
-          <p>{track.description}</p>
-          <ul class="card__stats" role="list">
-            <li>{available.length} of {planned} lessons ready</li>
-            <li>{minutes} min in total</li>
-            <li>{level}</li>
-          </ul>
-          <TrackProgress client:load entries={entries} planned={planned} />
-        </li>
-        {
-          comingSoonTracks.map((t) => (
-            <li class="card card--soon">
-              <h3 class="card__title">{t.title}</h3>
-              <p>{t.blurb}</p>
-              <p class="card__soon">Coming soon</p>
-            </li>
-          ))
-        }
-      </ul>
-    </section>
-
-    <section aria-labelledby="prep-title" class="home__section">
-      <h2 id="prep-title">Preparing for&hellip;</h2>
-      <p class="home__note">Pick a certification or role to see the lessons that help.</p>
-      <ul class="chips" role="list">
-        {
-          certTags.map((tag) => (
-            <li>
-              <a class="chip" href={`/${track.id}?for=${tag}`}>{CERT_TAGS[tag]}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </section>
-
-    <section aria-labelledby="how-title" class="home__section">
-      <h2 id="how-title">How a lesson works</h2>
-      <ol class="how" role="list">
-        {
-          steps.map((s, i) => (
-            <li class="how__step">
-              <span class="how__num" aria-hidden="true">{i + 1}</span>
-              <h3 class="how__name">{s.name}</h3>
-              <p>{s.line}</p>
-            </li>
-          ))
-        }
-      </ol>
-    </section>
+  <div class="wrap exams">
+    <p>Each lesson shows which exams and jobs it helps with</p>
+    <ul>
+      {
+        certTags.map((tag) => (
+          <li>
+            <a href={`/${track.id}?for=${tag}`}>{CERT_TAGS[tag]}</a>
+          </li>
+        ))
+      }
+    </ul>
   </div>
+
+  <section class="section wrap" aria-labelledby="why-title">
+    <div class="section-head">
+      <span class="eyebrow"><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>Why it works</span>
+      <h2 id="why-title">Learn by <span class="accent">watching it happen.</span></h2>
+      <p>Reading about a network is hard. Watching one is easier. Every lesson is a small simulation you move through at your own pace.</p>
+    </div>
+    <div class="bento">
+      <article class="card big">
+        <div class="big-top">
+          <div>
+            <div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" set:html={EYE} /></div>
+            <h3>Step through what really happens</h3>
+            <p>Devices send each other messages, one step at a time. Go forward, go back, and read what each message means beside it.</p>
+          </div>
+          <span class="count"><b>{dhcpEntry.stepCount}</b> steps in {dhcpEntry.title}</span>
+        </div>
+        <div class="log-sample">
+          <div class="log-sample-bar">
+            <span id="sample-title">{dhcpEntry.title}: how a device gets its address</span>
+            <span id="sample-where">Step {sample.step} of {sample.steps}</span>
+          </div>
+          <ol aria-labelledby="sample-title sample-where">
+            {
+              sample.rows.map((row) => (
+                <li class={row.current ? 'here' : undefined} aria-current={row.current ? 'step' : undefined}>
+                  <span class="num">{row.n}</span>
+                  <span class="who">
+                    {row.from} <span aria-hidden="true">→</span>
+                    <span class="sr-only">to</span> {row.to}
+                  </span>
+                  {row.tag === null ? <span /> : <span class="msg" style={`color: ${tagColour(row.kind)}`}>{row.tag}</span>}
+                  <span class="say">{row.plain}</span>
+                </li>
+              ))
+            }
+            {
+              sample.later && (
+                <li class="later">
+                  <span class="num">{sample.later.n}</span>
+                  <span class="who">Later</span>
+                  <span />
+                  <span class="say">{sample.later.sub}</span>
+                </li>
+              )
+            }
+          </ol>
+        </div>
+      </article>
+      <article class="card small">
+        <div class="ico">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9l-5 4v-14z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M8 9.5h8M8 12.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+        </div>
+        <h3>Plain words first</h3>
+        <p>Each step explains the idea in everyday language, then names the technical term. Exam-level detail waits in a Go deeper section, for when you want it.</p>
+      </article>
+      <article class="card small">
+        <div class="ico">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 6.6-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+        </div>
+        <h3>Nothing to sign up for</h3>
+        <p>No account and no email. Your progress is saved in this browser only, and you can clear it any time.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section wrap" id="how" aria-labelledby="how-title">
+    <div class="section-head">
+      <span class="eyebrow"><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>How a lesson works</span>
+      <h2 id="how-title">Watch, learn, <span class="accent">then practice.</span></h2>
+      <p>Three parts, always in this order.</p>
+    </div>
+    <ol class="timeline">
+      {
+        parts.map((part, i) => (
+          <li>
+            <div class="ico">
+              <svg viewBox="0 0 24 24" aria-hidden="true" set:html={part.icon} />
+            </div>
+            <div>
+              <p class="num">{two(i + 1)}</p>
+              <h3>{part.name}</h3>
+              <p>{part.line}</p>
+            </div>
+            <div class="art" set:html={spot(part.kind)} />
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="section wrap" id="tracks" aria-labelledby="tracks-title">
+    <div class="section-head">
+      <span class="eyebrow"><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>Tracks</span>
+      <h2 id="tracks-title">Start with <span class="accent">networking.</span></h2>
+      <p>A track is a set of lessons in order. Networking comes first, because everything else builds on it. More tracks are on the way.</p>
+    </div>
+    <ul class="tracks">
+      <li>
+        <a class="card track ready" href={`/${track.id}`}>
+          <div class="art" aria-hidden="true" set:html={cardCover('networking')} />
+          <div class="body">
+            <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(track.level)}</span></div>
+            <h3>{track.title}</h3>
+            <p>{networkingBlurb}</p>
+            <div class="foot">
+              <TrackCardProgress client:load known={known} totals={totals} />
+            </div>
+          </div>
+        </a>
+      </li>
+      {
+        comingSoonTracks.map((t) => (
+          <li>
+            <div class="card track later">
+              <div class="art" set:html={cardCover(t.cover)} />
+              <div class="body">
+                <div class="top">
+                  <span class="kind">{t.kind}</span>
+                  <span class="badge soon">Coming soon</span>
+                </div>
+                <h3>{t.title}</h3>
+                <p>{t.blurb}</p>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 </BaseLayout>
 
 <style is:global>
-  .home {
-    padding-block: var(--space-7) var(--space-4);
+  html {
+    scroll-behavior: smooth;
   }
-  .home__section {
-    margin-top: var(--space-8);
+
+  /* ---------- The exams strip ---------- */
+  .exams {
+    padding: 64px 0 0;
+    text-align: center;
   }
-  .home__note {
-    max-width: var(--measure);
-    color: var(--ink-muted);
+  .exams p {
+    margin: 0 0 18px;
+    color: var(--muted);
+    font: 500 14.5px/1.4 var(--sans);
   }
-  .hero h1 {
-    max-width: 22ch;
-    margin-bottom: var(--space-4);
-    font-size: clamp(2rem, 1.4rem + 3vw, 3.25rem);
-    letter-spacing: -0.02em;
-  }
-  .hero__lede {
-    max-width: var(--measure);
-    font-size: var(--text-lg);
-  }
-  /* Room for the Continue card, so nothing moves when it fills in after load. */
-  .hero__actions {
+  .exams ul {
     display: flex;
     flex-wrap: wrap;
-    align-items: stretch;
-    gap: var(--space-3);
-    min-height: 9.5rem;
-    margin-top: var(--space-5);
-    align-content: flex-start;
-  }
-  @media (min-width: 40rem) {
-    .hero__actions {
-      min-height: 4.75rem;
-    }
-  }
-  /* With a Continue card present, the start link steps back to a secondary button. */
-  .hero__actions:has(.continue-card) .hero__start {
-    border-color: var(--line-strong);
-    background: var(--panel-raised);
-    color: var(--ink-strong);
-    align-self: center;
-  }
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-    gap: var(--space-4);
+    justify-content: center;
+    gap: 12px 44px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .card {
+  .exams a {
+    color: color-mix(in srgb, var(--ink-strong) 55%, var(--bg));
+    font: 700 19px/1.2 var(--sans);
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+  .exams a:hover {
+    color: var(--ink-strong);
+  }
+
+  /* ---------- Sections ---------- */
+  .section {
+    padding-top: 120px;
+  }
+  .section-head {
+    max-width: 720px;
+    margin: 0 auto 44px;
+    text-align: center;
+  }
+  .section-head h2 {
+    margin: 18px 0 12px;
+    color: var(--ink-strong);
+    font: 700 clamp(32px, 1.4rem + 1.6vw, 44px) / 1.1 var(--sans);
+    letter-spacing: -0.025em;
+  }
+  .section-head p {
+    max-width: 38em;
+    margin: 0 auto;
+    color: var(--ink);
+  }
+  .ico {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 18px;
+    border: 1px solid var(--accent-line);
+    border-radius: 11px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .ico svg {
+    width: 20px;
+    height: 20px;
+  }
+  .card h3 {
+    margin: 0 0 8px;
+    color: var(--ink-strong);
+    font: 700 21px/1.3 var(--sans);
+    letter-spacing: -0.01em;
+  }
+  .card p {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  /* ---------- Why it works ---------- */
+  .bento {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 18px;
+  }
+  .bento .big {
     display: flex;
     flex-direction: column;
-    padding: var(--space-5);
+    grid-row: span 2;
+    padding: 30px;
+  }
+  .bento .small {
+    padding: 26px;
+  }
+  .big-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .count {
+    padding: 6px 10px;
     border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--panel);
+    border-radius: 999px;
+    color: var(--muted);
+    font: 500 13px/1 var(--mono);
+    white-space: nowrap;
   }
-  .card:first-child {
-    border-color: var(--line-strong);
-    grid-column: 1 / -1;
-    max-width: 48rem;
+  .count b {
+    color: var(--accent);
   }
-  .card__title {
-    margin-bottom: var(--space-2);
-    font-size: var(--text-xl);
+  /* A lesson's message log, on the console's dark ground in both themes. */
+  .log-sample {
+    position: relative;
+    flex: 1;
+    margin-top: 24px;
+    overflow: hidden;
+    border: 1px solid #1d3553;
+    border-radius: 12px;
+    background: #0a1220;
+    color: #d8e4f4;
   }
-  .card__stats {
+  .log-sample-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 16px;
+    border-bottom: 1px solid #1d3553;
+    color: #93a8c6;
+    font: 500 12.5px/1.3 var(--mono);
+  }
+  .log-sample ol {
+    margin: 0;
+    padding: 8px 0;
+    list-style: none;
+  }
+  .log-sample li {
+    display: grid;
+    grid-template-columns: 30px 150px 96px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    border-inline-start: 3px solid transparent;
+    font: 500 13.5px/1.35 var(--mono);
+  }
+  /* Lighter than the mockup's #5f7899, which is under 4.5:1 on the console and on the current row. */
+  .log-sample .num {
+    color: #7088a6;
+  }
+  .log-sample .who {
+    color: #b9c9e0;
+  }
+  .log-sample .msg {
+    justify-self: start;
+    padding: 5px 7px;
+    border: 1px solid currentColor;
+    border-radius: 5px;
+    font: 700 11px/1 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .log-sample .say {
+    color: #f2f7ff;
+    font: 400 14.5px/1.4 var(--sans);
+  }
+  /* The current row, in the console's marigold. */
+  .log-sample li.here {
+    border-inline-start-color: #f5b83d;
+    background: rgba(245, 184, 61, 0.08);
+  }
+  .log-sample li.later .say {
+    color: #7d93b3;
+    font-style: italic;
+  }
+
+  /* ---------- How a lesson works ---------- */
+  .timeline {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+  }
+  .timeline li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 300px;
+    align-items: start;
+    gap: 22px;
+    padding-bottom: 40px;
+  }
+  .timeline li:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 23px;
+    top: 52px;
+    bottom: 6px;
+    width: 1.5px;
+    background: var(--line-strong);
+  }
+  .timeline .ico {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    background: var(--card);
+  }
+  .timeline .num {
+    margin: 4px 0 8px;
+    color: var(--accent);
+    font: 700 13px/1 var(--mono);
+    letter-spacing: 0.04em;
+  }
+  .timeline h3 {
+    margin: 0 0 6px;
+    color: var(--ink-strong);
+    font: 700 23px/1.25 var(--sans);
+  }
+  .timeline p {
+    max-width: 34em;
+    margin: 0;
+  }
+  .timeline .art {
+    aspect-ratio: 528 / 372;
+    overflow: hidden;
+    border: 1px solid var(--fig-line);
+    border-radius: 12px;
+    background: var(--fig-bg);
+  }
+  .timeline .art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ---------- Tracks ---------- */
+  .tracks {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .track {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    text-decoration: none;
+    transition:
+      transform 200ms var(--ease-out),
+      box-shadow 200ms ease,
+      border-color 200ms ease;
+  }
+  a.track {
+    color: inherit;
+  }
+  a.track:hover {
+    border-color: var(--accent-line);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
+  }
+  a.track:active {
+    transform: translateY(-1px) scale(0.99);
+  }
+  .track.ready {
+    border-color: var(--accent-line);
+  }
+  .track .art {
+    height: 216px;
+    border-bottom: 1px solid var(--fig-line);
+    background: var(--fig-bg);
+  }
+  .track .art svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .track .body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 20px 22px 22px;
+  }
+  .track .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .track .kind {
+    color: var(--accent);
+    font: 600 13.5px/1.2 var(--sans);
+  }
+  .track h3 {
+    font-size: 20px;
+  }
+  .track p {
+    color: var(--ink);
+    font-size: 15.5px;
+  }
+  .track .foot {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-    margin: 0 0 var(--space-3);
-    padding: 0;
-    list-style: none;
-    color: var(--ink-muted);
-    font-size: var(--text-sm);
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 18px;
   }
-  .card--soon {
-    border-style: dashed;
-    background: transparent;
-    color: var(--ink-muted);
+  .track .foot .meta {
+    color: var(--muted);
+    font: 500 13.5px/1.3 var(--mono);
   }
-  .card--soon .card__title {
-    color: var(--ink-muted);
+  .track .go {
+    margin-inline-start: auto;
+    color: var(--accent);
+    font: 700 15px/1 var(--sans);
   }
-  .card__soon {
-    margin: auto 0 0;
-    font-size: var(--text-sm);
-    font-weight: 600;
+  a.track:hover .go {
+    text-decoration: underline;
+    text-underline-offset: 4px;
   }
-  .how {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-    gap: var(--space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .track.later {
+    background: var(--card-2);
+    box-shadow: none;
   }
-  .how__step {
-    padding: var(--space-5);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--panel);
+  .track.later .art .lm-svg {
+    opacity: 0.82;
   }
-  .how__num {
-    display: block;
-    margin-bottom: var(--space-2);
-    color: var(--ink-muted);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+
+  @media (max-width: 960px) {
+    .bento {
+      grid-template-columns: 1fr;
+    }
+    .bento .big {
+      grid-row: auto;
+    }
+    .tracks {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .timeline li {
+      grid-template-columns: 48px minmax(0, 1fr);
+    }
+    .timeline .art {
+      display: none;
+    }
   }
-  .how__name {
-    margin-bottom: var(--space-2);
-  }
-  .how__step p {
-    margin: 0;
+  @media (max-width: 720px) {
+    .exams {
+      padding-top: 48px;
+    }
+    .exams ul {
+      gap: 10px 26px;
+    }
+    .section {
+      padding-top: 88px;
+    }
+    .bento .big,
+    .bento .small {
+      padding: 22px;
+    }
+    .big-top {
+      flex-direction: column;
+    }
+    .log-sample li {
+      grid-template-columns: 26px minmax(0, 1fr) auto;
+      row-gap: 4px;
+      padding: 10px 14px;
+    }
+    .log-sample .say {
+      grid-column: 2 / -1;
+    }
+    .tracks {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

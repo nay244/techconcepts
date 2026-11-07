@@ -1,521 +1,403 @@
-import { describe, expect, test } from 'vitest';
-import { formatIPv4, parseIPv4, toOctetBits } from '../../../engine/net/ipv4';
-import { maskFromPrefix, sameSubnet, subnetInfo } from '../../../engine/net/subnet';
-import { countWords, estimateMinutes } from '../../estimate';
+// @vitest-environment jsdom
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { expect, test } from 'vitest';
+import { drawSubnet } from '../../../art/scenes/subnet';
+import { parseIPv4 } from '../../../engine/net/ipv4';
+import { sameSubnet } from '../../../engine/net/subnet';
+import { initialPlayback } from '../../../engine/playback';
+import { deriveState, positionOf } from '../../../engine/timeline';
+import { BitsBoard } from '../../../lesson/panels/BitsBoard';
+import { ScenePanel } from '../../../lesson/ScenePanel';
+import { lessonNumbers, lessonTitles } from '../../../test/lesson-references';
+import { showSweep } from '../../../test/show-sweep';
+import { validateLesson } from '../../define';
+import { countUnitWords, estimateMinutes } from '../../estimate';
+import { checkStated, learnerProse } from '../../helpers/subnet-events';
 import { getEntries } from '../../registry';
-import subnetting from './subnetting';
+import type { Lesson, NoteEvent } from '../../schema';
+import subnetting, { STATED } from './subnetting';
 
-const s = subnetting;
-
-/** The subnet maths for step `i`'s preset address and prefix. */
-const info = (i: number) => {
-  const p = s.steps[i]!.preset!;
-  const r = parseIPv4(p.address);
-  if (!r.ok) throw new Error(`Step ${i + 1}: "${p.address}" is not an address.`);
-  return subnetInfo(r.value, p.prefix);
+const unit = subnetting.units[0]!;
+const events = unit.steps.flatMap((s) => s.events);
+const notes = events.filter((e): e is NoteEvent => e.type === 'note');
+const ip = (text: string): number => {
+  const parsed = parseIPv4(text);
+  if (!parsed.ok) throw new Error(text);
+  return parsed.value;
 };
+const noteById = (id: string): NoteEvent => notes.find((e) => e.id === id)!;
 
-const ip = (text: string) => {
-  const r = parseIPv4(text);
-  if (!r.ok) throw new Error(`"${text}" is not an address.`);
-  return r.value;
-};
-
-/** Everything a step tells the learner: its narrative and its facts. */
-const spoken = (i: number) => [s.steps[i]!.narrative, ...s.steps[i]!.facts.map((f) => `${f.label}: ${f.value}`)].join('\n');
-
-/** Every dotted-quad address in `text`. */
-const addressesIn = (text: string) => text.match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g) ?? [];
-
-/** Every "/NN" prefix in `text`. */
-const prefixesIn = (text: string) => [...text.matchAll(/\/(\d{1,2})\b/g)].map((m) => Number(m[1]));
-
-// ------------------------------------------------------------ the brief's tests
-
-test('budget', () => expect(estimateMinutes(s)).toBeLessThanOrEqual(15));
-
-test('stays under the 12-minute warning', () => expect(estimateMinutes(s)).toBeLessThanOrEqual(12));
-
-test('step 3 numbers', () => {
-  const i = info(2);
-  expect([formatIPv4(i.network), formatIPv4(i.broadcast), i.usableHosts]).toEqual(['192.168.1.0', '192.168.1.255', 254]);
-  expect(s.steps[2]!.narrative).toContain('254');
+test('Subnetting validates and takes 10 minutes', () => {
+  expect(() => validateLesson(subnetting)).not.toThrow();
+  expect(subnetting.units).toHaveLength(1);
+  expect(unit.steps).toHaveLength(6);
+  expect(events).toHaveLength(17);
+  expect(unit.practice).toHaveLength(3);
+  expect(estimateMinutes(subnetting)).toBe(10);
+  // The mockup's words, all of them, counted as FIGS/minutes.mjs counts them.
+  expect(countUnitWords(unit)).toBe(1178);
 });
 
-test('step 4 numbers', () => {
-  const i = info(3);
-  expect([formatIPv4(i.network), i.usableHosts]).toEqual(['192.168.1.64', 62]);
-  expect(s.steps[3]!.narrative).toContain('62');
-});
-
-test('step 5 compare is different', () => {
-  const p = s.steps[4]!.preset!;
-  const a = parseIPv4(p.address);
-  const b = parseIPv4(p.compare!);
-  if (!a.ok || !b.ok) throw new Error('Step 5 needs two valid addresses.');
-  expect(sameSubnet(a.value, b.value, p.prefix)).toBe(false);
-});
-
-test('step 6 numbers', () => {
-  expect(info(5).usableHosts).toBe(2);
-  expect(s.steps[5]!.narrative).toContain('2 usable');
-});
-
-test('check answer for /26 is 62', () => expect(s.check[0]!.options[s.check[0]!.answer]).toContain('62'));
-
-// ------------------------------------------------------------ shape and meta
-
-test('a playground lesson with six steps and a free Try it', () => {
-  expect(s.scene).toEqual({ type: 'playground', playground: 'subnet' });
-  expect(s.steps).toHaveLength(6);
-  expect(s.tryIt.mode).toBe('free');
-  expect(s.check).toHaveLength(3);
-  expect(s.recap.takeaways).toHaveLength(3);
-});
-
-test('track entry is available as lesson 7', () =>
-  expect(getEntries('networking').find((e) => e.slug === 'subnetting')).toMatchObject({ available: true, number: 7 }));
-
-test('meta follows the brief', () => {
-  expect(s).toMatchObject({ slug: 'subnetting', title: 'Subnetting', subtitle: 'Splitting networks into smaller ones', osiLayers: [3] });
-  expect(s.certTags).toEqual(['network-plus', 'ccna']);
-  expect(s.references.map((r) => r.url)).toEqual(['https://www.rfc-editor.org/rfc/rfc950', 'https://www.rfc-editor.org/rfc/rfc4632']);
-  expect(s.references.map((r) => r.label)).toEqual([
-    expect.stringContaining('RFC 950'),
-    expect.stringContaining('RFC 4632'),
+test('the lesson is lesson 8, Subnetting, on the office figure with the bits board', () => {
+  expect(subnetting).toMatchObject({
+    slug: 'subnetting',
+    title: 'Subnetting',
+    subtitle: 'Splitting networks into smaller ones',
+    level: 'beginner',
+    certTags: ['network-plus', 'ccna'],
+    summary:
+      'See how one big network is cut into smaller ones, how many devices fit in each, and how a device tells whether another device is its neighbour.',
+    figure: 'subnet',
+  });
+  expect(getEntries('networking').find((e) => e.slug === 'subnetting')).toMatchObject({ number: 8, available: true, minutes: 10 });
+  expect(unit).toMatchObject({
+    name: 'Subnetting',
+    fullName: 'Cutting one network into smaller ones',
+    purpose: 'One network, cut into four',
+    osiLayers: [3],
+  });
+  expect(unit.references.map((r) => r.label)).toEqual([
+    'RFC 950: Internet Standard Subnetting Procedure',
+    'RFC 4632: Classless Inter-domain Routing (CIDR)',
   ]);
+  expect(unit.scene.title).toBe('Office network · 192.168.1.0/24');
+  expect(unit.scene.panel).toEqual({ type: 'bits' });
 });
 
-test('overview facts follow the brief', () => {
-  const fact = (label: string) => s.overview.facts.find((f) => f.label === label)?.value;
-  expect(fact('Written as')).toBe('192.168.1.0/24');
-  expect(fact('Mask')).toBe('255.255.255.0');
-  expect(fact('Usable hosts')).toBe('2 to the power of host bits, minus 2 (for prefixes up to /30)');
-  expect(fact('Defined in')).toBe('RFC 950, RFC 4632');
-});
-
-test('the overview example is the lesson\'s own: 192.168.1.0/24 has the mask 255.255.255.0', () => {
-  expect(formatIPv4(maskFromPrefix(24))).toBe('255.255.255.0');
-  expect(formatIPv4(subnetInfo(ip('192.168.1.0'), 24).network)).toBe('192.168.1.0');
-});
-
-// ------------------------------------------------------------ presets
-
-test('each step starts the playground from its brief preset', () => {
-  expect(s.steps.map((x) => [x.title, x.preset])).toEqual([
-    ['An address has two parts', { address: '192.168.1.10', prefix: 24 }],
-    ['The mask draws the line', { address: '192.168.1.10', prefix: 24 }],
-    ['Network, broadcast and hosts', { address: '192.168.1.10', prefix: 24 }],
-    ['Borrowing bits', { address: '192.168.1.70', prefix: 26 }],
-    ['Same subnet or not?', { address: '192.168.1.10', prefix: 26, compare: '192.168.1.70' }],
-    ['Tiny subnets', { address: '10.0.0.5', prefix: 30 }],
+test('step titles are the technical terms, in order, and the pattern names the four things worked out', () => {
+  expect(unit.steps.map((s) => [s.title, s.sub])).toEqual([
+    ['Network and Host Portions', 'Which network, then which device'],
+    ['Subnet Mask', 'A number marks where the network ends'],
+    ['Network and Broadcast Addresses', 'Two addresses are kept back'],
+    ['Borrowing Bits', 'Move the line right for smaller networks'],
+    ['Local vs. Remote Delivery', 'Same subnet: direct. Different: the router'],
+    ['Point-to-Point Subnet', 'A /30 holds exactly two devices'],
   ]);
+  expect(unit.learn.pattern.names).toEqual(['Subnet Mask', 'Network Address', 'Broadcast Address', 'Usable Addresses']);
 });
 
-test('only private addresses appear anywhere in the steps, as the example-data rule requires', () => {
-  const found = s.steps.flatMap((_, i) => addressesIn(spoken(i)));
-  expect(found.length).toBeGreaterThan(0);
-  for (const address of found) {
-    const isPrivate = /^(192\.168\.|10\.|255\.255\.255\.)/.test(address);
-    expect(isPrivate, address).toBe(true);
-  }
-});
-
-// ------------------------------------------------------------ every number a step states
-
-describe('step 1 and 2: two parts, and the mask that divides them', () => {
-  test('192.168.1.10/24 splits into 24 network bits and 8 host bits', () => {
-    const i = info(0);
-    expect(i.prefix).toBe(24);
-    expect(32 - i.prefix).toBe(8);
-    expect(formatIPv4(i.network)).toBe('192.168.1.0');
-    expect(ip('192.168.1.10') & 255).toBe(10);
-  });
-
-  test('step 1 says the network part is the first three numbers and the host part is 10', () => {
-    expect(spoken(0)).toContain('192.168.1');
-    expect(s.steps[0]!.facts.map((f) => f.value).join('\n')).toMatch(/24 bits/);
-    expect(s.steps[0]!.facts.map((f) => f.value).join('\n')).toMatch(/8 bits/);
-    expect(s.steps[0]!.facts.map((f) => f.value).join('\n')).toMatch(/\b32 bits\b/);
-  });
-
-  test('255.255.255.0 is 24 ones then 8 zeros', () => {
-    const mask = info(1).mask;
-    expect(formatIPv4(mask)).toBe('255.255.255.0');
-    expect(toOctetBits(mask).join('.')).toBe('11111111.11111111.11111111.00000000');
-    expect(s.steps[1]!.narrative).toContain('255.255.255.0');
-    expect(s.steps[1]!.narrative).toMatch(/24 ones/);
-    expect(s.steps[1]!.narrative).toMatch(/8 zeros/);
-    expect(s.steps[1]!.facts.map((f) => f.value)).toContain('11111111.11111111.11111111.00000000');
-  });
-});
-
-describe('step 3: network, broadcast and hosts at /24', () => {
-  test('256 addresses, 254 usable, from .1 to .254', () => {
-    const i = info(2);
-    expect(i.totalAddresses).toBe(256);
-    expect([formatIPv4(i.firstHost), formatIPv4(i.lastHost)]).toEqual(['192.168.1.1', '192.168.1.254']);
-    expect(s.steps[2]!.narrative).toContain('256');
-    expect(s.steps[2]!.narrative).toContain('192.168.1.1 to 192.168.1.254');
-    expect(s.steps[2]!.narrative).toMatch(/8 host bits/);
-    expect(s.steps[2]!.narrative).toContain('2 to the power of 8');
-  });
-});
-
-describe('step 4: borrowing two bits from the /24', () => {
-  test('4 subnets of 64 addresses, and the address sits in the one that starts at .64', () => {
-    const i = info(3);
-    expect(i.totalAddresses).toBe(64);
-    expect(2 ** (26 - 24)).toBe(4);
-    expect(256 / 4).toBe(64);
-    expect([formatIPv4(i.network), formatIPv4(i.broadcast)]).toEqual(['192.168.1.64', '192.168.1.127']);
-    expect([formatIPv4(i.firstHost), formatIPv4(i.lastHost)]).toEqual(['192.168.1.65', '192.168.1.126']);
-    expect(32 - i.prefix).toBe(6);
-    expect(s.steps[3]!.narrative).toContain('4 subnets');
-    expect(s.steps[3]!.narrative).toContain('64 addresses');
-    expect(s.steps[3]!.narrative).toContain('192.168.1.64');
-  });
-
-  test('the four subnets start at .0, .64, .128 and .192', () => {
-    const starts = [0, 1, 2, 3].map((n) => formatIPv4(subnetInfo(ip('192.168.1.0') + n * 64, 26).network));
-    expect(starts).toEqual(['192.168.1.0', '192.168.1.64', '192.168.1.128', '192.168.1.192']);
-    expect(s.steps[3]!.narrative).toMatch(/192\.168\.1\.0, \.64, \.128 and \.192/);
-  });
-
-  test('the facts name the /26 mask and the subnet\'s range', () => {
-    expect(formatIPv4(maskFromPrefix(26))).toBe('255.255.255.192');
-    const values = s.steps[3]!.facts.map((f) => f.value).join('\n');
-    expect(values).toContain('255.255.255.192');
-    expect(values).toContain('192.168.1.64 to 192.168.1.127');
-    expect(values).toContain('192.168.1.65 to 192.168.1.126');
-  });
-});
-
-describe('step 5: the same two addresses at /26 and at /24', () => {
-  const a = ip('192.168.1.10');
-  const b = ip('192.168.1.70');
-
-  test('different at /26, and each is in the subnet the lesson names', () => {
-    expect(sameSubnet(a, b, 26)).toBe(false);
-    expect(formatIPv4(subnetInfo(a, 26).network)).toBe('192.168.1.0');
-    expect(formatIPv4(subnetInfo(b, 26).network)).toBe('192.168.1.64');
-    expect(s.steps[4]!.narrative).toContain('192.168.1.0');
-    expect(s.steps[4]!.narrative).toContain('192.168.1.64');
-    expect(s.steps[4]!.narrative).toMatch(/different subnets/i);
-  });
-
-  test('the same two would share a subnet at /24, and the narrative says so', () => {
-    expect(sameSubnet(a, b, 24)).toBe(true);
-    expect(s.steps[4]!.narrative).toMatch(/At \/24/);
-  });
-
-  test('the router pointer is to lesson 8, and DHCP is lesson 9', () => {
-    expect(s.steps[4]!.narrative).toMatch(/lesson 8/);
-    expect(getEntries('networking').find((e) => e.slug === 'router')?.number).toBe(8);
-    expect(getEntries('networking').find((e) => e.slug === 'dhcp')?.number).toBe(9);
-    expect(getEntries('networking').find((e) => e.slug === 'ip-address')?.number).toBe(3);
-  });
-});
-
-describe('step 6: a /30', () => {
-  test('4 addresses, 2 usable, network .4 with hosts .5 and .6', () => {
-    const i = info(5);
-    expect(i.totalAddresses).toBe(4);
-    expect(32 - i.prefix).toBe(2);
-    expect([formatIPv4(i.network), formatIPv4(i.firstHost), formatIPv4(i.lastHost), formatIPv4(i.broadcast)]).toEqual([
-      '10.0.0.4',
-      '10.0.0.5',
-      '10.0.0.6',
-      '10.0.0.7',
-    ]);
-    expect(formatIPv4(maskFromPrefix(30))).toBe('255.255.255.252');
-    const text = spoken(5);
-    expect(text).toContain('10.0.0.4');
-    expect(text).toContain('10.0.0.5');
-    expect(text).toContain('10.0.0.6');
-    expect(text).toContain('255.255.255.252');
-    expect(s.steps[5]!.narrative).toMatch(/2 host bits/);
-    expect(s.steps[5]!.narrative).toContain('2 to the power of 2');
-  });
+test('the pattern note’s steps are the ones that work at those prefixes', () => {
+  expect(unit.learn.pattern.note).toContain('Steps 2 and 3 did it for a /24, step 4 for a /26 and step 6 for a /30.');
+  const prefixes = (step: number) => [...new Set(unit.steps[step - 1]!.events.map((e) => (e.type === 'note' ? e.board?.prefix : null)))];
+  expect([prefixes(2), prefixes(3), prefixes(4), prefixes(6)]).toEqual([[24], [24], [26], [30]]);
 });
 
 /**
- * A guard on every number the lesson states: any address or prefix a step
- * mentions has to be one the engine produces for that step (or a named extra).
+ * The mockup's log rows, from FIGS/subnet-lesson.mjs: worked out, value, prefix, in plain words, as it draws them:
+ * an empty prefix is a dash (`e.prefix || '–'`).
  */
-describe('every address and prefix a step states is one the engine computes for it', () => {
-  const extras: Record<number, { addresses: string[]; prefixes: number[] }> = {
-    0: { addresses: [], prefixes: [] },
-    1: { addresses: [], prefixes: [] },
-    2: { addresses: [], prefixes: [] },
-    // The four /26 subnets of the /24, and the /24 they were cut from.
-    3: { addresses: ['192.168.1.0', '192.168.1.128', '192.168.1.192', '255.255.255.192'], prefixes: [24] },
-    // The second address's subnet, and the /24 the same two would share.
-    4: { addresses: ['192.168.1.64'], prefixes: [24] },
-    5: { addresses: ['255.255.255.252'], prefixes: [] },
+const MOCKUP_ROWS = [
+  ['Address', '192.168.1.10', '–', 'The Sales laptop’s address, in bits'],
+  ['Network portion', '192.168.1', '–', 'Which network: the same for the whole office'],
+  ['Host portion', '10', '–', 'Which device: the laptop'],
+  ['Subnet mask', '255.255.255.0', '/24', '24 ones, then 8 zeros'],
+  ['Prefix length', '/24', '/24', 'Written 192.168.1.10/24'],
+  ['Network address', '192.168.1.0', '/24', 'Host bits all 0: the network’s own name'],
+  ['Broadcast address', '192.168.1.255', '/24', 'Host bits all 1: the whole floor hears it'],
+  ['Usable addresses', '254', '/24', '256 addresses, minus those two: .1 to .254'],
+  ['Subnet mask', '255.255.255.192', '/26', '2 host bits borrowed for the network'],
+  ['Subnets', '4 × 64 addresses', '/26', 'Starting at .0, .64, .128 and .192'],
+  ['Network address', '192.168.1.64', '/26', 'The Design PC, .70, has 01 in the borrowed bits'],
+  ['Broadcast address', '192.168.1.127', '/26', 'Host bits all 1: only Design hears it'],
+  ['Same subnet', '192.168.1.20', '/26', 'Network parts match: straight to the printer'],
+  ['Different subnet', '192.168.1.70', '/26', 'Network parts differ: sent via the router'],
+  ['Subnet mask', '255.255.255.252', '/30', '30 network bits, 2 host bits'],
+  ['Network address', '203.0.113.4', '/30', 'Broadcast is 203.0.113.7, so two are left'],
+  ['Usable addresses', '203.0.113.5 and .6', '/30', 'One for each end of the link'],
+];
+
+test('subnetValue gives the mockup values for every event', () => {
+  expect(notes).toHaveLength(17);
+  expect(notes.map((e) => [e.log.worked, e.log.value, e.log.prefix, e.plain])).toEqual(MOCKUP_ROWS);
+});
+
+/** The mockup's fx for each event, as cues: a flag alone, a text cue with its arg. */
+const MOCKUP_CUES = [
+  ['glow laptop', 'focus sales'],
+  ['one-net', 'pulse onenet'],
+  ['glow laptop', 'focus sales'],
+  [],
+  ['pulse onenet'],
+  ['pulse onenet'],
+  ['ring all', 'glow laptop', 'focus sales'],
+  [],
+  ['cut'],
+  ['pulse pads'],
+  ['glow pc', 'focus design'],
+  ['ring design', 'glow pc', 'focus design'],
+  ['route local', 'busy printer', 'focus sales'],
+  ['route remote', 'busy pc', 'focus router'],
+  ['link', 'focus router'],
+  ['pulse link'],
+  ['route link', 'busy provider', 'focus provider'],
+];
+
+test('each event carries the mockup’s fx as cues, and the figure has every part they name', () => {
+  expect(notes.map((e) => (e.cues ?? []).map((c) => (c.arg === undefined ? c.cue : `${c.cue} ${c.arg}`)))).toEqual(MOCKUP_CUES);
+  const { svg } = drawSubnet();
+  const ids = new Set([...svg.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]));
+  const partFor: Record<string, (arg: string) => string> = {
+    glow: (arg) => `sn-glow-${arg}`,
+    focus: (arg) => `sn-call-${arg}`,
+    ring: (arg) => `sn-ring-${arg}`,
+    route: (arg) => `sn-tag-${arg}`,
+    busy: (arg) => (arg === 'pc' ? 'sn-glow-pc' : `sn-busy-${arg}`),
+    pulse: (arg) => ({ onenet: 'sn-onenet', link: 'sn-link', pads: 'sn-padline-sales' })[arg] ?? arg,
   };
-
-  test.each([0, 1, 2, 3, 4, 5])('step %i', (i) => {
-    const p = s.steps[i]!.preset!;
-    const n = info(i);
-    const allowed = new Set([
-      p.address,
-      ...(p.compare === undefined ? [] : [p.compare]),
-      formatIPv4(n.mask),
-      formatIPv4(n.network),
-      formatIPv4(n.broadcast),
-      formatIPv4(n.firstHost),
-      formatIPv4(n.lastHost),
-      ...extras[i]!.addresses,
-    ]);
-    for (const address of addressesIn(spoken(i))) expect(allowed.has(address), `step ${i + 1} states ${address}`).toBe(true);
-    const allowedPrefixes = new Set([p.prefix, ...extras[i]!.prefixes]);
-    for (const prefix of prefixesIn(spoken(i))) expect(allowedPrefixes.has(prefix), `step ${i + 1} states /${prefix}`).toBe(true);
-  });
-
-  test.each([0, 1, 2, 3, 4, 5])('step %i: every count it states (hosts, host bits, ones, zeros, addresses) matches its preset', (i) => {
-    const n = info(i);
-    const text = spoken(i);
-    const counts = (pattern: RegExp) => [...text.matchAll(pattern)].map((m) => Number(m[1]!.replaceAll(',', '')));
-    for (const v of counts(/(\d[\d,]*) usable hosts?\b/g)) expect(v).toBe(n.usableHosts);
-    for (const v of counts(/(\d+) host bits\b/g)) expect(v).toBe(32 - n.prefix);
-    for (const v of counts(/(\d+) ones\b/g)) expect(v).toBe(n.prefix);
-    for (const v of counts(/(\d+) zeros\b/g)) expect(v).toBe(32 - n.prefix);
-    for (const v of counts(/(\d+) addresses\b/g)) expect(v).toBe(n.totalAddresses);
-    const usable = s.steps[i]!.facts.find((fact) => fact.label === 'Usable hosts');
-    if (usable !== undefined) expect(Number.parseInt(usable.value, 10)).toBe(n.usableHosts);
-  });
-
-  test('steps 3, 4 and 6 state their usable-host count in words, not just inside an address', () => {
-    expect(s.steps[2]!.narrative).toContain('254 usable hosts');
-    expect(s.steps[3]!.narrative).toContain('62 usable hosts');
-    expect(s.steps[5]!.narrative).toContain('2 usable hosts');
-  });
-
-  test('the usable-hosts rule 2 to the power of h, minus 2, holds for every prefix in the playground range', () => {
-    for (let prefix = 16; prefix <= 30; prefix += 1) {
-      const n = subnetInfo(ip('10.0.0.1'), prefix);
-      expect(n.totalAddresses).toBe(2 ** (32 - prefix));
-      expect(n.usableHosts).toBe(n.totalAddresses - 2);
-    }
-  });
+  for (const { cue, arg } of notes.flatMap((e) => e.cues ?? [])) {
+    if (arg !== undefined) expect(ids.has(partFor[cue]!(arg)), `${cue} ${arg}`).toBe(true);
+  }
 });
 
-// ------------------------------------------------------------ Try it
-
-describe('Try it', () => {
-  test('is free-form, invites /16 to /30 and lists three things to notice', () => {
-    expect(s.tryIt.mode).toBe('free');
-    if (s.tryIt.mode !== 'free') return;
-    expect(s.tryIt.prompt).toContain('/16');
-    expect(s.tryIt.prompt).toContain('/30');
-    expect(s.tryIt.explanation).toMatch(/\bFirst\b/);
-    expect(s.tryIt.explanation).toMatch(/\bSecond\b/);
-    expect(s.tryIt.explanation).toMatch(/\bThird\b/);
-    expect(s.tryIt.prompt).toContain('Compare with');
-  });
-
-  test('each step to the left of the slider doubles the addresses in a subnet', () => {
-    for (let prefix = 17; prefix <= 30; prefix += 1) {
-      const wider = subnetInfo(ip('192.168.1.10'), prefix - 1).totalAddresses;
-      const narrower = subnetInfo(ip('192.168.1.10'), prefix).totalAddresses;
-      expect(wider).toBe(2 * narrower);
-    }
-    // The example in the explanation.
-    expect(subnetInfo(ip('192.168.1.10'), 24).totalAddresses).toBe(256);
-    expect(subnetInfo(ip('192.168.1.10'), 23).totalAddresses).toBe(512);
-    if (s.tryIt.mode === 'free') {
-      expect(s.tryIt.explanation).toContain('256');
-      expect(s.tryIt.explanation).toContain('512');
-    }
-  });
-
-  test('changing only the last number leaves the network address alone until it crosses into the next block', () => {
-    const at = (last: number) => formatIPv4(subnetInfo(ip(`192.168.1.${last}`), 26).network);
-    expect([at(64), at(100), at(127)]).toEqual(['192.168.1.64', '192.168.1.64', '192.168.1.64']);
-    expect(at(128)).toBe('192.168.1.128');
-  });
-
-  test('192.168.1.10 and 192.168.1.70 share a subnet up to /25 and split at /26', () => {
-    const shared = [];
-    for (let prefix = 16; prefix <= 30; prefix += 1) shared.push(sameSubnet(ip('192.168.1.10'), ip('192.168.1.70'), prefix));
-    expect(shared.indexOf(false) + 16).toBe(26);
-    expect(shared.slice(0, 10).every(Boolean)).toBe(true); // /16 through /25
-    expect(shared.slice(10).every((x) => !x)).toBe(true); // /26 through /30
-    if (s.tryIt.mode === 'free') {
-      expect(s.tryIt.explanation).toContain('192.168.1.10');
-      expect(s.tryIt.explanation).toContain('192.168.1.70');
-      expect(s.tryIt.explanation).toContain('/25');
-      expect(s.tryIt.explanation).toContain('/26');
-    }
-  });
-
-  test('the prompt starts from the last step, 10.0.0.5/30, and says so', () => {
-    expect(s.steps.at(-1)!.preset).toEqual({ address: '10.0.0.5', prefix: 30 });
-    if (s.tryIt.mode === 'free') expect(s.tryIt.prompt).toMatch(/\/30 link/);
-  });
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', () => {
+  // Each position (the Overview, 6 steps, Learn, Practice) and each of the 17 events once more.
+  expect(showSweep(subnetting)).toBe(9 + 17);
 });
 
-// ------------------------------------------------------------ Check yourself
-
-describe('Check yourself', () => {
-  test('/26 leaves 6 host bits: 64 addresses, 62 usable; the other options are the near misses', () => {
-    const n = subnetInfo(ip('192.168.1.0'), 26);
-    expect([32 - 26, n.totalAddresses, n.usableHosts]).toEqual([6, 64, 62]);
-    expect(subnetInfo(ip('192.168.1.0'), 25).usableHosts).toBe(126);
-    expect(subnetInfo(ip('192.168.1.0'), 27).usableHosts).toBe(30);
-    const q = s.check[0]!;
-    expect(q.options).toEqual(['30', '62', '64', '126']);
-    expect(q.explanation).toContain('64');
-    expect(q.explanation).toContain('62');
-    expect(q.explanation).toContain('126');
-    expect(q.explanation).toContain('/25');
-    expect(q.explanation).toContain('30');
-    expect(q.explanation).toContain('/27');
-  });
-
-  test('192.168.1.10 and 192.168.1.70 are on the same /24: the answer is yes', () => {
-    expect(sameSubnet(ip('192.168.1.10'), ip('192.168.1.70'), 24)).toBe(true);
-    const q = s.check[1]!;
-    expect(q.prompt).toContain('192.168.1.10');
-    expect(q.prompt).toContain('192.168.1.70');
-    expect(q.options[q.answer]).toMatch(/^Yes/);
-    for (const [index, option] of q.options.entries()) if (index !== q.answer) expect(option).not.toMatch(/^Yes/);
-  });
-
-  test('the /30 question is about links between routers, and a /30 has 2 usable hosts', () => {
-    expect(info(5).usableHosts).toBe(2);
-    const q = s.check[2]!;
-    expect(q.prompt).toContain('/30');
-    expect(q.options[q.answer]).toMatch(/routers/);
-    expect(q.explanation).toContain('2 usable');
-    for (const [index, option] of q.options.entries()) if (index !== q.answer) expect(option).not.toMatch(/routers/);
-  });
-
-  test('the right answer is not always in the same place, and not always the longest option', () => {
-    expect(new Set(s.check.map((q) => q.answer)).size).toBeGreaterThan(1);
-    const longest = s.check.filter((q) => {
-      const lengths = q.options.map((o) => o.length);
-      const max = Math.max(...lengths);
-      return q.options[q.answer]!.length === max && lengths.filter((n) => n === max).length === 1;
-    });
-    expect(longest.length).toBeLessThanOrEqual(1);
-  });
-
-  test('every question has distinct options and a real explanation', () => {
-    for (const q of s.check) {
-      expect(new Set(q.options).size).toBe(q.options.length);
-      expect(countWords(q.explanation)).toBeGreaterThan(10);
-    }
-  });
+test('the log is “Working”, with the mockup’s columns: words where it has words, and its widths', () => {
+  const log = unit.scene.log;
+  expect(log.title).toBe('Working');
+  expect(log.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false, c.strong ?? false])).toEqual([
+    ['worked', 'Worked out', 176, true, true],
+    ['value', 'Value', 190, false, true],
+    ['prefix', 'Prefix', 76, false, false],
+    ['plain', 'In plain words', null, true, false],
+  ]);
+  // The mockup's three glyphs, each explained in words.
+  expect(log.legend).toEqual([
+    { kind: 'request', label: 'Worked out' },
+    { kind: 'response', label: 'Sent' },
+    { kind: 'broadcast', label: 'Broadcast' },
+  ]);
+  // The empty log speaks for the whole lesson, from the Overview on, as the mockup's does.
+  expect(log.idle).toBe('Nothing worked out yet. Press Play, or pick a step.');
+  expect(unit.steps.filter((s) => s.idle !== undefined)).toEqual([]);
 });
 
-// ------------------------------------------------------------ what the lesson says about reserved addresses
-
-describe('the usable-hosts rule is stated only for the range the lesson covers', () => {
-  const everything = () => [
-    s.overview.hook,
-    s.overview.description,
-    ...s.overview.facts.map((f) => `${f.label}: ${f.value}`),
-    ...s.steps.flatMap((x) => [x.title, x.subtitle, x.narrative, ...x.facts.map((f) => `${f.label}: ${f.value}`)]),
-    s.tryIt.prompt,
-    s.tryIt.mode === 'free' ? s.tryIt.explanation : '',
-    ...s.check.flatMap((q) => [q.prompt, ...q.options, q.explanation]),
-    ...s.recap.takeaways,
-  ];
-
-  test('takeaway 2 gives the rule for ordinary subnets (prefixes up to /30) and pins its three numbers', () => {
-    const takeaway = s.recap.takeaways[1]!;
-    expect(takeaway).toMatch(/ordinary subnets \(prefixes up to \/30, the ones you can build here\)/);
-    expect(takeaway).toMatch(/254 usable in a \/24, 62 in a \/26, 2 in a \/30/);
-    // The three numbers are what the engine says.
-    expect([24, 26, 30].map((prefix) => subnetInfo(ip('10.0.0.1'), prefix).usableHosts)).toEqual([254, 62, 2]);
-  });
-
-  test('the step 3 subtitle and the overview fact carry the same scope', () => {
-    expect(s.steps[2]!.subtitle).toBe('Two addresses in an ordinary subnet are reserved');
-    expect(s.overview.facts.find((f) => f.label === 'Usable hosts')?.value).toMatch(/\(for prefixes up to \/30\)$/);
-  });
-
-  test('no text claims the rule for "every subnet", and none mentions /31 or /32, which the slider does not reach', () => {
-    for (const text of everything()) {
-      expect(text).not.toMatch(/\bevery subnet\b/i);
-      expect(text).not.toMatch(/\/(31|32)\b/);
-    }
-  });
-
-  test('outside the rule: a /31 has 2 usable hosts and a /32 has 1, so the scope matters', () => {
-    expect(subnetInfo(ip('10.0.0.0'), 31).usableHosts).toBe(2);
-    expect(subnetInfo(ip('10.0.0.0'), 32).usableHosts).toBe(1);
-    expect(subnetInfo(ip('10.0.0.0'), 30).usableHosts).toBe(2 ** 2 - 2);
-  });
+test('each row’s glyph says what the figure does with it: a ring is a broadcast, a route is sent, the rest are worked out', () => {
+  const glyphs = Object.fromEntries(notes.map((e) => [e.id, e.glyph]));
+  // As subnet-v1.html's events: its two broadcast addresses ring, and its three deliveries ride a route.
+  expect(Object.entries(glyphs).filter(([, g]) => g === 'broadcast').map(([id]) => id)).toEqual(['broadcast-24', 'broadcast-26']);
+  expect(Object.entries(glyphs).filter(([, g]) => g === 'response').map(([id]) => id)).toEqual(['same-subnet', 'different-subnet', 'usable-30']);
+  expect(Object.values(glyphs).filter((g) => g === 'request')).toHaveLength(12);
+  for (const e of notes) {
+    const cues = (e.cues ?? []).map((c) => c.cue);
+    expect(e.glyph, e.id).toBe(cues.includes('ring') ? 'broadcast' : cues.includes('route') ? 'response' : 'request');
+  }
+  // Before the mask shows, the Prefix column says so with a dash, as the mockup's does.
+  expect(notes.filter((e) => e.log.prefix === '–').map((e) => e.id)).toEqual(['address', 'network-part', 'host-part']);
+  expect(notes.filter((e) => e.log.prefix === '')).toEqual([]);
 });
 
-describe('terms and analogy', () => {
-  test('"host bit" is defined at first use, in step 2, and not again in step 3', () => {
-    expect(s.steps[0]!.narrative).not.toMatch(/host bit/);
-    expect(s.steps[1]!.narrative).toContain('a 1 for every network bit (a bit in the network part) and a 0 for every host bit (a bit in the host part)');
-    expect(s.steps[2]!.narrative).not.toMatch(/\(each bit/);
-  });
+test('192.168.1.10 and 192.168.1.70 are in different /26 subnets, and the text says so', () => {
+  expect(sameSubnet(ip('192.168.1.10'), ip('192.168.1.70'), 26)).toBe(false);
+  expect(sameSubnet(ip('192.168.1.10'), ip('192.168.1.70'), 24)).toBe(true);
+  expect(sameSubnet(ip('192.168.1.10'), ip('192.168.1.20'), 26)).toBe(true);
 
-  test('step 1 does not teach that the first three numbers are always the network', () => {
-    expect(s.steps[0]!.narrative).not.toMatch(/first three numbers/);
-    expect(s.steps[0]!.narrative).toContain('the next step shows what decides where the line falls');
-  });
-
-  test('the street analogy is one analogy: a subnet is a street, a /30 is a short lane, and no "neighborhood" or "private lane"', () => {
-    expect(s.steps[3]!.narrative).toContain("Each subnet is its own street: a router doesn't pass its broadcasts on to the next one.");
-    expect(s.steps[3]!.narrative).not.toMatch(/\bnever\b/);
-    expect(s.steps[5]!.narrative).toContain('a short lane with exactly two houses');
-    for (const step of s.steps) expect(step.narrative).not.toMatch(/neighborhood|private lane/);
-  });
-
-  test('CIDR is expanded where it is first used, and the lesson is named for subnetting, not for CIDR', () => {
-    expect(s.steps[1]!.narrative).toContain('(CIDR notation, from Classless Inter-Domain Routing)');
-    expect(s.overview.fullName).toBe('Subnetwork addressing');
-  });
-
-  test('wording: "Neither can be given to a device", and the split is "once the prefix reaches /26 or more"', () => {
-    expect(s.steps[2]!.narrative).toContain('Neither can be given to a device');
-    expect(s.check[1]!.explanation).toContain('once the prefix reaches /26 or more');
-  });
+  // The log: each compared address is marked same or different, as the engine says.
+  for (const e of notes.filter((n) => n.board?.third?.mode === 'cmp' && n.board.addr.startsWith('192.168.1.'))) {
+    const same = sameSubnet(ip(e.board!.addr), ip(e.board!.third!.addr), e.board!.prefix!);
+    expect(e.log.worked, e.id).toBe(same ? 'Same subnet' : 'Different subnet');
+  }
+  const different = noteById('different-subnet');
+  expect(different.board).toMatchObject({ addr: '192.168.1.10', prefix: 26, third: { addr: '192.168.1.70', mode: 'cmp' } });
+  expect(different.plain).toBe('Network parts differ: sent via the router');
+  // The board under the scene says so too.
+  expect(renderToStaticMarkup(createElement(BitsBoard, { board: different.board! }))).toContain(
+    '/26: the network parts differ, so it’s another subnet',
+  );
+  // So do the narration and Practice.
+  const delivery = unit.steps[4]!;
+  expect(delivery.narrative).toContain('The Design PC, 192.168.1.70, doesn’t match');
+  const question = unit.practice.find((q) => q.prompt.includes('192.168.1.70'))!;
+  expect(question.options[question.answer]!.text).toBe('To the router, because the network parts differ.');
 });
 
-// ------------------------------------------------------------ voice
+test('the lesson hides the Sequence toggle', () => {
+  expect(unit.scene.views).toEqual(['network']);
+  const derived = deriveState(subnetting, positionOf(subnetting, 0, 'step', 1), 0);
+  const html = renderToStaticMarkup(
+    createElement(ScenePanel, { unit, figure: null, figureData: null, derived, playback: initialPlayback(), reducedMotion: false }),
+  );
+  expect(html).not.toContain('Sequence');
+  expect(html).not.toContain('aria-pressed');
+  expect(html).toContain('Office network · 192.168.1.0/24');
+  expect(html).toContain('The address in bits');
+});
 
-describe('voice and wording', () => {
-  const allText = () => [
-    s.overview.hook,
-    s.overview.description,
-    ...s.steps.flatMap((x) => [x.title, x.subtitle, x.narrative, ...x.facts.map((f) => f.value)]),
-    s.tryIt.prompt,
-    s.tryIt.mode === 'free' ? s.tryIt.explanation : '',
-    ...s.check.flatMap((q) => [q.prompt, ...q.options, q.explanation]),
-    ...s.recap.takeaways,
-  ];
+test('the lesson points at other lessons by name, and each is a lesson of the track', () => {
+  expect(lessonNumbers(subnetting)).toEqual([]);
+  const titles = getEntries('networking').map((e) => e.title);
+  expect(lessonTitles(subnetting)).toEqual(['IP Address', 'Router']);
+  for (const title of lessonTitles(subnetting)) expect(titles).toContain(title);
+});
 
-  test('no gamification words', () => {
-    for (const text of allText()) expect(text).not.toMatch(/\b(points|score|scores|badge|badges|streak|xp|mission complete|level up|unlock)\b/i);
-  });
+// ------------------------------------------------------------------ the numbers
 
-  test('narratives and the hook stay inside the word limits', () => {
-    for (const step of s.steps) expect(countWords(step.narrative), step.id).toBeLessThanOrEqual(120);
-    expect(countWords(s.overview.hook)).toBeLessThanOrEqual(80);
-  });
+/**
+ * The fields that hold a bare value, which the lesson works out with the engine
+ * rather than states in a sentence: the scene's title, the facts, and Practice's
+ * number options. Each is the mockup's value (FIGS/subnet-lesson.mjs), by place.
+ */
+const COMPUTED: Record<string, string> = {
+  'scene.title': 'Office network · 192.168.1.0/24',
+  'overview.facts.0.value': '192.168.1.0/24',
+  'overview.facts.1.value': '255.255.255.0',
+  'overview.facts.2.value': '2 to the power of the host bits, minus 2',
+  'steps.portions.facts.0.value': '192.168.1.10',
+  'steps.portions.facts.1.value': '192.168.1 (the first 24 bits)',
+  'steps.portions.facts.2.value': '10 (the last 8 bits)',
+  'steps.portions.facts.3.value': '32 bits, in four groups of 8',
+  'steps.subnet-mask.facts.0.value': '255.255.255.0',
+  'steps.subnet-mask.facts.1.value': '11111111.11111111.11111111.00000000',
+  'steps.subnet-mask.facts.2.value': '/24 (24 ones)',
+  'steps.subnet-mask.facts.3.value': '192.168.1.10/24',
+  'steps.network-broadcast.facts.0.value': '192.168.1.0',
+  'steps.network-broadcast.facts.1.value': '192.168.1.255',
+  'steps.network-broadcast.facts.2.value': '254 (2⁸ − 2)',
+  'steps.network-broadcast.facts.3.value': '192.168.1.1 to 192.168.1.254',
+  'steps.borrowing-bits.facts.0.value': '255.255.255.192 (/26)',
+  'steps.borrowing-bits.facts.1.label': 'Cut from one /24',
+  'steps.borrowing-bits.facts.1.value': '4 subnets of 64 addresses',
+  'steps.borrowing-bits.facts.2.value': '192.168.1.64 to 192.168.1.127',
+  'steps.borrowing-bits.facts.3.value': '62 (192.168.1.65 to 192.168.1.126)',
+  'steps.local-remote.facts.0.value': '192.168.1.10, in 192.168.1.0/26',
+  'steps.local-remote.facts.1.value': '192.168.1.20: same subnet, sent directly',
+  'steps.local-remote.facts.2.value': '192.168.1.70: in 192.168.1.64/26, sent via the router',
+  'steps.local-remote.facts.3.value': '192.168.1.1',
+  'steps.point-to-point.facts.0.value': '255.255.255.252 (/30)',
+  'steps.point-to-point.facts.1.value': '203.0.113.4 to 203.0.113.7',
+  'steps.point-to-point.facts.2.value': '2 (203.0.113.5 and 203.0.113.6)',
+  'learn.facts.0.label': '/25',
+  'learn.facts.0.value': '128 addresses, 126 usable',
+  'learn.facts.1.label': '/26',
+  'learn.facts.1.value': '64 addresses, 62 usable',
+  'learn.facts.2.label': '/27',
+  'learn.facts.2.value': '32 addresses, 30 usable',
+  'learn.facts.3.label': '/28',
+  'learn.facts.3.value': '16 addresses, 14 usable',
+  'learn.facts.4.label': '/29',
+  'learn.facts.4.value': '8 addresses, 6 usable',
+  'learn.facts.5.label': '/30',
+  'learn.facts.5.value': '4 addresses, 2 usable',
+  'learn.facts.6.value': 'RFC 950 (subnets), RFC 4632 (CIDR), RFC 3021 (/31 links)',
+  'practice.usable-26.options.0.text': '64',
+  'practice.usable-26.options.1.text': '62',
+  'practice.usable-26.options.2.text': '30',
+};
 
-  test('points to the lessons that teach what it borrows: addresses and binary in 3, routers in 8, DHCP in 9', () => {
-    const narratives = s.steps.map((x) => x.narrative).join('\n');
-    expect(narratives).toMatch(/lesson 3\b/);
-    expect(narratives).toMatch(/lesson 8\b/);
-    if (/\bDHCP\b/.test(narratives)) expect(narratives).toMatch(/lesson 9\b/);
-  });
+/** Numbers in the words that are not the engine's to work out, by place: a street, standards, the lesson's own steps, named ranges. */
+const NOT_COMPUTED: [string, string][] = [
+  ['steps.portions.narrative', '12 Oak Street'],
+  ['overview.facts.3.value', '192.168.x.x'],
+  ['overview.facts.3.value', '203.0.113.x'],
+  ['overview.facts.4.value', 'RFC 950'],
+  ['overview.facts.4.value', 'RFC 4632'],
+  ['steps.point-to-point.deep', 'RFC 3021'],
+  ['learn.pattern.note', 'Steps 2 and 3'],
+];
 
-  test('each step is about one thing: it has its own title and a subtitle', () => {
-    expect(new Set(s.steps.map((x) => x.title)).size).toBe(6);
-    for (const step of s.steps) {
-      expect(step.subtitle.length).toBeGreaterThan(0);
-      expect(step.facts.length).toBeGreaterThanOrEqual(2);
-      expect(step.facts.length).toBeLessThanOrEqual(4);
+/**
+ * Every number a learner reads in `lesson` that nothing accounts for, by place:
+ * a computed field must be the mockup's value, and in any other place each
+ * number must sit inside a stated phrase pinned to that place (or a pinned
+ * number that is not the engine's).
+ */
+function uncovered(lesson: Lesson): string[] {
+  return learnerProse(lesson).flatMap(({ place, text }) => {
+    if (Object.hasOwn(COMPUTED, place)) return text === COMPUTED[place] ? [] : [`${place}: “${text}”, not “${COMPUTED[place]}”`];
+    const phrases = [
+      ...STATED.filter((s) => (typeof s.at === 'string' ? [s.at] : s.at).includes(place)).map((s) => s.text),
+      ...NOT_COMPUTED.filter(([at]) => at === place).map(([, phrase]) => phrase),
+    ];
+    const covered: [number, number][] = [];
+    for (const phrase of phrases) {
+      for (let at = text.indexOf(phrase); at !== -1; at = text.indexOf(phrase, at + 1)) covered.push([at, at + phrase.length]);
     }
+    return [...text.matchAll(/\d+(?:\.\d+)*/g)]
+      .filter((m) => !covered.some(([from, to]) => m.index >= from && m.index + m[0].length <= to))
+      .map((m) => `${place}: ${m[0]} in “${text}”`);
   });
+}
+
+/** What the build-time check and the coverage check find wrong in `lesson`. */
+function problemsIn(lesson: Lesson): string[] {
+  const found = uncovered(lesson);
+  try {
+    checkStated(lesson, STATED);
+  } catch (error) {
+    found.push((error as Error).message);
+  }
+  return found;
+}
+
+/** The object and key that hold a `learnerProse` place in the lesson's unit: steps, events and questions by id, the rest by key or index. */
+function holderOf(lesson: Lesson, place: string): { parent: Record<string, unknown>; key: string } {
+  const path = place.split('.');
+  const key = path.pop()!;
+  let node: unknown = lesson.units[0];
+  for (let i = 0; i < path.length; i += 1) {
+    const name = path[i]!;
+    node = (node as Record<string, unknown>)[name];
+    if (name === 'steps' || name === 'events' || name === 'practice') {
+      i += 1;
+      node = (node as { id: string }[]).find((x) => x.id === path[i]);
+    }
+    if (node === undefined) throw new Error(`No ${place} in the lesson.`);
+  }
+  return { parent: node as Record<string, unknown>, key };
+}
+
+/** A copy of the lesson with `from` changed to `to` at `place`. */
+function changed(place: string, from: string, to: string): Lesson {
+  const copy = structuredClone(subnetting);
+  const { parent, key } = holderOf(copy, place);
+  const text = parent[key] as string;
+  expect(text, place).toContain(from);
+  parent[key] = text.replace(from, to);
+  return copy;
+}
+
+test('every number in narratives and facts is one the engine computes', () => {
+  expect(() => checkStated(subnetting, STATED)).not.toThrow();
+  // Every place the check names, and every computed field, is a place the learner reads.
+  const places = learnerProse(subnetting).map((p) => p.place);
+  expect(STATED.flatMap((s) => (typeof s.at === 'string' ? [s.at] : s.at)).filter((at) => !places.includes(at))).toEqual([]);
+  expect(Object.keys(COMPUTED).filter((at) => !places.includes(at))).toEqual([]);
+  // Every number the learner reads is accounted for in its own place.
+  expect(uncovered(subnetting)).toEqual([]);
+
+  // One number changed in a narrative, a log row's plain words or a question's feedback: the build-time check throws.
+  expect(() => checkStated(changed('steps.network-broadcast.narrative', '192.168.1.255', '192.168.1.254'), STATED)).toThrow(
+    /steps\.network-broadcast\.narrative should say “Set every host bit to 1 and you get 192\.168\.1\.255”/,
+  );
+  expect(() => checkStated(changed('steps.borrowing-bits.events.subnets-26.plain', '.128', '.127'), STATED)).toThrow(/\.128/);
+  expect(() => checkStated(changed('practice.usable-26.options.1.feedback', '62 are left', '60 are left'), STATED)).toThrow(/62/);
+});
+
+/**
+ * Wrong numbers that once passed both checks (the review's mutations, the
+ * first seven), and others like them: each swaps one valid number for another.
+ */
+const MUTATIONS: [place: string, from: string, to: string][] = [
+  ['steps.network-broadcast.facts.0.value', '192.168.1.0', '192.168.1.255'],
+  ['steps.network-broadcast.facts.1.value', '192.168.1.255', '192.168.1.0'],
+  ['steps.local-remote.facts.3.value', '192.168.1.1', '192.168.1.0'],
+  ['overview.facts.0.value', '192.168.1.0/24', '192.168.1.0/25'],
+  ['scene.title', '192.168.1.0/24', '192.168.1.0/26'],
+  ['practice.usable-26.options.0.text', '64', '62'],
+  ['practice.usable-26.options.2.text', '30', '64'],
+  ['steps.local-remote.facts.3.value', '192.168.1.1', '192.168.1.2'],
+  ['overview.facts.1.value', '255.255.255.0', '255.255.255.128'],
+  ['steps.portions.facts.0.value', '192.168.1.10', '192.168.1.11'],
+  ['learn.facts.0.label', '/25', '/26'],
+  ['steps.borrowing-bits.facts.3.value', '192.168.1.126', '192.168.1.125'],
+  ['steps.borrowing-bits.deep', '62 of them usable', '64 of them usable'],
+  ['practice.why-30.options.2.text', 'exactly 2 usable', 'exactly 4 usable'],
+];
+
+test.each(MUTATIONS)('a copy with %s changed from %s to %s is caught, at that place', (place, from, to) => {
+  const problems = problemsIn(changed(place, from, to));
+  expect(problems.join('\n')).toContain(place);
 });

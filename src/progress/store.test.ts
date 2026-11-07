@@ -144,6 +144,31 @@ describe('sanitizeProgress', () => {
     expect(s.lastLesson).toBeNull();
   });
 
+  test('an old record past the new last position clamps to it and keeps finished', () => {
+    // The live site's DHCP ran Overview, 5 steps, Try it, Check yourself and Recap: positions 0 to 8, finished at 8.
+    // The new DHCP is Overview, 5 steps, Learn and Practice: positions 0 to 7.
+    const raw = JSON.stringify({
+      version: 1,
+      lastLesson: 'networking/dhcp',
+      lessons: {
+        'networking/dhcp': { status: 'finished', furthestPosition: 8, lastOpened: '2026-11-01T10:00:00.000Z' },
+        // An in-progress record past the end clamps too, and stays in progress until Practice is reached again.
+        'networking/subnetting': { status: 'in-progress', furthestPosition: 9, lastOpened: '2026-11-01T10:00:00.000Z' },
+      },
+    });
+    const s = sanitizeProgress(parseProgress(raw), { 'networking/dhcp': 7, 'networking/subnetting': 7 });
+    expect(s.lessons['networking/dhcp']).toEqual({ status: 'finished', furthestPosition: 7, lastOpened: '2026-11-01T10:00:00.000Z' });
+    expect(s.lessons['networking/subnetting']).toEqual({ status: 'in-progress', furthestPosition: 7, lastOpened: '2026-11-01T10:00:00.000Z' });
+    expect(s.lastLesson).toBe('networking/dhcp');
+    expect(resumePosition(s, 'networking/dhcp')).toBeNull();
+    expect(resumePosition(s, 'networking/subnetting')).toBe(7);
+
+    // Opening the finished lesson again, anywhere, keeps it finished; reaching Practice finishes the other.
+    const reopened = recordVisit(s, 'networking/dhcp', 2, 7, now);
+    expect(reopened.lessons['networking/dhcp']).toMatchObject({ status: 'finished', furthestPosition: 7 });
+    expect(recordVisit(s, 'networking/subnetting', 7, 7, now).lessons['networking/subnetting']!.status).toBe('finished');
+  });
+
   test('does not change its input', () => {
     const d = recordVisit(emptyProgress(), 'networking/dhcp', 9, 9, now);
     const before = JSON.stringify(d);
@@ -174,7 +199,7 @@ describe('recordVisit', () => {
     expect(d.lessons['networking/dhcp']).toEqual({ status: 'in-progress', furthestPosition: 1, lastOpened: now.toISOString() });
   });
 
-  test('jumping straight to the Recap finishes the lesson', () => {
+  test('jumping straight to the last position (Practice) finishes the lesson', () => {
     const d = recordVisit(emptyProgress(), 'networking/dhcp', 8, 8, now);
     expect(d.lessons['networking/dhcp']).toEqual({ status: 'finished', furthestPosition: 8, lastOpened: now.toISOString() });
   });

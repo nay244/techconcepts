@@ -1,0 +1,28 @@
+/* The DHCP scene's own parts (src/art/scenes/dhcp.ts), from the approved mockup's sceneCss (FIGS/dhcp-scene.mjs).
+   The callouts sit on the page's figure background, so they take the site's ink and line tokens and follow the theme;
+   the parts on the plate take the lumen finish's tokens and stay the same in both themes. */
+.dh .dh-call .dh-name { font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--ink-strong); }
+.dh .dh-call .dh-sub { font: 400 13px/1 var(--sans); fill: var(--muted); }
+.dh .dh-call .dh-addr { font: 500 12.5px/1 var(--mono); fill: var(--ink); }
+.dh .dh-call .dh-addr.none { fill: var(--muted); font: italic 400 13px/1 var(--sans); }
+.dh .dh-call .dh-addr.new { fill: var(--allowed-text); font-weight: 700; }
+.dh .dh-ignore { font: 500 13px/1 var(--sans); fill: var(--muted); opacity: 0; transition: opacity 250ms ease; }
+.dh .dh-ignore.on { opacity: 1; }
+.dh .dh-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; }
+.dh .dh-lead-dot { fill: var(--muted); }
+.dh .dh-glow { fill: var(--lit-b); opacity: 0; transition: opacity 300ms ease; }
+.dh .dh-glow.on { opacity: .42; }
+.dh .dh-scr { font: 700 5px var(--mono); fill: var(--anatomy-mid); letter-spacing: .04em; }
+.dh .dh-scr.lit { fill: var(--lit-a); }
+.dh .dh-scr-s { font: 700 2.4px var(--mono); fill: var(--anatomy-mid); letter-spacing: .06em; }
+.dh .dh-board-h { font: 700 3.4px var(--mono); fill: var(--anatomy-hi); letter-spacing: .14em; }
+.dh .dh-row { fill: url(#lm-top); }
+.dh .dh-row-t { font: 700 3.4px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .04em; }
+.dh .dh-tag { will-change: transform; }
+.dh .dh-tag-t { font: 700 4.6px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .03em; }
+.dh .dh-ring { fill: none; stroke: var(--lit-a); stroke-width: 2.6px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--lit-b)); }
+.dh .dh-ring.soft { stroke-width: 1.2px; opacity: .55; filter: none; }
+/* While the driver's show settles the figure, the lights and the note change at once (src/scenes/drivers/dhcp.ts). */
+.dh[data-settling] .dh-glow, .dh[data-settling] .dh-ignore { transition: none; }
+/* Reduced motion keeps every light and note, and only drops the fades. */
+@media (prefers-reduced-motion: reduce) { .dh .dh-ignore, .dh .dh-glow { transition: none; } }

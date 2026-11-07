@@ -1,0 +1,243 @@
+/* The firewall's rule list under the scene, and the connections it remembers, as the rules panel in
+   firewalls-v1.html: a small title with how the list is read, the rules in the console's data style with a
+   Check column, then a row of chips.
+
+   A rule's mark is a tint of its state's colour behind the row and a 3px bar of it down the left edge: the
+   marigold of --here for the rule being read (the only "current" thing here), the allowed green for the rule
+   that lets a visit in, and the blocked red for the rule that turns it away. Those are marks, which only need
+   3:1. DENY and "Fits → deny" are in the blocked red, as in the mockup: it reaches 4.5:1 on every row they sit
+   on. ALLOW, "Fits → allow" and "Checking" stay in ink, because in the light theme the allowed green and the
+   marigold fall short of 4.5:1 on their own tints: the action keeps its colour in a small square beside its
+   word (DENY has one too), and the Check word has the row's tint and bar. A rule that was read and did not fit
+   is muted, not faded, and that wins over the red. Colour is never the only signal: the Check column says what
+   happened to each rule.
+
+   The panel is positioned, so the visually hidden words in it (each chip's addresses) scroll with it and never
+   stretch the page. The rows come in once after a change, and the newest chip pulses, only when the learner has
+   not asked for less motion. */
+
+.rpanel {
+  position: relative;
+  flex: none;
+  max-height: 45%;
+  overflow: auto;
+  padding: 8px 14px 9px;
+  border-top: 1px solid var(--line);
+}
+
+.rpanel__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* One line as tall as its words, as the mockup's heading: the caption's own line would be the page's taller one. */
+.rpanel caption {
+  margin-bottom: 4px;
+  font: 400 12.5px/1.1 var(--sans);
+  text-align: start;
+}
+.rpanel__title {
+  color: var(--muted);
+  font: 700 11.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.rpanel__by {
+  margin-inline-start: 6px;
+  color: var(--muted);
+  font: 400 12.5px/1 var(--sans);
+}
+
+.rpanel th {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font: 700 11px/1.2 var(--mono);
+  letter-spacing: 0.1em;
+  text-align: start;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.rpanel td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font: 500 13px/1.35 var(--mono);
+  text-align: start;
+  vertical-align: top;
+  white-space: nowrap;
+}
+/* What a rule is for: words, cut short with an ellipsis rather than wrapping, as in the mockup. */
+.rpanel td.rpanel__prose {
+  overflow: hidden;
+  font: 400 13px/1.35 var(--sans);
+  text-overflow: ellipsis;
+}
+.rpanel td.rpanel__empty {
+  padding: 10px;
+  border-bottom: 0;
+  color: var(--muted);
+  font: 400 13.5px/1.4 var(--sans);
+  text-align: center;
+  white-space: normal;
+}
+
+.rpanel tr[data-state] {
+  background: color-mix(in srgb, var(--state) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--state);
+}
+.rpanel tr[data-state='check'] {
+  --state: var(--here);
+}
+.rpanel tr[data-state='allow'] {
+  --state: var(--allowed);
+}
+.rpanel tr[data-state='deny'] {
+  --state: var(--blocked);
+}
+/* Read, and it did not fit: no tint and no bar, and every word muted. */
+.rpanel tr[data-state='miss'] {
+  --state: transparent;
+}
+.rpanel tr[data-state='miss'] td {
+  color: var(--muted);
+}
+.rpanel tr[data-state='miss'] .rpanel__act,
+.rpanel tr[data-state='miss'] .rpanel__check {
+  color: var(--muted);
+}
+
+/* ALLOW in ink and DENY in the blocked red, each with a square of its colour before it. */
+.rpanel__act {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-strong);
+  font: 700 12px/1 var(--mono);
+  letter-spacing: 0.06em;
+}
+.rpanel__act::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  background: var(--mark);
+}
+.rpanel__act[data-action='allow'] {
+  --mark: var(--allowed);
+}
+.rpanel__act[data-action='deny'] {
+  --mark: var(--blocked);
+  color: var(--blocked);
+}
+
+/* What happened to the rule, in ink, with the row's tint and its bar beside it; "Fits → deny" in the blocked red. */
+.rpanel__check {
+  color: var(--ink-strong);
+  font: 600 12.5px/1.2 var(--mono);
+}
+.rpanel tr[data-state='deny'] .rpanel__check {
+  color: var(--blocked);
+}
+
+/* The connections it remembers: the title, then one chip each under it. The mockup puts the chips beside the
+   title, where two of them only fit because its chips' rule words were squeezed into a 20px box; under the
+   title they get the panel's whole width, so the most this lesson remembers (two chips, one saying a reply was
+   let through) stays on one line at 1280px, and the panel keeps its height from step to step. */
+.rpanel__conns {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  margin-top: 6px;
+}
+.rpanel__conns > .rpanel__none,
+.rpanel__chips {
+  min-height: 24px;
+}
+.rpanel__none {
+  display: flex;
+  align-items: center;
+}
+.rpanel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rpanel__none {
+  color: var(--muted);
+  font: 400 12.5px/1.3 var(--sans);
+}
+.rpanel__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--card-2);
+  color: var(--ink-strong);
+  font: 500 12px/1 var(--mono);
+  white-space: nowrap;
+}
+.rpanel__rule {
+  margin-inline-start: 4px;
+  color: var(--muted);
+}
+/* The connection a reply belongs to: a green border and tint, and the words that say it was let through. */
+.rpanel__chip[data-known] {
+  border-color: var(--allowed);
+  background: color-mix(in srgb, var(--allowed) 12%, var(--card-2));
+}
+.rpanel__known {
+  margin-inline-start: 8px;
+  padding-inline-start: 8px;
+  border-inline-start: 1px solid var(--allowed);
+  font: 400 12px/1 var(--sans);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rpanel tbody tr {
+    transition:
+      background-color 200ms var(--ease-out),
+      box-shadow 200ms var(--ease-out);
+  }
+  .rpanel__chip {
+    transition:
+      background-color 200ms var(--ease-out),
+      border-color 200ms var(--ease-out);
+  }
+  .rpanel tbody[data-moved] tr {
+    animation: rpanel-rows-in 600ms var(--ease-out) 1;
+  }
+  .rpanel__chip[data-new],
+  .rpanel__chip[data-known] {
+    animation: rpanel-pulse 900ms var(--ease-out) 1;
+  }
+}
+
+@keyframes rpanel-rows-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes rpanel-pulse {
+  from {
+    background-color: color-mix(in srgb, var(--selected) 40%, var(--card-2));
+  }
+}
+
+/* Its focus outline sits inside the panel, which the stage's edge would clip.
+   [data-panel] makes this beat the console's own focus offset, which loads after this file. */
+.rpanel[data-panel]:focus-visible {
+  outline-offset: -2px;
+}

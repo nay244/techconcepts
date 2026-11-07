@@ -1,390 +1,387 @@
-import { expect, test } from 'vitest';
-import { evaluateRules, FIREWALL_COLUMNS } from '../../../engine/net/firewall';
-import { deriveState } from '../../../engine/timeline';
-import { countWords, estimateMinutes } from '../../estimate';
+// @vitest-environment jsdom
+import { afterEach, expect, test } from 'vitest';
+import { drawFirewall } from '../../../art/scenes/firewall';
+import { evaluateRules } from '../../../engine/net/firewall';
+import { cidrContains } from '../../../engine/net/ipv4';
+import { deriveState, positionOf, slotsFor, stepEvents } from '../../../engine/timeline';
+import { sceneViewOf } from '../../../scenes/driver';
+import { firewallDriver } from '../../../scenes/drivers/firewall';
+import { lessonNumbers, misnamedLessons, textsOf } from '../../../test/lesson-references';
+import { showSweep } from '../../../test/show-sweep';
+import { validateLesson } from '../../define';
+import { countUnitWords, estimateMinutes } from '../../estimate';
+import { checkResults, RULES, RULESETS } from '../../helpers/firewall-events';
 import { getEntries } from '../../registry';
-import type { FlowScene, MessageEvent, Packet, SceneEvent, TableEvent, TryIt } from '../../schema';
-import fw from './firewalls';
+import type { Lesson, MessageEvent, NoteEvent, Panel, SceneEvent, TableEvent } from '../../schema';
+import firewalls from './firewalls';
 
-const outcomes = (events: SceneEvent[]) =>
-  events.filter((e) => e.type === 'message' && e.id.endsWith('-in')).map((e) => (e as MessageEvent).outcome ?? 'delivered');
-const flow = () => fw.scene as FlowScene;
-const choices = () => (fw.tryIt as Extract<TryIt, { mode: 'choices' }>).choices;
-const choice = (id: string) => choices().find((x) => x.id === id)!;
-const step = (id: string) => fw.steps.find((s) => s.id === id)!;
-const messages = (events: SceneEvent[]) => events.filter((e): e is MessageEvent => e.type === 'message');
-const tables = (events: SceneEvent[]) => events.filter((e): e is TableEvent => e.type === 'table');
-const fieldOf = (p: Packet, layer: string, field: string) => p.layers.find((l) => l.name === layer)!.fields.find((f) => f.name === field)?.value;
-
-// ------------------------------------------------------------ the brief's tests
-
-test('budget', () => expect(estimateMinutes(fw)).toBeLessThanOrEqual(15));
-test('stays under the 12-minute warning', () => expect(estimateMinutes(fw)).toBeLessThanOrEqual(12));
-
-test('step outcomes', () => expect(fw.steps.slice(0, 4).map((s) => outcomes(s.events)[0])).toEqual(['delivered', 'dropped', 'delivered', 'dropped']));
-
-test('deny-first blocks everything', () => {
-  expect(outcomes(choice('deny-first').events)).toHaveLength(4);
-  expect(outcomes(choice('deny-first').events).every((o) => o === 'dropped')).toBe(true);
+afterEach(() => {
+  document.body.innerHTML = '';
 });
 
-test('remove-admin denies admin SSH', () => {
-  const admin = choice('remove-admin').events.find((e) => e.type === 'message' && (e as MessageEvent).from === 'admin') as MessageEvent;
-  expect(admin.outcome).toBe('dropped');
+const unit = firewalls.units[0]!;
+const events = unit.steps.flatMap((s) => s.events);
+const messages = events.filter((e): e is MessageEvent => e.type === 'message');
+const byId = (id: string): SceneEvent => events.find((e) => e.id === id)!;
+const checkOf = (id: string) => (byId(id) as MessageEvent).check;
+
+/**
+ * Each message and note's decision, worked out again by the engine: a visit is read against the rules in force (the
+ * base order, or the one the latest change put in), from the source, the port and the protocol its log row shows.
+ */
+function engineDecisions(lesson: Lesson): string[] {
+  let set: keyof typeof RULESETS = 'base';
+  return lesson.units[0]!.steps.flatMap((s) => s.events).flatMap((e): string[] => {
+    if (e.type === 'table') return [];
+    if (e.type === 'note') {
+      const arg = e.cues?.find((c) => c.cue === 'rules')?.arg as keyof typeof RULESETS;
+      set = arg;
+      return ['change'];
+    }
+    if (e.known !== undefined) return ['reply'];
+    const rules = RULESETS[set].map((id) => RULES[id]);
+    const sourceIp = e.log.source!.split(':')[0]!;
+    const port = Number(e.log.destination!.split(':')[1]);
+    const protocol = e.log.service!.split(' ')[0]!.toLowerCase() as 'tcp';
+    const { ruleId, action } = evaluateRules(rules, { sourceIp, protocol, port });
+    return [`${action} ${rules.findIndex((r) => r.id === ruleId) + 1}`];
+  });
+}
+
+/** The panel's tables once step `n` has played its first `played` events (all of them when left out). */
+function tablesAt(n: number, played?: number) {
+  const p = positionOf(firewalls, 0, 'step', n);
+  return deriveState(firewalls, p, played ?? stepEvents(firewalls, p).length).tables;
+}
+
+// ---------------------------------------------------------------- the lesson
+
+test('Firewalls validates and takes 10 minutes', () => {
+  expect(() => validateLesson(firewalls)).not.toThrow();
+  expect(validateLesson(firewalls).warnings).toEqual([]);
+  expect(firewalls.units).toHaveLength(1);
+  expect(unit.steps).toHaveLength(6);
+  expect(unit.practice).toHaveLength(3);
+  // The words a learner reads, counted as FIGS/minutes.mjs counts them: 1043 ÷ 200 + 6 × 0.5 + 1, rounded up.
+  expect(countUnitWords(unit)).toBe(1043);
+  expect(estimateMinutes(firewalls)).toBe(10);
+  // The four lessons built so far, and the track's total.
+  const minutes = Object.fromEntries(getEntries('networking').flatMap((e) => (e.available ? [[e.slug, e.minutes] as const] : [])));
+  expect(minutes).toEqual({ 'how-the-internet-works': 96, subnetting: 10, dhcp: 8, firewalls: 10 });
+  expect(Object.values(minutes).reduce((a, b) => a + b, 0)).toBe(124);
 });
 
-test('only documentation or private addresses', () => {
-  const addrs = flow().actors.flatMap((a) => a.addresses);
-  expect(addrs.every((a) => /^(203\.0\.113|198\.51\.100|192\.0\.2|10\.)/.test(a))).toBe(true);
-});
-
-// ------------------------------------------------------------ meta and overview
-
-test('meta follows the brief, with the NIST title and csrc.nist.gov address', () => {
-  expect(fw).toMatchObject({ slug: 'firewalls', title: 'Firewalls', subtitle: 'Deciding what gets in', level: 'beginner', osiLayers: [3, 4] });
-  expect(fw.certTags).toEqual(['network-plus', 'security-plus', 'ccna', 'soc-analyst']);
-  expect(fw.references).toEqual([
+test('the lesson’s own words: title, subtitle, cert tags, summary, unit and reference', () => {
+  expect(firewalls).toMatchObject({
+    slug: 'firewalls',
+    title: 'Firewalls',
+    subtitle: 'Deciding what gets in',
+    level: 'beginner',
+    certTags: ['network-plus', 'security-plus', 'ccna', 'soc-analyst'],
+    summary: 'Watch a firewall check each connection against its list of rules, from the top down, and see why the order of the rules matters.',
+    figure: 'firewall',
+  });
+  expect(unit).toMatchObject({ id: 'firewalls', name: 'Firewall', fullName: 'Network firewall', purpose: 'A guard for your network', osiLayers: [3, 4] });
+  expect(unit.references).toEqual([
     { label: 'NIST SP 800-41 Rev. 1: Guidelines on Firewalls and Firewall Policy', url: 'https://csrc.nist.gov/pubs/sp/800/41/r1/final' },
   ]);
 });
 
-test('track entry is available as lesson 16', () =>
-  expect(getEntries('networking').find((e) => e.slug === 'firewalls')).toMatchObject({ available: true, number: 16 }));
-
-test('overview facts: default deny is worded as a recommendation, not a claim about every firewall', () => {
-  expect(fw.overview.facts).toEqual([
-    { label: 'Works with', value: 'Addresses and ports (layers 3–4)' },
-    { label: 'Reads rules', value: 'Top to bottom, first match wins' },
-    { label: 'Recommended default', value: 'Block anything not allowed' },
-    { label: 'Common types', value: 'Packet filter, stateful, next-generation' },
-  ]);
+test('step titles are the technical terms, in order, and Learn’s pattern names four of them', () => {
+  expect(unit.steps.map((s) => s.title)).toEqual(['Rule Evaluation', 'First-Match Rule', 'Source Filtering', 'Default Deny', 'Stateful Inspection', 'Rule Shadowing']);
+  expect(unit.learn.pattern.names).toEqual(['Rule Evaluation', 'First-Match Rule', 'Default Deny', 'Stateful Inspection']);
+  expect(unit.learn.terms.map((t) => t.name)).toEqual(['Firewall', 'Rule', 'Port', 'Source', 'First match', 'Default deny', 'Stateful', 'Shadowed rule']);
+  expect(unit.practice.map((q) => q.answer)).toEqual([0, 0, 1]);
 });
 
-test('the overview tells the three types apart, and says a stateful firewall remembers the connections it allowed', () => {
-  const d = fw.overview.description;
-  expect(d).toMatch(/packet filter judges each packet on its own/i);
-  expect(d).toMatch(/stateful firewall also remembers the connections it has allowed/i);
-  expect(d).toMatch(/next-generation/i);
-  expect(d).toMatch(/some products use other orders/);
-});
+// ---------------------------------------------------------------- the decisions
 
-// ------------------------------------------------------------ the scene
-
-test('the scene: five actors, four wired links, views, and the rule table', () => {
-  const scene = flow();
-  expect(scene.views).toEqual(['network', 'sequence']);
-  expect(scene.actors.map((a) => [a.id, a.label, a.addresses])).toEqual([
-    ['visitor', 'Visitor', ['203.0.113.50']],
-    ['admin', 'Admin laptop', ['198.51.100.7']],
-    ['internet', 'The internet', []],
-    ['fw', 'Firewall', []],
-    ['web', 'Web server', ['10.0.0.10']],
-  ]);
-  expect(scene.links.map((l) => [l.from, l.to, l.medium])).toEqual([
-    ['visitor', 'internet', 'wired'],
-    ['admin', 'internet', 'wired'],
-    ['internet', 'fw', 'wired'],
-    ['fw', 'web', 'wired'],
-  ]);
-  const rules = scene.tables[0]!;
-  expect(rules).toMatchObject({ id: 'rules', actor: 'fw', keyColumn: '#', columns: FIREWALL_COLUMNS });
-  expect(rules.initialRows).toEqual([
-    { '#': '1', action: 'ALLOW', protocol: 'TCP', port: '443', source: 'any', note: 'Website (HTTPS)' },
-    { '#': '2', action: 'ALLOW', protocol: 'TCP', port: '22', source: '198.51.100.7/32', note: 'Admin SSH' },
-    { '#': '3', action: 'DENY', protocol: 'ANY', port: 'any', source: 'any', note: 'Block everything else' },
-  ]);
-});
-
-test('actors keep clear of the canvas edges so labels do not clip or overlap', () => {
-  for (const a of flow().actors) {
-    expect(a.y, a.id).toBeLessThanOrEqual(480);
-    expect(a.x, a.id).toBeGreaterThanOrEqual(100);
-  }
-});
-
-// ------------------------------------------------------------ the steps
-
-const STEP_PROBES = [
-  { id: 'https', from: 'visitor', src: '203.0.113.50', port: 443, rule: '1', verdict: 'ALLOW' },
-  { id: 'ssh', from: 'visitor', src: '203.0.113.50', port: 22, rule: '3', verdict: 'DENY' },
-  { id: 'admin-ssh', from: 'admin', src: '198.51.100.7', port: 22, rule: '2', verdict: 'ALLOW' },
-  { id: 'telnet', from: 'visitor', src: '203.0.113.50', port: 23, rule: '3', verdict: 'DENY' },
-];
-
-test('the steps follow the brief: titles, one probe each, matched rule and verdict', () => {
-  expect(fw.steps.map((s) => s.title)).toEqual([
-    'Rules are read top to bottom',
-    'The first match wins',
-    'Rules can name a source',
-    'Everything else is blocked',
-    'Replies get through',
-  ]);
-  STEP_PROBES.forEach((p, i) => {
-    const events = fw.steps[i]!.events;
-    const inbound = messages(events)[0]!;
-    expect(inbound).toMatchObject({ id: `${p.id}-in`, from: p.from, to: ['fw'], via: ['internet'], src: p.src, dst: `10.0.0.10:${p.port}`, protocol: 'TCP', kind: 'request' });
-    expect(tables(events)[0]).toMatchObject({ op: 'match', key: p.rule, summary: `Rule ${p.rule} → ${p.verdict}` });
-    // An allowed probe is passed on to the web server; a denied one stops at the firewall.
-    expect(messages(events).map((m) => m.id)).toEqual(p.verdict === 'ALLOW' ? [`${p.id}-in`, `${p.id}-out`] : [`${p.id}-in`]);
-  });
-});
-
-test('the engine agrees with every outcome the narratives state', () => {
-  const rules = flow().tables[0]!.initialRows;
-  const verdict = (src: string, port: number) => {
-    const decided = evaluateRules(
-      [
-        { id: '1', action: 'allow', protocol: 'tcp', port: 443, source: 'any', note: '' },
-        { id: '2', action: 'allow', protocol: 'tcp', port: 22, source: '198.51.100.7/32', note: '' },
-        { id: '3', action: 'deny', protocol: 'any', port: 'any', source: 'any', note: '' },
-      ],
-      { sourceIp: src, protocol: 'tcp', port },
-    );
-    return `${decided.ruleId}:${decided.action}`;
-  };
-  expect(rules).toHaveLength(3);
-  expect(STEP_PROBES.map((p) => verdict(p.src, p.port))).toEqual(['1:allow', '3:deny', '2:allow', '3:deny']);
-});
-
-test('step 5 is one reply from the web server through the firewall and the internet, with no table event', () => {
-  const events = step('replies').events;
-  expect(events).toHaveLength(1);
-  const reply = events[0] as MessageEvent;
-  expect(reply).toMatchObject({
-    type: 'message',
-    from: 'web',
-    to: ['visitor'],
-    via: ['fw', 'internet'],
-    kind: 'response',
-    summary: 'HTTPS reply (part of an allowed connection)',
-    protocol: 'TCP',
-    src: '10.0.0.10:443',
-  });
-  expect(step('replies').id).toBe('replies');
-});
-
-test('the reply answers the step 1 connection: same visitor port, acknowledging the visitor\'s sequence number plus 1', () => {
-  const reply = flow().packets['https-reply']!;
-  const request = flow().packets['https']!;
-  const port = fieldOf(request, 'TCP', 'Source port')!;
-  expect((step('replies').events[0] as MessageEvent).dst).toBe(`203.0.113.50:${port}`);
-  expect(fieldOf(reply, 'TCP', 'Destination port')).toBe(port);
-  expect(fieldOf(reply, 'TCP', 'Source port')).toBe('443 (HTTPS)');
-  expect(Number(fieldOf(reply, 'TCP', 'Acknowledgment number'))).toBe(Number(fieldOf(request, 'TCP', 'Sequence number')) + 1);
-  expect(fieldOf(reply, 'TCP', 'Flags')).toBe('0x012 (SYN, ACK)');
-});
-
-test('times only move forward through the steps, so the log never runs backwards', () => {
-  const times = fw.steps.flatMap((s) => messages(s.events).map((m) => m.time));
-  expect(times).toEqual([...times].sort((a, b) => a - b));
-});
-
-test('step events never collide with each other; Try it events never collide with a step', () => {
-  const stepIds = fw.steps.flatMap((s) => s.events.map((e) => e.id));
-  expect(new Set(stepIds).size).toBe(stepIds.length);
-  for (const c of choices()) {
-    const ids = c.events.map((e) => e.id);
-    expect(new Set(ids).size, c.id).toBe(ids.length);
-    for (const id of ids) {
-      expect(id === 'rules-replace' || id.startsWith(`${c.id}-`), id).toBe(true);
-      expect(stepIds).not.toContain(id);
-    }
-  }
-});
-
-// ------------------------------------------------------------ the packets
-
-test('every message has a TCP packet of IPv4 + TCP, 44 bytes, matching its event', () => {
-  const all = [...fw.steps.flatMap((s) => s.events), ...choices().flatMap((c) => c.events)].flatMap((e) => (e.type === 'message' ? [e] : []));
-  expect(all.length).toBeGreaterThan(0);
-  for (const m of all) {
-    const p = flow().packets[m.packet!]!;
-    expect(p, m.id).toBeDefined();
-    expect(p.size).toBe(44);
-    expect(m.size).toBe(44);
-    expect(p.layers.map((l) => l.name)).toEqual(['IPv4', 'TCP']);
-    expect(fieldOf(p, 'IPv4', 'Source IP address'), m.id).toBe(m.src.split(':')[0]);
-    expect(fieldOf(p, 'IPv4', 'Destination IP address'), m.id).toBe(m.dst.split(':')[0]);
-    const dstPort = m.dst.split(':')[1]!;
-    expect(fieldOf(p, 'TCP', 'Destination port'), m.id).toMatch(new RegExp(`^${dstPort}\\b`));
-    expect(p.seenAt, m.id).toMatch(/^[A-Z].*\.$/);
-  }
-});
-
-test('every packet has its own identification, and every request its own source port and sequence number', () => {
-  const ps = Object.entries(flow().packets);
-  const ids = ps.map(([, p]) => fieldOf(p, 'IPv4', 'Identification'));
-  expect(new Set(ids).size).toBe(ps.length);
-  const requests = ps.filter(([id]) => !id.endsWith('reply')).map(([, p]) => p);
-  expect(new Set(requests.map((p) => fieldOf(p, 'TCP', 'Source port'))).size).toBe(requests.length);
-  expect(new Set(requests.map((p) => fieldOf(p, 'TCP', 'Sequence number'))).size).toBe(requests.length);
-  for (const p of requests) {
-    const port = Number(fieldOf(p, 'TCP', 'Source port'));
-    expect(port).toBeGreaterThanOrEqual(49152);
-    expect(port).toBeLessThanOrEqual(65535);
-  }
-});
-
-// ------------------------------------------------------------ Try it
-
-test('Try it offers the three brief choices', () =>
-  expect(choices().map((c) => [c.id, c.label])).toEqual([
-    ['deny-first', "Move 'Block everything else' to the top"],
-    ['allow-http', "Add 'Allow TCP 80' above the last rule"],
-    ['remove-admin', 'Remove the admin SSH rule'],
-  ]));
-
-const replacedRows = (id: string) => (tables(choice(id).events)[0] as TableEvent).rows!;
-
-test('every choice starts by replacing the rules, and the rows are the new order', () => {
-  for (const c of choices()) expect(tables(c.events)[0]).toMatchObject({ id: 'rules-replace', op: 'replace' });
-  expect(replacedRows('deny-first').map((r) => [r['#'], r.action, r.port])).toEqual([['1', 'DENY', 'any'], ['2', 'ALLOW', '443'], ['3', 'ALLOW', '22']]);
-  expect(replacedRows('allow-http').map((r) => [r['#'], r.action, r.port, r.note])).toEqual([
-    ['1', 'ALLOW', '443', 'Website (HTTPS)'],
-    ['2', 'ALLOW', '22', 'Admin SSH'],
-    ['3', 'ALLOW', '80', 'Website (HTTP)'],
-    ['4', 'DENY', 'any', 'Block everything else'],
-  ]);
-  expect(replacedRows('remove-admin').map((r) => [r['#'], r.action, r.port])).toEqual([['1', 'ALLOW', '443'], ['2', 'DENY', 'any']]);
-});
-
-test('the same four probes run in every choice, in the step order, with allow-http adding visitor TCP 80', () => {
-  const dsts = (id: string) => messages(choice(id).events).filter((m) => m.id.endsWith('-in')).map((m) => [m.from, m.dst]);
-  const four = [['visitor', '10.0.0.10:443'], ['visitor', '10.0.0.10:22'], ['admin', '10.0.0.10:22'], ['visitor', '10.0.0.10:23']];
-  expect(dsts('deny-first')).toEqual(four);
-  expect(dsts('remove-admin')).toEqual(four);
-  expect(dsts('allow-http')).toEqual([...four, ['visitor', '10.0.0.10:80']]);
-});
-
-test('outcomes in each choice', () => {
-  expect(outcomes(choice('allow-http').events)).toEqual(['delivered', 'dropped', 'delivered', 'dropped', 'delivered']);
-  expect(outcomes(choice('remove-admin').events)).toEqual(['delivered', 'dropped', 'dropped', 'dropped']);
-});
-
-test('the match events name the rule numbers in the new list', () => {
-  const keys = (id: string) => tables(choice(id).events).filter((t) => t.op === 'match').map((t) => t.key);
-  expect(keys('deny-first')).toEqual(['1', '1', '1', '1']);
-  expect(keys('allow-http')).toEqual(['1', '4', '2', '4', '3']);
-  expect(keys('remove-admin')).toEqual(['1', '2', '2', '2']);
-});
-
-test('at Try it the table shows the edited rules, and the port 80 visit highlights rule 3', () => {
-  const state = deriveState(fw, 6, choice('allow-http').events.length, 'allow-http').tables.rules!;
-  expect(state.rows).toHaveLength(4);
-  expect(state.highlight).toEqual({ key: '3', type: 'matched' });
-});
-
-test('explanations say what each outcome was and why', () => {
-  expect(choice('deny-first').explanation).toMatch(/all four visits are blocked/i);
-  expect(choice('allow-http').explanation).toMatch(/port 80/);
-  expect(choice('allow-http').explanation).toMatch(/lesson 14/);
-  expect(choice('remove-admin').explanation).toMatch(/admin/);
-});
-
-// ------------------------------------------------------------ narrative facts
-
-test('step 1 teaches the rule list and points ahead to ports, TCP and IP addresses; where 10.0.0.10 fits is a fact, not a second idea', () => {
-  const n = step('rules-top-down').narrative;
-  expect(n).toMatch(/lesson 11/);
-  expect(n).toMatch(/lesson 10/);
-  expect(n).toMatch(/lesson 3/);
-  expect(n).toMatch(/TCP, the reliable way most connections travel; lesson 11/);
-  expect(n).not.toMatch(/10\.0\.0\.10|NAT/);
-  const web = step('rules-top-down').facts.find((f) => f.label === 'Web server')!;
-  expect(web.value).toBe('10.0.0.10 is private, so in real life NAT passes visits on to it (lesson 12)');
-  expect(n).toMatch(/port 443/);
-});
-
-test('step 2 walks the list: rule 1 is port 443, rule 2 is port 22 from 198.51.100.7, rule 3 covers everything', () => {
-  const n = step('first-match').narrative;
-  expect(n).toMatch(/Rule 1 covers port 443/);
-  expect(n).toMatch(/Rule 2 covers port 22, but only for one address, 198\.51\.100\.7/);
-  expect(n).toMatch(/Rule 3 covers everything/);
-  expect(n).toMatch(/port 22/);
-});
-
-test('step 3 says /32 is exactly one address and points to lesson 7', () => {
-  const n = step('named-source').narrative;
-  expect(n).toMatch(/\/32 on the end means exactly that one address/);
-  expect(n).toMatch(/lesson 7/);
-});
-
-test('step 4 names Telnet on port 23 as unencrypted, calls default deny a recommendation, and does not claim every firewall does it', () => {
-  const n = step('everything-else').narrative;
-  expect(n).toMatch(/port 23, Telnet/);
-  expect(n).toMatch(/readable text/);
-  expect(n).toMatch(/default deny/);
-  expect(n).toMatch(/NIST/);
-  expect(n).toMatch(/Not every firewall blocks by default/);
-});
-
-test('step 5 is precise about stateful and packet filters', () => {
-  const n = step('replies').narrative;
-  expect(n).toMatch(/stateful firewall keeps a table of the connections it has allowed/);
-  expect(n).toMatch(/packet filter, which judges every packet alone, would need a rule of its own for replies/);
-});
-
-test('narratives obey the limits and the voice', () => {
-  for (const s of fw.steps) expect(countWords(s.narrative), s.id).toBeLessThanOrEqual(120);
-  expect(countWords(fw.overview.hook)).toBeLessThanOrEqual(80);
-  expect(fw.steps).toHaveLength(5);
-  expect(fw.check.length).toBeGreaterThanOrEqual(2);
-  expect(fw.check.length).toBeLessThanOrEqual(3);
-  expect(fw.recap.takeaways).toHaveLength(3);
-});
-
-test('the overview analogy is one guard at one front door, and steps stay with it', () => {
-  expect(fw.overview.hook).toMatch(/guard at the front door/);
-  for (const s of fw.steps) expect(s.narrative, s.id).toMatch(/\bguard\b|\bclipboard\b/);
-  expect(step('everything-else').narrative).toMatch(/^The guard's clipboard/);
-});
-
-// ------------------------------------------------------------ check yourself
-
-test('Check yourself asks the three brief questions with the right answers', () => {
-  expect(fw.check).toHaveLength(3);
-  const right = (i: number) => fw.check[i]!.options[fw.check[i]!.answer];
-  expect(fw.check[0]!.prompt).toBe("A packet matches none of the rules in this lesson's list. What happens to it?");
-  expect(right(0)).toBe('It is blocked, because no rule allows it');
-  expect(fw.check[1]!.prompt).toMatch(/Rule 1: allow TCP 22 from any source\. Rule 2: deny TCP 22 from 203\.0\.113\.50/);
-  expect(right(1)).toBe('Allowed, because rule 1 fits first');
-  expect(right(2)).toBe("Rule 2, because it names the admin's address");
-});
-
-test('the correct answers are not always in the same place, nor always the longest', () => {
-  expect(new Set(fw.check.map((q) => q.answer)).size).toBeGreaterThan(1);
-  const longest = fw.check.map((q) => q.options[q.answer]!.length === Math.max(...q.options.map((o) => o.length)));
-  expect(longest.every(Boolean)).toBe(false);
-});
-
-test('the rule-order question is right under first-match', () => {
-  const decided = evaluateRules(
-    [
-      { id: 'a', action: 'allow', protocol: 'tcp', port: 22, source: 'any', note: '' },
-      { id: 'b', action: 'deny', protocol: 'tcp', port: 22, source: '203.0.113.50/32', note: '' },
-    ],
-    { sourceIp: '203.0.113.50', protocol: 'tcp', port: 22 },
+test('the decisions are allow 1, deny 3, allow 2, deny 3, the reply, the change, deny 1', () => {
+  const expected = ['allow 1', 'deny 3', 'allow 2', 'deny 3', 'reply', 'change', 'deny 1'];
+  expect(engineDecisions(firewalls)).toEqual(expected);
+  // The events say the same as the engine: each visit's check, where it ends, and its log row.
+  const said = events.flatMap((e): string[] =>
+    e.type === 'table' ? [] : e.type === 'note' ? ['change'] : e.check === undefined ? ['reply'] : [`${e.check.action} ${e.check.match}`],
   );
-  expect(decided).toEqual({ ruleId: 'a', action: 'allow' });
-});
-
-test('recap says what is recommended, not that every firewall blocks by default', () => {
-  const text = fw.recap.takeaways.join(' ');
-  expect(text).toMatch(/recommended policy is default deny/);
-  expect(fw.recap.takeaways[1]).toMatch(/put the most specific rules first and the catch-all last/);
-  expect(text).toMatch(/stateful firewall also remembers the connections it allowed/);
-});
-
-test('no gamification language anywhere in the lesson', () => {
-  const text = JSON.stringify(fw.steps) + JSON.stringify(fw.tryIt) + JSON.stringify(fw.check) + JSON.stringify(fw.recap);
-  expect(text.match(/\b(points|scores?|scored|badges?|streaks?|mission complete|xp)\b/i)?.[0]).toBeUndefined();
-});
-
-test('"Rules updated" lands on the first visit of each Try it choice, not on the last step\'s reply', () => {
-  for (const c of choices()) {
-    const log = deriveState(fw, 6, c.events.length, c.id).log;
-    expect(log.find((row) => row.eventId === 'https-reply')!.tableChange, c.id).toBeUndefined();
-    expect(log.find((row) => row.eventId === `${c.id}-https-in`)!.tableChange, c.id).toMatch(/^Rules updated; Rule \d → (ALLOW|DENY)$/);
-    expect(log.filter((row) => row.tableChange?.includes('Rules updated')), c.id).toHaveLength(1);
+  expect(said).toEqual(expected);
+  for (const m of messages.filter((e) => e.check !== undefined)) {
+    const allowed = m.check!.action === 'allow';
+    expect([m.to, m.outcome ?? 'delivered'], m.id).toEqual(allowed ? ['web', 'delivered'] : ['firewall', 'blocked']);
+    expect(m.log.decision, m.id).toBe(`${allowed ? 'Allowed' : 'Denied'} · rule ${m.check!.match}`);
   }
+});
+
+test('each step’s Result fact agrees with the decision the engine makes', () => {
+  const decisions = engineDecisions(firewalls);
+  let i = 0;
+  const results: [string, string][] = [];
+  for (const step of unit.steps) {
+    const own = step.events.filter((e) => e.type !== 'table').map(() => decisions[i++]!);
+    const result = step.facts.find((f) => f.label === 'Result');
+    if (result === undefined) continue;
+    const [action, n] = own.at(-1)!.split(' ');
+    expect(result.value, step.id).toMatch(new RegExp(`^${action === 'allow' ? 'Allowed' : 'Denied'} by .*\\brule ${n}$`));
+    results.push([step.id, result.value]);
+  }
+  expect(results.map(([, value]) => value)).toEqual(['Allowed by rule 1', 'Denied by rule 3', 'Allowed by rule 2', 'Denied by rule 3', 'Denied by the new rule 1']);
+});
+
+test('a visit reads rules until the first fit: read 3 for the Telnet visit', () => {
+  expect(checkOf('visit-telnet')).toEqual({ table: 'rules', read: 3, match: 3, action: 'deny' });
+  expect(messages.filter((m) => m.check !== undefined).map((m) => [m.id, m.check!.read])).toEqual([
+    ['visit-website', 1],
+    ['visit-login', 3],
+    ['admin-login', 2],
+    ['visit-telnet', 3],
+    ['visit-website-again', 1],
+  ]);
+  // A reply reads no rules: it belongs to a connection the firewall remembers.
+  expect(byId('reply-website')).toMatchObject({ known: { table: 'conns', key: 'visitor:443' } });
+  expect((byId('reply-website') as MessageEvent).check).toBeUndefined();
+});
+
+test('the firewall remembers each visit it let in, and the reply uses the website visit’s connection', () => {
+  expect(tablesAt(1).conns!.rows.map((r) => r.key)).toEqual(['visitor:443']);
+  expect(tablesAt(2).conns!.rows.map((r) => r.key)).toEqual(['visitor:443']);
+  expect(tablesAt(4).conns!.rows).toEqual([
+    { key: 'visitor:443', who: 'Visitor', port: '443', rule: '1', from: '203.0.113.50:50432', to: '10.0.0.10:443' },
+    { key: 'admin:22', who: 'Admin', port: '22', rule: '2', from: '198.51.100.7:51876', to: '10.0.0.10:22' },
+  ]);
+});
+
+test('after the change the rule list is DENY, ALLOW 443, ALLOW 22, and no connections are remembered', () => {
+  // Step 6 starts with both connections remembered and the base order.
+  const before = tablesAt(6, 0);
+  expect(before.rules!.rows.map((r) => `${r.action} ${r.port}`)).toEqual(['ALLOW TCP 443', 'ALLOW TCP 22', 'DENY Any']);
+  expect(before.conns!.rows).toHaveLength(2);
+  // The change: its two table events and its note.
+  const after = tablesAt(6, 3);
+  expect(after.rules!.rows.map((r) => [r['#'], r.action, r.port, r.source])).toEqual([
+    ['1', 'DENY', 'Any', 'Any'],
+    ['2', 'ALLOW', 'TCP 443', 'Any'],
+    ['3', 'ALLOW', 'TCP 22', '198.51.100.7/32'],
+  ]);
+  expect(after.conns!.rows).toEqual([]);
+  expect(byId('move-catch-all')).toMatchObject({ type: 'note', cues: [{ cue: 'rules', arg: 'shadow' }], log: { decision: 'Rules changed' } });
+});
+
+// ---------------------------------------------------------------- checkResults (§7.4)
+
+/** A copy of the lesson to break. */
+const copy = (): Lesson => structuredClone(firewalls) as Lesson;
+const stepOf = (l: Lesson, id: string) => l.units[0]!.steps.find((s) => s.id === id)!;
+const eventOf = (l: Lesson, id: string) => l.units[0]!.steps.flatMap((s) => s.events).find((e) => e.id === id)!;
+
+test('checkResults passes on the lesson as written', () => {
+  expect(() => checkResults(firewalls)).not.toThrow();
+});
+
+test('checkResults throws on a copy whose Result fact says allowed for a denied visit', () => {
+  const l = copy();
+  stepOf(l, 'first-match').facts.find((f) => f.label === 'Result')!.value = 'Allowed by rule 3';
+  expect(() => checkResults(l)).toThrow(/first-match.*Result.*“Allowed by rule 3”.*denied by rule 3/s);
+});
+
+test('checkResults throws when the rules in force are reordered, though every word stays the same', () => {
+  // The change puts the base order back, in the rule list and in its cue: the last visit would now be allowed by rule 1.
+  const l = copy();
+  const rows = eventOf(l, 'move-catch-all-rules') as TableEvent;
+  rows.rows = structuredClone((l.units[0]!.scene.panel as Extract<Panel, { type: 'rules' }>).rules.initialRows);
+  (eventOf(l, 'move-catch-all') as NoteEvent).cues = [{ cue: 'rules', arg: 'base' }];
+  expect(() => checkResults(l)).toThrow(/visit-website-again.*allow.*rule 1/s);
+});
+
+test('checkResults throws when a visit’s port is swapped, or its rule number is off', () => {
+  // The visitor's login visit asks for port 443 instead: rule 1 would let it in.
+  const port = copy();
+  (eventOf(port, 'visit-login') as MessageEvent).log.destination = '10.0.0.10:443';
+  expect(() => checkResults(port)).toThrow(/visit-login.*allowed by rule 1/s);
+
+  const rule = copy();
+  stepOf(rule, 'default-deny').facts.find((f) => f.label === 'Result')!.value = 'Denied by rule 2';
+  expect(() => checkResults(rule)).toThrow(/default-deny.*“Denied by rule 2”/s);
+
+  const read = copy();
+  stepOf(read, 'rule-evaluation').facts.find((f) => f.label === 'Rules read')!.value = '2 of 3';
+  expect(() => checkResults(read)).toThrow(/rule-evaluation.*Rules read.*“1 of 3”/s);
+});
+
+test('checkResults throws when the rule list shows other rules than the ones the decisions are worked out from', () => {
+  const l = copy();
+  (eventOf(l, 'move-catch-all') as NoteEvent).cues = [{ cue: 'rules', arg: 'base' }];
+  expect(() => checkResults(l)).toThrow(/rule list.*base/s);
+});
+
+test('checkResults throws when a reply answers a connection the firewall does not remember', () => {
+  const l = copy();
+  (eventOf(l, 'reply-website') as MessageEvent).known = { table: 'conns', key: 'visitor:22' };
+  expect(() => checkResults(l)).toThrow(/reply-website.*visitor:22.*not remember/s);
+});
+
+// ---------------------------------------------------------------- the scene
+
+test('the panel holds the rule list and the connections it remembers, as the mockup shows them', () => {
+  const panel = unit.scene.panel;
+  expect(panel?.type).toBe('rules');
+  if (panel?.type !== 'rules') return;
+  expect(panel.rules).toMatchObject({ id: 'rules', title: 'Rule list', by: 'read from the top, first match wins', keyColumn: '#' });
+  expect(panel.rules.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false])).toEqual([
+    ['#', '#', 28, false],
+    ['action', 'Action', 64, false],
+    ['port', 'Port', 76, false],
+    ['source', 'Source', 132, false],
+    ['note', 'For', null, true],
+  ]);
+  expect(panel.rules.initialRows.map((r) => r.note)).toEqual(['Website (HTTPS)', 'Admin login (SSH)', 'Block everything else']);
+  expect(panel.conns).toMatchObject({
+    id: 'conns',
+    title: 'Connections it remembers',
+    keyColumn: 'key',
+    hiddenKey: true,
+    initialRows: [],
+    empty: 'None yet. Each allowed visit is remembered here.',
+  });
+  expect(panel.conns.columns.map((c) => c.label)).toEqual(['Who', 'Port', 'Let in by', 'From', 'To']);
+});
+
+test('the log is the firewall’s, with the mockup’s columns at the widths it draws them at 1280 px', () => {
+  const { log } = unit.scene;
+  expect(log.title).toBe('Firewall log');
+  // The decision is the row's main words, set strong as the mockup's .log td.dec.
+  expect(log.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false, c.strong ?? false])).toEqual([
+    ['source', 'Source', 168, false, false],
+    ['destination', 'Destination', 168, false, false],
+    ['service', 'Service', 146, false, false],
+    ['decision', 'Decision', 234, false, true],
+    ['plain', 'In plain words', null, true, false],
+  ]);
+  expect(log.legend).toEqual([
+    { kind: 'request', label: 'Visit' },
+    { kind: 'response', label: 'Reply' },
+    { kind: 'blocked', label: 'Blocked' },
+    { kind: 'change', label: 'Rule change' },
+  ]);
+});
+
+test('the scene: its title, both views, and the four parties with their addresses', () => {
+  expect(unit.scene.title).toBe('Office firewall · web server 10.0.0.10');
+  expect(unit.scene.views).toEqual(['network', 'sequence']);
+  expect(unit.scene.parties).toEqual([
+    { place: 'visitor', label: 'Visitor', addr: '203.0.113.50' },
+    { place: 'admin', label: 'Admin', addr: '198.51.100.7' },
+    { place: 'firewall', label: 'Firewall', addr: 'rule list' },
+    { place: 'web', label: 'Web server', addr: '10.0.0.10' },
+  ]);
+  // The empty log speaks for the whole lesson, from the Overview on, as the mockup's does.
+  expect(unit.scene.log.idle).toBe('Nothing has reached the firewall yet. Press Play, or pick a step.');
+  expect(unit.steps.filter((s) => s.idle !== undefined)).toEqual([]);
+});
+
+test('every message rides a tag the figure draws, with the figure’s own words', () => {
+  const { svg } = drawFirewall();
+  const words = [...svg.matchAll(/<text class="fw-tag-t"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+  expect(messages.map((m) => m.tag)).toEqual(['HTTPS 443', 'SSH 22', 'SSH 22', 'TELNET 23', 'REPLY 443', 'HTTPS 443']);
+  for (const m of messages) expect(words, m.id).toContain(m.tag);
+});
+
+test('every address is a documentation or private one', () => {
+  const documentation = ['192.0.2.0/24', '198.51.100.0/24', '203.0.113.0/24'];
+  const own = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];
+  const addresses = [...new Set(textsOf(firewalls).flatMap((t) => t.match(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g) ?? []))];
+  expect(addresses.sort()).toEqual(['10.0.0.10', '198.51.100.7', '203.0.113.50']);
+  for (const a of addresses) expect([...documentation, ...own].some((net) => cidrContains(net, a)), a).toBe(true);
+  // No MAC addresses: the lesson works at layers 3 and 4.
+  expect(textsOf(firewalls).join(' ')).not.toMatch(/\b[0-9a-f]{2}(?::[0-9a-f]{2}){5}\b/i);
+});
+
+/** The words a sentence uses for each lesson it may point at. */
+const TOPIC: Record<string, string> = {
+  'tcp-udp': 'SYN',
+  'http-https': 'HTTPS',
+  nat: 'NAT',
+  subnetting: 'slash',
+  vpn: 'VPN',
+};
+
+test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
+  expect(lessonNumbers(firewalls).map((x) => x.n)).toEqual([12, 15, 13, 8, 20]);
+  expect(misnamedLessons(firewalls, TOPIC)).toEqual([]);
+});
+
+// ---------------------------------------------------------------- the figure, as the console shows it
+
+/** The figure on the page, and its driver. */
+function mount() {
+  const { svg, data } = drawFirewall();
+  const host = document.createElement('div');
+  host.innerHTML = svg;
+  document.body.append(host);
+  const root = host.querySelector<SVGSVGElement>('svg[data-figure="firewall"]')!;
+  return { root, driver: firewallDriver.create(root, data) };
+}
+
+/** The view at position `p` once `n` of its events have played (all of them when `n` is left out). */
+function viewAt(p: number, n = stepEvents(firewalls, p).length) {
+  return sceneViewOf(unit, deriveState(firewalls, p, n));
+}
+
+/** What show leaves on the figure: the board, the marks, the lights, where each tag is, and the trail. */
+function figureState(root: SVGSVGElement) {
+  const q = (id: string) => root.querySelector<SVGElement>(`#${id}`)!;
+  return {
+    board: [0, 1, 2].map((i) => [q(`fw-brow-t-${i}`).textContent, q(`fw-brow-${i}`).getAttribute('class')]),
+    bar: q('fw-bar').getAttribute('class'),
+    arms: [q('fw-arms-down').style.opacity, q('fw-arms-up').style.opacity],
+    stop: q('fw-stop').style.opacity,
+    lit: [...root.querySelectorAll('.on')].map((el) => el.id).filter((id) => !id.startsWith('fw-sled')),
+    tags: ['https', 'ssh', 'telnet', 'reply'].map((t) => [q(`fw-tag-${t}`).style.opacity, q(`fw-tag-${t}`).parentElement!.id]),
+    trail: [q('fw-trail').getAttribute('class'), q('fw-trail').style.opacity],
+  };
+}
+
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', () => {
+  // Each position (the Overview, 6 steps, Learn, Practice) and each event of each step once more.
+  expect(showSweep(firewalls)).toBe(slotsFor(firewalls).length + events.length);
+});
+
+test('the first position shows the base list on the board, the gate shut, and nothing lit or on its way', () => {
+  const { root, driver } = mount();
+  driver.show(viewAt(0, 0));
+  expect(figureState(root)).toEqual({
+    board: [
+      ['1  ALLOW 443  ANY', 'fw-brow'],
+      ['2  ALLOW 22   ADMIN', 'fw-brow'],
+      ['3  DENY  ALL', 'fw-brow'],
+    ],
+    bar: 'fw-bar',
+    arms: ['1', '0'],
+    stop: '0',
+    lit: [],
+    tags: [
+      ['0', 'fw-layer-front'],
+      ['0', 'fw-layer-front'],
+      ['0', 'fw-layer-front'],
+      ['0', 'fw-layer-front'],
+    ],
+    trail: ['fw-trail', '0'],
+  });
+});
+
+test('the end of each step shows where its last visit or reply ended up, and the rule that decided', () => {
+  const { root, driver } = mount();
+  const at = (n: number) => {
+    driver.show(viewAt(positionOf(firewalls, 0, 'step', n)));
+    return figureState(root);
+  };
+  // Step 1: let in by rule 1, the tag on top of the server behind the wall, the server busy.
+  expect(at(1)).toMatchObject({ board: [['1  ALLOW 443  ANY', 'fw-brow allow'], ['2  ALLOW 22   ADMIN', 'fw-brow'], ['3  DENY  ALL', 'fw-brow']], bar: 'fw-bar allow', arms: ['0', '1'], stop: '0', lit: ['fw-busy-server'] });
+  expect(at(1).tags[0]).toEqual(['1', 'fw-layer-behind']);
+  // Step 2: turned away by rule 3 at the gate, in front of the wall, under the stop mark, its trail red.
+  expect(at(2)).toMatchObject({ board: [['1  ALLOW 443  ANY', 'fw-brow miss'], ['2  ALLOW 22   ADMIN', 'fw-brow miss'], ['3  DENY  ALL', 'fw-brow deny']], bar: 'fw-bar deny', arms: ['1', '0'], stop: '1', trail: ['fw-trail deny', '0.9'] });
+  expect(at(2).tags[1]).toEqual(['1', 'fw-layer-front']);
+  // Step 5: the reply back at the visitor's laptop, whose screen glows; the gate open, no rule read.
+  expect(at(5)).toMatchObject({ bar: 'fw-bar allow', arms: ['0', '1'], lit: ['fw-glow-visitor'], board: [['1  ALLOW 443  ANY', 'fw-brow'], ['2  ALLOW 22   ADMIN', 'fw-brow'], ['3  DENY  ALL', 'fw-brow']] });
+  expect(at(5).tags[3]).toEqual(['1', 'fw-layer-front']);
+  // Step 6: the new order on the board, and the website visit turned away by the new rule 1.
+  expect(at(6).board).toEqual([['1  DENY  ALL', 'fw-brow deny'], ['2  ALLOW 443  ANY', 'fw-brow'], ['3  ALLOW 22   ADMIN', 'fw-brow']]);
 });
