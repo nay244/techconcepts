@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * ICMP, protocol 8 of How the Internet Works’ 14. Ping asks example.net whether it is there. Traceroute sends probes
@@ -30,7 +31,7 @@ const answers: TableDef = {
 
 const msg = messagesFor(answers);
 
-const icmp: Unit = {
+const icmp: LegacyUnitInput = {
   id: 'icmp',
   name: 'ICMP',
   fullName: 'Internet Control Message Protocol',

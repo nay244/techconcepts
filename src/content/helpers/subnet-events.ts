@@ -1,6 +1,6 @@
 import { formatIPv4, IPV4_ERROR, parseIPv4, type IPv4 } from '../../engine/net/ipv4';
 import { maskFromPrefix, subnetInfo } from '../../engine/net/subnet';
-import type { Board, Cue, Fact, Lesson, NoteEvent } from '../schema';
+import type { Board, Cue, Fact, Lesson, NoteEvent, Paragraph } from '../schema';
 
 /**
  * Builders for the Subnetting lesson's notes, so every number the lesson shows
@@ -150,12 +150,16 @@ export interface Prose {
  * cells, the boards, ids, cues, urls or the figure's tags: those are the
  * engine's or the page's, not words a lesson states. A lesson with more than one
  * unit puts the unit's id before each place: `alpha:steps.hello.narrative`.
+ * Learn's statements (`learn.lead`, `learn.why`) are one place, read as one
+ * paragraph; so is each Go deeper (`learn.deep`, `steps.hello.deep`), a line
+ * per paragraph.
  */
 export function learnerProse(lesson: Lesson): Prose[] {
   const out: Prose[] = [];
   const add = (place: string, text: string | undefined): void => {
     if (text !== undefined) out.push({ place, text });
   };
+  const joined = (items: readonly Paragraph[], between: ' ' | '\n'): string => items.map((item) => item.text).join(between);
   const addFacts = (at: string, facts: readonly Fact[]): void =>
     facts.forEach((f, i) => {
       add(`${at}.facts.${i}.label`, f.label);
@@ -178,7 +182,7 @@ export function learnerProse(lesson: Lesson): Prose[] {
       add(`${s}.title`, step.title);
       add(`${s}.sub`, step.sub);
       add(`${s}.narrative`, step.narrative);
-      add(`${s}.deep`, step.deep);
+      add(`${s}.deep`, joined(step.deep, '\n'));
       add(`${s}.status`, step.status);
       add(`${s}.idle`, step.idle);
       addFacts(s, step.facts);
@@ -188,15 +192,15 @@ export function learnerProse(lesson: Lesson): Prose[] {
       }
     }
     const { learn } = unit;
-    add(`${u}learn.lead`, learn.lead);
+    add(`${u}learn.lead`, joined(learn.lead, ' '));
     learn.terms.forEach((t, i) => {
       add(`${u}learn.terms.${i}.idea`, t.idea);
       add(`${u}learn.terms.${i}.name`, t.name);
     });
     learn.pattern.names.forEach((name, i) => add(`${u}learn.pattern.names.${i}`, name));
     add(`${u}learn.pattern.note`, learn.pattern.note);
-    add(`${u}learn.why`, learn.why);
-    add(`${u}learn.deep`, learn.deep);
+    add(`${u}learn.why`, joined(learn.why, ' '));
+    add(`${u}learn.deep`, joined(learn.deep, '\n'));
     addFacts(`${u}learn`, learn.facts);
     for (const q of unit.practice) {
       const p = `${u}practice.${q.id}`;

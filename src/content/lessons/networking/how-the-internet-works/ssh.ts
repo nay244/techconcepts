@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * SSH, protocol 13 of How the Internet Works’ 14. Version lines first, then each side’s lists (KEXINIT), then the key
@@ -28,7 +29,7 @@ const agreed: TableDef = {
 
 const msg = messagesFor(agreed);
 
-const ssh: Unit = {
+const ssh: LegacyUnitInput = {
   id: 'ssh',
   name: 'SSH',
   fullName: 'Secure Shell',

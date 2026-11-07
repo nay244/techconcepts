@@ -11,7 +11,7 @@ import { BitsBoard } from '../../../lesson/panels/BitsBoard';
 import { ScenePanel } from '../../../lesson/ScenePanel';
 import { lessonNumbers, lessonTitles } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
-import { validateLesson } from '../../define';
+import { checkStructure } from '../../define';
 import { checkStated, learnerProse } from '../../helpers/subnet-events';
 import { getEntries } from '../../registry';
 import type { Lesson, NoteEvent } from '../../schema';
@@ -28,7 +28,7 @@ const ip = (text: string): number => {
 const noteById = (id: string): NoteEvent => notes.find((e) => e.id === id)!;
 
 test('Subnetting validates', () => {
-  expect(() => validateLesson(subnetting)).not.toThrow();
+  expect(checkStructure(subnetting)).toEqual([]);
   expect(subnetting.units).toHaveLength(1);
   expect(unit.steps).toHaveLength(6);
   expect(events).toHaveLength(17);
@@ -51,7 +51,7 @@ test('the lesson is lesson 8, Subnetting, on the office figure with the bits boa
     name: 'Subnetting',
     fullName: 'Cutting one network into smaller ones',
     purpose: 'One network, cut into four',
-    osiLayers: [3],
+    osi: { layers: [3], cite: [] },
   });
   expect(unit.references.map((r) => r.label)).toEqual([
     'RFC 950: Internet Standard Subnetting Procedure',
@@ -348,7 +348,10 @@ function holderOf(lesson: Lesson, place: string): { parent: Record<string, unkno
 /** A copy of the lesson with `from` changed to `to` at `place`. */
 function changed(place: string, from: string, to: string): Lesson {
   const copy = structuredClone(subnetting);
-  const { parent, key } = holderOf(copy, place);
+  let { parent, key } = holderOf(copy, place);
+  // Learn's statements and a Go deeper's paragraphs are lists: the change goes in the item that holds `from`.
+  const list = parent[key];
+  if (Array.isArray(list)) [parent, key] = [list.find((item: { text: string }) => item.text.includes(from)) ?? {}, 'text'];
   const text = parent[key] as string;
   expect(text, place).toContain(from);
   parent[key] = text.replace(from, to);

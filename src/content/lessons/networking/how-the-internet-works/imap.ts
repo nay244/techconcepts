@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * IMAP, protocol 11 of How the Internet Works’ 14. Your letters are in your mailbox at mail.example.net as the part
@@ -31,7 +32,7 @@ const inbox: TableDef = {
 
 const msg = messagesFor(inbox);
 
-const imap: Unit = {
+const imap: LegacyUnitInput = {
   id: 'imap',
   name: 'IMAP',
   fullName: 'Internet Message Access Protocol',

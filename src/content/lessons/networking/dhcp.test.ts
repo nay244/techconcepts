@@ -5,7 +5,7 @@ import { deriveState, positionOf, stepEvents } from '../../../engine/timeline';
 import { formatBytes } from '../../../lib/format';
 import { lessonNumbers, misnamedLessons } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
-import { validateLesson } from '../../define';
+import { checkStructure } from '../../define';
 import type { MessageEvent } from '../../schema';
 import dhcp from './dhcp';
 
@@ -19,7 +19,7 @@ function leasesAfterStep(n: number) {
 }
 
 test('DHCP validates, has 5 steps and 3 questions', () => {
-  expect(() => validateLesson(dhcp)).not.toThrow();
+  expect(checkStructure(dhcp)).toEqual([]);
   expect(dhcp.units).toHaveLength(1);
   expect(unit.steps).toHaveLength(5);
   expect(unit.practice).toHaveLength(3);

@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * DNS, protocol 6 of How the Internet Works’ 14. The laptop asks its resolver for techconcepts.app, and the
@@ -30,7 +31,7 @@ const learned: TableDef = {
 
 const msg = messagesFor(learned);
 
-const dns: Unit = {
+const dns: LegacyUnitInput = {
   id: 'dns',
   name: 'DNS',
   fullName: 'Domain Name System',

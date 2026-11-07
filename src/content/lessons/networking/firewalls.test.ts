@@ -8,7 +8,7 @@ import { sceneViewOf } from '../../../scenes/driver';
 import { firewallDriver } from '../../../scenes/drivers/firewall';
 import { lessonNumbers, misnamedLessons, textsOf } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
-import { validateLesson } from '../../define';
+import { checkStructure } from '../../define';
 import { checkResults, RULES, RULESETS } from '../../helpers/firewall-events';
 import type { Lesson, MessageEvent, NoteEvent, Panel, SceneEvent, TableEvent } from '../../schema';
 import firewalls from './firewalls';
@@ -55,7 +55,7 @@ function tablesAt(n: number, played?: number) {
 // ---------------------------------------------------------------- the lesson
 
 test('Firewalls validates', () => {
-  expect(() => validateLesson(firewalls)).not.toThrow();
+  expect(checkStructure(firewalls)).toEqual([]);
   expect(firewalls.units).toHaveLength(1);
   expect(unit.steps).toHaveLength(6);
   expect(unit.practice).toHaveLength(3);
@@ -71,7 +71,7 @@ test('the lesson’s own words: title, subtitle, cert tags, summary, unit and re
     summary: 'Watch a firewall check each connection against its list of rules, from the top down, and see why the order of the rules matters.',
     figure: 'firewall',
   });
-  expect(unit).toMatchObject({ id: 'firewalls', name: 'Firewall', fullName: 'Network firewall', purpose: 'A guard for your network', osiLayers: [3, 4] });
+  expect(unit).toMatchObject({ id: 'firewalls', name: 'Firewall', fullName: 'Network firewall', purpose: 'A guard for your network', osi: { layers: [3, 4], cite: [] } });
   expect(unit.references).toEqual([
     { label: 'NIST SP 800-41 Rev. 1: Guidelines on Firewalls and Firewall Policy', url: 'https://csrc.nist.gov/pubs/sp/800/41/r1/final' },
   ]);

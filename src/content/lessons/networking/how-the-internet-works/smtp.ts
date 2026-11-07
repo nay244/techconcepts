@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * SMTP, protocol 9 of How the Internet Works’ 14. Alex’s mail app hands a letter to Alex’s own mail server over a
@@ -31,7 +32,7 @@ const trip: TableDef = {
 
 const msg = messagesFor(trip);
 
-const smtp: Unit = {
+const smtp: LegacyUnitInput = {
   id: 'smtp',
   name: 'SMTP',
   fullName: 'Simple Mail Transfer Protocol',

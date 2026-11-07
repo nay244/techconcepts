@@ -4,27 +4,17 @@ import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import { buildEntries } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { slotsFor } from '../engine/timeline';
 import { emptyProgress } from '../progress/store';
 import { Outline } from './Outline';
 
-// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
-
-const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
+const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 /** Alpha (core): 0 Overview, 1–5 steps, 6 Learn, 7 Practice. Beta (app): 8 Overview, 9–13 steps, 14 Learn, 15 Practice. */
-const TWO: Lesson = validateLesson(
-  makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }),
-).lesson;
+const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, 'how-the-internet-works': TWO });
 
 function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] = []) {

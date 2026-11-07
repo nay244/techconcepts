@@ -1,8 +1,9 @@
-import { expect, test, vi } from 'vitest';
+import { expect, test } from 'vitest';
 import { CERT_TAGS } from './certs';
-import { validateLesson } from './define';
+import { LEGACY_LESSONS } from './legacy';
 import {
   buildEntries,
+  checkLegacyList,
   getEntries,
   getLesson,
   getTrack,
@@ -10,18 +11,10 @@ import {
   neighbors,
   trackTotals,
 } from './registry';
-import { makeLesson, makeTwoUnitLesson } from './test-fixtures';
+import { liftedFixture, makeLesson, makeTwoUnitLesson } from './test-fixtures';
 import { comingSoonTracks, networkingTrack, tracks } from './tracks';
 
-// These tests build available entries from fixtures, while the real lessons load too (through the registry), so the
-// figure parts are the real ones with the fixture's added: each lesson validates on its own figure.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('./test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
-
-const lessonFor = (slug: string, title: string) => validateLesson(makeLesson({ slug, title })).lesson;
+const lessonFor = (slug: string, title: string) => liftedFixture(makeLesson({ slug, title }));
 
 const SLUGS = [
   'how-the-internet-works', 'osi-model', 'packets',
@@ -111,7 +104,7 @@ test('an available entry reports units, subtitle and maxPosition', () => {
   });
 
   // Two units of five steps: 16 positions, 0 to 15.
-  const internet = validateLesson(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' })).lesson;
+  const internet = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
   expect(buildEntries(networkingTrack, { 'how-the-internet-works': internet })[0]).toMatchObject({
     available: true,
     number: 1,
@@ -199,6 +192,29 @@ test('every lesson file that exists is available in the registry under its slug'
     if (entry.available) expect(getLesson(entry.trackId, entry.slug)?.slug).toBe(entry.slug);
     else expect(getLesson(entry.trackId, entry.slug)).toBeUndefined();
   }
+});
+
+// ------------------------------------------------------------ the closed legacy list
+
+test('the four ready lessons are legacy, and every legacy lesson is listed', () => {
+  const legacy = ['how-the-internet-works', 'subnetting', 'dhcp', 'firewalls'].map((s) => getLesson('networking', s)!);
+  expect(legacy.map((l) => l.origin)).toEqual(['legacy', 'legacy', 'legacy', 'legacy']);
+  const ready = getEntries('networking').filter((e) => e.available).map((e) => getLesson('networking', e.slug)!);
+  for (const lesson of ready.filter((l) => l.origin === 'legacy')) expect(LEGACY_LESSONS, lesson.slug).toContain(lesson.slug);
+});
+
+test('the build stops on a legacy lesson off the list, and on a listed slug whose lesson is not legacy', () => {
+  const ready = LEGACY_LESSONS.map((slug) => liftedFixture(makeLesson({ slug })));
+  expect(() => checkLegacyList(ready)).not.toThrow();
+  // A new lesson cannot take the legacy path.
+  expect(() => checkLegacyList([...ready, liftedFixture(makeLesson({ slug: 'osi-model' }))])).toThrow(
+    /"osi-model" is a legacy lesson, but it is not on the legacy list/,
+  );
+  // A lesson that has moved to the cited shape leaves the list: the list only shrinks.
+  const migrated = ready.map((l) => (l.slug === 'dhcp' ? { ...l, origin: 'cited' as const } : l));
+  expect(() => checkLegacyList(migrated)).toThrow(/"dhcp" is on the legacy list, but its lesson is cited/);
+  // So does a slug no lesson has any more.
+  expect(() => checkLegacyList(ready.filter((l) => l.slug !== 'dhcp'))).toThrow(/"dhcp" is on the legacy list, but no lesson has that slug/);
 });
 
 test('groupLessonModules groups by folder (track id) and file name (slug)', () => {

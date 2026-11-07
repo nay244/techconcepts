@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * POP3, protocol 10 of How the Internet Works’ 14. Two letters are waiting in your mailbox at mail.example.net as
@@ -29,7 +30,7 @@ const mailbox: TableDef = {
 
 const msg = messagesFor(mailbox);
 
-const pop3: Unit = {
+const pop3: LegacyUnitInput = {
   id: 'pop3',
   name: 'POP3',
   fullName: 'Post Office Protocol, version 3',

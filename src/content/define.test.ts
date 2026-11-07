@@ -1,7 +1,9 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { defineLesson, defineTrack, LessonValidationError, validateLesson } from './define';
-import type { LessonInput } from './schema';
-import { makeLesson, makeTwoUnitLesson, makeUnit, type UnitInput } from './test-fixtures';
+import { defineTrack, LessonValidationError } from './define';
+import { defineLegacyLesson, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
+import { liftedFixture, makeLesson, makeTwoUnitLesson, makeUnit } from './test-fixtures';
+
+// The structural rules (`checkStructure`) and today's limits, through the legacy path, which runs both.
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has
 // places, a flag cue and a text cue, layers, and a board on `subnet` only.
@@ -9,7 +11,7 @@ vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./tes
 
 const issuesOf = (input: unknown): string[] => {
   try {
-    validateLesson(input);
+    validateLegacyLesson(input);
     return [];
   } catch (e) {
     if (e instanceof LessonValidationError) return e.issues;
@@ -23,12 +25,12 @@ afterEach(() => {
 });
 
 // Shorthand for reaching into the first unit and its events.
-const unit = (l: LessonInput, i = 0): UnitInput => l.units[i]!;
-const ev = (l: LessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
+const unit = (l: LegacyLessonInput, i = 0): LegacyUnitInput => l.units[i]!;
+const ev = (l: LegacyLessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
 const words = (n: number) => 'word '.repeat(n).trim();
 
 /** The fixture with a rules panel, as Firewalls has: a rule list and the connections it remembers. */
-function withRulesPanel(): LessonInput {
+function withRulesPanel(): LegacyLessonInput {
   const l = makeLesson();
   const columns = [
     { key: 'n', label: '#' },
@@ -46,10 +48,9 @@ function withRulesPanel(): LessonInput {
 
 // ---------------------------------------------------------------- the fixtures
 
-test('a valid one-unit lesson passes and comes back unchanged', () => {
+test('a valid one-unit lesson passes and comes back lifted, every word as written', () => {
   const input = makeLesson();
-  const { lesson } = validateLesson(input);
-  expect(lesson).toEqual(input);
+  expect(validateLegacyLesson(input)).toEqual(liftedFixture(input));
 });
 
 test('the two-unit fixture is valid, and every call gives a fresh copy', () => {
@@ -66,7 +67,7 @@ test('layers and labels default to empty', () => {
   const input = makeLesson();
   delete (unit(input).scene as any).layers;
   delete (unit(input).scene as any).labels;
-  const { lesson } = validateLesson(input);
+  const lesson = validateLegacyLesson(input);
   expect(lesson.units[0]!.scene.layers).toEqual([]);
   expect(lesson.units[0]!.scene.labels).toEqual({});
 });
@@ -156,14 +157,15 @@ test('reports every broken rule together', () => {
   ev(l, 1, 0).log.colour = 'blue';
   let caught: unknown;
   try {
-    validateLesson(l);
+    validateLegacyLesson(l);
   } catch (e) {
     caught = e;
   }
   expect(caught).toBeInstanceOf(LessonValidationError);
   const err = caught as LessonValidationError;
   expect(err.issues).toHaveLength(4);
-  expect(err.issues[0]).toMatch(/4–6 steps/);
+  // The structural rules first, then today's limits.
+  expect(err.issues.at(-1)).toMatch(/4–6 steps/);
   expect(err.issues.join('\n')).toMatch(/"mars"/);
   expect(err.issues.join('\n')).toMatch(/cue "status" needs an arg/);
   expect(err.issues.join('\n')).toMatch(/"colour"/);
@@ -335,7 +337,7 @@ test('a scene with no start is given an empty one, as its layers and labels are'
   const l = makeLesson();
   delete (unit(l).scene as { start?: unknown }).start;
   delete (unit(l).scene as { layers?: unknown }).layers;
-  const { lesson } = validateLesson(l);
+  const lesson = validateLegacyLesson(l);
   expect([lesson.units[0]!.scene.start, lesson.units[0]!.scene.layers]).toEqual([[], []]);
 });
 
@@ -565,7 +567,7 @@ test('sequence view needs two parties', () => {
 });
 
 test('net-map scene titles over 51 characters are rejected', () => {
-  const at = (figure: LessonInput['figure'], length: number) => {
+  const at = (figure: LegacyLessonInput['figure'], length: number) => {
     const l = makeLesson({ figure });
     unit(l).scene.title = 'x'.repeat(length);
     return issuesOf(l);
@@ -597,16 +599,17 @@ test('a multi-unit lesson needs exactly 2 questions per unit', () => {
   expect(joined(three)).toMatch(/Unit "beta".*exactly 2 questions/);
 });
 
-// ---------------------------------------------------------------- defineLesson / defineTrack
+// ---------------------------------------------------------------- defineLegacyLesson / defineTrack
 
-test('defineLesson returns the validated lesson', () => {
-  expect(defineLesson(makeLesson()).slug).toBe('fixture-lesson');
+test('defineLegacyLesson returns the validated lesson, lifted', () => {
+  const lesson = defineLegacyLesson(makeLesson({ slug: 'dhcp' }));
+  expect([lesson.slug, lesson.origin]).toEqual(['dhcp', 'legacy']);
 });
 
-test('defineLesson throws LessonValidationError for a bad lesson', () => {
-  const input = makeLesson();
+test('defineLegacyLesson throws LessonValidationError for a bad lesson', () => {
+  const input = makeLesson({ slug: 'dhcp' });
   unit(input).steps = unit(input).steps.slice(0, 2);
-  expect(() => defineLesson(input)).toThrow(LessonValidationError);
+  expect(() => defineLegacyLesson(input)).toThrow(LessonValidationError);
 });
 
 const trackOf = (parts: { id: string; slugs: string[] }[]) => ({

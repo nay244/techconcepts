@@ -2,11 +2,10 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import { buildEntries, trackTotals } from '../content/registry';
 import type { AvailableSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { makeLesson } from '../content/test-fixtures';
+import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { knownFrom } from '../lib/entries';
 import { presentTags, trackParts } from '../lib/track';
@@ -16,17 +15,9 @@ import { ResetProgress } from './ResetProgress';
 import { TrackLessons } from './TrackLessons';
 import { TrackSidebar } from './TrackSidebar';
 
-// The track here is built from fixtures filed as DHCP and Firewalls, while the real lessons load too (through the
-// registry), so the figure parts are the real ones with the fixture's added: each lesson validates on its own figure.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
-
 const lessons: Record<string, Lesson> = {
-  dhcp: validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP', certTags: ['network-plus', 'ccna'] })).lesson,
-  firewalls: validateLesson(makeLesson({ slug: 'firewalls', title: 'Firewalls', certTags: ['network-plus', 'security-plus'] })).lesson,
+  dhcp: liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', certTags: ['network-plus', 'ccna'] })),
+  firewalls: liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls', certTags: ['network-plus', 'security-plus'] })),
 };
 const entries = buildEntries(networkingTrack, lessons);
 const available = entries.filter((e): e is AvailableSummary => e.available);

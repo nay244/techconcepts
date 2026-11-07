@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * TCP, protocol 3 of How the Internet Works’ 14. The laptop and the web server shake hands, then the page comes
@@ -28,7 +29,7 @@ const pieces: TableDef = {
 
 const msg = messagesFor(pieces);
 
-const tcp: Unit = {
+const tcp: LegacyUnitInput = {
   id: 'tcp',
   name: 'TCP',
   fullName: 'Transmission Control Protocol',

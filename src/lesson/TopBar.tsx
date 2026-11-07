@@ -105,7 +105,9 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
   }
 
   const n = unit.steps.length;
-  const osi = osiHeading(unit.osiLayers, { named: lesson.units.length === 1 });
+  // A unit that spans layers names none, so it shows no OSI chip.
+  const layers = unit.osi === 'spans' ? [] : unit.osi.layers;
+  const osi = osiHeading(layers, { named: lesson.units.length === 1 });
   const finished = new Set(
     entries.filter((e) => Object.hasOwn(progress.lessons, e.key) && progress.lessons[e.key]!.status === 'finished').map((e) => e.key),
   );
@@ -143,7 +145,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
           <p className="console__ptitle">{osi}</p>
           <span className="topbar__chips" aria-hidden="true">
             {[1, 2, 3, 4, 5, 6, 7].map((layer) => (
-              <i key={layer} data-on={unit.osiLayers.includes(layer) ? '' : undefined}>
+              <i key={layer} data-on={layers.includes(layer) ? '' : undefined}>
                 {layer}
               </i>
             ))}

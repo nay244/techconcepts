@@ -2,27 +2,17 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import { buildEntries, neighbors } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { slotsFor } from '../engine/timeline';
 import { Explanation } from './Explanation';
 import { Rich } from './Rich';
 
-// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
-
-const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
-const FIREWALLS: Lesson = validateLesson(makeLesson({ slug: 'firewalls', title: 'Firewalls' })).lesson;
-const TWO: Lesson = validateLesson(
-  makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }),
-).lesson;
+const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
+const FIREWALLS: Lesson = liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls' }));
+const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': TWO });
 
 function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
@@ -100,6 +90,59 @@ test('Learn shows the lead, the idea → name pairs and the pattern box', () => 
   const pattern = screen.getByText('Say hello, get an answer, then look it up next time.').closest('div')!;
   expect(within(pattern).getByText('Neighbor Hello')).toBeInTheDocument();
   expect(within(pattern).getByText('Table Lookup')).toBeInTheDocument();
+});
+
+/** The `<p>` whose words, bold marks aside, are exactly `text`. */
+const paragraph = (text: string): HTMLElement => screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === text);
+
+test('Learn joins its statements into one paragraph; Go deeper gives each paragraph its own', () => {
+  const lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
+  const { learn, steps } = lesson.units[0]!;
+  learn.lead = [
+    { id: 'lead-1', text: 'A **router** keeps a list.', cite: [] },
+    { id: 'lead-2', text: 'It asks only once.', cite: [] },
+  ];
+  learn.why = [
+    { id: 'why-1', text: 'Helpdesk staff read it.', cite: [] },
+    { id: 'why-2', text: 'So do **you**.', cite: [] },
+  ];
+  learn.deep = [
+    { id: 'deep-1', text: 'Learn, first paragraph.', cite: [] },
+    { id: 'deep-2', text: 'Learn, second paragraph.', cite: [] },
+  ];
+  steps[0]!.deep = [
+    { text: 'Step, first paragraph.', cite: [] },
+    { text: 'Step, second **paragraph**.', cite: [] },
+  ];
+
+  const { unmount } = show(6, lesson);
+  const lead = paragraph('A router keeps a list. It asks only once.');
+  expect(within(lead).getByText('router', { selector: 'b' })).toBeInTheDocument();
+  expect(within(paragraph('Helpdesk staff read it. So do you.')).getByText('you', { selector: 'b' })).toBeInTheDocument();
+  const learnDeep = [paragraph('Learn, first paragraph.'), paragraph('Learn, second paragraph.')];
+  for (const p of learnDeep) expect(deeper()).toContainElement(p);
+  expect(learnDeep[0]).not.toBe(learnDeep[1]);
+  unmount();
+
+  show(1, lesson);
+  const stepDeep = [paragraph('Step, first paragraph.'), paragraph('Step, second paragraph.')];
+  for (const p of stepDeep) expect(deeper()).toContainElement(p);
+  expect(within(stepDeep[1]!).getByText('paragraph', { selector: 'b' })).toBeInTheDocument();
+});
+
+test('a lifted lesson renders the same Learn words as its legacy text', () => {
+  const input = makeLesson({ slug: 'dhcp', title: 'DHCP' });
+  const lesson = liftedFixture(input);
+  const plain = (text: string) => text.replaceAll('**', '');
+  const { learn, steps } = input.units[0]!;
+
+  const { unmount } = show(6, lesson);
+  for (const text of [learn.lead, learn.why]) expect(paragraph(plain(text))).toHaveClass('explain__narr');
+  expect(deeper()).toContainElement(paragraph(plain(learn.deep)));
+  unmount();
+
+  show(1, lesson);
+  expect(deeper()).toContainElement(paragraph(plain(steps[0]!.deep)));
 });
 
 test('the end row names the next ready lesson, or says the last ready one for now', () => {

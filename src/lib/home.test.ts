@@ -1,18 +1,10 @@
-import { expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
+import { expect, test } from 'vitest';
 import { getLesson } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { tracks } from '../content/tracks';
 import { resumeLabel, slotsFor } from '../engine/timeline';
 import { firstSentence, logSample, midSentence, resumePlaces } from './home';
-
-// The real lessons and the small fixtures both validate: the fixtures' stand-in parts are added to the real ones.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
 
 const lesson = (slug: string): Lesson => {
   const found = getLesson('networking', slug);
@@ -87,13 +79,13 @@ test('the receiver reads mid-sentence, as the mockup writes it, and an acronym k
 });
 
 test('a sample with fewer messages than it asks for is refused by name', () => {
-  const small = validateLesson(makeLesson()).lesson;
+  const small = liftedFixture(makeLesson());
   expect(() => logSample(small, 40)).toThrow(/fixture-lesson.*40/);
 });
 
 test('a sample row that is a note, not a message, is refused by name', () => {
   // The fixture's log runs m1, m2, then the note n1.
-  const fixture = validateLesson(makeLesson()).lesson;
+  const fixture = liftedFixture(makeLesson());
   expect(() => logSample(fixture, 2)).not.toThrow();
   expect(() => logSample(fixture, 3)).toThrow(/fixture-lesson.*note/);
 });
@@ -116,7 +108,7 @@ test('each place reads after "You’re on" and before "in <lesson>"; a step keep
 });
 
 test('in a lesson of many units the unit’s name says which part', () => {
-  const two = validateLesson(makeTwoUnitLesson()).lesson;
+  const two = liftedFixture(makeTwoUnitLesson());
   expect(resumePlaces(two)).toEqual([
     'the Alpha Overview',
     'Alpha step 1 of 5',

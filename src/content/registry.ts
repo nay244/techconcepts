@@ -1,5 +1,6 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
+import { LEGACY_LESSONS } from './legacy';
 import type { Lesson, Track } from './schema';
 import { tracks } from './tracks';
 
@@ -132,6 +133,29 @@ export function groupLessonModules(modules: Record<string, Lesson>): Record<stri
   return grouped;
 }
 
+/**
+ * Holds the legacy list closed: throws, naming each, when a lesson is legacy but not on `LEGACY_LESSONS`, or a slug on
+ * the list has no lesson or a lesson that is cited. So the list only ever shrinks, as each lesson moves to citations.
+ */
+export function checkLegacyList(lessons: readonly Lesson[]): void {
+  const listed: readonly string[] = LEGACY_LESSONS;
+  const problems: string[] = [];
+  for (const lesson of lessons) {
+    if (lesson.origin === 'legacy' && !listed.includes(lesson.slug)) {
+      problems.push(`"${lesson.slug}" is a legacy lesson, but it is not on the legacy list, which is closed.`);
+    }
+  }
+  for (const slug of listed) {
+    const own = lessons.filter((l) => l.slug === slug);
+    if (own.length === 0) {
+      problems.push(`"${slug}" is on the legacy list, but no lesson has that slug; take it off the list.`);
+    } else if (own.some((l) => l.origin !== 'legacy')) {
+      problems.push(`"${slug}" is on the legacy list, but its lesson is cited; take it off the list.`);
+    }
+  }
+  if (problems.length > 0) throw new Error(`The legacy list is out of date:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
+}
+
 // Test files sit beside the lessons they cover, so they are excluded here. Only
 // files directly in a track's folder are lessons: a lesson's own parts (lesson
 // 1's protocols in lessons/networking/how-the-internet-works/) are not.
@@ -140,6 +164,7 @@ const modules = import.meta.glob<Lesson>(['./lessons/*/*.ts', '!./lessons/*/*.te
   import: 'default',
 });
 const lessonsByTrack = groupLessonModules(modules);
+checkLegacyList(Object.values(lessonsByTrack).flatMap((lessons) => Object.values(lessons)));
 
 for (const trackId of Object.keys(lessonsByTrack)) {
   if (!tracks.some((t) => t.id === trackId)) {

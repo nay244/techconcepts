@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * DHCP, protocol 7 of How the Internet Works’ 14. The laptop joins the Wi-Fi with no address, and the router lends
@@ -33,7 +34,7 @@ const settings: TableDef = {
 
 const msg = messagesFor(settings);
 
-const dhcp: Unit = {
+const dhcp: LegacyUnitInput = {
   id: 'dhcp',
   name: 'DHCP',
   fullName: 'Dynamic Host Configuration Protocol',

@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * TLS/SSL, protocol 14 of How the Internet Works’ 14. The TCP line to techconcepts.app is already open as the part
@@ -28,7 +29,7 @@ const handshake: TableDef = {
 
 const msg = messagesFor(handshake);
 
-const tls: Unit = {
+const tls: LegacyUnitInput = {
   id: 'tls',
   name: 'TLS/SSL',
   fullName: 'Transport Layer Security (SSL is its old name)',

@@ -1,7 +1,7 @@
-import { expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
-import type { Board, Lesson, LessonInput, MessageEvent, SceneEvent } from '../content/schema';
-import { makeLesson, makeTwoUnitLesson, makeUnit } from '../content/test-fixtures';
+import { expect, test } from 'vitest';
+import type { LegacyLessonInput, LegacyUnitInput } from '../content/legacy';
+import type { Board, Lesson, MessageEvent, SceneEvent } from '../content/schema';
+import { liftedFixture, makeLesson, makeTwoUnitLesson, makeUnit } from '../content/test-fixtures';
 import { applyTableEvent, initialTables } from './tables';
 import {
   appliedEvents,
@@ -15,12 +15,8 @@ import {
   type Slot,
 } from './timeline';
 
-// The real FIGURE_PARTS stays empty until each figure is built, so the fixtures
-// validate against the stand-in parts.
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
-
-/** Goes through validateLesson, so a typo in a test lesson fails loudly instead of testing nothing. */
-const build = (input: LessonInput): Lesson => validateLesson(input).lesson;
+/** Goes through the legacy schema, so a typo in a test lesson fails loudly instead of testing nothing. */
+const build = (input: LegacyLessonInput): Lesson => liftedFixture(input);
 
 /** The row the fixture's step 2 adds to the neighbor table. */
 const LAPTOP_ROW = { ip: '192.168.1.10', mac: '00:00:5E:00:53:0A' };
@@ -32,7 +28,7 @@ const PHONE_ROW = { ip: '192.168.1.20', mac: '00:00:5E:00:53:0B' };
  * m1 · m2, t-add · t-match, n1 · m3 (dropped) · m4.
  * Positions: alpha 0 Overview, 1–5 steps, 6 Learn, 7 Practice; beta 8 Overview, 9–13 steps, 14 Learn, 15 Practice.
  */
-function twoUnits(): LessonInput {
+function twoUnits(): LegacyLessonInput {
   const input = makeTwoUnitLesson();
   const panel = input.units[1]!.scene.panel;
   if (panel?.type !== 'table') throw new Error('the fixture should have a table panel');
@@ -300,7 +296,7 @@ test('a unit’s tables are its panel’s: one for a table, rules and conns for 
     conns: { rows: [{ who: 'laptop' }], highlight: null, missed: [] },
   });
 
-  const withoutTables = (panel: LessonInput['units'][number]['scene']['panel']): Lesson => {
+  const withoutTables = (panel: LegacyUnitInput['scene']['panel']): Lesson => {
     const input = makeLesson({ figure: 'subnet' });
     const u = input.units[0]!;
     u.scene.panel = panel;

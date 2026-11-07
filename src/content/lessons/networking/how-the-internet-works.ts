@@ -1,4 +1,4 @@
-import { defineLesson } from '../../define';
+import { defineLegacyLesson } from '../../legacy';
 import dhcp from './how-the-internet-works/dhcp';
 import dns from './how-the-internet-works/dns';
 import ftp from './how-the-internet-works/ftp';
@@ -23,7 +23,7 @@ import udp from './how-the-internet-works/udp';
 /** The protocols in the order the lesson teaches them, the order of Protocol Explorer's list. */
 export const UNIT_ORDER = ['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls'] as const;
 
-export default defineLesson({
+export default defineLegacyLesson({
   slug: 'how-the-internet-works',
   title: 'How the Internet Works',
   subtitle: 'The protocols behind every page',

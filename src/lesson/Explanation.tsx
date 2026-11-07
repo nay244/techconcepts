@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { AvailableSummary } from '../content/registry';
-import type { Fact, Lesson, Source, Unit } from '../content/schema';
+import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
 import { positionOf, type Position, type Slot } from '../engine/timeline';
 import { wrapAtDots } from '../lib/wrapAtDots';
 import { placeLabel } from './placeLabel';
@@ -51,6 +51,33 @@ function Facts({ facts }: { facts: Fact[] }) {
         </Fragment>
       ))}
     </dl>
+  );
+}
+
+/** Learn's statements as one paragraph: their texts, joined by a space. */
+function Statements({ items }: { items: Statement[] }) {
+  return (
+    <p className="explain__narr">
+      {items.map((item, i) => (
+        <Fragment key={item.id}>
+          {i > 0 ? ' ' : null}
+          <Rich text={item.text} />
+        </Fragment>
+      ))}
+    </p>
+  );
+}
+
+/** A Go deeper's paragraphs, each its own. */
+function Paragraphs({ items }: { items: Paragraph[] }) {
+  return (
+    <>
+      {items.map((item, i) => (
+        <p key={i}>
+          <Rich text={item.text} />
+        </p>
+      ))}
+    </>
   );
 }
 
@@ -224,9 +251,7 @@ export function Explanation(props: ExplanationProps) {
           <Rich text={step.narrative} />
         </p>
         <GoDeeper open={deeperOpen} onToggle={setDeeperOpen}>
-          <p>
-            <Rich text={step.deep} />
-          </p>
+          <Paragraphs items={step.deep} />
           <Facts facts={step.facts} />
         </GoDeeper>
       </>
@@ -237,9 +262,7 @@ export function Explanation(props: ExplanationProps) {
       <>
         <h2 className="explain__title">{LEARN_TITLE}</h2>
         <p className="explain__sub">{LEARN_SUB}</p>
-        <p className="explain__narr">
-          <Rich text={learn.lead} />
-        </p>
+        <Statements items={learn.lead} />
         <ol className="explain__terms" aria-label="Terms">
           {learn.terms.map((term, i) => (
             <li key={i}>
@@ -263,13 +286,9 @@ export function Explanation(props: ExplanationProps) {
             <Rich text={learn.pattern.note} />
           </p>
         </div>
-        <p className="explain__narr">
-          <Rich text={learn.why} />
-        </p>
+        <Statements items={learn.why} />
         <GoDeeper open={deeperOpen} onToggle={setDeeperOpen}>
-          <p>
-            <Rich text={learn.deep} />
-          </p>
+          <Paragraphs items={learn.deep} />
           <Facts facts={learn.facts} />
           <Sources sources={unit.references} />
         </GoDeeper>

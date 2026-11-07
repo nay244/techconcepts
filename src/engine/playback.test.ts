@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import type { Lesson, SceneEvent } from '../content/schema';
-import { makeTwoUnitLesson } from '../content/test-fixtures';
+import { liftedFixture, makeTwoUnitLesson } from '../content/test-fixtures';
 import {
   createPlaybackReducer,
   HOLD_MS,
@@ -18,10 +17,6 @@ import {
 } from './playback';
 import { deriveState, stepEvents } from './timeline';
 
-// The real FIGURE_PARTS stays empty until each figure is built, so the fixtures
-// validate against the stand-in parts.
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
-
 /**
  * Two units of five steps. Alpha keeps the fixture's events: step 1 m1; 2 m2,
  * t-add; 3 t-match, n1; 4 m3; 5 m4. Beta's first and last steps have none, as
@@ -33,7 +28,7 @@ function fixture(): Lesson {
   const beta = input.units[1]!;
   beta.steps[0]!.events = [];
   beta.steps[4]!.events = [];
-  return validateLesson(input).lesson;
+  return liftedFixture(input);
 }
 
 const L = fixture();

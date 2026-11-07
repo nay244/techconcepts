@@ -1,13 +1,12 @@
+import type { z } from 'zod';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
 import { formatBytes } from '../lib/format';
 import {
-  lessonSchema,
   trackSchema,
   type Cue,
   type Lesson,
-  type LessonInput,
   type Row,
   type SceneEvent,
   type TableDef,
@@ -91,9 +90,13 @@ interface UnitContext {
 
 // ---------------------------------------------------------------- unit rules
 
-function checkUnitLimits(u: Unit, at: string, multiUnit: boolean, issues: string[]): void {
+/**
+ * Today's content limits for one unit (`at` names it in each issue): step, fact, question, option, term and pattern
+ * counts, narrative and hook words, and at least one reference. The legacy path runs them until each track carries
+ * its own limits (direction doc §4.4).
+ */
+export function checkUnitLimits(u: Unit, at: string, multiUnit: boolean, issues: string[]): void {
   if (!inRange(u.steps.length, 4, 6)) issues.push(`${at}: a unit needs 4–6 steps; this one has ${u.steps.length}.`);
-  for (const id of duplicates(u.steps.map((s) => s.id))) issues.push(`${at}: Duplicate step id "${id}".`);
 
   for (const step of u.steps) {
     if (!inRange(step.facts.length, 2, 4)) {
@@ -116,7 +119,6 @@ function checkUnitLimits(u: Unit, at: string, multiUnit: boolean, issues: string
   } else if (!multiUnit && !inRange(questions, 2, 3)) {
     issues.push(`${at}: Practice needs 2–3 questions; this unit has ${questions}.`);
   }
-  for (const id of duplicates(u.practice.map((q) => q.id))) issues.push(`${at}: Duplicate question id "${id}".`);
   for (const q of u.practice) {
     if (!inRange(q.options.length, 2, 4)) {
       issues.push(`${at}: Question "${q.id}" needs 2–4 options; it has ${q.options.length}.`);
@@ -291,7 +293,8 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
 
 function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
   const at = `Unit "${u.id}"`;
-  checkUnitLimits(u, at, l.units.length > 1, issues);
+  for (const id of duplicates(u.steps.map((s) => s.id))) issues.push(`${at}: Duplicate step id "${id}".`);
+  for (const id of duplicates(u.practice.map((q) => q.id))) issues.push(`${at}: Duplicate question id "${id}".`);
 
   const c: UnitContext = {
     figure: l.figure,
@@ -322,28 +325,27 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
 // ---------------------------------------------------------------- public API
 
 /**
- * Checks a lesson and returns it. Throws one
- * LessonValidationError listing every problem found. Shape problems (a missing
- * field, a wrong type, a key the schema does not know) are reported first on
- * their own, because the rules below need a well-formed lesson to compare against.
+ * Parses a lesson's shape with `schema`, or throws one LessonValidationError naming every shape problem (a missing
+ * field, a wrong type, a key the schema does not know) with its path. Shape problems are reported on their own,
+ * because the rules after them need a well-formed lesson to compare against.
  */
-export function validateLesson(input: unknown): { lesson: Lesson } {
-  const parsed = lessonSchema.safeParse(input);
+export function parseLessonShape<S extends z.ZodType>(schema: S, input: unknown): z.output<S> {
+  const parsed = schema.safeParse(input);
   if (!parsed.success) throw new LessonValidationError(parsed.error.issues.map(describeZodIssue), slugOf(input));
-  const lesson = parsed.data;
+  return parsed.data;
+}
 
+/**
+ * The structural rules every lesson keeps, whichever path it came by, as readable issues (empty when it has none): a
+ * cert tag; unique unit, step, question, event and table ids; and a scene, events, tables and cues that fit the
+ * lesson's figure and each other.
+ */
+export function checkStructure(lesson: Lesson): string[] {
   const issues: string[] = [];
   if (lesson.certTags.length < 1) issues.push('A lesson needs at least 1 cert tag.');
   for (const id of duplicates(lesson.units.map((u) => u.id))) issues.push(`Duplicate unit id "${id}".`);
   for (const u of lesson.units) checkUnit(lesson, u, issues);
-
-  if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
-  return { lesson };
-}
-
-/** The entry point for lesson files: validates at import, so a bad lesson fails the build. */
-export function defineLesson(input: LessonInput): Lesson {
-  return validateLesson(input).lesson;
+  return issues;
 }
 
 /** Validates a track's shape and that part ids and lesson slugs are unique. */

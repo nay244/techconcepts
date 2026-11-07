@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest';
 import type { Lesson } from '../content/schema';
-import { makeTwoUnitLesson } from '../content/test-fixtures';
+import { liftedFixture, makeTwoUnitLesson } from '../content/test-fixtures';
 import { deriveState, positionOf, type SlotKind } from '../engine/timeline';
 import { landedEvent, marksOf, sceneViewOf } from './driver';
 
 /** The two-unit fixture, with its first unit's steps 2 and 4 setting the laptop's status as they start. */
 function lessonWithStatuses(): Lesson {
-  const lesson = makeTwoUnitLesson() as Lesson;
+  const lesson = liftedFixture(makeTwoUnitLesson());
   lesson.units[0]!.steps[1]!.status = 'Asking';
   lesson.units[0]!.steps[3]!.status = 'Waiting';
   return lesson;
@@ -55,7 +55,7 @@ test('a scene view carries the unit’s layers, labels and start with the derive
 });
 
 test('landed is the latest message or note of the step so far: a table event it brings does not take its place', () => {
-  const lesson = makeTwoUnitLesson() as Lesson;
+  const lesson = liftedFixture(makeTwoUnitLesson());
   const steps = lesson.units[0]!.steps;
   const landed = (step: number, played: number) => viewAt(lesson, 0, 'step', step, played).landed;
   // Step 2: a message, then the table event it brings. The message stays the one that landed.

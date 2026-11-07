@@ -1,7 +1,7 @@
 import { formatIPv4, parseIPv4, toOctetBits, type IPv4 } from '../../../engine/net/ipv4';
 import { maskFromPrefix, sameSubnet, subnetInfo, type SubnetInfo } from '../../../engine/net/subnet';
-import { defineLesson } from '../../define';
 import { calc, checkStated, subnetValue, type Stated } from '../../helpers/subnet-events';
+import { defineLegacyLesson } from '../../legacy';
 import type { Board, Cue, NoteEvent } from '../../schema';
 
 /**
@@ -124,7 +124,7 @@ function compare(o: { id: string; plain: string; board: Board; cues?: Cue[] }): 
   return calc({ ...o, row: same ? 'Same subnet' : 'Different subnet', shown: 'compared' });
 }
 
-const subnetting = defineLesson({
+const subnetting = defineLegacyLesson({
   slug: 'subnetting',
   title: 'Subnetting',
   subtitle: 'Splitting networks into smaller ones',

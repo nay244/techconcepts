@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * HTTPS, protocol 2 of How the Internet Works’ 14. The browser opens techconcepts.app as HTTP opens a page, with
@@ -28,7 +29,7 @@ const seen: TableDef = {
 
 const msg = messagesFor(seen);
 
-const https: Unit = {
+const https: LegacyUnitInput = {
   id: 'https',
   name: 'HTTPS',
   fullName: 'HTTP Secure',

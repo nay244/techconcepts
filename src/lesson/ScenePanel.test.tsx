@@ -3,17 +3,13 @@ import { act, render, screen, within } from '@testing-library/react';
 import { useMemo } from 'react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import type { Lesson } from '../content/schema';
-import { makeLesson, makeUnit } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeUnit } from '../content/test-fixtures';
 import { pendingEvent, type PlaybackState } from '../engine/playback';
 import { deriveState } from '../engine/timeline';
 import type { PanelMark, PlayOptions, SceneView } from '../scenes/driver';
 import { UnitPanel } from './panels/UnitPanel';
 import { ScenePanel } from './ScenePanel';
-
-// No lesson files exist yet, so the lessons are fixtures, which validate against the stand-in figure parts.
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
 
 /** One stand-in driver for every figure, whose calls the tests read. */
 const fake = vi.hoisted(() => {
@@ -35,7 +31,7 @@ vi.mock('./panels/UnitPanel', async (importOriginal) => {
  * Reply (m2, t-add), 3 Table Lookup (t-match, n1), 4 Lost Message (m3),
  * 5 Retransmission (m4), 6 Learn, 7 Practice.
  */
-const LESSON: Lesson = validateLesson(makeLesson()).lesson;
+const LESSON: Lesson = liftedFixture(makeLesson());
 const DATA = { routes: { a: [[0, 0]] } };
 const FIGURE = <svg data-figure="dhcp" role="img" aria-label="Fixture figure" />;
 
@@ -213,7 +209,7 @@ test('switching to Sequence and back re-shows the settled Network state', async 
 
 test('the toggle is hidden when views has only network', () => {
   const unit = makeUnit();
-  const lesson = validateLesson(makeLesson({ units: [{ ...unit, scene: { ...unit.scene, views: ['network'] } }] })).lesson;
+  const lesson = liftedFixture(makeLesson({ units: [{ ...unit, scene: { ...unit.scene, views: ['network'] } }] }));
   render(panel(at(0, 0, 'idle'), lesson));
   expect(screen.queryByRole('group', { name: 'View' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Sequence' })).not.toBeInTheDocument();

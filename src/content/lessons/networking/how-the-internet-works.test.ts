@@ -8,7 +8,7 @@ import { sceneViewOf } from '../../../scenes/driver';
 import { netMapDriver } from '../../../scenes/drivers/net-map';
 import { lessonNumbers, lessonTitles, misnamedLessons, textsOf } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
-import { validateLesson } from '../../define';
+import { checkStructure } from '../../define';
 import { getEntries, getLesson } from '../../registry';
 import type { MessageEvent, Unit } from '../../schema';
 import internet, { UNIT_ORDER } from './how-the-internet-works';
@@ -66,21 +66,21 @@ test('the lesson is lesson 1, How the Internet Works, on the network map', () =>
     units: 14,
     stepCount: 78,
   });
-  expect(internet.units.map((u) => [u.name, u.fullName, u.purpose, u.group, u.osiLayers])).toEqual([
-    ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', [7]],
-    ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', [7]],
-    ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core', [4]],
-    ['UDP', 'User Datagram Protocol', 'Quick, no checking', 'core', [4]],
-    ['IP', 'Internet Protocol', 'Addresses and routes', 'core', [3]],
-    ['DNS', 'Domain Name System', 'Names into numbers', 'app', [7]],
-    ['DHCP', 'Dynamic Host Configuration Protocol', 'Getting an address', 'app', [7]],
-    ['ICMP', 'Internet Control Message Protocol', 'Network check-ups', 'core', [3]],
-    ['SMTP', 'Simple Mail Transfer Protocol', 'Sending email', 'app', [7]],
-    ['POP3', 'Post Office Protocol, version 3', 'Downloading email', 'app', [7]],
-    ['IMAP', 'Internet Message Access Protocol', 'Email kept in sync', 'app', [7]],
-    ['FTP', 'File Transfer Protocol', 'Moving files', 'app', [7]],
-    ['SSH', 'Secure Shell', 'Remote control, sealed', 'security', [7]],
-    ['TLS/SSL', 'Transport Layer Security (SSL is its old name)', 'The seal itself', 'security', [6]],
+  expect(internet.units.map((u) => [u.name, u.fullName, u.purpose, u.group, u.osi])).toEqual([
+    ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
+    ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', { layers: [7], cite: [] }],
+    ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core', { layers: [4], cite: [] }],
+    ['UDP', 'User Datagram Protocol', 'Quick, no checking', 'core', { layers: [4], cite: [] }],
+    ['IP', 'Internet Protocol', 'Addresses and routes', 'core', { layers: [3], cite: [] }],
+    ['DNS', 'Domain Name System', 'Names into numbers', 'app', { layers: [7], cite: [] }],
+    ['DHCP', 'Dynamic Host Configuration Protocol', 'Getting an address', 'app', { layers: [7], cite: [] }],
+    ['ICMP', 'Internet Control Message Protocol', 'Network check-ups', 'core', { layers: [3], cite: [] }],
+    ['SMTP', 'Simple Mail Transfer Protocol', 'Sending email', 'app', { layers: [7], cite: [] }],
+    ['POP3', 'Post Office Protocol, version 3', 'Downloading email', 'app', { layers: [7], cite: [] }],
+    ['IMAP', 'Internet Message Access Protocol', 'Email kept in sync', 'app', { layers: [7], cite: [] }],
+    ['FTP', 'File Transfer Protocol', 'Moving files', 'app', { layers: [7], cite: [] }],
+    ['SSH', 'Secure Shell', 'Remote control, sealed', 'security', { layers: [7], cite: [] }],
+    ['TLS/SSL', 'Transport Layer Security (SSL is its old name)', 'The seal itself', 'security', { layers: [6], cite: [] }],
   ]);
 });
 
@@ -103,16 +103,16 @@ test('the DHCP part and lesson 10, DHCP, both call their unit "dhcp", and each v
   const part = unitById('dhcp');
   expect(getEntries('networking').find((e) => e.slug === 'dhcp')).toMatchObject({ number: 10, available: true, key: 'networking/dhcp' });
   expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({ key: 'networking/how-the-internet-works' });
-  expect(() => validateLesson(lesson10)).not.toThrow();
-  expect(() => validateLesson(internet)).not.toThrow();
+  expect(checkStructure(lesson10)).toEqual([]);
+  expect(checkStructure(internet)).toEqual([]);
   expect([lesson10.units.map((u) => u.id), part.id]).toEqual([['dhcp'], 'dhcp']);
   expect(lesson10.figure).toBe('dhcp');
   // The part plays on the network map, at home, with no server plate of its own.
   expect([internet.figure, part.scene.layers]).toEqual(['net-map', []]);
 });
 
-test('each protocol validates, has 5–6 steps and and 2 questions', () => {
-  expect(() => validateLesson(internet)).not.toThrow();
+test('each protocol validates, has 5–6 steps and 2 questions', () => {
+  expect(checkStructure(internet)).toEqual([]);
   for (const u of internet.units) {
     expect(u.steps.length, u.id).toBeGreaterThanOrEqual(5);
     expect(u.steps.length, u.id).toBeLessThanOrEqual(6);

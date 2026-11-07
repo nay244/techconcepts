@@ -1,6 +1,6 @@
 import { formatBytes, formatTime } from '../../../lib/format';
-import { defineLesson } from '../../define';
 import { dhcpLayer, ethernetLayer, ipv4Layer, packet, udpLayer } from '../../helpers/packets';
+import { defineLegacyLesson } from '../../legacy';
 import type { Field, MessageEvent, MessageKind, Packet, TableEvent } from '../../schema';
 
 /**
@@ -246,7 +246,7 @@ const leaseRenewed: TableEvent = {
 
 // ------------------------------------------------------------------- lesson
 
-export default defineLesson({
+export default defineLegacyLesson({
   slug: 'dhcp',
   title: 'DHCP',
   subtitle: 'Getting an address automatically',

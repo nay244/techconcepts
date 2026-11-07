@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * UDP, protocol 4 of How the Internet Works’ 14. In a voice call, the laptop sends a slice of sound every 20
@@ -30,7 +31,7 @@ const voice: TableDef = {
 
 const msg = messagesFor(voice);
 
-const udp: Unit = {
+const udp: LegacyUnitInput = {
   id: 'udp',
   name: 'UDP',
   fullName: 'User Datagram Protocol',

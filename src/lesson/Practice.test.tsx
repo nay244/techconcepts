@@ -4,10 +4,10 @@ import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Question } from '../content/schema';
-import { makeUnit } from '../content/test-fixtures';
+import { liftedFixture } from '../content/test-fixtures';
 import { Practice, type Picks } from './Practice';
 
-const questions = makeUnit().practice as Question[];
+const questions = liftedFixture().units[0]!.practice;
 
 /** Practice with its picks held the way the console holds them: in memory. */
 function Harness({ questions: qs }: { questions: Question[] }) {
@@ -62,8 +62,8 @@ test('a wrong pick always reads Not quite, even when its feedback does not start
       id: 'q',
       prompt: 'Which one is the router?',
       options: [
-        { text: 'The phone', feedback: 'The phone only uses addresses.' },
-        { text: 'The box by the door', feedback: 'That’s it. It hands out the addresses.' },
+        { text: 'The phone', feedback: 'The phone only uses addresses.', cite: [] },
+        { text: 'The box by the door', feedback: 'That’s it. It hands out the addresses.', cite: [] },
       ],
       answer: 1,
     },

@@ -4,24 +4,15 @@ import userEvent from '@testing-library/user-event';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
 import type { Lesson, SceneEvent } from '../content/schema';
-import { makeLesson, makeUnit, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeUnit, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
 import { THEME_KEY } from '../lib/theme';
 import { PROGRESS_KEY } from '../progress/store';
 import { seedProgress, type SeedLesson } from '../test/progress';
 import LessonConsole from './LessonConsole';
-
-// The lessons these tests play are fixtures, while the real lessons load too (through the registry), so the figure
-// parts are the real ones with the fixture's added: each lesson validates on its own figure.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
 
 // Every figure's driver gives every event the same second, so these tests time the console, not a figure. (A test
 // may give table changes no time, as the real drivers do.)
@@ -36,10 +27,10 @@ vi.mock('../scenes/drivers', () => ({ DRIVERS: { dhcp: still, subnet: still, fir
  * networking track. Positions: 0 Overview, 1–5 the steps (Neighbor Hello,
  * Neighbor Reply, Table Lookup, Lost Message, Retransmission), 6 Learn, 7 Practice.
  */
-const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
-const FIREWALLS: Lesson = validateLesson(makeLesson({ slug: 'firewalls', title: 'Firewalls' })).lesson;
+const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
+const FIREWALLS: Lesson = liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls' }));
 /** Lesson 1, of three units: Alpha 0–7, Beta 8–15, Gamma 16–23 (each Overview, 5 steps, Learn, Practice). */
-const THREE: Lesson = validateLesson(
+const THREE: Lesson = liftedFixture(
   makeLesson({
     slug: 'how-the-internet-works',
     title: 'How the Internet Works',
@@ -49,9 +40,9 @@ const THREE: Lesson = validateLesson(
       makeUnit('gamma', { name: 'Gamma', group: 'security' }),
     ],
   }),
-).lesson;
+);
 /** DHCP with two table changes in a row in Neighbor Reply and in Table Lookup (`makeUnitWithTwoTableChanges`). */
-const TWO_TABLE_CHANGES: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP', units: [makeUnitWithTwoTableChanges()] })).lesson;
+const TWO_TABLE_CHANGES: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', units: [makeUnitWithTwoTableChanges()] }));
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE });
 const KEY = 'networking/dhcp';
 /** Every event's wait in these tests: the stand-in drivers' duration. */
@@ -173,7 +164,7 @@ test('the empty log says the unit’s words at the Overview, and a quiet step sa
   const idle = () => within(screen.getByRole('region', { name: 'Event log' })).getByRole('cell').textContent;
   const unit = makeUnit();
   const withIdle = (log: Partial<typeof unit.scene.log>, firstIdle: string | undefined) =>
-    validateLesson(
+    liftedFixture(
       makeLesson({
         slug: 'dhcp',
         title: 'DHCP',
@@ -185,7 +176,7 @@ test('the empty log says the unit’s words at the Overview, and a quiet step sa
           },
         ],
       }),
-    ).lesson;
+    );
 
   // Lesson 1's way: only the quiet first step has words, so the Overview keeps the console's own.
   const quiet = render(consoleFor(withIdle({}, 'Nothing on the network yet.')));

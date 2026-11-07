@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { makeLesson } from '../test-fixtures';
+import { liftedFixture } from '../test-fixtures';
 import type { Board, Lesson } from '../schema';
 import { calc, checkStated, learnerProse, subnetValue, type Shown } from './subnet-events';
 
@@ -97,14 +97,14 @@ test('calc throws when the board shows the mask before it has a prefix', () => {
 
 /** The fixture lesson, its first step's narrative set to `narrative`. */
 function lessonSaying(narrative: string): Lesson {
-  const lesson = makeLesson() as Lesson;
+  const lesson = liftedFixture();
   lesson.units[0]!.steps[0]!.narrative = narrative;
   return lesson;
 }
 const NARRATIVE = 'steps.hello.narrative';
 
 test('learnerProse names every place a learner reads words, and leaves out log cells, boards, ids and urls', () => {
-  const lesson = makeLesson() as Lesson;
+  const lesson = liftedFixture();
   const places = learnerProse(lesson).map((p) => p.place);
   expect(places).toEqual(
     expect.arrayContaining([
@@ -166,7 +166,7 @@ test('checkStated finds a phrase only in the place it names, and only in what th
   // Written somewhere else: the deep text is not the narrative.
   expect(() => checkStated(lesson, [{ ...phrase, at: 'steps.hello.deep' }])).toThrow(/steps\.hello\.deep/);
   // Written in a second place it does not name: each place it stands for is named.
-  lesson.units[0]!.steps[0]!.deep = 'The laptop is 192.168.1.10. It says hello.';
+  lesson.units[0]!.steps[0]!.deep = [{ text: 'The laptop is 192.168.1.10. It says hello.', cite: [] }];
   expect(() => checkStated(lesson, [{ ...phrase, at: NARRATIVE }])).toThrow(/also in steps\.hello\.deep/);
   expect(() => checkStated(lesson, [{ ...phrase, at: [NARRATIVE, 'steps.hello.deep'] }])).not.toThrow();
   // A log cell is not prose: the fixture's note logs 192.168.1.1, and no learner text states it.

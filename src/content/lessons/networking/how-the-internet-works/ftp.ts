@@ -1,5 +1,6 @@
 import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { TableDef, Unit } from '../../../schema';
+import type { LegacyUnitInput } from '../../../legacy';
+import type { TableDef } from '../../../schema';
 
 /**
  * FTP, protocol 12 of How the Internet Works’ 14. Commands go on the control connection to port 21, in plain text,
@@ -31,7 +32,7 @@ const readable: TableDef = {
 
 const msg = messagesFor(readable);
 
-const ftp: Unit = {
+const ftp: LegacyUnitInput = {
   id: 'ftp',
   name: 'FTP',
   fullName: 'File Transfer Protocol',

@@ -1,5 +1,5 @@
-import { defineLesson } from '../../define';
 import { ADDR, change, checkResults, ruleTableRows, visits } from '../../helpers/firewall-events';
+import { defineLegacyLesson } from '../../legacy';
 
 /**
  * Firewalls, lesson 17 of 20. A visitor and an admin out on the internet reach
@@ -19,7 +19,7 @@ import { ADDR, change, checkResults, ruleTableRows, visits } from '../../helpers
 // This lesson's visits, so each reply can name the visit it answers.
 const { visit, reply } = visits();
 
-const firewalls = defineLesson({
+const firewalls = defineLegacyLesson({
   slug: 'firewalls',
   title: 'Firewalls',
   subtitle: 'Deciding what gets in',

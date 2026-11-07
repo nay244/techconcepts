@@ -1,13 +1,15 @@
 import type { FigureId, FigureParts } from '../art/scenes/types';
-import type { LessonInput } from './schema';
+import { legacyLessonSchema, liftLegacy, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
+import type { Lesson } from './schema';
 
 /**
- * Valid lessons for tests. Every call builds a fresh object, so a test can
- * change any part of it without affecting the next test.
+ * Valid lessons for tests, written in the legacy authoring shape. Every call
+ * builds a fresh object, so a test can change any part of it without affecting
+ * the next test. A test that needs a runtime `Lesson` lifts one with
+ * `liftedFixture` (below), which needs no figure mock.
  *
  * The real `FIGURE_PARTS` only holds what each figure built so far can show,
- * so a test that validates these fixtures swaps in `FIXTURE_PARTS`, or, if it
- * also loads the real lessons, `withFixtureParts` (below):
+ * so a test that validates these fixtures swaps in `FIXTURE_PARTS`:
  *
  *   vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./test-fixtures')).FIXTURE_PARTS }));
  *
@@ -34,39 +36,9 @@ function fixtureParts({ board, start }: { board: boolean; start: boolean }): Fig
   return { places: ['laptop', 'router', 'phone'], cues: { glow: 'flag', status: 'text' }, layers: ['web', 'mail'], board, start };
 }
 
-/**
- * The real `FIGURE_PARTS` with the fixture's parts added, for a test that
- * validates these fixtures and also loads the real lessons (through the
- * registry): each real lesson must still validate on its own figure. Where a
- * figure's real cue has the same name as a fixture cue, the real one wins, so
- * a fixture on such a figure (Subnetting's `glow` takes an arg) needs
- * `FIXTURE_PARTS` instead.
- *
- *   vi.mock('../art/scenes/parts', async (importOriginal) => ({
- *     FIGURE_PARTS: (await import('./test-fixtures')).withFixtureParts(
- *       (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
- *     ),
- *   }));
- */
-export function withFixtureParts(real: Record<FigureId, FigureParts>): Record<FigureId, FigureParts> {
-  const merged = (id: FigureId): FigureParts => {
-    const [own, fixture] = [real[id], FIXTURE_PARTS[id]];
-    return {
-      places: [...new Set([...own.places, ...fixture.places])],
-      cues: { ...fixture.cues, ...own.cues },
-      layers: [...new Set([...own.layers, ...fixture.layers])],
-      board: own.board || fixture.board,
-      start: own.start || fixture.start,
-    };
-  };
-  return { dhcp: merged('dhcp'), subnet: merged('subnet'), firewall: merged('firewall'), 'net-map': merged('net-map') };
-}
-
-export type UnitInput = LessonInput['units'][number];
-
 /** One valid unit: an overview, five Watch steps, Learn and two questions. */
-export function makeUnit(id = 'neighbors', overrides: Partial<UnitInput> = {}): UnitInput {
-  const unit: UnitInput = {
+export function makeUnit(id = 'neighbors', overrides: Partial<LegacyUnitInput> = {}): LegacyUnitInput {
+  const unit: LegacyUnitInput = {
     id,
     name: 'Neighbor table',
     fullName: 'Neighbor table (a demonstration)',
@@ -324,7 +296,7 @@ export function makeUnit(id = 'neighbors', overrides: Partial<UnitInput> = {}): 
  * The fixture unit with two table changes in a row in two of its steps. Neighbor Reply plays `m2`, `t-add`, then
  * `t-check`. Table Lookup plays `t-match`, `t-recheck`, then note `n1`. `t-check`'s summary has no full stop at its end.
  */
-export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial<UnitInput> = {}): UnitInput {
+export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial<LegacyUnitInput> = {}): LegacyUnitInput {
   const unit = makeUnit(id, overrides);
   const answer = unit.steps.find((s) => s.id === 'answer')!;
   const reuse = unit.steps.find((s) => s.id === 'reuse')!;
@@ -334,8 +306,8 @@ export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial
 }
 
 /** A valid one-unit lesson on figure 'dhcp'. */
-export function makeLesson(overrides: Partial<LessonInput> = {}): LessonInput {
-  const lesson: LessonInput = {
+export function makeLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLessonInput {
+  const lesson: LegacyLessonInput = {
     slug: 'fixture-lesson',
     title: 'Fixture lesson',
     subtitle: 'A small lesson used only by tests',
@@ -349,9 +321,14 @@ export function makeLesson(overrides: Partial<LessonInput> = {}): LessonInput {
 }
 
 /** A valid lesson of two units, `alpha` (core) and `beta` (app), each with five steps and two questions. */
-export function makeTwoUnitLesson(overrides: Partial<LessonInput> = {}): LessonInput {
+export function makeTwoUnitLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLessonInput {
   return makeLesson({
     units: [makeUnit('alpha', { name: 'Alpha', group: 'core' }), makeUnit('beta', { name: 'Beta', group: 'app' })],
     ...overrides,
   });
+}
+
+/** A fixture lifted into the runtime shape, as the legacy path lifts the ready lessons. Checks only the shape. */
+export function liftedFixture(input: LegacyLessonInput = makeLesson()): Lesson {
+  return liftLegacy(legacyLessonSchema.parse(input));
 }
