@@ -28,7 +28,13 @@
 .nm #nm-over { will-change: transform; }
 .nm .nm-over-t { font: 700 3.2px var(--mono); fill: var(--anatomy-hi); letter-spacing: .04em; paint-order: stroke; stroke: var(--anatomy-shade-0); stroke-width: .9px; stroke-linejoin: round; }
 .nm .nm-trail { fill: none; stroke: var(--lit-a); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 3px var(--lit-b)); }
-.nm .nm-trail.lost { stroke: var(--blocked); filter: none; stroke-dasharray: 4 4; }
+/* The lost trail runs over the charcoal plates as well as the page, and the light theme's red is under 3:1 on the
+   plates, so each dash is outlined in the figure's own background: beside it there is always the page's colour. */
+.nm .nm-trail.lost {
+  stroke: var(--blocked);
+  stroke-dasharray: 4 4;
+  filter: drop-shadow(2px 0 0 var(--fig-bg)) drop-shadow(-2px 0 0 var(--fig-bg)) drop-shadow(0 2px 0 var(--fig-bg)) drop-shadow(0 -2px 0 var(--fig-bg));
+}
 .nm .nm-drop circle { fill: var(--fig-bg); stroke: var(--blocked); stroke-width: 1.8px; vector-effect: non-scaling-stroke; }
 .nm .nm-drop path { fill: none; stroke: var(--blocked); stroke-width: 2px; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .nm .nm-drop-pill { fill: var(--fig-bg); stroke: var(--blocked); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }

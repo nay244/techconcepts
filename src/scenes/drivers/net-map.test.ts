@@ -291,6 +291,9 @@ test('a dropped message leaves a blocked-red trail and a drop mark at dropAt', a
 
   // The colour of lost things is the blocked red, never marigold, which means only "current".
   expect(mapCss).toMatch(/\.nm \.nm-trail\.lost \{[^}]*stroke: var\(--blocked\)/);
+  // Outlined in the figure's background on all four sides, so the light red is never only beside a charcoal plate.
+  const outline = /\.nm \.nm-trail\.lost \{[^}]*filter: ([^;]*);/.exec(mapCss)?.[1] ?? '';
+  for (const offset of ['2px 0 0', '-2px 0 0', '0 2px 0', '0 -2px 0']) expect(outline).toContain(`drop-shadow(${offset} var(--fig-bg))`);
   expect(mapCss).toMatch(/\.nm \.nm-drop circle \{[^}]*stroke: var\(--blocked\)/);
   expect(mapCss).toMatch(/\.nm \.nm-drop path \{[^}]*stroke: var\(--blocked\)/);
   expect(mapCss).toMatch(/\.nm \.nm-drop-t \{[^}]*fill: var\(--blocked\)/);
