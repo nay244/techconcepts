@@ -70,14 +70,16 @@ function insideDocument(url: string, doc: string): boolean {
   if (!u || !d || u.href !== url || u.username || u.password || u.origin !== d.origin) return false;
   if (u.pathname === d.pathname && u.search === d.search) return true;
   const base = d.pathname.endsWith('/') ? d.pathname : `${d.pathname}/`;
-  return u.pathname.startsWith(base);
+  return u.pathname.startsWith(base) && u.pathname.length > base.length;
 }
 
 /** True when `url` is the document itself, with no fragment and no sub-path. */
 function isWholeDocument(url: string, doc: string): boolean {
   const u = parse(url);
   const d = parse(doc);
-  return !!u && !!d && u.pathname === d.pathname && u.search === d.search && !u.hash;
+  if (!u || !d || u.search !== d.search || u.hash) return false;
+  const base = d.pathname.endsWith('/') ? d.pathname : `${d.pathname}/`;
+  return u.pathname === d.pathname || u.pathname === base;
 }
 
 /** True when `url` is the document's own page plus a fragment. */

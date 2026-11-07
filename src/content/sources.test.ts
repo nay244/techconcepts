@@ -49,6 +49,7 @@ describe('cite', () => {
       expect(() => cite('ms-dhcp', 'DHCP lease', { sources, url })).toThrow(/ms-dhcp.*DHCP lease/);
     }
     expect(() => cite('ms-dhcp', 'DHCP lease', { sources, url: vendor.url })).toThrow(/section, not the whole document/);
+    expect(() => cite('ms-dhcp', 'x', { sources, url: `${vendor.url}/` })).toThrow(/ms-dhcp.*outside/);
     expect(() => cite('ms-dhcp', 'x', { sources, url: `${vendor.url}-v2` })).toThrow(/outside/);
     expect(() => cite('ms-dhcp', 'x', { sources, url: `${vendor.url}/../../../other-doc` })).toThrow(/outside/);
     expect(cite('ms-dhcp', 'DHCP lease', { sources, url: `${vendor.url}#lease` }).url).toBe(`${vendor.url}#lease`);

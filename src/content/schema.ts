@@ -9,8 +9,8 @@ export { slugSchema };
  * Shape of a lesson: Overview, Watch, Learn, Practice. These schemas check
  * types, enums and per-field bounds only. Rules that compare one part of a
  * lesson with another (step counts, "this place exists on the figure", packet
- * sizes, the time budget) live in `define.ts`, so they can all be reported
- * together with readable messages.
+ * sizes) live in `define.ts`, so they can all be reported together with
+ * readable messages.
  *
  * A lesson has one or more units. Most lessons have one; How the Internet
  * Works has one per protocol, each with its own Overview, Watch steps, Learn
