@@ -13,7 +13,8 @@ export function firstSentence(text: string): string {
 
 /**
  * A device's label as it reads after the arrow, mid-sentence, as home-v6 writes it ("Router → laptop"): its first
- * letter in lower case, unless the first word is an acronym ("DNS resolver").
+ * letter in lower case, unless the first word is an acronym ("DNS resolver"). It assumes a common noun, as every
+ * party Home samples (DHCP's) is: a proper noun ("Sam's laptop") would be lower-cased too.
  */
 export function midSentence(label: string): string {
   if (label === '' || /^[A-Z]{2}/.test(label)) return label;
