@@ -367,7 +367,10 @@ test.describe('without JavaScript', () => {
     for (const lesson of LESSONS) {
       await page.goto(lesson.path);
       const where = lesson.title;
-      await expect(page.locator('.console__log').getByText('This lesson needs JavaScript to play.'), where).toBeVisible();
+      // Found by its class: Playwright's text matching skips what is inside a <noscript>.
+      const note = page.locator('.console__log td[data-idle] noscript .log__nojs');
+      await expect(note, where).toBeVisible();
+      await expect(note, where).toHaveText('This lesson needs JavaScript to play.');
       await expect(page.locator('.console__log .log__idle-words'), where).toBeHidden();
       // No button works without JavaScript, so none shows: the theme and view switches, playback, the outline's places.
       await expect(page.locator('button:visible'), where).toHaveCount(0);
@@ -375,7 +378,12 @@ test.describe('without JavaScript', () => {
       await expect(page.locator('.console__explain .explain__title'), where).toBeVisible();
       await expect(page.locator('.console__stage svg[data-figure]'), where).toBeVisible();
       await expect(page.locator('.topbar__crumb a'), where).toBeVisible();
-      expect(await overflowAt(page, where)).toBeNull();
+      // The page does not scroll. (Measured at once: with JavaScript off no frame callback runs, so overflowAt cannot wait.)
+      const overflow = await page.evaluate(() => {
+        const root = document.scrollingElement ?? document.documentElement;
+        return [root.scrollHeight - window.innerHeight, root.scrollWidth - window.innerWidth].map((n) => Math.max(0, n));
+      });
+      expect(overflow, `${where}: [down, sideways]`).toEqual([0, 0]);
     }
   });
 });
