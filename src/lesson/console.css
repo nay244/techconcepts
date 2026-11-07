@@ -152,9 +152,13 @@
   font: 400 12px/1.2 var(--sans);
 }
 
-/* It gives way first when the bar is short of room, down to 340px, so the
-   blocks after it (the theme switch last) are never pushed out of sight. */
+/* It takes the bar's spare room, so the OSI and progress blocks sit beside the
+   theme switch, as in internet-v2, subnet-v1 and firewalls-v1 (lesson-v3, the
+   oldest, left the room after them). It gives way first when the bar is short
+   of room, down to 340px, so the blocks after it (the theme switch last) are
+   never pushed out of sight. */
 .topbar__now {
+  flex: 1 1 auto;
   gap: 6px;
   min-width: 340px;
 }

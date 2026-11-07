@@ -15,3 +15,9 @@ test('headings and the lesson’s titles wrap where the mockups’ do, not balan
   expect(globalCss).not.toMatch(/text-wrap:\s*balance/);
   expect(consoleCss).not.toMatch(/text-wrap:\s*balance/);
 });
+
+test('the lesson’s top bar gives its spare room to the crumb, as the three newest lesson mockups do', () => {
+  // internet-v2, subnet-v1 and firewalls-v1 set `.top > .now { flex: 1 0 auto; }`, which puts the OSI and progress
+  // blocks beside the theme switch; the crumb still gives way first when the bar is short of room.
+  expect(consoleCss).toMatch(/\.topbar__now \{[^}]*flex: 1 1 auto;[^}]*min-width: 340px;/);
+});
