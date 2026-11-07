@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { FigureId } from '../art/scenes/types';
 import { CERT_TAG_IDS } from './certs';
-import { slugSchema, text } from './primitives';
+import { httpsUrl, slugSchema, text } from './primitives';
 
 export { slugSchema };
 
@@ -27,7 +27,7 @@ export const certTagSchema = z.enum(CERT_TAG_IDS);
 /** The scene figures (`FigureId`); `parts.test.ts` keeps this list and `FIGURE_PARTS` the same. */
 export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map'] satisfies FigureId[]);
 
-export const sourceSchema = z.strictObject({ label: text, url: z.url({ protocol: /^https$/ }) });
+export const sourceSchema = z.strictObject({ label: text, url: httpsUrl });
 export const factSchema = z.strictObject({ label: text, value: text });
 
 /** One table or log row: column key to cell text. Cells may be empty. */

@@ -10,3 +10,6 @@ export const text = z.string().regex(/\S/, 'must not be empty');
 
 /** Lowercase words joined by hyphens: safe in a URL and a file name. */
 export const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be lowercase words joined by hyphens');
+
+/** An https URL. */
+export const httpsUrl = z.url({ protocol: /^https$/, message: 'must be an https URL' });

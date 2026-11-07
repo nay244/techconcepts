@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { slugSchema, text } from './primitives';
+import { httpsUrl, slugSchema, text } from './primitives';
 import type { Source } from './schema';
 
 /**
@@ -22,12 +22,11 @@ export const SOURCE_HOSTS: Record<SourceKind, readonly string[]> = {
   'cert-objectives': ['www.comptia.org', 'partners.comptia.org', 'learningnetwork.cisco.com'],
 };
 
-const httpsUrl = z.url({ protocol: /^https$/, message: 'must be an https URL' });
-
 const sourceEntrySchema = z.strictObject({
   id: slugSchema,
   kind: z.enum(SOURCE_KINDS),
-  short: text,
+  /** About splits a source list label at ": ", so a short name may not contain it. */
+  short: text.refine((v) => !v.includes(': '), 'must not contain ": "'),
   title: text,
   publisher: text,
   url: httpsUrl,
@@ -43,6 +42,49 @@ function hostOf(url: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function parse(url: string): URL | undefined {
+  try {
+    return new URL(url);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Why a registry url does not name a document, or undefined when it does. */
+function documentProblem(url: string): string | undefined {
+  const u = parse(url);
+  if (!u) return 'url cannot be read';
+  if (u.pathname === '/') return 'url must name a document, not a site root';
+  if (u.href !== url) return 'url must be in normal form (no "..", default port or upper-case host)';
+  if (u.username || u.password) return 'url must not include a user name or password';
+  if (u.hash) return 'url must not include a fragment';
+  return undefined;
+}
+
+/** True when `url` is the document or something below it: same origin, same page with a fragment, or a sub-path. */
+function insideDocument(url: string, doc: string): boolean {
+  const u = parse(url);
+  const d = parse(doc);
+  if (!u || !d || u.href !== url || u.username || u.password || u.origin !== d.origin) return false;
+  if (u.pathname === d.pathname && u.search === d.search) return true;
+  const base = d.pathname.endsWith('/') ? d.pathname : `${d.pathname}/`;
+  return u.pathname.startsWith(base);
+}
+
+/** True when `url` is the document itself, with no fragment and no sub-path. */
+function isWholeDocument(url: string, doc: string): boolean {
+  const u = parse(url);
+  const d = parse(doc);
+  return !!u && !!d && u.pathname === d.pathname && u.search === d.search && !u.hash;
+}
+
+/** True when `url` is the document's own page plus a fragment. */
+function isFragmentOf(url: string, doc: string): boolean {
+  const u = parse(url);
+  const d = parse(doc);
+  return !!u && !!d && u.pathname === d.pathname && u.search === d.search && u.hash.length > 1;
 }
 
 /** Validates every entry and returns the registry keyed by id. Throws one Error listing every issue. */
@@ -64,12 +106,17 @@ export function defineSources(entries: SourceEntry[]): SourceRegistry {
     registry[e.id] = e;
     const allowed = SOURCE_HOSTS[e.kind];
     const host = hostOf(e.url);
-    if (host && !allowed.includes(host)) {
+    const docIssue = documentProblem(e.url);
+    if (docIssue) issues.push(`${name}: ${docIssue}`);
+    if (!host) issues.push(`${name}: the host of url cannot be read`);
+    else if (!allowed.includes(host)) {
       issues.push(`${name}: ${host} is not an allowed host for ${e.kind} (allowed: ${allowed.join(', ')})`);
     }
     if (e.anchor !== undefined) {
-      if (!e.anchor.includes('{n}')) issues.push(`${name}: anchor must contain {n}, the section number`);
-      if (hostOf(e.anchor) !== host) issues.push(`${name}: anchor must be on the same host as url (${host})`);
+      const prefix = `${e.url}#`;
+      if (!e.anchor.startsWith(prefix) || !e.anchor.slice(prefix.length).includes('{n}')) {
+        issues.push(`${name}: anchor must be the url plus a fragment that contains {n}, the section number (${prefix}...{n})`);
+      }
     }
     if (e.kind === 'cert-objectives' && e.version === undefined) {
       issues.push(`${name}: a cert-objectives source needs a version (the objectives edition it pins)`);
@@ -85,7 +132,7 @@ export const SOURCES: SourceRegistry = defineSources([]);
 export const citationSchema = z.strictObject({ source: slugSchema, section: text, url: httpsUrl, label: text });
 export type Citation = z.infer<typeof citationSchema>;
 
-const NUMBERED = /^\d+(\.\d+)*$/;
+const NUMBERED = /^(0|[1-9]\d*)(\.(0|[1-9]\d*))*$/;
 
 /** Builds a citation. A numbered section on a source with an anchor links straight to it; otherwise `opts.url` is required. */
 export function cite(source: string, section: string, opts: { url?: string; sources?: SourceRegistry } = {}): Citation {
@@ -95,15 +142,24 @@ export function cite(source: string, section: string, opts: { url?: string; sour
   if (NUMBERED.test(section) && entry.anchor) {
     return { source, section, url: entry.anchor.replaceAll('{n}', section), label: `${entry.short} §${section}` };
   }
-  if (!opts.url) throw new Error(`Source "${source}", section ${section}: needs a URL, because the section is not a numbered one on a source with an anchor`);
-  if (!opts.url.startsWith(entry.url)) {
-    throw new Error(`Source "${source}", section ${section}: URL ${opts.url} is outside the document ${entry.url}`);
+  const where = `Source "${source}", section ${section}`;
+  if (!opts.url) throw new Error(`${where}: needs a URL, because the section is not a numbered one on a source with an anchor`);
+  if (!insideDocument(opts.url, entry.url)) {
+    throw new Error(`${where}: URL ${opts.url} is outside the document ${entry.url}`);
+  }
+  if (entry.kind !== 'cert-objectives' && isWholeDocument(opts.url, entry.url)) {
+    throw new Error(`${where}: the citation must point at the section, not the whole document (add a fragment or a sub-path)`);
+  }
+  if (entry.anchor && !NUMBERED.test(section) && !isFragmentOf(opts.url, entry.url)) {
+    throw new Error(`${where}: on a source with an anchor, an unnumbered section needs the document URL plus a fragment`);
   }
   return { source, section, url: opts.url, label: `${entry.short}, ${section}` };
 }
 
 /** Problems with a citation, as readable messages; empty when it is sound. */
 export function checkCitation(c: Citation, sources: SourceRegistry, use: 'content' | 'objectives'): string[] {
+  const shape = citationSchema.safeParse(c);
+  if (!shape.success) return shape.error.issues.map((i) => `Citation ${i.path.join('.') || 'value'} ${i.message}`);
   const entry = Object.hasOwn(sources, c.source) ? sources[c.source] : undefined;
   if (!entry) return [`Unknown source "${c.source}" (section ${c.section})`];
   const problems: string[] = [];
@@ -111,7 +167,7 @@ export function checkCitation(c: Citation, sources: SourceRegistry, use: 'conten
     problems.push(`Source "${c.source}" (section ${c.section}) is an objectives document, which may be cited only for objective mapping, not for content`);
   }
   if (use === 'objectives' && entry.kind !== 'cert-objectives') {
-    problems.push(`Source "${c.source}" (section ${c.section}) is a ${entry.kind} source; objective mapping must cite a cert-objectives source`);
+    problems.push(`Source "${c.source}" (section ${c.section}) is a source of kind "${entry.kind}"; objective mapping must cite a cert-objectives source`);
   }
   try {
     const expected = cite(c.source, c.section, { url: c.url, sources });
