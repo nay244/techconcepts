@@ -271,7 +271,9 @@ test('the scene: its title, both views, and the four parties with their addresse
     { place: 'firewall', label: 'Firewall', addr: 'rule list' },
     { place: 'web', label: 'Web server', addr: '10.0.0.10' },
   ]);
-  expect(unit.steps[0]!.idle).toBe('Nothing has reached the firewall yet. Press Play, or pick a step.');
+  // The empty log speaks for the whole lesson, from the Overview on, as the mockup's does.
+  expect(unit.scene.log.idle).toBe('Nothing has reached the firewall yet. Press Play, or pick a step.');
+  expect(unit.steps.filter((s) => s.idle !== undefined)).toEqual([]);
 });
 
 test('every message rides a tag the figure draws, with the figure’s own words', () => {

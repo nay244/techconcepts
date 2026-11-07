@@ -88,6 +88,7 @@ test('countUnitWords counts exactly the read fields', () => {
   unit.purpose = fifty;
   unit.references[0]!.label = fifty;
   unit.scene.title = fifty;
+  unit.scene.log.idle = fifty;
   unit.overview.facts[0]!.value = fifty;
   for (const step of unit.steps) {
     step.title = fifty;

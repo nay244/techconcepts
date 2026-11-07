@@ -151,8 +151,9 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const fresh = latest !== undefined && derived.events.some((e) => e.id === latest.eventId) ? latest : null;
   const step = slot.kind === 'step' ? unit.steps[slot.step - 1]! : null;
   const announcement = step === null ? resumeLabel(lesson, position) : fresh === null ? step.title : `${step.title}. ${fresh.plain}`;
-  // A step may say what its empty log means; elsewhere the unit's first step speaks for it.
-  const idle = (step === null ? unit.steps[0]?.idle : step.idle) ?? IDLE;
+  // A step may say what its empty log means (lesson 1's quiet first steps); otherwise, and always at the Overview,
+  // the unit's log says it, as the mockups' log does before anything has played.
+  const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 
   return (
     <div className="console">

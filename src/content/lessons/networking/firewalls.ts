@@ -75,6 +75,7 @@ const firewalls = defineLesson({
         },
         log: {
           title: 'Firewall log',
+          idle: 'Nothing has reached the firewall yet. Press Play, or pick a step.',
           // The widths the mockup's log draws its columns at, at 1280 px; the console's table is fixed, so they are set.
           columns: [
             { key: 'source', label: 'Source', width: 168 },
@@ -123,7 +124,6 @@ const firewalls = defineLesson({
             { label: 'Result', value: 'Allowed by rule 1' },
             { label: 'Rules read', value: '1 of 3' },
           ],
-          idle: 'Nothing has reached the firewall yet. Press Play, or pick a step.',
           events: visit({ id: 'visit-website', who: 'visitor', tag: 'HTTPS 443', port: 443, svc: 'HTTPS', sport: 50432, rules: 'base', plain: 'The visitor asks for the website.' }),
         },
         {

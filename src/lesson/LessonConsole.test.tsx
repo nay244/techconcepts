@@ -166,6 +166,38 @@ test('a lesson of many units gives its OSI layer by number only, so its long tit
   expect(within(topBar()).queryByText(/Data link/)).toBeNull();
 });
 
+test('the empty log says the unit’s words at the Overview, and a quiet step says its own', async () => {
+  const idle = () => within(screen.getByRole('region', { name: 'Event log' })).getByRole('cell').textContent;
+  const unit = makeUnit();
+  const withIdle = (log: Partial<typeof unit.scene.log>, firstIdle: string | undefined) =>
+    validateLesson(
+      makeLesson({
+        slug: 'dhcp',
+        title: 'DHCP',
+        units: [
+          {
+            ...unit,
+            scene: { ...unit.scene, log: { ...unit.scene.log, ...log } },
+            steps: [{ ...unit.steps[0]!, idle: firstIdle }, ...unit.steps.slice(1)],
+          },
+        ],
+      }),
+    ).lesson;
+
+  // Lesson 1's way: only the quiet first step has words, so the Overview keeps the console's own.
+  const quiet = render(consoleFor(withIdle({}, 'Nothing on the network yet.')));
+  expect(idle()).toBe('Nothing has happened yet. Press Play to start.');
+  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  expect(idle()).toBe('Nothing on the network yet.');
+  quiet.unmount();
+
+  // Subnetting's and Firewalls' way: the log has words of its own, from the Overview on.
+  render(consoleFor(withIdle({ idle: 'Nothing has reached the firewall yet.' }, undefined)));
+  expect(idle()).toBe('Nothing has reached the firewall yet.');
+  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  expect(idle()).toBe('Nothing has reached the firewall yet.');
+});
+
 test('ArrowRight walks Overview → steps → Learn → Practice and records progress; Practice finishes the lesson', async () => {
   renderConsole();
   expect(heading()).toHaveTextContent('Neighbor table');

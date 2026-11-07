@@ -163,7 +163,9 @@ test('the log is “Working”, with the mockup’s columns: words where it has 
   ]);
   // Every row is something worked out, so the one glyph the log draws is explained as that.
   expect(log.legend).toEqual([{ kind: 'note', label: 'Worked out' }]);
-  expect(unit.steps[0]!.idle).toBe('Nothing worked out yet. Press Play, or pick a step.');
+  // The empty log speaks for the whole lesson, from the Overview on, as the mockup's does.
+  expect(log.idle).toBe('Nothing worked out yet. Press Play, or pick a step.');
+  expect(unit.steps.filter((s) => s.idle !== undefined)).toEqual([]);
 });
 
 test('192.168.1.10 and 192.168.1.70 are in different /26 subnets, and the text says so', () => {

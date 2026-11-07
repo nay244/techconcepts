@@ -150,6 +150,7 @@ const subnetting = defineLesson({
         panel: { type: 'bits' },
         log: {
           title: 'Working',
+          idle: 'Nothing worked out yet. Press Play, or pick a step.',
           columns: [
             { key: 'worked', label: 'Worked out', width: 176, prose: true },
             { key: 'value', label: 'Value', width: 190 },
@@ -189,7 +190,6 @@ const subnetting = defineLesson({
               value: `${ADDRESS_BITS} bits, in ${NUMBER_WORDS[ADDRESS_BITS / OCTET_BITS]} groups of ${OCTET_BITS}`,
             },
           ],
-          idle: 'Nothing worked out yet. Press Play, or pick a step.',
           events: [
             calc({
               id: 'address',

@@ -191,6 +191,11 @@ export const panelSchema = z.discriminatedUnion('type', [
 /** The log under the scene. A column keyed `plain` shows each event's `plain` text; the console adds `#` itself. */
 export const logDefSchema = z.strictObject({
   title: text,
+  /**
+   * What the log says while it is empty: at the Overview, and at a step with no `idle` of its own. Without it the
+   * console says "Nothing has happened yet. Press Play to start."
+   */
+  idle: text.optional(),
   columns: columnsSchema,
   legend: z.array(
     z.strictObject({
