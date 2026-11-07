@@ -681,7 +681,6 @@ a.outline__lesson:hover {
   margin: 0 0 6px;
   color: var(--ink-strong);
   font: 700 31px/1.15 var(--sans);
-  text-wrap: balance;
 }
 .explain__sub {
   margin: 0 0 16px;
