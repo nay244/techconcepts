@@ -1,6 +1,7 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
 import { LEGACY_LESSONS } from './legacy';
+import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
 import { tracks } from './tracks';
 
@@ -40,8 +41,9 @@ export type AvailableSummary = Extract<LessonSummary, { available: true }>;
  * One entry per lesson the track plans, in track order, numbered from 1 across
  * all parts. `lessons` is keyed by slug; a planned lesson with no file is
  * returned as unavailable. Throws when a lesson is not in the track, is filed
- * under a different slug than its own, or has a different title than the
- * track lists.
+ * under a different slug than its own, has a different title than the
+ * track lists, does not fit the track's limits, or carries an override it
+ * does not need.
  */
 export function buildEntries(track: Track, lessons: Record<string, Lesson>): LessonSummary[] {
   const planned = new Map(track.parts.flatMap((part) => part.lessons.map((l) => [l.slug, l.title] as const)));
@@ -51,6 +53,14 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
     if (lesson.slug !== slug) throw new Error(`Lesson filed as "${slug}" has the slug "${lesson.slug}"; the slug must match.`);
     if (lesson.title !== title) {
       throw new Error(`Lesson "${slug}" has the title "${lesson.title}", but the ${track.id} track lists the title "${title}".`);
+    }
+    const misfits = checkLimits(lesson, track.limits);
+    if (misfits.length > 0) {
+      throw new Error(`Lesson "${slug}" does not fit the ${track.id} track's limits:\n${misfits.map((m) => `  - ${m}`).join('\n')}`);
+    }
+    const unneeded = unneededOverrides(lesson, [track.limits]);
+    if (unneeded.length > 0) {
+      throw new Error(`Lesson "${slug}" has overrides the ${track.id} track does not need:\n${unneeded.map((m) => `  - ${m}`).join('\n')}`);
     }
   }
 

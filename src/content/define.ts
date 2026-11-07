@@ -2,9 +2,11 @@ import type { z } from 'zod';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
+import { checkCitation, SOURCES, type SourceRegistry } from './sources';
 import { formatBytes } from '../lib/format';
 import {
   trackSchema,
+  type CertificationTrack,
   type Cue,
   type Lesson,
   type Row,
@@ -14,10 +16,7 @@ import {
   type Track,
   type Unit,
 } from './schema';
-import { countWords } from './words';
 
-const MAX_NARRATIVE_WORDS = 120;
-const MAX_HOOK_WORDS = 80;
 /** Longer titles overflow the net-map figure's fixed frame. */
 const MAX_NET_MAP_TITLE = 51;
 
@@ -56,11 +55,6 @@ function slugOf(input: unknown): string | undefined {
   return undefined;
 }
 
-/** True when `n` is from `min` to `max`, both included. */
-function inRange(n: number, min: number, max: number): boolean {
-  return n >= min && n <= max;
-}
-
 /** The rows a unit's table events give the table `id`, whole: each row an add brings, and each a replace brings. */
 function rowsGivenTo(u: Unit, id: string): Row[] {
   const events = u.steps.flatMap((step) => step.events).filter((e): e is TableEvent => e.type === 'table' && e.table === id);
@@ -89,53 +83,6 @@ interface UnitContext {
 }
 
 // ---------------------------------------------------------------- unit rules
-
-/**
- * Today's content limits for one unit (`at` names it in each issue): step, fact, question, option, term and pattern
- * counts, narrative and hook words, and at least one reference. The legacy path runs them until each track carries
- * its own limits (direction doc §4.4).
- */
-export function checkUnitLimits(u: Unit, at: string, multiUnit: boolean, issues: string[]): void {
-  if (!inRange(u.steps.length, 4, 6)) issues.push(`${at}: a unit needs 4–6 steps; this one has ${u.steps.length}.`);
-
-  for (const step of u.steps) {
-    if (!inRange(step.facts.length, 2, 4)) {
-      issues.push(`${at}: Step "${step.id}" needs 2–4 facts; it has ${step.facts.length}.`);
-    }
-    const words = countWords(step.narrative);
-    if (words > MAX_NARRATIVE_WORDS) {
-      issues.push(`${at}: Step "${step.id}" narrative is ${words} words; the limit is ${MAX_NARRATIVE_WORDS} words.`);
-    }
-  }
-
-  const hookWords = countWords(u.overview.hook);
-  if (hookWords > MAX_HOOK_WORDS) {
-    issues.push(`${at}: the overview hook is ${hookWords} words; the limit is ${MAX_HOOK_WORDS} words.`);
-  }
-
-  const questions = u.practice.length;
-  if (multiUnit && questions !== 2) {
-    issues.push(`${at}: in a lesson of many units, Practice needs exactly 2 questions per unit; this one has ${questions}.`);
-  } else if (!multiUnit && !inRange(questions, 2, 3)) {
-    issues.push(`${at}: Practice needs 2–3 questions; this unit has ${questions}.`);
-  }
-  for (const q of u.practice) {
-    if (!inRange(q.options.length, 2, 4)) {
-      issues.push(`${at}: Question "${q.id}" needs 2–4 options; it has ${q.options.length}.`);
-    }
-    if (q.answer < 0 || q.answer >= q.options.length) {
-      issues.push(`${at}: Question "${q.id}" has answer ${q.answer}, but it has ${q.options.length} options (answers count from 0).`);
-    }
-  }
-
-  if (!inRange(u.learn.terms.length, 3, 10)) {
-    issues.push(`${at}: Learn needs 3–10 terms; this unit has ${u.learn.terms.length}.`);
-  }
-  if (!inRange(u.learn.pattern.names.length, 2, 6)) {
-    issues.push(`${at}: Learn's pattern needs 2–6 names; this unit has ${u.learn.pattern.names.length}.`);
-  }
-  if (u.references.length < 1) issues.push(`${at}: a unit needs at least 1 reference.`);
-}
 
 function checkScene(c: UnitContext, at: string): void {
   const { unit: u, parts, figure, issues } = c;
@@ -295,6 +242,11 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
   const at = `Unit "${u.id}"`;
   for (const id of duplicates(u.steps.map((s) => s.id))) issues.push(`${at}: Duplicate step id "${id}".`);
   for (const id of duplicates(u.practice.map((q) => q.id))) issues.push(`${at}: Duplicate question id "${id}".`);
+  for (const q of u.practice) {
+    if (q.answer < 0 || q.answer >= q.options.length) {
+      issues.push(`${at}: Question "${q.id}" has answer ${q.answer}, but it has ${q.options.length} options (answers count from 0).`);
+    }
+  }
 
   const c: UnitContext = {
     figure: l.figure,
@@ -348,14 +300,59 @@ export function checkStructure(lesson: Lesson): string[] {
   return issues;
 }
 
-/** Validates a track's shape and that part ids and lesson slugs are unique. */
-export function defineTrack(t: Track): Track {
+/** Issues with a certification track's pin and the objectives its lessons map to. */
+function checkCertification(t: CertificationTrack, sources: SourceRegistry): string[] {
+  const issues: string[] = [];
+  const { exam } = t;
+  const source = Object.hasOwn(sources, exam.source) ? sources[exam.source] : undefined;
+  if (source === undefined) {
+    issues.push(`The exam source "${exam.source}" is not in the source registry.`);
+  } else {
+    if (source.kind !== 'cert-objectives') {
+      issues.push(`The exam source "${exam.source}" is a source of kind "${source.kind}", not cert-objectives.`);
+    }
+    if (source.version !== exam.version) {
+      issues.push(
+        `The track pins exam version "${exam.version}", but the registry's "${exam.source}" is version "${source.version ?? 'unversioned'}"; ` +
+          'pin the version the registry holds, or update the registry first.',
+      );
+    }
+  }
+  for (const part of t.parts) {
+    for (const lesson of part.lessons) {
+      const seen = new Set<string>();
+      for (const o of lesson.objectives) {
+        const at = `Lesson "${lesson.slug}", objective ${o.exam} ${o.objective}`;
+        if (!exam.codes.includes(o.exam)) {
+          issues.push(`${at}: "${o.exam}" is not one of the track's exam codes (${exam.codes.join(', ')}).`);
+        }
+        if (seen.has(`${o.exam} ${o.objective}`)) issues.push(`Lesson "${lesson.slug}" lists objective ${o.exam} ${o.objective} twice.`);
+        seen.add(`${o.exam} ${o.objective}`);
+        if (o.cite.source !== exam.source) {
+          issues.push(`${at}: the citation is from "${o.cite.source}", but the track's objectives document is "${exam.source}".`);
+        }
+        if (o.cite.section !== o.objective) {
+          issues.push(`${at}: the citation is at section ${o.cite.section}, but the objective is ${o.objective}; cite the objective's own section.`);
+        }
+        for (const problem of checkCitation(o.cite, sources, 'objectives')) issues.push(`${at}: ${problem}`);
+      }
+    }
+  }
+  return issues;
+}
+
+/**
+ * Validates a track's shape, that part ids and lesson slugs are unique and, for a certification track, its pin and
+ * the objectives its lessons map to, checked against `sources`. Throws one Error listing every problem.
+ */
+export function defineTrack(t: Track, sources: SourceRegistry = SOURCES): Track {
   const parsed = trackSchema.safeParse(t);
   const issues = parsed.success ? [] : parsed.error.issues.map(describeZodIssue);
   if (parsed.success) {
     for (const id of duplicates(parsed.data.parts.map((p) => p.id))) issues.push(`Duplicate part id "${id}".`);
     const slugs = parsed.data.parts.flatMap((p) => p.lessons.map((x) => x.slug));
     for (const slug of duplicates(slugs)) issues.push(`Duplicate lesson slug "${slug}".`);
+    if (parsed.data.type === 'certification') issues.push(...checkCertification(parsed.data, sources));
   }
   if (!parsed.success || issues.length > 0) {
     const name = typeof t?.id === 'string' ? ` "${t.id}"` : '';

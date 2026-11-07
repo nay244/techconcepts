@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { LessonValidationError } from './define';
-import { defineLegacyLesson, LEGACY_LESSONS } from './legacy';
+import { defineLegacyLesson, LEGACY_LESSONS, legacyLessonSchema } from './legacy';
 import { liftedFixture, makeLesson, makeUnit } from './test-fixtures';
 
 test('the legacy list is exactly the four ready lessons (it may only shrink)', () => {
@@ -52,9 +52,23 @@ test('only listed slugs may use the legacy path', () => {
   expect(() => defineLegacyLesson({ ...makeLesson(), slug: 'osi-model' })).toThrow(/osi-model.*not on the legacy list/);
 });
 
+test('a legacy lesson lifts with no overrides', () => {
+  expect(liftedFixture().overrides).toEqual([]);
+  expect(legacyLessonSchema.safeParse({ ...makeLesson(), overrides: [] }).success).toBe(false);
+});
+
 test('the list is checked before anything else, and a listed lesson is still checked in full', () => {
   // A lesson off the list is refused for that alone, however broken it is.
-  expect(() => defineLegacyLesson({ ...makeLesson(), slug: 'osi-model', units: [] })).toThrow(/osi-model.*not on the legacy list/);
+  let caught: unknown;
+  try {
+    defineLegacyLesson({ ...makeLesson(), slug: 'osi-model', units: [] });
+  } catch (e) {
+    caught = e;
+  }
+  expect(caught).toBeInstanceOf(LessonValidationError);
+  const issues = (caught as LessonValidationError).issues;
+  expect(issues).toHaveLength(1);
+  expect(issues[0]).toMatch(/osi-model.*not on the legacy list/);
   // A listed slug goes on to the shape and the rules.
   const broken = () => defineLegacyLesson({ ...makeLesson(), slug: 'dhcp', units: [] });
   expect(broken).toThrow(LessonValidationError);

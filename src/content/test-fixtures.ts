@@ -1,6 +1,8 @@
 import type { FigureId, FigureParts } from '../art/scenes/types';
 import { legacyLessonSchema, liftLegacy, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
-import type { Lesson } from './schema';
+import type { Limits } from './limits';
+import type { CertificationTrack, Lesson } from './schema';
+import { cite, defineSources, type SourceRegistry } from './sources';
 
 /**
  * Valid lessons for tests, written in the legacy authoring shape. Every call
@@ -331,4 +333,78 @@ export function makeTwoUnitLesson(overrides: Partial<LegacyLessonInput> = {}): L
 /** A fixture lifted into the runtime shape, as the legacy path lifts the ready lessons. Checks only the shape. */
 export function liftedFixture(input: LegacyLessonInput = makeLesson()): Lesson {
   return liftLegacy(legacyLessonSchema.parse(input));
+}
+
+/** Networking's limits: what the four ready lessons fit without overrides. */
+export const FIXTURE_LIMITS: Limits = {
+  steps: { min: 4, max: 6 },
+  factsPerStep: { min: 2, max: 4 },
+  practiceQuestions: { min: 2, max: 3 },
+  optionsPerQuestion: { min: 2, max: 4 },
+  learnTerms: { min: 3, max: 10 },
+  patternNames: { min: 2, max: 6 },
+  narrativeWords: 120,
+  hookWords: 80,
+  deepWords: 90,
+};
+
+/** The whole-document URL of `example-objectives`, which an objective citation may use. */
+export const OBJ_URL = 'https://partners.comptia.org/example-objectives.pdf';
+
+/** A small registry of invented sources, one of each kind a test needs. */
+export const FIXTURE_SOURCES: SourceRegistry = defineSources([
+  {
+    id: 'rfc-example',
+    kind: 'rfc',
+    short: 'RFC 9999',
+    title: 'Example Protocol',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc9999.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc9999.html#section-{n}',
+  },
+  {
+    id: 'vendor-example',
+    kind: 'vendor',
+    short: 'Example vendor',
+    title: 'Example page',
+    publisher: 'Microsoft',
+    url: 'https://learn.microsoft.com/example',
+  },
+  {
+    id: 'example-objectives',
+    kind: 'cert-objectives',
+    short: 'Example objectives',
+    title: 'Example certification exam objectives',
+    publisher: 'CompTIA',
+    url: OBJ_URL,
+    version: 'V1',
+  },
+]);
+
+/** A certification track of two lessons, each mapped to one objective of the pinned `example-objectives` (V1). */
+export function makeCertTrack(): CertificationTrack {
+  const objective = (section: string) => ({
+    exam: 'EX-101',
+    objective: section,
+    cite: cite('example-objectives', section, { sources: FIXTURE_SOURCES, url: OBJ_URL }),
+  });
+  return {
+    id: 'example-cert',
+    type: 'certification',
+    title: 'Example cert',
+    description: 'A certification track used only by tests.',
+    level: 'intermediate',
+    limits: structuredClone(FIXTURE_LIMITS),
+    exam: { title: 'Example cert', codes: ['EX-101'], version: 'V1', source: 'example-objectives' },
+    parts: [
+      {
+        id: 'domain-2',
+        title: 'Domain 2',
+        lessons: [
+          { slug: 'lesson-a', title: 'Lesson A', objectives: [objective('2.6')] },
+          { slug: 'lesson-b', title: 'Lesson B', objectives: [objective('2.7')] },
+        ],
+      },
+    ],
+  };
 }

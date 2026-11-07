@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { FigureId } from '../art/scenes/types';
 import { CERT_TAG_IDS } from './certs';
+import { limitsSchema, overrideSchema } from './limits';
 import { httpsUrl, slugSchema, text } from './primitives';
 import { citationSchema } from './sources';
 
@@ -377,23 +378,53 @@ export const lessonSchema = z.strictObject({
   summary: text,
   figure: figureIdSchema,
   units: z.array(unitSchema).min(1),
+  /** Where this lesson leaves its track's limits, each with its reason (`limits.ts`). */
+  overrides: z.array(overrideSchema).default([]),
   /** Backs the subtitle and the summary. */
   backing: backingSchema.optional(),
 });
 
-export const partSchema = z.strictObject({
-  id: slugSchema,
-  title: text,
-  lessons: z.array(z.strictObject({ slug: slugSchema, title: text })).min(1),
+// ---------------------------------------------------------------- tracks
+
+const lessonRef = z.strictObject({ slug: slugSchema, title: text });
+
+/** One objective of the pinned exam document that a certification track's lesson teaches. */
+const objectiveSchema = z.strictObject({
+  /** One of the track's exam codes. */
+  exam: text,
+  /** The objective's number in the document, such as `2.6`. */
+  objective: z.string().regex(/^\d+\.\d+$/, 'must be a number like 2.6'),
+  /** Where the objectives document lists it: section equal to `objective`. */
+  cite: citationSchema,
 });
 
-export const trackSchema = z.strictObject({
-  id: slugSchema,
-  title: text,
-  description: text,
-  level: lessonSchema.shape.level,
-  parts: z.array(partSchema).min(1),
+const certLessonRef = lessonRef.extend({ objectives: z.array(objectiveSchema).min(1) });
+
+const base = { id: slugSchema, title: text, description: text, level: lessonSchema.shape.level, limits: limitsSchema };
+
+/** Taught in order, in parts; exam data is the lessons' cert tags only. */
+export const conceptTrackSchema = z.strictObject({
+  ...base,
+  type: z.literal('concept'),
+  parts: z.array(z.strictObject({ id: slugSchema, title: text, lessons: z.array(lessonRef).min(1) })).min(1),
 });
+
+/** Ordered by exam domain; every lesson maps to objectives of one pinned version of the official document. */
+export const certificationTrackSchema = z.strictObject({
+  ...base,
+  type: z.literal('certification'),
+  exam: z.strictObject({
+    title: text,
+    codes: z.array(text).min(1),
+    /** The objectives edition this track maps to; it must be the registry's version of `source`. */
+    version: text,
+    /** The id of the objectives document in the source registry. */
+    source: slugSchema,
+  }),
+  parts: z.array(z.strictObject({ id: slugSchema, title: text, lessons: z.array(certLessonRef).min(1) })).min(1),
+});
+
+export const trackSchema = z.discriminatedUnion('type', [conceptTrackSchema, certificationTrackSchema]);
 
 export type MessageKind = z.infer<typeof messageKindSchema>;
 export type Source = z.infer<typeof sourceSchema>;
@@ -428,5 +459,7 @@ export type Question = z.infer<typeof questionSchema>;
 export type Unit = z.infer<typeof unitSchema>;
 /** A lesson as the site uses it: written in the cited shape, or lifted from the legacy one (`legacy.ts`). */
 export type Lesson = z.output<typeof lessonSchema> & { origin: 'cited' | 'legacy' };
-export type Part = z.infer<typeof partSchema>;
+export type ConceptTrack = z.infer<typeof conceptTrackSchema>;
+export type CertificationTrack = z.infer<typeof certificationTrackSchema>;
+export type Objective = z.infer<typeof objectiveSchema>;
 export type Track = z.infer<typeof trackSchema>;

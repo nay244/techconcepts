@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { checkStructure, checkUnitLimits, LessonValidationError, parseLessonShape } from './define';
+import { checkStructure, LessonValidationError, parseLessonShape } from './define';
 import { text } from './primitives';
 import {
   certTagSchema,
@@ -72,7 +72,7 @@ const legacyUnitSchema = z.strictObject({
   group: unitSchema.shape.group,
   /** OSI layers the unit touches, 1 (physical) to 7 (application). May be empty. */
   osiLayers: z.array(z.number().int().min(1).max(7)),
-  /** At least one per unit (`checkUnitLimits`). */
+  /** At least one per unit (`checkLegacyRules`). */
   references: z.array(sourceSchema),
   scene: unitSceneSchema,
   overview: z.strictObject({ hook: text, description: text, facts: z.array(factSchema) }),
@@ -125,17 +125,34 @@ function liftUnit(u: LegacyUnit): Unit {
  * nothing gets a backing.
  */
 export function liftLegacy(parsed: LegacyLesson): Lesson {
-  return { ...parsed, units: parsed.units.map(liftUnit), origin: 'legacy' };
+  return { ...parsed, units: parsed.units.map(liftUnit), overrides: [], origin: 'legacy' };
+}
+
+/**
+ * The rules only the legacy path keeps, as readable issues: at least 1 reference per unit, and exactly 2 Practice
+ * questions per unit in a lesson of several units. The numeric limits belong to the track the lesson is in
+ * (`limits.ts`); the registry checks them.
+ */
+function checkLegacyRules(lesson: Lesson): string[] {
+  const issues: string[] = [];
+  const multiUnit = lesson.units.length > 1;
+  for (const u of lesson.units) {
+    const at = `Unit "${u.id}"`;
+    if (u.references.length < 1) issues.push(`${at}: a unit needs at least 1 reference.`);
+    if (multiUnit && u.practice.length !== 2) {
+      issues.push(`${at}: in a lesson of many units, Practice needs exactly 2 questions per unit; this one has ${u.practice.length}.`);
+    }
+  }
+  return issues;
 }
 
 /**
  * Checks a legacy lesson and returns it lifted: its shape first (alone, as `parseLessonShape` reports it), then the
- * structural rules every lesson keeps, then today's limits. Throws one LessonValidationError listing every problem.
+ * structural rules every lesson keeps, then the legacy-only rules. Throws one LessonValidationError listing every problem.
  */
 export function validateLegacyLesson(input: unknown): Lesson {
   const lesson = liftLegacy(parseLessonShape(legacyLessonSchema, input));
-  const issues = checkStructure(lesson);
-  for (const u of lesson.units) checkUnitLimits(u, `Unit "${u.id}"`, lesson.units.length > 1, issues);
+  const issues = [...checkStructure(lesson), ...checkLegacyRules(lesson)];
   if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
   return lesson;
 }

@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { CERT_TAGS } from './certs';
 import { LEGACY_LESSONS } from './legacy';
+import { checkLimits } from './limits';
 import {
   buildEntries,
   checkLegacyList,
@@ -11,7 +12,7 @@ import {
   neighbors,
   trackTotals,
 } from './registry';
-import { liftedFixture, makeLesson, makeTwoUnitLesson } from './test-fixtures';
+import { FIXTURE_LIMITS, liftedFixture, makeLesson, makeTwoUnitLesson } from './test-fixtures';
 import { comingSoonTracks, networkingTrack, tracks } from './tracks';
 
 const lessonFor = (slug: string, title: string) => liftedFixture(makeLesson({ slug, title }));
@@ -240,4 +241,36 @@ test('groupLessonModules rejects a default export that is not a lesson', () => {
 test('a file one folder deeper (a unit of lesson 1) is not a lesson path', () => {
   const http = lessonFor('http', 'HTTP');
   expect(() => groupLessonModules({ './lessons/networking/how-the-internet-works/http.ts': http })).toThrow(/Unexpected lesson file path/);
+});
+
+test('Networking is a concept track with today’s limits', () => {
+  expect(getTrack('networking')).toMatchObject({ type: 'concept', limits: FIXTURE_LIMITS });
+});
+
+test('none of the four real lessons carries a backing', () => {
+  for (const slug of LEGACY_LESSONS) expect(JSON.stringify(getLesson('networking', slug)), slug).not.toContain('"backing"');
+});
+
+test('the four real lessons fit Networking’s limits with no overrides', () => {
+  for (const slug of LEGACY_LESSONS) {
+    const lesson = getLesson('networking', slug)!;
+    expect(lesson.overrides, slug).toEqual([]);
+    expect(checkLimits(lesson, networkingTrack.limits), slug).toEqual([]);
+  }
+});
+
+test('the build stops on a lesson that does not fit its track’s limits, naming the lesson, the track and the limit', () => {
+  const l = makeLesson({ slug: 'dhcp', title: 'DHCP' });
+  l.units[0]!.steps[0]!.narrative = 'word '.repeat(130).trim();
+  const long = liftedFixture(l);
+  expect(() => buildEntries(networkingTrack, { dhcp: long })).toThrow(
+    /Lesson "dhcp" does not fit the networking track's limits:\n {2}- .*narrative is 130 words; the limit is 120/,
+  );
+  const reasoned = { ...long, overrides: [{ limit: 'narrativeWords' as const, max: 140, reason: 'Names all four messages in one step.' }] };
+  expect(() => buildEntries(networkingTrack, { dhcp: reasoned })).not.toThrow();
+});
+
+test('the build stops on an override the lesson does not need', () => {
+  const idle = { ...lessonFor('dhcp', 'DHCP'), overrides: [{ limit: 'steps' as const, max: 8, reason: 'Room to grow.' }] };
+  expect(() => buildEntries(networkingTrack, { dhcp: idle })).toThrow(/networking track.*"dhcp".*steps.*not needed/s);
 });
