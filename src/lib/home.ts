@@ -11,11 +11,20 @@ export function firstSentence(text: string): string {
   return end === -1 ? text : text.slice(0, end + 1);
 }
 
+/**
+ * A device's label as it reads after the arrow, mid-sentence, as home-v6 writes it ("Router → laptop"): its first
+ * letter in lower case, unless the first word is an acronym ("DNS resolver").
+ */
+export function midSentence(label: string): string {
+  if (label === '' || /^[A-Z]{2}/.test(label)) return label;
+  return label[0]!.toLowerCase() + label.slice(1);
+}
+
 export interface SampleRow {
   /** The row's number, two digits. */
   n: string;
   from: string;
-  /** 'everyone' for a broadcast, whichever device answers it. */
+  /** 'everyone' for a broadcast, whichever device answers it; otherwise the device, mid-sentence ('laptop'). */
   to: string;
   kind: MessageKind;
   /** The words on the message's tag; null when it has none, and then no tag is shown. */
@@ -57,7 +66,7 @@ export function logSample(lesson: Lesson, count = 4): LogSample {
     return {
       n: two(row.n),
       from: party(row.from),
-      to: row.kind === 'broadcast' ? 'everyone' : party(row.to),
+      to: row.kind === 'broadcast' ? 'everyone' : midSentence(party(row.to)),
       kind: row.kind,
       tag: row.tag,
       plain: row.plain,

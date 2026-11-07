@@ -215,6 +215,8 @@
 .lm-x { stroke: #200605; stroke-width: .9px; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 
 /* ---------- Draw-in: a figure fades up once when it appears ---------- */
-@keyframes lm-draw-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* No end keyframe: it fades up to the figure's own opacity, which the fill then leaves alone, so a dimmed figure
+   (Home's coming-soon track covers, at .82 as in home-v6) stays dimmed. */
+@keyframes lm-draw-in { from { opacity: 0; transform: translateY(6px); } }
 .lm-svg { animation: lm-draw-in 600ms var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1)) both; }
 @media (prefers-reduced-motion: reduce) { .lm-svg { animation: none; } }

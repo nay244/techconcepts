@@ -47,6 +47,13 @@ describe('shared figure helpers', () => {
     expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.lm-svg \{ animation: none/);
   });
 
+  test('a figure draws in to its own opacity, so a dimmed one (a coming-soon track cover) stays dimmed', () => {
+    // An end keyframe of opacity 1, held by the fill, beat Home's `.track.later .art .lm-svg { opacity: .82 }`.
+    const keyframes = /@keyframes lm-draw-in \{(.*)\}\n/.exec(css)?.[1] ?? '';
+    expect(keyframes).toMatch(/from \{ opacity: 0; transform: translateY\(6px\); \}/);
+    expect(keyframes).not.toMatch(/\bto\b|100%/);
+  });
+
   test('theme variables follow the system without a data-theme attribute, and explicit themes win', () => {
     expect(css).toMatch(/:root, \[data-theme="light"\] \{ --pool-op: \.5; --halo: #3d4a5e;/);
     expect(css).toMatch(

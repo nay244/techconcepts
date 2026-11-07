@@ -5,7 +5,7 @@ import type { Lesson } from '../content/schema';
 import { makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { tracks } from '../content/tracks';
 import { resumeLabel, slotsFor } from '../engine/timeline';
-import { firstSentence, logSample, resumePlaces } from './home';
+import { firstSentence, logSample, midSentence, resumePlaces } from './home';
 
 // The real lessons and the small fixtures both validate: the fixtures' stand-in parts are added to the real ones.
 vi.mock('../art/scenes/parts', async (importOriginal) => ({
@@ -46,7 +46,7 @@ test('the DHCP log sample is its first four messages at Learn, the fourth curren
       {
         n: '02',
         from: 'Router',
-        to: 'Laptop',
+        to: 'laptop',
         kind: 'response',
         tag: 'Offer',
         plain: 'The router offers 192.168.1.100, plus the other settings the laptop needs, for 24 hours.',
@@ -64,7 +64,7 @@ test('the DHCP log sample is its first four messages at Learn, the fourth curren
       {
         n: '04',
         from: 'Router',
-        to: 'Laptop',
+        to: 'laptop',
         kind: 'response',
         tag: 'ACK',
         plain: 'The router confirms: 192.168.1.100 is the laptop’s for 24 hours.',
@@ -75,6 +75,15 @@ test('the DHCP log sample is its first four messages at Learn, the fourth curren
     steps: 5,
     later: { n: '05', sub: 'Halfway through, ask to keep it' },
   });
+});
+
+test('the receiver reads mid-sentence, as the mockup writes it, and an acronym keeps its capitals', () => {
+  // home-v6: "Router → laptop", "Laptop → router".
+  expect(midSentence('Laptop')).toBe('laptop');
+  expect(midSentence('Web server')).toBe('web server');
+  expect(midSentence('DNS resolver')).toBe('DNS resolver');
+  expect(midSentence('A')).toBe('a');
+  expect(midSentence('')).toBe('');
 });
 
 test('a sample with fewer messages than it asks for is refused by name', () => {
