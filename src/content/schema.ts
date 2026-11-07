@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import type { FigureId } from '../art/scenes/types';
 import { CERT_TAG_IDS } from './certs';
+import { slugSchema, text } from './primitives';
+
+export { slugSchema };
 
 /**
  * Shape of a lesson: Overview, Watch, Learn, Practice. These schemas check
@@ -16,13 +19,8 @@ import { CERT_TAG_IDS } from './certs';
  * Prose fields mark key terms with `**term**`; nothing else is markup.
  */
 
-/** Prose or a label: must contain something other than whitespace. */
-const text = z.string().regex(/\S/, 'must not be empty');
 /** A whole number of bytes, packets and similar counts. */
 const count = z.number().int().min(0);
-
-/** Lowercase words joined by hyphens: safe in a URL and a file name. */
-export const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be lowercase words joined by hyphens');
 
 export const messageKindSchema = z.enum(['request', 'response', 'control', 'broadcast', 'encrypted']);
 export const certTagSchema = z.enum(CERT_TAG_IDS);
