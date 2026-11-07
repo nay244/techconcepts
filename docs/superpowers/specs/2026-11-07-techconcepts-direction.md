@@ -175,6 +175,7 @@ Until then the site stays a soft preview on `.workers.dev` and isn't promoted.
   2. `git worktree remove .claude/worktrees/redesign-build`
   3. Delete the merged `home-internet-works` branch, locally and on GitHub.
 - **Commit `skills-lock.json` and `.claude/skills/`** (accessibility, design-review, emil-design-eng, frontend-design), so every session has the same skills (owner, Q15). `.claude/worktrees/` stays ignored.
+  - **Changed in the build session, 2026-11-07 (owner):** the repository is public, so only skills whose licence allows republishing are committed: `frontend-design` (Apache 2.0, with its `LICENSE.txt`) and `accessibility` (MIT, with its `LICENSE` from `addyosmani/web-quality-skills`). `design-review` and `emil-design-eng` state no licence. They stay installed locally, `.gitignore` keeps them out, and `skills-lock.json` still lists all four with their sources.
 
 ## 9. What this changes in the earlier specs
 

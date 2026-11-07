@@ -11,3 +11,7 @@ playwright-report
 
 # git worktrees made for builds
 .claude/worktrees/
+
+# Skills listed in skills-lock.json whose authors state no licence: they stay local, out of this public repo
+.claude/skills/design-review/
+.claude/skills/emil-design-eng/
