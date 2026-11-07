@@ -357,6 +357,40 @@ test('a polite live region announces the step title and the latest message in pl
   expect(live).not.toHaveTextContent('The laptop says hello');
 });
 
+test('a change only the table shows is announced by its summary as it plays, the latest event winning', async () => {
+  renderConsole();
+  const live = document.querySelector('[aria-live="polite"][data-announce]')!;
+  // Neighbor Reply: the router's answer, and then the row it adds, which only the table shows.
+  await user.keyboard('{ArrowRight}{ArrowRight}');
+  expect(live).toHaveTextContent(/^Neighbor Reply\.?$/);
+  await wait(EVENT_MS);
+  expect(live).toHaveTextContent(/^Neighbor Reply\. The router answers the laptop\.$/);
+  await wait(EVENT_MS);
+  expect(live).toHaveTextContent(/^Neighbor Reply\. The router remembers the laptop\.$/);
+  // Table Lookup: the table's match first, then a note, which wins.
+  await user.keyboard('{ArrowRight}');
+  expect(live).toHaveTextContent(/^Table Lookup\.?$/);
+  await wait(EVENT_MS);
+  expect(live).toHaveTextContent(/^Table Lookup\. The router finds the laptop in its table\.$/);
+  await wait(EVENT_MS);
+  expect(live).toHaveTextContent(/^Table Lookup\. The router already knows the laptop\.$/);
+});
+
+test('a jump announces no table change, as it announces no message: only where it lands', async () => {
+  renderConsole();
+  const live = document.querySelector('[aria-live="polite"][data-announce]')!;
+  const outline = screen.getByRole('navigation', { name: 'This lesson' });
+  // Lost Message comes after both of the table's changes (Neighbor Reply's add and Table Lookup's match).
+  await user.click(within(outline).getByRole('button', { name: /^Lost Message/ }));
+  expect(live).toHaveTextContent(/^Lost Message\.?$/);
+  await user.click(within(outline).getByRole('button', { name: /^Neighbor Reply/ }));
+  expect(live).toHaveTextContent(/^Neighbor Reply\.?$/);
+  await user.click(within(outline).getByRole('button', { name: /^Table Lookup/ }));
+  expect(live).toHaveTextContent(/^Table Lookup\.?$/);
+  await user.click(within(outline).getByRole('button', { name: /^What happened and why/ }));
+  expect(live).toHaveTextContent(/^Learn$/);
+});
+
 test('the Light/Dark switch shows the theme in effect and saves a choice', async () => {
   renderConsole();
   const group = within(topBar()).getByRole('group', { name: 'Theme' });

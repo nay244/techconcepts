@@ -144,6 +144,7 @@ export const tableEventSchema = z.strictObject({
    * mark until an event changes it again without one.
    */
   miss: z.boolean().optional(),
+  /** What changed, in one plain sentence. The table only shows it, so screen readers hear this when the event plays. */
   summary: text,
 });
 

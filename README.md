@@ -97,7 +97,7 @@ A step's events play in order. There are three kinds:
 
 - **`message`**: something travels `from` one place on the figure `to` another, wearing a `tag`. Its `kind` (request, response, control, broadcast or encrypted) picks its mark and colour in the log and the Sequence view, and a broadcast spreads across the figure. Its `outcome` may be `'dropped'` (lost on the way, at `dropAt`) or `'blocked'` by a firewall; it defaults to `'delivered'`. A firewall's `check` says how many rules it read and which one matched, and `known` marks a reply let through because the firewall remembers the connection. A message may also point at one of the scene's `packets` (DHCP keeps its packets).
 - **`note`**: something happens in one place, such as a calculation. On the Subnetting figure a note can carry a `board` for the bits board. The log draws a note with the legend's note entry, or with a message kind's glyph when the note names one as its `glyph` (Subnetting's sent and broadcast rows); the legend must explain it.
-- **`table`**: a row of the unit's panel table is added, updated, removed, matched, replaced or cleared.
+- **`table`**: a row of the unit's panel table is added, updated, removed, matched, replaced or cleared. It adds no log row. Its `summary` says what changed in one plain sentence, and screen readers hear it when the event plays. A jump says only where it lands, as it does for messages.
 
 Messages and notes give their own `log` row (by the log's column keys) and a `plain` sentence, which the log's `plain` column shows and screen readers hear. Both can carry **cues**: named changes the figure shows besides the message itself, such as the padlock lighting up on the network map.
 

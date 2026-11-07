@@ -58,7 +58,8 @@ function FinishedMarker() {
  * `?step=` link. Every move is recorded as progress; Practice is never saved.
  *
  * Keys (`useLessonShortcuts`): Space plays or pauses, → and ← move. A polite
- * live region says each step's title and, as it plays, its latest message.
+ * live region says each step's title and, as it plays, its latest message or
+ * table change.
  *
  * Two things live in memory only, for as long as the page is open: the units
  * the learner has opened (the outline ticks them) and the Practice picks, per
@@ -146,11 +147,14 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
 
   // ---------------------------------------------------------------- what the step says
 
-  // The latest log row, if this step played it: it pulses once and is announced.
+  // The latest log row, if this step played it: it pulses once.
   const latest = derived.log.at(-1);
   const fresh = latest !== undefined && derived.events.some((e) => e.id === latest.eventId) ? latest : null;
   const step = slot.kind === 'step' ? unit.steps[slot.step - 1]! : null;
-  const announcement = step === null ? resumeLabel(lesson, position) : fresh === null ? step.title : `${step.title}. ${fresh.plain}`;
+  // The latest event this step has played is announced after its title: a log row's plain words, or the summary of a
+  // change only the table shows. A jump has played none of the step yet, so it says only where it lands.
+  const said = derived.active?.type === 'table' ? derived.active.summary : fresh?.plain;
+  const announcement = step === null ? resumeLabel(lesson, position) : said === undefined ? step.title : `${step.title}. ${said}`;
   // A step may say what its empty log means (lesson 1's quiet first steps); otherwise, and always at the Overview,
   // the unit's log says it, as the mockups' log does before anything has played.
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
