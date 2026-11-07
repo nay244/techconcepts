@@ -29,7 +29,6 @@ afterEach(() => {
 // Shorthand for reaching into the first unit and its events.
 const unit = (l: LegacyLessonInput, i = 0): LegacyUnitInput => l.units[i]!;
 const ev = (l: LegacyLessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
-const words = (n: number) => 'word '.repeat(n).trim();
 
 /** The fixture with a rules panel, as Firewalls has: a rule list and the connections it remembers. */
 function withRulesPanel(): LegacyLessonInput {
