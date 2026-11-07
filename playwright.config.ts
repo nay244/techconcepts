@@ -11,9 +11,14 @@ import { defineConfig } from '@playwright/test';
  * `visual.spec.ts` (tagged @visual) takes the screenshots for the visual check: `npm run e2e:visual`. `npm run e2e`
  * leaves it out. It sets each size and theme itself, so only the d1440-dark project runs it; the other projects
  * ignore the file.
+ *
+ * Phone and desktop tests go to their projects here, not by skipping: the phone project runs only site.spec.ts's
+ * @phone tests, and every desktop project leaves them out. The skips left in the specs are deliberate gates: the
+ * playback behaviour checks run in d1440-dark and reduced-motion only, and the reduced-motion timing in its project.
  */
 const PORT = 4471;
-const notVisual = { testIgnore: /visual\.spec\.ts$/ };
+const desktop = { grepInvert: /@phone/ };
+const notVisual = { ...desktop, testIgnore: /visual\.spec\.ts$/ };
 
 export default defineConfig({
   testDir: 'e2e',
@@ -37,11 +42,11 @@ export default defineConfig({
   projects: [
     { name: 'd1280', ...notVisual, use: { viewport: { width: 1280, height: 800 } } },
     { name: 'd1366', ...notVisual, use: { viewport: { width: 1366, height: 768 } } },
-    { name: 'd1440-dark', use: { viewport: { width: 1440, height: 900 }, colorScheme: 'dark' } },
+    { name: 'd1440-dark', ...desktop, use: { viewport: { width: 1440, height: 900 }, colorScheme: 'dark' } },
     { name: 'd1440-light', ...notVisual, use: { viewport: { width: 1440, height: 900 }, colorScheme: 'light' } },
     { name: 'd1920', ...notVisual, use: { viewport: { width: 1920, height: 1080 } } },
     { name: 'reduced-motion', ...notVisual, use: { viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' } },
     // Small screens are not designed yet: the phone only loads and scrolls every page (site.spec.ts).
-    { name: 'phone', testMatch: /site\.spec\.ts$/, use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
+    { name: 'phone', testMatch: /site\.spec\.ts$/, grep: /@phone/, use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
   ],
 });

@@ -308,7 +308,6 @@ test.describe('lesson specifics', () => {
     const reduced = await runTime(page);
     const note = `${shortest.title}'s first unit, Play to Replay at 1×: ${normal} ms with motion, ${reduced} ms with reduced motion`;
     testInfo.annotations.push({ type: 'run time', description: note });
-    console.log(note);
     // As long as normal: within a quarter either way.
     expect(Math.abs(reduced - normal) / normal).toBeLessThanOrEqual(0.25);
   });
@@ -318,8 +317,11 @@ test.describe('lesson specifics', () => {
     // Step 4 plays the Acknowledge, then a table event that remounts the lease table with its new row.
     await open(page, `${dhcp.path}?step=4`);
     const table = page.getByRole('region', { name: 'DHCP lease table' });
+    const lease = table.getByRole('cell', { name: '192.168.1.100' });
+    // The row must arrive after the focus, or the remount is never tested.
+    await expect(lease).toHaveCount(0);
     await table.focus();
-    await expect(table.getByRole('cell', { name: '192.168.1.100' })).toBeVisible({ timeout: 30_000 });
+    await expect(lease).toBeVisible({ timeout: 30_000 });
     await expect(table).toBeFocused();
   });
 

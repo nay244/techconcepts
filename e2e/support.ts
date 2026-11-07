@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // ---------------------------------------------------------------- the ready lessons
 
@@ -45,11 +45,6 @@ export const SITE_PAGES = [
   { name: 'about', path: '/about' },
   { name: '404', path: '/does-not-exist' },
 ] as const;
-
-// ---------------------------------------------------------------- projects
-
-/** The phone project only loads and scrolls each page; every other project is a desktop size. */
-export const isPhone = (testInfo: TestInfo): boolean => testInfo.project.name === 'phone';
 
 // ---------------------------------------------------------------- pages
 
@@ -100,16 +95,10 @@ export async function pageOverflow(page: Page): Promise<{ down: number; sideways
 export const kicker = (page: Page): Locator => page.locator('.console__explain .explain__kicker');
 export const playButton = (page: Page): Locator => page.locator('.console__controls .cbtn--play');
 export const nextButton = (page: Page): Locator => page.getByRole('button', { name: 'Next step', exact: true });
-export const previousButton = (page: Page): Locator => page.getByRole('button', { name: 'Previous step', exact: true });
 export const speedButton = (page: Page): Locator => page.locator('.console__controls .cbtn--speed');
 export const viewSwitch = (page: Page): Locator => page.getByRole('group', { name: 'View', exact: true });
 /** The log's rows, without the line it shows while it is empty. */
 export const logRows = (page: Page): Locator => page.locator('.console__log tbody tr:not(:has(td[data-idle]))');
-
-/** Shortcuts are ignored on buttons and fields by design, so nothing may hold focus when a lesson key is pressed. */
-export async function blurFocus(page: Page): Promise<void> {
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-}
 
 /** Where the console is, and what the page looks like there, two frames after it got there. */
 export interface Position {
@@ -164,7 +153,10 @@ export async function moveBy(page: Page, action: () => Promise<void>): Promise<P
   return position(page, before);
 }
 
-/** Presses a lesson key with nothing focused, and waits for the move. */
+/**
+ * Presses a lesson key with nothing focused, and waits for the move. Shortcuts are ignored on buttons and fields by
+ * design, so focus is dropped first, in the same round trip that reads the kicker.
+ */
 export async function pressKey(page: Page, key: 'ArrowRight' | 'ArrowLeft'): Promise<Position> {
   const before = await page.evaluate(() => {
     (document.activeElement as HTMLElement | null)?.blur();

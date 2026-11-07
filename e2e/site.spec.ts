@@ -3,7 +3,6 @@ import {
   SITE_PAGES,
   collectErrors,
   hydrated,
-  isPhone,
   kicker,
   moveBy,
   nextButton,
@@ -35,9 +34,8 @@ async function finishLesson(page: Page, path: string): Promise<void> {
   await expect(kicker(page)).toContainText('Practice');
 }
 
+// The desktop projects run this block and the phone project the next, by its @phone tag (playwright.config.ts).
 test.describe('desktop', () => {
-  test.beforeEach(({}, testInfo) => test.skip(isPhone(testInfo), 'The phone project only loads and scrolls each page.'));
-
   requireLessons(LESSONS);
 
   test.describe('Home', () => {
@@ -231,9 +229,7 @@ test.describe('desktop', () => {
   });
 });
 
-test.describe('phone', () => {
-  test.beforeEach(({}, testInfo) => test.skip(!isPhone(testInfo), 'Only the phone project loads and scrolls each page.'));
-
+test.describe('phone', { tag: '@phone' }, () => {
   requireLessons(LESSONS);
 
   for (const { name, path } of ALL_PAGES) {

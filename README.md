@@ -14,7 +14,7 @@ Node 22 or newer is required (`.node-version` pins 24).
 | `npm run budgets` | Check the built `dist/` against the page-weight budgets (run it after a build) |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm test` | Run the Vitest tests once (`src/` and `scripts/`) |
-| `npm run e2e` | Run the Playwright end-to-end tests at five desktop sizes, with reduced motion and on a phone (it builds the site and previews it on port 4471 itself) |
+| `npm run e2e` | Run the Playwright end-to-end tests at four desktop sizes (1440 in both themes, so five desktop projects), with reduced motion and on a phone (it builds the site and previews it on port 4471 itself) |
 | `npm run e2e:visual` | Take full-page screenshots of every page at four desktop sizes in both themes, into `test-results/visual/` (not committed) |
 | `npm run deploy` | Deploy `dist/` with `wrangler deploy` (build first) |
 | `node scripts/generate-og-image.mjs` | Redraw the social image, `public/og-default.png` |
