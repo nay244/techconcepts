@@ -30,6 +30,7 @@ You do these once. Nothing here needs a password pasted into any tool; you sign 
    - Deploy command: `npm run deploy` (it runs the `wrangler` pinned in `package.json`, which Workers Builds installs with the other dependencies; the dashboard's default `npx wrangler deploy` would also use that local copy)
    - Root directory: leave empty
    - Build variable: `NODE_VERSION` = `24`
+   - Branches other than `main` (for example a pull request's branch) use the dashboard's default non-production deploy command, `npx wrangler preview`. It makes a separate Preview, so production is untouched. The command refuses to run unless `wrangler.jsonc` has a `previews` block; the empty block there is that block.
 
    Save and deploy. Cloudflare gives the site a preview address ending in `.workers.dev`. Send that address to your assistant.
 3. **Optional: turn on page-view counting.** In the dashboard open **Web Analytics**, choose **Add a site**, enter the preview hostname, and finish. Then open **Manage site** and copy the **token** from the snippet it shows (the value after `"token":`). Back in your Worker, go to **Settings**, then **Build**, then **Variables and secrets**, and add `PUBLIC_CF_WEB_ANALYTICS_TOKEN` with that token. Redeploy. The token is a public identifier, not a secret, but keep it out of the repository. Skip this step if you do not want analytics yet; the site works the same without it.

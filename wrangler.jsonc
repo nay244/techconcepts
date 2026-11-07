@@ -13,5 +13,8 @@
     // directly; /networking/dhcp/ and /networking/dhcp/index.html redirect (307) to them.
     // The default, auto-trailing-slash, would redirect every internal link the other way.
     "html_handling": "drop-trailing-slash"
-  }
+  },
+  // Cloudflare builds every branch other than main with `npx wrangler preview`, which refuses to run without a
+  // `previews` block. It stays empty: the assets and settings above apply to previews too.
+  "previews": {}
 }
