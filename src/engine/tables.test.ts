@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Row, TableDef, TableEvent } from '../content/schema';
-import { applyTableEvent, highlightFor, initialTables, type TableState } from './tables';
+import { applyTableEvent, highlightFor, initialTables, tablesOf, type TableState } from './tables';
 
 const def: TableDef = {
   id: 't',
@@ -48,6 +48,16 @@ test('initialTables starts every table at its own copy of its initial rows, with
 });
 
 test('initialTables of no tables is empty', () => expect(initialTables([])).toEqual({}));
+
+// ---------------------------------------------------------------- tablesOf
+
+test("tablesOf is the tables a unit's panel holds: a table panel's one, a rules panel's rules and connections, else none", () => {
+  const conns: TableDef = { ...def, id: 'conns', initialRows: [] };
+  expect(tablesOf({ scene: { panel: { type: 'table', table: def } } })).toEqual([def]);
+  expect(tablesOf({ scene: { panel: { type: 'rules', rules: def, conns } } })).toEqual([def, conns]);
+  expect(tablesOf({ scene: { panel: { type: 'bits' } } })).toEqual([]);
+  expect(tablesOf({ scene: { panel: null } })).toEqual([]);
+});
 
 // ---------------------------------------------------------------- applyTableEvent
 

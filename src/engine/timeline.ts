@@ -1,5 +1,5 @@
-import type { Board, Lesson, MessageKind, Row, SceneEvent, TableDef, Unit } from '../content/schema';
-import { applyTableEvent, highlightFor, initialTables, type TableState } from './tables';
+import type { Board, Lesson, MessageKind, Row, SceneEvent } from '../content/schema';
+import { applyTableEvent, highlightFor, initialTables, tablesOf, type TableState } from './tables';
 
 /**
  * Where a learner is in a lesson: a flat index over every unit's slots. Each
@@ -165,19 +165,6 @@ function eventsOf(lesson: Lesson, slot: Slot): SceneEvent[] {
   return slot.kind === 'step' ? lesson.units[slot.unit]!.steps[slot.step - 1]!.events : [];
 }
 
-/**
- * The tables a unit's events change: the ones its scene's panel holds. A table
- * panel has one, a rules panel has the rules and the connections it remembers,
- * and the bits board or no panel has none. (`define.ts` checks events against the same list.)
- */
-function unitTables(u: Unit): TableDef[] {
-  const panel = u.scene.panel;
-  if (panel === null) return [];
-  if (panel.type === 'table') return [panel.table];
-  if (panel.type === 'rules') return [panel.rules, panel.conns];
-  return [];
-}
-
 function logRow(e: Exclude<SceneEvent, { type: 'table' }>, n: number): LogRow {
   const cells = { ...e.log };
   if (e.type === 'note') {
@@ -223,7 +210,7 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number): De
     ...events.slice(0, Math.max(0, eventIndex)).map((event) => ({ event, current: true })),
   ];
 
-  const defs = unitTables(u);
+  const defs = tablesOf(u);
   // Fresh tables every time: applyTableEvent changes them in place.
   const tables = initialTables(defs);
   const log: LogRow[] = [];

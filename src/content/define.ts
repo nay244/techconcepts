@@ -1,5 +1,6 @@
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
+import { tablesOf } from '../engine/tables';
 import { formatBytes } from '../lib/format';
 import { countWords, estimateMinutes, estimateUnitMinutes, MAX_MINUTES, PRACTICE_MINUTES_PER_UNIT, WARN_MINUTES } from './estimate';
 import {
@@ -59,15 +60,6 @@ function slugOf(input: unknown): string | undefined {
 /** True when `n` is from `min` to `max`, both included. */
 function inRange(n: number, min: number, max: number): boolean {
   return n >= min && n <= max;
-}
-
-/** The tables a panel holds, which are the only tables a unit's events may change. */
-function panelTables(u: Unit): TableDef[] {
-  const panel = u.scene.panel;
-  if (panel === null) return [];
-  if (panel.type === 'table') return [panel.table];
-  if (panel.type === 'rules') return [panel.rules, panel.conns];
-  return [];
 }
 
 /** The rows a unit's table events give the table `id`, whole: each row an add brings, and each a replace brings. */
@@ -306,7 +298,7 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
     parts: FIGURE_PARTS[l.figure],
     unit: u,
     logKeys: new Set(u.scene.log.columns.map((column) => column.key).filter((key) => key !== 'plain' && key !== '#')),
-    tables: panelTables(u),
+    tables: tablesOf(u),
     issues,
   };
   checkScene(c, at);

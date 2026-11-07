@@ -1,4 +1,18 @@
-import type { Row, TableDef, TableEvent } from '../content/schema';
+import type { Panel, Row, TableDef, TableEvent } from '../content/schema';
+
+/**
+ * The tables a unit's panel holds, which are the only tables its events may
+ * change: a table panel has one, a rules panel has the rules and the
+ * connections it remembers, and the bits board or no panel has none. The
+ * timeline builds these tables and `define.ts` checks events against them.
+ */
+export function tablesOf(unit: { scene: { panel: Panel | null } }): TableDef[] {
+  const panel = unit.scene.panel;
+  if (panel === null) return [];
+  if (panel.type === 'table') return [panel.table];
+  if (panel.type === 'rules') return [panel.rules, panel.conns];
+  return [];
+}
 
 /**
  * A panel table as it stands at a moment of the lesson: its rows, the row the
