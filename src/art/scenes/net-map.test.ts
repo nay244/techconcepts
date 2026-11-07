@@ -19,6 +19,7 @@ import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_TAG_MAX, plateSites } from
 // - two site additions no FIGS part draws: the carrier under the tag (`#nm-over`) and the word LOST on the drop mark.
 // Then normaliseFigure(). The data is `{ ...camera(), routes }`, with `buildScene(protocol's servers).route(a, b)` for
 // every ordered pair of places each protocol uses, as `JSON.stringify`.
+// The lost trail's edge (`#nm-trail-edge`, net-map.css) came later; the map is checked without it, and it on its own.
 const EXPECTED = {
   svg: '5146c02dcb7efbddf0c50d500c1db6a098d32e9ef2148ce5af87726fd5fd7132',
   data: '9206d017007b801efb42ea2777fc4faccf9a9229c993083ebc4d5d2888439b6f',
@@ -29,10 +30,18 @@ const PROTOCOLS = ['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', '
 /** The groups a server's parts are drawn in, back to front, as the mockup's map draws one protocol's. */
 const SLOTS = ['nm-l-under', 'nm-l-plates', 'nm-l-cables', 'nm-l-things', 'nm-l-calls'];
 
+/** The figure's background under a lost trail, so the red always has its own edge: a plain stroke, hidden at first. */
+const TRAIL_EDGE = '<polyline class="nm-trail-edge" id="nm-trail-edge" points="" style="opacity:0"/>';
+
 test('drawNetMap matches the mockup map', async () => {
   const { svg, data } = drawNetMap();
-  expect(await sha256(normaliseFigure(svg))).toBe(EXPECTED.svg);
+  expect(svg.split(TRAIL_EDGE)).toHaveLength(2);
+  expect(await sha256(normaliseFigure(svg.replace(TRAIL_EDGE, '')))).toBe(EXPECTED.svg);
   expect(await sha256(JSON.stringify(data))).toBe(EXPECTED.data);
+});
+
+test('the lost trail’s edge is drawn just under the trail, so the red sits on the figure’s background', () => {
+  expect(drawNetMap().svg).toContain(`${TRAIL_EDGE}<polyline class="nm-trail" id="nm-trail" points="" style="opacity:0"/>`);
 });
 
 test('the map keeps the mockup’s one fixed frame', () => {

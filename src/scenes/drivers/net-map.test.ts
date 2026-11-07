@@ -255,6 +255,7 @@ test('a dropped message leaves a blocked-red trail and a drop mark at dropAt', a
   let done = false;
   void driver.play(lost, before, options()).then(() => (done = true));
   const trail = part(root, 'nm-trail') as SVGPolylineElement;
+  const edge = part(root, 'nm-trail-edge') as SVGPolylineElement;
   const drop = part(root, 'nm-drop');
   const tag = part(root, 'nm-tag-7');
   expect(opacity(tag)).toBe('1');
@@ -268,6 +269,8 @@ test('a dropped message leaves a blocked-red trail and a drop mark at dropAt', a
   frameAt(0);
   frameAt(travel / 2);
   expect(trail.classList.contains('lost')).toBe(false);
+  // A trail that is not lost has no edge under it.
+  expect(opacity(edge)).toBe('0');
   frameAt(travel);
   await flush();
   // Lost: the trail turns red and dashed, and the drop mark sits where it stopped, with the word LOST on it.
@@ -277,6 +280,10 @@ test('a dropped message leaves a blocked-red trail and a drop mark at dropAt', a
   expect(moved(drop)).toEqual(at.map((v) => +v.toFixed(1)));
   expect(trail.getAttribute('points')!.split(' ').at(-1)).toBe(at.map((v) => v.toFixed(1)).join(','));
   expect(drop.textContent).toBe('LOST');
+  // Under the red, its edge in the figure's background, along the same points and as opaque as the trail.
+  expect(edge.getAttribute('points')).toBe(trail.getAttribute('points'));
+  expect(opacity(edge)).toBe(opacity(trail));
+  expect(edge.nextElementSibling).toBe(trail);
 
   // The tag fades over 380 ms, then the mark stays 650 ms more, and the scene clears.
   frameAt(travel + 190);
@@ -288,12 +295,19 @@ test('a dropped message leaves a blocked-red trail and a drop mark at dropAt', a
   expect(done).toBe(true);
   expect(opacity(drop)).toBe('0');
   expect(trail.classList.contains('lost')).toBe(false);
+  expect(opacity(edge)).toBe('0');
+  expect(edge.getAttribute('points')).toBe('');
 
   // The colour of lost things is the blocked red, never marigold, which means only "current".
   expect(mapCss).toMatch(/\.nm \.nm-trail\.lost \{[^}]*stroke: var\(--blocked\)/);
-  // Outlined in the figure's background on all four sides, so the light red is never only beside a charcoal plate.
-  const outline = /\.nm \.nm-trail\.lost \{[^}]*filter: ([^;]*);/.exec(mapCss)?.[1] ?? '';
-  for (const offset of ['2px 0 0', '-2px 0 0', '0 2px 0', '0 -2px 0']) expect(outline).toContain(`drop-shadow(${offset} var(--fig-bg))`);
+  // Edged in the figure's background, 2px each side of the 2px trail, so the light red is never only beside a
+  // charcoal plate. A plain stroke, as every engine draws it: no CSS filter, which WebKit has historically ignored on SVG parts.
+  expect(mapCss).toMatch(
+    /\.nm \.nm-trail-edge \{ fill: none; stroke: var\(--fig-bg\); stroke-width: 6px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; \}/,
+  );
+  expect(mapCss).toMatch(/\.nm \.nm-trail \{[^}]*stroke-width: 2px;/);
+  expect(mapCss).toMatch(/\.nm \.nm-trail\.lost \{[^}]*filter: none;/);
+  expect(mapCss).not.toMatch(/drop-shadow\([^)]*var\(--fig-bg\)/);
   expect(mapCss).toMatch(/\.nm \.nm-drop circle \{[^}]*stroke: var\(--blocked\)/);
   expect(mapCss).toMatch(/\.nm \.nm-drop path \{[^}]*stroke: var\(--blocked\)/);
   expect(mapCss).toMatch(/\.nm \.nm-drop-t \{[^}]*fill: var\(--blocked\)/);

@@ -197,6 +197,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   const over = part('nm-over');
   const overText = over.querySelector('text')!;
   const trail = part('nm-trail');
+  /** The figure's background under a lost trail, so the red always has its own edge (net-map.css). */
+  const edge = part('nm-trail-edge');
   const drop = part('nm-drop');
   const ring = part('nm-ring');
 
@@ -311,9 +313,11 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     }
     for (const tag of tags) tag.querySelector('.nm-tag-t')!.textContent = '';
     overText.textContent = '';
-    fade(trail, 0);
+    for (const line of [trail, edge]) {
+      fade(line, 0);
+      line.setAttribute('points', '');
+    }
     trail.classList.remove('lost');
-    trail.setAttribute('points', '');
     for (const el of [drop, ring]) {
       fade(el, 0);
       el.removeAttribute('transform');
@@ -388,6 +392,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       await animate(travel * stop, (k) => ride(stop * easeOut(k), k), o);
       if (o.signal.aborted) return;
       trail.classList.add('lost');
+      edge.setAttribute('points', trail.getAttribute('points') ?? '');
+      fade(edge, TRAIL_OPACITY);
       moveTo(drop, flatAt(r, stop));
       fade(drop, 1);
       await animate(

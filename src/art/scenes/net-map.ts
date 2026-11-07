@@ -374,7 +374,7 @@ function mapSvg() {
   const tags = Array.from({ length: NET_MAP_TAG_MAX }, (_, i) => `<g class="nm-tag" id="${ID}-tag-${i + 1}" style="opacity:0">${tag(i + 1)}</g>`).join("");
   const svg = `<svg data-figure="net-map" class="lm-svg nm" viewBox="${vb.join(" ")}" role="img" aria-label="${ARIA}">${base.under}<g id="${ID}-l-under">${slot("under")}</g>` +
     `<g class="lm-body"><g id="${ID}-l-plates">${slot("plates")}</g>${base.plates}<g id="${ID}-ring" style="opacity:0"><path class="nm-ring" d="${k.ring(0, 0, RING_R, 0, P, 72)}"/></g>${base.cables}<g id="${ID}-l-cables">${slot("cables")}</g><g id="${ID}-conns"></g>` +
-    `<polyline class="nm-trail" id="${ID}-trail" points="" style="opacity:0"/>${base.things}<g id="${ID}-l-things">${slot("things")}</g><g id="${ID}-l-tags">${tags}${OVER}</g>${DROP}</g><g id="${ID}-l-calls">${shared}${slot("calls")}</g></svg>`;
+    `<polyline class="nm-trail-edge" id="${ID}-trail-edge" points="" style="opacity:0"/><polyline class="nm-trail" id="${ID}-trail" points="" style="opacity:0"/>${base.things}<g id="${ID}-l-things">${slot("things")}</g><g id="${ID}-l-tags">${tags}${OVER}</g>${DROP}</g><g id="${ID}-l-calls">${shared}${slot("calls")}</g></svg>`;
   return { svg, layers };
 }
 
