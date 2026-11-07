@@ -45,7 +45,7 @@ test('the lost trail’s edge is drawn just under the trail, so the red sits on 
 });
 
 test('the map keeps the mockup’s one fixed frame', () => {
-  expect(drawNetMap().svg).toMatch(/^<svg data-figure="net-map" class="lm-svg nm" viewBox="-98 -60 685 378" role="img" aria-label="[^"]+">/);
+  expect(drawNetMap().svg).toMatch(/^<svg data-figure="net-map" class="lm-svg nm" viewBox="-98 -60 685 378" role="img" aria-label="[^"]*\S[^"]*">/);
 });
 
 test('the figure keeps its ids to itself, with no grain and no closing tag an HTML parser would act on', () => {

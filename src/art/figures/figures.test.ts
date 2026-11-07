@@ -7,10 +7,14 @@ import { SPOTS, spot } from './spots.ts';
 
 const ALL = (): string[] => [...COVER_IDS.map(cover), ...SPOTS.map(spot), heroWebSvg(), internetThumb()];
 
-test('every figure has role="img" and a non-empty aria-label', () => {
+/** An aria-label with words in it: a label of only spaces says nothing. */
+const LABEL = /aria-label="[^"]*\S[^"]*"/;
+
+test('every figure has role="img" and an aria-label with words in it', () => {
+  expect('<svg aria-label="   ">').not.toMatch(LABEL);
   for (const s of ALL()) {
     expect(s).toMatch(/^<svg[^>]* role="img"/);
-    expect(s).toMatch(/aria-label="[^"]+"/);
+    expect(s).toMatch(LABEL);
   }
 });
 

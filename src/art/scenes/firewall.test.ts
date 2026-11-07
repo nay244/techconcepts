@@ -20,7 +20,7 @@ test('drawFirewall matches the mockup scene', async () => {
 
 test('the figure names itself for its driver and keeps its ids to itself', () => {
   const { svg } = drawFirewall();
-  expect(svg).toMatch(/^<svg data-figure="firewall" class="lm-svg fw" viewBox="[^"]+" role="img" aria-label="[^"]+">/);
+  expect(svg).toMatch(/^<svg data-figure="firewall" class="lm-svg fw" viewBox="[^"]+" role="img" aria-label="[^"]*\S[^"]*">/);
   const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!);
   expect(ids.length).toBeGreaterThan(0);
   expect(ids.filter((id) => !id.startsWith('fw-'))).toEqual([]);

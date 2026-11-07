@@ -20,7 +20,7 @@ test('drawSubnet matches the mockup scene', async () => {
 
 test('the figure names itself for its driver and keeps its ids to itself', () => {
   const { svg } = drawSubnet();
-  expect(svg).toMatch(/^<svg data-figure="subnet" class="lm-svg sn" viewBox="[^"]+" role="img" aria-label="[^"]+">/);
+  expect(svg).toMatch(/^<svg data-figure="subnet" class="lm-svg sn" viewBox="[^"]+" role="img" aria-label="[^"]*\S[^"]*">/);
   const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!);
   expect(ids.length).toBeGreaterThan(0);
   expect(ids.filter((id) => !id.startsWith('sn-'))).toEqual([]);
