@@ -257,6 +257,10 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
 
   if (e.type === 'note') {
     if (e.board !== undefined && !c.parts.board) issues.push(`${where} has a board, but the ${figure} figure has none.`);
+    // A glyph's colour and shape never say what it is alone: the legend says it in words.
+    if (e.glyph !== undefined && !c.unit.scene.log.legend.some((entry) => entry.kind === e.glyph)) {
+      issues.push(`${where} draws the ${e.glyph} glyph, which the unit's log legend does not explain.`);
+    }
     return;
   }
 

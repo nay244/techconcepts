@@ -83,11 +83,14 @@ test('the pattern note’s steps are the ones that work at those prefixes', () =
   expect([prefixes(2), prefixes(3), prefixes(4), prefixes(6)]).toEqual([[24], [24], [26], [30]]);
 });
 
-/** The mockup's log rows, from FIGS/subnet-lesson.mjs: worked out, value, prefix, in plain words. */
+/**
+ * The mockup's log rows, from FIGS/subnet-lesson.mjs: worked out, value, prefix, in plain words, as it draws them:
+ * an empty prefix is a dash (`e.prefix || '–'`).
+ */
 const MOCKUP_ROWS = [
-  ['Address', '192.168.1.10', '', 'The Sales laptop’s address, in bits'],
-  ['Network portion', '192.168.1', '', 'Which network: the same for the whole office'],
-  ['Host portion', '10', '', 'Which device: the laptop'],
+  ['Address', '192.168.1.10', '–', 'The Sales laptop’s address, in bits'],
+  ['Network portion', '192.168.1', '–', 'Which network: the same for the whole office'],
+  ['Host portion', '10', '–', 'Which device: the laptop'],
   ['Subnet mask', '255.255.255.0', '/24', '24 ones, then 8 zeros'],
   ['Prefix length', '/24', '/24', 'Written 192.168.1.10/24'],
   ['Network address', '192.168.1.0', '/24', 'Host bits all 0: the network’s own name'],
@@ -155,17 +158,36 @@ test('show draws every moment of the lesson, forwards, backwards and jumping, as
 test('the log is “Working”, with the mockup’s columns: words where it has words, and its widths', () => {
   const log = unit.scene.log;
   expect(log.title).toBe('Working');
-  expect(log.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false])).toEqual([
-    ['worked', 'Worked out', 176, true],
-    ['value', 'Value', 190, false],
-    ['prefix', 'Prefix', 76, false],
-    ['plain', 'In plain words', null, true],
+  expect(log.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false, c.strong ?? false])).toEqual([
+    ['worked', 'Worked out', 176, true, true],
+    ['value', 'Value', 190, false, true],
+    ['prefix', 'Prefix', 76, false, false],
+    ['plain', 'In plain words', null, true, false],
   ]);
-  // Every row is something worked out, so the one glyph the log draws is explained as that.
-  expect(log.legend).toEqual([{ kind: 'note', label: 'Worked out' }]);
+  // The mockup's three glyphs, each explained in words.
+  expect(log.legend).toEqual([
+    { kind: 'request', label: 'Worked out' },
+    { kind: 'response', label: 'Sent' },
+    { kind: 'broadcast', label: 'Broadcast' },
+  ]);
   // The empty log speaks for the whole lesson, from the Overview on, as the mockup's does.
   expect(log.idle).toBe('Nothing worked out yet. Press Play, or pick a step.');
   expect(unit.steps.filter((s) => s.idle !== undefined)).toEqual([]);
+});
+
+test('each row’s glyph says what the figure does with it: a ring is a broadcast, a route is sent, the rest are worked out', () => {
+  const glyphs = Object.fromEntries(notes.map((e) => [e.id, e.glyph]));
+  // As subnet-v1.html's events: its two broadcast addresses ring, and its three deliveries ride a route.
+  expect(Object.entries(glyphs).filter(([, g]) => g === 'broadcast').map(([id]) => id)).toEqual(['broadcast-24', 'broadcast-26']);
+  expect(Object.entries(glyphs).filter(([, g]) => g === 'response').map(([id]) => id)).toEqual(['same-subnet', 'different-subnet', 'usable-30']);
+  expect(Object.values(glyphs).filter((g) => g === 'request')).toHaveLength(12);
+  for (const e of notes) {
+    const cues = (e.cues ?? []).map((c) => c.cue);
+    expect(e.glyph, e.id).toBe(cues.includes('ring') ? 'broadcast' : cues.includes('route') ? 'response' : 'request');
+  }
+  // Before the mask shows, the Prefix column says so with a dash, as the mockup's does.
+  expect(notes.filter((e) => e.log.prefix === '–').map((e) => e.id)).toEqual(['address', 'network-part', 'host-part']);
+  expect(notes.filter((e) => e.log.prefix === '')).toEqual([]);
 });
 
 test('192.168.1.10 and 192.168.1.70 are in different /26 subnets, and the text says so', () => {

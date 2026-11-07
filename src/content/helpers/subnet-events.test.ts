@@ -51,16 +51,27 @@ test('calc makes a note whose log row is worked out by the engine', () => {
     log: { worked: 'Subnet mask', value: '255.255.255.192', prefix: '/26' },
     plain: '2 host bits borrowed for the network',
     board,
+    glyph: 'request',
     cues,
   });
-  // Before the mask shows, the prefix column is empty, and a note without cues has none.
+  // Before the mask shows, the prefix column is a dash, and a note without cues has none.
   expect(calc({ id: 'a', row: 'Address', shown: 'address', plain: 'The address', board: laptop(null) })).toEqual({
     type: 'note',
     id: 'a',
-    log: { worked: 'Address', value: '192.168.1.10', prefix: '' },
+    log: { worked: 'Address', value: '192.168.1.10', prefix: '–' },
     plain: 'The address',
     board: laptop(null),
+    glyph: 'request',
   });
+});
+
+test('calc draws a ring as a broadcast and a route as sent, and anything else as worked out', () => {
+  const note = (cues: { cue: string; arg?: string }[]) =>
+    calc({ id: 'x', row: 'Address', shown: 'address', plain: 'x', board: laptop(24, { mask: true }), cues }).glyph;
+  expect(note([{ cue: 'ring', arg: 'all' }, { cue: 'glow', arg: 'laptop' }])).toBe('broadcast');
+  expect(note([{ cue: 'route', arg: 'local' }, { cue: 'busy', arg: 'printer' }])).toBe('response');
+  expect(note([{ cue: 'pulse', arg: 'onenet' }])).toBe('request');
+  expect(note([])).toBe('request');
 });
 
 test('calc throws when a network or broadcast row on the board is not the engine’s', () => {

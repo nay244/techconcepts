@@ -247,12 +247,13 @@ test('the panel holds the rule list and the connections it remembers, as the moc
 test('the log is the firewall’s, with the mockup’s columns at the widths it draws them at 1280 px', () => {
   const { log } = unit.scene;
   expect(log.title).toBe('Firewall log');
-  expect(log.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false])).toEqual([
-    ['source', 'Source', 168, false],
-    ['destination', 'Destination', 168, false],
-    ['service', 'Service', 146, false],
-    ['decision', 'Decision', 234, false],
-    ['plain', 'In plain words', null, true],
+  // The decision is the row's main words, set strong as the mockup's .log td.dec.
+  expect(log.columns.map((c) => [c.key, c.label, c.width ?? null, c.prose ?? false, c.strong ?? false])).toEqual([
+    ['source', 'Source', 168, false, false],
+    ['destination', 'Destination', 168, false, false],
+    ['service', 'Service', 146, false, false],
+    ['decision', 'Decision', 234, false, true],
+    ['plain', 'In plain words', null, true, false],
   ]);
   expect(log.legend).toEqual([
     { kind: 'request', label: 'Visit' },

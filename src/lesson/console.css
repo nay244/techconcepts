@@ -1100,6 +1100,17 @@ a.outline__lesson:hover {
   font: 400 13.5px/1.4 var(--sans);
   white-space: normal;
 }
+/* A row's main words, in the strongest ink (Subnetting's Worked out and Value, as subnet-v1.html's .log td.row
+   and td.val; Firewalls' Decision, as firewalls-v1.html's td.dec): a figure at 600, words at 500. On a blocked
+   row they take the blocked colour, as the mockup's denied decision. An allowed one stays in ink, as the rule
+   list's ALLOW does: the allowed green is under 4.5:1 on the light theme's fresh-row pulse. */
+.log__table td.log__strong {
+  color: var(--ink-strong);
+  font-weight: 600;
+}
+.log__table td.log__prose.log__strong {
+  font-weight: 500;
+}
 .log__table td.log__idle {
   padding: 18px;
   border-bottom: 0;
@@ -1118,6 +1129,7 @@ a.outline__lesson:hover {
   color: var(--muted);
 }
 .log__table tr[data-outcome] td.log__prose,
+.log__table tr[data-outcome] td.log__strong,
 .log__flag {
   color: var(--blocked);
 }

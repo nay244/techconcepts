@@ -373,6 +373,28 @@ test('every log key is a column of the unit’s log, and # and plain are never w
   expect(joined(column)).toMatch(/"#" is added by the console/);
 });
 
+test('a note may draw a message kind’s glyph, one the log’s legend explains in words', () => {
+  // The fixture's legend explains a request, a reply, a lost message and a note.
+  const sent = makeLesson();
+  ev(sent, 2, 1).glyph = 'response';
+  expect(issuesOf(sent)).toEqual([]);
+  const unexplained = makeLesson();
+  ev(unexplained, 2, 1).glyph = 'broadcast';
+  expect(issuesOf(unexplained)).toEqual([expect.stringMatching(/note "n1" draws the broadcast glyph, which the unit's log legend does not explain/)]);
+  const notAKind = makeLesson();
+  ev(notAKind, 2, 1).glyph = 'blocked';
+  expect(joined(notAKind)).toMatch(/glyph/);
+});
+
+test('a log column may be strong; a panel table’s may not', () => {
+  const strong = makeLesson();
+  unit(strong).scene.log.columns[0] = { ...unit(strong).scene.log.columns[0]!, strong: true };
+  expect(issuesOf(strong)).toEqual([]);
+  const table = makeLesson();
+  (unit(table).scene.panel as any).table.columns[0].strong = true;
+  expect(joined(table)).toMatch(/scene\.panel\.table\.columns\[0\]: .*Unrecognized key.*"strong"/);
+});
+
 // ---------------------------------------------------------------- outcomes, rules panel, tables, packets
 
 test('dropped needs dropAt', () => {

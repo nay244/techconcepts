@@ -135,6 +135,46 @@ test('with no plain column, a lost row says so in its first column of words, whe
   expect(within(screen.getByRole('region', { name: 'Figures' })).getAllByRole('cell').at(-1)).toHaveTextContent(/^Dropped 1\.5 KB$/);
 });
 
+test('a note that names its own glyph draws it, and a strong column’s cells are set strong', () => {
+  // Subnetting's Working log, as subnet-v1.html draws it: a square for what was worked out, an arrow for what was
+  // sent and a ring for a broadcast, with the row's Worked out and Value in the strongest ink.
+  const log: LogDef = {
+    title: 'Working',
+    columns: [
+      { key: 'worked', label: 'Worked out', prose: true, strong: true },
+      { key: 'value', label: 'Value', strong: true },
+      { key: 'prefix', label: 'Prefix' },
+      { key: 'plain', label: 'In plain words' },
+    ],
+    legend: [
+      { kind: 'request', label: 'Worked out' },
+      { kind: 'response', label: 'Sent' },
+      { kind: 'broadcast', label: 'Broadcast' },
+    ],
+  };
+  const note = (n: number, glyph: LogRow['glyph']): LogRow => ({
+    n,
+    eventId: `n${n}`,
+    type: 'note',
+    kind: null,
+    outcome: null,
+    from: null,
+    to: null,
+    tag: null,
+    cells: { worked: 'Broadcast address', value: '192.168.1.255', prefix: '/24' },
+    plain: 'Host bits all 1: the whole floor hears it',
+    ...(glyph === undefined ? {} : { glyph }),
+  });
+  render(<LogPanel log={log} rows={[note(1, 'request'), note(2, 'response'), note(3, 'broadcast')]} idle="Nothing yet." />);
+  const rows = within(within(screen.getByRole('region', { name: 'Working' })).getByRole('table')).getAllByRole('row').slice(1);
+  expect(rows.map((row) => row.querySelector('[data-glyph]')?.getAttribute('data-glyph'))).toEqual(['request', 'response', 'broadcast']);
+  expect(within(rows[0]!).getAllByRole('cell').map((td) => td.classList.contains('log__strong'))).toEqual([false, true, true, false, false]);
+
+  // Without one, a note still takes the legend's note entry (the Firewall log's rule change, above).
+  render(<LogPanel log={LOG} rows={[{ ...note(4, undefined), cells: {} }]} idle="Nothing yet." />);
+  expect(table().querySelector('[data-glyph]')).toHaveAttribute('data-glyph', 'change');
+});
+
 test('the legend explains each glyph in words', () => {
   render(<LogPanel log={LOG} rows={ROWS} idle="Nothing yet." />);
   const legend = screen.getByRole('list', { name: 'Legend' });

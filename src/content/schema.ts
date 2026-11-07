@@ -120,6 +120,12 @@ export const noteEventSchema = z.strictObject({
   plain: text,
   cues: z.array(cueSchema).optional(),
   board: boardSchema.optional(),
+  /**
+   * The log's glyph for the note, a message kind's, when the note stands for something the figure sends: Subnetting
+   * draws what it works out as a request, a route as a response and a ring as a broadcast. The unit's legend must
+   * explain it. Without it the note takes the legend's note entry.
+   */
+  glyph: messageKindSchema.optional(),
 });
 
 export const tableEventSchema = z.strictObject({
@@ -196,7 +202,11 @@ export const logDefSchema = z.strictObject({
    * console says "Nothing has happened yet. Press Play to start."
    */
   idle: text.optional(),
-  columns: columnsSchema,
+  /**
+   * A column marked `strong` holds the row's main words, set in the strongest ink: Subnetting's Worked out and
+   * Value, as subnet-v1.html sets them. Only the log's columns may say so.
+   */
+  columns: z.array(columnSchema.extend({ strong: z.literal(true).optional() })).min(1),
   legend: z.array(
     z.strictObject({
       kind: z.union([messageKindSchema, z.enum(['blocked', 'dropped', 'change', 'note'])]),

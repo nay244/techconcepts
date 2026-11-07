@@ -81,7 +81,7 @@ const firewalls = defineLesson({
             { key: 'source', label: 'Source', width: 168 },
             { key: 'destination', label: 'Destination', width: 168 },
             { key: 'service', label: 'Service', width: 146 },
-            { key: 'decision', label: 'Decision', width: 234 },
+            { key: 'decision', label: 'Decision', width: 234, strong: true },
             { key: 'plain', label: 'In plain words', prose: true },
           ],
           legend: [

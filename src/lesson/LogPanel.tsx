@@ -68,11 +68,13 @@ const OUTCOME_WORD = { blocked: 'Blocked', dropped: 'Dropped' } as const;
 
 /**
  * A message's glyph follows its kind, or its outcome when it did not get
- * through. A note takes the legend's note entry, which a lesson may name as a
- * change (Firewalls' rule changes are notes).
+ * through. A note draws its own glyph when it names one (Subnetting's sent and
+ * broadcast rows), or else the legend's note entry, which a lesson may name as
+ * a change (Firewalls' rule changes are notes).
  */
 function glyphFor(row: LogRow, noteKind: GlyphKind): GlyphKind {
-  if (row.type === 'note' || row.kind === null) return noteKind;
+  if (row.type === 'note') return row.glyph ?? noteKind;
+  if (row.kind === null) return noteKind;
   if (row.outcome === 'blocked' || row.outcome === 'dropped') return row.outcome;
   return row.kind;
 }
@@ -82,6 +84,10 @@ const NUMBER_WIDTH = 56;
 
 /** A column of words: one marked `prose`, or the `plain` column unless it says otherwise. */
 const isProse = (column: LogDef['columns'][number]): boolean => column.prose ?? column.key === 'plain';
+
+/** A cell's classes: words or figures, and set strong when its column holds the row's main words. */
+const cellClass = (column: LogDef['columns'][number]): string | undefined =>
+  [isProse(column) ? 'log__prose' : '', column.strong ? 'log__strong' : ''].filter(Boolean).join(' ') || undefined;
 
 export interface LogPanelProps {
   log: LogDef;
@@ -174,7 +180,7 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
                       const plain = column.key === 'plain';
                       const text = plain ? row.plain : Object.hasOwn(row.cells, column.key) ? row.cells[column.key] : '';
                       return (
-                        <td key={column.key} className={isProse(column) ? 'log__prose' : undefined}>
+                        <td key={column.key} className={cellClass(column)}>
                           {missed !== null && column.key === flagColumn ? (
                             <>
                               <span className="log__flag">{OUTCOME_WORD[missed]}</span>{' '}

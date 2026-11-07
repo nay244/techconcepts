@@ -113,6 +113,8 @@ export interface LogRow {
   /** The event's `log` row as written, by column key. The console adds `#`; the `plain` column reads `plain`. */
   cells: Row;
   plain: string;
+  /** A note's own glyph, a message kind's (Subnetting's); without it a note takes the legend's note entry. */
+  glyph?: MessageKind;
 }
 
 /** A cue that has played, in order. `current` marks the cues of the step being shown. */
@@ -179,7 +181,8 @@ function unitTables(u: Unit): TableDef[] {
 function logRow(e: Exclude<SceneEvent, { type: 'table' }>, n: number): LogRow {
   const cells = { ...e.log };
   if (e.type === 'note') {
-    return { n, eventId: e.id, type: 'note', kind: null, outcome: null, from: null, to: null, tag: null, cells, plain: e.plain };
+    const row: LogRow = { n, eventId: e.id, type: 'note', kind: null, outcome: null, from: null, to: null, tag: null, cells, plain: e.plain };
+    return e.glyph === undefined ? row : { ...row, glyph: e.glyph };
   }
   return {
     n,

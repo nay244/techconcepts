@@ -103,8 +103,21 @@ function checkThird(id: string, board: Board): void {
 }
 
 /**
+ * The log's glyph for a note, from what the figure does with it, as
+ * subnet-v1.html's three kinds: a ring is a broadcast, a route is sent (the
+ * reply's arrow), and anything else is worked out (the request's square).
+ */
+function glyphOf(cues: Cue[] | undefined): NonNullable<NoteEvent['glyph']> {
+  const names = (cues ?? []).map((c) => c.cue);
+  if (names.includes('ring')) return 'broadcast';
+  if (names.includes('route')) return 'response';
+  return 'request';
+}
+
+/**
  * A note whose log row is worked out by the engine: Worked out (`row`), Value
- * (`shown` of the board) and Prefix (once the board shows the mask). A board
+ * (`shown` of the board) and Prefix (once the board shows the mask; a dash
+ * before, as the mockup's). Its glyph follows its cues (`glyphOf`). A board
  * that shows the mask before it has a prefix throws: the schema allows it, but
  * there is no mask to show.
  */
@@ -115,9 +128,10 @@ export function calc(o: { id: string; row: string; shown: Shown; plain: string; 
   return {
     type: 'note',
     id: o.id,
-    log: { worked: o.row, value: subnetValue(o.shown, board), prefix: board.mask ? `/${board.prefix}` : '' },
+    log: { worked: o.row, value: subnetValue(o.shown, board), prefix: board.mask ? `/${board.prefix}` : '–' },
     plain: o.plain,
     board,
+    glyph: glyphOf(o.cues),
     ...(o.cues === undefined ? {} : { cues: o.cues }),
   };
 }
