@@ -6,8 +6,8 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { validateLesson } from '../content/define';
 import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
-import type { Lesson } from '../content/schema';
-import { makeLesson, makeUnit } from '../content/test-fixtures';
+import type { Lesson, SceneEvent } from '../content/schema';
+import { makeLesson, makeUnit, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
 import { THEME_KEY } from '../lib/theme';
@@ -23,10 +23,11 @@ vi.mock('../art/scenes/parts', async (importOriginal) => ({
   ),
 }));
 
-// Every figure's driver gives every event the same second, so these tests time the console, not a figure.
+// Every figure's driver gives every event the same second, so these tests time the console, not a figure. (A test
+// may give table changes no time, as the real drivers do.)
 const still = vi.hoisted(() => ({
   create: () => ({ show() {}, play: async () => {}, destroy() {} }),
-  duration: vi.fn((): number => 1000),
+  duration: vi.fn((_event: SceneEvent): number => 1000),
 }));
 vi.mock('../scenes/drivers', () => ({ DRIVERS: { dhcp: still, subnet: still, firewall: still, 'net-map': still } }));
 
@@ -49,6 +50,8 @@ const THREE: Lesson = validateLesson(
     ],
   }),
 ).lesson;
+/** DHCP with two table changes in a row in Neighbor Reply and in Table Lookup (`makeUnitWithTwoTableChanges`). */
+const TWO_TABLE_CHANGES: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP', units: [makeUnitWithTwoTableChanges()] })).lesson;
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE });
 const KEY = 'networking/dhcp';
 /** Every event's wait in these tests: the stand-in drivers' duration. */
@@ -357,23 +360,42 @@ test('a polite live region announces the step title and the latest message in pl
   expect(live).not.toHaveTextContent('The laptop says hello');
 });
 
-test('a change only the table shows is announced by its summary as it plays, the latest event winning', async () => {
+test("a change only the table shows is announced after the message before it, not instead of it, though it takes no time", async () => {
+  // As in every real driver, a table change plays at once: it lands a moment after the message it follows.
+  still.duration.mockImplementation((event) => (event.type === 'table' ? 0 : EVENT_MS));
   renderConsole();
   const live = document.querySelector('[aria-live="polite"][data-announce]')!;
   // Neighbor Reply: the router's answer, and then the row it adds, which only the table shows.
   await user.keyboard('{ArrowRight}{ArrowRight}');
   expect(live).toHaveTextContent(/^Neighbor Reply\.?$/);
   await wait(EVENT_MS);
-  expect(live).toHaveTextContent(/^Neighbor Reply\. The router answers the laptop\.$/);
-  await wait(EVENT_MS);
-  expect(live).toHaveTextContent(/^Neighbor Reply\. The router remembers the laptop\.$/);
-  // Table Lookup: the table's match first, then a note, which wins.
+  await wait(0);
+  expect(logRows()).toHaveLength(2);
+  expect(live).toHaveTextContent(/^Neighbor Reply\. The router answers the laptop\. The router remembers the laptop\.$/);
+  // Table Lookup: the table's match, at once, then a note. The note is the latest row, so the match is not repeated.
   await user.keyboard('{ArrowRight}');
-  expect(live).toHaveTextContent(/^Table Lookup\.?$/);
-  await wait(EVENT_MS);
+  await wait(0);
   expect(live).toHaveTextContent(/^Table Lookup\. The router finds the laptop in its table\.$/);
   await wait(EVENT_MS);
   expect(live).toHaveTextContent(/^Table Lookup\. The router already knows the laptop\.$/);
+});
+
+test('two table changes in a row are both announced, in order', async () => {
+  still.duration.mockImplementation((event) => (event.type === 'table' ? 0 : EVENT_MS));
+  render(consoleFor(TWO_TABLE_CHANGES));
+  const live = document.querySelector('[aria-live="polite"][data-announce]')!;
+  // Neighbor Reply: the answer, then two changes; Table Lookup: two changes, then a note.
+  await user.keyboard('{ArrowRight}{ArrowRight}');
+  await wait(EVENT_MS);
+  await wait(0);
+  await wait(0);
+  expect(live).toHaveTextContent(
+    /^Neighbor Reply\. The router answers the laptop\. The router remembers the laptop\. The router checks the row it wrote$/,
+  );
+  await user.keyboard('{ArrowRight}');
+  await wait(0);
+  await wait(0);
+  expect(live).toHaveTextContent(/^Table Lookup\. The router finds the laptop in its table\. The row is still there\.$/);
 });
 
 test('a jump announces no table change, as it announces no message: only where it lands', async () => {

@@ -325,6 +325,17 @@ test.describe('lesson specifics', () => {
     await expect(table).toBeFocused();
   });
 
+  test("DHCP: the Acknowledge step, once played, announces the ACK's words and then the lease table's change", async ({ page }) => {
+    const dhcp = lessonNamed('dhcp');
+    // Step 4 plays the Acknowledge, then the table change, which the real driver gives no time.
+    await open(page, `${dhcp.path}?step=4`);
+    await expect(page.locator('[aria-live="polite"][data-announce]')).toHaveText(
+      'DHCP Acknowledge. The router confirms: 192.168.1.100 is the laptop’s for 24 hours. ' +
+        'The router writes down that 192.168.1.100 belongs to the laptop for 24 hours.',
+      { timeout: 30_000 },
+    );
+  });
+
   test('Firewalls: the matched rule row is in view at every step', async ({ page }) => {
     const firewalls = lessonNamed('firewalls');
     // Each step's visit and the rule that decides it (the list is reordered before step 6); step 5's reply is let

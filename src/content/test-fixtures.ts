@@ -320,6 +320,19 @@ export function makeUnit(id = 'neighbors', overrides: Partial<UnitInput> = {}): 
   return { ...unit, ...overrides };
 }
 
+/**
+ * The fixture unit with two table changes in a row in two of its steps. Neighbor Reply plays `m2`, `t-add`, then
+ * `t-check`. Table Lookup plays `t-match`, `t-recheck`, then note `n1`. `t-check`'s summary has no full stop at its end.
+ */
+export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial<UnitInput> = {}): UnitInput {
+  const unit = makeUnit(id, overrides);
+  const answer = unit.steps.find((s) => s.id === 'answer')!;
+  const reuse = unit.steps.find((s) => s.id === 'reuse')!;
+  answer.events.push({ type: 'table', id: 't-check', table: 't', op: 'match', key: '192.168.1.10', summary: 'The router checks the row it wrote' });
+  reuse.events.splice(1, 0, { type: 'table', id: 't-recheck', table: 't', op: 'match', key: '192.168.1.10', summary: 'The row is still there.' });
+  return unit;
+}
+
 /** A valid one-unit lesson on figure 'dhcp'. */
 export function makeLesson(overrides: Partial<LessonInput> = {}): LessonInput {
   const lesson: LessonInput = {
