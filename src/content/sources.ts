@@ -136,11 +136,14 @@ export type Citation = z.infer<typeof citationSchema>;
 
 const NUMBERED = /^(0|[1-9]\d*)(\.(0|[1-9]\d*))*$/;
 
+/** What to do about a source the registry does not have, added to every message that names one. */
+const UNKNOWN_SOURCE_FIX = 'add it to SOURCES in src/content/sources.ts, or fix the id.';
+
 /** Builds a citation. A numbered section on a source with an anchor links straight to it; otherwise `opts.url` is required. */
 export function cite(source: string, section: string, opts: { url?: string; sources?: SourceRegistry } = {}): Citation {
   const registry = opts.sources ?? SOURCES;
   const entry = Object.hasOwn(registry, source) ? registry[source] : undefined;
-  if (!entry) throw new Error(`Unknown source "${source}" (cited at section ${section})`);
+  if (!entry) throw new Error(`Unknown source "${source}" (cited at section ${section}); ${UNKNOWN_SOURCE_FIX}`);
   if (NUMBERED.test(section) && entry.anchor) {
     return { source, section, url: entry.anchor.replaceAll('{n}', section), label: `${entry.short} §${section}` };
   }
@@ -163,7 +166,7 @@ export function checkCitation(c: Citation, sources: SourceRegistry, use: 'conten
   const shape = citationSchema.safeParse(c);
   if (!shape.success) return shape.error.issues.map((i) => `Citation ${i.path.join('.') || 'value'} ${i.message}`);
   const entry = Object.hasOwn(sources, c.source) ? sources[c.source] : undefined;
-  if (!entry) return [`Unknown source "${c.source}" (section ${c.section})`];
+  if (!entry) return [`Unknown source "${c.source}" (section ${c.section}); ${UNKNOWN_SOURCE_FIX}`];
   const problems: string[] = [];
   if (use === 'content' && entry.kind === 'cert-objectives') {
     problems.push(`Source "${c.source}" (section ${c.section}) is an objectives document, which may be cited only for objective mapping, not for content`);
@@ -189,7 +192,7 @@ export function sourceListOf(citations: Citation[], sources: SourceRegistry): So
     if (seen.has(c.source)) continue;
     seen.add(c.source);
     const entry = Object.hasOwn(sources, c.source) ? sources[c.source] : undefined;
-    if (!entry) throw new Error(`Unknown source "${c.source}" (section ${c.section})`);
+    if (!entry) throw new Error(`Unknown source "${c.source}" (section ${c.section}); ${UNKNOWN_SOURCE_FIX}`);
     list.push({ label: `${entry.short}: ${entry.title}`, url: entry.url });
   }
   return list;

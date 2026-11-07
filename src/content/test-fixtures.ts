@@ -367,7 +367,11 @@ export const FIXTURE_LIMITS: Limits = {
 /** The whole-document URL of `example-objectives`, which an objective citation may use. */
 export const OBJ_URL = 'https://partners.comptia.org/example-objectives.pdf';
 
-/** A small registry of invented sources, one of each kind a test needs. */
+/**
+ * A small registry of invented sources, one of each kind a test needs. Tests pass it by name to `validateLesson`,
+ * `lessonsFromModules`, `defineTrack` and `checkTracks`. The registry accepts only lessons and tracks checked against
+ * the real `SOURCES`, so nothing checked against this list reaches the site.
+ */
 export const FIXTURE_SOURCES: SourceRegistry = defineSources([
   {
     id: 'rfc-example',
@@ -404,14 +408,17 @@ const vendor = (section: string, fragment: string) =>
   cite('vendor-example', section, { sources: FIXTURE_SOURCES, url: `https://learn.microsoft.com/example#${fragment}` });
 
 /**
- * A valid lesson in the cited shape (figure 'dhcp'), against `FIXTURE_SOURCES`; it fits `FIXTURE_LIMITS`. One unit,
- * `leases`: a laptop borrows an address from the router for a set time, then renews it. Every Learn statement,
- * Go-deeper paragraph and Practice option cites; the OSI layer cites `rfc-example` first, so the derived sources read
- * RFC 9999, then the vendor page. Every Watch part has a backing: most trace to Learn ids (`lead-1`, `lead-2`,
- * `term-1`…`term-3`, `pattern`, `why-1`, `deep-1`, `fact-1`…`fact-3`), the hook is an analogy, and the addresses
- * that stand alone (RFC 5737's 192.0.2.0/24, RFC 7042's 00:00:5E:00:53:xx) are example data. Four steps: `request`
- * (message `m1`, packet `p1`), `grant` (`m2`, table add `t-add`), `lookup` (table match `t-match`, note `n1`) and
- * `renew` (`m3`, `m4`, table update `t-renew`); two Practice questions, `q1` (three options) and `q2` (two).
+ * A valid lesson in the cited shape (figure 'dhcp'), against `FIXTURE_SOURCES`; it fits `FIXTURE_LIMITS`. It shows
+ * the shape only: its sources are invented, so a real lesson's sources go into `SOURCES`, and `defineLesson`, which
+ * checks against `SOURCES`, rejects this one.
+ *
+ * One unit, `leases`: a laptop borrows an address from the router for a set time, then renews it. Every Learn
+ * statement, Go-deeper paragraph and Practice option cites; the OSI layer cites `rfc-example` first, so the derived
+ * sources read RFC 9999, then the vendor page. Every Watch part has a backing: most trace to Learn ids (`lead-1`,
+ * `lead-2`, `term-1`…`term-3`, `pattern`, `why-1`, `deep-1`, `fact-1`…`fact-3`), the hook is an analogy, and the
+ * addresses that stand alone (RFC 5737's 192.0.2.0/24, RFC 7042's 00:00:5E:00:53:xx) are example data. Four steps:
+ * `request` (message `m1`, packet `p1`), `grant` (`m2`, table add `t-add`), `lookup` (table match `t-match`, note
+ * `n1`) and `renew` (`m3`, `m4`, table update `t-renew`); two Practice questions, `q1` (three options) and `q2` (two).
  */
 export function makeCitedLesson(): LessonInput {
   return {
@@ -726,7 +733,10 @@ export function makeCitedLesson(): LessonInput {
   };
 }
 
-/** A certification track of two lessons, each mapped to one objective of the pinned `example-objectives` (V1). */
+/**
+ * A certification track of two lessons, each mapped to one objective of the pinned `example-objectives` (V1). It is
+ * valid against `FIXTURE_SOURCES` only; the registry's check against `SOURCES` (`checkTracks`) rejects it.
+ */
 export function makeCertTrack(): CertificationTrack {
   const objective = (section: string) => ({
     exam: 'EX-101',

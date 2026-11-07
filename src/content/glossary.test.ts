@@ -58,7 +58,7 @@ test('every citation is checked: content only, and as the registry builds it', (
   const unknown = lease();
   unknown.definition[0]!.cite![0]!.source = 'nowhere';
   expect(() => defineGlossary([unknown], FIXTURE_SOURCES)).toThrow(
-    'entry "lease": definition[0] ("d1"), citation 1: Unknown source "nowhere" (section 2.1); add it to the source registry, or fix the id.',
+    'entry "lease": definition[0] ("d1"), citation 1: Unknown source "nowhere" (section 2.1); add it to SOURCES in src/content/sources.ts, or fix the id.',
   );
 });
 

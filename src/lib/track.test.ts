@@ -44,10 +44,12 @@ test('a ready lesson carries its card: words, link, protocols for a lesson of se
   });
   // 14 protocols are counted from the lesson, not written in.
   expect(internet.meta).toEqual(['14 protocols', 'CompTIA A+', 'CompTIA Network+', 'CompTIA Security+', 'Cisco CCNA', 'Helpdesk']);
+  expect(internet.metaLabel).toBe('Protocols and exams');
   expect(internet.places).toEqual(cardPlaces(INTERNET));
 
   const dhcp = all.find((l) => l.title === 'DHCP') as ReadyLesson;
   expect(dhcp.meta).toEqual(['CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
+  expect(dhcp.metaLabel).toBe('Exams');
   expect(dhcp.places).toHaveLength(slotsFor(DHCP).length);
 });
 
@@ -55,7 +57,9 @@ test('the protocols chip counts the units of whatever lesson has several', () =>
   const two = liftedFixture(makeTwoUnitLesson({ slug: 'dhcp', title: 'DHCP' }));
   const fixtureEntries = entries.map((e) => (e.slug === 'dhcp' && e.available ? { ...e, units: 2 } : e));
   const all = trackParts(networkingTrack, fixtureEntries, (e) => (e.slug === 'dhcp' ? two : lessonOf(e))).flatMap((p) => p.lessons);
-  expect((all.find((l) => l.title === 'DHCP') as ReadyLesson).meta.slice(0, 1)).toEqual(['2 protocols']);
+  const dhcp = all.find((l) => l.title === 'DHCP') as ReadyLesson;
+  expect(dhcp.meta.slice(0, 1)).toEqual(['2 protocols']);
+  expect(dhcp.metaLabel).toBe('Protocols and exams');
 });
 
 test('the exam chips are the tags some ready lesson carries, in the usual order', () => {

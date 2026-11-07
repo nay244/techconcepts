@@ -201,7 +201,7 @@ function LessonCard({ lesson, progress, art }: { lesson: ReadyLesson; progress: 
         </h3>
         <p className="l-sub">{lesson.subtitle}</p>
         <p className="l-say">{lesson.summary}</p>
-        <ul className="l-meta" aria-label="Protocols and exams">
+        <ul className="l-meta" aria-label={lesson.metaLabel}>
           {lesson.meta.map((m) => (
             <li key={m}>{m}</li>
           ))}

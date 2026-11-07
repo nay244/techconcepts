@@ -81,8 +81,13 @@ test('lesson 1’s card shows 14 protocols, its exams and its figure; one-unit l
   expect(within(internet).getByTestId('art-1')).toBeInTheDocument();
   expect(within(card('Subnetting')).getByTestId('art-8')).toBeInTheDocument();
 
-  const dhcp = within(card('DHCP')).getByRole('list', { name: 'Protocols and exams' });
+  // A one-unit lesson's list holds only its exams, and says so.
+  const dhcp = within(card('DHCP')).getByRole('list', { name: 'Exams' });
   expect(within(dhcp).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
+  for (const title of ['Subnetting', 'Firewalls']) {
+    expect(within(card(title)).getByRole('list', { name: 'Exams' }), title).toBeInTheDocument();
+    expect(within(card(title)).queryByRole('list', { name: 'Protocols and exams' }), title).toBeNull();
+  }
 });
 
 test('a first visit shows each ready lesson as not started', () => {

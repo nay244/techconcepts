@@ -198,20 +198,12 @@ function badTraces(parts: BackedPart[], lesson: Lesson): string[] {
   return issues;
 }
 
-/**
- * What is wrong with a citation of content, as `checkCitation` says it, with what to do added to the one message that
- * lacks it: a source the registry does not have. The glossary uses it too.
- */
-export function contentCitationProblems(c: Citation, sources: SourceRegistry): string[] {
-  return checkCitation(c, sources, 'content').map((problem) =>
-    problem.startsWith('Unknown source ') ? `${problem}; add it to the source registry, or fix the id.` : problem,
-  );
-}
-
 /** Rule 7: every citation is one the registry builds, of a source that may back content. */
 function unsoundCitations(u: Unit, at: string, sources: SourceRegistry): string[] {
   const parts = [{ at: `${at}.osi`, cite: osiCitations(u) }, ...citedParts(u, at)];
-  return parts.flatMap((p) => p.cite.flatMap((c, n) => contentCitationProblems(c, sources).map((problem) => `${p.at}, citation ${n + 1}: ${problem}`)));
+  return parts.flatMap((p) =>
+    p.cite.flatMap((c, n) => checkCitation(c, sources, 'content').map((problem) => `${p.at}, citation ${n + 1}: ${problem}`)),
+  );
 }
 
 /** Rule 8: no "lesson N", since a shared lesson's number differs from track to track. */

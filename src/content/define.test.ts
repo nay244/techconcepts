@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { checkStructure, defineTrack, isDefinedLesson, LessonValidationError } from './define';
+import { checkStructure, definedWith, defineTrack, LessonValidationError } from './define';
 import { defineLegacyLesson, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
 import type { CertificationTrack } from './schema';
 import { cite } from './sources';
@@ -550,12 +550,12 @@ test('defineLegacyLesson returns the validated lesson, lifted', () => {
   expect([lesson.slug, lesson.origin]).toEqual(['dhcp', 'legacy']);
 });
 
-test('the legacy path’s lesson is a defined lesson; one lifted without its checks is not', () => {
-  expect(isDefinedLesson(defineLegacyLesson(makeLesson({ slug: 'dhcp' })))).toBe(true);
-  expect(isDefinedLesson(validateLegacyLesson(makeLesson()))).toBe(true);
-  expect(isDefinedLesson(liftedFixture())).toBe(false);
-  expect(isDefinedLesson(undefined)).toBe(false);
-  expect(isDefinedLesson('dhcp')).toBe(false);
+test('the legacy path’s lesson is a defined lesson, recorded as legacy; one lifted without its checks is not', () => {
+  expect(definedWith(defineLegacyLesson(makeLesson({ slug: 'dhcp' })))).toBe('legacy');
+  expect(definedWith(validateLegacyLesson(makeLesson()))).toBe('legacy');
+  expect(definedWith(liftedFixture())).toBeUndefined();
+  expect(definedWith(undefined)).toBeUndefined();
+  expect(definedWith('dhcp')).toBeUndefined();
 });
 
 test('defineLegacyLesson throws LessonValidationError for a bad lesson', () => {

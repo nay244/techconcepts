@@ -278,21 +278,28 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
 
 // ---------------------------------------------------------------- public API
 
-/** The lessons a validator has returned: the registry accepts only these, so no lesson file can skip the rules. */
-const defined = new WeakSet<object>();
+/**
+ * The lessons a validator has returned, each with what it was checked against: the source registry for a cited
+ * lesson, 'legacy' for the legacy path. The registry accepts only these, and only a cited lesson checked against the
+ * real `SOURCES`, so no lesson file can skip the rules or bring its own sources.
+ */
+const defined = new WeakMap<object, SourceRegistry | 'legacy'>();
 
 /**
- * Internal to the two lesson paths: records a lesson that `validateLesson` or `validateLegacyLesson` has just checked,
- * and returns it. A lesson file never calls it.
+ * @internal Only the two lesson paths call it: records a lesson that `validateLesson` (with the registry it used) or
+ * `validateLegacyLesson` (with 'legacy') has just checked, and returns it. A lesson file never calls it.
  */
-export function markDefined(lesson: Lesson): Lesson {
-  defined.add(lesson);
+export function markDefined(lesson: Lesson, checkedAgainst: SourceRegistry | 'legacy'): Lesson {
+  defined.set(lesson, checkedAgainst);
   return lesson;
 }
 
-/** True when `l` is the very object a validator returned: not a copy, and not a lesson built by hand. */
-export function isDefinedLesson(l: unknown): boolean {
-  return typeof l === 'object' && l !== null && defined.has(l);
+/**
+ * What a validator checked `l` against when it returned `l`: the source registry of a cited lesson, or 'legacy'.
+ * Undefined for anything a validator did not return, such as a copy or a lesson built by hand.
+ */
+export function definedWith(l: unknown): SourceRegistry | 'legacy' | undefined {
+  return typeof l === 'object' && l !== null ? defined.get(l) : undefined;
 }
 
 /**
@@ -308,8 +315,8 @@ export function parseLessonShape<S extends z.ZodType>(schema: S, input: unknown)
 
 /**
  * The structural rules every lesson keeps, whichever path it came by, as readable issues (empty when it has none): a
- * cert tag; unique unit, step, question, event and table ids; at most one override per limit; and a scene, events, tables and cues that fit the
- * lesson's figure and each other.
+ * cert tag; unique unit, step, question, event and table ids; at most one override per limit; and a scene, events,
+ * tables and cues that fit the lesson's figure and each other.
  */
 export function checkStructure(lesson: Lesson): string[] {
   const issues: string[] = [];
@@ -330,21 +337,27 @@ export type LessonInput = z.input<typeof lessonSchema>;
 
 /**
  * Checks a lesson in the cited shape against `sources` and returns it, origin 'cited', with each unit's references
- * listed from its citations in reading order. Its shape first (alone, as `parseLessonShape` reports it); then, together,
- * the cited rules (`cited.ts`: one unit, no written references, citations, the OSI badge, backing and traces, sound
- * citations, no lesson numbers) and the structural rules every lesson keeps (`checkStructure`). Throws one
- * LessonValidationError listing every problem. The numeric limits are the track's, checked in the registry.
+ * listed from its citations in reading order. Its shape first (alone, as `parseLessonShape` reports it); then,
+ * together, the cited rules (`cited.ts`: one unit, no written references, citations, the OSI badge, backing and
+ * traces, sound citations, no lesson numbers) and the structural rules every lesson keeps (`checkStructure`). Throws
+ * one LessonValidationError listing every problem. The numeric limits are the track's, checked in the registry.
+ * Records `sources` with the lesson: the registry accepts a cited lesson only when that is the real `SOURCES`, so
+ * another list is for tests alone.
  */
 export function validateLesson(input: unknown, sources: SourceRegistry = SOURCES): Lesson {
   const lesson: Lesson = { ...parseLessonShape(lessonSchema, input), origin: 'cited' };
   const issues = [...checkCitedRules(lesson, sources), ...checkStructure(lesson)];
   if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
-  return markDefined({ ...lesson, units: lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) })) });
+  const units = lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) }));
+  return markDefined({ ...lesson, units }, sources);
 }
 
-/** The entry point for every new lesson file: it validates at import, so a bad lesson fails the build. */
-export function defineLesson(input: LessonInput, sources: SourceRegistry = SOURCES): Lesson {
-  return validateLesson(input, sources);
+/**
+ * The entry point for every new lesson file: it validates at import against `SOURCES`, the real registry, so a bad
+ * lesson, or one citing a source not in `SOURCES`, fails the build.
+ */
+export function defineLesson(input: LessonInput): Lesson {
+  return validateLesson(input, SOURCES);
 }
 
 /** Issues with a certification track's pin and the objectives its lessons map to. */
@@ -390,7 +403,8 @@ function checkCertification(t: CertificationTrack, sources: SourceRegistry): str
 
 /**
  * Validates a track's shape, that part ids and lesson slugs are unique and, for a certification track, its pin and
- * the objectives its lessons map to, checked against `sources`. Throws one Error listing every problem.
+ * the objectives its lessons map to, checked against `sources`. Throws one Error listing every problem. The registry
+ * checks every track again against the real `SOURCES` (`checkTracks`), so another list is for tests alone.
  */
 export function defineTrack(t: Track, sources: SourceRegistry = SOURCES): Track {
   const parsed = trackSchema.safeParse(t);

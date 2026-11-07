@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { defineLesson, isDefinedLesson, LessonValidationError, validateLesson, type LessonInput } from './define';
+import { defineLesson, definedWith, LessonValidationError, validateLesson, type LessonInput } from './define';
 import { checkLimits } from './limits';
 import type { Backing } from './schema';
 import { cite } from './sources';
@@ -338,7 +338,7 @@ test('a citation to a source the registry does not have is rejected, naming its 
   const l = makeCitedLesson();
   u(l).learn.facts[0]!.cite = [{ source: 'nowhere', section: '1', url: 'https://www.rfc-editor.org/rfc/rfc1.html#section-1', label: 'RFC 1 §1' }];
   expect(issuesOf(l)).toEqual([
-    'units[0].learn.facts[0] ("fact-1"), citation 1: Unknown source "nowhere" (section 1); add it to the source registry, or fix the id.',
+    'units[0].learn.facts[0] ("fact-1"), citation 1: Unknown source "nowhere" (section 1); add it to SOURCES in src/content/sources.ts, or fix the id.',
   ]);
 });
 
@@ -392,24 +392,25 @@ test('a lesson in the legacy shape is rejected by the strict path, on its shape 
   expect(issues.every((issue) => !/no citation|no backing/.test(issue))).toBe(true);
 });
 
-test('defineLesson returns the validated lesson', () => {
-  expect(defineLesson(makeCitedLesson(), FIXTURE_SOURCES)).toEqual(validateLesson(makeCitedLesson(), FIXTURE_SOURCES));
-});
-
-test('the strict path’s lesson is a defined lesson, which the registry accepts; a copy of it is not', () => {
-  const l = defineLesson(makeCitedLesson(), FIXTURE_SOURCES);
-  expect(isDefinedLesson(l)).toBe(true);
-  expect(isDefinedLesson(validateLesson(makeCitedLesson(), FIXTURE_SOURCES))).toBe(true);
-  expect(isDefinedLesson({ ...l })).toBe(false);
+test('the strict path records the source list it checked the lesson against; a copy of its lesson is not defined', () => {
+  const l = validateLesson(makeCitedLesson(), FIXTURE_SOURCES);
+  expect(definedWith(l)).toBe(FIXTURE_SOURCES);
+  expect(definedWith({ ...l })).toBeUndefined();
 });
 
 test('defineLesson throws LessonValidationError naming the lesson', () => {
   const l = makeCitedLesson();
   delete u(l).steps[0]!.backing;
-  expect(() => defineLesson(l, FIXTURE_SOURCES)).toThrow(LessonValidationError);
-  expect(() => defineLesson(l, FIXTURE_SOURCES)).toThrow(/Lesson "cited-lesson" is invalid/);
+  expect(() => defineLesson(l)).toThrow(LessonValidationError);
+  expect(() => defineLesson(l)).toThrow(/Lesson "cited-lesson" is invalid/);
 });
 
-test('without a registry, a lesson is checked against the real one, which has none of the fixture’s sources yet', () => {
+test('defineLesson checks against SOURCES and takes no other list, so the fixture’s invented sources are unknown to it', () => {
   expect(() => defineLesson(makeCitedLesson())).toThrow(/Unknown source "rfc-example"/);
+  // @ts-expect-error defineLesson takes no source list.
+  expect(() => defineLesson(makeCitedLesson(), FIXTURE_SOURCES)).toThrow(/Unknown source "rfc-example"/);
+});
+
+test('validateLesson with no list checks against SOURCES too', () => {
+  expect(() => validateLesson(makeCitedLesson())).toThrow(/Unknown source "rfc-example"/);
 });

@@ -64,8 +64,6 @@ for (const lesson of LESSONS) {
   test.describe(lesson.title, () => {
     test.describe.configure({ timeout: 180_000 });
 
-
-
     test('→ walks Overview, every step, Learn and Practice, ← walks back, and the page never scrolls', async ({ page }) => {
       const errors = collectErrors(page);
       await open(page, lesson.path);

@@ -1,9 +1,10 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
-import { isDefinedLesson } from './define';
+import { definedWith, defineTrack } from './define';
 import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
+import { SOURCES, type SourceRegistry } from './sources';
 import { tracks } from './tracks';
 
 export type LessonSummary =
@@ -128,9 +129,10 @@ const LESSON_PATH = /^\.\/lessons\/([^/]+)\.ts$/;
 /**
  * Keys the glob result by slug. A lesson is a file directly in `lessons/`, and the file name must equal the lesson's
  * slug. Each lesson must be the one `defineLesson` or `defineLegacyLesson` returned, so a lesson file cannot skip the
- * rules (direction doc §3.4: the build fails if a lesson is missing a citation).
+ * rules (direction doc §3.4: the build fails if a lesson is missing a citation), and a cited lesson must have been
+ * checked against `sources`, the real `SOURCES` outside tests, so it cannot bring a source list of its own.
  */
-export function lessonsFromModules(modules: Record<string, Lesson>): Record<string, Lesson> {
+export function lessonsFromModules(modules: Record<string, Lesson>, sources: SourceRegistry = SOURCES): Record<string, Lesson> {
   const bySlug: Record<string, Lesson> = {};
   for (const [path, lesson] of Object.entries(modules)) {
     const match = LESSON_PATH.exec(path);
@@ -139,9 +141,15 @@ export function lessonsFromModules(modules: Record<string, Lesson>): Record<stri
     if (typeof lesson !== 'object' || lesson === null || typeof lesson.slug !== 'string') {
       throw new Error(`${path} must default-export defineLesson({ ... }), or defineLegacyLesson({ ... }) for a lesson on the legacy list.`);
     }
-    if (!isDefinedLesson(lesson)) {
+    const checkedAgainst = definedWith(lesson);
+    if (checkedAgainst === undefined) {
       throw new Error(
         `${path}: the lesson was not made with defineLesson (or defineLegacyLesson for a lesson on the legacy list); wrap it so every rule runs.`,
+      );
+    }
+    if (checkedAgainst !== 'legacy' && checkedAgainst !== sources) {
+      throw new Error(
+        `${path}: the lesson was checked against a different source list; use defineLesson, which checks against SOURCES in src/content/sources.ts.`,
       );
     }
     if (lesson.slug !== fileName) {
@@ -182,7 +190,9 @@ function listingTracks(slug: string, trackList: readonly Track[]): Track[] {
 export function checkListings(lessons: Record<string, Lesson>, trackList: readonly Track[]): void {
   for (const [slug, lesson] of Object.entries(lessons)) {
     const listing = listingTracks(slug, trackList);
-    if (listing.length === 0) throw new Error(`Lesson "${slug}" is not listed in any track.`);
+    if (listing.length === 0) {
+      throw new Error(`Lesson "${slug}" is not listed in any track; add it to a part's lessons in src/content/tracks/<track>.ts.`);
+    }
     const unneeded = unneededOverrides(lesson, listing.map((t) => t.limits));
     if (unneeded.length > 0) {
       throw new Error(
@@ -215,6 +225,15 @@ export function checkLegacyList(lessons: readonly Lesson[]): void {
   if (problems.length > 0) throw new Error(`The legacy list is out of date:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
 }
 
+/**
+ * Checks every track again with `defineTrack` against `sources` (the real `SOURCES` outside tests), throwing as it
+ * does. So a track written as a plain object, or defined against another source list, fails the build: a
+ * certification track's pin and objectives are checked against the real registry.
+ */
+export function checkTracks(trackList: readonly Track[], sources: SourceRegistry = SOURCES): void {
+  for (const t of trackList) defineTrack(t, sources);
+}
+
 // Test files sit beside the lessons they cover, so they are excluded here. Only files directly in `lessons/` are
 // lessons: a lesson's own parts (lesson 1's protocols in lessons/how-the-internet-works/) are not.
 const modules = import.meta.glob<Lesson>(['./lessons/*.ts', '!./lessons/*.test.ts'], {
@@ -224,6 +243,7 @@ const modules = import.meta.glob<Lesson>(['./lessons/*.ts', '!./lessons/*.test.t
 const lessonsBySlug = lessonsFromModules(modules);
 checkLessonFolders(Object.keys(import.meta.glob(['./lessons/*/*.ts', '!./lessons/*/*.test.ts'])), Object.keys(lessonsBySlug));
 checkLegacyList(Object.values(lessonsBySlug));
+checkTracks(tracks);
 checkListings(lessonsBySlug, tracks);
 
 /** The tracks that list a lesson, in `tracks` order; empty for a slug no track lists. */

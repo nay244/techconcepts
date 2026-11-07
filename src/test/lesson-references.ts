@@ -4,7 +4,8 @@
  * entries give the number, and a small map of the words a sentence uses for
  * each lesson it may point at gives the topic. Each lesson's test passes its
  * own map, because a sentence names a lesson the way that sentence needs.
- * `textsOf` lives in `src/content/texts.ts`, since the strict lesson path uses it too; it is re-exported here.
+ * `textsOf` lives in `src/content/texts.ts`, beside `textsAt`, which the
+ * strict lesson path uses; it is re-exported here.
  */
 import { getEntries } from '../content/registry';
 import type { Lesson } from '../content/schema';

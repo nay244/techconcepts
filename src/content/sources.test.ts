@@ -62,8 +62,10 @@ describe('cite', () => {
   test('a section number with leading zeros does not take the anchor path', () => {
     expect(() => cite('rfc2131', '03.1', { sources })).toThrow(/needs a URL/);
   });
-  test('an unknown source throws, naming it', () => {
-    expect(() => cite('nope', '1', { sources })).toThrow(/Unknown source "nope".*section 1/);
+  test('an unknown source throws, naming it and saying what to do', () => {
+    expect(() => cite('nope', '1', { sources })).toThrow(
+      'Unknown source "nope" (cited at section 1); add it to SOURCES in src/content/sources.ts, or fix the id.',
+    );
   });
 });
 
@@ -122,9 +124,9 @@ describe('checkCitation', () => {
     expect(checkCitation(c, sources, 'objectives')).toEqual([expect.stringMatching(/cert-objectives/)]);
     expect(checkCitation(cite('aplus-objectives', '2.6', { sources, url: objectives.url }), sources, 'objectives')).toEqual([]);
   });
-  test('an unknown source is reported', () => {
+  test('an unknown source is reported, once, with what to do', () => {
     expect(checkCitation({ source: 'x', section: '1', url: 'https://a.b/', label: 'x' }, sources, 'content')).toEqual([
-      expect.stringMatching(/Unknown source "x"/),
+      'Unknown source "x" (section 1); add it to SOURCES in src/content/sources.ts, or fix the id.',
     ]);
   });
 });
@@ -137,5 +139,11 @@ describe('sourceListOf', () => {
       { label: 'Microsoft DHCP: DHCP Server overview', url: vendor.url },
       { label: 'RFC 2131: Dynamic Host Configuration Protocol', url: rfc.url },
     ]);
+  });
+  test('an unknown source throws, naming it and saying what to do', () => {
+    const unknown = { ...cite('rfc2131', '1', { sources }), source: 'nope' };
+    expect(() => sourceListOf([unknown], sources)).toThrow(
+      'Unknown source "nope" (section 1); add it to SOURCES in src/content/sources.ts, or fix the id.',
+    );
   });
 });

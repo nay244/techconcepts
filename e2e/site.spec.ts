@@ -136,6 +136,10 @@ test.describe('desktop', () => {
       await expect(first.locator('.l-num')).toHaveText('Lesson 01');
       await expect(first.locator('a.l-link')).toHaveText('How the Internet Works');
       await expect(first.locator('.l-meta li').first()).toHaveText('14 protocols');
+      // The list is named for what it holds: a one-unit lesson's card lists only exams.
+      await expect(first.getByRole('list', { name: 'Protocols and exams', exact: true })).toBeVisible();
+      const dhcp = trackItems(page).filter({ has: page.getByRole('link', { name: 'DHCP', exact: true }) });
+      await expect(dhcp.getByRole('list', { name: 'Exams', exact: true })).toBeVisible();
     });
 
     test('?for= filters the lessons, the chips keep the URL in step, and an unknown value shows everything', async ({ page }) => {

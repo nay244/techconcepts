@@ -1,11 +1,12 @@
 import { expect, test } from 'vitest';
 import { CERT_TAGS } from './certs';
-import { validateLesson } from './define';
+import { defineTrack, validateLesson } from './define';
 import { LEGACY_LESSONS, validateLegacyLesson } from './legacy';
 import { checkLimits } from './limits';
 import {
   buildEntries,
   checkLegacyList,
+  checkTracks,
   getEntries,
   getLesson,
   getTrack,
@@ -17,7 +18,8 @@ import {
   trackTotals,
 } from './registry';
 import { lessonSchema, type Lesson, type Track } from './schema';
-import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCitedLesson, makeLesson, makeTwoUnitLesson } from './test-fixtures';
+import type { SourceRegistry } from './sources';
+import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeCitedLesson, makeLesson, makeTwoUnitLesson } from './test-fixtures';
 import { comingSoonTracks, networkingTrack, tracks } from './tracks';
 
 const lessonFor = (slug: string, title: string) => liftedFixture(makeLesson({ slug, title }));
@@ -253,9 +255,39 @@ test('lessonsFromModules requires the file name to equal the slug', () => {
   expect(() => lessonsFromModules({ './lessons/dhcp.ts': definedFor('router', 'Router') })).toThrow(/dhcp.*router/s);
 });
 
-test('lessonsFromModules accepts a lesson made with defineLesson', () => {
+test('lessonsFromModules accepts a cited lesson checked against the source list it is given', () => {
   const cited = validateLesson(withoutCues(makeCitedLesson()), FIXTURE_SOURCES);
-  expect(lessonsFromModules({ './lessons/cited-lesson.ts': cited })['cited-lesson']).toBe(cited);
+  expect(lessonsFromModules({ './lessons/cited-lesson.ts': cited }, FIXTURE_SOURCES)['cited-lesson']).toBe(cited);
+});
+
+const OTHER_LIST =
+  'the lesson was checked against a different source list; use defineLesson, which checks against SOURCES in src/content/sources.ts.';
+
+test('a lesson checked against the test sources is rejected with the real ones, and accepted with the test sources', () => {
+  const cited = validateLesson(withoutCues(makeCitedLesson()), FIXTURE_SOURCES);
+  expect(() => lessonsFromModules({ './lessons/cited-lesson.ts': cited })).toThrow(`./lessons/cited-lesson.ts: ${OTHER_LIST}`);
+  expect(lessonsFromModules({ './lessons/cited-lesson.ts': cited }, FIXTURE_SOURCES)).toEqual({ 'cited-lesson': cited });
+});
+
+test('a lesson checked against a hand-built source list that allows Wikipedia never reaches the site', () => {
+  const RFC_PAGE = 'https://www.rfc-editor.org/rfc/rfc9999.html';
+  const WIKI_PAGE = 'https://en.wikipedia.org/wiki/Example';
+  // Written by hand, not through defineSources, so nothing checked its hosts.
+  const handBuilt: SourceRegistry = {
+    ...FIXTURE_SOURCES,
+    'rfc-example': { ...FIXTURE_SOURCES['rfc-example']!, url: WIKI_PAGE, anchor: `${WIKI_PAGE}#section-{n}` },
+  };
+  const input: unknown = JSON.parse(JSON.stringify(withoutCues(makeCitedLesson())).replaceAll(RFC_PAGE, WIKI_PAGE));
+  const lesson = validateLesson(input, handBuilt);
+  // It passes its own list, so its unit would list Wikipedia among its sources.
+  expect(lesson.units[0]!.references.map((s) => s.url)).toContain(WIKI_PAGE);
+  expect(() => lessonsFromModules({ './lessons/cited-lesson.ts': lesson })).toThrow(`./lessons/cited-lesson.ts: ${OTHER_LIST}`);
+});
+
+test('a legacy lesson passes, whichever source list the registry checks against', () => {
+  const dhcp = definedFor('dhcp', 'DHCP');
+  expect(lessonsFromModules({ './lessons/dhcp.ts': dhcp })).toEqual({ dhcp });
+  expect(lessonsFromModules({ './lessons/dhcp.ts': dhcp }, FIXTURE_SOURCES)).toEqual({ dhcp });
 });
 
 const NOT_DEFINED =
@@ -329,7 +361,9 @@ test('a second track that lists another title for the lesson fails', () => {
 });
 
 test('a lesson file no track lists fails', () => {
-  expect(() => checkListings({ shared }, [networkingTrack])).toThrow('Lesson "shared" is not listed in any track.');
+  expect(() => checkListings({ shared }, [networkingTrack])).toThrow(
+    'Lesson "shared" is not listed in any track; add it to a part\'s lessons in src/content/tracks/<track>.ts.',
+  );
   expect(() => checkListings({ shared }, [alpha, beta])).not.toThrow();
 });
 
@@ -346,6 +380,22 @@ test('a lesson file in a folder fails the build; a folder named after a lesson h
     './lessons/networking/osi-model.ts: lesson files live directly in src/content/lessons/; a folder there holds the parts of the lesson it is named after, and no lesson is named "networking".',
   );
   expect(() => checkLessonFolders(['./lessons/how-the-internet-works/dns.ts'], ['how-the-internet-works'])).not.toThrow();
+});
+
+test('the registry re-checks each track against SOURCES, so a certification track checked against other sources fails', () => {
+  const cert = defineTrack(makeCertTrack(), FIXTURE_SOURCES);
+  expect(() => checkTracks([networkingTrack, cert])).toThrow(
+    /^Track "example-cert" is invalid:\n {2}- The exam source "example-objectives" is not in the source registry\./,
+  );
+  expect(() => checkTracks([networkingTrack, cert], FIXTURE_SOURCES)).not.toThrow();
+  // A track written as a plain object never ran defineTrack; the re-check runs its rules.
+  const plain = makeCertTrack();
+  plain.exam.version = 'V2';
+  expect(() => checkTracks([plain], FIXTURE_SOURCES)).toThrow(/pins exam version "V2"/);
+});
+
+test('Networking passes the re-check against the real sources', () => {
+  expect(() => checkTracks(tracks)).not.toThrow();
 });
 
 test('tracksOf lists the tracks that list a slug, in tracks order', () => {

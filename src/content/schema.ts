@@ -10,9 +10,10 @@ export { slugSchema };
 /**
  * Shape of a lesson at runtime, the cited shape: Overview, Watch, Learn,
  * Practice. These schemas check types, enums and per-field bounds only. Rules
- * that compare one part of a lesson with another ("this place
- * exists on the figure", packet sizes; the numeric limits are a track's, in `limits.ts`) live in `define.ts`, so they can all be
- * reported together with readable messages.
+ * that compare one part of a lesson with another ("this place exists on the
+ * figure", packet sizes) live in `define.ts`, so they can all be reported
+ * together with readable messages. The numeric limits are a track's, in
+ * `limits.ts`.
  *
  * Learn's statements, every Go deeper paragraph, Practice's options and the
  * OSI layers cite primary sources (`sources.ts`). Watch and the scene cite

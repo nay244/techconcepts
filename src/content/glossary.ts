@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { contentCitationProblems, statementIssue } from './cited';
+import { statementIssue } from './cited';
 import { slugSchema, text } from './primitives';
 import { statementSchema } from './schema';
-import { SOURCES, type SourceRegistry } from './sources';
+import { checkCitation, SOURCES, type SourceRegistry } from './sources';
 
 /**
  * The glossary (direction doc §6.5): terms, each with a cited definition (§3.1). A definition is one or more
@@ -57,7 +57,9 @@ export function defineGlossary(entries: GlossaryEntryInput[], sources: SourceReg
     }
     for (const [j, s] of e.definition.entries()) {
       for (const [n, c] of s.cite.entries()) {
-        for (const problem of contentCitationProblems(c, sources)) issues.push(`${name}: definition[${j}] ("${s.id}"), citation ${n + 1}: ${problem}`);
+        for (const problem of checkCitation(c, sources, 'content')) {
+          issues.push(`${name}: definition[${j}] ("${s.id}"), citation ${n + 1}: ${problem}`);
+        }
       }
     }
   }
