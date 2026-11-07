@@ -278,6 +278,23 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
 
 // ---------------------------------------------------------------- public API
 
+/** The lessons a validator has returned: the registry accepts only these, so no lesson file can skip the rules. */
+const defined = new WeakSet<object>();
+
+/**
+ * Internal to the two lesson paths: records a lesson that `validateLesson` or `validateLegacyLesson` has just checked,
+ * and returns it. A lesson file never calls it.
+ */
+export function markDefined(lesson: Lesson): Lesson {
+  defined.add(lesson);
+  return lesson;
+}
+
+/** True when `l` is the very object a validator returned: not a copy, and not a lesson built by hand. */
+export function isDefinedLesson(l: unknown): boolean {
+  return typeof l === 'object' && l !== null && defined.has(l);
+}
+
 /**
  * Parses a lesson's shape with `schema`, or throws one LessonValidationError naming every shape problem (a missing
  * field, a wrong type, a key the schema does not know) with its path. Shape problems are reported on their own,
@@ -322,7 +339,7 @@ export function validateLesson(input: unknown, sources: SourceRegistry = SOURCES
   const lesson: Lesson = { ...parseLessonShape(lessonSchema, input), origin: 'cited' };
   const issues = [...checkCitedRules(lesson, sources), ...checkStructure(lesson)];
   if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
-  return { ...lesson, units: lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) })) };
+  return markDefined({ ...lesson, units: lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) })) });
 }
 
 /** The entry point for every new lesson file: it validates at import, so a bad lesson fails the build. */

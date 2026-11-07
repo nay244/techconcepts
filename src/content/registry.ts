@@ -1,5 +1,6 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
+import { isDefinedLesson } from './define';
 import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
@@ -124,7 +125,10 @@ const LESSON_PATH = /^\.\/lessons\/([^/]+)\/([^/]+)\.ts$/;
 
 /**
  * Groups the glob result into `{ trackId: { slug: lesson } }`. The folder
- * name is the track id and the file name must equal the lesson's slug.
+ * name is the track id and the file name must equal the lesson's slug. Each
+ * lesson must be the one `defineLesson` or `defineLegacyLesson` returned, so a
+ * lesson file cannot skip the rules (direction doc §3.4: the build fails if a
+ * lesson is missing a citation).
  */
 export function groupLessonModules(modules: Record<string, Lesson>): Record<string, Record<string, Lesson>> {
   const grouped: Record<string, Record<string, Lesson>> = {};
@@ -134,6 +138,11 @@ export function groupLessonModules(modules: Record<string, Lesson>): Record<stri
     const [, trackId, fileName] = match as unknown as [string, string, string];
     if (typeof lesson !== 'object' || lesson === null || typeof lesson.slug !== 'string') {
       throw new Error(`${path} must default-export defineLesson({ ... }), or defineLegacyLesson({ ... }) for a lesson on the legacy list.`);
+    }
+    if (!isDefinedLesson(lesson)) {
+      throw new Error(
+        `${path}: the lesson was not made with defineLesson (or defineLegacyLesson for a lesson on the legacy list); wrap it so every rule runs.`,
+      );
     }
     if (lesson.slug !== fileName) {
       throw new Error(`${path}: the file name "${fileName}" must equal the lesson slug "${lesson.slug}".`);

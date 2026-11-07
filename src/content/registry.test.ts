@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { CERT_TAGS } from './certs';
-import { LEGACY_LESSONS } from './legacy';
+import { validateLesson } from './define';
+import { LEGACY_LESSONS, validateLegacyLesson } from './legacy';
 import { checkLimits } from './limits';
 import {
   buildEntries,
@@ -12,10 +13,23 @@ import {
   neighbors,
   trackTotals,
 } from './registry';
-import { FIXTURE_LIMITS, liftedFixture, makeLesson, makeTwoUnitLesson } from './test-fixtures';
+import { lessonSchema, type Lesson } from './schema';
+import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCitedLesson, makeLesson, makeTwoUnitLesson } from './test-fixtures';
 import { comingSoonTracks, networkingTrack, tracks } from './tracks';
 
 const lessonFor = (slug: string, title: string) => liftedFixture(makeLesson({ slug, title }));
+
+/**
+ * Drops a fixture's cues. This file loads the real lessons through the registry, so it cannot swap the fixture parts in
+ * for the real ones, and the real dhcp figure takes no cues.
+ */
+function withoutCues<L extends { units: { steps: { events: { id: string; cues?: unknown }[] }[] }[] }>(l: L): L {
+  for (const u of l.units) for (const step of u.steps) for (const e of step.events) delete e.cues;
+  return l;
+}
+
+/** A fixture as a lesson file makes it, through the legacy path's validator, so the registry accepts it. */
+const definedFor = (slug: string, title: string) => validateLegacyLesson(withoutCues(makeLesson({ slug, title })));
 
 const SLUGS = [
   'how-the-internet-works', 'osi-model', 'packets',
@@ -219,19 +233,46 @@ test('the build stops on a legacy lesson off the list, and on a listed slug whos
 });
 
 test('groupLessonModules groups by folder (track id) and file name (slug)', () => {
-  const dhcp = lessonFor('dhcp', 'DHCP');
-  const router = lessonFor('router', 'Router');
+  const dhcp = definedFor('dhcp', 'DHCP');
+  const router = definedFor('router', 'Router');
   const grouped = groupLessonModules({
     './lessons/networking/dhcp.ts': dhcp,
     './lessons/networking/router.ts': router,
-    './lessons/crypto/hash.ts': lessonFor('hash', 'Hash'),
+    './lessons/crypto/hash.ts': definedFor('hash', 'Hash'),
   });
   expect(Object.keys(grouped).sort()).toEqual(['crypto', 'networking']);
   expect(grouped.networking).toEqual({ dhcp, router });
 });
 
 test('groupLessonModules requires the file name to equal the slug', () => {
-  expect(() => groupLessonModules({ './lessons/networking/dhcp.ts': lessonFor('router', 'Router') })).toThrow(/dhcp.*router/s);
+  expect(() => groupLessonModules({ './lessons/networking/dhcp.ts': definedFor('router', 'Router') })).toThrow(/dhcp.*router/s);
+});
+
+test('groupLessonModules accepts a lesson made with defineLesson', () => {
+  const cited = validateLesson(withoutCues(makeCitedLesson()), FIXTURE_SOURCES);
+  const grouped = groupLessonModules({ './lessons/networking/cited-lesson.ts': cited });
+  expect(grouped.networking!['cited-lesson']).toBe(cited);
+});
+
+const NOT_DEFINED =
+  'the lesson was not made with defineLesson (or defineLegacyLesson for a lesson on the legacy list); wrap it so every rule runs.';
+
+test('groupLessonModules rejects a lesson object built by hand, which skipped every rule', () => {
+  // A hand-built lesson in the cited shape with an uncited Learn statement: only the gate stops it.
+  const raw: Lesson = { ...lessonSchema.parse(makeCitedLesson()), origin: 'cited' };
+  raw.units[0]!.learn.lead[0]!.cite = [];
+  expect(() => groupLessonModules({ './lessons/networking/cited-lesson.ts': raw })).toThrow(
+    `./lessons/networking/cited-lesson.ts: ${NOT_DEFINED}`,
+  );
+  // A legacy lesson lifted without its checks is stopped too.
+  expect(() => groupLessonModules({ './lessons/networking/dhcp.ts': lessonFor('dhcp', 'DHCP') })).toThrow(
+    `./lessons/networking/dhcp.ts: ${NOT_DEFINED}`,
+  );
+});
+
+test('groupLessonModules rejects a copy of a defined lesson, since a copy can be changed after its checks', () => {
+  const defined = definedFor('dhcp', 'DHCP');
+  expect(() => groupLessonModules({ './lessons/networking/dhcp.ts': { ...defined } })).toThrow(`./lessons/networking/dhcp.ts: ${NOT_DEFINED}`);
 });
 
 test('groupLessonModules rejects a default export that is not a lesson', () => {

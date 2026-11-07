@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { checkStructure, LessonValidationError, parseLessonShape } from './define';
+import { checkStructure, LessonValidationError, markDefined, parseLessonShape } from './define';
 import { text } from './primitives';
 import {
   certTagSchema,
@@ -154,7 +154,7 @@ export function validateLegacyLesson(input: unknown): Lesson {
   const lesson = liftLegacy(parseLessonShape(legacyLessonSchema, input));
   const issues = [...checkStructure(lesson), ...checkLegacyRules(lesson)];
   if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
-  return lesson;
+  return markDefined(lesson);
 }
 
 /** The entry point for the ready lessons' files: only a listed slug may use it, and it validates at import, so a bad lesson fails the build. */

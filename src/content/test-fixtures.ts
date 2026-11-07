@@ -582,7 +582,7 @@ export function makeCitedLesson(): LessonInput {
             id: 'lookup',
             title: 'Lease Lookup',
             sub: 'The router checks what it has lent',
-            narrative: 'Before it lends an address, the router reads its table. An address that is still lent is never lent to a second device.',
+            narrative: 'The router reads its table: the address is lent to the laptop, so it lends it to no other device.',
             deep: [{ text: 'One row per lent address lets the router tell at once which addresses are still free.', cite: [rfc('2.3')] }],
             facts: [
               { label: 'Lookup', value: 'Found', backing: { traces: ['why-1'] } },

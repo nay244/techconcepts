@@ -170,8 +170,9 @@ function duplicateLearnIds(u: Unit, at: string): string[] {
 }
 
 /**
- * Rule 6, second half: every trace names a cited Learn part of this lesson. An analogy, a step's Go deeper (which has
- * no id) and an id of another lesson are not targets.
+ * Rule 6, second half: every trace names a cited Learn part of this lesson: a lead or why statement, a term, the
+ * pattern, a fact, or a paragraph of Learn's Go deeper. An analogy, a step's Go deeper (which has no id) and an id of
+ * another lesson are not targets.
  */
 function badTraces(parts: BackedPart[], lesson: Lesson): string[] {
   const targets = new Map<string, Target>();
@@ -184,7 +185,9 @@ function badTraces(parts: BackedPart[], lesson: Lesson): string[] {
     for (const id of backing.traces) {
       const target = targets.get(id);
       if (target === undefined) {
-        issues.push(`${at}: traces "${id}", which is not a Learn statement, term, pattern, fact or Go-deeper paragraph of this lesson; trace one of those by its id.`);
+        issues.push(
+          `${at}: traces "${id}", which is not a Learn lead or why statement, term, pattern, fact or Go-deeper paragraph of this lesson; trace one of those by its id.`,
+        );
       } else if (target.analogy) {
         issues.push(`${at}: traces "${id}", which is an analogy; trace a cited Learn statement instead, or flag this as an analogy too.`);
       } else if (!target.cited) {
@@ -195,12 +198,20 @@ function badTraces(parts: BackedPart[], lesson: Lesson): string[] {
   return issues;
 }
 
+/**
+ * What is wrong with a citation of content, as `checkCitation` says it, with what to do added to the one message that
+ * lacks it: a source the registry does not have. The glossary uses it too.
+ */
+export function contentCitationProblems(c: Citation, sources: SourceRegistry): string[] {
+  return checkCitation(c, sources, 'content').map((problem) =>
+    problem.startsWith('Unknown source ') ? `${problem}; add it to the source registry, or fix the id.` : problem,
+  );
+}
+
 /** Rule 7: every citation is one the registry builds, of a source that may back content. */
 function unsoundCitations(u: Unit, at: string, sources: SourceRegistry): string[] {
   const parts = [{ at: `${at}.osi`, cite: osiCitations(u) }, ...citedParts(u, at)];
-  return parts.flatMap((p) =>
-    p.cite.flatMap((c, n) => checkCitation(c, sources, 'content').map((problem) => `${p.at}, citation ${n + 1}: ${problem}`)),
-  );
+  return parts.flatMap((p) => p.cite.flatMap((c, n) => contentCitationProblems(c, sources).map((problem) => `${p.at}, citation ${n + 1}: ${problem}`)));
 }
 
 /** Rule 8: no "lesson N", since a shared lesson's number differs from track to track. */

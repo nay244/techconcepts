@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { checkStructure, defineTrack, LessonValidationError } from './define';
+import { checkStructure, defineTrack, isDefinedLesson, LessonValidationError } from './define';
 import { defineLegacyLesson, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
 import type { CertificationTrack } from './schema';
 import { cite } from './sources';
@@ -548,6 +548,14 @@ test('a multi-unit legacy lesson needs exactly 2 questions per unit, and a one-u
 test('defineLegacyLesson returns the validated lesson, lifted', () => {
   const lesson = defineLegacyLesson(makeLesson({ slug: 'dhcp' }));
   expect([lesson.slug, lesson.origin]).toEqual(['dhcp', 'legacy']);
+});
+
+test('the legacy path’s lesson is a defined lesson; one lifted without its checks is not', () => {
+  expect(isDefinedLesson(defineLegacyLesson(makeLesson({ slug: 'dhcp' })))).toBe(true);
+  expect(isDefinedLesson(validateLegacyLesson(makeLesson()))).toBe(true);
+  expect(isDefinedLesson(liftedFixture())).toBe(false);
+  expect(isDefinedLesson(undefined)).toBe(false);
+  expect(isDefinedLesson('dhcp')).toBe(false);
 });
 
 test('defineLegacyLesson throws LessonValidationError for a bad lesson', () => {

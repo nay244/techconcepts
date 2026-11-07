@@ -1,9 +1,9 @@
 import { expect, test, vi } from 'vitest';
-import { defineLesson, LessonValidationError, validateLesson, type LessonInput } from './define';
+import { defineLesson, isDefinedLesson, LessonValidationError, validateLesson, type LessonInput } from './define';
 import { checkLimits } from './limits';
 import type { Backing } from './schema';
 import { cite } from './sources';
-import { FIXTURE_LIMITS, FIXTURE_SOURCES, makeCitedLesson, makeLesson, OBJ_URL } from './test-fixtures';
+import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCitedLesson, makeLesson, OBJ_URL } from './test-fixtures';
 
 // The strict path every new lesson takes: the cited shape, the citation and backing rules, and the structural rules.
 
@@ -97,7 +97,7 @@ const REJECTED: [string, (l: LessonInput) => void, RegExp][] = [
   [
     'a trace to an unknown id',
     (l) => { u(l).steps[0]!.backing = { traces: ['nowhere'] }; },
-    /units\[0\]\.steps\[0\] \(step "request"\): traces "nowhere", which is not a Learn statement/,
+    /units\[0\]\.steps\[0\] \(step "request"\): traces "nowhere", which is not a Learn lead or why statement/,
   ],
   [
     'a duplicate statement id',
@@ -304,10 +304,12 @@ test('a trace to a Learn part with no citation is rejected', () => {
 });
 
 test('a trace to an id this lesson does not have is rejected, such as another lesson’s', () => {
+  // The legacy fixture's lead statement: a real Learn id, of another lesson.
+  const other = liftedFixture().units[0]!.learn.lead[0]!.id;
   const l = makeCitedLesson();
-  l.backing = { traces: ['lead-1', 'lead'] };
+  l.backing = { traces: ['lead-1', other] };
   expect(issuesOf(l)).toEqual([
-    'backing (the lesson\'s subtitle and summary): traces "lead", which is not a Learn statement, term, pattern, fact or Go-deeper paragraph of this lesson; trace one of those by its id.',
+    `backing (the lesson's subtitle and summary): traces "${other}", which is not a Learn lead or why statement, term, pattern, fact or Go-deeper paragraph of this lesson; trace one of those by its id.`,
   ]);
 });
 
@@ -335,7 +337,9 @@ test('Learn ids are unique across statements, terms, the pattern, Go deeper and 
 test('a citation to a source the registry does not have is rejected, naming its place', () => {
   const l = makeCitedLesson();
   u(l).learn.facts[0]!.cite = [{ source: 'nowhere', section: '1', url: 'https://www.rfc-editor.org/rfc/rfc1.html#section-1', label: 'RFC 1 §1' }];
-  expect(issuesOf(l)).toEqual(['units[0].learn.facts[0] ("fact-1"), citation 1: Unknown source "nowhere" (section 1)']);
+  expect(issuesOf(l)).toEqual([
+    'units[0].learn.facts[0] ("fact-1"), citation 1: Unknown source "nowhere" (section 1); add it to the source registry, or fix the id.',
+  ]);
 });
 
 test('a citation of the whole document, not its section, is rejected', () => {
@@ -390,6 +394,13 @@ test('a lesson in the legacy shape is rejected by the strict path, on its shape 
 
 test('defineLesson returns the validated lesson', () => {
   expect(defineLesson(makeCitedLesson(), FIXTURE_SOURCES)).toEqual(validateLesson(makeCitedLesson(), FIXTURE_SOURCES));
+});
+
+test('the strict path’s lesson is a defined lesson, which the registry accepts; a copy of it is not', () => {
+  const l = defineLesson(makeCitedLesson(), FIXTURE_SOURCES);
+  expect(isDefinedLesson(l)).toBe(true);
+  expect(isDefinedLesson(validateLesson(makeCitedLesson(), FIXTURE_SOURCES))).toBe(true);
+  expect(isDefinedLesson({ ...l })).toBe(false);
 });
 
 test('defineLesson throws LessonValidationError naming the lesson', () => {

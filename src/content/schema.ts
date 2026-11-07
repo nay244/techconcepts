@@ -43,8 +43,9 @@ export const factSchema = z.strictObject({ label: text, value: text });
 // ---------------------------------------------------------------- citations and backing
 
 /**
- * What stands behind a part of Watch or the scene, which cites nothing itself: the cited Learn statements or
- * Learn Go-deeper paragraphs (by id) it traces to, or a flag saying it is an analogy or example data.
+ * What stands behind a part of Watch or the scene, which cites nothing itself: the cited Learn parts of the same lesson
+ * it traces to, by id (Learn's lead and why statements, its terms, the pattern, its facts, and the paragraphs of
+ * Learn's Go deeper; not an analogy, and not a step's Go deeper), or a flag saying it is an analogy or example data.
  */
 export const backingSchema = z.union([
   z.strictObject({ traces: z.array(slugSchema).min(1) }),
