@@ -229,6 +229,18 @@ test.describe('desktop', () => {
   });
 });
 
+test.describe('without JavaScript', () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("no page shows the header's theme toggle, which needs JavaScript to work", async ({ page }) => {
+    for (const { path } of SITE_PAGES) {
+      await page.goto(path);
+      await expect(page.locator('.site-head .theme-toggle'), path).toHaveCount(1);
+      await expect(page.locator('.site-head .theme-toggle'), path).toBeHidden();
+    }
+  });
+});
+
 test.describe('phone', { tag: '@phone' }, () => {
   requireLessons(LESSONS);
 

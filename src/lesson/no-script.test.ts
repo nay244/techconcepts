@@ -24,10 +24,13 @@ async function lessonPage(slug: string): Promise<Document> {
   return new JSDOM(html).window.document;
 }
 
-/** The selectors the head's no-script style hides. */
+/**
+ * The selectors the head's no-script style hides. The rule must be `!important`: the page's own stylesheets load
+ * after it, and their `display` (the switches' inline-flex, the controls' flex) would win at the same specificity.
+ */
 function hiddenWithoutScript(doc: Document): string {
   const styles = [...doc.querySelectorAll('head noscript style')].map((s) => s.textContent ?? '').join('\n');
-  const rule = /([^{}]+)\{\s*display:\s*none;?\s*\}/.exec(styles);
+  const rule = /([^{}]+)\{\s*display:\s*none\s*!important;?\s*\}/.exec(styles);
   if (rule === null) throw new Error('The head has no no-script rule that hides anything.');
   return rule[1]!.trim();
 }
