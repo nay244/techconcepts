@@ -9,6 +9,7 @@ import {
   getEntries,
   getLesson,
   getTrack,
+  checkLessonFolders,
   checkListings,
   lessonsFromModules,
   neighbors,
@@ -338,6 +339,13 @@ test('an override is unneeded unless some listing track needs it', () => {
   // alpha alone (max 6) does not need it; beta (max 4) does, so a listing in both keeps it.
   expect(() => checkListings({ shared: reasoned }, [alpha])).toThrow(/"shared".*steps.*not needed/s);
   expect(() => checkListings({ shared: reasoned }, [alpha, tight])).not.toThrow();
+});
+
+test('a lesson file in a folder fails the build; a folder named after a lesson holds its parts', () => {
+  expect(() => checkLessonFolders(['./lessons/networking/osi-model.ts'], ['how-the-internet-works'])).toThrow(
+    './lessons/networking/osi-model.ts: lesson files live directly in src/content/lessons/; a folder there holds the parts of the lesson it is named after, and no lesson is named "networking".',
+  );
+  expect(() => checkLessonFolders(['./lessons/how-the-internet-works/dns.ts'], ['how-the-internet-works'])).not.toThrow();
 });
 
 test('tracksOf lists the tracks that list a slug, in tracks order', () => {

@@ -64,6 +64,8 @@ for (const lesson of LESSONS) {
   test.describe(lesson.title, () => {
     test.describe.configure({ timeout: 180_000 });
 
+
+
     test('→ walks Overview, every step, Learn and Practice, ← walks back, and the page never scrolls', async ({ page }) => {
       const errors = collectErrors(page);
       await open(page, lesson.path);
@@ -266,6 +268,8 @@ for (const lesson of LESSONS) {
 }
 
 test.describe('lesson specifics', () => {
+  test.describe.configure({ timeout: 180_000 });
+
   test('a lesson page names its canonical URL, the same address as og:url', async ({ page }) => {
     // The configured site (astro.config), not baseURL: og:url has always been built on it.
     const canonical = new URL('/networking/dhcp', 'https://techconcepts.app').href;
@@ -273,9 +277,6 @@ test.describe('lesson specifics', () => {
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
   });
-
-
-  test.describe.configure({ timeout: 180_000 });
 
   /** A lesson the brief names, found among the ready ones. */
   function lessonNamed(slug: string): ReadyLesson {

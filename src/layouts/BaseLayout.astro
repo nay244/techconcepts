@@ -25,9 +25,10 @@ interface Props {
   overHero?: boolean;
   /**
    * The path of the one address search engines should index for this page, when it is served at more than one: a lesson
-   * several tracks list is at a URL in each, and names the first listing track's. Without it, the page's own path.
+   * several tracks list is at a URL in each, and names the first listing track's. Left out, the page's own path.
+   * `null` means no canonical link at all (the 404 page, which is no address to name); og:url stays the page's own.
    */
-  canonical?: string;
+  canonical?: string | null;
 }
 
 const SITE_NAME = 'TechConcepts';
@@ -71,7 +72,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={imageUrl} />
-    <link rel="canonical" href={pageUrl} />
+    {canonical !== null && <link rel="canonical" href={pageUrl} />}
     <meta property="og:url" content={pageUrl} />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />

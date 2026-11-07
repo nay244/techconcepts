@@ -45,10 +45,10 @@ export type AvailableSummary = Extract<LessonSummary, { available: true }>;
  * all parts. `lessons` is keyed by slug and holds every lesson file; a planned
  * lesson with no file is returned as unavailable. `homeOf(slug)` is the first
  * track, in `tracks` order, that lists the slug: its URL is the lesson's canonical
- * one. Throws when a lesson is not in this track, is filed under a different slug
- * than its own, has a different title than the track lists, or does not fit the
- * track's limits. (Whether any track lists a lesson, and whether its overrides are
- * needed across every listing track, is `checkListings`.)
+ * one. Skips a lesson this track does not list (another track may; `checkListings`
+ * catches a lesson no track lists, and overrides no listing track needs). Throws when
+ * a listed lesson is filed under a different slug than its own, has a different
+ * title than the track lists, or does not fit the track's limits.
  */
 export function buildEntries(track: Track, lessons: Record<string, Lesson>, homeOf: (slug: string) => string): LessonSummary[] {
   const planned = new Map(track.parts.flatMap((part) => part.lessons.map((l) => [l.slug, l.title] as const)));
@@ -153,6 +153,22 @@ export function lessonsFromModules(modules: Record<string, Lesson>): Record<stri
 }
 
 /**
+ * Throws, naming the file, for a `.ts` file in a folder under `lessons/` whose folder is not the slug of a lesson. A
+ * folder there holds the parts of the lesson it is named after (lesson 1's protocols); anything else would be a lesson
+ * file in the wrong place, silently never loaded. `paths` are glob keys like `./lessons/<dir>/<file>.ts`.
+ */
+export function checkLessonFolders(paths: readonly string[], slugs: readonly string[]): void {
+  for (const path of paths) {
+    const dir = /^\.\/lessons\/([^/]+)\//.exec(path)?.[1];
+    if (dir !== undefined && !slugs.includes(dir)) {
+      throw new Error(
+        `${path}: lesson files live directly in src/content/lessons/; a folder there holds the parts of the lesson it is named after, and no lesson is named "${dir}".`,
+      );
+    }
+  }
+}
+
+/**
  * The tracks, in order, that list `slug`.
  */
 function listingTracks(slug: string, trackList: readonly Track[]): Track[] {
@@ -206,6 +222,7 @@ const modules = import.meta.glob<Lesson>(['./lessons/*.ts', '!./lessons/*.test.t
   import: 'default',
 });
 const lessonsBySlug = lessonsFromModules(modules);
+checkLessonFolders(Object.keys(import.meta.glob(['./lessons/*/*.ts', '!./lessons/*/*.test.ts'])), Object.keys(lessonsBySlug));
 checkLegacyList(Object.values(lessonsBySlug));
 checkListings(lessonsBySlug, tracks);
 
