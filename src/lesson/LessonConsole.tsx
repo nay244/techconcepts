@@ -131,8 +131,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
 
   // Keyed on the position, never on the progress data: every update hands out a new data object.
   useEffect(() => {
-    update((d) => recordVisit(d, entry.key, position, entry.maxPosition, new Date()));
-  }, [update, entry.key, entry.maxPosition, position]);
+    update((d) => recordVisit(d, entry.key, entry.trackId, position, entry.maxPosition, new Date()));
+  }, [update, entry.key, entry.trackId, entry.maxPosition, position]);
 
   const record = Object.hasOwn(progress.data.lessons, entry.key) ? progress.data.lessons[entry.key] : undefined;
   const resumeAt = deepLinked ? null : resumePosition(progress.data, entry.key);

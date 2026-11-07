@@ -34,9 +34,9 @@ test('a first visit reads the ready lessons, counted from the track', () => {
 
 test('a returning visitor sees done and in progress, with one bar segment per lesson', () => {
   seedProgress({
-    'networking/dhcp': { status: 'finished', furthestPosition: 7 },
-    'networking/subnetting': { status: 'in-progress', furthestPosition: 2 },
-    'networking/firewalls': { status: 'in-progress', furthestPosition: 1 },
+    'dhcp': { status: 'finished', furthestPosition: 7 },
+    'subnetting': { status: 'in-progress', furthestPosition: 2 },
+    'firewalls': { status: 'in-progress', furthestPosition: 1 },
   });
   const { container } = render(card());
   expect(screen.getByText('1 of 20 done, 2 in progress')).toBeInTheDocument();
@@ -48,13 +48,13 @@ test('a returning visitor sees done and in progress, with one bar segment per le
 });
 
 test('progress saved only for lessons the track does not have is still a first visit', () => {
-  seedProgress({ 'networking/osi-model': { status: 'finished', furthestPosition: 4 } });
+  seedProgress({ 'osi-model': { status: 'finished', furthestPosition: 4 } });
   const { container } = render(card());
   expectFirstVisit(container);
 });
 
 test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {
-  seedProgress({ 'networking/dhcp': { status: 'in-progress', furthestPosition: 3 } });
+  seedProgress({ 'dhcp': { status: 'in-progress', furthestPosition: 3 } });
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   const container = document.createElement('div');
   container.innerHTML = renderToString(card());

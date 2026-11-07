@@ -4,6 +4,7 @@ import {
   collectErrors,
   hydrated,
   kicker,
+  lessonCard,
   moveBy,
   nextButton,
   open,
@@ -25,8 +26,6 @@ const HERO_START = 'Learn how the Internet Works';
 const INTERNET_PATH = '/networking/how-the-internet-works';
 const trackCards = (page: Page) => page.locator('.tracks > li > .card.track');
 const networkingCard = (page: Page) => page.locator('.tracks a.card.track.ready[href="/networking"]');
-const lessonCard = (page: Page, title: string) =>
-  page.locator('main li.lesson', { has: page.locator('a.l-link', { hasText: new RegExp(`^${title}$`) }) });
 /** Every lesson the track lists, ready or not, in the order it lists them. */
 const trackItems = (page: Page) => page.locator('main ol.lessons > li, main ol.soon-list > li');
 
@@ -168,7 +167,7 @@ test.describe('desktop', () => {
     await finishLesson(page, dhcp!.path);
 
     await open(page, '/networking');
-    const card = lessonCard(page, 'DHCP');
+    const card = lessonCard(page, 'dhcp');
     await expect(card.locator('.badge')).toHaveText('Finished');
     await expect(page.locator('.toc .pg-title')).toHaveText('1 of 20 complete');
 
@@ -191,6 +190,27 @@ test.describe('desktop', () => {
     await open(page, '/');
     await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
     await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready');
+  });
+
+  test('progress saved before this update still shows, then moves to the new record', async ({ page }) => {
+    // One goto first, then seed: an init script would put the old record back on every navigation.
+    await page.goto('/');
+    const v1 = JSON.stringify({
+      version: 1,
+      lastLesson: 'networking/dhcp',
+      lessons: { 'networking/dhcp': { status: 'finished', furthestPosition: 7, lastOpened: '2026-11-06T10:00:00.000Z' } },
+    });
+    await page.evaluate((value) => window.localStorage.setItem('techconcepts:v1', value), v1);
+
+    await open(page, '/networking');
+    await expect(lessonCard(page, 'dhcp')).toContainText('Finished');
+
+    await open(page, '/networking/subnetting?step=1');
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem('techconcepts:v1'))).toBeNull();
+    const v2 = JSON.parse((await page.evaluate(() => window.localStorage.getItem('techconcepts:v2')))!);
+    expect(v2.lessons.dhcp.status).toBe('finished');
+    expect(v2.lessons.subnetting.status).toBe('in-progress');
+    expect(v2.lastTrack).toBe('networking');
   });
 
   test('About states where progress lives, credits the inspirations and the kit, and resets', async ({ page }) => {
@@ -277,8 +297,8 @@ test.describe('without JavaScript', () => {
     // Everything the chips would filter is still there: each part, each ready lesson's card, each lesson to come.
     expect(LESSONS.length).toBeGreaterThan(0);
     for (const lesson of LESSONS) {
-      await expect(lessonCard(page, lesson.title), lesson.title).toBeVisible();
-      await expect(lessonCard(page, lesson.title).locator('a.l-link'), lesson.title).toBeVisible();
+      await expect(lessonCard(page, lesson.slug), lesson.title).toBeVisible();
+      await expect(lessonCard(page, lesson.slug).locator('a.l-link'), lesson.title).toBeVisible();
     }
     const items = trackItems(page);
     expect(await items.count()).toBeGreaterThan(LESSONS.length);

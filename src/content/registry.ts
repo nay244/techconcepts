@@ -69,7 +69,7 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
   for (const part of track.parts) {
     for (const planned of part.lessons) {
       const base = {
-        key: `${track.id}/${planned.slug}`,
+        key: planned.slug,
         trackId: track.id,
         slug: planned.slug,
         number: entries.length + 1,

@@ -98,12 +98,16 @@ test('cert tags', () => {
 
 // ------------------------------------------------------------ available entries
 
+test('an entry’s key is its lesson slug', () => {
+  expect(getEntries('networking').find((e) => e.slug === 'dhcp')!.key).toBe('dhcp');
+});
+
 test('an available entry reports units, subtitle and maxPosition', () => {
   // One unit of five steps: Overview, 5 steps, Learn, Practice is 8 positions, 0 to 7.
   const dhcp = lessonFor('dhcp', 'DHCP');
   expect(buildEntries(networkingTrack, { dhcp }).find((x) => x.slug === 'dhcp')).toEqual({
     available: true,
-    key: 'networking/dhcp',
+    key: 'dhcp',
     trackId: 'networking',
     slug: 'dhcp',
     url: '/networking/dhcp',
@@ -132,7 +136,7 @@ test('an available entry reports units, subtitle and maxPosition', () => {
 test('unavailable entries carry only identity', () => {
   expect(buildEntries(networkingTrack, {})[0]).toEqual({
     available: false,
-    key: 'networking/how-the-internet-works',
+    key: 'how-the-internet-works',
     trackId: 'networking',
     slug: 'how-the-internet-works',
     number: 1,

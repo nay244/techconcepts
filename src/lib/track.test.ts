@@ -25,7 +25,7 @@ test('the six parts in order, each with its number, its title, its lessons and h
   const all = parts.flatMap((p) => p.lessons);
   expect(all.map((l) => l.n)).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0')));
   expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['How the Internet Works', 'Subnetting', 'DHCP', 'Firewalls']);
-  expect(all[1]).toEqual({ ready: false, key: 'networking/osi-model', n: '02', title: 'OSI Model' });
+  expect(all[1]).toEqual({ ready: false, key: 'osi-model', n: '02', title: 'OSI Model' });
 });
 
 test('a ready lesson carries its card: words, link, protocols for a lesson of several units, and exams', () => {
@@ -33,7 +33,7 @@ test('a ready lesson carries its card: words, link, protocols for a lesson of se
   const internet = all[0] as ReadyLesson;
   expect(internet).toMatchObject({
     ready: true,
-    key: 'networking/how-the-internet-works',
+    key: 'how-the-internet-works',
     n: '01',
     number: 1,
     title: 'How the Internet Works',

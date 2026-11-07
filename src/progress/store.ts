@@ -1,7 +1,9 @@
 import type { SafeStorage } from '../lib/storage';
 
-/** The one versioned localStorage record that holds all learning progress. */
-export const PROGRESS_KEY = 'techconcepts:v1';
+/** The one versioned localStorage record that holds all learning progress, keyed by lesson slug. */
+export const PROGRESS_KEY = 'techconcepts:v2';
+/** The record earlier visits left, keyed `track/slug`. It is read and merged in, and removed only after a v2 save. */
+export const LEGACY_PROGRESS_KEY = 'techconcepts:v1';
 
 export interface LessonProgress {
   status: 'in-progress' | 'finished';
@@ -15,14 +17,16 @@ export interface LessonProgress {
 }
 
 export interface ProgressData {
-  version: 1;
-  /** Lesson records keyed by lesson key, e.g. `networking/dhcp`. */
+  version: 2;
+  /** Lesson records keyed by lesson slug, e.g. `dhcp`: progress follows the lesson, whichever track it was opened in. */
   lessons: Record<string, LessonProgress>;
   lastLesson: string | null;
+  /** The track `lastLesson` was opened in; null when that is not known. It travels with `lastLesson`. */
+  lastTrack: string | null;
 }
 
 export function emptyProgress(): ProgressData {
-  return { version: 1, lessons: {}, lastLesson: null };
+  return { version: 2, lessons: {}, lastLesson: null, lastTrack: null };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -38,32 +42,107 @@ function parseLesson(value: unknown): LessonProgress | null {
   return { status, furthestPosition, lastOpened };
 }
 
+/** The valid lesson records of a stored `lessons` object, one by one; a malformed record is dropped alone. */
+function parseLessons(lessons: Record<string, unknown>): [string, LessonProgress][] {
+  const out: [string, LessonProgress][] = [];
+  for (const [key, record] of Object.entries(lessons)) {
+    const lesson = parseLesson(record);
+    if (lesson) out.push([key, lesson]);
+  }
+  return out;
+}
+
+function parseJson(raw: string | null): unknown {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Turns whatever was stored into progress data. Anything that is not the
- * current version's shape reads as empty, and a single malformed lesson record
- * is dropped without discarding the rest. Positions are kept as stored (the
+ * Turns whatever was stored under the v2 key into progress data. Anything that is not the v2 shape reads as empty,
+ * and a single malformed lesson record is dropped without discarding the rest. Positions are kept as stored (the
  * range check needs the lesson list, so `sanitizeProgress` does it).
  */
 export function parseProgress(raw: string | null): ProgressData {
-  if (!raw) return emptyProgress();
-  let value: unknown;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    return emptyProgress();
+  const value = parseJson(raw);
+  if (!isObject(value) || value.version !== 2 || !isObject(value.lessons)) return emptyProgress();
+  const lastLesson = typeof value.lastLesson === 'string' ? value.lastLesson : null;
+  return {
+    version: 2,
+    lessons: Object.fromEntries(parseLessons(value.lessons)),
+    lastLesson,
+    lastTrack: lastLesson !== null && typeof value.lastTrack === 'string' ? value.lastTrack : null,
+  };
+}
+
+/** A lesson's slug and, when the key was exactly `track/slug`, its track. Any other key is kept as it was, from its last `/` on. */
+function splitV1Key(key: string): { slug: string; track: string | null } {
+  const at = key.lastIndexOf('/');
+  if (at === -1) return { slug: key, track: null };
+  const slug = key.slice(at + 1);
+  // Nothing after the slash: keep the whole key rather than lose the record under an empty name.
+  if (slug === '') return { slug: key, track: null };
+  const track = key.slice(0, at);
+  return { slug, track: track !== '' && !track.includes('/') ? track : null };
+}
+
+/** Lesson records of both, a lesson in both merged. */
+function mergeLessons(a: Record<string, LessonProgress>, b: Record<string, LessonProgress>): Record<string, LessonProgress> {
+  const merged = new Map<string, LessonProgress>(Object.entries(a));
+  for (const [slug, record] of Object.entries(b)) {
+    const have = merged.get(slug);
+    merged.set(slug, have === undefined ? record : mergeRecords(have, record));
   }
+  return Object.fromEntries(merged);
+}
+
+/**
+ * Reads what the earlier version left under `techconcepts:v1`: its parser (a malformed record is dropped alone), then
+ * every `track/slug` key becomes its slug (a key without `/` is kept), and two tracks' records of one lesson merge.
+ * `lastLesson` becomes a slug and `lastTrack` its track, or null when the old value named no single track.
+ */
+export function migrateV1(raw: string | null): ProgressData {
+  const value = parseJson(raw);
   if (!isObject(value) || value.version !== 1 || !isObject(value.lessons)) return emptyProgress();
 
-  const lessons: [string, LessonProgress][] = [];
-  for (const [key, record] of Object.entries(value.lessons)) {
-    const lesson = parseLesson(record);
-    if (lesson) lessons.push([key, lesson]);
+  let lessons: Record<string, LessonProgress> = {};
+  for (const [key, record] of parseLessons(value.lessons)) {
+    lessons = mergeLessons(lessons, Object.fromEntries([[splitV1Key(key).slug, record]]));
   }
+  if (typeof value.lastLesson !== 'string') return { version: 2, lessons, lastLesson: null, lastTrack: null };
+  const { slug, track } = splitV1Key(value.lastLesson);
+  return { version: 2, lessons, lastLesson: slug, lastTrack: track };
+}
+
+function timeOf(iso: string): number {
+  return Date.parse(iso);
+}
+
+/**
+ * One lesson's record from two: finished if either is, the larger furthest position, the later `lastOpened`
+ * (compared as dates; the stored text is kept, and a date that does not parse yields to the other).
+ */
+export function mergeRecords(a: LessonProgress, b: LessonProgress): LessonProgress {
+  const ta = timeOf(a.lastOpened);
+  const tb = timeOf(b.lastOpened);
+  const lastOpened = Number.isNaN(tb) || (!Number.isNaN(ta) && ta >= tb) ? a.lastOpened : b.lastOpened;
   return {
-    version: 1,
-    lessons: Object.fromEntries(lessons),
-    lastLesson: typeof value.lastLesson === 'string' ? value.lastLesson : null,
+    status: a.status === 'finished' || b.status === 'finished' ? 'finished' : 'in-progress',
+    furthestPosition: Math.max(a.furthestPosition, b.furthestPosition),
+    lastOpened,
   };
+}
+
+/**
+ * Every lesson of both, a lesson in both merged. `lastLesson` and `lastTrack` stay a pair: they come from `primary`
+ * unless it has no last lesson, and then from `other`.
+ */
+export function combineProgress(primary: ProgressData, other: ProgressData): ProgressData {
+  const from = primary.lastLesson !== null ? primary : other;
+  return { version: 2, lessons: mergeLessons(primary.lessons, other.lessons), lastLesson: from.lastLesson, lastTrack: from.lastTrack };
 }
 
 /**
@@ -75,21 +154,26 @@ function lessonOf(d: ProgressData, key: string): LessonProgress | undefined {
 }
 
 /**
- * Fits saved data to the lessons that exist now. `known` maps each lesson key
- * to its last step (`maxPosition`). Records for unknown lessons are dropped, a
- * position outside `[1, max]` is clamped, and an unknown `lastLesson` becomes null.
+ * Fits saved data to the lessons that exist now. `known` maps each lesson slug to its last step (`maxPosition`).
+ * A position outside `[1, max]` is clamped for a known lesson. A record for a lesson no track lists yet is kept
+ * exactly as it is, because unlisted is not gone. An unknown `lastLesson` becomes null, with its `lastTrack`.
  */
 export function sanitizeProgress(d: ProgressData, known: Record<string, number>): ProgressData {
   const lessons: [string, LessonProgress][] = [];
   for (const [key, lesson] of Object.entries(d.lessons)) {
-    if (!Object.hasOwn(known, key)) continue;
-    const furthestPosition = Math.max(1, Math.min(lesson.furthestPosition, known[key]));
+    if (!Object.hasOwn(known, key)) {
+      lessons.push([key, lesson]);
+      continue;
+    }
+    const furthestPosition = Math.max(1, Math.min(lesson.furthestPosition, known[key]!));
     lessons.push([key, { ...lesson, furthestPosition }]);
   }
+  const lastKnown = d.lastLesson !== null && Object.hasOwn(known, d.lastLesson);
   return {
-    version: 1,
+    version: 2,
     lessons: Object.fromEntries(lessons),
-    lastLesson: d.lastLesson !== null && Object.hasOwn(known, d.lastLesson) ? d.lastLesson : null,
+    lastLesson: lastKnown ? d.lastLesson : null,
+    lastTrack: lastKnown ? d.lastTrack : null,
   };
 }
 
@@ -102,20 +186,23 @@ export function sanitizeProgress(d: ProgressData, known: Record<string, number>)
  */
 export function mergeProgress(stored: ProgressData, next: ProgressData, known: Record<string, number>): ProgressData {
   const kept = Object.entries(stored.lessons).filter(([key]) => !Object.hasOwn(known, key));
+  const decided = Object.entries(next.lessons).filter(([key]) => Object.hasOwn(known, key));
   const keepStoredLast = next.lastLesson === null && stored.lastLesson !== null && !Object.hasOwn(known, stored.lastLesson);
+  const from = keepStoredLast ? stored : next;
   return {
-    version: 1,
-    lessons: Object.fromEntries([...kept, ...Object.entries(next.lessons)]),
-    lastLesson: keepStoredLast ? stored.lastLesson : next.lastLesson,
+    version: 2,
+    lessons: Object.fromEntries([...kept, ...decided]),
+    lastLesson: from.lastLesson,
+    lastTrack: from.lastTrack,
   };
 }
 
 /**
- * Records that `key` was opened at `position` (0 is the Overview). Moving past
+ * Records that lesson `key` (its slug) was opened in track `trackId` at `position` (0 is the Overview). Moving past
  * the Overview starts the lesson, reaching `maxPosition` finishes it, and a
  * finished lesson stays finished however it is opened again. Returns new data.
  */
-export function recordVisit(d: ProgressData, key: string, position: number, maxPosition: number, now: Date): ProgressData {
+export function recordVisit(d: ProgressData, key: string, trackId: string, position: number, maxPosition: number, now: Date): ProgressData {
   const existing = lessonOf(d, key);
   const lastOpened = now.toISOString();
 
@@ -132,7 +219,7 @@ export function recordVisit(d: ProgressData, key: string, position: number, maxP
   } else if (existing) {
     lessons = { ...d.lessons, [key]: { ...existing, lastOpened } };
   }
-  return { ...d, lessons, lastLesson: key };
+  return { ...d, lessons, lastLesson: key, lastTrack: trackId };
 }
 
 /** The step to offer "Resume at step N" for: only a lesson still in progress has one. */
@@ -152,15 +239,19 @@ export function trackCompletion(d: ProgressData, keys: string[]): { finished: nu
   return { finished, inProgress };
 }
 
+/** What is stored under v2, with whatever v1 still holds merged in (an old tab may have written it since). */
 export function loadProgress(s: SafeStorage): ProgressData {
-  return parseProgress(s.get(PROGRESS_KEY));
+  return combineProgress(parseProgress(s.get(PROGRESS_KEY)), migrateV1(s.get(LEGACY_PROGRESS_KEY)));
 }
 
-/** True only when the record was actually stored. */
+/** True only when the v2 record was actually stored. v1 is removed only after that, so a failed write loses nothing. */
 export function saveProgress(s: SafeStorage, d: ProgressData): boolean {
-  return s.set(PROGRESS_KEY, JSON.stringify(d));
+  if (!s.set(PROGRESS_KEY, JSON.stringify(d))) return false;
+  s.remove(LEGACY_PROGRESS_KEY);
+  return true;
 }
 
 export function clearProgress(s: SafeStorage): void {
   s.remove(PROGRESS_KEY);
+  s.remove(LEGACY_PROGRESS_KEY);
 }

@@ -9,8 +9,8 @@ import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { knownFrom } from '../lib/entries';
 import { presentTags, trackParts } from '../lib/track';
-import { PROGRESS_KEY } from '../progress/store';
-import { seedProgress } from '../test/progress';
+import { LEGACY_PROGRESS_KEY, PROGRESS_KEY } from '../progress/store';
+import { seedProgress, seedV1Progress } from '../test/progress';
 import { ResetProgress } from './ResetProgress';
 import { TrackLessons } from './TrackLessons';
 import { TrackSidebar } from './TrackSidebar';
@@ -55,7 +55,7 @@ describe('the track page', () => {
   });
 
   test('Clear in the sidebar clears the lesson cards beside it at once', async () => {
-    seedProgress({ 'networking/firewalls': { status: 'in-progress', furthestPosition: 2 } }, 'networking/firewalls');
+    seedProgress({ 'firewalls': { status: 'in-progress', furthestPosition: 2 } }, 'firewalls');
     render(page());
     expect(screen.getByText('In progress')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
@@ -81,14 +81,16 @@ describe('ResetProgress', () => {
     expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 
-  test('asks first, then clears techconcepts:v1 and announces it', async () => {
+  test('asks first, then clears techconcepts:v2 and the old v1 record and announces it', async () => {
     seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: 3 } }, dhcp.key);
+    seedV1Progress({ 'networking/subnetting': { status: 'finished', furthestPosition: 3 } });
     render(<ResetProgress />);
     await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
     expect(screen.getByRole('group', { name: 'Reset all progress on this device?' })).toHaveFocus();
     expect(window.localStorage.getItem(PROGRESS_KEY)).not.toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
     expect(window.localStorage.getItem(PROGRESS_KEY)).toBeNull();
+    expect(window.localStorage.getItem(LEGACY_PROGRESS_KEY)).toBeNull();
     expect(screen.getByRole('status')).toHaveTextContent('Progress cleared');
     expect(screen.getByRole('button', { name: 'Reset progress' })).toHaveFocus();
   });

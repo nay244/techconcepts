@@ -101,8 +101,8 @@ test('the DHCP part and lesson 10, DHCP, both call their unit "dhcp", and each v
   // page's own console.
   const lesson10 = getLesson('networking', 'dhcp')!;
   const part = unitById('dhcp');
-  expect(getEntries('networking').find((e) => e.slug === 'dhcp')).toMatchObject({ number: 10, available: true, key: 'networking/dhcp' });
-  expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({ key: 'networking/how-the-internet-works' });
+  expect(getEntries('networking').find((e) => e.slug === 'dhcp')).toMatchObject({ number: 10, available: true, key: 'dhcp' });
+  expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({ key: 'how-the-internet-works' });
   expect(checkStructure(lesson10)).toEqual([]);
   expect(checkStructure(internet)).toEqual([]);
   expect([lesson10.units.map((u) => u.id), part.id]).toEqual([['dhcp'], 'dhcp']);

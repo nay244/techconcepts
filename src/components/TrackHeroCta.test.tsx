@@ -81,7 +81,7 @@ test('with no saved lesson progress, or a last lesson the site does not have, it
   expectFirstVisit(first.container);
   first.unmount();
 
-  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'networking/osi-model');
+  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'osi-model');
   const second = render(cta());
   expectFirstVisit(second.container);
 });

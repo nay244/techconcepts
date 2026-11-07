@@ -44,7 +44,7 @@ const THREE: Lesson = liftedFixture(
 /** DHCP with two table changes in a row in Neighbor Reply and in Table Lookup (`makeUnitWithTwoTableChanges`). */
 const TWO_TABLE_CHANGES: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', units: [makeUnitWithTwoTableChanges()] }));
 const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE });
-const KEY = 'networking/dhcp';
+const KEY = 'dhcp';
 /** Every event's wait in these tests: the stand-in drivers' duration. */
 const EVENT_MS = 1000;
 
@@ -197,6 +197,8 @@ test('ArrowRight walks Overview → steps → Learn → Practice and records pro
   expect(heading()).toHaveTextContent('Neighbor table');
   // Opening the lesson records it as the last one, without starting it.
   expect(stored().lastLesson).toBe(KEY);
+  // The track it was opened in goes with it.
+  expect(JSON.parse(window.localStorage.getItem(PROGRESS_KEY)!).lastTrack).toBe('networking');
   expect(stored().lessons[KEY]).toBeUndefined();
 
   const titles = ['Neighbor Hello', 'Neighbor Reply', 'Table Lookup', 'Lost Message', 'Retransmission'];
