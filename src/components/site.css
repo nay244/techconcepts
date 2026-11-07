@@ -89,8 +89,8 @@
 .badge.done {
   border-color: color-mix(in srgb, var(--allowed) 40%, transparent);
   background: color-mix(in srgb, var(--allowed) 10%, transparent);
-  /* The green moved a little toward the strongest ink, so it stays AA on its own tint in both themes. */
-  color: color-mix(in srgb, var(--allowed) 85%, var(--ink-strong));
+  /* Green words take the green text token, which stays AA on this tint in both themes. */
+  color: var(--allowed-text);
 }
 /* In progress is where the visitor is: marigold, the current colour. */
 .badge.prog {

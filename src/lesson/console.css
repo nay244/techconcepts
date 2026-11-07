@@ -424,7 +424,7 @@
 }
 .outline__item[data-state='done'] .outline__mark {
   border-color: var(--allowed);
-  color: var(--allowed);
+  color: var(--allowed-text);
 }
 .outline__item[data-state='done'] .outline__mark[data-dot]::before {
   content: none;
@@ -499,7 +499,7 @@
   color: var(--here);
 }
 .outline__unit[data-state='seen'] .outline__unit-n {
-  color: var(--allowed);
+  color: var(--allowed-text);
 }
 .outline__unit-name {
   color: var(--ink-strong);
@@ -608,7 +608,7 @@ a.outline__lesson:hover {
   font: 400 12.5px/1 var(--sans);
 }
 .outline__lesson-status[data-status='finished'] {
-  color: var(--allowed);
+  color: var(--allowed-text);
 }
 
 /* ---------------------------------------------------------------- scene box */
@@ -719,7 +719,7 @@ a.outline__lesson:hover {
   align-items: center;
   gap: 6px;
   margin: 0 0 16px;
-  color: var(--allowed);
+  color: var(--allowed-text);
   font: 700 13px/1 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -982,7 +982,7 @@ a.outline__lesson:hover {
   background: color-mix(in srgb, var(--allowed) 10%, var(--card));
 }
 .practice__option[data-result='right'] .practice__letter {
-  color: var(--allowed);
+  color: var(--allowed-text);
 }
 /* A wrong answer isn't "you are here" or an error: strong ink and the words "Not quite" carry it. */
 .practice__option[data-result='wrong'] {
@@ -1001,7 +1001,7 @@ a.outline__lesson:hover {
   margin: 0;
 }
 .practice__feedback b {
-  color: var(--allowed);
+  color: var(--allowed-text);
 }
 .practice__feedback[data-result='wrong'] b {
   color: var(--ink-strong);

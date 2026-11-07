@@ -29,6 +29,7 @@ export type TokenName =
   | 'control'
   | 'broadcast'
   | 'allowed'
+  | 'allowed-text'
   | 'blocked'
   | 'encrypted'
   | 'selected';
@@ -47,6 +48,13 @@ export type TokenName =
  * the same hue, darker, is #9b6200 (5.07:1 on white, 4.51:1 on #eef2f7). The
  * mockups do not define control, encrypted or selected, so those three are
  * chosen here.
+ *
+ * `allowed-text` is the green for words (done, seen, right, new), and `allowed`
+ * stays for fills, strokes and borders, as the mockups draw them. Light
+ * `allowed` reaches 4.5:1 only on white, so the text token is `allowed` moved
+ * 15% toward `ink-strong`, written out as a value like every other token:
+ * `color-mix(in srgb, allowed 85%, ink-strong)` is #1f7247 light (5.2:1 or
+ * more on every ground words sit on) and #75db9c dark.
  */
 export const tokens: Record<Theme, Record<TokenName, string>> = {
   light: {
@@ -78,6 +86,7 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     control: '#6d42b8',
     broadcast: '#b23a8e',
     allowed: '#23824a',
+    'allowed-text': '#1f7247',
     blocked: '#c22f2b',
     encrypted: '#0d7a86',
     selected: '#7a7410',
@@ -111,6 +120,7 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     control: '#b697ff',
     broadcast: '#ff7fc4',
     allowed: '#5fd68a',
+    'allowed-text': '#75db9c',
     blocked: '#ff7a7a',
     encrypted: '#4fd6e6',
     selected: '#e8d95c',

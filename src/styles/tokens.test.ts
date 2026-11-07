@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { contrastRatio, hexToRgb } from '../lib/contrast';
+import { mix, over } from '../test/paint';
 import { tokens, tokensToCss } from './tokens';
 
 const lumenCss: string = readFileSync(new URL('../art/lumen.css', import.meta.url), 'utf8');
@@ -45,7 +46,39 @@ const EXCEPTION = { theme: 'light', a: 'response', b: 'blocked', min: 0.07 } as 
 const SITE = [
   'bg', 'bg-soft', 'card', 'card-2', 'tile', 'line', 'line-strong', 'ink', 'ink-strong', 'muted', 'accent', 'accent-ink',
   'accent-soft', 'accent-line', 'here', 'here-soft', 'focus', 'dot', 'hero-bg', 'hero-glow', 'shadow-sm', 'shadow-lg', 'btn-shadow',
+  'allowed-text',
 ] as const;
+
+/**
+ * Every token words are drawn in: the three inks, the accent (links), the green that says done or right (its text
+ * token), the blocked red (DENY, Lost, Blocked) and marigold (the current place).
+ */
+const TEXT = ['ink', 'ink-strong', 'muted', 'accent', 'allowed-text', 'blocked', 'here'] as const;
+
+/**
+ * Every ground words sit on, in a theme: the page and card surfaces, the figures' background, and the marigold tint
+ * on each surface it is laid on: the page (the track page's Resume), a card (the console's current place and current
+ * lesson, a lesson card's In progress) and Home's hero (the welcome-back eyebrow).
+ */
+function grounds(theme: 'light' | 'dark'): Record<string, string> {
+  const t = tokens[theme];
+  return {
+    bg: t.bg,
+    'bg-soft': t['bg-soft'],
+    card: t.card,
+    'card-2': t['card-2'],
+    tile: t.tile,
+    'fig-bg': figBg(theme),
+    'here-soft on bg': over(t['here-soft'], t.bg),
+    'here-soft on card': over(t['here-soft'], t.card),
+    'here-soft on hero-bg': over(t['here-soft'], t['hero-bg']),
+  };
+}
+
+/** Pairs that never meet on the site, each with the reason. */
+const NEVER_MEET: Record<string, string> = {
+  'here on here-soft on hero-bg': "the hero's only marigold tint is the welcome-back eyebrow, and its words are ink-strong",
+};
 
 test('contrastRatio sanity', () => expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 0));
 
@@ -78,6 +111,14 @@ for (const theme of ['light', 'dark'] as const) {
   test(`${theme}: here reaches 4.5:1 on the figures' background (lumen.css --fig-bg)`, () => {
     expect(contrastRatio(t.here, figBg(theme)), `here on ${figBg(theme)}`).toBeGreaterThanOrEqual(4.5);
   });
+  // Every text token on every ground words sit on, so a tinted ground cannot slip a colour below AA unseen.
+  test(`${theme}: every text token reaches 4.5:1 on every ground words sit on`, () => {
+    for (const k of TEXT)
+      for (const [name, ground] of Object.entries(grounds(theme))) {
+        if (Object.hasOwn(NEVER_MEET, `${k} on ${name}`)) continue;
+        expect(contrastRatio(t[k], ground), `${k} on ${name} (${ground})`).toBeGreaterThanOrEqual(4.5);
+      }
+  });
   test(`${theme}: focus reaches 3:1 on bg`, () => {
     expect(contrastRatio(t.focus, t.bg)).toBeGreaterThanOrEqual(3);
   });
@@ -90,6 +131,17 @@ for (const theme of ['light', 'dark'] as const) {
       }
   });
 }
+
+// Green words take allowed-text: the allowed hue moved 15% toward the strongest ink, which keeps them AA on the tints
+// and on the figures' background. allowed stays as the mockups have it, for fills, strokes and borders.
+test('allowed-text is the allowed green moved 15% toward ink-strong, in both themes', () => {
+  expect(tokens.light['allowed-text']).toBe('#1f7247');
+  expect(tokens.dark['allowed-text']).toBe('#75db9c');
+  for (const theme of ['light', 'dark'] as const) {
+    const t = tokens[theme];
+    expect(t['allowed-text'], theme).toBe(mix(t.allowed, t['ink-strong'], 85));
+  }
+});
 
 test('blocked is red in both themes', () => {
   expect(tokens.dark.blocked).toBe('#ff7a7a');

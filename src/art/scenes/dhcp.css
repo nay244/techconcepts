@@ -5,7 +5,7 @@
 .dh .dh-call .dh-sub { font: 400 13px/1 var(--sans); fill: var(--muted); }
 .dh .dh-call .dh-addr { font: 500 12.5px/1 var(--mono); fill: var(--ink); }
 .dh .dh-call .dh-addr.none { fill: var(--muted); font: italic 400 13px/1 var(--sans); }
-.dh .dh-call .dh-addr.new { fill: var(--allowed); font-weight: 700; }
+.dh .dh-call .dh-addr.new { fill: var(--allowed-text); font-weight: 700; }
 .dh .dh-ignore { font: 500 13px/1 var(--sans); fill: var(--muted); opacity: 0; transition: opacity 250ms ease; }
 .dh .dh-ignore.on { opacity: 1; }
 .dh .dh-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; }

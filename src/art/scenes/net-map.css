@@ -8,7 +8,7 @@
 .nm .nm-call .nm-addr { font: 500 12.5px / 1 var(--mono); fill: var(--ink); }
 .nm .nm-call .nm-state { font: italic 400 13px / 1 var(--sans); fill: var(--muted); }
 .nm .nm-call .nm-state.known { font-style: normal; font-weight: 500; fill: var(--ink); }
-.nm .nm-call .nm-state.done { font-style: normal; font-weight: 700; fill: var(--allowed); }
+.nm .nm-call .nm-state.done { font-style: normal; font-weight: 700; fill: var(--allowed-text); }
 .nm .nm-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .nm .nm-lead-dot { fill: var(--muted); }
 .nm .nm-glow { fill: var(--lit-b); opacity: 0; transition: opacity 300ms ease; }
