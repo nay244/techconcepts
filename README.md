@@ -57,7 +57,7 @@ Tests sit next to their source as `*.test.ts(x)`, or `*.test.mjs` beside the scr
 A **lesson** is made of one or more **units**. A lesson in the cited shape has exactly one. How the Internet Works, still on the legacy path (see `docs/content-model.md`), has fourteen, one per protocol. Every unit runs the same way:
 
 1. **Overview**: a short hook and description.
-2. **Watch**: 4 to 6 steps. Each step plays a few **events** on the lesson's **figure**, and the log under the figure lists them.
+2. **Watch**: a few steps (each track sets how many; Networking allows 4 to 6). Each step plays a few **events** on the lesson's **figure**, and the log under the figure lists them.
 3. **Learn**: what happened, in plain words first and then by name.
 4. **Practice**: a few questions with feedback. Practice is never scored or saved.
 
@@ -72,7 +72,7 @@ A lesson counts as finished once the learner reaches its last position, the last
 `docs/content-model.md` is the reference for sources, citations, backing, limits and the registry rules. Read it first. In short:
 
 1. **Plan it in the track**, `src/content/tracks/networking.ts`. Until its file exists it shows as "Coming soon". A lesson must be listed by at least one track.
-2. **Create `src/content/lessons/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. The build rejects a lesson made any other way. Every fact cites a source from the registry (`src/content/sources.ts`) with `cite()`, and every Watch part traces to a cited Learn statement. `makeCitedLesson` in `src/content/test-fixtures.ts` is a full example of the shape. Do not copy `dhcp.ts`, `firewalls.ts`, `subnetting.ts` or `how-the-internet-works.ts`: they use `defineLegacyLesson`, which refuses any slug not on its closed list of those four. Only files directly in `src/content/lessons/` are lessons. A folder there may hold only the parts of the lesson it is named after, as `how-the-internet-works/` does.
+2. **Create `src/content/lessons/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. The build rejects a lesson made any other way. Every fact cites a source from the registry, `SOURCES` in `src/content/sources.ts`, with `cite()`, and every Watch part traces to a cited Learn statement. `defineLesson` always checks against `SOURCES`, so add the lesson's sources there. `makeCitedLesson` in `src/content/test-fixtures.ts` is a full example of the shape only: its sources are invented, and the build rejects a lesson checked against them. Do not copy `dhcp.ts`, `firewalls.ts`, `subnetting.ts` or `how-the-internet-works.ts`: they use `defineLegacyLesson`, which refuses any slug not on its closed list of those four. Only files directly in `src/content/lessons/` are lessons. A folder there may hold only the parts of the lesson it is named after, as `how-the-internet-works/` does.
 3. **Give it a card figure** on the track page: add its slug to `FIGURES` in `src/pages/[track]/index.astro`, usually with a small figure from `src/art/figures/spots.ts`. The build stops when a ready lesson has none.
 4. **Write its test** beside it, `<slug>.test.ts`: see "The lesson's test" below.
 5. **Check it end to end**: `npm run build`, which also checks the page-weight budgets, then `npm run e2e`. There is no list of lessons to edit: the tests find the ready lessons from the links on the built track page (`e2e/global-setup.ts`) and walk, play and fit-check each one at every size. A lesson whose Watch has no Network / Sequence switch, like Subnetting, goes in `NO_SEQUENCE` in `e2e/lesson.spec.ts`; checks that only one lesson needs (DHCP's lease table, Firewalls' rule list) sit under "lesson specifics" there, by slug. `npm run e2e:visual` takes its screenshots too.
@@ -170,7 +170,7 @@ Voice (launch spec §7.2, and the redesign spec, both in `docs/superpowers/specs
 
 ## Conventions worth knowing
 
-- **Browser storage** is touched only through `createSafeStorage()` in `src/lib/storage.ts`. It never throws: reads give `null`, writes give `false`. It holds only `techconcepts:theme` and `techconcepts:v2` (plus the older `techconcepts:v1` it reads once, merges and then removes), and the site must work fully when storage is blocked or full.
+- **Browser storage** is touched only through `createSafeStorage()` in `src/lib/storage.ts`. It never throws: reads give `null`, writes give `false`. It holds only `techconcepts:theme` and `techconcepts:v2`. The older `techconcepts:v1` is read and merged on every load until the first successful save, which then removes it. The site must work fully when storage is blocked or full.
 - **Colour** comes only from the semantic tokens in `src/styles/tokens.ts`, which meet WCAG AA in both themes. Colour is never the only signal: always add a label, icon or text. Marigold (`here`) means only "you are here".
 - **Themes**: the root element's `data-theme` attribute selects light or dark. An inline boot script sets it before first paint; without JavaScript the page follows `prefers-color-scheme`. Figures stay charcoal in both themes.
 - **Type**: Atkinson Hyperlegible Next for prose and Atkinson Hyperlegible Mono for data, self-hosted.

@@ -8,7 +8,13 @@ The real `SOURCES` registry is empty today. A lesson's first sources are added t
 
 ## 1. Sources
 
-Every fact cites a primary source: an RFC, an IEEE standard, an IANA registry, a NIST publication, or official vendor documentation. An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries. *Policy:* the build checks only the host of each source, so you must pick the right documents.
+Every fact cites a primary source: an RFC, an IEEE standard, an IANA registry, a NIST publication, or official vendor documentation. An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries.
+
+*Policy:* the build checks only the host of each source, so you must pick the right documents. Some pages on allowed hosts are not primary sources, and the build lets them through:
+
+- Internet-Drafts on `datatracker.ietf.org`. Cite only published RFCs.
+- Microsoft Q&A and Shows on `learn.microsoft.com`. They are a forum and videos, not documentation.
+- Conference papers on `ieeexplore.ieee.org`. They are not standards.
 
 Sources live in the list inside `defineSources([...])` in `src/content/sources.ts` (`SOURCES`). Add one entry per document:
 
@@ -52,7 +58,11 @@ The bare document address is rejected, because a citation must point at the sect
 
 ## 3. Writing a lesson
 
-A lesson file is `src/content/lessons/<slug>.ts`. The file name is the lesson's `slug`. The default export is `defineLesson({ ... })`. The shape is in `src/content/schema.ts` (`lessonSchema`). Copy the cited fixture in `src/content/test-fixtures.ts` (`makeCitedLesson`) as a starting point.
+A lesson file is `src/content/lessons/<slug>.ts`. The file name is the lesson's `slug`. The default export is `defineLesson({ ... })`. The shape is in `src/content/schema.ts` (`lessonSchema`).
+
+`defineLesson` always checks the lesson against `SOURCES`, the registry in `src/content/sources.ts`. It takes no other source list, so every source a lesson cites must be in `SOURCES`.
+
+The cited fixture in `src/content/test-fixtures.ts` (`makeCitedLesson`) shows the shape only. Its sources are invented (`FIXTURE_SOURCES`), and the registry rejects any lesson checked against them. Copy its shape, then cite real sources from `SOURCES`.
 
 A cited lesson has exactly one unit. Do not write `references`: each unit's source list is built from its citations.
 
@@ -129,11 +139,11 @@ One override per limit. An override the lesson does not need fails the build, so
 
 How the Internet Works, Subnetting, DHCP and Firewalls are still in the older shape, without citations. They use `defineLegacyLesson` from `src/content/legacy.ts`, and their slugs are on the closed `LEGACY_LESSONS` list. The list can only shrink. `defineLegacyLesson` refuses any slug not on it, so a new lesson cannot start there.
 
-To move a lesson across, rewrite its file with `defineLesson` and remove its slug from `LEGACY_LESSONS` in the same change. The registry fails the build when the list and the files disagree. Direction doc §10 task 6 deletes the legacy path.
+To move a lesson across, rewrite its file with `defineLesson` and remove its slug from `LEGACY_LESSONS` in the same change. The registry fails the build when the list and the files disagree. `src/content/legacy.test.ts` pins the list too, so shrink the list in that test in the same change. Direction doc §10 task 6 deletes the legacy path.
 
 ## 5. Tracks and objectives
 
-`defineTrack` (`src/content/define.ts`) checks a track. A track lists lesson slugs and titles in parts, and carries its limits.
+`defineTrack` (`src/content/define.ts`) checks a track. A track lists lesson slugs and titles in parts, and carries its limits. The registry checks every track in `tracks` again against `SOURCES` (section 7), so a track written as a plain object still gets every check.
 
 - A **concept track** (`type: 'concept'`) teaches in order. Its lessons carry cert and role tags (`certTags`) only.
 - A **certification track** (`type: 'certification'`) maps every listed lesson to objectives of one pinned exam document. Pin it in `exam`: its `source` is a `cert-objectives` id in the registry, and its `version` must equal that source's `version`. Each objective's citation must be from that source, its `section` must equal its `objective` number, and its `exam` must be one of the track's `codes`.
@@ -176,8 +186,10 @@ exam: { title: 'Example exam', codes: ['EX-101'], version: 'V1', source: 'exampl
 - A lesson file is not directly in `src/content/lessons/`. A folder there may only hold the parts of the lesson it is named after, as `how-the-internet-works/` does.
 - The file name is not the slug.
 - The lesson was not made with `defineLesson` (or `defineLegacyLesson` while on the list). Anything else, such as a plain object, is rejected.
+- A cited lesson was checked against a source list other than `SOURCES`, such as the fixture's.
 - No track lists the lesson.
 - A track lists the lesson under another title, or the lesson does not fit that track's limits.
+- A track fails `defineTrack` when checked again against `SOURCES`. For a certification track, that means the pinned objectives document and every objective citation must be in `SOURCES`.
 
 **Shared lessons.** A lesson exists once. Tracks only reference it. It gets a URL in every track that lists it, `/<track>/<slug>`, and a canonical link to the first listing track's URL (in `tracks` order). Progress is saved by slug, so it follows the lesson into every track.
 
