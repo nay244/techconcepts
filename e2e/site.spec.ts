@@ -19,7 +19,12 @@ const LESSONS = readyLessons();
 const ALL_PAGES = [...SITE_PAGES, ...LESSONS.map((lesson) => ({ name: lesson.slug, path: lesson.path }))];
 
 const heroStart = (page: Page) => page.locator('.hero .actions .btn--primary');
-const networkingCard = (page: Page) => page.locator('.tracks a.card.track.ready');
+const heroEyebrow = (page: Page) => page.locator('.hero .eyebrow');
+/** The hero's first button, for every visitor: it always opens How the Internet Works. */
+const HERO_START = 'Learn how the Internet Works';
+const INTERNET_PATH = '/networking/how-the-internet-works';
+const trackCards = (page: Page) => page.locator('.tracks > li > .card.track');
+const networkingCard = (page: Page) => page.locator('.tracks a.card.track.ready[href="/networking"]');
 const lessonCard = (page: Page, title: string) =>
   page.locator('main li.lesson', { has: page.locator('a.l-link', { hasText: new RegExp(`^${title}$`) }) });
 /** Every lesson the track lists, ready or not, in the order it lists them. */
@@ -46,15 +51,27 @@ test.describe('desktop', () => {
       await expect(networkingCard(page)).toHaveAttribute('href', '/networking');
       await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready, 124 min');
       await expect(networkingCard(page).locator('.go')).toHaveText('Open track');
-      // A first visit starts at the track's first ready lesson.
-      await expect(heroStart(page)).toHaveText('Start learning');
-      await expect(heroStart(page)).toHaveAttribute('href', LESSONS[0]!.path);
+      await expect(heroStart(page)).toHaveText(HERO_START);
+      await expect(heroStart(page)).toHaveAttribute('href', INTERNET_PATH);
+    });
+
+    test('the first track card is How the Internet Works, ready, opening the lesson; then Networking', async ({ page }) => {
+      await open(page, '/');
+      const first = trackCards(page).nth(0);
+      await expect(first).toHaveAttribute('href', INTERNET_PATH);
+      await expect(first.locator('h3')).toHaveText('How the Internet Works');
+      await expect(first.locator('.badge')).toHaveText('Beginner');
+      await expect(first.locator('.meta')).toHaveText(/^Lesson 1, 14 protocols, \d+ min$/);
+      await expect(first.locator('.go')).toHaveText('Open lesson');
+      await expect(trackCards(page).nth(1)).toHaveAttribute('href', '/networking');
+      await expect(page.locator('.tracks')).not.toContainText('How the Web Works');
     });
 
     test('coming-soon track cards are not links', async ({ page }) => {
       await open(page, '/');
       const soon = page.locator('.tracks .card.track.later');
-      await expect(soon).toHaveCount(5);
+      await expect(soon).toHaveCount(4);
+      await expect(trackCards(page)).toHaveCount(6);
       for (const card of await soon.all()) {
         await expect(card.locator('.badge')).toHaveText('Coming soon');
         await expect(card.locator('a')).toHaveCount(0);
@@ -138,7 +155,7 @@ test.describe('desktop', () => {
     });
   });
 
-  test('finishing DHCP shows Finished on the track and Continue on Home, and Clear my progress clears both', async ({ page }) => {
+  test('finishing DHCP shows Finished on the track and on Home, and Clear my progress clears both', async ({ page }) => {
     const dhcp = LESSONS.find((lesson) => lesson.slug === 'dhcp');
     expect(dhcp, 'DHCP is a ready lesson').toBeDefined();
     await finishLesson(page, dhcp!.path);
@@ -149,7 +166,10 @@ test.describe('desktop', () => {
     await expect(page.locator('.toc .pg-title')).toHaveText('1 of 20 complete');
 
     await open(page, '/');
-    await expect(heroStart(page)).toHaveText('Continue DHCP');
+    await expect(heroEyebrow(page)).toHaveText('You finished DHCP');
+    // The hero's button stays the same for a returning visitor.
+    await expect(heroStart(page)).toHaveText(HERO_START);
+    await expect(heroStart(page)).toHaveAttribute('href', INTERNET_PATH);
     await expect(networkingCard(page).locator('.meta')).toHaveText('1 of 20 done, 0 in progress');
     await expect(networkingCard(page).locator('.go')).toHaveText('Continue');
 
@@ -162,7 +182,7 @@ test.describe('desktop', () => {
     await expect(page.locator('.toc .pg-title')).toHaveText('Your progress');
 
     await open(page, '/');
-    await expect(heroStart(page)).toHaveText('Start learning');
+    await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
     await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready, 124 min');
   });
 
@@ -197,7 +217,7 @@ test.describe('desktop', () => {
     await expect(page.getByRole('button', { name: 'Reset progress' })).toBeFocused();
 
     await open(page, '/');
-    await expect(heroStart(page)).toHaveText('Start learning');
+    await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
   });
 
   test('/does-not-exist serves the 404 page, with the site header and footer', async ({ page }) => {
