@@ -30,11 +30,15 @@ export interface TopBarProps {
 
 const OSI_NAMES = ['Physical', 'Data link', 'Network', 'Transport', 'Session', 'Presentation', 'Application'];
 
-/** 'OSI layer 7, Application', or 'OSI layers 3 and 4'. Null when the unit names no layer. */
-export function osiHeading(layers: number[]): string | null {
+/**
+ * 'OSI layer 7, Application', or 'OSI layers 3 and 4'. Null when the unit names no layer. With `named: false`, a
+ * single layer is only its number, 'OSI layer 7': a lesson of many units says it that way (internet-v2), which
+ * leaves its long title room in the bar at 1280 px; the one-unit lessons' mockups name the layer.
+ */
+export function osiHeading(layers: number[], { named = true }: { named?: boolean } = {}): string | null {
   const sorted = [...new Set(layers)].sort((a, b) => a - b);
   if (sorted.length === 0) return null;
-  if (sorted.length === 1) return `OSI layer ${sorted[0]}, ${OSI_NAMES[sorted[0]! - 1]}`;
+  if (sorted.length === 1) return named ? `OSI layer ${sorted[0]}, ${OSI_NAMES[sorted[0]! - 1]}` : `OSI layer ${sorted[0]}`;
   return `OSI layers ${sorted.slice(0, -1).join(', ')} and ${sorted.at(-1)}`;
 }
 
@@ -101,7 +105,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
   }
 
   const n = unit.steps.length;
-  const osi = osiHeading(unit.osiLayers);
+  const osi = osiHeading(unit.osiLayers, { named: lesson.units.length === 1 });
   const finished = new Set(
     entries.filter((e) => Object.hasOwn(progress.lessons, e.key) && progress.lessons[e.key]!.status === 'finished').map((e) => e.key),
   );

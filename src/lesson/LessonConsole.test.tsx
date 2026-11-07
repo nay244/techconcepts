@@ -160,6 +160,12 @@ test('the top bar says Step 2 of 5, never the step title', async () => {
   expect(within(topBar()).getByText('OSI layer 2, Data link')).toBeInTheDocument();
 });
 
+test('a lesson of many units gives its OSI layer by number only, so its long title fits the bar', () => {
+  renderConsole(THREE);
+  expect(within(topBar()).getByText('OSI layer 2')).toBeInTheDocument();
+  expect(within(topBar()).queryByText(/Data link/)).toBeNull();
+});
+
 test('ArrowRight walks Overview → steps → Learn → Practice and records progress; Practice finishes the lesson', async () => {
   renderConsole();
   expect(heading()).toHaveTextContent('Neighbor table');

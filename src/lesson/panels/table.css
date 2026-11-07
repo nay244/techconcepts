@@ -30,8 +30,11 @@
   border-collapse: collapse;
 }
 
+/* One line as tall as its title, as the mockup's heading (lesson-v3 .leases h3): the caption's own line would be the
+   page's taller one, and take 7px from the figure above. */
 .tpanel caption {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font: 700 11.5px/1.2 var(--mono);
   text-align: start;
 }
 .tpanel__title {

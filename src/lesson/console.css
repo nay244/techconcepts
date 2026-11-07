@@ -617,11 +617,13 @@ a.outline__lesson:hover {
   overflow: hidden;
 }
 /* The Network / Sequence switch on the left, the scene's title on the right. */
+/* The gap is only the least room between the switch and a long title: at 1280 px lesson 1's longest, SMTP's, fits
+   whole, as in the mockup (whose head has no gap). */
 .stage__head {
   display: flex;
   flex: none;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-height: 50px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
@@ -659,7 +661,10 @@ a.outline__lesson:hover {
 
 /* ---------------------------------------------------------------- explanation */
 
+/* Positioned, so the visually hidden "(opens in a new tab)" of a source link far down an open Go deeper is
+   clipped with the panel and never stretches the page. */
 .console__explain {
+  position: relative;
   grid-column: 2;
   grid-row: 1;
   overflow: auto;
