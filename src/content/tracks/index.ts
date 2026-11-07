@@ -8,16 +8,11 @@ export { networkingTrack };
 export const tracks: Track[] = [networkingTrack];
 
 /**
- * Roadmap cards on Home (spec §10.1). Not clickable: there is nothing behind them yet. Each wears its approved
- * cover, still, under the kind of track it is (the Networking card wears the `networking` cover).
+ * Roadmap cards on Home (spec §10.1), after the How the Internet Works and Networking cards. Not clickable: there is
+ * nothing behind them yet. Each wears its approved cover, still, under the kind of track it is (the Networking card
+ * wears the `networking` cover, and How the Internet Works the `web` one).
  */
 export const comingSoonTracks: { title: string; blurb: string; kind: string; cover: CoverId }[] = [
-  {
-    title: 'How the Web Works',
-    blurb: 'Follow a page from the address bar to your screen: browsers, servers, cookies and what sits between them.',
-    kind: 'The web',
-    cover: 'web',
-  },
   {
     title: 'Cryptography',
     blurb: 'Hashes, keys and signatures, explained by watching them work.',

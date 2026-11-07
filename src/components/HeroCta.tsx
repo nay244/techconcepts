@@ -8,24 +8,30 @@ export type { ResumeLesson };
 const RING = 2 * Math.PI * 7.5;
 
 /**
- * The hero's eyebrow and buttons, around the page's own words (`children`). A first visit, and the server render,
- * get "Free visual lessons, no sign-up", "Start learning" and "How a lesson works". Once this browser has saved
- * progress in a ready lesson, a visitor whose last lesson is ready gets where they are in it, "You’re on <place> in
- * <lesson>" ("You finished <lesson>" once it is finished), and "Continue <lesson>" first (launch spec §10.1).
+ * The hero's eyebrow and buttons, around the page's own words (`children`). The first button is always the same:
+ * `start.label`, opening `start.href` (Home passes "Learn how the Internet Works" and that lesson's page). A first
+ * visit, and the server render, get "Free visual lessons, no sign-up" and "How a lesson works" beside it. Once this
+ * browser has saved progress in a ready lesson, a visitor whose last lesson is ready gets where they are in it,
+ * "You’re on <place> in <lesson>" ("You finished <lesson>" once it is finished), and "Browse tracks" beside it.
  * `known` is the page's `knownFrom(entries)`.
  */
 export function HeroCta({
   lessons,
   known,
-  startUrl,
+  start,
   children,
 }: {
   lessons: ResumeLesson[];
   known: Record<string, number>;
-  startUrl: string;
+  start: { href: string; label: string };
   children?: ReactNode;
 }) {
   const resume = resumeOf(useProgress(known), lessons, known);
+  const startButton = (
+    <a className="btn btn--primary" href={start.href}>
+      {start.label}
+    </a>
+  );
 
   if (resume === null) {
     return (
@@ -38,9 +44,7 @@ export function HeroCta({
         </span>
         {children}
         <div className="actions">
-          <a className="btn btn--primary" href={startUrl}>
-            Start learning
-          </a>
+          {startButton}
           <a className="btn" href="#how">
             How a lesson works
           </a>
@@ -71,9 +75,7 @@ export function HeroCta({
       </span>
       {children}
       <div className="actions">
-        <a className="btn btn--primary" href={resume.href}>
-          {`Continue ${resume.lesson.title}`}
-        </a>
+        {startButton}
         <a className="btn" href="#tracks">
           Browse tracks
         </a>

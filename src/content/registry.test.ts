@@ -68,12 +68,13 @@ test('networking track metadata, parts and titles', () => {
 test('tracks and coming-soon tracks', () => {
   expect(tracks).toEqual([networkingTrack]);
   expect(comingSoonTracks.map((t) => t.title)).toEqual([
-    'How the Web Works', 'Cryptography', 'AI Concepts', 'Privilege Escalation', 'Threat & Vulnerability Management',
+    'Cryptography', 'AI Concepts', 'Privilege Escalation', 'Threat & Vulnerability Management',
   ]);
   expect(comingSoonTracks.every((t) => t.blurb.length > 10)).toBe(true);
-  // Home's cards: each wears its approved cover (the Networking card wears 'networking') under its kind of track.
-  expect(comingSoonTracks.map((t) => t.cover)).toEqual(['web', 'crypto', 'ai', 'privesc', 'tvm']);
-  expect(comingSoonTracks.map((t) => t.kind)).toEqual(['The web', 'Security', 'AI', 'Security', 'Security']);
+  // Home's cards: each wears its approved cover under its kind of track. 'networking' and 'web' are taken by the
+  // Networking and How the Internet Works cards.
+  expect(comingSoonTracks.map((t) => t.cover)).toEqual(['crypto', 'ai', 'privesc', 'tvm']);
+  expect(comingSoonTracks.map((t) => t.kind)).toEqual(['Security', 'AI', 'Security', 'Security']);
 });
 
 test('cert tags', () => {

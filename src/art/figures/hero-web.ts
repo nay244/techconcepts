@@ -1,4 +1,4 @@
-// The home hero's figure: the How the Web Works cover, drawn large. Ported from the approved mockups' hero-web.mjs
+// The home hero's figure: the web cover (also How the Internet Works's card on Home), drawn large. Ported from the approved mockups' hero-web.mjs
 // (heroSvg, heroData and the caption steps in its page script); the drawing is identical. src/scripts/hero-web.ts moves it.
 import { at as atFig, base, n1 } from '../common.ts';
 import { webDrawing } from './covers.ts';

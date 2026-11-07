@@ -1,7 +1,7 @@
 ---
 // Home (spec §6.1, mockup home-v6). The words are the mockup's; the numbers and the DHCP log sample are worked out
-// from the track and its lessons. Only the hero's buttons, the Networking card's progress and the hero's movement
-// run in the browser; the rest is static.
+// from the track and its lessons. Only the hero's eyebrow and second button, the Networking card's progress and the
+// hero's movement run in the browser; the rest is static.
 import { coverStill, type CoverId } from '../art/figures/covers';
 import { spot } from '../art/figures/spots';
 import { cropViewBox } from '../art/ids';
@@ -39,8 +39,9 @@ function readyEntry(slug: string): AvailableSummary {
 // Each ready lesson's last position, for both progress islands.
 const known = knownFrom(entries);
 
-// ---------- Hero: lesson 1 to start; each ready lesson can say where a returning visitor is ----------
-const start = available[0]!;
+// ---------- Hero: always How the Internet Works; each ready lesson can say where a returning visitor is ----------
+const internet = readyEntry('how-the-internet-works');
+const heroStart = { href: internet.url, label: 'Learn how the Internet Works' };
 const resumeLessons: ResumeLesson[] = available.map((entry) => ({
   key: entry.key,
   title: entry.title,
@@ -59,7 +60,10 @@ const sample = logSample(lessonOf(dhcpEntry));
 const tagColour = (kind: MessageKind): string => tokens.dark[kind];
 
 // ---------- Tracks ----------
-// The card carries the first sentence of the track's description, as the mockup does.
+// First, How the Internet Works on its own card, wearing the web cover (a laptop asks a server for a page). It and
+// the Networking card each carry the first sentence of their own description, as the mockup does.
+const internetBlurb = firstSentence(internet.summary);
+const internetMeta = `Lesson 1, ${internet.units} protocols, ${internet.minutes} min`;
 const networkingBlurb = firstSentence(track.description);
 const cardCover = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
 
@@ -96,7 +100,7 @@ const EYE = parts[0].icon;
   overHero
 >
   <HeroWeb>
-    <HeroCta client:load lessons={resumeLessons} known={known} startUrl={start.url}>
+    <HeroCta client:load lessons={resumeLessons} known={known} start={heroStart}>
       <h1 id="hero-title">See how technology <span class="accent">really works.</span></h1>
       <p class="lede">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
     </HeroCta>
@@ -212,6 +216,20 @@ const EYE = parts[0].icon;
       <p>A track is a set of lessons in order. Networking comes first, because everything else builds on it. More tracks are on the way.</p>
     </div>
     <ul class="tracks">
+      <li>
+        <a class="card track ready" href={internet.url}>
+          <div class="art" aria-hidden="true" set:html={cardCover('web')} />
+          <div class="body">
+            <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(lessonOf(internet).level)}</span></div>
+            <h3>{internet.title}</h3>
+            <p>{internetBlurb}</p>
+            <div class="foot">
+              <span class="meta">{internetMeta}</span>
+              <span class="go">Open lesson</span>
+            </div>
+          </div>
+        </a>
+      </li>
       <li>
         <a class="card track ready" href={`/${track.id}`}>
           <div class="art" aria-hidden="true" set:html={cardCover('networking')} />

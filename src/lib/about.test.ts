@@ -6,7 +6,7 @@ import { comingTracksSentence, sourceRows } from './about';
 describe('comingTracksSentence', () => {
   test('names the tracks still to come, in order, in one sentence (about-v1)', () => {
     expect(comingTracksSentence(comingSoonTracks.map((t) => t.title))).toBe(
-      'Five more tracks are on the way: How the Web Works, Cryptography, AI Concepts, Privilege Escalation, and Threat & Vulnerability Management.',
+      'Four more tracks are on the way: Cryptography, AI Concepts, Privilege Escalation, and Threat & Vulnerability Management.',
     );
   });
 

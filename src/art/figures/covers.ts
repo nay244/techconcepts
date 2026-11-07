@@ -11,7 +11,7 @@ const rect = (cls, u, z, w, h, rx = 0.6) => `<rect class="${cls}" x="${n1(u)}" y
 const zero = at([0, 0, 0]);
 const screenPath = (route) => G.resample(route, 1).map((p) => { const s = at([p[0], p[1], 0]); return [+(s[0] - zero[0]).toFixed(1), +(s[1] - zero[1]).toFixed(1)]; });
 
-// ---------- How the Web Works: a laptop asks a server for a page ----------
+// ---------- The web: a laptop asks a server for a page (How the Internet Works's card on Home) ----------
 function web() {
   const out = [];
   // Laptop: base, keyboard, trackpad, lid. Its screen shows a browser; the page is drawn when the reply arrives.
