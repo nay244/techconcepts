@@ -36,7 +36,7 @@ export default defineConfig({
     command: `npm run build && npm run preview -- --port ${PORT} --ignore-lock`,
     port: PORT,
     reuseExistingServer: false,
-    // `npm run build` runs astro check first.
+    // `npm run build` runs astro check first and the budget check last.
     timeout: 240_000,
   },
   projects: [

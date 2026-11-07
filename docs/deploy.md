@@ -1,6 +1,6 @@
 # Deploying TechConcepts to a Cloudflare preview
 
-TechConcepts is a fully static site: `npm run build` writes everything to `dist/`, and there is no server code. Before deploying, `npm run budgets` checks the built pages against their size budgets. This page covers the preview deployment (Plan 1). Connecting `techconcepts.app` comes later (Plan 2).
+TechConcepts is a fully static site: `npm run build` writes everything to `dist/`, and there is no server code. Its last step checks the built pages against their size budgets, so a page over budget fails the build and is never deployed. This page covers the preview deployment (Plan 1). Connecting `techconcepts.app` comes later (Plan 2).
 
 ## Which Cloudflare product, and why
 
@@ -26,7 +26,7 @@ You do these once. Nothing here needs a password pasted into any tool; you sign 
 2. **Create the Cloudflare project.** In the Cloudflare dashboard open **Workers & Pages**, choose **Create application**, then **Import a repository** (connect GitHub when asked), and pick the repository. Use these settings:
    - Project name: `techconcepts` (it must match `name` in `wrangler.jsonc`)
    - Production branch: `main`
-   - Build command: `npm run build`
+   - Build command: `npm run build` (it type-checks, builds, then checks the size budgets; a breach stops the deploy)
    - Deploy command: `npm run deploy` (it runs the `wrangler` pinned in `package.json`, which Workers Builds installs with the other dependencies; the dashboard's default `npx wrangler deploy` would also use that local copy)
    - Root directory: leave empty
    - Build variable: `NODE_VERSION` = `24`

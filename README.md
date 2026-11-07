@@ -10,8 +10,8 @@ Node 22 or newer is required (`.node-version` pins 24).
 |---|---|
 | `npm install` | Install dependencies |
 | `npm run dev` | Start the dev server at `http://localhost:4321` |
-| `npm run build` | Type-check (`astro check`), then build the static site into `dist/` |
-| `npm run budgets` | Check the built `dist/` against the page-weight budgets (run it after a build) |
+| `npm run build` | Type-check (`astro check`), build the static site into `dist/`, then check it against the page-weight budgets |
+| `npm run budgets` | Check the built `dist/` against the page-weight budgets again, on its own |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm test` | Run the Vitest tests once (`src/` and `scripts/`) |
 | `npm run e2e` | Run the Playwright end-to-end tests at four desktop sizes (1440 in both themes, so five desktop projects), with reduced motion and on a phone (it builds the site and previews it on port 4471 itself) |
@@ -19,7 +19,7 @@ Node 22 or newer is required (`.node-version` pins 24).
 | `npm run deploy` | Deploy `dist/` with `wrangler deploy` (build first) |
 | `node scripts/generate-og-image.mjs` | Redraw the social image, `public/og-default.png` |
 
-`npm run budgets` prints every page's gzipped size and fails when a page breaks a budget: the HTML of any page must stay at or under 250 KB gzipped, and the JavaScript a lesson page loads at or under 200 KB gzipped in all.
+The budget check prints every page's gzipped size and fails when a page breaks a budget: the HTML of any page must stay at or under 250 KB gzipped, and the JavaScript a lesson page loads at or under 200 KB gzipped in all. It is the last step of `npm run build`, so a breach fails the build, on Cloudflare too.
 
 ## Layout
 
@@ -72,7 +72,7 @@ A lesson counts as finished once the learner reaches its last position, the last
 2. **Create `src/content/lessons/<track>/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. Copy a lesson that is close to yours: `dhcp.ts`, `firewalls.ts` and `subnetting.ts` have one unit each. Only files directly in the track's folder are lessons. A lesson of many units can keep each unit in a folder beside it, as `how-the-internet-works/` does.
 3. **Give it a card figure** on the track page: add its slug to `FIGURES` in `src/pages/[track]/index.astro`, usually with a small figure from `src/art/figures/spots.ts`. The build stops when a ready lesson has none.
 4. **Write its test** beside it, `<slug>.test.ts`: see "The lesson's test" below.
-5. **Check it end to end**: `npm run build`, `npm run budgets`, then `npm run e2e`. There is no list of lessons to edit: the tests find the ready lessons from the links on the built track page (`e2e/global-setup.ts`) and walk, play and fit-check each one at every size. A lesson whose Watch has no Network / Sequence switch, like Subnetting, goes in `NO_SEQUENCE` in `e2e/lesson.spec.ts`; checks that only one lesson needs (DHCP's lease table, Firewalls' rule list) sit under "lesson specifics" there, by slug. `npm run e2e:visual` takes its screenshots too.
+5. **Check it end to end**: `npm run build`, which also checks the page-weight budgets, then `npm run e2e`. There is no list of lessons to edit: the tests find the ready lessons from the links on the built track page (`e2e/global-setup.ts`) and walk, play and fit-check each one at every size. A lesson whose Watch has no Network / Sequence switch, like Subnetting, goes in `NO_SEQUENCE` in `e2e/lesson.spec.ts`; checks that only one lesson needs (DHCP's lease table, Firewalls' rule list) sit under "lesson specifics" there, by slug. `npm run e2e:visual` takes its screenshots too.
 
 Everything else comes from the lesson file: its page, its place and number in the track, the minutes, and the totals on Home and the track page.
 
@@ -185,4 +185,4 @@ Voice (launch spec §7.2, and the redesign spec, both in `docs/superpowers/specs
 
 ## Deploying and analytics
 
-`npm run deploy` runs `wrangler deploy` (Cloudflare Workers with static assets, set up in `wrangler.jsonc`) and expects `npm run build` to have run. Run `npm run budgets` after the build to check page weight. `docs/deploy.md` has the dashboard steps. If the build variable `PUBLIC_CF_WEB_ANALYTICS_TOKEN` is set, every page includes Cloudflare's cookieless Web Analytics beacon and the About page says so; leave it unset for no analytics.
+`npm run deploy` runs `wrangler deploy` (Cloudflare Workers with static assets, set up in `wrangler.jsonc`) and expects `npm run build` to have run. The build checks page weight as its last step, so a page over budget is never deployed. `docs/deploy.md` has the dashboard steps. If the build variable `PUBLIC_CF_WEB_ANALYTICS_TOKEN` is set, every page includes Cloudflare's cookieless Web Analytics beacon and the About page says so; leave it unset for no analytics.
