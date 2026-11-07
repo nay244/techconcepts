@@ -32,7 +32,6 @@ The budget check prints every page's gzipped size and fails when a page breaks a
   - `legacy.ts` the closed list of the four lessons still in the older shape, and `defineLegacyLesson`
   - `registry.ts` finds the lesson files and builds each track's list, with each lesson's number and link
   - `tracks/`, `lessons/<slug>.ts`, `certs.ts` (the exam tags), and `helpers/` (builders that turn a lesson's messages into scene events, with the numbers worked out by the engine)
-  - `docs/content-model.md` is the authoring reference for all of this
 - `src/engine/` the logic behind a lesson, with no drawing in it:
   - `timeline.ts` the lesson's positions, and the scene's state at any position, always worked out again from the start
   - `playback.ts` Play, the pause between steps and the speed button, as a reducer and a React hook
@@ -49,7 +48,7 @@ The budget check prints every page's gzipped size and fails when a page breaks a
 - `src/scripts/` small page scripts that run without React: Home's hero and header, the track cover's packets, About's "On this page" list
 - `src/styles/` colour tokens (`tokens.ts`) and base CSS (`global.css`)
 - `src/test/` helpers the tests share
-- `e2e/` Playwright tests; `scripts/` tools (the budgets check and the social image); `docs/deploy.md` deploying to Cloudflare
+- `e2e/` Playwright tests; `scripts/` tools (the budgets check and the social image); `docs/deploy.md` deploying to Cloudflare; `docs/content-model.md` the authoring reference for sources, citations, lessons, limits and tracks
 
 Tests sit next to their source as `*.test.ts(x)`, or `*.test.mjs` beside the scripts. Component tests start with `// @vitest-environment jsdom`. Tests import `test`, `expect` and `vi` from `vitest` explicitly; there are no globals.
 

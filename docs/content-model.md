@@ -1,32 +1,35 @@
 # The content model
 
-How to add a source, a lesson, a track and a glossary entry, and which rules the build enforces. Read this before you write or move a lesson. Every rule here fails the build when broken, with a message that says what to fix.
+How to add a source, a lesson, a track and a glossary entry, and which rules the build enforces. Read this before you write or move a lesson. Most rules here fail the build when broken, with a message that says what to fix. Rules marked *policy* do not: nothing checks them, so you must.
 
-The ids, sections and web addresses in the examples show the shape. Check each one against the real document before you copy it.
+**Every source, section number, objective and web address in the examples is invented. Look up each real one in the document itself.**
+
+The real `SOURCES` registry is empty today. A lesson's first sources are added to `src/content/sources.ts` in the same change as the lesson.
 
 ## 1. Sources
 
-Every fact cites a primary source: an RFC, an IEEE standard, an IANA registry, a NIST publication, or official vendor documentation. An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries.
+Every fact cites a primary source: an RFC, an IEEE standard, an IANA registry, a NIST publication, or official vendor documentation. An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries. *Policy:* the build checks only the host of each source, so you must pick the right documents.
 
 Sources live in the list inside `defineSources([...])` in `src/content/sources.ts` (`SOURCES`). Add one entry per document:
 
 ```ts
+// Invented example: no id, section, address or objective here is a checked citation.
 {
-  id: 'rfc-2131',
+  id: 'rfc-example',
   kind: 'rfc',
-  short: 'RFC 2131',
-  title: 'Dynamic Host Configuration Protocol',
+  short: 'RFC 9999',
+  title: 'Example Protocol',
   publisher: 'IETF',
-  url: 'https://www.rfc-editor.org/rfc/rfc2131.html',
-  anchor: 'https://www.rfc-editor.org/rfc/rfc2131.html#section-{n}',
+  url: 'https://www.rfc-editor.org/rfc/rfc9999.html',
+  anchor: 'https://www.rfc-editor.org/rfc/rfc9999.html#section-{n}',
 }
 ```
 
 - `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `vendor`, `cert-objectives`.
 - The host of `url` must be listed for that kind in `SOURCE_HOSTS`. Hosts are exact, with no wildcards. To allow a new host, add it to `SOURCE_HOSTS` in the same change and say why in the commit.
-- `url` names one document. It has a path other than `/` and no `#fragment`.
+- `url` names one document. It is an `https` address in normal form, with a path other than `/` and no `#fragment`.
 - `anchor` is optional. It is the same `url`, then `#`, then a fragment that holds `{n}`, the section number. With an anchor, a numbered section links itself.
-- `short` is the name readers see, such as `RFC 2131`. It may not contain `": "`.
+- `short` is the name readers see, such as `RFC 9999`. It may not contain `": "`.
 - A `cert-objectives` source needs a `version`, the edition of the objectives.
 
 ## 2. Citing: `cite()`
@@ -34,13 +37,15 @@ Sources live in the list inside `defineSources([...])` in `src/content/sources.t
 `cite(source, section, { url? })` builds a citation. Never write one by hand: the build rebuilds each citation and rejects any that differ.
 
 ```ts
-cite('rfc-2131', '3.1')
+// Invented example: no id, section, address or objective here is a checked citation.
+cite('rfc-example', '3.1')
 ```
 
 A numbered section such as `3.1` on a source with an anchor needs nothing else. Any other citation needs a `url` inside the document, with a fragment or a sub-path:
 
 ```ts
-cite('rfc-2131', 'Table 1', { url: 'https://www.rfc-editor.org/rfc/rfc2131.html#section-2' })
+// Invented example: no id, section, address or objective here is a checked citation.
+cite('rfc-example', 'Table 1', { url: 'https://www.rfc-editor.org/rfc/rfc9999.html#section-2' })
 ```
 
 The bare document address is rejected, because a citation must point at the section. On a source with an anchor, an unnumbered section needs the document address plus a fragment. The one exception is an objectives document: its whole-document address is allowed, and only for objective mapping (section 5).
@@ -56,7 +61,8 @@ A cited lesson has exactly one unit. Do not write `references`: each unit's sour
 A statement is `{ id, text, cite, analogy? }`:
 
 ```ts
-{ id: 'lead-1', text: 'A client that needs an address **broadcasts** a request.', cite: [cite('rfc-2131', '3.1')] }
+// Invented example: no id, section, address or objective here is a checked citation.
+{ id: 'lead-1', text: 'A client that needs an address **broadcasts** a request.', cite: [cite('rfc-example', '3.1')] }
 ```
 
 **Analogies.** A Learn lead statement, why statement or term may be an analogy instead. It carries `analogy: true` and no citation. It is never both:
@@ -64,6 +70,18 @@ A statement is `{ id, text, cite, analogy? }`:
 ```ts
 { id: 'lead-3', text: 'Think of a lease like a library loan: you may keep the book for a while.', analogy: true }
 ```
+
+**Shapes.** `cite` may be left out only on an analogy. Parts that a trace can name carry an `id`:
+
+| Part | Shape |
+|---|---|
+| Learn lead and why statement | `{ id, text, cite }` or `{ id, text, analogy: true }` |
+| Learn term | `{ id, idea, name, cite }` or `{ id, idea, name, analogy: true }` |
+| Learn pattern | `{ id, names, note, cite }` |
+| Learn fact | `{ id, label, value, cite }` |
+| Learn Go-deeper paragraph | `{ id, text, cite }` |
+| Watch step Go-deeper paragraph | `{ text, cite }` (no id, so it cannot be traced) |
+| Overview fact and step fact | `{ label, value, backing }` |
 
 **Go deeper** is exam-level detail, closed by default. Each paragraph cites directly. The paragraphs of one block count together against the track's `deepWords` limit.
 
@@ -77,7 +95,7 @@ backing: { example: true }                  // it is example data
 
 A trace names ids from the same lesson. It may name a Learn lead or why statement, a term, the pattern, a fact, or a paragraph of Learn's Go deeper. It may not name an analogy, an uncited part, a Watch step's Go deeper (it has no id) or a part of another lesson. Learn ids must be unique in the lesson.
 
-Example data is only for made-up values: RFC 5737 and RFC 1918 addresses, `00:00:5E:00:53:xx` MACs. Everything else traces.
+Example data is only for made-up values: RFC 5737 and RFC 1918 addresses, `00:00:5E:00:53:xx` MACs. *Policy:* the build does not check that example data uses those ranges, so you must. Everything else traces. *Policy:* keep the voice beginner-first, everyday idea before the term, Go deeper for exam detail; nothing checks it.
 
 **Strict path, in order.** `defineLesson` (`src/content/define.ts` and `cited.ts`) reads the shape first and reports shape problems alone. Then it checks these together and reports every issue in one error:
 
@@ -99,7 +117,13 @@ A lesson may leave a limit with an override and a one-line reason of at most 160
 overrides: [{ limit: 'deepWords', max: 140, reason: 'The lease timers need a longer worked example.' }]
 ```
 
-One override per limit. An override the lesson does not need fails the build, so remove it once it is not used. Every limit message closes with the limit's key in brackets, such as `(deepWords).` That is the name to override.
+A range limit takes `min`, `max` or both, and needs at least one:
+
+```ts
+overrides: [{ limit: 'steps', max: 7, reason: 'Shows all seven steps of the handshake in order.' }]
+```
+
+One override per limit. An override the lesson does not need fails the build, so remove it once it is not used. A lesson in several tracks keeps an override while any one listing track needs it. Each limit message names the limit, and most end with its key in parentheses, such as `(deepWords)`. That is the name to override.
 
 ## 4. The legacy list
 
@@ -115,27 +139,34 @@ To move a lesson across, rewrite its file with `defineLesson` and remove its slu
 - A **certification track** (`type: 'certification'`) maps every listed lesson to objectives of one pinned exam document. Pin it in `exam`: its `source` is a `cert-objectives` id in the registry, and its `version` must equal that source's `version`. Each objective's citation must be from that source, its `section` must equal its `objective` number, and its `exam` must be one of the track's `codes`.
 
 ```ts
+// Invented example: no id, section, address or objective here is a checked citation.
+exam: { title: 'Example exam', codes: ['EX-101'], version: 'V1', source: 'example-objectives' },
+// ...and in a part's lessons:
 {
   slug: 'dhcp',
   title: 'DHCP',
   objectives: [
     {
-      exam: 'N10-009',
-      objective: '2.6',
-      cite: cite('comptia-n10-009', '2.6', { url: 'https://www.comptia.org/docs/network-n10-009-objectives.pdf' }),
+      exam: 'EX-101',
+      objective: '9.9', // invented
+      cite: cite('example-objectives', '9.9', { url: 'https://partners.comptia.org/example-objectives.pdf' }),
     },
   ],
 }
 ```
 
-The source behind it is a `cert-objectives` entry with a `version` such as `'V1'`.
+- `exam.source` is the `id` of the objectives source in the registry. That source is a `cert-objectives` entry with a `version`, and `exam.version` must equal it.
+- The `url` in the objective's `cite()` is that source's own `url`. The whole-document address is allowed only for a `cert-objectives` source, and only here.
+- Each objective's citation section equals its objective number. Its `exam` must be one of `exam.codes`.
+- A lesson may not list the same objective twice.
 
 ## 6. The glossary
 
 `defineGlossary` in `src/content/glossary.ts` holds `GLOSSARY`. Each entry is `{ id, term, definition }`, and `definition` is a list of statements like a lesson's. Each statement cites or is an analogy, never both, and at least one cites. Ids are unique, and terms are unique ignoring case.
 
 ```ts
-{ id: 'lease', term: 'Lease', definition: [{ id: 'lease-1', text: 'A lease is an address lent for a limited time.', cite: [cite('rfc-2131', '1')] }] }
+// Invented example: no id, section, address or objective here is a checked citation.
+{ id: 'lease', term: 'Lease', definition: [{ id: 'lease-1', text: 'A lease is an address lent for a limited time.', cite: [cite('rfc-example', '2.1')] }] }
 ```
 
 ## 7. The registry gate
