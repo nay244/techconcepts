@@ -1,6 +1,6 @@
-import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../../legacy';
-import type { TableDef } from '../../../schema';
+import { eventLog, messagesFor } from '../../helpers/internet-events';
+import type { LegacyUnitInput } from '../../legacy';
+import type { TableDef } from '../../schema';
 
 /**
  * DHCP, protocol 7 of How the Internet Works’ 14. The laptop joins the Wi-Fi with no address, and the router lends

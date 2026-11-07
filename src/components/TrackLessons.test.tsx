@@ -15,7 +15,7 @@ import { TrackLessons } from './TrackLessons';
 // The real track, as the page builds the island's props from it.
 const entries = getEntries('networking');
 const known = knownFrom(entries);
-const parts = trackParts(networkingTrack, entries, (e: AvailableSummary) => getLesson('networking', e.slug)!);
+const parts = trackParts(networkingTrack, entries, (e: AvailableSummary) => getLesson(e.slug)!);
 const tags = presentTags(entries);
 const key = (slug: string) => entries.find((e) => e.slug === slug)!.key;
 

@@ -7,9 +7,9 @@ import { positionOf, slotsFor } from '../engine/timeline';
 import { cardPlaces, nextUps, presentTags, trackParts, type ReadyLesson } from './track';
 
 const entries = getEntries('networking');
-const lessonOf = (e: AvailableSummary): Lesson => getLesson('networking', e.slug)!;
-const DHCP = getLesson('networking', 'dhcp')!;
-const INTERNET = getLesson('networking', 'how-the-internet-works')!;
+const lessonOf = (e: AvailableSummary): Lesson => getLesson(e.slug)!;
+const DHCP = getLesson('dhcp')!;
+const INTERNET = getLesson('how-the-internet-works')!;
 
 test('the six parts in order, each with its number, its title, its lessons and how many are ready', () => {
   const parts = trackParts(networkingTrack, entries, lessonOf);

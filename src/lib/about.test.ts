@@ -23,7 +23,7 @@ describe('comingTracksSentence', () => {
 
 describe('sourceRows', () => {
   test('splits each source into its standard and its title, as About lists the DHCP lesson’s', () => {
-    const dhcp = getLesson('networking', 'dhcp')!;
+    const dhcp = getLesson('dhcp')!;
     expect(sourceRows(dhcp.units.flatMap((u) => u.references))).toEqual([
       { standard: 'RFC 2131', title: 'Dynamic Host Configuration Protocol', url: 'https://www.rfc-editor.org/rfc/rfc2131' },
       { standard: 'RFC 2132', title: 'DHCP Options and BOOTP Vendor Extensions', url: 'https://www.rfc-editor.org/rfc/rfc2132' },

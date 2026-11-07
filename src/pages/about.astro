@@ -22,7 +22,7 @@ function readyEntry(slug: string): AvailableSummary {
 }
 
 function lessonOf(entry: AvailableSummary): Lesson {
-  const lesson = getLesson(track.id, entry.slug);
+  const lesson = getLesson(entry.slug);
   // An available entry is built from its lesson, so this cannot happen.
   if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
   return lesson;

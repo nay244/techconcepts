@@ -1,6 +1,6 @@
-import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../../legacy';
-import type { TableDef } from '../../../schema';
+import { eventLog, messagesFor } from '../../helpers/internet-events';
+import type { LegacyUnitInput } from '../../legacy';
+import type { TableDef } from '../../schema';
 
 /**
  * DNS, protocol 6 of How the Internet Works’ 14. The laptop asks its resolver for techconcepts.app, and the

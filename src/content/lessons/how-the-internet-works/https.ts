@@ -1,6 +1,6 @@
-import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../../legacy';
-import type { TableDef } from '../../../schema';
+import { eventLog, messagesFor } from '../../helpers/internet-events';
+import type { LegacyUnitInput } from '../../legacy';
+import type { TableDef } from '../../schema';
 
 /**
  * HTTPS, protocol 2 of How the Internet Works’ 14. The browser opens techconcepts.app as HTTP opens a page, with

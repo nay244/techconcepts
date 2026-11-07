@@ -7,7 +7,7 @@ import { resumeLabel, slotsFor } from '../engine/timeline';
 import { firstSentence, logSample, midSentence, resumePlaces } from './home';
 
 const lesson = (slug: string): Lesson => {
-  const found = getLesson('networking', slug);
+  const found = getLesson(slug);
   if (found === undefined) throw new Error(`no ${slug}`);
   return found;
 };

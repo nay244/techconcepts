@@ -18,7 +18,7 @@ async function lessonPage(slug: string): Promise<Document> {
   const track = tracks[0]!;
   const entries = getEntries(track.id);
   const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === slug)!;
-  const props = { track, entry, entries, lesson: getLesson(track.id, slug)!, next: neighbors(entries, slug).next };
+  const props = { track, entry, entries, lesson: getLesson(slug)!, next: neighbors(entries, slug).next };
   const container = await AstroContainer.create({ renderers: await loadRenderers([getContainerRenderer()]) });
   const html = await container.renderToString(LessonPage, { params: { track: track.id, lesson: slug }, props });
   return new JSDOM(html).window.document;

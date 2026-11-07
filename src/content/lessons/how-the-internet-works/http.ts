@@ -1,6 +1,6 @@
-import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../../legacy';
-import type { TableDef } from '../../../schema';
+import { eventLog, messagesFor } from '../../helpers/internet-events';
+import type { LegacyUnitInput } from '../../legacy';
+import type { TableDef } from '../../schema';
 
 /**
  * HTTP, the first of How the Internet Works’ 14 protocols. You type example.net and press Enter: the browser looks

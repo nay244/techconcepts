@@ -1,5 +1,5 @@
-import { ADDR, change, checkResults, ruleTableRows, visits } from '../../helpers/firewall-events';
-import { defineLegacyLesson } from '../../legacy';
+import { ADDR, change, checkResults, ruleTableRows, visits } from '../helpers/firewall-events';
+import { defineLegacyLesson } from '../legacy';
 
 /**
  * Firewalls, lesson 17 of 20. A visitor and an admin out on the internet reach

@@ -13,7 +13,7 @@ import { Rich } from './Rich';
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 const FIREWALLS: Lesson = liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls' }));
 const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': TWO });
+const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': TWO }, () => 'networking');
 
 function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
   const entry = entries.find((e) => e.slug === lesson.slug)!;

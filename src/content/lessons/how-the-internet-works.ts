@@ -1,4 +1,4 @@
-import { defineLegacyLesson } from '../../legacy';
+import { defineLegacyLesson } from '../legacy';
 import dhcp from './how-the-internet-works/dhcp';
 import dns from './how-the-internet-works/dns';
 import ftp from './how-the-internet-works/ftp';

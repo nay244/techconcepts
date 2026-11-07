@@ -266,6 +266,15 @@ for (const lesson of LESSONS) {
 }
 
 test.describe('lesson specifics', () => {
+  test('a lesson page names its canonical URL, the same address as og:url', async ({ page }) => {
+    // The configured site (astro.config), not baseURL: og:url has always been built on it.
+    const canonical = new URL('/networking/dhcp', 'https://techconcepts.app').href;
+    await page.goto('/networking/dhcp');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
+  });
+
+
   test.describe.configure({ timeout: 180_000 });
 
   /** A lesson the brief names, found among the ready ones. */

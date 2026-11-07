@@ -43,7 +43,7 @@ const THREE: Lesson = liftedFixture(
 );
 /** DHCP with two table changes in a row in Neighbor Reply and in Table Lookup (`makeUnitWithTwoTableChanges`). */
 const TWO_TABLE_CHANGES: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', units: [makeUnitWithTwoTableChanges()] }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE });
+const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE }, () => 'networking');
 const KEY = 'dhcp';
 /** Every event's wait in these tests: the stand-in drivers' duration. */
 const EVENT_MS = 1000;

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import dhcp from '../content/lessons/networking/dhcp';
+import dhcp from '../content/lessons/dhcp';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
 import { createPlaybackReducer, type PlaybackState } from '../engine/playback';

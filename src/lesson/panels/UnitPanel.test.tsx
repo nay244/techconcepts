@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/react';
 import { expect, test } from 'vitest';
-import firewalls from '../../content/lessons/networking/firewalls';
+import firewalls from '../../content/lessons/firewalls';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
 import type { PanelMark } from '../../scenes/driver';
 import { UnitPanel } from './UnitPanel';

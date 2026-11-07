@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test } from 'vitest';
-import { drawFirewall } from '../../../art/scenes/firewall';
-import { evaluateRules } from '../../../engine/net/firewall';
-import { cidrContains } from '../../../engine/net/ipv4';
-import { deriveState, positionOf, slotsFor, stepEvents } from '../../../engine/timeline';
-import { sceneViewOf } from '../../../scenes/driver';
-import { firewallDriver } from '../../../scenes/drivers/firewall';
-import { lessonNumbers, misnamedLessons, textsOf } from '../../../test/lesson-references';
-import { showSweep } from '../../../test/show-sweep';
-import { checkStructure } from '../../define';
-import { checkResults, RULES, RULESETS } from '../../helpers/firewall-events';
-import type { Lesson, MessageEvent, NoteEvent, Panel, SceneEvent, TableEvent } from '../../schema';
+import { drawFirewall } from '../../art/scenes/firewall';
+import { evaluateRules } from '../../engine/net/firewall';
+import { cidrContains } from '../../engine/net/ipv4';
+import { deriveState, positionOf, slotsFor, stepEvents } from '../../engine/timeline';
+import { sceneViewOf } from '../../scenes/driver';
+import { firewallDriver } from '../../scenes/drivers/firewall';
+import { lessonNumbers, misnamedLessons, textsOf } from '../../test/lesson-references';
+import { showSweep } from '../../test/show-sweep';
+import { checkStructure } from '../define';
+import { checkResults, RULES, RULESETS } from '../helpers/firewall-events';
+import type { Lesson, MessageEvent, NoteEvent, Panel, SceneEvent, TableEvent } from '../schema';
 import firewalls from './firewalls';
 
 afterEach(() => {

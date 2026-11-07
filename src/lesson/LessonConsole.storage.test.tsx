@@ -12,7 +12,7 @@ import LessonConsole from './LessonConsole';
 // lives, and each test file gets fresh modules, so no other test sees this one's blocked storage.
 
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP });
+const entries = buildEntries(networkingTrack, { dhcp: DHCP }, () => 'networking');
 const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === 'dhcp')!;
 
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });

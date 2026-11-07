@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from 'vitest';
-import { drawNetMap } from '../../../art/scenes/net-map';
-import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from '../../../art/scenes/net-map-layers';
-import { FIGURE_PARTS } from '../../../art/scenes/parts';
-import { deriveState, positionOf, slotsFor, stepEvents } from '../../../engine/timeline';
-import { sceneViewOf } from '../../../scenes/driver';
-import { netMapDriver } from '../../../scenes/drivers/net-map';
-import { lessonNumbers, lessonTitles, misnamedLessons, textsOf } from '../../../test/lesson-references';
-import { showSweep } from '../../../test/show-sweep';
-import { checkStructure } from '../../define';
-import { getEntries, getLesson } from '../../registry';
-import type { MessageEvent, Unit } from '../../schema';
+import { drawNetMap } from '../../art/scenes/net-map';
+import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from '../../art/scenes/net-map-layers';
+import { FIGURE_PARTS } from '../../art/scenes/parts';
+import { deriveState, positionOf, slotsFor, stepEvents } from '../../engine/timeline';
+import { sceneViewOf } from '../../scenes/driver';
+import { netMapDriver } from '../../scenes/drivers/net-map';
+import { lessonNumbers, lessonTitles, misnamedLessons, textsOf } from '../../test/lesson-references';
+import { showSweep } from '../../test/show-sweep';
+import { checkStructure } from '../define';
+import { getEntries, getLesson } from '../registry';
+import type { MessageEvent, Unit } from '../schema';
 import internet, { UNIT_ORDER } from './how-the-internet-works';
 
 afterEach(() => {
@@ -85,21 +85,21 @@ test('the lesson is lesson 1, How the Internet Works, on the network map', () =>
 });
 
 test('the protocol files are parts of the lesson, not lessons of their own', () => {
-  // The registry reads lessons/<track>/<slug>.ts only, so lessons/networking/how-the-internet-works/*.ts stay out.
+  // The registry reads lessons/<slug>.ts only, so lessons/how-the-internet-works/*.ts stay out.
   // (DNS, DHCP and TLS also have lessons of their own, 14, 10 and 16, under the same slugs as their units here.)
   const available = getEntries('networking').filter((e) => e.available).map((e) => e.slug);
   expect(available).toContain('how-the-internet-works');
   for (const id of ['http', 'https', 'tcp', 'udp', 'ip', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh']) {
-    expect(getLesson('networking', id), id).toBeUndefined();
+    expect(getLesson(id), id).toBeUndefined();
   }
-  expect(getLesson('networking', 'how-the-internet-works')).toBe(internet);
+  expect(getLesson('how-the-internet-works')).toBe(internet);
 });
 
 test('the DHCP part and lesson 10, DHCP, both call their unit "dhcp", and each validates under its own lesson key and figure', () => {
   // Their overlap stays as it is (owner: deferred). Sharing the unit id is safe because nothing keys on a unit id
   // across lessons: progress is kept by lesson key, ?step= counts positions, and Practice picks live in each
   // page's own console.
-  const lesson10 = getLesson('networking', 'dhcp')!;
+  const lesson10 = getLesson('dhcp')!;
   const part = unitById('dhcp');
   expect(getEntries('networking').find((e) => e.slug === 'dhcp')).toMatchObject({ number: 10, available: true, key: 'dhcp' });
   expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({ key: 'how-the-internet-works' });

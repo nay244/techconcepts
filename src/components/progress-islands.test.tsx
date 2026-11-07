@@ -19,7 +19,7 @@ const lessons: Record<string, Lesson> = {
   dhcp: liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', certTags: ['network-plus', 'ccna'] })),
   firewalls: liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls', certTags: ['network-plus', 'security-plus'] })),
 };
-const entries = buildEntries(networkingTrack, lessons);
+const entries = buildEntries(networkingTrack, lessons, () => 'networking');
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const { planned } = trackTotals(entries);
 const known = knownFrom(entries);

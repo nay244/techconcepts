@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
-import firewalls from '../../content/lessons/networking/firewalls';
+import firewalls from '../../content/lessons/firewalls';
 import type { MessageEvent, Panel, SceneEvent } from '../../content/schema';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
 import { contrastRatio, hexToRgb } from '../../lib/contrast';

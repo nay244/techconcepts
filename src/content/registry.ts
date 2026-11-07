@@ -13,6 +13,8 @@ export type LessonSummary =
       trackId: string;
       slug: string;
       url: string;
+      /** The one address search engines should index: the first listing track's URL for the lesson, `/<home track>/<slug>`. */
+      canonical: string;
       number: number;
       title: string;
       subtitle: string;
@@ -40,17 +42,20 @@ export type AvailableSummary = Extract<LessonSummary, { available: true }>;
 
 /**
  * One entry per lesson the track plans, in track order, numbered from 1 across
- * all parts. `lessons` is keyed by slug; a planned lesson with no file is
- * returned as unavailable. Throws when a lesson is not in the track, is filed
- * under a different slug than its own, has a different title than the
- * track lists, does not fit the track's limits, or carries an override it
- * does not need.
+ * all parts. `lessons` is keyed by slug and holds every lesson file; a planned
+ * lesson with no file is returned as unavailable. `homeOf(slug)` is the first
+ * track, in `tracks` order, that lists the slug: its URL is the lesson's canonical
+ * one. Throws when a lesson is not in this track, is filed under a different slug
+ * than its own, has a different title than the track lists, or does not fit the
+ * track's limits. (Whether any track lists a lesson, and whether its overrides are
+ * needed across every listing track, is `checkListings`.)
  */
-export function buildEntries(track: Track, lessons: Record<string, Lesson>): LessonSummary[] {
+export function buildEntries(track: Track, lessons: Record<string, Lesson>, homeOf: (slug: string) => string): LessonSummary[] {
   const planned = new Map(track.parts.flatMap((part) => part.lessons.map((l) => [l.slug, l.title] as const)));
   for (const [slug, lesson] of Object.entries(lessons)) {
     const title = planned.get(slug);
-    if (title === undefined) throw new Error(`Lesson "${slug}" is not listed in the ${track.id} track.`);
+    // A lesson another track lists is not an error here; only a lesson no track lists is (`checkListings`).
+    if (title === undefined) continue;
     if (lesson.slug !== slug) throw new Error(`Lesson filed as "${slug}" has the slug "${lesson.slug}"; the slug must match.`);
     if (lesson.title !== title) {
       throw new Error(`Lesson "${slug}" has the title "${lesson.title}", but the ${track.id} track lists the title "${title}".`);
@@ -58,10 +63,6 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
     const misfits = checkLimits(lesson, track.limits);
     if (misfits.length > 0) {
       throw new Error(`Lesson "${slug}" does not fit the ${track.id} track's limits:\n${misfits.map((m) => `  - ${m}`).join('\n')}`);
-    }
-    const unneeded = unneededOverrides(lesson, [track.limits]);
-    if (unneeded.length > 0) {
-      throw new Error(`Lesson "${slug}" has overrides the ${track.id} track does not need:\n${unneeded.map((m) => `  - ${m}`).join('\n')}`);
     }
   }
 
@@ -84,6 +85,7 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
               available: true,
               ...base,
               url: `/${track.id}/${planned.slug}`,
+              canonical: `/${homeOf(planned.slug)}/${planned.slug}`,
               subtitle: lesson.subtitle,
               summary: lesson.summary,
               certTags: lesson.certTags,
@@ -121,21 +123,19 @@ export function trackTotals(entries: LessonSummary[]): { available: number; plan
   return { available: entries.filter((e) => e.available).length, planned: entries.length };
 }
 
-const LESSON_PATH = /^\.\/lessons\/([^/]+)\/([^/]+)\.ts$/;
+const LESSON_PATH = /^\.\/lessons\/([^/]+)\.ts$/;
 
 /**
- * Groups the glob result into `{ trackId: { slug: lesson } }`. The folder
- * name is the track id and the file name must equal the lesson's slug. Each
- * lesson must be the one `defineLesson` or `defineLegacyLesson` returned, so a
- * lesson file cannot skip the rules (direction doc §3.4: the build fails if a
- * lesson is missing a citation).
+ * Keys the glob result by slug. A lesson is a file directly in `lessons/`, and the file name must equal the lesson's
+ * slug. Each lesson must be the one `defineLesson` or `defineLegacyLesson` returned, so a lesson file cannot skip the
+ * rules (direction doc §3.4: the build fails if a lesson is missing a citation).
  */
-export function groupLessonModules(modules: Record<string, Lesson>): Record<string, Record<string, Lesson>> {
-  const grouped: Record<string, Record<string, Lesson>> = {};
+export function lessonsFromModules(modules: Record<string, Lesson>): Record<string, Lesson> {
+  const bySlug: Record<string, Lesson> = {};
   for (const [path, lesson] of Object.entries(modules)) {
     const match = LESSON_PATH.exec(path);
     if (match === null) throw new Error(`Unexpected lesson file path "${path}".`);
-    const [, trackId, fileName] = match as unknown as [string, string, string];
+    const [, fileName] = match as unknown as [string, string];
     if (typeof lesson !== 'object' || lesson === null || typeof lesson.slug !== 'string') {
       throw new Error(`${path} must default-export defineLesson({ ... }), or defineLegacyLesson({ ... }) for a lesson on the legacy list.`);
     }
@@ -147,9 +147,33 @@ export function groupLessonModules(modules: Record<string, Lesson>): Record<stri
     if (lesson.slug !== fileName) {
       throw new Error(`${path}: the file name "${fileName}" must equal the lesson slug "${lesson.slug}".`);
     }
-    (grouped[trackId] ??= {})[fileName] = lesson;
+    bySlug[fileName] = lesson;
   }
-  return grouped;
+  return bySlug;
+}
+
+/**
+ * The tracks, in order, that list `slug`.
+ */
+function listingTracks(slug: string, trackList: readonly Track[]): Track[] {
+  return trackList.filter((t) => t.parts.some((part) => part.lessons.some((l) => l.slug === slug)));
+}
+
+/**
+ * Throws when a lesson file is listed by no track, or carries an override that no listing track needs (a lesson in
+ * several tracks keeps an override while any one of them needs it).
+ */
+export function checkListings(lessons: Record<string, Lesson>, trackList: readonly Track[]): void {
+  for (const [slug, lesson] of Object.entries(lessons)) {
+    const listing = listingTracks(slug, trackList);
+    if (listing.length === 0) throw new Error(`Lesson "${slug}" is not listed in any track.`);
+    const unneeded = unneededOverrides(lesson, listing.map((t) => t.limits));
+    if (unneeded.length > 0) {
+      throw new Error(
+        `Lesson "${slug}" has overrides the ${listing.map((t) => t.id).join(', ')} track${listing.length > 1 ? 's do' : ' does'} not need:\n${unneeded.map((m) => `  - ${m}`).join('\n')}`,
+      );
+    }
+  }
 }
 
 /**
@@ -175,25 +199,24 @@ export function checkLegacyList(lessons: readonly Lesson[]): void {
   if (problems.length > 0) throw new Error(`The legacy list is out of date:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
 }
 
-// Test files sit beside the lessons they cover, so they are excluded here. Only
-// files directly in a track's folder are lessons: a lesson's own parts (lesson
-// 1's protocols in lessons/networking/how-the-internet-works/) are not.
-const modules = import.meta.glob<Lesson>(['./lessons/*/*.ts', '!./lessons/*/*.test.ts'], {
+// Test files sit beside the lessons they cover, so they are excluded here. Only files directly in `lessons/` are
+// lessons: a lesson's own parts (lesson 1's protocols in lessons/how-the-internet-works/) are not.
+const modules = import.meta.glob<Lesson>(['./lessons/*.ts', '!./lessons/*.test.ts'], {
   eager: true,
   import: 'default',
 });
-const lessonsByTrack = groupLessonModules(modules);
-checkLegacyList(Object.values(lessonsByTrack).flatMap((lessons) => Object.values(lessons)));
+const lessonsBySlug = lessonsFromModules(modules);
+checkLegacyList(Object.values(lessonsBySlug));
+checkListings(lessonsBySlug, tracks);
 
-for (const trackId of Object.keys(lessonsByTrack)) {
-  if (!tracks.some((t) => t.id === trackId)) {
-    throw new Error(`src/content/lessons/${trackId} does not match any track id (${tracks.map((t) => t.id).join(', ')}).`);
-  }
+/** The tracks that list a lesson, in `tracks` order; empty for a slug no track lists. */
+export function tracksOf(slug: string): Track[] {
+  return listingTracks(slug, tracks);
 }
 
-const entriesByTrack = new Map(
-  tracks.map((t) => [t.id, buildEntries(t, Object.hasOwn(lessonsByTrack, t.id) ? lessonsByTrack[t.id]! : {})]),
-);
+const homeOf = (slug: string): string => tracksOf(slug)[0]!.id;
+
+const entriesByTrack = new Map(tracks.map((t) => [t.id, buildEntries(t, lessonsBySlug, homeOf)]));
 
 export function getTrack(id: string): Track | undefined {
   return tracks.find((t) => t.id === id);
@@ -203,8 +226,6 @@ export function getEntries(trackId: string): LessonSummary[] {
   return entriesByTrack.get(trackId) ?? [];
 }
 
-export function getLesson(trackId: string, slug: string): Lesson | undefined {
-  if (!Object.hasOwn(lessonsByTrack, trackId)) return undefined;
-  const lessons = lessonsByTrack[trackId]!;
-  return Object.hasOwn(lessons, slug) ? lessons[slug] : undefined;
+export function getLesson(slug: string): Lesson | undefined {
+  return Object.hasOwn(lessonsBySlug, slug) ? lessonsBySlug[slug] : undefined;
 }

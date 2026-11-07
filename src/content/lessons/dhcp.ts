@@ -1,7 +1,7 @@
-import { formatBytes, formatTime } from '../../../lib/format';
-import { dhcpLayer, ethernetLayer, ipv4Layer, packet, udpLayer } from '../../helpers/packets';
-import { defineLegacyLesson } from '../../legacy';
-import type { Field, MessageEvent, MessageKind, Packet, TableEvent } from '../../schema';
+import { formatBytes, formatTime } from '../../lib/format';
+import { dhcpLayer, ethernetLayer, ipv4Layer, packet, udpLayer } from '../helpers/packets';
+import { defineLegacyLesson } from '../legacy';
+import type { Field, MessageEvent, MessageKind, Packet, TableEvent } from '../schema';
 
 /**
  * DHCP, lesson 10 of 20. A laptop joins a home Wi-Fi network and gets its

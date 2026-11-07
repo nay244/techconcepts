@@ -1,6 +1,6 @@
-import { eventLog, messagesFor } from '../../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../../legacy';
-import type { TableDef } from '../../../schema';
+import { eventLog, messagesFor } from '../../helpers/internet-events';
+import type { LegacyUnitInput } from '../../legacy';
+import type { TableDef } from '../../schema';
 
 /**
  * SMTP, protocol 9 of How the Internet Works’ 14. Alex’s mail app hands a letter to Alex’s own mail server over a

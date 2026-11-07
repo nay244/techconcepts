@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { expect, test } from 'vitest';
-import { drawDhcp } from '../../../art/scenes/dhcp';
-import { deriveState, positionOf, stepEvents } from '../../../engine/timeline';
-import { formatBytes } from '../../../lib/format';
-import { lessonNumbers, misnamedLessons } from '../../../test/lesson-references';
-import { showSweep } from '../../../test/show-sweep';
-import { checkStructure } from '../../define';
-import type { MessageEvent } from '../../schema';
+import { drawDhcp } from '../../art/scenes/dhcp';
+import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
+import { formatBytes } from '../../lib/format';
+import { lessonNumbers, misnamedLessons } from '../../test/lesson-references';
+import { showSweep } from '../../test/show-sweep';
+import { checkStructure } from '../define';
+import type { MessageEvent } from '../schema';
 import dhcp from './dhcp';
 
 const unit = dhcp.units[0]!;

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { expect, test } from 'vitest';
-import firewalls from '../content/lessons/networking/firewalls';
+import firewalls from '../content/lessons/firewalls';
 import type { Party } from '../content/schema';
 import { deriveState, positionOf, type LogRow } from '../engine/timeline';
 import { ROW_H, SequenceView } from './SequenceView';

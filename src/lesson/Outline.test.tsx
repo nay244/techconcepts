@@ -15,7 +15,7 @@ import { Outline } from './Outline';
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 /** Alpha (core): 0 Overview, 1–5 steps, 6 Learn, 7 Practice. Beta (app): 8 Overview, 9–13 steps, 14 Learn, 15 Practice. */
 const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, 'how-the-internet-works': TWO });
+const entries = buildEntries(networkingTrack, { dhcp: DHCP, 'how-the-internet-works': TWO }, () => 'networking');
 
 function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] = []) {
   const current = slotsFor(lesson)[position]!.unit;

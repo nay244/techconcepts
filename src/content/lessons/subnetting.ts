@@ -1,8 +1,8 @@
-import { formatIPv4, parseIPv4, toOctetBits, type IPv4 } from '../../../engine/net/ipv4';
-import { maskFromPrefix, sameSubnet, subnetInfo, type SubnetInfo } from '../../../engine/net/subnet';
-import { calc, checkStated, subnetValue, type Stated } from '../../helpers/subnet-events';
-import { defineLegacyLesson } from '../../legacy';
-import type { Board, Cue, NoteEvent } from '../../schema';
+import { formatIPv4, parseIPv4, toOctetBits, type IPv4 } from '../../engine/net/ipv4';
+import { maskFromPrefix, sameSubnet, subnetInfo, type SubnetInfo } from '../../engine/net/subnet';
+import { calc, checkStated, subnetValue, type Stated } from '../helpers/subnet-events';
+import { defineLegacyLesson } from '../legacy';
+import type { Board, Cue, NoteEvent } from '../schema';
 
 /**
  * Subnetting, lesson 8 of 20. An office cuts its one /24 into four /26s, one

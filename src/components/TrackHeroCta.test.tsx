@@ -15,7 +15,7 @@ const entries = getEntries('networking');
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const known = knownFrom(entries);
 const lessons: TrackResumeLesson[] = available.map((e) => {
-  const lesson = getLesson('networking', e.slug)!;
+  const lesson = getLesson(e.slug)!;
   return { key: e.key, title: e.title, url: e.url, places: resumePlaces(lesson), next: nextUps(lesson) };
 });
 const start = { title: available[0]!.title, url: available[0]!.url };
