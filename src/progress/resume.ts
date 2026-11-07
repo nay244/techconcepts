@@ -38,7 +38,8 @@ export function resumeOf<L extends ResumeLesson>(
   lessons: L[],
   known: Record<string, number>,
 ): Resume<L> | null {
-  const saved = ready && available && Object.keys(data.lessons).length > 0;
+  // Only a record for a lesson this page knows counts: one no track lists yet is kept in storage, but is not progress here.
+  const saved = ready && available && Object.keys(data.lessons).some((key) => Object.hasOwn(known, key));
   const lesson = saved ? lessons.find((l) => l.key === data.lastLesson) : undefined;
   if (lesson === undefined) return null;
 

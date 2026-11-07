@@ -8,13 +8,13 @@ import { HeroCta, type ResumeLesson } from './HeroCta';
 
 // What Home hands the island: each ready lesson with the words for each of its positions (resumePlaces, at build time).
 const DHCP: ResumeLesson = {
-  key: 'networking/dhcp',
+  key: 'dhcp',
   title: 'DHCP',
   url: '/networking/dhcp',
   places: ['the Overview', 'step 1 of 5', 'step 2 of 5', 'step 3 of 5', 'step 4 of 5', 'step 5 of 5', 'the Learn part', 'the Practice part'],
 };
 const INTERNET: ResumeLesson = {
-  key: 'networking/how-the-internet-works',
+  key: 'how-the-internet-works',
   title: 'How the Internet Works',
   url: '/networking/how-the-internet-works',
   places: [
@@ -117,7 +117,7 @@ test('a last lesson only opened, while another has progress, is at its Overview,
 
 test('with no saved lesson progress it is a first visit, whatever lesson was last opened', () => {
   // Progress only for a lesson the site does not have.
-  seedProgress({ 'networking/osi-model': { status: 'in-progress', furthestPosition: 2 } }, 'networking/osi-model');
+  seedProgress({ 'osi-model': { status: 'in-progress', furthestPosition: 2 } }, 'osi-model');
   const first = render(cta());
   expectFirstVisit();
   first.unmount();
@@ -128,8 +128,14 @@ test('with no saved lesson progress it is a first visit, whatever lesson was las
   expectFirstVisit();
 });
 
+test('a record for an unlisted lesson alone is a first visit, even when the last lesson is a ready one', () => {
+  seedProgress({ 'osi-model': { status: 'in-progress', furthestPosition: 2 } }, DHCP.key);
+  render(cta());
+  expectFirstVisit();
+});
+
 test('progress with no last lesson on the site is a first visit', () => {
-  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'networking/osi-model');
+  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'osi-model');
   render(cta());
   expectFirstVisit();
 });

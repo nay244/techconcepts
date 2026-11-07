@@ -3,12 +3,12 @@ import { act, render, renderHook, screen } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { createSafeStorage } from '../lib/storage';
-import { PROGRESS_KEY, emptyProgress, recordVisit } from './store';
+import { LEGACY_PROGRESS_KEY, PROGRESS_KEY, emptyProgress, recordVisit } from './store';
 import type { ProgressData } from './store';
 import { useProgress } from './useProgress';
 
 const now = new Date('2026-11-03T12:00:00Z');
-const known = { 'networking/dhcp': 8, 'networking/arp': 6 };
+const known = { 'dhcp': 8, 'arp': 6 };
 
 function saved(): ProgressData | null {
   const raw = window.localStorage.getItem(PROGRESS_KEY);
@@ -48,13 +48,14 @@ test('starts empty when nothing is saved', () => {
   expect(result.current.data).toEqual(emptyProgress());
 });
 
-test('loads saved progress, dropping unknown lessons and clamping positions', () => {
-  const stored = recordVisit(recordVisit(emptyProgress(), 'networking/dhcp', 99, 99, now), 'gone/x', 2, 5, now);
+test('loads saved progress, clamping known positions and keeping lessons no track lists', () => {
+  const stored = recordVisit(recordVisit(emptyProgress(), 'dhcp', 'networking', 99, 99, now), 'gone-x', 'networking', 2, 5, now);
   window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(stored));
 
   const { result } = renderHook(() => useProgress(known));
-  expect(Object.keys(result.current.data.lessons)).toEqual(['networking/dhcp']);
-  expect(result.current.data.lessons['networking/dhcp'].furthestPosition).toBe(8);
+  expect(Object.keys(result.current.data.lessons).sort()).toEqual(['dhcp', 'gone-x']);
+  expect(result.current.data.lessons['dhcp'].furthestPosition).toBe(8);
+  expect(result.current.data.lessons['gone-x']).toEqual(stored.lessons['gone-x']);
   expect(result.current.data.lastLesson).toBeNull();
 });
 
@@ -67,7 +68,7 @@ test('blocked storage: available is false and nothing throws', () => {
   expect(result.current.available).toBe(false);
   expect(result.current.data).toEqual(emptyProgress());
 
-  expect(() => act(() => result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)))).not.toThrow();
+  expect(() => act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)))).not.toThrow();
   expect(() => act(() => result.current.reset())).not.toThrow();
   expect(result.current.available).toBe(false);
 });
@@ -84,66 +85,66 @@ test('a write that storage refuses makes progress unavailable', () => {
   const { result } = renderHook(() => useProgress(known, full));
   expect(result.current.available).toBe(true);
 
-  act(() => result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
+  act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
   expect(result.current.available).toBe(false);
 });
 
 test('update saves the new record and shows it', () => {
   const { result } = renderHook(() => useProgress(known));
-  act(() => result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
+  act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
 
-  expect(result.current.data.lastLesson).toBe('networking/dhcp');
-  expect(result.current.data.lessons['networking/dhcp']).toMatchObject({ status: 'in-progress', furthestPosition: 3 });
+  expect(result.current.data.lastLesson).toBe('dhcp');
+  expect(result.current.data.lessons['dhcp']).toMatchObject({ status: 'in-progress', furthestPosition: 3 });
   expect(saved()).toEqual(result.current.data);
 });
 
 test('update builds on what is saved now, not on a stale copy', () => {
   const { result } = renderHook(() => useProgress(known));
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'networking/arp', 6, 6, now)));
+  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'arp', 'networking', 6, 6, now)));
 
-  act(() => result.current.update((d) => recordVisit(d, 'networking/dhcp', 2, 8, now)));
-  expect(Object.keys(saved()?.lessons ?? {}).sort()).toEqual(['networking/arp', 'networking/dhcp']);
+  act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 2, 8, now)));
+  expect(Object.keys(saved()?.lessons ?? {}).sort()).toEqual(['arp', 'dhcp']);
 });
 
 test('update keeps saved lessons that are not in `known`', () => {
-  const elsewhere = recordVisit(emptyProgress(), 'ai/x', 4, 9, now);
+  const elsewhere = recordVisit(emptyProgress(), 'ai-x', 'networking', 4, 9, now);
   window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(elsewhere));
   const { result } = renderHook(() => useProgress(known));
-  expect(result.current.data.lessons['ai/x']).toBeUndefined();
+  expect(result.current.data.lessons['ai-x']).toEqual(elsewhere.lessons['ai-x']);
 
-  act(() => result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
+  act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
 
-  expect(result.current.data.lessons['ai/x']).toBeUndefined();
-  expect(saved()?.lessons['ai/x']).toEqual(elsewhere.lessons['ai/x']);
-  expect(saved()?.lessons['networking/dhcp']).toMatchObject({ furthestPosition: 3 });
-  expect(saved()?.lastLesson).toBe('networking/dhcp');
+  expect(result.current.data.lessons['ai-x']).toEqual(elsewhere.lessons['ai-x']);
+  expect(saved()?.lessons['ai-x']).toEqual(elsewhere.lessons['ai-x']);
+  expect(saved()?.lessons['dhcp']).toMatchObject({ furthestPosition: 3 });
+  expect(saved()?.lastLesson).toBe('dhcp');
 });
 
 test('update keeps the saved last lesson when it is not in `known` and the update names none', () => {
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'ai/x', 4, 9, now)));
+  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'ai-x', 'networking', 4, 9, now)));
   const { result } = renderHook(() => useProgress(known));
 
   act(() => result.current.update((d) => d));
-  expect(saved()?.lastLesson).toBe('ai/x');
+  expect(saved()?.lastLesson).toBe('ai-x');
 });
 
 test('a lesson missing from `known` for a while comes back with its progress', () => {
   const { result: networking } = renderHook(() => useProgress(known));
-  act(() => networking.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
+  act(() => networking.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
 
-  const { result: ai } = renderHook(() => useProgress({ 'ai/x': 9 }));
-  act(() => ai.current.update((d) => recordVisit(d, 'ai/x', 2, 9, now)));
+  const { result: ai } = renderHook(() => useProgress({ 'ai-x': 9 }));
+  act(() => ai.current.update((d) => recordVisit(d, 'ai-x', 'networking', 2, 9, now)));
 
-  const { result: both } = renderHook(() => useProgress({ ...known, 'ai/x': 9 }));
-  expect(Object.keys(both.current.data.lessons).sort()).toEqual(['ai/x', 'networking/dhcp']);
+  const { result: both } = renderHook(() => useProgress({ ...known, 'ai-x': 9 }));
+  expect(Object.keys(both.current.data.lessons).sort()).toEqual(['ai-x', 'dhcp']);
 });
 
 test('instances in the same document stay in sync', () => {
   const first = renderHook(() => useProgress(known));
   const second = renderHook(() => useProgress(known));
 
-  act(() => first.result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
-  expect(second.result.current.data.lessons['networking/dhcp']).toMatchObject({ furthestPosition: 3 });
+  act(() => first.result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
+  expect(second.result.current.data.lessons['dhcp']).toMatchObject({ furthestPosition: 3 });
   expect(second.result.current.data).toEqual(first.result.current.data);
 
   act(() => second.result.current.reset());
@@ -151,30 +152,60 @@ test('instances in the same document stay in sync', () => {
   expect(second.result.current.data).toEqual(emptyProgress());
 });
 
-test('each instance shows only the lessons it was given', () => {
+test('each instance clamps only the lessons it was given, and none loses a record', () => {
   const networking = renderHook(() => useProgress(known));
-  const ai = renderHook(() => useProgress({ 'ai/x': 9 }));
+  const ai = renderHook(() => useProgress({ 'ai-x': 9 }));
 
-  act(() => ai.result.current.update((d) => recordVisit(d, 'ai/x', 2, 9, now)));
-  act(() => networking.result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
+  act(() => ai.result.current.update((d) => recordVisit(d, 'ai-x', 'networking', 2, 9, now)));
+  act(() => networking.result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
 
-  expect(Object.keys(networking.result.current.data.lessons)).toEqual(['networking/dhcp']);
-  expect(Object.keys(ai.result.current.data.lessons)).toEqual(['ai/x']);
+  expect(Object.keys(networking.result.current.data.lessons).sort()).toEqual(['ai-x', 'dhcp']);
+  expect(Object.keys(ai.result.current.data.lessons).sort()).toEqual(['ai-x', 'dhcp']);
+});
+
+test('a change to the old key in another tab reloads', () => {
+  const { result } = renderHook(() => useProgress(known));
+  expect(result.current.data).toEqual(emptyProgress());
+
+  const v1 = JSON.stringify({
+    version: 1,
+    lastLesson: 'networking/dhcp',
+    lessons: { 'networking/dhcp': { status: 'finished', furthestPosition: 7, lastOpened: '2026-11-06T10:00:00.000Z' } },
+  });
+  act(() => {
+    window.localStorage.setItem(LEGACY_PROGRESS_KEY, v1);
+    window.dispatchEvent(new StorageEvent('storage', { key: LEGACY_PROGRESS_KEY, newValue: v1 }));
+  });
+  expect(result.current.data.lessons['dhcp']).toMatchObject({ status: 'finished' });
+  expect(result.current.data).toMatchObject({ lastLesson: 'dhcp', lastTrack: 'networking' });
+});
+
+test('saved v1 progress shows on load and moves to v2 with the next update', () => {
+  window.localStorage.setItem(
+    LEGACY_PROGRESS_KEY,
+    JSON.stringify({ version: 1, lastLesson: null, lessons: { 'networking/arp': { status: 'finished', furthestPosition: 6, lastOpened: '2026-11-06T10:00:00.000Z' } } }),
+  );
+  const { result } = renderHook(() => useProgress(known));
+  expect(result.current.data.lessons['arp']).toMatchObject({ status: 'finished' });
+
+  act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
+  expect(window.localStorage.getItem(LEGACY_PROGRESS_KEY)).toBeNull();
+  expect(Object.keys(saved()?.lessons ?? {}).sort()).toEqual(['arp', 'dhcp']);
 });
 
 test('a storage event for the progress key reloads the data', () => {
   const { result } = renderHook(() => useProgress(known));
   expect(result.current.data).toEqual(emptyProgress());
 
-  const fromOtherTab = recordVisit(emptyProgress(), 'networking/dhcp', 5, 8, now);
+  const fromOtherTab = recordVisit(emptyProgress(), 'dhcp', 'networking', 5, 8, now);
   act(() => writeFromAnotherTab(fromOtherTab));
   expect(result.current.data).toEqual(fromOtherTab);
 });
 
 test('clearing storage in another tab reloads the data too', () => {
-  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'networking/dhcp', 5, 8, now)));
+  window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'dhcp', 'networking', 5, 8, now)));
   const { result } = renderHook(() => useProgress(known));
-  expect(result.current.data.lastLesson).toBe('networking/dhcp');
+  expect(result.current.data.lastLesson).toBe('dhcp');
 
   act(() => {
     window.localStorage.clear();
@@ -186,19 +217,21 @@ test('clearing storage in another tab reloads the data too', () => {
 test('storage events for other keys are ignored', () => {
   const { result } = renderHook(() => useProgress(known));
   act(() => {
-    window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'networking/dhcp', 5, 8, now)));
+    window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(recordVisit(emptyProgress(), 'dhcp', 'networking', 5, 8, now)));
     window.dispatchEvent(new StorageEvent('storage', { key: 'techconcepts:theme', newValue: 'dark' }));
   });
   expect(result.current.data).toEqual(emptyProgress());
 });
 
-test('reset clears the key and the data', () => {
+test('reset clears both keys and the data', () => {
   const { result } = renderHook(() => useProgress(known));
-  act(() => result.current.update((d) => recordVisit(d, 'networking/dhcp', 3, 8, now)));
+  act(() => result.current.update((d) => recordVisit(d, 'dhcp', 'networking', 3, 8, now)));
   expect(window.localStorage.getItem(PROGRESS_KEY)).not.toBeNull();
 
+  window.localStorage.setItem(LEGACY_PROGRESS_KEY, '{}');
   act(() => result.current.reset());
   expect(window.localStorage.getItem(PROGRESS_KEY)).toBeNull();
+  expect(window.localStorage.getItem(LEGACY_PROGRESS_KEY)).toBeNull();
   expect(result.current.data).toEqual(emptyProgress());
   expect(result.current.ready).toBe(true);
 });

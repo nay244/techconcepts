@@ -15,7 +15,7 @@ const entries = getEntries('networking');
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const known = knownFrom(entries);
 const lessons: TrackResumeLesson[] = available.map((e) => {
-  const lesson = getLesson('networking', e.slug)!;
+  const lesson = getLesson(e.slug)!;
   return { key: e.key, title: e.title, url: e.url, places: resumePlaces(lesson), next: nextUps(lesson) };
 });
 const start = { title: available[0]!.title, url: available[0]!.url };
@@ -81,7 +81,7 @@ test('with no saved lesson progress, or a last lesson the site does not have, it
   expectFirstVisit(first.container);
   first.unmount();
 
-  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'networking/osi-model');
+  seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'osi-model');
   const second = render(cta());
   expectFirstVisit(second.container);
 });

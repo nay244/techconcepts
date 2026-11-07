@@ -1,7 +1,11 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { defineLesson, defineTrack, LessonValidationError, validateLesson } from './define';
-import type { LessonInput } from './schema';
-import { makeLesson, makeTwoUnitLesson, makeUnit, type UnitInput } from './test-fixtures';
+import { checkStructure, definedWith, defineTrack, LessonValidationError } from './define';
+import { defineLegacyLesson, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
+import type { CertificationTrack } from './schema';
+import { cite } from './sources';
+import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeLesson, makeLongLesson, makeTwoUnitLesson, makeUnit, OBJ_URL } from './test-fixtures';
+
+// The structural rules (`checkStructure`) and the legacy-only rules, through the legacy path, which runs both.
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has
 // places, a flag cue and a text cue, layers, and a board on `subnet` only.
@@ -9,7 +13,7 @@ vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./tes
 
 const issuesOf = (input: unknown): string[] => {
   try {
-    validateLesson(input);
+    validateLegacyLesson(input);
     return [];
   } catch (e) {
     if (e instanceof LessonValidationError) return e.issues;
@@ -23,12 +27,11 @@ afterEach(() => {
 });
 
 // Shorthand for reaching into the first unit and its events.
-const unit = (l: LessonInput, i = 0): UnitInput => l.units[i]!;
-const ev = (l: LessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
-const words = (n: number) => 'word '.repeat(n).trim();
+const unit = (l: LegacyLessonInput, i = 0): LegacyUnitInput => l.units[i]!;
+const ev = (l: LegacyLessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
 
 /** The fixture with a rules panel, as Firewalls has: a rule list and the connections it remembers. */
-function withRulesPanel(): LessonInput {
+function withRulesPanel(): LegacyLessonInput {
   const l = makeLesson();
   const columns = [
     { key: 'n', label: '#' },
@@ -46,11 +49,9 @@ function withRulesPanel(): LessonInput {
 
 // ---------------------------------------------------------------- the fixtures
 
-test('a valid one-unit lesson passes and comes back unchanged', () => {
+test('a valid one-unit lesson passes and comes back lifted, every word as written', () => {
   const input = makeLesson();
-  const { lesson, warnings } = validateLesson(input);
-  expect(warnings).toEqual([]);
-  expect(lesson).toEqual(input);
+  expect(validateLegacyLesson(input)).toEqual(liftedFixture(input));
 });
 
 test('the two-unit fixture is valid, and every call gives a fresh copy', () => {
@@ -67,7 +68,7 @@ test('layers and labels default to empty', () => {
   const input = makeLesson();
   delete (unit(input).scene as any).layers;
   delete (unit(input).scene as any).labels;
-  const { lesson } = validateLesson(input);
+  const lesson = validateLegacyLesson(input);
   expect(lesson.units[0]!.scene.layers).toEqual([]);
   expect(lesson.units[0]!.scene.labels).toEqual({});
 });
@@ -151,20 +152,21 @@ test('a board prefix is a whole number from 0 to 32, or null', () => {
 
 test('reports every broken rule together', () => {
   const l = makeLesson();
-  unit(l).steps = unit(l).steps.slice(0, 3);
+  unit(l).references = [];
   ev(l, 0, 0).from = 'mars';
   ev(l, 0, 0).cues = [{ cue: 'status' }];
   ev(l, 1, 0).log.colour = 'blue';
   let caught: unknown;
   try {
-    validateLesson(l);
+    validateLegacyLesson(l);
   } catch (e) {
     caught = e;
   }
   expect(caught).toBeInstanceOf(LessonValidationError);
   const err = caught as LessonValidationError;
   expect(err.issues).toHaveLength(4);
-  expect(err.issues[0]).toMatch(/4–6 steps/);
+  // The structural rules first, then the legacy-only rules.
+  expect(err.issues.at(-1)).toMatch(/at least 1 reference/);
   expect(err.issues.join('\n')).toMatch(/"mars"/);
   expect(err.issues.join('\n')).toMatch(/cue "status" needs an arg/);
   expect(err.issues.join('\n')).toMatch(/"colour"/);
@@ -172,60 +174,10 @@ test('reports every broken rule together', () => {
   for (const issue of err.issues) expect(err.message).toContain(issue);
 });
 
-// ---------------------------------------------------------------- limits
+// ---------------------------------------------------------------- legacy-only rules and answers
+// The numeric limits (steps, facts, words, questions, options, terms, names) are a track's: see limits.test.ts.
 
-test('a unit needs 4–6 steps', () => {
-  const four = makeLesson();
-  unit(four).steps = unit(four).steps.slice(0, 4);
-  expect(issuesOf(four)).toEqual([]);
-  const seven = makeLesson();
-  const extra = (n: number) => ({ ...structuredClone(unit(seven).steps[4]!), id: `extra${n}`, events: [] });
-  unit(seven).steps.push(extra(6));
-  expect(issuesOf(seven)).toEqual([]);
-  unit(seven).steps.push(extra(7));
-  expect(joined(seven)).toMatch(/4–6 steps; this one has 7/);
-});
-
-test('a step needs 2–4 facts', () => {
-  const few = makeLesson();
-  unit(few).steps[0]!.facts = [{ label: 'One', value: '1' }];
-  expect(joined(few)).toMatch(/Step "hello" needs 2–4 facts/);
-  const many = makeLesson();
-  unit(many).steps[0]!.facts = Array.from({ length: 5 }, (_, i) => ({ label: `F${i}`, value: `${i}` }));
-  expect(joined(many)).toMatch(/2–4 facts/);
-});
-
-test('narratives stop at 120 words and the hook at 80, ** markers aside', () => {
-  const ok = makeLesson();
-  unit(ok).steps[0]!.narrative = `**${words(120)}**`;
-  unit(ok).overview.hook = words(80);
-  expect(issuesOf(ok)).toEqual([]);
-  const long = makeLesson();
-  unit(long).steps[0]!.narrative = words(121);
-  unit(long).overview.hook = words(81);
-  expect(joined(long)).toMatch(/121 words; the limit is 120/);
-  expect(joined(long)).toMatch(/81 words; the limit is 80/);
-});
-
-test('a one-unit lesson has 2–3 Practice questions', () => {
-  const one = makeLesson();
-  unit(one).practice = unit(one).practice.slice(0, 1);
-  expect(joined(one)).toMatch(/2–3 questions/);
-  const three = makeLesson();
-  unit(three).practice.push({ ...structuredClone(unit(three).practice[0]!), id: 'q3' });
-  expect(issuesOf(three)).toEqual([]);
-  unit(three).practice.push({ ...structuredClone(unit(three).practice[0]!), id: 'q4' });
-  expect(joined(three)).toMatch(/2–3 questions/);
-});
-
-test('a question has 2–4 options and an answer that points at one', () => {
-  const few = makeLesson();
-  unit(few).practice[1]!.options = unit(few).practice[1]!.options.slice(0, 1);
-  expect(joined(few)).toMatch(/Question "q2" needs 2–4 options/);
-  const many = makeLesson();
-  const option = unit(many).practice[0]!.options[0]!;
-  unit(many).practice[0]!.options = [option, option, option, option, option];
-  expect(joined(many)).toMatch(/2–4 options/);
+test('a question’s answer points at one of its options', () => {
   for (const answer of [3, -1]) {
     const l = makeLesson();
     unit(l).practice[0]!.answer = answer;
@@ -234,20 +186,6 @@ test('a question has 2–4 options and an answer that points at one', () => {
   const frac = makeLesson();
   unit(frac).practice[0]!.answer = 0.5;
   expect(joined(frac)).toMatch(/answer/);
-});
-
-test('Learn has 3–10 terms and 2–6 pattern names', () => {
-  const few = makeLesson();
-  unit(few).learn.terms = unit(few).learn.terms.slice(0, 2);
-  unit(few).learn.pattern.names = ['Only one'];
-  expect(joined(few)).toMatch(/3–10 terms/);
-  expect(joined(few)).toMatch(/2–6 names/);
-  const many = makeLesson();
-  const term = unit(many).learn.terms[0]!;
-  unit(many).learn.terms = Array.from({ length: 11 }, () => term);
-  unit(many).learn.pattern.names = Array.from({ length: 7 }, (_, i) => `Name ${i}`);
-  expect(joined(many)).toMatch(/3–10 terms/);
-  expect(joined(many)).toMatch(/2–6 names/);
 });
 
 test('each unit needs a reference and the lesson a cert tag', () => {
@@ -336,7 +274,7 @@ test('a scene with no start is given an empty one, as its layers and labels are'
   const l = makeLesson();
   delete (unit(l).scene as { start?: unknown }).start;
   delete (unit(l).scene as { layers?: unknown }).layers;
-  const { lesson } = validateLesson(l);
+  const lesson = validateLegacyLesson(l);
   expect([lesson.units[0]!.scene.start, lesson.units[0]!.scene.layers]).toEqual([[], []]);
 });
 
@@ -566,7 +504,7 @@ test('sequence view needs two parties', () => {
 });
 
 test('net-map scene titles over 51 characters are rejected', () => {
-  const at = (figure: LessonInput['figure'], length: number) => {
+  const at = (figure: LegacyLessonInput['figure'], length: number) => {
     const l = makeLesson({ figure });
     unit(l).scene.title = 'x'.repeat(length);
     return issuesOf(l);
@@ -576,66 +514,63 @@ test('net-map scene titles over 51 characters are rejected', () => {
   expect(at('dhcp', 52)).toEqual([]);
 });
 
-// ---------------------------------------------------------------- minutes
+// ---------------------------------------------------------------- length
 
-test('a one-unit lesson fails above 15 minutes and warns above 12', () => {
-  // The fixture is about 5 minutes: 0.5 × 5 steps + 1 for Practice + its words.
-  const long = makeLesson();
-  unit(long).overview.description = words(2500);
-  expect(joined(long)).toMatch(/about \d+ minutes.*limit is 15/);
-
-  const warn = makeLesson();
-  unit(warn).overview.description = words(1700);
-  const { warnings } = validateLesson(warn);
-  expect(warnings).toHaveLength(1);
-  expect(warnings[0]).toMatch(/12/);
+test('a long lesson is not rejected for its length', () => {
+  const long = makeLongLesson();
+  expect(unit(long).steps).toHaveLength(6);
+  expect(unit(long).practice).toHaveLength(3);
+  expect(issuesOf(long)).toEqual([]);
 });
 
-test('a multi-unit lesson needs exactly 2 questions per unit and checks minutes per unit', () => {
+test('a lesson may override a limit once, not twice', () => {
+  const once = { ...liftedFixture(), overrides: [{ limit: 'hookWords' as const, max: 90, reason: 'First reason.' }] };
+  expect(checkStructure(once)).toEqual([]);
+  const doubled = {
+    ...once,
+    overrides: [...once.overrides, { limit: 'hookWords' as const, max: 95, reason: 'Second reason.' }],
+  };
+  expect(checkStructure(doubled)).toEqual([expect.stringMatching(/"fixture-lesson".*hookWords.*more than once/)]);
+});
+
+test('a multi-unit legacy lesson needs exactly 2 questions per unit, and a one-unit lesson is left to its track', () => {
   const three = makeTwoUnitLesson();
   unit(three, 1).practice.push({ ...structuredClone(unit(three, 1).practice[0]!), id: 'q3' });
   expect(joined(three)).toMatch(/Unit "beta".*exactly 2 questions/);
-
-  // Each unit about 10 minutes, so the lesson is about 20: the lesson as a whole has no cap.
-  const long = makeTwoUnitLesson();
-  for (const u of long.units) u.overview.description = words(1300);
-  expect(validateLesson(long).warnings).toEqual([]);
-
-  // One unit over 15 (with half a minute of Practice) fails on its own.
-  unit(long, 1).overview.description = words(2500);
-  const issues = issuesOf(long);
-  expect(issues).toHaveLength(1);
-  expect(issues[0]).toMatch(/Unit "beta" takes about \d+ minutes.*limit is 15/);
+  const four = makeLesson();
+  unit(four).practice.push({ ...structuredClone(unit(four).practice[0]!), id: 'q3' });
+  unit(four).practice.push({ ...structuredClone(unit(four).practice[0]!), id: 'q4' });
+  expect(issuesOf(four)).toEqual([]);
 });
 
-// ---------------------------------------------------------------- defineLesson / defineTrack
+// ---------------------------------------------------------------- defineLegacyLesson / defineTrack
 
-test('defineLesson returns the validated lesson without warning when it is short', () => {
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  expect(defineLesson(makeLesson()).slug).toBe('fixture-lesson');
-  expect(warn).not.toHaveBeenCalled();
+test('defineLegacyLesson returns the validated lesson, lifted', () => {
+  const lesson = defineLegacyLesson(makeLesson({ slug: 'dhcp' }));
+  expect([lesson.slug, lesson.origin]).toEqual(['dhcp', 'legacy']);
 });
 
-test('defineLesson logs each warning, naming the lesson', () => {
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  const input = makeLesson();
-  unit(input).overview.description = words(1700);
-  defineLesson(input);
-  expect(warn).toHaveBeenCalledTimes(1);
-  expect(String(warn.mock.calls[0]![0])).toContain(input.slug);
+test('the legacy path’s lesson is a defined lesson, recorded as legacy; one lifted without its checks is not', () => {
+  expect(definedWith(defineLegacyLesson(makeLesson({ slug: 'dhcp' })))).toBe('legacy');
+  expect(definedWith(validateLegacyLesson(makeLesson()))).toBe('legacy');
+  expect(definedWith(liftedFixture())).toBeUndefined();
+  expect(definedWith(undefined)).toBeUndefined();
+  expect(definedWith('dhcp')).toBeUndefined();
 });
 
-test('defineLesson throws LessonValidationError for a bad lesson', () => {
-  const input = makeLesson();
-  unit(input).steps = unit(input).steps.slice(0, 2);
-  expect(() => defineLesson(input)).toThrow(LessonValidationError);
+test('defineLegacyLesson throws LessonValidationError for a bad lesson', () => {
+  const input = makeLesson({ slug: 'dhcp' });
+  unit(input).references = [];
+  expect(() => defineLegacyLesson(input)).toThrow(LessonValidationError);
 });
 
 const trackOf = (parts: { id: string; slugs: string[] }[]) => ({
   id: 'demo',
+  type: 'concept' as const,
   title: 'Demo',
   description: 'A demo track.',
   level: 'beginner' as const,
+  limits: structuredClone(FIXTURE_LIMITS),
   parts: parts.map((p) => ({ id: p.id, title: p.id, lessons: p.slugs.map((slug) => ({ slug, title: slug })) })),
 });
 
@@ -660,4 +595,73 @@ test('defineTrack rejects duplicate part ids, empty parts and bad slugs', () => 
   expect(() => defineTrack(trackOf([{ id: 'one', slugs: [] }]))).toThrow(/lessons/);
   expect(() => defineTrack(trackOf([{ id: 'one', slugs: ['Bad Slug'] }]))).toThrow(/slug/);
   expect(() => defineTrack({ ...trackOf([{ id: 'one', slugs: ['a'] }]), level: 'expert' as never })).toThrow(/level/);
+});
+
+test('a track has a type and limits', () => {
+  const { limits: _limits, ...noLimits } = trackOf([{ id: 'one', slugs: ['a'] }]);
+  expect(() => defineTrack(noLimits as never)).toThrow(/limits/);
+  const { type: _type, ...noType } = trackOf([{ id: 'one', slugs: ['a'] }]);
+  expect(() => defineTrack(noType as never)).toThrow(/type/);
+  const bad = trackOf([{ id: 'one', slugs: ['a'] }]);
+  bad.limits.steps = { min: 7, max: 6 };
+  expect(() => defineTrack(bad)).toThrow(/min must not exceed max/);
+});
+
+test('a concept track’s lessons cannot carry objectives', () => {
+  const t = trackOf([{ id: 'one', slugs: ['a'] }]);
+  const withObjectives = {
+    ...t,
+    parts: [{ ...t.parts[0]!, lessons: [{ ...t.parts[0]!.lessons[0]!, objectives: makeCertTrack().parts[0]!.lessons[0]!.objectives }] }],
+  };
+  expect(() => defineTrack(withObjectives as never)).toThrow(/objectives/);
+});
+
+// ---------------------------------------------------------------- certification tracks
+
+test('a certification track maps every lesson to pinned objectives', () => {
+  expect(() => defineTrack(makeCertTrack(), FIXTURE_SOURCES)).not.toThrow();
+});
+
+const BAD_CERT_TRACKS: [string, (t: CertificationTrack) => void, RegExp?][] = [
+  ['a lesson with no objective', (t) => { t.parts[0]!.lessons[0]!.objectives = []; }, /objectives/],
+  [
+    'an objective cited from another document',
+    (t) => { t.parts[0]!.lessons[0]!.objectives[0]!.cite = cite('rfc-example', '3.1', { sources: FIXTURE_SOURCES }); },
+    /example-objectives/,
+  ],
+  ['a version that is not the registry’s', (t) => { t.exam.version = 'V2'; }, /version "V2".*"V1"/],
+  ['an exam code the track does not have', (t) => { t.parts[0]!.lessons[0]!.objectives[0]!.exam = 'EX-999'; }, /EX-999/],
+  ['an objective that is not N.N', (t) => { t.parts[0]!.lessons[0]!.objectives[0]!.objective = '2'; }, /objective/],
+  [
+    'a citation at another objective',
+    (t) => { t.parts[0]!.lessons[0]!.objectives[0]!.cite = cite('example-objectives', '9.9', { sources: FIXTURE_SOURCES, url: OBJ_URL }); },
+    /at section 9\.9.*objective is 2\.6/,
+  ],
+  ['a source the registry does not have', (t) => { t.exam.source = 'missing-objectives'; }, /missing-objectives/],
+  ['a source that is not an objectives document', (t) => { t.exam.source = 'rfc-example'; }, /rfc-example.*cert-objectives/],
+  [
+    'the same objective listed twice in a lesson',
+    (t) => { t.parts[0]!.lessons[0]!.objectives.push(structuredClone(t.parts[0]!.lessons[0]!.objectives[0]!)); },
+    /lists objective EX-101 2\.6 twice/,
+  ],
+  [
+    'a citation whose label is not the registry’s',
+    (t) => { t.parts[0]!.lessons[0]!.objectives[0]!.cite.label = 'Made up'; },
+    /label should be/,
+  ],
+];
+test.each(BAD_CERT_TRACKS)('rejects %s', (_, change, message) => {
+  const t = makeCertTrack();
+  change(t);
+  expect(() => defineTrack(t, FIXTURE_SOURCES)).toThrow(message);
+});
+
+test('the same objective may appear in different lessons, and a lesson may list several', () => {
+  const t = makeCertTrack();
+  t.parts[0]!.lessons[1]!.objectives.push(structuredClone(t.parts[0]!.lessons[0]!.objectives[0]!));
+  expect(() => defineTrack(t, FIXTURE_SOURCES)).not.toThrow();
+});
+
+test('a certification track against the empty real registry has no source to pin to', () => {
+  expect(() => defineTrack(makeCertTrack())).toThrow(/"example-objectives"/);
 });

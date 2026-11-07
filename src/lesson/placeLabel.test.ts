@@ -1,13 +1,10 @@
-import { expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
-import { makeLesson } from '../content/test-fixtures';
+import { expect, test } from 'vitest';
+import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { slotsFor } from '../engine/timeline';
 import { placeLabel } from './placeLabel';
 
-vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../content/test-fixtures')).FIXTURE_PARTS }));
-
 test('placeLabel says the place in the unit, never a step’s title', () => {
-  const lesson = validateLesson(makeLesson()).lesson;
+  const lesson = liftedFixture(makeLesson());
   const unit = lesson.units[0]!;
   expect(slotsFor(lesson).map((slot) => placeLabel(unit, slot))).toEqual([
     'Overview',

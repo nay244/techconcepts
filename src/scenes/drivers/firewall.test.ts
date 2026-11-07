@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawFirewall, type FirewallSceneData } from '../../art/scenes/firewall';
-import firewalls from '../../content/lessons/networking/firewalls';
+import firewalls from '../../content/lessons/firewalls';
 import type { SceneEvent } from '../../content/schema';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
 import { sceneViewOf, type PanelMark, type PlayOptions, type SceneDriver, type SceneView } from '../driver';

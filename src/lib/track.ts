@@ -39,8 +39,10 @@ export interface ReadyLesson {
   url: string;
   subtitle: string;
   summary: string;
-  /** '96 min', then '14 protocols' for a lesson of several units, then the names of its exams. */
+  /** '14 protocols' for a lesson of several units, then the names of its exams. */
   meta: string[];
+  /** What `meta` holds, for screen readers: protocols and exams, or exams alone. */
+  metaLabel: 'Protocols and exams' | 'Exams';
   /** Its exams, for the filter. */
   tags: CertTag[];
   /** For each position, what the card says while the lesson is in progress there (`cardPlaces`). */
@@ -66,6 +68,7 @@ export function trackParts(track: Track, entries: LessonSummary[], lessonOf: (en
       const entry = entries.find((e) => e.slug === planned.slug);
       if (entry === undefined) throw new Error(`The ${track.id} track lists "${planned.slug}", which has no entry.`);
       if (!entry.available) return { ready: false, key: entry.key, n: two(entry.number), title: entry.title };
+      const protocols = entry.units > 1 ? [`${entry.units} protocols`] : [];
       return {
         ready: true,
         key: entry.key,
@@ -75,7 +78,8 @@ export function trackParts(track: Track, entries: LessonSummary[], lessonOf: (en
         url: entry.url,
         subtitle: entry.subtitle,
         summary: entry.summary,
-        meta: [`${entry.minutes} min`, ...(entry.units > 1 ? [`${entry.units} protocols`] : []), ...entry.certTags.map((t) => CERT_TAGS[t])],
+        meta: [...protocols, ...entry.certTags.map((t) => CERT_TAGS[t])],
+        metaLabel: protocols.length > 0 ? 'Protocols and exams' : 'Exams',
         tags: entry.certTags,
         places: cardPlaces(lessonOf(entry)),
       };

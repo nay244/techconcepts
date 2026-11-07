@@ -6,10 +6,22 @@ import { defineTrack } from '../define';
  */
 export const networkingTrack = defineTrack({
   id: 'networking',
+  type: 'concept',
   title: 'Networking Concepts',
   description:
-    'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it. Short, visual lessons you can finish in one sitting.',
+    'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it. Visual lessons at your own pace: stop anywhere and pick up where you left off.',
   level: 'beginner',
+  limits: {
+    steps: { min: 4, max: 6 },
+    factsPerStep: { min: 2, max: 4 },
+    practiceQuestions: { min: 2, max: 3 },
+    optionsPerQuestion: { min: 2, max: 4 },
+    learnTerms: { min: 3, max: 10 },
+    patternNames: { min: 2, max: 6 },
+    narrativeWords: 120,
+    hookWords: 80,
+    deepWords: 90,
+  },
   parts: [
     {
       id: 'big-picture',

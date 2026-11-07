@@ -1,14 +1,16 @@
+import type { z } from 'zod';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
+import { checkCitedRules, citationsOf } from './cited';
+import { checkCitation, SOURCES, sourceListOf, type SourceRegistry } from './sources';
 import { formatBytes } from '../lib/format';
-import { countWords, estimateMinutes, estimateUnitMinutes, MAX_MINUTES, PRACTICE_MINUTES_PER_UNIT, WARN_MINUTES } from './estimate';
 import {
   lessonSchema,
   trackSchema,
+  type CertificationTrack,
   type Cue,
   type Lesson,
-  type LessonInput,
   type Row,
   type SceneEvent,
   type TableDef,
@@ -17,8 +19,6 @@ import {
   type Unit,
 } from './schema';
 
-const MAX_NARRATIVE_WORDS = 120;
-const MAX_HOOK_WORDS = 80;
 /** Longer titles overflow the net-map figure's fixed frame. */
 const MAX_NET_MAP_TITLE = 51;
 
@@ -57,11 +57,6 @@ function slugOf(input: unknown): string | undefined {
   return undefined;
 }
 
-/** True when `n` is from `min` to `max`, both included. */
-function inRange(n: number, min: number, max: number): boolean {
-  return n >= min && n <= max;
-}
-
 /** The rows a unit's table events give the table `id`, whole: each row an add brings, and each a replace brings. */
 function rowsGivenTo(u: Unit, id: string): Row[] {
   const events = u.steps.flatMap((step) => step.events).filter((e): e is TableEvent => e.type === 'table' && e.table === id);
@@ -90,50 +85,6 @@ interface UnitContext {
 }
 
 // ---------------------------------------------------------------- unit rules
-
-function checkUnitLimits(u: Unit, at: string, multiUnit: boolean, issues: string[]): void {
-  if (!inRange(u.steps.length, 4, 6)) issues.push(`${at}: a unit needs 4–6 steps; this one has ${u.steps.length}.`);
-  for (const id of duplicates(u.steps.map((s) => s.id))) issues.push(`${at}: Duplicate step id "${id}".`);
-
-  for (const step of u.steps) {
-    if (!inRange(step.facts.length, 2, 4)) {
-      issues.push(`${at}: Step "${step.id}" needs 2–4 facts; it has ${step.facts.length}.`);
-    }
-    const words = countWords(step.narrative);
-    if (words > MAX_NARRATIVE_WORDS) {
-      issues.push(`${at}: Step "${step.id}" narrative is ${words} words; the limit is ${MAX_NARRATIVE_WORDS} words.`);
-    }
-  }
-
-  const hookWords = countWords(u.overview.hook);
-  if (hookWords > MAX_HOOK_WORDS) {
-    issues.push(`${at}: the overview hook is ${hookWords} words; the limit is ${MAX_HOOK_WORDS} words.`);
-  }
-
-  const questions = u.practice.length;
-  if (multiUnit && questions !== 2) {
-    issues.push(`${at}: in a lesson of many units, Practice needs exactly 2 questions per unit; this one has ${questions}.`);
-  } else if (!multiUnit && !inRange(questions, 2, 3)) {
-    issues.push(`${at}: Practice needs 2–3 questions; this unit has ${questions}.`);
-  }
-  for (const id of duplicates(u.practice.map((q) => q.id))) issues.push(`${at}: Duplicate question id "${id}".`);
-  for (const q of u.practice) {
-    if (!inRange(q.options.length, 2, 4)) {
-      issues.push(`${at}: Question "${q.id}" needs 2–4 options; it has ${q.options.length}.`);
-    }
-    if (q.answer < 0 || q.answer >= q.options.length) {
-      issues.push(`${at}: Question "${q.id}" has answer ${q.answer}, but it has ${q.options.length} options (answers count from 0).`);
-    }
-  }
-
-  if (!inRange(u.learn.terms.length, 3, 10)) {
-    issues.push(`${at}: Learn needs 3–10 terms; this unit has ${u.learn.terms.length}.`);
-  }
-  if (!inRange(u.learn.pattern.names.length, 2, 6)) {
-    issues.push(`${at}: Learn's pattern needs 2–6 names; this unit has ${u.learn.pattern.names.length}.`);
-  }
-  if (u.references.length < 1) issues.push(`${at}: a unit needs at least 1 reference.`);
-}
 
 function checkScene(c: UnitContext, at: string): void {
   const { unit: u, parts, figure, issues } = c;
@@ -291,7 +242,13 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
 
 function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
   const at = `Unit "${u.id}"`;
-  checkUnitLimits(u, at, l.units.length > 1, issues);
+  for (const id of duplicates(u.steps.map((s) => s.id))) issues.push(`${at}: Duplicate step id "${id}".`);
+  for (const id of duplicates(u.practice.map((q) => q.id))) issues.push(`${at}: Duplicate question id "${id}".`);
+  for (const q of u.practice) {
+    if (q.answer < 0 || q.answer >= q.options.length) {
+      issues.push(`${at}: Question "${q.id}" has answer ${q.answer}, but it has ${q.options.length} options (answers count from 0).`);
+    }
+  }
 
   const c: UnitContext = {
     figure: l.figure,
@@ -322,61 +279,141 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
 // ---------------------------------------------------------------- public API
 
 /**
- * Checks a lesson and returns it with any warnings. Throws one
- * LessonValidationError listing every problem found. Shape problems (a missing
- * field, a wrong type, a key the schema does not know) are reported first on
- * their own, because the rules below need a well-formed lesson to compare against.
+ * The lessons a validator has returned, each with what it was checked against: the source registry for a cited
+ * lesson, 'legacy' for the legacy path. The registry accepts only these, and only a cited lesson checked against the
+ * real `SOURCES`, so no lesson file can skip the rules or bring its own sources.
  */
-export function validateLesson(input: unknown): { lesson: Lesson; warnings: string[] } {
-  const parsed = lessonSchema.safeParse(input);
-  if (!parsed.success) throw new LessonValidationError(parsed.error.issues.map(describeZodIssue), slugOf(input));
-  const lesson = parsed.data;
+const defined = new WeakMap<object, SourceRegistry | 'legacy'>();
 
-  const issues: string[] = [];
-  if (lesson.certTags.length < 1) issues.push('A lesson needs at least 1 cert tag.');
-  for (const id of duplicates(lesson.units.map((u) => u.id))) issues.push(`Duplicate unit id "${id}".`);
-  for (const u of lesson.units) checkUnit(lesson, u, issues);
-
-  // A one-unit lesson is capped as a whole. A lesson of many units (lesson 1)
-  // is exempt as a whole, and each unit is capped instead.
-  const warnings: string[] = [];
-  if (lesson.units.length === 1) {
-    const minutes = estimateMinutes(lesson);
-    if (minutes > MAX_MINUTES) {
-      issues.push(
-        `This lesson takes about ${minutes} minutes to get through; the limit is ${MAX_MINUTES} minutes. Trim the prose or split the lesson.`,
-      );
-    } else if (minutes > WARN_MINUTES) {
-      warnings.push(`This lesson takes about ${minutes} minutes, over the ${WARN_MINUTES}-minute target. Consider trimming it.`);
-    }
-  } else {
-    for (const u of lesson.units) {
-      const minutes = estimateUnitMinutes(u, PRACTICE_MINUTES_PER_UNIT);
-      if (minutes > MAX_MINUTES) {
-        issues.push(`Unit "${u.id}" takes about ${minutes} minutes to get through; the limit is ${MAX_MINUTES} minutes per unit.`);
-      }
-    }
-  }
-
-  if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
-  return { lesson, warnings };
-}
-
-/** The entry point for lesson files: validates at import, so a bad lesson fails the build. */
-export function defineLesson(input: LessonInput): Lesson {
-  const { lesson, warnings } = validateLesson(input);
-  for (const warning of warnings) console.warn(`[lesson ${lesson.slug}] ${warning}`);
+/**
+ * @internal Only the two lesson paths call it: records a lesson that `validateLesson` (with the registry it used) or
+ * `validateLegacyLesson` (with 'legacy') has just checked, and returns it. A lesson file never calls it.
+ */
+export function markDefined(lesson: Lesson, checkedAgainst: SourceRegistry | 'legacy'): Lesson {
+  defined.set(lesson, checkedAgainst);
   return lesson;
 }
 
-/** Validates a track's shape and that part ids and lesson slugs are unique. */
-export function defineTrack(t: Track): Track {
+/**
+ * What a validator checked `l` against when it returned `l`: the source registry of a cited lesson, or 'legacy'.
+ * Undefined for anything a validator did not return, such as a copy or a lesson built by hand.
+ */
+export function definedWith(l: unknown): SourceRegistry | 'legacy' | undefined {
+  return typeof l === 'object' && l !== null ? defined.get(l) : undefined;
+}
+
+/**
+ * Parses a lesson's shape with `schema`, or throws one LessonValidationError naming every shape problem (a missing
+ * field, a wrong type, a key the schema does not know) with its path. Shape problems are reported on their own,
+ * because the rules after them need a well-formed lesson to compare against.
+ */
+export function parseLessonShape<S extends z.ZodType>(schema: S, input: unknown): z.output<S> {
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) throw new LessonValidationError(parsed.error.issues.map(describeZodIssue), slugOf(input));
+  return parsed.data;
+}
+
+/**
+ * The structural rules every lesson keeps, whichever path it came by, as readable issues (empty when it has none): a
+ * cert tag; unique unit, step, question, event and table ids; at most one override per limit; and a scene, events,
+ * tables and cues that fit the lesson's figure and each other.
+ */
+export function checkStructure(lesson: Lesson): string[] {
+  const issues: string[] = [];
+  if (lesson.certTags.length < 1) issues.push('A lesson needs at least 1 cert tag.');
+  for (const id of duplicates(lesson.units.map((u) => u.id))) issues.push(`Duplicate unit id "${id}".`);
+  for (const limit of duplicates(lesson.overrides.map((o) => o.limit))) {
+    issues.push(`Lesson "${lesson.slug}" overrides the ${limit} limit more than once; keep one override, with one reason.`);
+  }
+  for (const u of lesson.units) checkUnit(lesson, u, issues);
+  return issues;
+}
+
+/**
+ * What a cited lesson file writes. Its references are left out (they are listed from its citations); citation lists,
+ * overrides and a scene's layers, labels and start may be.
+ */
+export type LessonInput = z.input<typeof lessonSchema>;
+
+/**
+ * Checks a lesson in the cited shape against `sources` and returns it, origin 'cited', with each unit's references
+ * listed from its citations in reading order. Its shape first (alone, as `parseLessonShape` reports it); then,
+ * together, the cited rules (`cited.ts`: one unit, no written references, citations, the OSI badge, backing and
+ * traces, sound citations, no lesson numbers) and the structural rules every lesson keeps (`checkStructure`). Throws
+ * one LessonValidationError listing every problem. The numeric limits are the track's, checked in the registry.
+ * Records `sources` with the lesson: the registry accepts a cited lesson only when that is the real `SOURCES`, so
+ * another list is for tests alone.
+ */
+export function validateLesson(input: unknown, sources: SourceRegistry = SOURCES): Lesson {
+  const lesson: Lesson = { ...parseLessonShape(lessonSchema, input), origin: 'cited' };
+  const issues = [...checkCitedRules(lesson, sources), ...checkStructure(lesson)];
+  if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
+  const units = lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) }));
+  return markDefined({ ...lesson, units }, sources);
+}
+
+/**
+ * The entry point for every new lesson file: it validates at import against `SOURCES`, the real registry, so a bad
+ * lesson, or one citing a source not in `SOURCES`, fails the build.
+ */
+export function defineLesson(input: LessonInput): Lesson {
+  return validateLesson(input, SOURCES);
+}
+
+/** Issues with a certification track's pin and the objectives its lessons map to. */
+function checkCertification(t: CertificationTrack, sources: SourceRegistry): string[] {
+  const issues: string[] = [];
+  const { exam } = t;
+  const source = Object.hasOwn(sources, exam.source) ? sources[exam.source] : undefined;
+  if (source === undefined) {
+    issues.push(`The exam source "${exam.source}" is not in the source registry.`);
+  } else {
+    if (source.kind !== 'cert-objectives') {
+      issues.push(`The exam source "${exam.source}" is a source of kind "${source.kind}", not cert-objectives.`);
+    }
+    if (source.version !== exam.version) {
+      issues.push(
+        `The track pins exam version "${exam.version}", but the registry's "${exam.source}" is version "${source.version ?? 'unversioned'}"; ` +
+          'pin the version the registry holds, or update the registry first.',
+      );
+    }
+  }
+  for (const part of t.parts) {
+    for (const lesson of part.lessons) {
+      const seen = new Set<string>();
+      for (const o of lesson.objectives) {
+        const at = `Lesson "${lesson.slug}", objective ${o.exam} ${o.objective}`;
+        if (!exam.codes.includes(o.exam)) {
+          issues.push(`${at}: "${o.exam}" is not one of the track's exam codes (${exam.codes.join(', ')}).`);
+        }
+        if (seen.has(`${o.exam} ${o.objective}`)) issues.push(`Lesson "${lesson.slug}" lists objective ${o.exam} ${o.objective} twice.`);
+        seen.add(`${o.exam} ${o.objective}`);
+        if (o.cite.source !== exam.source) {
+          issues.push(`${at}: the citation is from "${o.cite.source}", but the track's objectives document is "${exam.source}".`);
+        }
+        if (o.cite.section !== o.objective) {
+          issues.push(`${at}: the citation is at section ${o.cite.section}, but the objective is ${o.objective}; cite the objective's own section.`);
+        }
+        for (const problem of checkCitation(o.cite, sources, 'objectives')) issues.push(`${at}: ${problem}`);
+      }
+    }
+  }
+  return issues;
+}
+
+/**
+ * Validates a track's shape, that part ids and lesson slugs are unique and, for a certification track, its pin and
+ * the objectives its lessons map to, checked against `sources`. Throws one Error listing every problem. The registry
+ * checks every track again against the real `SOURCES` (`checkTracks`), so another list is for tests alone.
+ */
+export function defineTrack(t: Track, sources: SourceRegistry = SOURCES): Track {
   const parsed = trackSchema.safeParse(t);
   const issues = parsed.success ? [] : parsed.error.issues.map(describeZodIssue);
   if (parsed.success) {
     for (const id of duplicates(parsed.data.parts.map((p) => p.id))) issues.push(`Duplicate part id "${id}".`);
     const slugs = parsed.data.parts.flatMap((p) => p.lessons.map((x) => x.slug));
     for (const slug of duplicates(slugs)) issues.push(`Duplicate lesson slug "${slug}".`);
+    if (parsed.data.type === 'certification') issues.push(...checkCertification(parsed.data, sources));
   }
   if (!parsed.success || issues.length > 0) {
     const name = typeof t?.id === 'string' ? ` "${t.id}"` : '';

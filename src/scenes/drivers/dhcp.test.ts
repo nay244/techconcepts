@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawDhcp } from '../../art/scenes/dhcp';
 import type { SceneEvent } from '../../content/schema';
-import dhcp from '../../content/lessons/networking/dhcp';
+import dhcp from '../../content/lessons/dhcp';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
 import { sceneViewOf, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
 import { dhcpDriver } from './dhcp';

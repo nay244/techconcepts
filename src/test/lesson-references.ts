@@ -4,17 +4,14 @@
  * entries give the number, and a small map of the words a sentence uses for
  * each lesson it may point at gives the topic. Each lesson's test passes its
  * own map, because a sentence names a lesson the way that sentence needs.
+ * `textsOf` lives in `src/content/texts.ts`, beside `textsAt`, which the
+ * strict lesson path uses; it is re-exported here.
  */
 import { getEntries } from '../content/registry';
 import type { Lesson } from '../content/schema';
+import { textsOf } from '../content/texts';
 
-/** Every string in a value, wherever it sits. */
-export function textsOf(value: unknown): string[] {
-  if (typeof value === 'string') return [value];
-  if (Array.isArray(value)) return value.flatMap(textsOf);
-  if (typeof value === 'object' && value !== null) return Object.values(value).flatMap(textsOf);
-  return [];
-}
+export { textsOf };
 
 /** Each "lesson N" and "lessons N and M" in a lesson's text, with the string it sits in. */
 export function lessonNumbers(lesson: Lesson): { text: string; n: number }[] {

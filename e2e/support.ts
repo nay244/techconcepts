@@ -9,8 +9,6 @@ export interface ReadyLesson {
   title: string;
   /** Its page, such as `/networking/dhcp`. */
   path: string;
-  /** The minutes its card shows. */
-  minutes: number;
 }
 
 /** Where `global-setup.ts` leaves the lessons it found for the specs. */
@@ -37,6 +35,9 @@ export function requireLessons(lessons: ReadyLesson[]): void {
     expect(lessons.length, 'global-setup.ts found no ready lesson on /networking').toBeGreaterThan(0);
   });
 }
+
+/** A ready lesson's card on the track page, found by the slug its link ends in (a lesson in progress links to `?step=N`). */
+export const lessonCard = (page: Page, slug: string): Locator => page.locator('main li.lesson', { has: page.locator(`a.l-link[href$="/${slug}"], a.l-link[href*="/${slug}?"]`) });
 
 /** Every page outside the lessons, by the address it is served at. */
 export const SITE_PAGES = [

@@ -23,18 +23,25 @@ interface Props {
   current?: 'tracks' | 'how' | 'about';
   /** Home: the header sits over the hero until the page scrolls. */
   overHero?: boolean;
+  /**
+   * The path of the one address search engines should index for this page, when it is served at more than one: a lesson
+   * several tracks list is at a URL in each, and names the first listing track's. Left out, the page's own path.
+   * `null` means no canonical link at all (the 404 page, which is no address to name); og:url stays the page's own.
+   */
+  canonical?: string | null;
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png', chrome = true, current, overHero = false } = Astro.props;
+const { title, description, image = '/og-default.png', chrome = true, current, overHero = false, canonical } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
 // Social crawlers need an absolute image URL.
 const beacon = analyticsBeacon(analyticsToken);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
-// The page's own absolute address on the live site, in the slash-less form it is served at.
-const pageUrl = canonicalUrl(Astro.url.pathname, Astro.site ?? Astro.url);
+// The page's canonical absolute address on the live site (its own path unless it names another), in the slash-less
+// form it is served at. The canonical link and og:url say the same address.
+const pageUrl = canonicalUrl(canonical ?? Astro.url.pathname, Astro.site ?? Astro.url);
 // The one inline head script: the theme, then a `js` class on the root, so CSS can start hidden the parts a script
 // will bring in (Home's hero) from the first paint, and show them in full when there is no JavaScript.
 const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("js");`;
@@ -65,6 +72,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={imageUrl} />
+    {canonical !== null && <link rel="canonical" href={pageUrl} />}
     <meta property="og:url" content={pageUrl} />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />

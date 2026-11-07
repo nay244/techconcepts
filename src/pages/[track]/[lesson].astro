@@ -13,7 +13,7 @@ export const getStaticPaths = (() =>
     return entries
       .filter((entry): entry is AvailableSummary => entry.available)
       .map((entry) => {
-        const lesson = getLesson(track.id, entry.slug);
+        const lesson = getLesson(entry.slug);
         // An available entry is built from its lesson, so this cannot happen.
         if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
         return {
@@ -31,7 +31,7 @@ const { svg, data } = drawFigure(lesson.figure);
 // The console has its own top bar and <main id="main">, so the layout adds no header, main or footer.
 ---
 
-<BaseLayout title={lesson.title} description={lesson.summary} chrome={false}>
+<BaseLayout title={lesson.title} description={lesson.summary} chrome={false} canonical={entry.canonical}>
   <LessonConsole
     client:load
     trackId={track.id}

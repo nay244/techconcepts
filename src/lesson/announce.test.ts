@@ -1,23 +1,15 @@
-import { expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
-import dhcp from '../content/lessons/networking/dhcp';
+import { expect, test } from 'vitest';
+import dhcp from '../content/lessons/dhcp';
 import type { Lesson } from '../content/schema';
-import { makeLesson, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
 import { createPlaybackReducer, type PlaybackState } from '../engine/playback';
 import { deriveState, positionOf, stepEvents, type Position } from '../engine/timeline';
 import { stepAnnouncement } from './announce';
 
-// The fixtures validate on their own parts, and the real DHCP lesson on its own.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
-
 /** Positions: 0 Overview, 1 Neighbor Hello, 2 Neighbor Reply (m2, t-add), 3 Table Lookup (t-match, n1), 4 Lost Message. */
-const FIXTURE: Lesson = validateLesson(makeLesson()).lesson;
+const FIXTURE: Lesson = liftedFixture(makeLesson());
 /** The same, with Neighbor Reply playing m2, t-add, t-check and Table Lookup t-match, t-recheck, n1. */
-const TWO: Lesson = validateLesson(makeLesson({ units: [makeUnitWithTwoTableChanges()] })).lesson;
+const TWO: Lesson = liftedFixture(makeLesson({ units: [makeUnitWithTwoTableChanges()] }));
 
 /** What the live region says at a step after its first `played` events. */
 function said(lesson: Lesson, position: Position, played: number): string {

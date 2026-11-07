@@ -26,11 +26,12 @@ The budget check prints every page's gzipped size and fails when a page breaks a
 - `src/pages/` the pages: Home, the track page (`[track]/index.astro`), the lesson page (`[track]/[lesson].astro`), About and 404
 - `src/layouts/`, `src/components/` the site shell (header, footer, theme button) and the parts of Home, the track page and About, some of them React islands
 - `src/content/` lessons and tracks:
-  - `schema.ts` the shape of a lesson
-  - `define.ts` `defineLesson` and `defineTrack`, which check every rule and fail the build on a breach
-  - `estimate.ts` how many minutes a lesson takes
-  - `registry.ts` finds the lesson files and builds each track's list, with each lesson's number, minutes and link
-  - `tracks/`, `lessons/<track>/<slug>.ts`, `certs.ts` (the exam tags), and `helpers/` (builders that turn a lesson's messages into scene events, with the numbers worked out by the engine)
+  - `schema.ts` the shape of a lesson and of a track
+  - `sources.ts` the primary-source registry and `cite()`; `cited.ts` and `define.ts` `defineLesson` and `defineTrack`, which check every rule and fail the build on a breach
+  - `limits.ts` the per-track limits and the overrides a lesson may carry; `glossary.ts` the cited glossary
+  - `legacy.ts` the closed list of the four lessons still in the older shape, and `defineLegacyLesson`
+  - `registry.ts` finds the lesson files and builds each track's list, with each lesson's number and link
+  - `tracks/`, `lessons/<slug>.ts`, `certs.ts` (the exam tags), and `helpers/` (builders that turn a lesson's messages into scene events, with the numbers worked out by the engine)
 - `src/engine/` the logic behind a lesson, with no drawing in it:
   - `timeline.ts` the lesson's positions, and the scene's state at any position, always worked out again from the start
   - `playback.ts` Play, the pause between steps and the speed button, as a reducer and a React hook
@@ -42,21 +43,21 @@ The budget check prints every page's gzipped size and fails when a page breaks a
   - `scenes/` the four lesson figures, and `parts.ts`, the `FIGURE_PARTS` a lesson may name on each
 - `src/scenes/` what moves a figure in the browser: `driver.ts` (the driver contract), `drivers/` (one driver per figure), `motion.ts` (tweens and waits) and the Sequence view
 - `src/lesson/` the lesson console: the top bar, the outline, the explanation (Overview, each Watch step, Learn, Go deeper), Practice, the playback controls, the scene and its log, `panels/` (a table, a firewall's rules, the bits board) and the keyboard shortcuts
-- `src/progress/` saved progress (`techconcepts:v1`), the hook that reads it, and where a returning visitor picks up
+- `src/progress/` saved progress (`techconcepts:v2`, keyed by lesson slug), the hook that reads it, and where a returning visitor picks up
 - `src/lib/` small helpers, mostly plain TypeScript: safe storage, the theme, contrast maths (for the colour tests), analytics, formatting, page addresses, the data Home, the track page and About show, and `wrapAtDots.tsx`, a React helper that lets an address wrap only at its dots
 - `src/scripts/` small page scripts that run without React: Home's hero and header, the track cover's packets, About's "On this page" list
 - `src/styles/` colour tokens (`tokens.ts`) and base CSS (`global.css`)
 - `src/test/` helpers the tests share
-- `e2e/` Playwright tests; `scripts/` tools (the budgets check and the social image); `docs/deploy.md` deploying to Cloudflare
+- `e2e/` Playwright tests; `scripts/` tools (the budgets check and the social image); `docs/deploy.md` deploying to Cloudflare; `docs/content-model.md` the authoring reference for sources, citations, lessons, limits and tracks
 
 Tests sit next to their source as `*.test.ts(x)`, or `*.test.mjs` beside the scripts. Component tests start with `// @vitest-environment jsdom`. Tests import `test`, `expect` and `vi` from `vitest` explicitly; there are no globals.
 
 ## How a lesson is put together
 
-A **lesson** is made of one or more **units**. Most lessons have one. How the Internet Works has fourteen, one per protocol. Every unit runs the same way:
+A **lesson** is made of one or more **units**. A lesson in the cited shape has exactly one. How the Internet Works, still on the legacy path (see `docs/content-model.md`), has fourteen, one per protocol. Every unit runs the same way:
 
 1. **Overview**: a short hook and description.
-2. **Watch**: 4 to 6 steps. Each step plays a few **events** on the lesson's **figure**, and the log under the figure lists them.
+2. **Watch**: a few steps (each track sets how many; Networking allows 4 to 6). Each step plays a few **events** on the lesson's **figure**, and the log under the figure lists them.
 3. **Learn**: what happened, in plain words first and then by name.
 4. **Practice**: a few questions with feedback. Practice is never scored or saved.
 
@@ -68,13 +69,15 @@ A lesson counts as finished once the learner reaches its last position, the last
 
 ## Adding a lesson
 
-1. **Plan it in the track**, `src/content/tracks/networking.ts`. Until its file exists it shows as "Coming soon".
-2. **Create `src/content/lessons/<track>/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. Copy a lesson that is close to yours: `dhcp.ts`, `firewalls.ts` and `subnetting.ts` have one unit each. Only files directly in the track's folder are lessons. A lesson of many units can keep each unit in a folder beside it, as `how-the-internet-works/` does.
+`docs/content-model.md` is the reference for sources, citations, backing, limits and the registry rules. Read it first. In short:
+
+1. **Plan it in the track**, `src/content/tracks/networking.ts`. Until its file exists it shows as "Coming soon". A lesson must be listed by at least one track.
+2. **Create `src/content/lessons/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. The build rejects a lesson made any other way. Every fact cites a source from the registry, `SOURCES` in `src/content/sources.ts`, with `cite()`, and every Watch part traces to a cited Learn statement. `defineLesson` always checks against `SOURCES`, so add the lesson's sources there. `makeCitedLesson` in `src/content/test-fixtures.ts` is a full example of the shape only: its sources are invented, and the build rejects a lesson checked against them. Do not copy `dhcp.ts`, `firewalls.ts`, `subnetting.ts` or `how-the-internet-works.ts`: they use `defineLegacyLesson`, which refuses any slug not on its closed list of those four. Only files directly in `src/content/lessons/` are lessons. A folder there may hold only the parts of the lesson it is named after, as `how-the-internet-works/` does.
 3. **Give it a card figure** on the track page: add its slug to `FIGURES` in `src/pages/[track]/index.astro`, usually with a small figure from `src/art/figures/spots.ts`. The build stops when a ready lesson has none.
 4. **Write its test** beside it, `<slug>.test.ts`: see "The lesson's test" below.
 5. **Check it end to end**: `npm run build`, which also checks the page-weight budgets, then `npm run e2e`. There is no list of lessons to edit: the tests find the ready lessons from the links on the built track page (`e2e/global-setup.ts`) and walk, play and fit-check each one at every size. A lesson whose Watch has no Network / Sequence switch, like Subnetting, goes in `NO_SEQUENCE` in `e2e/lesson.spec.ts`; checks that only one lesson needs (DHCP's lease table, Firewalls' rule list) sit under "lesson specifics" there, by slug. `npm run e2e:visual` takes its screenshots too.
 
-Everything else comes from the lesson file: its page, its place and number in the track, the minutes, and the totals on Home and the track page.
+Everything else comes from the lesson file: its page, its place and number in each track that lists it, and the totals on Home and the track page. Lessons are untimed. A lesson shared by two tracks has a page in each, with a canonical link to the first; its progress is saved once, by slug.
 
 ### The lesson and its units
 
@@ -82,11 +85,11 @@ The lesson gives its `slug`, `title`, `subtitle`, `level`, `certTags` (at least 
 
 Each unit has:
 
-- `id`, `name`, `fullName` and `purpose` (one line on what it is for), `osiLayers` (shown in the top bar) and `references` (at least one, an `https` link each; they are listed as Sources at the end of Learn's Go deeper)
+- `id`, `name`, `fullName` and `purpose` (one line on what it is for), and `osi` (the OSI layers shown in the top bar, with a citation, or `'spans'`). Its sources are listed at the end of Learn's Go deeper, built from its citations, so a cited lesson does not write them.
 - `overview`: a `hook`, a `description` and a few `facts`
-- `steps`: each one has a `title`, a Title Case technical term such as "DHCP Discover", and a `sub` line saying the same thing in plain words. Then a `narrative` (the everyday idea first, then the term), `deep` (Go deeper: exam-level detail, closed by default), 2 to 4 `facts`, and its `events`. A step may also give a `status` (what the scene says it is doing) and an `idle` line (what the log says while it is still empty at that step).
-- `learn`: a `lead`, `terms` (each an everyday `idea` and its `name`), a `pattern` (the steps' names and a note on the pattern), `why`, `deep` and `facts`
-- `practice`: questions, each with 2 to 4 `options` (`text` and `feedback`) and the `answer`, counted from 0
+- `steps`: each one has a `title`, a Title Case technical term such as "DHCP Discover", and a `sub` line saying the same thing in plain words. Then a `narrative` (the everyday idea first, then the term), `deep` (Go deeper: exam-level detail, closed by default, each paragraph cited), `facts`, and its `events`. A step may also give a `status` (what the scene says it is doing) and an `idle` line (what the log says while it is still empty at that step).
+- `learn`: a `lead`, `terms` (each an everyday `idea` and its `name`), a `pattern` (the steps' names and a note on the pattern), `why`, `deep` and `facts`. Each part cites a source, or a lead, why or term is flagged as an analogy.
+- `practice`: questions, each with `options` (`text`, `feedback` and the citation behind the feedback) and the `answer`, counted from 0
 - `scene`: what sits around the figure: a `title`, the `views` (`['network']`, or `['network', 'sequence']` to offer the Sequence view), the `parties` the Sequence view draws as lifelines, the `log` (its title, columns and legend, and an optional `idle` line: what it says while empty, from the Overview on; the console says "Nothing has happened yet. Press Play to start." without one; a column marked `strong` holds the row's main words, in the strongest ink), and a `panel` under the figure (a `table`, a firewall's `rules` with the connections it remembers, the `bits` board, or `null`). On the network map a unit also picks its `layers`, its `labels` and its `start`.
 
 Prose fields mark key terms with `**term**`. Nothing else is markup: the console never reads lesson text as HTML.
@@ -141,33 +144,22 @@ Each driver has its own tests in `src/scenes/drivers/<figure>.test.ts`. At the l
 
 Each lesson has a test file beside it. Look at `firewalls.test.ts` for a full one. At the least, check that:
 
-- the lesson validates, with its number of steps and questions, and its minutes (`estimateMinutes`)
+- the lesson validates, with its number of steps and questions
 - the step titles are the technical terms, in order
 - every message goes between places the figure has. Where the figure draws its tags ahead of time (DHCP, Firewalls), each message rides one of them.
 - the **show sweep** passes: `expect(showSweep(lesson)).toBe(<positions + events>)`, from `src/test/show-sweep.ts`, in a test file that starts with `// @vitest-environment jsdom`. The helper draws the lesson's figure into the page and makes one driver for it. It calls `show` for every position of the lesson, Overview, each step, Learn and Practice, unit after unit, after each of the step's events in turn, first forwards and then back again to the first Overview. Then it jumps from the first Overview to the end of every position and straight back. At each position's first and last moment, every time, it checks that the figure's markup is exactly what a fresh driver shown only that moment draws (style attributes and the order of attributes are written one way first, since jsdom writes them differently once a driver has set them; classes, text, transforms and hidden flags are compared as they are). The moments in the middle of a step are shown but not compared: a fresh network map and its driver take about 30 ms under jsdom, and comparing all 429 of lesson 1's moments would triple the time the whole suite takes. A difference fails with the position, the direction and the markup around it. This catches a driver that leaves something behind, or one that cannot draw a moment that playing forward would reach. It returns the number of moments it showed, which the test checks.
 
-### Minutes
-
-`estimateMinutes` (`src/content/estimate.ts`) works out how long a lesson takes, and the registry shows it on Home and the track page:
-
-- **Words read** count at 200 a minute. They are the overview's hook and description, every step's narrative, Learn's lead, each term's idea and name, the pattern note and why, and every question with its options and feedback. Titles, sub lines, Go deeper, facts and labels are not counted.
-- Each Watch step adds half a minute.
-- Practice adds 1 minute. In a lesson of many units it adds half a minute per unit instead.
-- The total is rounded up.
-
-A one-unit lesson over 12 minutes builds with a warning, and over 15 minutes fails the build. A lesson of many units has no limit as a whole, but each of its units is capped at 15 minutes.
-
 ### Limits
 
-`defineLesson` fails the build on a breach, and lists every problem at once:
+Each track sets its own limits in its track file (`limits` in `src/content/tracks/networking.ts`; the keys are in `src/content/limits.ts`): steps per unit, facts per step, Practice questions, options per question, Learn terms, pattern names, and the word limits for a step's narrative, an overview hook and a Go deeper block. Networking's today are 4 to 6 steps, 2 to 4 facts per step, 2 to 3 questions with 2 to 4 options each, 3 to 10 terms, 2 to 6 pattern names, and at most 120, 80 and 90 words.
 
-- 4 to 6 steps per unit, each with 2 to 4 facts and a narrative of at most 120 words
-- an overview hook of at most 80 words
-- 2 to 3 Practice questions (exactly 2 per unit in a lesson of many units), each with 2 to 4 options
-- Learn with 3 to 10 terms and a pattern of 2 to 6 names
-- at least 1 reference per unit and 1 cert tag per lesson
-- unique unit, step, question and event ids
-- the minutes above
+The build fails when a lesson does not fit every track that lists it, and lists every problem at once. A lesson may leave a limit only with an `overrides` entry in its own file, with a one-line reason; an override it does not need fails the build.
+
+`defineLesson` also checks, among others:
+
+- every citation, and the backing of every Watch and scene part (see `docs/content-model.md`)
+- exactly one unit, and unique unit, step, question and event ids
+- at least 1 cert tag per lesson
 - every place, cue, layer, log column, table and packet a unit names exists on its figure or in its scene. The schema also rejects unknown keys, so a typo such as `narative:` fails too.
 
 ### Example data and voice
@@ -178,7 +170,7 @@ Voice (launch spec §7.2, and the redesign spec, both in `docs/superpowers/specs
 
 ## Conventions worth knowing
 
-- **Browser storage** is touched only through `createSafeStorage()` in `src/lib/storage.ts`. It never throws: reads give `null`, writes give `false`. It holds only `techconcepts:theme` and `techconcepts:v1`, and the site must work fully when storage is blocked or full.
+- **Browser storage** is touched only through `createSafeStorage()` in `src/lib/storage.ts`. It never throws: reads give `null`, writes give `false`. It holds only `techconcepts:theme` and `techconcepts:v2`. The older `techconcepts:v1` is read and merged on every load until the first successful save, which then removes it. The site must work fully when storage is blocked or full.
 - **Colour** comes only from the semantic tokens in `src/styles/tokens.ts`, which meet WCAG AA in both themes. Colour is never the only signal: always add a label, icon or text. Marigold (`here`) means only "you are here".
 - **Themes**: the root element's `data-theme` attribute selects light or dark. An inline boot script sets it before first paint; without JavaScript the page follows `prefers-color-scheme`. Figures stay charcoal in both themes.
 - **Type**: Atkinson Hyperlegible Next for prose and Atkinson Hyperlegible Mono for data, self-hosted.

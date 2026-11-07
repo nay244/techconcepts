@@ -2,25 +2,17 @@
 import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { validateLesson } from '../content/define';
 import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { makeLesson } from '../content/test-fixtures';
+import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import LessonConsole from './LessonConsole';
 
 // A file of its own: a SafeStorage that has failed keeps saying so for as long as its module
 // lives, and each test file gets fresh modules, so no other test sees this one's blocked storage.
 
-// The real lessons load here too (through the registry), so the fixture's parts are added to the real ones.
-vi.mock('../art/scenes/parts', async (importOriginal) => ({
-  FIGURE_PARTS: (await import('../content/test-fixtures')).withFixtureParts(
-    (await importOriginal<typeof import('../art/scenes/parts')>()).FIGURE_PARTS,
-  ),
-}));
-
-const DHCP: Lesson = validateLesson(makeLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
-const entries = buildEntries(networkingTrack, { dhcp: DHCP });
+const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
+const entries = buildEntries(networkingTrack, { dhcp: DHCP }, () => 'networking');
 const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === 'dhcp')!;
 
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });

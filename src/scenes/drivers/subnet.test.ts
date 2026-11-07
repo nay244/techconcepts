@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawSubnet, type SubnetSceneData } from '../../art/scenes/subnet';
 import type { NoteEvent, SceneEvent } from '../../content/schema';
-import subnetting from '../../content/lessons/networking/subnetting';
+import subnetting from '../../content/lessons/subnetting';
 import { formatIPv4, parseIPv4 } from '../../engine/net/ipv4';
 import { sameSubnet, subnetInfo } from '../../engine/net/subnet';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';

@@ -3,7 +3,7 @@ import { useProgress } from '../progress/useProgress';
 import './site.css';
 
 /**
- * The foot of Home's Networking card. A first visit, and the server render, read "4 of 20 lessons ready, 124 min"
+ * The foot of Home's Networking card. A first visit, and the server render, read "4 of 20 lessons ready"
  * and "Open track"; once this browser has progress in the track it reads "n of 20 done, m in progress" over a bar
  * of one segment per planned lesson (done first, then in progress), and "Continue".
  *
@@ -14,7 +14,7 @@ export function TrackCardProgress({
   totals,
 }: {
   known: Record<string, number>;
-  totals: { available: number; planned: number; minutes: number };
+  totals: { available: number; planned: number };
 }) {
   const { ready, available, data } = useProgress(known);
   const { finished, inProgress } = trackCompletion(data, Object.keys(known));
@@ -22,7 +22,7 @@ export function TrackCardProgress({
   if (!ready || !available || finished + inProgress === 0) {
     return (
       <>
-        <span className="meta">{`${totals.available} of ${totals.planned} lessons ready, ${totals.minutes} min`}</span>
+        <span className="meta">{`${totals.available} of ${totals.planned} lessons ready`}</span>
         <span className="go">Open track</span>
       </>
     );

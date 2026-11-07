@@ -8,8 +8,7 @@ import { loadRenderers } from 'astro:container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
 import { expect, test, vi } from 'vitest';
-import { MAX_MINUTES } from '../content/estimate';
-import { getEntries, trackTotals, type AvailableSummary } from '../content/registry';
+import { getEntries, trackTotals } from '../content/registry';
 import { comingSoonTracks, tracks } from '../content/tracks';
 import About from '../pages/about.astro';
 
@@ -40,15 +39,10 @@ test('the stats count the tracks planned and the lessons ready from the content'
   expect(stat('accounts needed')).toBe('0');
 });
 
-test('the length note gives the cap, and lesson 1’s own minutes and parts from the registry', async () => {
+test('the pace note says lessons are self-paced and gives no figure', async () => {
   const doc = await about();
-  const first = getEntries(tracks[0]!.id).find((e): e is AvailableSummary => e.available && e.number === 1);
-  expect(first).toBeDefined();
-
   expect(words(doc.querySelector('.a-note p'))).toBe(
-    `Most lessons take ${MAX_MINUTES} minutes or less. Lesson ${first!.number}, ${first!.title}, is longer: it follows ${first!.units} ` +
-      `protocols, from HTTP to TLS, in about ${first!.minutes} minutes in all. Each protocol is its own short part, so you can stop after ` +
-      'any one and pick up later.',
+    'Lessons are self-paced. Take as long as you need. This browser remembers where you stopped, so you can pick up where you left off.',
   );
 });
 

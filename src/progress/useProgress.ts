@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createSafeStorage } from '../lib/storage';
 import type { SafeStorage } from '../lib/storage';
-import { PROGRESS_KEY, clearProgress, emptyProgress, loadProgress, mergeProgress, sanitizeProgress, saveProgress } from './store';
+import { LEGACY_PROGRESS_KEY, PROGRESS_KEY, clearProgress, emptyProgress, loadProgress, mergeProgress, sanitizeProgress, saveProgress } from './store';
 import type { ProgressData } from './store';
 
 // Shared by every island on the page. Creating it never touches `window`, so
@@ -35,11 +35,11 @@ export interface UseProgress {
 type Snapshot = Pick<UseProgress, 'ready' | 'available' | 'data'>;
 
 /**
- * Browser-only learning progress. `known` maps each lesson key to its last step
- * (`{ [entry.key]: entry.maxPosition }`). `data` shows only those lessons, with
- * saved positions clamped to it. Saved records for other lessons are ignored,
- * not deleted: `update` leaves them in storage exactly as they were, and
- * `reset` is the only thing that clears them. `known` is read when progress
+ * Browser-only learning progress. `known` maps each lesson key (its slug) to its last step
+ * (`{ [entry.key]: entry.maxPosition }`). Saved positions of those lessons are
+ * clamped to it. Saved records for other lessons (not in `known`)
+ * stay in `data` as they are and are never dropped: `update` leaves them in storage exactly as they
+ * were, and `reset` is the only thing that clears them. `known` is read when progress
  * loads or changes, so passing a fresh object each render is fine.
  *
  * Every instance in the document (and in other tabs) reloads when one of them
@@ -63,8 +63,8 @@ export function useProgress(known: Record<string, number>, storage: SafeStorage 
       setSnapshot({ ready: true, available: storage.available, data });
     };
     const onStorage = (event: StorageEvent) => {
-      // A null key means another tab cleared all of storage.
-      if (event.key === null || event.key === PROGRESS_KEY) load();
+      // A null key means another tab cleared all of storage. The old key counts: an old tab may still write it.
+      if (event.key === null || event.key === PROGRESS_KEY || event.key === LEGACY_PROGRESS_KEY) load();
     };
     load();
     window.addEventListener('storage', onStorage);

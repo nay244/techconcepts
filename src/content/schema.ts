@@ -1,13 +1,27 @@
 import { z } from 'zod';
 import type { FigureId } from '../art/scenes/types';
 import { CERT_TAG_IDS } from './certs';
+import { limitsSchema, overrideSchema } from './limits';
+import { httpsUrl, slugSchema, text } from './primitives';
+import { citationSchema } from './sources';
+
+export { slugSchema };
 
 /**
- * Shape of a lesson: Overview, Watch, Learn, Practice. These schemas check
- * types, enums and per-field bounds only. Rules that compare one part of a
- * lesson with another (step counts, "this place exists on the figure", packet
- * sizes, the time budget) live in `define.ts`, so they can all be reported
- * together with readable messages.
+ * Shape of a lesson at runtime, the cited shape: Overview, Watch, Learn,
+ * Practice. These schemas check types, enums and per-field bounds only. Rules
+ * that compare one part of a lesson with another ("this place exists on the
+ * figure", packet sizes) live in `define.ts`, so they can all be reported
+ * together with readable messages. The numeric limits are a track's, in
+ * `limits.ts`.
+ *
+ * Learn's statements, every Go deeper paragraph, Practice's options and the
+ * OSI layers cite primary sources (`sources.ts`). Watch and the scene cite
+ * nothing of their own: each part carries a `backing` that traces it to cited
+ * Learn statements, or flags it as an analogy or as example data. Citation
+ * lists default to empty here; the cited lessons' rules require them. The four
+ * ready lessons are still written in the older shape and lifted into this one
+ * (`legacy.ts`).
  *
  * A lesson has one or more units. Most lessons have one; How the Internet
  * Works has one per protocol, each with its own Overview, Watch steps, Learn
@@ -16,21 +30,49 @@ import { CERT_TAG_IDS } from './certs';
  * Prose fields mark key terms with `**term**`; nothing else is markup.
  */
 
-/** Prose or a label: must contain something other than whitespace. */
-const text = z.string().regex(/\S/, 'must not be empty');
 /** A whole number of bytes, packets and similar counts. */
 const count = z.number().int().min(0);
-
-/** Lowercase words joined by hyphens: safe in a URL and a file name. */
-export const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be lowercase words joined by hyphens');
 
 export const messageKindSchema = z.enum(['request', 'response', 'control', 'broadcast', 'encrypted']);
 export const certTagSchema = z.enum(CERT_TAG_IDS);
 /** The scene figures (`FigureId`); `parts.test.ts` keeps this list and `FIGURE_PARTS` the same. */
 export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map'] satisfies FigureId[]);
 
-export const sourceSchema = z.strictObject({ label: text, url: z.url({ protocol: /^https$/ }) });
+export const sourceSchema = z.strictObject({ label: text, url: httpsUrl });
 export const factSchema = z.strictObject({ label: text, value: text });
+
+// ---------------------------------------------------------------- citations and backing
+
+/**
+ * What stands behind a part of Watch or the scene, which cites nothing itself: the cited Learn parts of the same lesson
+ * it traces to, by id (Learn's lead and why statements, its terms, the pattern, its facts, and the paragraphs of
+ * Learn's Go deeper; not an analogy, and not a step's Go deeper), or a flag saying it is an analogy or example data.
+ */
+export const backingSchema = z.union([
+  z.strictObject({ traces: z.array(slugSchema).min(1) }),
+  z.strictObject({ analogy: z.literal(true) }),
+  z.strictObject({ example: z.literal(true) }),
+]);
+
+/** A Learn statement: cited, or flagged as an analogy. Statements in a list read as one paragraph. */
+export const statementSchema = z.strictObject({
+  id: slugSchema,
+  text,
+  cite: z.array(citationSchema).default([]),
+  analogy: z.literal(true).optional(),
+});
+
+/** A Go deeper paragraph: a Watch step's. */
+export const paragraphSchema = z.strictObject({ text, cite: z.array(citationSchema).default([]) });
+
+/** Learn's Go deeper paragraph, which Watch may trace to by id. */
+export const learnParagraphSchema = paragraphSchema.extend({ id: slugSchema });
+
+/** An Overview or Watch step fact: backed like the rest of Watch. */
+export const tracedFactSchema = factSchema.extend({ backing: backingSchema.optional() });
+
+/** A Learn fact: cited, and a trace target. */
+export const learnFactSchema = factSchema.extend({ id: slugSchema, cite: z.array(citationSchema).default([]) });
 
 /** One table or log row: column key to cell text. Cells may be empty. */
 export const rowSchema = z.record(z.string(), z.string());
@@ -61,6 +103,7 @@ export const packetSchema = z.strictObject({
   seenAt: z.string().optional(),
   size: count,
   layers: z.array(layerSchema).min(1),
+  backing: backingSchema.optional(),
 });
 
 // ---------------------------------------------------------------- events
@@ -111,6 +154,7 @@ export const messageEventSchema = z.strictObject({
   /** The event in plain words: the log's `plain` column and the live region read it. */
   plain: text,
   cues: z.array(cueSchema).optional(),
+  backing: backingSchema.optional(),
 });
 
 export const noteEventSchema = z.strictObject({
@@ -126,6 +170,7 @@ export const noteEventSchema = z.strictObject({
    * explain it. Without it the note takes the legend's note entry.
    */
   glyph: messageKindSchema.optional(),
+  backing: backingSchema.optional(),
 });
 
 export const tableEventSchema = z.strictObject({
@@ -146,6 +191,7 @@ export const tableEventSchema = z.strictObject({
   miss: z.boolean().optional(),
   /** What changed, in one plain sentence. The table only shows it, so screen readers hear this when the event plays. */
   summary: text,
+  backing: backingSchema.optional(),
 });
 
 export const sceneEventSchema = z.discriminatedUnion('type', [messageEventSchema, noteEventSchema, tableEventSchema]);
@@ -236,6 +282,7 @@ export const unitSceneSchema = z.strictObject({
   log: logDefSchema,
   parties: z.array(partySchema),
   packets: z.record(z.string(), packetSchema).optional(),
+  backing: backingSchema.optional(),
 });
 
 // ---------------------------------------------------------------- lesson
@@ -247,33 +294,56 @@ export const stepSchema = z.strictObject({
   /** The same step in plain words. */
   sub: text,
   narrative: text,
-  /** Go deeper: exam-level detail, closed by default. */
-  deep: text,
-  facts: z.array(factSchema),
+  /** Go deeper: exam-level detail, closed by default. Each paragraph cites directly. */
+  deep: z.array(paragraphSchema).min(1),
+  facts: z.array(tracedFactSchema),
   events: z.array(sceneEventSchema),
   status: text.optional(),
   /** What the log says while it is empty at this step. */
   idle: text.optional(),
+  backing: backingSchema.optional(),
+});
+
+/** Everyday idea first, then its name. */
+export const termSchema = z.strictObject({
+  id: slugSchema,
+  idea: text,
+  name: text,
+  cite: z.array(citationSchema).default([]),
+  analogy: z.literal(true).optional(),
+});
+
+/** The steps by their technical names, and a note on the pattern. */
+export const patternSchema = z.strictObject({
+  id: slugSchema,
+  names: z.array(text),
+  note: text,
+  cite: z.array(citationSchema).default([]),
 });
 
 export const learnSchema = z.strictObject({
-  lead: text,
-  /** Everyday idea first, then its name. */
-  terms: z.array(z.strictObject({ idea: text, name: text })),
-  /** The steps by their technical names, and a note on the pattern. */
-  pattern: z.strictObject({ names: z.array(text), note: text }),
-  why: text,
-  deep: text,
-  facts: z.array(factSchema),
+  lead: z.array(statementSchema).min(1),
+  terms: z.array(termSchema),
+  pattern: patternSchema,
+  why: z.array(statementSchema).min(1),
+  deep: z.array(learnParagraphSchema).min(1),
+  facts: z.array(learnFactSchema),
 });
 
 export const questionSchema = z.strictObject({
   id: text,
   prompt: text,
-  options: z.array(z.strictObject({ text, feedback: text })),
+  /** Each option's feedback explains the answer, so it cites. */
+  options: z.array(z.strictObject({ text, feedback: text, cite: z.array(citationSchema).default([]) })),
   /** Index of the right option, from 0. */
   answer: z.number().int(),
 });
+
+/** OSI layers the unit touches, 1 (physical) to 7 (application), cited; or 'spans' when no source puts it at one. */
+export const osiSchema = z.union([
+  z.strictObject({ layers: z.array(z.int().min(1).max(7)).min(1), cite: z.array(citationSchema).default([]) }),
+  z.literal('spans'),
+]);
 
 export const unitSchema = z.strictObject({
   id: slugSchema,
@@ -283,14 +353,22 @@ export const unitSchema = z.strictObject({
   purpose: text,
   /** Lesson 1's outline filters. */
   group: z.enum(['core', 'app', 'security']).optional(),
-  /** OSI layers the unit touches, 1 (physical) to 7 (application). May be empty. */
-  osiLayers: z.array(z.number().int().min(1).max(7)),
-  references: z.array(sourceSchema),
+  osi: osiSchema,
+  /** The unit's sources, listed under Learn's Go deeper. */
+  references: z.array(sourceSchema).default([]),
   scene: unitSceneSchema,
-  overview: z.strictObject({ hook: text, description: text, facts: z.array(factSchema) }),
+  overview: z.strictObject({
+    hook: text,
+    hookBacking: backingSchema.optional(),
+    description: text,
+    backing: backingSchema.optional(),
+    facts: z.array(tracedFactSchema),
+  }),
   steps: z.array(stepSchema),
   learn: learnSchema,
   practice: z.array(questionSchema),
+  /** Backs the unit's full name and purpose. */
+  backing: backingSchema.optional(),
 });
 
 export const lessonSchema = z.strictObject({
@@ -302,25 +380,66 @@ export const lessonSchema = z.strictObject({
   summary: text,
   figure: figureIdSchema,
   units: z.array(unitSchema).min(1),
+  /** Where this lesson leaves its track's limits, each with its reason (`limits.ts`). */
+  overrides: z.array(overrideSchema).default([]),
+  /** Backs the subtitle and the summary. */
+  backing: backingSchema.optional(),
 });
 
-export const partSchema = z.strictObject({
-  id: slugSchema,
-  title: text,
-  lessons: z.array(z.strictObject({ slug: slugSchema, title: text })).min(1),
+// ---------------------------------------------------------------- tracks
+
+const lessonRef = z.strictObject({ slug: slugSchema, title: text });
+
+/** One objective of the pinned exam document that a certification track's lesson teaches. */
+const objectiveSchema = z.strictObject({
+  /** One of the track's exam codes. */
+  exam: text,
+  /** The objective's number in the document, such as `2.6`. */
+  objective: z.string().regex(/^\d+\.\d+$/, 'must be a number like 2.6'),
+  /** Where the objectives document lists it: section equal to `objective`. */
+  cite: citationSchema,
 });
 
-export const trackSchema = z.strictObject({
-  id: slugSchema,
-  title: text,
-  description: text,
-  level: lessonSchema.shape.level,
-  parts: z.array(partSchema).min(1),
+const certLessonRef = lessonRef.extend({ objectives: z.array(objectiveSchema).min(1) });
+
+const base = { id: slugSchema, title: text, description: text, level: lessonSchema.shape.level, limits: limitsSchema };
+
+/** Taught in order, in parts; exam data is the lessons' cert tags only. */
+export const conceptTrackSchema = z.strictObject({
+  ...base,
+  type: z.literal('concept'),
+  parts: z.array(z.strictObject({ id: slugSchema, title: text, lessons: z.array(lessonRef).min(1) })).min(1),
 });
+
+/** Ordered by exam domain; every lesson maps to objectives of one pinned version of the official document. */
+export const certificationTrackSchema = z.strictObject({
+  ...base,
+  type: z.literal('certification'),
+  exam: z.strictObject({
+    title: text,
+    codes: z.array(text).min(1),
+    /** The objectives edition this track maps to; it must be the registry's version of `source`. */
+    version: text,
+    /** The id of the objectives document in the source registry. */
+    source: slugSchema,
+  }),
+  parts: z.array(z.strictObject({ id: slugSchema, title: text, lessons: z.array(certLessonRef).min(1) })).min(1),
+});
+
+export const trackSchema = z.discriminatedUnion('type', [conceptTrackSchema, certificationTrackSchema]);
 
 export type MessageKind = z.infer<typeof messageKindSchema>;
 export type Source = z.infer<typeof sourceSchema>;
 export type Fact = z.infer<typeof factSchema>;
+export type Backing = z.infer<typeof backingSchema>;
+export type Statement = z.infer<typeof statementSchema>;
+export type Paragraph = z.infer<typeof paragraphSchema>;
+export type LearnParagraph = z.infer<typeof learnParagraphSchema>;
+export type TracedFact = z.infer<typeof tracedFactSchema>;
+export type LearnFact = z.infer<typeof learnFactSchema>;
+export type Term = z.infer<typeof termSchema>;
+export type Pattern = z.infer<typeof patternSchema>;
+export type Osi = z.infer<typeof osiSchema>;
 export type Row = z.infer<typeof rowSchema>;
 export type Cue = z.infer<typeof cueSchema>;
 export type Field = z.infer<typeof fieldSchema>;
@@ -340,9 +459,9 @@ export type Step = z.infer<typeof stepSchema>;
 export type Learn = z.infer<typeof learnSchema>;
 export type Question = z.infer<typeof questionSchema>;
 export type Unit = z.infer<typeof unitSchema>;
-export type Lesson = z.infer<typeof lessonSchema>;
-export type Part = z.infer<typeof partSchema>;
+/** A lesson as the site uses it: written in the cited shape, or lifted from the legacy one (`legacy.ts`). */
+export type Lesson = z.output<typeof lessonSchema> & { origin: 'cited' | 'legacy' };
+export type ConceptTrack = z.infer<typeof conceptTrackSchema>;
+export type CertificationTrack = z.infer<typeof certificationTrackSchema>;
+export type Objective = z.infer<typeof objectiveSchema>;
 export type Track = z.infer<typeof trackSchema>;
-
-/** What an author writes: like `Lesson`, but a scene's `layers` and `labels` may be left out. */
-export type LessonInput = z.input<typeof lessonSchema>;
