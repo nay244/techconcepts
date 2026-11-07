@@ -322,6 +322,19 @@ export function makeLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLe
   return { ...lesson, ...overrides };
 }
 
+/** A valid one-unit lesson at the top of every limit: six steps of 120-word narratives, three questions, and a very long description and feedback. */
+export function makeLongLesson(): LegacyLessonInput {
+  const long = makeLesson();
+  const u = long.units[0]!;
+  const words = (n: number) => 'word '.repeat(n).trim();
+  u.steps.push({ ...structuredClone(u.steps[4]!), id: 'extra6', events: [] });
+  for (const step of u.steps) step.narrative = words(120);
+  u.overview.description = words(2500);
+  for (const q of u.practice) for (const option of q.options) option.feedback = words(200);
+  u.practice.push({ ...structuredClone(u.practice[0]!), id: 'q3' });
+  return long;
+}
+
 /** A valid lesson of two units, `alpha` (core) and `beta` (app), each with five steps and two questions. */
 export function makeTwoUnitLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLessonInput {
   return makeLesson({

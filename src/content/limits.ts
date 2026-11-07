@@ -31,11 +31,15 @@ export const limitsSchema = z.strictObject({
 export type Limits = z.infer<typeof limitsSchema>;
 export type LimitName = keyof Limits;
 
-const RANGE_LIMITS = ['steps', 'factsPerStep', 'practiceQuestions', 'optionsPerQuestion', 'learnTerms', 'patternNames'] as const;
+const LIMIT_NAMES = limitsSchema.keyof().options;
 const WORD_LIMITS = ['narrativeWords', 'hookWords', 'deepWords'] as const;
-const LIMIT_NAMES = [...RANGE_LIMITS, ...WORD_LIMITS] as const;
+type WordLimit = (typeof WORD_LIMITS)[number];
+type RangeLimit = Exclude<LimitName, WordLimit>;
+const RANGE_LIMITS: RangeLimit[] = LIMIT_NAMES.filter((name): name is RangeLimit => !isWordLimit(name));
 
-const isWordLimit = (limit: LimitName): limit is (typeof WORD_LIMITS)[number] => (WORD_LIMITS as readonly string[]).includes(limit);
+function isWordLimit(limit: LimitName): limit is WordLimit {
+  return (WORD_LIMITS as readonly string[]).includes(limit);
+}
 
 /** What a lesson says to leave a track's default: the limit, the new bound or bounds, and one line of why. */
 export const overrideSchema = z
@@ -72,79 +76,76 @@ export function applyOverrides(limits: Limits, overrides: Override[]): Limits {
 }
 
 const inRange = (n: number, r: { min: number; max: number }): boolean => n >= r.min && n <= r.max;
+/** A range limit is checked unless an override has crossed it. */
+const fails = (skip: ReadonlySet<LimitName>, name: RangeLimit, n: number, limits: Limits): boolean => !skip.has(name) && !inRange(n, limits[name]);
 const rangeText = (r: { min: number; max: number }): string => (r.min === r.max ? `exactly ${r.max}` : `${r.min}–${r.max}`);
 
 /** Words in one Go deeper block, its paragraphs together. */
 const blockWords = (paragraphs: { text: string }[]): number => paragraphs.reduce((sum, p) => sum + countWords(p.text), 0);
 
 /** Every unit against `limits` as they stand, as readable issues. */
-function unitIssues(lesson: Lesson, limits: Limits): string[] {
+function unitIssues(lesson: Lesson, limits: Limits, skip: ReadonlySet<LimitName> = new Set()): string[] {
   const issues: string[] = [];
   for (const u of lesson.units) {
     const at = `Unit "${u.id}"`;
-    if (!inRange(u.steps.length, limits.steps)) {
-      issues.push(`${at}: needs ${rangeText(limits.steps)} steps; this one has ${u.steps.length}.`);
+    if (fails(skip, 'steps', u.steps.length, limits)) {
+      issues.push(`${at}: needs ${rangeText(limits.steps)} steps; this one has ${u.steps.length} (steps).`);
     }
     for (const step of u.steps) {
       const here = `${at}: Step "${step.id}"`;
-      if (!inRange(step.facts.length, limits.factsPerStep)) {
-        issues.push(`${here} needs ${rangeText(limits.factsPerStep)} facts; it has ${step.facts.length}.`);
+      if (fails(skip, 'factsPerStep', step.facts.length, limits)) {
+        issues.push(`${here} needs ${rangeText(limits.factsPerStep)} facts; it has ${step.facts.length} (factsPerStep).`);
       }
       const narrative = countWords(step.narrative);
       if (narrative > limits.narrativeWords) {
-        issues.push(`${here} narrative is ${narrative} words; the limit is ${limits.narrativeWords}.`);
+        issues.push(`${here} narrative is ${narrative} words; the limit is ${limits.narrativeWords} (narrativeWords).`);
       }
       const deep = blockWords(step.deep);
-      if (deep > limits.deepWords) issues.push(`${here} Go deeper is ${deep} words; the limit is ${limits.deepWords}.`);
+      if (deep > limits.deepWords) issues.push(`${here} Go deeper is ${deep} words; the limit is ${limits.deepWords} (deepWords).`);
     }
 
     const hook = countWords(u.overview.hook);
-    if (hook > limits.hookWords) issues.push(`${at}: the overview hook is ${hook} words; the limit is ${limits.hookWords}.`);
+    if (hook > limits.hookWords) issues.push(`${at}: the overview hook is ${hook} words; the limit is ${limits.hookWords} (hookWords).`);
 
-    if (!inRange(u.practice.length, limits.practiceQuestions)) {
-      issues.push(`${at}: Practice needs ${rangeText(limits.practiceQuestions)} questions; this unit has ${u.practice.length}.`);
+    if (fails(skip, 'practiceQuestions', u.practice.length, limits)) {
+      issues.push(`${at}: Practice needs ${rangeText(limits.practiceQuestions)} questions; this unit has ${u.practice.length} (practiceQuestions).`);
     }
     for (const q of u.practice) {
-      if (!inRange(q.options.length, limits.optionsPerQuestion)) {
-        issues.push(`${at}: Question "${q.id}" needs ${rangeText(limits.optionsPerQuestion)} options; it has ${q.options.length}.`);
+      if (fails(skip, 'optionsPerQuestion', q.options.length, limits)) {
+        issues.push(`${at}: Question "${q.id}" needs ${rangeText(limits.optionsPerQuestion)} options; it has ${q.options.length} (optionsPerQuestion).`);
       }
     }
 
-    if (!inRange(u.learn.terms.length, limits.learnTerms)) {
-      issues.push(`${at}: Learn needs ${rangeText(limits.learnTerms)} terms; this unit has ${u.learn.terms.length}.`);
+    if (fails(skip, 'learnTerms', u.learn.terms.length, limits)) {
+      issues.push(`${at}: Learn needs ${rangeText(limits.learnTerms)} terms; this unit has ${u.learn.terms.length} (learnTerms).`);
     }
-    if (!inRange(u.learn.pattern.names.length, limits.patternNames)) {
-      issues.push(`${at}: Learn's pattern needs ${rangeText(limits.patternNames)} names; this unit has ${u.learn.pattern.names.length}.`);
+    if (fails(skip, 'patternNames', u.learn.pattern.names.length, limits)) {
+      issues.push(`${at}: Learn's pattern needs ${rangeText(limits.patternNames)} names; this unit has ${u.learn.pattern.names.length} (patternNames).`);
     }
     const learnDeep = blockWords(u.learn.deep);
     if (learnDeep > limits.deepWords) {
-      issues.push(`${at}: Learn's Go deeper is ${learnDeep} words; the limit is ${limits.deepWords}.`);
+      issues.push(`${at}: Learn's Go deeper is ${learnDeep} words; the limit is ${limits.deepWords} (deepWords).`);
     }
   }
   return issues;
 }
 
 /**
- * Every unit against the limits after the lesson's own overrides, as readable issues (empty when it fits). Also
- * reports a limit overridden twice, and an override that leaves a range with its minimum above its maximum. Go deeper
- * counts the words of one block's paragraphs together.
+ * Every unit against the limits after the lesson's own overrides, as readable issues (empty when it fits). An override
+ * that leaves a range with its minimum above its maximum is reported alone, and that limit is not checked further. Go
+ * deeper counts the words of one block's paragraphs together. Each message ends with the limit's key, which an override names.
  */
 export function checkLimits(lesson: Lesson, limits: Limits): string[] {
-  const issues: string[] = [];
-  const seen = new Set<LimitName>();
-  const repeated = new Set<LimitName>();
-  for (const o of lesson.overrides) (seen.has(o.limit) ? repeated : seen).add(o.limit);
-  for (const limit of repeated) {
-    issues.push(`Lesson "${lesson.slug}" overrides the ${limit} limit more than once; keep one override, with one reason.`);
-  }
-
   const applied = applyOverrides(limits, lesson.overrides);
+  const issues: string[] = [];
+  const crossed = new Set<LimitName>();
   for (const name of RANGE_LIMITS) {
     if (applied[name].min > applied[name].max) {
+      crossed.add(name);
       issues.push(`Lesson "${lesson.slug}": its ${name} override leaves a minimum of ${applied[name].min} above the maximum of ${applied[name].max}.`);
     }
   }
-  return [...issues, ...unitIssues(lesson, applied)];
+  return [...issues, ...unitIssues(lesson, applied, crossed)];
 }
 
 /** Overrides the lesson would still fit every one of these tracks' limits without, as messages. */

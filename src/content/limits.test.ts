@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { applyOverrides, checkLimits, overrideSchema, unneededOverrides } from './limits';
 import type { LegacyLessonInput, LegacyUnitInput } from './legacy';
-import { FIXTURE_LIMITS, liftedFixture, makeLesson } from './test-fixtures';
+import { FIXTURE_LIMITS, liftedFixture, makeLesson, makeLongLesson } from './test-fixtures';
 
 // The numeric limits a track sets, checked on a lifted fixture: the shape every lesson reaches the registry in.
 
@@ -157,18 +157,37 @@ test('an override the lesson does not need is reported', () => {
   expect(unneededOverrides(needed, [{ ...FIXTURE_LIMITS, narrativeWords: 200 }, FIXTURE_LIMITS])).toEqual([]);
 });
 
-test('two overrides for the same limit are reported once, naming the limit', () => {
-  const doubled = {
-    ...liftedFixture(),
-    overrides: [
-      { limit: 'hookWords' as const, max: 90, reason: 'First reason.' },
-      { limit: 'hookWords' as const, max: 95, reason: 'Second reason.' },
-    ],
-  };
-  expect(checkLimits(doubled, FIXTURE_LIMITS)).toEqual([expect.stringMatching(/"fixture-lesson".*hookWords.*more than once/)]);
-});
-
 test('an override that puts a minimum above its maximum is reported', () => {
   const crossed = { ...liftedFixture(), overrides: [{ limit: 'steps' as const, min: 7, reason: 'Wrong on purpose.' }] };
-  expect(checkLimits(crossed, FIXTURE_LIMITS).join('\n')).toMatch(/steps override leaves a minimum of 7 above the maximum of 6/);
+  expect(checkLimits(crossed, FIXTURE_LIMITS)).toEqual([
+    expect.stringMatching(/steps override leaves a minimum of 7 above the maximum of 6/),
+  ]);
+});
+
+test('a long lesson at the top of every limit still fits, so length alone never fails', () => {
+  expect(checkLimits(liftedFixture(makeLongLesson()), FIXTURE_LIMITS)).toEqual([]);
+});
+
+test('limit messages end with the key an override names', () => {
+  const l = makeLesson();
+  unit(l).steps[0]!.narrative = words(130);
+  unit(l).steps = unit(l).steps.slice(0, 3);
+  expect(joined(l)).toContain('the limit is 120 (narrativeWords)');
+  expect(joined(l)).toContain('this one has 3 (steps)');
+  const lesson = liftedFixture();
+  lesson.units[0]!.steps[0]!.deep = [{ text: words(95), cite: [] }];
+  expect(checkLimits(lesson, FIXTURE_LIMITS)).toEqual([expect.stringContaining('the limit is 90 (deepWords)')]);
+});
+
+test('of two overrides, only the idle one is reported', () => {
+  const l = makeLesson();
+  unit(l).steps[0]!.narrative = words(130);
+  const lesson = {
+    ...liftedFixture(l),
+    overrides: [
+      { limit: 'narrativeWords' as const, max: 140, reason: 'Names all four messages in one step.' },
+      { limit: 'steps' as const, max: 8, reason: 'Room to grow.' },
+    ],
+  };
+  expect(unneededOverrides(lesson, [FIXTURE_LIMITS])).toEqual([expect.stringMatching(/steps.*not needed/)]);
 });

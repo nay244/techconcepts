@@ -1,9 +1,9 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { defineTrack, LessonValidationError } from './define';
+import { checkStructure, defineTrack, LessonValidationError } from './define';
 import { defineLegacyLesson, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
 import type { CertificationTrack } from './schema';
 import { cite } from './sources';
-import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeLesson, makeTwoUnitLesson, makeUnit, OBJ_URL } from './test-fixtures';
+import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeLesson, makeLongLesson, makeTwoUnitLesson, makeUnit, OBJ_URL } from './test-fixtures';
 
 // The structural rules (`checkStructure`) and the legacy-only rules, through the legacy path, which runs both.
 
@@ -518,17 +518,20 @@ test('net-map scene titles over 51 characters are rejected', () => {
 // ---------------------------------------------------------------- length
 
 test('a long lesson is not rejected for its length', () => {
-  // Six steps of 120-word narratives, three questions with long feedback: far over the old 15 minutes.
-  const long = makeLesson();
-  const u = unit(long);
-  u.steps.push({ ...structuredClone(u.steps[4]!), id: 'extra6', events: [] });
-  for (const step of u.steps) step.narrative = words(120);
-  u.overview.description = words(2500);
-  for (const q of u.practice) for (const option of q.options) option.feedback = words(200);
-  u.practice.push({ ...structuredClone(u.practice[0]!), id: 'q3' });
-  expect(u.steps).toHaveLength(6);
-  expect(u.practice).toHaveLength(3);
+  const long = makeLongLesson();
+  expect(unit(long).steps).toHaveLength(6);
+  expect(unit(long).practice).toHaveLength(3);
   expect(issuesOf(long)).toEqual([]);
+});
+
+test('a lesson may override a limit once, not twice', () => {
+  const once = { ...liftedFixture(), overrides: [{ limit: 'hookWords' as const, max: 90, reason: 'First reason.' }] };
+  expect(checkStructure(once)).toEqual([]);
+  const doubled = {
+    ...once,
+    overrides: [...once.overrides, { limit: 'hookWords' as const, max: 95, reason: 'Second reason.' }],
+  };
+  expect(checkStructure(doubled)).toEqual([expect.stringMatching(/"fixture-lesson".*hookWords.*more than once/)]);
 });
 
 test('a multi-unit legacy lesson needs exactly 2 questions per unit, and a one-unit lesson is left to its track', () => {

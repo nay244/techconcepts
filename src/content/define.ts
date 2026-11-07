@@ -289,13 +289,16 @@ export function parseLessonShape<S extends z.ZodType>(schema: S, input: unknown)
 
 /**
  * The structural rules every lesson keeps, whichever path it came by, as readable issues (empty when it has none): a
- * cert tag; unique unit, step, question, event and table ids; and a scene, events, tables and cues that fit the
+ * cert tag; unique unit, step, question, event and table ids; at most one override per limit; and a scene, events, tables and cues that fit the
  * lesson's figure and each other.
  */
 export function checkStructure(lesson: Lesson): string[] {
   const issues: string[] = [];
   if (lesson.certTags.length < 1) issues.push('A lesson needs at least 1 cert tag.');
   for (const id of duplicates(lesson.units.map((u) => u.id))) issues.push(`Duplicate unit id "${id}".`);
+  for (const limit of duplicates(lesson.overrides.map((o) => o.limit))) {
+    issues.push(`Lesson "${lesson.slug}" overrides the ${limit} limit more than once; keep one override, with one reason.`);
+  }
   for (const u of lesson.units) checkUnit(lesson, u, issues);
   return issues;
 }
