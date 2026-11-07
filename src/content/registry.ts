@@ -133,7 +133,7 @@ export function groupLessonModules(modules: Record<string, Lesson>): Record<stri
     if (match === null) throw new Error(`Unexpected lesson file path "${path}".`);
     const [, trackId, fileName] = match as unknown as [string, string, string];
     if (typeof lesson !== 'object' || lesson === null || typeof lesson.slug !== 'string') {
-      throw new Error(`${path} must default-export defineLesson({ ... }).`);
+      throw new Error(`${path} must default-export defineLesson({ ... }), or defineLegacyLesson({ ... }) for a lesson on the legacy list.`);
     }
     if (lesson.slug !== fileName) {
       throw new Error(`${path}: the file name "${fileName}" must equal the lesson slug "${lesson.slug}".`);

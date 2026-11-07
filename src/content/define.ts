@@ -2,9 +2,11 @@ import type { z } from 'zod';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
-import { checkCitation, SOURCES, type SourceRegistry } from './sources';
+import { checkCitedRules, citationsOf } from './cited';
+import { checkCitation, SOURCES, sourceListOf, type SourceRegistry } from './sources';
 import { formatBytes } from '../lib/format';
 import {
+  lessonSchema,
   trackSchema,
   type CertificationTrack,
   type Cue,
@@ -301,6 +303,31 @@ export function checkStructure(lesson: Lesson): string[] {
   }
   for (const u of lesson.units) checkUnit(lesson, u, issues);
   return issues;
+}
+
+/**
+ * What a cited lesson file writes. Its references are left out (they are listed from its citations); citation lists,
+ * overrides and a scene's layers, labels and start may be.
+ */
+export type LessonInput = z.input<typeof lessonSchema>;
+
+/**
+ * Checks a lesson in the cited shape against `sources` and returns it, origin 'cited', with each unit's references
+ * listed from its citations in reading order. Its shape first (alone, as `parseLessonShape` reports it); then, together,
+ * the cited rules (`cited.ts`: one unit, no written references, citations, the OSI badge, backing and traces, sound
+ * citations, no lesson numbers) and the structural rules every lesson keeps (`checkStructure`). Throws one
+ * LessonValidationError listing every problem. The numeric limits are the track's, checked in the registry.
+ */
+export function validateLesson(input: unknown, sources: SourceRegistry = SOURCES): Lesson {
+  const lesson: Lesson = { ...parseLessonShape(lessonSchema, input), origin: 'cited' };
+  const issues = [...checkCitedRules(lesson, sources), ...checkStructure(lesson)];
+  if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
+  return { ...lesson, units: lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) })) };
+}
+
+/** The entry point for every new lesson file: it validates at import, so a bad lesson fails the build. */
+export function defineLesson(input: LessonInput, sources: SourceRegistry = SOURCES): Lesson {
+  return validateLesson(input, sources);
 }
 
 /** Issues with a certification track's pin and the objectives its lessons map to. */

@@ -1,4 +1,5 @@
 import type { FigureId, FigureParts } from '../art/scenes/types';
+import type { LessonInput } from './define';
 import { legacyLessonSchema, liftLegacy, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
 import type { Limits } from './limits';
 import type { CertificationTrack, Lesson } from './schema';
@@ -20,6 +21,8 @@ import { cite, defineSources, type SourceRegistry } from './sources';
  * panel with table `t` (keyed on `ip`, starting empty); five steps whose events
  * are `m1` (with packet `p1` and a `glow` cue), `m2` + `t-add`, `t-match` + note
  * `n1` (a `status` cue), `m3` (dropped) and `m4`; two Practice questions.
+ *
+ * `makeCitedLesson` (below) is the one fixture in the cited shape, for the strict path (`validateLesson`).
  */
 
 /**
@@ -393,6 +396,335 @@ export const FIXTURE_SOURCES: SourceRegistry = defineSources([
     version: 'V1',
   },
 ]);
+
+/** `rfc-example` at a numbered section, linked through the registry's anchor. */
+const rfc = (section: string) => cite('rfc-example', section, { sources: FIXTURE_SOURCES });
+/** `vendor-example` at a named section: the page plus a fragment, since a content citation points at the section. */
+const vendor = (section: string, fragment: string) =>
+  cite('vendor-example', section, { sources: FIXTURE_SOURCES, url: `https://learn.microsoft.com/example#${fragment}` });
+
+/**
+ * A valid lesson in the cited shape (figure 'dhcp'), against `FIXTURE_SOURCES`; it fits `FIXTURE_LIMITS`. One unit,
+ * `leases`: a laptop borrows an address from the router for a set time, then renews it. Every Learn statement,
+ * Go-deeper paragraph and Practice option cites; the OSI layer cites `rfc-example` first, so the derived sources read
+ * RFC 9999, then the vendor page. Every Watch part has a backing: most trace to Learn ids (`lead-1`, `lead-2`,
+ * `term-1`…`term-3`, `pattern`, `why-1`, `deep-1`, `fact-1`…`fact-3`), the hook is an analogy, and the addresses
+ * that stand alone (RFC 5737's 192.0.2.0/24, RFC 7042's 00:00:5E:00:53:xx) are example data. Four steps: `request`
+ * (message `m1`, packet `p1`), `grant` (`m2`, table add `t-add`), `lookup` (table match `t-match`, note `n1`) and
+ * `renew` (`m3`, `m4`, table update `t-renew`); two Practice questions, `q1` (three options) and `q2` (two).
+ */
+export function makeCitedLesson(): LessonInput {
+  return {
+    slug: 'cited-lesson',
+    title: 'Cited lesson',
+    subtitle: 'How a laptop borrows an address, and keeps it',
+    level: 'beginner',
+    certTags: ['network-plus'],
+    summary: 'A laptop borrows an address from the router for a set time, then asks to keep it.',
+    figure: 'dhcp',
+    backing: { traces: ['lead-1', 'lead-2'] },
+    units: [
+      {
+        id: 'leases',
+        name: 'Address lease',
+        fullName: 'Address lease (Example Protocol)',
+        purpose: 'How a device borrows an address for a set time.',
+        osi: { layers: [7], cite: [rfc('1.2')] },
+        backing: { traces: ['lead-1'] },
+        scene: {
+          title: 'Home network',
+          views: ['network', 'sequence'],
+          panel: {
+            type: 'table',
+            table: {
+              id: 'leases',
+              title: 'Lease table',
+              by: 'kept by the router',
+              columns: [
+                { key: 'ip', label: 'Address' },
+                { key: 'holder', label: 'Lent to' },
+                { key: 'state', label: 'State' },
+              ],
+              keyColumn: 'ip',
+              initialRows: [],
+              empty: 'Empty. The router has not lent any address yet.',
+            },
+          },
+          log: {
+            title: 'Event log',
+            columns: [
+              { key: 'source', label: 'Source' },
+              { key: 'destination', label: 'Destination' },
+              { key: 'size', label: 'Size' },
+              { key: 'plain', label: 'In plain words' },
+            ],
+            legend: [
+              { kind: 'broadcast', label: 'To every device' },
+              { kind: 'request', label: 'Request' },
+              { kind: 'response', label: 'Reply' },
+              { kind: 'change', label: 'Table change' },
+              { kind: 'note', label: 'Note' },
+            ],
+          },
+          parties: [
+            { place: 'laptop', label: 'Laptop', addr: '192.0.2.10' },
+            { place: 'router', label: 'Router', addr: '192.0.2.1' },
+          ],
+          packets: {
+            p1: {
+              name: 'Lease request',
+              summary: 'The laptop asks for an address, sent to every device on the local network.',
+              size: 34,
+              layers: [
+                {
+                  name: 'Ethernet',
+                  size: 14,
+                  summary: 'Carries the frame to every device on the local network.',
+                  fields: [
+                    { name: 'Destination MAC', value: 'FF:FF:FF:FF:FF:FF', explain: 'Every device on the local network.' },
+                    { name: 'Source MAC', value: '00:00:5E:00:53:0A', explain: 'The laptop.', example: true },
+                  ],
+                },
+                {
+                  name: 'Example Protocol',
+                  size: 20,
+                  summary: 'Asks for an address to borrow.',
+                  fields: [
+                    { name: 'Message', value: 'Lease request' },
+                    { name: 'Hardware address', value: '00:00:5E:00:53:0A', explain: 'Who is asking.', example: true },
+                  ],
+                },
+              ],
+              backing: { traces: ['term-1', 'fact-3'] },
+            },
+          },
+          backing: { traces: ['lead-1'] },
+        },
+        overview: {
+          hook: 'Think of a library book. You may keep it for a few weeks, and you can ask to keep it longer before it is due.',
+          hookBacking: { analogy: true },
+          description: 'A router lends each device an address for a set time, called a **lease**. Before the time runs out, the device asks to keep it.',
+          backing: { traces: ['lead-1', 'lead-2'] },
+          facts: [
+            { label: 'Example address', value: '192.0.2.10', backing: { example: true } },
+            { label: 'Lease time', value: 'Set by the router', backing: { traces: ['fact-1'] } },
+          ],
+        },
+        steps: [
+          {
+            id: 'request',
+            title: 'Lease Request',
+            sub: 'The laptop asks for an address',
+            narrative: 'The laptop has no address yet, so it sends a **lease request** to every device on the local network.',
+            deep: [
+              {
+                text: 'The request goes to every device on the local network, because the laptop does not yet know which one lends addresses.',
+                cite: [rfc('3.1')],
+              },
+            ],
+            facts: [
+              { label: 'Sender', value: 'Laptop', backing: { traces: ['term-1'] } },
+              { label: 'Sent to', value: 'Every device nearby', backing: { traces: ['fact-3'] } },
+            ],
+            idle: 'Nothing has happened yet. Press Play to start.',
+            events: [
+              {
+                type: 'message',
+                id: 'm1',
+                from: 'laptop',
+                to: 'router',
+                tag: 'Lease request',
+                kind: 'broadcast',
+                packet: 'p1',
+                log: { source: 'Laptop', destination: 'Every device', size: '34 B' },
+                plain: 'The laptop asks for an address.',
+                cues: [{ cue: 'glow' }],
+                backing: { traces: ['term-1'] },
+              },
+            ],
+            backing: { traces: ['term-1', 'fact-3'] },
+          },
+          {
+            id: 'grant',
+            title: 'Lease Grant',
+            sub: 'The router lends an address',
+            narrative: 'The router lends the laptop a free address for a set time, and writes the **lease** into its table.',
+            deep: [{ text: 'The router chooses how long the lease lasts, and says so in its reply.', cite: [rfc('2.2')] }],
+            facts: [
+              { label: 'Address', value: '192.0.2.10', backing: { example: true } },
+              { label: 'Lease time', value: 'Set by the router', backing: { traces: ['fact-1'] } },
+            ],
+            events: [
+              {
+                type: 'message',
+                id: 'm2',
+                from: 'router',
+                to: 'laptop',
+                tag: 'Lease grant',
+                kind: 'response',
+                log: { source: '192.0.2.1', destination: 'Laptop' },
+                plain: 'The router lends the laptop an address.',
+                backing: { traces: ['lead-1', 'fact-1'] },
+              },
+              {
+                type: 'table',
+                id: 't-add',
+                table: 'leases',
+                op: 'add',
+                row: { ip: '192.0.2.10', holder: 'Laptop', state: 'Lent' },
+                summary: 'The router writes down the lease.',
+                backing: { traces: ['lead-1'] },
+              },
+            ],
+            backing: { traces: ['lead-1', 'fact-1'] },
+          },
+          {
+            id: 'lookup',
+            title: 'Lease Lookup',
+            sub: 'The router checks what it has lent',
+            narrative: 'Before it lends an address, the router reads its table. An address that is still lent is never lent to a second device.',
+            deep: [{ text: 'One row per lent address lets the router tell at once which addresses are still free.', cite: [rfc('2.3')] }],
+            facts: [
+              { label: 'Lookup', value: 'Found', backing: { traces: ['why-1'] } },
+              { label: 'Lent to', value: 'Laptop', backing: { traces: ['why-1'] } },
+            ],
+            events: [
+              {
+                type: 'table',
+                id: 't-match',
+                table: 'leases',
+                op: 'match',
+                key: '192.0.2.10',
+                summary: 'The router finds the laptop’s lease.',
+                backing: { traces: ['why-1'] },
+              },
+              {
+                type: 'note',
+                id: 'n1',
+                log: { source: '192.0.2.1' },
+                plain: 'The address stays with the laptop.',
+                cues: [{ cue: 'status', arg: 'Lent' }],
+                backing: { traces: ['why-1'] },
+              },
+            ],
+            backing: { traces: ['why-1'] },
+          },
+          {
+            id: 'renew',
+            title: 'Lease Renewal',
+            sub: 'The laptop asks to keep it',
+            narrative: 'Halfway through the lease, the laptop asks to keep its address. The router agrees, and the lease starts again.',
+            deep: [{ text: 'A device asks to renew when half of its lease time has passed.', cite: [vendor('Lease renewal', 'lease-renewal')] }],
+            facts: [
+              { label: 'When', value: 'Halfway through', backing: { traces: ['fact-2'] } },
+              { label: 'Address', value: 'Unchanged', backing: { traces: ['lead-2'] } },
+            ],
+            events: [
+              {
+                type: 'message',
+                id: 'm3',
+                from: 'laptop',
+                to: 'router',
+                tag: 'Renew',
+                kind: 'request',
+                log: { source: '192.0.2.10', destination: '192.0.2.1' },
+                plain: 'The laptop asks to keep its address.',
+                backing: { traces: ['term-3', 'fact-2'] },
+              },
+              {
+                type: 'message',
+                id: 'm4',
+                from: 'router',
+                to: 'laptop',
+                tag: 'Renewed',
+                kind: 'response',
+                log: { source: '192.0.2.1', destination: '192.0.2.10' },
+                plain: 'The router extends the lease.',
+                backing: { traces: ['lead-2'] },
+              },
+              {
+                type: 'table',
+                id: 't-renew',
+                table: 'leases',
+                op: 'update',
+                key: '192.0.2.10',
+                row: { ip: '192.0.2.10', holder: 'Laptop', state: 'Renewed' },
+                summary: 'The router starts the laptop’s lease again.',
+                backing: { traces: ['lead-2'] },
+              },
+            ],
+            backing: { traces: ['lead-2', 'fact-2'] },
+          },
+        ],
+        learn: {
+          lead: [
+            { id: 'lead-1', text: 'A **lease** is an address the router lends a device for a set time.', cite: [rfc('2.1')] },
+            { id: 'lead-2', text: 'Before the time runs out, the device asks to keep the address, and the router extends the lease.', cite: [rfc('4.1')] },
+          ],
+          terms: [
+            { id: 'term-1', idea: 'Asking for an address', name: 'Lease request', cite: [rfc('3.1')] },
+            { id: 'term-2', idea: 'An address lent for a set time', name: 'Lease', cite: [rfc('2.1')] },
+            { id: 'term-3', idea: 'Asking to keep it longer', name: 'Renewal', cite: [vendor('Lease renewal', 'lease-renewal')] },
+          ],
+          pattern: {
+            id: 'pattern',
+            names: ['Lease Request', 'Lease Grant', 'Lease Renewal'],
+            note: 'Ask, receive, then renew before the time runs out.',
+            cite: [rfc('3')],
+          },
+          why: [
+            {
+              id: 'why-1',
+              text: 'While a lease lasts, the router lends that address to no other device, so no two devices share one.',
+              cite: [rfc('2.3')],
+            },
+          ],
+          deep: [
+            {
+              id: 'deep-1',
+              text: 'The router chooses the lease time. A device renews at half of it, so a lost reply still leaves time to try again.',
+              cite: [rfc('4.2'), vendor('Lease renewal', 'lease-renewal')],
+            },
+          ],
+          facts: [
+            { id: 'fact-1', label: 'Lease time', value: 'Chosen by the router', cite: [rfc('2.2')] },
+            { id: 'fact-2', label: 'Renewal', value: 'At half the lease time', cite: [vendor('Lease renewal', 'lease-renewal')] },
+            { id: 'fact-3', label: 'Request sent to', value: 'Every device on the local network', cite: [rfc('3.1')] },
+          ],
+        },
+        practice: [
+          {
+            id: 'q1',
+            prompt: 'What is a lease?',
+            options: [
+              { text: 'An address lent for a set time', feedback: 'Right. The router lends the address, and the lease says for how long.', cite: [rfc('2.1')] },
+              { text: 'An address a device keeps forever', feedback: 'Not quite. A lease ends unless the device renews it.', cite: [rfc('4.1')] },
+              {
+                text: 'A list of every device on the network',
+                feedback: 'Not quite. The router keeps a table of its leases; a lease is one address lent to one device.',
+                cite: [rfc('2.3')],
+              },
+            ],
+            answer: 0,
+          },
+          {
+            id: 'q2',
+            prompt: 'When does a device ask to keep its address?',
+            options: [
+              {
+                text: 'When half of its lease time has passed',
+                feedback: 'Right. Renewing halfway leaves time to try again if a reply is lost.',
+                cite: [vendor('Lease renewal', 'lease-renewal')],
+              },
+              { text: 'Only after the lease has run out', feedback: 'Not quite. By then the address is no longer lent to it.', cite: [rfc('4.1')] },
+            ],
+            answer: 0,
+          },
+        ],
+      },
+    ],
+  };
+}
 
 /** A certification track of two lessons, each mapped to one objective of the pinned `example-objectives` (V1). */
 export function makeCertTrack(): CertificationTrack {
