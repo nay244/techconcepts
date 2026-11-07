@@ -11,7 +11,6 @@
 :root {
   --sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
   --mono: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
-  --font-mono: var(--mono);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --text-sm: 0.875rem;
@@ -100,7 +99,7 @@ code,
 kbd,
 .mono,
 table.data {
-  font-family: var(--font-mono);
+  font-family: var(--mono);
   font-weight: 400;
 }
 

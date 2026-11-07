@@ -21,3 +21,8 @@ test('the lesson’s top bar gives its spare room to the crumb, as the three new
   // blocks beside the theme switch; the crumb still gives way first when the bar is short of room.
   expect(consoleCss).toMatch(/\.topbar__now \{[^}]*flex: 1 1 auto;[^}]*min-width: 340px;/);
 });
+
+test('the faces have one name each: data is set in --mono, and the old --font-mono alias is gone', () => {
+  expect(globalCss).not.toMatch(/--font-mono/);
+  expect(globalCss).toMatch(/table\.data \{\s*font-family: var\(--mono\);/);
+});
