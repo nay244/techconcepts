@@ -25,13 +25,15 @@ async function lessonPage(slug: string): Promise<Document> {
 }
 
 /**
- * The selectors the head's no-script style hides. The rule must be `!important`: the page's own stylesheets load
- * after it, and their `display` (the switches' inline-flex, the controls' flex) would win at the same specificity.
+ * The selectors the head's no-script style hides with `declaration`. The rule must be `!important`: the page's own
+ * stylesheets load after it, and their `display` (the switches' inline-flex, the controls' flex) would win at the
+ * same specificity.
  */
-function hiddenWithoutScript(doc: Document): string {
+function hiddenWithoutScript(doc: Document, declaration: 'display: none' | 'visibility: hidden' = 'display: none'): string {
   const styles = [...doc.querySelectorAll('head noscript style')].map((s) => s.textContent ?? '').join('\n');
-  const rule = /([^{}]+)\{\s*display:\s*none\s*!important;?\s*\}/.exec(styles);
-  if (rule === null) throw new Error('The head has no no-script rule that hides anything.');
+  const [property, value] = declaration.split(': ');
+  const rule = new RegExp(`([^{}]+)\\{\\s*${property}:\\s*${value}\\s*!important;?\\s*\\}`).exec(styles);
+  if (rule === null) throw new Error(`The head has no no-script rule that sets ${declaration} !important.`);
   return rule[1]!.trim();
 }
 
@@ -40,7 +42,9 @@ const words = (el: Element | null | undefined): string => (el?.textContent ?? ''
 test.each(['dhcp', 'how-the-internet-works'])('without JavaScript, %s says it needs JavaScript and hides every control', async (slug) => {
   const doc = await lessonPage(slug);
   const hidden = hiddenWithoutScript(doc);
-  const isHidden = (el: Element): boolean => el.closest(hidden) !== null;
+  // Kept in the layout, so the grid does not move, but out of sight and out of the accessibility tree.
+  const blanked = hiddenWithoutScript(doc, 'visibility: hidden');
+  const isHidden = (el: Element): boolean => el.closest(hidden) !== null || el.closest(blanked) !== null;
 
   // The controls that cannot work: the console's theme switch, the view switch, the playback controls and the
   // outline, whose places are buttons. Every button on the page is under one of them.
@@ -50,7 +54,12 @@ test.each(['dhcp', 'how-the-internet-works'])('without JavaScript, %s says it ne
   for (const button of buttons) expect(isHidden(button), button.outerHTML.slice(0, 120)).toBe(true);
   expect(isHidden(doc.querySelector('.topbar__seg')!)).toBe(true);
   expect(isHidden(doc.querySelector('.console__controls')!)).toBe(true);
-  expect(isHidden(doc.querySelector('.outline__list')!)).toBe(true);
+
+  // The whole outline goes, its heading too, so no empty "This lesson" landmark is left. It keeps its grid cell.
+  const outline = doc.querySelector('nav.console__outline')!;
+  expect(outline.matches(blanked), blanked).toBe(true);
+  expect(outline.closest(hidden), 'the outline keeps its cell: it is not display: none').toBeNull();
+  expect(isHidden(outline.querySelector('.outline__head')!)).toBe(true);
 
   // The note stands where the log would say "Press Play", whose words are hidden.
   const idle = doc.querySelector('.console__log td[data-idle]')!;

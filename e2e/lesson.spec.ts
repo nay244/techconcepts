@@ -385,6 +385,11 @@ test.describe('without JavaScript', () => {
       await expect(page.locator('.console__log .log__idle-words'), where).toBeHidden();
       // No button works without JavaScript, so none shows: the theme and view switches, playback, the outline's places.
       await expect(page.locator('button:visible'), where).toHaveCount(0);
+      // The outline goes whole, so no empty "This lesson" landmark is left, but it keeps its cell in the grid.
+      const outline = page.locator('nav.console__outline');
+      await expect(outline, where).toBeHidden();
+      await expect(page.getByRole('navigation', { name: /^(This lesson|\d+ protocols)$/ }), where).toHaveCount(0);
+      expect((await outline.boundingBox())?.width ?? 0, `${where}: the outline's cell`).toBeGreaterThan(100);
       // The Overview's words, the figure and the way back to the track stay.
       await expect(page.locator('.console__explain .explain__title'), where).toBeVisible();
       await expect(page.locator('.console__stage svg[data-figure]'), where).toBeVisible();
