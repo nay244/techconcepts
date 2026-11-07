@@ -3,8 +3,8 @@ import type { FigureId, FigureParts } from './types';
 
 /**
  * The places, cues and layers each scene figure supports, and whether it takes
- * a board or a scene's start. Every figure starts empty; each lesson's task fills its own figure
- * as the figure is built, so the validator only accepts what the figure can show.
+ * a board or a scene's start. Each list names only what its figure draws and
+ * its driver handles, so the validator only accepts what the figure can show.
  */
 export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
   dhcp: { places: ['laptop', 'router', 'phone'], cues: {}, layers: [], board: false, start: false },

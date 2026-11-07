@@ -1,4 +1,4 @@
-// The track page's words that are worked out from the track and its lessons when the page is built (Task 18): the
+// The track page's words that are worked out from the track and its lessons when the page is built: the
 // parts and their lessons as the cards show them, the exam chips, and what a returning visitor's card and the hero's
 // resume card say at each position of a lesson. Nothing here runs in the browser.
 import { CERT_TAGS, type CertTag } from '../content/certs';

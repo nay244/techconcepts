@@ -1,4 +1,4 @@
-// Home's words that are worked out from the lessons when the page is built (Task 17): the message-log sample on the
+// Home's words that are worked out from the lessons when the page is built: the message-log sample on the
 // big card, where a returning visitor is, and the track card's blurb. Nothing here runs in the browser.
 import type { Lesson, MessageKind } from '../content/schema';
 import { deriveState, positionOf, resumeLabel, slotsFor } from '../engine/timeline';

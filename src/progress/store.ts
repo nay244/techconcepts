@@ -5,7 +5,10 @@ export const PROGRESS_KEY = 'techconcepts:v1';
 
 export interface LessonProgress {
   status: 'in-progress' | 'finished';
-  /** The furthest step reached, counting from 1 (the Overview is step 0 and is never recorded). */
+  /**
+   * The furthest position reached, counting across every unit as the timeline does. Position 0, the first unit's
+   * Overview, is never recorded; every later one is, a later unit's Overview included.
+   */
   furthestPosition: number;
   /** ISO timestamp of the last time the lesson was opened. */
   lastOpened: string;
