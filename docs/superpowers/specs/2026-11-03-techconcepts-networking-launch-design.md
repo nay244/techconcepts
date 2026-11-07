@@ -175,7 +175,7 @@ Cert/role tags per lesson are drafted with the content and reviewed by the owner
 
 ## 9. Visual identity (designer's call; specifics left to the builder)
 
-- **Name:** **TechConcepts**, at **techconcepts.app** (owner). Write it as one word with a capital T and a capital C. (The project folder is still called `LevelUp`; that's only the folder name.)
+- **Name:** **TechConcepts**, at **techconcepts.app** (owner). Write it as one word with a capital T and a capital C.
 - **Feel:** a calm, technical classroom or lab. Dark by default, with an equally finished light theme and a toggle. Flat panels, thin borders, generous spacing, nothing flashy.
 - **Type:** a readable **sans-serif for prose** (lessons carry up to ~1,200 words, more than Protocol Explorer) and a **monospace for data** (addresses, packets, tables, ports). Both must be open-source. Uppercase, letter-spaced labels for panel titles are fine.
 - **Color:** defined as semantic tokens, each with **one meaning across every scene in every track**: request, response, handshake/control, broadcast, allowed/success, blocked/error, encrypted, selected/active. Both themes must meet WCAG AA contrast. **Color is never the only signal**; it is always paired with labels or shapes.

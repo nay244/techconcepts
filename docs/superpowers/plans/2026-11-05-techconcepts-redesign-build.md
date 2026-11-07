@@ -12,9 +12,9 @@
 
 **Reference material (not in any worktree):** the mockups and the scripts that drew them live only in the main checkout, which is git-ignored:
 
-- Mockups: `/Users/naaay/Developer/WebProjects/LevelUp/.superpowers/brainstorm/2830-1793891117/content/` (`MOCKUPS` below).
-- Figure and content scripts: `/Users/naaay/Developer/WebProjects/LevelUp/.superpowers/brainstorm/2830-1793891117/figs/` (`FIGS` below).
-- The Anatomy kit: `/Users/naaay/Developer/WebProjects/LevelUp/.superpowers/brainstorm/2830-1793891117/anatomy-src/repo/kit/` (`KIT` below), MIT, by Ryan (github.com/wheresryan22/anatomy).
+- Mockups: `.superpowers/brainstorm/2830-1793891117/content/` (`MOCKUPS` below).
+- Figure and content scripts: `.superpowers/brainstorm/2830-1793891117/figs/` (`FIGS` below).
+- The Anatomy kit: `.superpowers/brainstorm/2830-1793891117/anatomy-src/repo/kit/` (`KIT` below), MIT, by Ryan (github.com/wheresryan22/anatomy).
 
 Open a mockup in the built-in browser by serving `MOCKUPS` with any static server (for example `npx http-server MOCKUPS -p 5055`), or open the file directly. The scripts are the best record of geometry, routes, timings and words. Port what they do into the site's TypeScript, with tests; never import from `FIGS` or `KIT` at runtime or in tests.
 
