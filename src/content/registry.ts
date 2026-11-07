@@ -1,5 +1,4 @@
 import { slotsFor } from '../engine/timeline';
-import { estimateMinutes } from './estimate';
 import type { CertTag } from './certs';
 import type { Lesson, Track } from './schema';
 import { tracks } from './tracks';
@@ -16,7 +15,6 @@ export type LessonSummary =
       subtitle: string;
       partTitle: string;
       summary: string;
-      minutes: number;
       certTags: CertTag[];
       /** Watch steps in every unit together. */
       stepCount: number;
@@ -76,7 +74,6 @@ export function buildEntries(track: Track, lessons: Record<string, Lesson>): Les
               url: `/${track.id}/${planned.slug}`,
               subtitle: lesson.subtitle,
               summary: lesson.summary,
-              minutes: estimateMinutes(lesson),
               certTags: lesson.certTags,
               stepCount: lesson.units.reduce((sum, u) => sum + u.steps.length, 0),
               units: lesson.units.length,
@@ -108,13 +105,8 @@ export function neighbors(
 }
 
 /** `planned` counts every entry in the track (the "of 20" in "4 of 20 complete"). */
-export function trackTotals(entries: LessonSummary[]): { available: number; planned: number; minutes: number } {
-  const available = entries.filter((e): e is AvailableSummary => e.available);
-  return {
-    available: available.length,
-    planned: entries.length,
-    minutes: available.reduce((sum, e) => sum + e.minutes, 0),
-  };
+export function trackTotals(entries: LessonSummary[]): { available: number; planned: number } {
+  return { available: entries.filter((e) => e.available).length, planned: entries.length };
 }
 
 const LESSON_PATH = /^\.\/lessons\/([^/]+)\/([^/]+)\.ts$/;

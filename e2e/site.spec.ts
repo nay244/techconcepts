@@ -44,12 +44,12 @@ test.describe('desktop', () => {
   requireLessons(LESSONS);
 
   test.describe('Home', () => {
-    test('is titled TechConcepts and says "4 of 20 lessons ready, 124 min"', async ({ page }) => {
+    test('is titled TechConcepts and says "4 of 20 lessons ready"', async ({ page }) => {
       await open(page, '/');
       await expect(page).toHaveTitle('TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       await expect(networkingCard(page)).toHaveAttribute('href', '/networking');
-      await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready, 124 min');
+      await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready');
       await expect(networkingCard(page).locator('.go')).toHaveText('Open track');
       await expect(heroStart(page)).toHaveText(HERO_START);
       await expect(heroStart(page)).toHaveAttribute('href', INTERNET_PATH);
@@ -61,7 +61,7 @@ test.describe('desktop', () => {
       await expect(first).toHaveAttribute('href', INTERNET_PATH);
       await expect(first.locator('h3')).toHaveText('How the Internet Works');
       await expect(first.locator('.badge')).toHaveText('Beginner');
-      await expect(first.locator('.meta')).toHaveText(/^Lesson 1, 14 protocols, \d+ min$/);
+      await expect(first.locator('.meta')).toHaveText('Lesson 1, 14 protocols');
       await expect(first.locator('.go')).toHaveText('Open lesson');
       await expect(trackCards(page).nth(1)).toHaveAttribute('href', '/networking');
       await expect(page.locator('.tracks')).not.toContainText('How the Web Works');
@@ -107,6 +107,13 @@ test.describe('desktop', () => {
     }
   });
 
+  test('Home, the track page and About show no time figure', async ({ page }) => {
+    for (const path of ['/', '/networking', '/about']) {
+      await open(page, path);
+      await expect(page.locator('body')).not.toContainText(/\b\d+ ?min\b|\bminutes\b|one sitting|Short guided/i);
+    }
+  });
+
   test.describe('Track page', () => {
     test('lists 20 lessons, 16 of them Coming soon, with lesson 1 first and its "14 protocols"', async ({ page }) => {
       await open(page, '/networking');
@@ -114,7 +121,7 @@ test.describe('desktop', () => {
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       await expect(page.locator('.stats')).toContainText(/lessons planned\s*20/);
       await expect(page.locator('.stats')).toContainText(/ready now\s*4/);
-      await expect(page.locator('.stats')).toContainText(/minutes in all\s*124/);
+      await expect(page.locator('.stats')).not.toContainText(/minutes in all/);
 
       await expect(trackItems(page)).toHaveCount(20);
       await expect(page.locator('main li.lesson')).toHaveCount(4);
@@ -129,7 +136,7 @@ test.describe('desktop', () => {
       const first = trackItems(page).first();
       await expect(first.locator('.l-num')).toHaveText('Lesson 01');
       await expect(first.locator('a.l-link')).toHaveText('How the Internet Works');
-      await expect(first.locator('.l-meta li')).toContainText(['96 min', '14 protocols']);
+      await expect(first.locator('.l-meta li').first()).toHaveText('14 protocols');
     });
 
     test('?for= filters the lessons, the chips keep the URL in step, and an unknown value shows everything', async ({ page }) => {
@@ -183,7 +190,7 @@ test.describe('desktop', () => {
 
     await open(page, '/');
     await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
-    await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready, 124 min');
+    await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready');
   });
 
   test('About states where progress lives, credits the inspirations and the kit, and resets', async ({ page }) => {

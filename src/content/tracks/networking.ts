@@ -8,7 +8,7 @@ export const networkingTrack = defineTrack({
   id: 'networking',
   title: 'Networking Concepts',
   description:
-    'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it. Short, visual lessons you can finish in one sitting.',
+    'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it. Visual lessons at your own pace: stop anywhere and pick up where you left off.',
   level: 'beginner',
   parts: [
     {

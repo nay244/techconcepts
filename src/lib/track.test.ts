@@ -36,7 +36,7 @@ test('the six parts in order, each with its number, its title, its lessons and h
   expect(all[1]).toEqual({ ready: false, key: 'networking/osi-model', n: '02', title: 'OSI Model' });
 });
 
-test('a ready lesson carries its card: words, link, minutes, protocols for a lesson of several units, and exams', () => {
+test('a ready lesson carries its card: words, link, protocols for a lesson of several units, and exams', () => {
   const all = trackParts(networkingTrack, entries, lessonOf).flatMap((p) => p.lessons);
   const internet = all[0] as ReadyLesson;
   expect(internet).toMatchObject({
@@ -50,20 +50,20 @@ test('a ready lesson carries its card: words, link, minutes, protocols for a les
     summary: INTERNET.summary,
     tags: ['a-plus', 'network-plus', 'security-plus', 'ccna', 'helpdesk'],
   });
-  // 96 minutes and 14 protocols are counted from the lesson, not written in.
-  expect(internet.meta).toEqual(['96 min', '14 protocols', 'CompTIA A+', 'CompTIA Network+', 'CompTIA Security+', 'Cisco CCNA', 'Helpdesk']);
+  // 14 protocols are counted from the lesson, not written in.
+  expect(internet.meta).toEqual(['14 protocols', 'CompTIA A+', 'CompTIA Network+', 'CompTIA Security+', 'Cisco CCNA', 'Helpdesk']);
   expect(internet.places).toEqual(cardPlaces(INTERNET));
 
   const dhcp = all.find((l) => l.title === 'DHCP') as ReadyLesson;
-  expect(dhcp.meta).toEqual(['8 min', 'CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
+  expect(dhcp.meta).toEqual(['CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
   expect(dhcp.places).toHaveLength(slotsFor(DHCP).length);
 });
 
 test('the protocols chip counts the units of whatever lesson has several', () => {
   const two = validateLesson(makeTwoUnitLesson({ slug: 'dhcp', title: 'DHCP' })).lesson;
-  const fixtureEntries = entries.map((e) => (e.slug === 'dhcp' && e.available ? { ...e, units: 2, minutes: 9 } : e));
+  const fixtureEntries = entries.map((e) => (e.slug === 'dhcp' && e.available ? { ...e, units: 2 } : e));
   const all = trackParts(networkingTrack, fixtureEntries, (e) => (e.slug === 'dhcp' ? two : lessonOf(e))).flatMap((p) => p.lessons);
-  expect((all.find((l) => l.title === 'DHCP') as ReadyLesson).meta.slice(0, 2)).toEqual(['9 min', '2 protocols']);
+  expect((all.find((l) => l.title === 'DHCP') as ReadyLesson).meta.slice(0, 1)).toEqual(['2 protocols']);
 });
 
 test('the exam chips are the tags some ready lesson carries, in the usual order', () => {

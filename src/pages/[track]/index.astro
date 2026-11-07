@@ -91,7 +91,6 @@ const figures = available.map((entry) => {
         <dl class="stats">
           <div><dt>lessons planned</dt><dd>{totals.planned}</dd></div>
           <div><dt>ready now</dt><dd>{totals.available}</dd></div>
-          <div><dt>minutes in all</dt><dd>{totals.minutes}</dd></div>
         </dl>
         <TrackHeroCta client:load lessons={resumeLessons} known={known} start={{ title: start.title, url: start.url }} />
         <p class="flow">

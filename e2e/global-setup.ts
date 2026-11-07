@@ -18,18 +18,16 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         const link = card.querySelector<HTMLAnchorElement>('a.l-link');
         if (link === null) throw new Error('A ready lesson card has no link.');
         const path = new URL(link.href).pathname;
-        const minutes = /^(\d+) min$/.exec(card.querySelector('.l-meta li')?.textContent?.trim() ?? '');
         return {
           slug: path.split('/').filter(Boolean).at(-1) ?? '',
           title: link.textContent?.trim() ?? '',
           path,
-          minutes: minutes === null ? Number.NaN : Number(minutes[1]),
         };
       }),
     );
     if (lessons.length === 0) throw new Error('The track page at /networking links to no ready lesson.');
     for (const lesson of lessons) {
-      if (lesson.slug === '' || lesson.title === '' || Number.isNaN(lesson.minutes)) {
+      if (lesson.slug === '' || lesson.title === '') {
         throw new Error(`Could not read a ready lesson's card: ${JSON.stringify(lesson)}`);
       }
     }

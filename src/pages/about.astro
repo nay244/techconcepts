@@ -1,10 +1,8 @@
 ---
-// About (spec §6.4, mockup about-v1). The words are the mockup's; the stats, the tracks still to come, the long
-// lesson's length and the DHCP lesson's sources are worked out from the content. Only Reset progress runs as an
+// About (spec §6.4, mockup about-v1). The words are the mockup's; the stats, the tracks still to come and the DHCP lesson's sources are worked out from the content. Only Reset progress runs as an
 // island. The "On this page" list is plain links; a small module script marks the section being read.
 import { coverStill } from '../art/figures/covers';
 import { spot } from '../art/figures/spots';
-import { MAX_MINUTES } from '../content/estimate';
 import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { comingSoonTracks, tracks } from '../content/tracks';
@@ -36,8 +34,6 @@ const lessonsReady = trackTotals(tracks.flatMap((t) => getEntries(t.id))).availa
 
 // ---------- Body ----------
 const coming = comingTracksSentence(comingSoonTracks.map((t) => t.title));
-// The one lesson longer than the cap: each of its protocols is a short part of its own.
-const long = readyEntry('how-the-internet-works');
 const dhcp = readyEntry('dhcp');
 const sources = sourceRows(lessonOf(dhcp).units.flatMap((u) => u.references));
 ---
@@ -148,8 +144,7 @@ const sources = sourceRows(lessonOf(dhcp).units.flatMap((u) => u.references));
               stroke-linejoin="round"></path></svg
           >
           <p>
-            <b>Most lessons take {MAX_MINUTES} minutes or less.</b> Lesson {long.number}, {long.title}, is longer: it follows {long.units} protocols,
-            from HTTP to TLS, in about {long.minutes} minutes in all. Each protocol is its own short part, so you can stop after any one and pick up later.
+            <b>Lessons are self-paced.</b> Take as long as you need. This browser remembers where you stopped, so you can pick up where you left off.
           </p>
         </div>
         <p>The example networks use addresses set aside for documentation and private use, so nothing in a lesson points at a real machine.</p>

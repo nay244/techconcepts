@@ -6,7 +6,6 @@ import { formatBytes } from '../../../lib/format';
 import { lessonNumbers, misnamedLessons } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
-import { countUnitWords, estimateMinutes } from '../../estimate';
 import type { MessageEvent } from '../../schema';
 import dhcp from './dhcp';
 
@@ -19,14 +18,11 @@ function leasesAfterStep(n: number) {
   return deriveState(dhcp, p, stepEvents(dhcp, p).length).tables.leases!.rows;
 }
 
-test('DHCP validates, has 5 steps, 3 questions and takes 8 minutes', () => {
+test('DHCP validates, has 5 steps and 3 questions', () => {
   expect(() => validateLesson(dhcp)).not.toThrow();
   expect(dhcp.units).toHaveLength(1);
   expect(unit.steps).toHaveLength(5);
   expect(unit.practice).toHaveLength(3);
-  expect(estimateMinutes(dhcp)).toBe(8);
-  // The words a learner reads, counted as FIGS/minutes.mjs counts them.
-  expect(countUnitWords(unit)).toBe(816);
 });
 
 test('step titles are the technical terms, in order', () => {

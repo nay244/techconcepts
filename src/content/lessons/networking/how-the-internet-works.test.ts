@@ -9,7 +9,6 @@ import { netMapDriver } from '../../../scenes/drivers/net-map';
 import { lessonNumbers, lessonTitles, misnamedLessons, textsOf } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
-import { countUnitWords, estimateMinutes, estimateUnitMinutes, MAX_MINUTES, PRACTICE_MINUTES_PER_UNIT } from '../../estimate';
 import { getEntries, getLesson } from '../../registry';
 import type { MessageEvent, Unit } from '../../schema';
 import internet, { UNIT_ORDER } from './how-the-internet-works';
@@ -21,7 +20,6 @@ afterEach(() => {
 const unitById = (id: string): Unit => internet.units.find((u) => u.id === id)!;
 const indexOf = (id: string): number => internet.units.findIndex((u) => u.id === id);
 const messagesOf = (u: Unit): MessageEvent[] => u.steps.flatMap((s) => s.events).filter((e): e is MessageEvent => e.type === 'message');
-const minutesOf = (u: Unit): number => estimateUnitMinutes(u, PRACTICE_MINUTES_PER_UNIT);
 // Read from the project root: under jsdom import.meta.url is not a file URL.
 
 /** A unit's table once its step `n` has played in full (or, without `n`, at its Learn). */
@@ -51,13 +49,6 @@ test('78 Watch steps in all, 28 questions', () => {
   expect(internet.units.reduce((n, u) => n + u.practice.length, 0)).toBe(28);
 });
 
-test('the lesson takes 96 minutes', () => {
-  expect(estimateMinutes(internet)).toBe(96);
-  // As FIGS/minutes.mjs counts the whole lesson: 9,829 words read, 78 steps, half a minute of Practice for each of 14.
-  expect(internet.units.reduce((n, u) => n + countUnitWords(u), 0)).toBe(9829);
-  expect(PRACTICE_MINUTES_PER_UNIT).toBe(0.5);
-});
-
 test('the lesson is lesson 1, How the Internet Works, on the network map', () => {
   expect(internet).toMatchObject({
     slug: 'how-the-internet-works',
@@ -74,7 +65,6 @@ test('the lesson is lesson 1, How the Internet Works, on the network map', () =>
     available: true,
     units: 14,
     stepCount: 78,
-    minutes: 96,
   });
   expect(internet.units.map((u) => [u.name, u.fullName, u.purpose, u.group, u.osiLayers])).toEqual([
     ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', [7]],
@@ -121,31 +111,16 @@ test('the DHCP part and lesson 10, DHCP, both call their unit "dhcp", and each v
   expect([internet.figure, part.scene.layers]).toEqual(['net-map', []]);
 });
 
-test('each protocol validates, has 5–6 steps and 2 questions, and takes at most 15 minutes', () => {
+test('each protocol validates, has 5–6 steps and and 2 questions', () => {
   expect(() => validateLesson(internet)).not.toThrow();
   for (const u of internet.units) {
     expect(u.steps.length, u.id).toBeGreaterThanOrEqual(5);
     expect(u.steps.length, u.id).toBeLessThanOrEqual(6);
     expect(u.practice, u.id).toHaveLength(2);
-    expect(minutesOf(u), u.id).toBeLessThanOrEqual(MAX_MINUTES);
   }
-  // The mockup's words, all of them, counted as FIGS/minutes.mjs counts them: steps, words read and minutes, each
-  // as minutes.mjs gives it for that protocol. (The whole lesson's 96 is pinned above.)
-  expect(internet.units.map((u) => [u.id, u.steps.length, countUnitWords(u), minutesOf(u)])).toEqual([
-    ['http', 5, 737, 7],
-    ['https', 6, 814, 8],
-    ['tcp', 6, 680, 7],
-    ['udp', 5, 661, 7],
-    ['ip', 5, 731, 7],
-    ['dns', 5, 636, 7],
-    ['dhcp', 6, 679, 7],
-    ['icmp', 6, 725, 8],
-    ['smtp', 6, 685, 7],
-    ['pop3', 5, 578, 6],
-    ['imap', 5, 645, 7],
-    ['ftp', 6, 682, 7],
-    ['ssh', 6, 797, 8],
-    ['tls', 6, 779, 8],
+  expect(internet.units.map((u) => [u.id, u.steps.length])).toEqual([
+    ['http', 5], ['https', 6], ['tcp', 6], ['udp', 5], ['ip', 5], ['dns', 5], ['dhcp', 6],
+    ['icmp', 6], ['smtp', 6], ['pop3', 5], ['imap', 5], ['ftp', 6], ['ssh', 6], ['tls', 6],
   ]);
 });
 

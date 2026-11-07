@@ -2,7 +2,6 @@ import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
 import { formatBytes } from '../lib/format';
-import { countWords, estimateMinutes, estimateUnitMinutes, MAX_MINUTES, PRACTICE_MINUTES_PER_UNIT, WARN_MINUTES } from './estimate';
 import {
   lessonSchema,
   trackSchema,
@@ -16,6 +15,7 @@ import {
   type Track,
   type Unit,
 } from './schema';
+import { countWords } from './words';
 
 const MAX_NARRATIVE_WORDS = 120;
 const MAX_HOOK_WORDS = 80;
@@ -322,12 +322,12 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
 // ---------------------------------------------------------------- public API
 
 /**
- * Checks a lesson and returns it with any warnings. Throws one
+ * Checks a lesson and returns it. Throws one
  * LessonValidationError listing every problem found. Shape problems (a missing
  * field, a wrong type, a key the schema does not know) are reported first on
  * their own, because the rules below need a well-formed lesson to compare against.
  */
-export function validateLesson(input: unknown): { lesson: Lesson; warnings: string[] } {
+export function validateLesson(input: unknown): { lesson: Lesson } {
   const parsed = lessonSchema.safeParse(input);
   if (!parsed.success) throw new LessonValidationError(parsed.error.issues.map(describeZodIssue), slugOf(input));
   const lesson = parsed.data;
@@ -337,36 +337,13 @@ export function validateLesson(input: unknown): { lesson: Lesson; warnings: stri
   for (const id of duplicates(lesson.units.map((u) => u.id))) issues.push(`Duplicate unit id "${id}".`);
   for (const u of lesson.units) checkUnit(lesson, u, issues);
 
-  // A one-unit lesson is capped as a whole. A lesson of many units (lesson 1)
-  // is exempt as a whole, and each unit is capped instead.
-  const warnings: string[] = [];
-  if (lesson.units.length === 1) {
-    const minutes = estimateMinutes(lesson);
-    if (minutes > MAX_MINUTES) {
-      issues.push(
-        `This lesson takes about ${minutes} minutes to get through; the limit is ${MAX_MINUTES} minutes. Trim the prose or split the lesson.`,
-      );
-    } else if (minutes > WARN_MINUTES) {
-      warnings.push(`This lesson takes about ${minutes} minutes, over the ${WARN_MINUTES}-minute target. Consider trimming it.`);
-    }
-  } else {
-    for (const u of lesson.units) {
-      const minutes = estimateUnitMinutes(u, PRACTICE_MINUTES_PER_UNIT);
-      if (minutes > MAX_MINUTES) {
-        issues.push(`Unit "${u.id}" takes about ${minutes} minutes to get through; the limit is ${MAX_MINUTES} minutes per unit.`);
-      }
-    }
-  }
-
   if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
-  return { lesson, warnings };
+  return { lesson };
 }
 
 /** The entry point for lesson files: validates at import, so a bad lesson fails the build. */
 export function defineLesson(input: LessonInput): Lesson {
-  const { lesson, warnings } = validateLesson(input);
-  for (const warning of warnings) console.warn(`[lesson ${lesson.slug}] ${warning}`);
-  return lesson;
+  return validateLesson(input).lesson;
 }
 
 /** Validates a track's shape and that part ids and lesson slugs are unique. */

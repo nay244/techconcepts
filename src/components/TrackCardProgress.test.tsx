@@ -18,7 +18,7 @@ const card = () => <TrackCardProgress known={known} totals={totals} />;
 const segments = (container: HTMLElement) => [...container.querySelectorAll('.segbar i')].map((i) => i.className || 'none');
 
 function expectFirstVisit(container: HTMLElement): void {
-  expect(screen.getByText('4 of 20 lessons ready, 124 min')).toBeInTheDocument();
+  expect(screen.getByText('4 of 20 lessons ready')).toBeInTheDocument();
   expect(screen.getByText('Open track')).toBeInTheDocument();
   expect(container.querySelector('.segbar')).toBeNull();
 }
@@ -26,8 +26,8 @@ function expectFirstVisit(container: HTMLElement): void {
 beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
-test('a first visit reads the ready lessons and their minutes, counted from the track', () => {
-  expect(totals).toEqual({ available: 4, planned: 20, minutes: 124 });
+test('a first visit reads the ready lessons, counted from the track', () => {
+  expect(totals).toEqual({ available: 4, planned: 20 });
   const { container } = render(card());
   expectFirstVisit(container);
 });
@@ -41,7 +41,7 @@ test('a returning visitor sees done and in progress, with one bar segment per le
   const { container } = render(card());
   expect(screen.getByText('1 of 20 done, 2 in progress')).toBeInTheDocument();
   expect(screen.getByText('Continue')).toBeInTheDocument();
-  expect(screen.queryByText('4 of 20 lessons ready, 124 min')).toBeNull();
+  expect(screen.queryByText('4 of 20 lessons ready')).toBeNull();
   // Done first, then in progress, then the rest; the bar repeats the words, so it is hidden from screen readers.
   expect(segments(container)).toEqual(['done', 'prog', 'prog', ...Array<string>(17).fill('none')]);
   expect(container.querySelector('.segbar')).toHaveAttribute('aria-hidden', 'true');

@@ -12,7 +12,6 @@ import { ScenePanel } from '../../../lesson/ScenePanel';
 import { lessonNumbers, lessonTitles } from '../../../test/lesson-references';
 import { showSweep } from '../../../test/show-sweep';
 import { validateLesson } from '../../define';
-import { countUnitWords, estimateMinutes } from '../../estimate';
 import { checkStated, learnerProse } from '../../helpers/subnet-events';
 import { getEntries } from '../../registry';
 import type { Lesson, NoteEvent } from '../../schema';
@@ -28,15 +27,12 @@ const ip = (text: string): number => {
 };
 const noteById = (id: string): NoteEvent => notes.find((e) => e.id === id)!;
 
-test('Subnetting validates and takes 10 minutes', () => {
+test('Subnetting validates', () => {
   expect(() => validateLesson(subnetting)).not.toThrow();
   expect(subnetting.units).toHaveLength(1);
   expect(unit.steps).toHaveLength(6);
   expect(events).toHaveLength(17);
   expect(unit.practice).toHaveLength(3);
-  expect(estimateMinutes(subnetting)).toBe(10);
-  // The mockup's words, all of them, counted as FIGS/minutes.mjs counts them.
-  expect(countUnitWords(unit)).toBe(1178);
 });
 
 test('the lesson is lesson 8, Subnetting, on the office figure with the bits board', () => {
@@ -50,7 +46,7 @@ test('the lesson is lesson 8, Subnetting, on the office figure with the bits boa
       'See how one big network is cut into smaller ones, how many devices fit in each, and how a device tells whether another device is its neighbour.',
     figure: 'subnet',
   });
-  expect(getEntries('networking').find((e) => e.slug === 'subnetting')).toMatchObject({ number: 8, available: true, minutes: 10 });
+  expect(getEntries('networking').find((e) => e.slug === 'subnetting')).toMatchObject({ number: 8, available: true });
   expect(unit).toMatchObject({
     name: 'Subnetting',
     fullName: 'Cutting one network into smaller ones',

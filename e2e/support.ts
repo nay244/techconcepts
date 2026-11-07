@@ -9,8 +9,6 @@ export interface ReadyLesson {
   title: string;
   /** Its page, such as `/networking/dhcp`. */
   path: string;
-  /** The minutes its card shows. */
-  minutes: number;
 }
 
 /** Where `global-setup.ts` leaves the lessons it found for the specs. */

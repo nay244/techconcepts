@@ -32,7 +32,7 @@ interface Props {
 
 /**
  * The track's lessons (track-v2): "Show lessons for" chips, then the parts. A ready lesson is a card with its figure,
- * words, minutes and exams, and, for a returning visitor, Finished or In progress with its Watch, Learn and Practice
+ * words and exams, and, for a returning visitor, Finished or In progress with its Watch, Learn and Practice
  * marks; a lesson still to come is a compact row.
  *
  * The chips follow `?for=<tag>`, kept in step with `history.replaceState`, so filtering adds no history. The server
@@ -201,7 +201,7 @@ function LessonCard({ lesson, progress, art }: { lesson: ReadyLesson; progress: 
         </h3>
         <p className="l-sub">{lesson.subtitle}</p>
         <p className="l-say">{lesson.summary}</p>
-        <ul className="l-meta" aria-label="Length and exams">
+        <ul className="l-meta" aria-label="Protocols and exams">
           {lesson.meta.map((m) => (
             <li key={m}>{m}</li>
           ))}

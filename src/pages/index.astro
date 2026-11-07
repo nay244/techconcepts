@@ -63,7 +63,7 @@ const tagColour = (kind: MessageKind): string => tokens.dark[kind];
 // First, How the Internet Works on its own card, wearing the web cover (a laptop asks a server for a page). It and
 // the Networking card each carry the first sentence of their own description, as the mockup does.
 const internetBlurb = firstSentence(internet.summary);
-const internetMeta = `Lesson 1, ${internet.units} protocols, ${internet.minutes} min`;
+const internetMeta = `Lesson 1, ${internet.units} protocols`;
 const networkingBlurb = firstSentence(track.description);
 const cardCover = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
 

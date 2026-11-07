@@ -48,8 +48,7 @@ function withRulesPanel(): LessonInput {
 
 test('a valid one-unit lesson passes and comes back unchanged', () => {
   const input = makeLesson();
-  const { lesson, warnings } = validateLesson(input);
-  expect(warnings).toEqual([]);
+  const { lesson } = validateLesson(input);
   expect(lesson).toEqual(input);
 });
 
@@ -576,53 +575,32 @@ test('net-map scene titles over 51 characters are rejected', () => {
   expect(at('dhcp', 52)).toEqual([]);
 });
 
-// ---------------------------------------------------------------- minutes
+// ---------------------------------------------------------------- length
 
-test('a one-unit lesson fails above 15 minutes and warns above 12', () => {
-  // The fixture is about 5 minutes: 0.5 × 5 steps + 1 for Practice + its words.
+test('a long lesson is not rejected for its length', () => {
+  // Six steps of 120-word narratives, three questions with long feedback: far over the old 15 minutes.
   const long = makeLesson();
-  unit(long).overview.description = words(2500);
-  expect(joined(long)).toMatch(/about \d+ minutes.*limit is 15/);
-
-  const warn = makeLesson();
-  unit(warn).overview.description = words(1700);
-  const { warnings } = validateLesson(warn);
-  expect(warnings).toHaveLength(1);
-  expect(warnings[0]).toMatch(/12/);
+  const u = unit(long);
+  u.steps.push({ ...structuredClone(u.steps[4]!), id: 'extra6', events: [] });
+  for (const step of u.steps) step.narrative = words(120);
+  u.overview.description = words(2500);
+  for (const q of u.practice) for (const option of q.options) option.feedback = words(200);
+  u.practice.push({ ...structuredClone(u.practice[0]!), id: 'q3' });
+  expect(u.steps).toHaveLength(6);
+  expect(u.practice).toHaveLength(3);
+  expect(issuesOf(long)).toEqual([]);
 });
 
-test('a multi-unit lesson needs exactly 2 questions per unit and checks minutes per unit', () => {
+test('a multi-unit lesson needs exactly 2 questions per unit', () => {
   const three = makeTwoUnitLesson();
   unit(three, 1).practice.push({ ...structuredClone(unit(three, 1).practice[0]!), id: 'q3' });
   expect(joined(three)).toMatch(/Unit "beta".*exactly 2 questions/);
-
-  // Each unit about 10 minutes, so the lesson is about 20: the lesson as a whole has no cap.
-  const long = makeTwoUnitLesson();
-  for (const u of long.units) u.overview.description = words(1300);
-  expect(validateLesson(long).warnings).toEqual([]);
-
-  // One unit over 15 (with half a minute of Practice) fails on its own.
-  unit(long, 1).overview.description = words(2500);
-  const issues = issuesOf(long);
-  expect(issues).toHaveLength(1);
-  expect(issues[0]).toMatch(/Unit "beta" takes about \d+ minutes.*limit is 15/);
 });
 
 // ---------------------------------------------------------------- defineLesson / defineTrack
 
-test('defineLesson returns the validated lesson without warning when it is short', () => {
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+test('defineLesson returns the validated lesson', () => {
   expect(defineLesson(makeLesson()).slug).toBe('fixture-lesson');
-  expect(warn).not.toHaveBeenCalled();
-});
-
-test('defineLesson logs each warning, naming the lesson', () => {
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  const input = makeLesson();
-  unit(input).overview.description = words(1700);
-  defineLesson(input);
-  expect(warn).toHaveBeenCalledTimes(1);
-  expect(String(warn.mock.calls[0]![0])).toContain(input.slug);
 });
 
 test('defineLesson throws LessonValidationError for a bad lesson', () => {

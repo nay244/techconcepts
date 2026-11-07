@@ -39,7 +39,7 @@ export interface ReadyLesson {
   url: string;
   subtitle: string;
   summary: string;
-  /** '96 min', then '14 protocols' for a lesson of several units, then the names of its exams. */
+  /** '14 protocols' for a lesson of several units, then the names of its exams. */
   meta: string[];
   /** Its exams, for the filter. */
   tags: CertTag[];
@@ -75,7 +75,7 @@ export function trackParts(track: Track, entries: LessonSummary[], lessonOf: (en
         url: entry.url,
         subtitle: entry.subtitle,
         summary: entry.summary,
-        meta: [`${entry.minutes} min`, ...(entry.units > 1 ? [`${entry.units} protocols`] : []), ...entry.certTags.map((t) => CERT_TAGS[t])],
+        meta: [...(entry.units > 1 ? [`${entry.units} protocols`] : []), ...entry.certTags.map((t) => CERT_TAGS[t])],
         tags: entry.certTags,
         places: cardPlaces(lessonOf(entry)),
       };

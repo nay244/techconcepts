@@ -64,14 +64,13 @@ test('every lesson is listed by part: ready ones as cards that link, the rest as
   expect(within(local).getByText('IP Address').closest('li')).toHaveTextContent('04IP Address');
 });
 
-test('lesson 1’s card shows 96 min, 14 protocols, its exams and its figure; one-unit lessons have no protocols chip', () => {
+test('lesson 1’s card shows 14 protocols, its exams and its figure; one-unit lessons have no protocols chip', () => {
   render(lessons());
   const internet = card('How the Internet Works');
   expect(within(internet).getByText('Lesson 01')).toBeInTheDocument();
   expect(within(internet).getByText('The protocols behind every page')).toBeInTheDocument();
-  const meta = within(internet).getByRole('list', { name: 'Length and exams' });
+  const meta = within(internet).getByRole('list', { name: 'Protocols and exams' });
   expect(within(meta).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-    '96 min',
     '14 protocols',
     'CompTIA A+',
     'CompTIA Network+',
@@ -82,8 +81,8 @@ test('lesson 1’s card shows 96 min, 14 protocols, its exams and its figure; on
   expect(within(internet).getByTestId('art-1')).toBeInTheDocument();
   expect(within(card('Subnetting')).getByTestId('art-8')).toBeInTheDocument();
 
-  const dhcp = within(card('DHCP')).getByRole('list', { name: 'Length and exams' });
-  expect(within(dhcp).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['8 min', 'CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
+  const dhcp = within(card('DHCP')).getByRole('list', { name: 'Protocols and exams' });
+  expect(within(dhcp).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
 });
 
 test('a first visit shows each ready lesson as not started', () => {

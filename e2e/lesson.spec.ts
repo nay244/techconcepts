@@ -275,12 +275,12 @@ test.describe('lesson specifics', () => {
     return lesson;
   }
 
-  test('reduced motion: a Play run takes as long as it does with motion (the shortest lesson)', async ({ browser, page }, testInfo) => {
+  test('reduced motion: a Play run takes as long as it does with motion (DHCP)', async ({ browser, page }, testInfo) => {
     test.skip(testInfo.project.name !== 'reduced-motion', 'Compares the reduced-motion project with a normal run.');
-    const shortest = [...LESSONS].sort((a, b) => a.minutes - b.minutes)[0]!;
+    const dhcp = lessonNamed('dhcp');
     /** One run of the lesson's first unit at 1×, from Play to Replay, measured in the page. */
     async function runTime(p: Page): Promise<number> {
-      await open(p, shortest.path);
+      await open(p, dhcp.path);
       await p.evaluate(() => {
         const button = document.querySelector('.console__controls .cbtn--play')!;
         const w = window as unknown as { runStart: number; runEnd: Promise<number> };
@@ -306,7 +306,7 @@ test.describe('lesson specifics', () => {
     const normal = await runTime(normalPage);
     await normalContext.close();
     const reduced = await runTime(page);
-    const note = `${shortest.title}'s first unit, Play to Replay at 1×: ${normal} ms with motion, ${reduced} ms with reduced motion`;
+    const note = `${dhcp.title}'s first unit, Play to Replay at 1×: ${normal} ms with motion, ${reduced} ms with reduced motion`;
     testInfo.annotations.push({ type: 'run time', description: note });
     // As long as normal: within a quarter either way.
     expect(Math.abs(reduced - normal) / normal).toBeLessThanOrEqual(0.25);

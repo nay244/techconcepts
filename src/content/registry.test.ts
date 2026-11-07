@@ -1,7 +1,6 @@
 import { expect, test, vi } from 'vitest';
 import { CERT_TAGS } from './certs';
 import { validateLesson } from './define';
-import { estimateMinutes } from './estimate';
 import {
   buildEntries,
   getEntries,
@@ -105,7 +104,6 @@ test('an available entry reports units, subtitle and maxPosition', () => {
     subtitle: dhcp.subtitle,
     partTitle: 'Getting between networks',
     summary: dhcp.summary,
-    minutes: estimateMinutes(dhcp),
     certTags: dhcp.certTags,
     stepCount: 5,
     units: 1,
@@ -120,7 +118,6 @@ test('an available entry reports units, subtitle and maxPosition', () => {
     units: 2,
     stepCount: 10,
     maxPosition: 15,
-    minutes: estimateMinutes(internet),
   });
 });
 
@@ -172,15 +169,18 @@ test('a title that differs from the track, a lesson not in the track, or a misma
   expect(() => buildEntries(networkingTrack, { dhcp: lessonFor('router', 'Router') })).toThrow(/slug/);
 });
 
-test('trackTotals counts planned (all entries), available and minutes', () => {
+test('trackTotals counts planned (all entries), and available', () => {
   const dhcp = lessonFor('dhcp', 'DHCP');
   const fw = lessonFor('firewalls', 'Firewalls');
-  expect(trackTotals(buildEntries(networkingTrack, {}))).toEqual({ available: 0, planned: 20, minutes: 0 });
+  expect(trackTotals(buildEntries(networkingTrack, {}))).toEqual({ available: 0, planned: 20 });
   expect(trackTotals(buildEntries(networkingTrack, { dhcp, firewalls: fw }))).toEqual({
     available: 2,
     planned: 20,
-    minutes: estimateMinutes(dhcp) + estimateMinutes(fw),
   });
+});
+
+test('entries carry no minutes', () => {
+  for (const e of getEntries('networking')) expect(e).not.toHaveProperty('minutes');
 });
 
 // ------------------------------------------------------------ module-level wiring
