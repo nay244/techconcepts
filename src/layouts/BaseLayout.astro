@@ -49,13 +49,15 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <script is:inline set:html={bootScript} />
     <style is:inline set:html={tokensToCss()} />
     {
-      /* Without JavaScript nothing can switch the theme or play a lesson, so those controls are hidden: the header's
-         theme toggle, and in the lesson console its Light/Dark switch, the view switch, the playback controls, the
-         outline below its heading (its places are buttons), and the log's "Press Play" words, where LogPanel's own
-         no-script note says the lesson needs JavaScript. The page's stylesheets load after this one and set these
-         controls' display at the same specificity, so the rule is !important. */
+      /* Without JavaScript nothing can switch the theme, filter a track or play a lesson, so those controls are
+         hidden: the header's theme toggle; the track page's exam chips, with their label and the line that counts
+         what they show (every lesson stays listed); and in the lesson console its Light/Dark switch, the view
+         switch, the playback controls, the outline below its heading (its places are buttons), and the log's
+         "Press Play" words, where LogPanel's own no-script note says the lesson needs JavaScript. The page's
+         stylesheets load after this one and set these controls' display at the same specificity, so the rule is
+         !important. */
     }
-    <noscript><style>.theme-toggle, .topbar__seg, .stage__views, .console__controls, .console__outline > :not(.outline__head), .log__idle-words { display: none !important; } :root .site-head[data-over-hero] { border-bottom-color: var(--line); background: var(--bg); }</style></noscript>
+    <noscript><style>.theme-toggle, .t-body .toolbar, .topbar__seg, .stage__views, .console__controls, .console__outline > :not(.outline__head), .log__idle-words { display: none !important; } :root .site-head[data-over-hero] { border-bottom-color: var(--line); background: var(--bg); }</style></noscript>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={fullTitle} />

@@ -239,6 +239,27 @@ test.describe('without JavaScript', () => {
       await expect(page.locator('.site-head .theme-toggle'), path).toBeHidden();
     }
   });
+
+  test('the track page hides its exam chips, which need JavaScript to filter, and still shows every lesson', async ({ page }) => {
+    await page.goto('/networking');
+    // The chips are on the page, and none of them shows; nor does their label or the line that counts what they show.
+    expect(await page.locator('main button.chip').count()).toBeGreaterThan(1);
+    await expect(page.locator('main button.chip:visible')).toHaveCount(0);
+    await expect(page.getByText('Show lessons for')).toBeHidden();
+    await expect(page.locator('main .showing')).toBeHidden();
+    // Everything the chips would filter is still there: each part, each ready lesson's card, each lesson to come.
+    expect(LESSONS.length).toBeGreaterThan(0);
+    for (const lesson of LESSONS) {
+      await expect(lessonCard(page, lesson.title), lesson.title).toBeVisible();
+      await expect(lessonCard(page, lesson.title).locator('a.l-link'), lesson.title).toBeVisible();
+    }
+    const items = trackItems(page);
+    expect(await items.count()).toBeGreaterThan(LESSONS.length);
+    for (const item of await items.all()) await expect(item).toBeVisible();
+    for (const part of await page.locator('main section.part').all()) await expect(part).toBeVisible();
+    // No control is left that cannot work.
+    await expect(page.locator('button:visible')).toHaveCount(0);
+  });
 });
 
 test.describe('phone', { tag: '@phone' }, () => {
