@@ -13,8 +13,10 @@ const DHCP: ResumeLesson = {
   url: '/networking/dhcp',
   places: ['the Overview', 'step 1 of 5', 'step 2 of 5', 'step 3 of 5', 'step 4 of 5', 'step 5 of 5', 'the Learn part', 'the Practice part'],
 };
+// A lesson of two units, as the old lesson 1 was. Its key is not that lesson's slug: loading progress splits a record
+// under that slug into the How the Internet Works lessons.
 const INTERNET: ResumeLesson = {
-  key: 'how-the-internet-works',
+  key: 'internet-tour',
   title: 'How the Internet Works',
   url: '/networking/how-the-internet-works',
   places: [

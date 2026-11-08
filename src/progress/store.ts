@@ -1,4 +1,5 @@
 import type { SafeStorage } from '../lib/storage';
+import { splitInternet } from './internet-split';
 
 /** The one versioned localStorage record that holds all learning progress, keyed by lesson slug. */
 export const PROGRESS_KEY = 'techconcepts:v2';
@@ -243,9 +244,12 @@ export function trackCompletion(d: ProgressData, keys: string[]): { finished: nu
   return { finished, inProgress };
 }
 
-/** What is stored under v2, with whatever v1 still holds merged in (an old tab may have written it since). */
+/**
+ * What is stored under v2, with whatever v1 still holds merged in (an old tab may have written it since), and the
+ * old Networking lesson 1 split into the How the Internet Works lessons that replaced it.
+ */
 export function loadProgress(s: SafeStorage): ProgressData {
-  return combineProgress(parseProgress(s.get(PROGRESS_KEY)), migrateV1(s.get(LEGACY_PROGRESS_KEY)));
+  return splitInternet(combineProgress(parseProgress(s.get(PROGRESS_KEY)), migrateV1(s.get(LEGACY_PROGRESS_KEY))));
 }
 
 /**
