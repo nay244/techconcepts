@@ -16,8 +16,9 @@ const FIREWALLS: Lesson = liftedFixture(makeLesson({ slug: 'firewalls', title: '
 // Internet Works, with HTTPS after it.
 const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
 const HTTPS: Lesson = liftedFixture(makeLesson({ slug: 'what-is-https', title: 'HTTPS' }));
+const TLS: Lesson = liftedFixture(makeLesson({ slug: 'what-is-tls', title: 'TLS/SSL' }));
 const NETWORKING = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS }, () => 'networking');
-const TOUR = buildEntries(internetTrack, { 'what-is-http': TWO, 'what-is-https': HTTPS }, () => 'how-the-internet-works');
+const TOUR = buildEntries(internetTrack, { 'what-is-http': TWO, 'what-is-https': HTTPS, 'what-is-tls': TLS }, () => 'how-the-internet-works');
 
 /** Shows a lesson as its own track's page does: numbered among, and leading on to, that track's lessons. */
 function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
@@ -163,6 +164,13 @@ test('the end row names the next ready lesson, or says the last ready one for no
     'That’s the whole lesson, and the last ready one for now. Lessons 17 to 19 are coming soon.',
   );
   expect(screen.getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
+});
+
+test('the end row of a track’s last lesson says the track ends there, not that more is coming', () => {
+  show(7, TLS);
+  expect(screen.getByText(/whole lesson/)).toHaveTextContent('That’s the whole lesson, and the last lesson of this track.');
+  expect(screen.queryByText(/for now|coming soon/)).toBeNull();
+  expect(screen.getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/how-the-internet-works');
 });
 
 test('in a lesson of many units, a unit’s end row leads to the next unit', async () => {
