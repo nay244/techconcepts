@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import { backedPartsOf, citedPartsOf } from '../cited';
 import type { Backing, Lesson } from '../schema';
 import type { Citation, SourceEntry, SourceRegistry } from '../sources';
+import { sha256 } from './sha256';
 
 /**
  * A lesson's claim sheet (fact-checker design §6.1): every item the fact-checker checks, with a stable key, and a
@@ -122,7 +122,7 @@ export function claimSheet(lesson: Lesson, sources: SourceRegistry): ClaimSheet 
   const ids = [...new Set(items.flatMap((item) => item.cite.map((c) => c.source)))].sort();
   const cited = ids.flatMap((id) => (Object.hasOwn(sources, id) ? [sources[id]!] : []));
   const body = { slug: lesson.slug, items, sources: cited, overrides: lesson.overrides };
-  return { ...body, hash: createHash('sha256').update(canonical(body)).digest('hex') };
+  return { ...body, hash: sha256(canonical(body)) };
 }
 
 /** The sheet as Markdown, for the fact-checker to read: the sources, then every item, then the overrides. */

@@ -61,7 +61,7 @@ const osiCitations = (u: Unit): Citation[] => (u.osi === 'spans' ? [] : u.osi.ci
  */
 function citedParts(u: Unit, at: string): CitedPart[] {
   const { learn } = u;
-  const part = (where: string, value: { cite: Citation[]; analogy?: true }, statement = false): CitedPart => ({
+  const part = (where: string, value: { cite: Citation[]; analogy?: true; [key: string]: unknown }, statement = false): CitedPart => ({
     at: where,
     cite: value.cite,
     statement,

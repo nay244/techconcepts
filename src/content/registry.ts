@@ -1,6 +1,7 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
 import { definedWith, defineTrack } from './define';
+import { checkFactChecks } from './factcheck/gate';
 import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
@@ -246,6 +247,19 @@ checkLessonFolders(Object.keys(import.meta.glob(['./lessons/*/*.ts', '!./lessons
 checkLegacyList(Object.values(lessonsBySlug));
 checkTracks(tracks);
 checkListings(lessonsBySlug, tracks);
+
+/**
+ * Throws when any lesson in the cited shape lacks a current fact-check report in which every item passes, or when a
+ * report has no cited lesson (`factcheck/gate.ts`). `reports` is keyed by path, as `import.meta.glob` gives them.
+ */
+export function checkFactCheckReports(lessons: readonly Lesson[], reports: Record<string, string>, sources: SourceRegistry = SOURCES): void {
+  const issues = checkFactChecks(lessons, reports, sources);
+  if (issues.length > 0) throw new Error(`Fact checks:\n- ${issues.join('\n- ')}`);
+}
+
+// Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not.
+const reports = import.meta.glob<string>('../../docs/fact-checks/*.md', { query: '?raw', import: 'default', eager: true });
+checkFactCheckReports(Object.values(lessonsBySlug), reports);
 
 /** The tracks that list a lesson, in `tracks` order; empty for a slug no track lists. */
 export function tracksOf(slug: string): Track[] {
