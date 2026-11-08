@@ -18,10 +18,12 @@ export interface TrackCard {
   kind: string;
   blurb: string;
   cover: CoverId;
-  /** '20 lessons · 4 ready', or 'No lessons yet'. */
+  /** '19 lessons · 3 ready', or 'No lessons yet'. */
   count: string;
   /** 'Being written' for a track with no lessons yet. */
   flag: string | null;
+  /** True only for the first track, where a newcomer starts: its card is flagged "Start here". */
+  start: boolean;
   /** Each ready lesson's key and last position, for the progress island; empty for a track with no lessons. */
   known: Record<string, number>;
   /** How many lessons the track plans; 0 for a track with no lessons. */
@@ -33,7 +35,7 @@ const kindOf = (type: Track['type'], level: Track['level']): string =>
 
 /** Every track with lessons, in Home's order, then the tracks still being written. */
 export function trackCards(): TrackCard[] {
-  const ready = tracks.map((track): TrackCard => {
+  const ready = tracks.map((track, i): TrackCard => {
     const cover = TRACK_COVERS[track.id];
     if (cover === undefined) throw new Error(`The ${track.id} track has no cover for the Tracks page.`);
     const entries = getEntries(track.id);
@@ -47,6 +49,7 @@ export function trackCards(): TrackCard[] {
       cover,
       count: `${planned} lessons · ${available} ready`,
       flag: null,
+      start: i === 0,
       known: knownFrom(entries),
       planned,
     };
@@ -61,6 +64,7 @@ export function trackCards(): TrackCard[] {
       cover: track.cover,
       count: 'No lessons yet',
       flag: 'Being written',
+      start: false,
       known: {},
       planned: 0,
     }),

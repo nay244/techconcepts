@@ -49,3 +49,7 @@ test('a planned track is no link, says so, and has no progress', () => {
   });
   expect(card('comptia-a-plus').blurb).toBe('Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.');
 });
+
+test('the first track is where to start', () => {
+  expect(trackCards().map((c) => c.start)).toEqual([true, false, false]);
+});
