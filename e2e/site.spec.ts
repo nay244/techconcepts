@@ -116,12 +116,15 @@ test.describe('desktop', () => {
     }
   });
 
-  test('the header’s Tracks link opens /tracks on every page, marked current on /tracks and the track page', async ({ page }) => {
-    // Every page with the site header; lessons have none.
+  test('the header’s Tracks link and the footer’s All tracks link open /tracks on every page; Tracks is current on /tracks and the track page', async ({ page }) => {
+    // Every page with the site header and footer; lessons have neither.
     for (const { path } of SITE_PAGES) {
       await open(page, path);
       await expect(headerTracksLink(page), path).toHaveAttribute('href', '/tracks');
-      if (path === '/tracks' || path === '/networking') await expect(headerTracksLink(page), path).toHaveAttribute('aria-current', 'page');
+      await expect(page.getByRole('contentinfo').getByRole('link', { name: 'All tracks', exact: true }), path).toHaveAttribute('href', '/tracks');
+      // "page" only where the link is this very page; on a track page, inside the Tracks section, it is "true".
+      const current = path === '/tracks' ? 'page' : path === '/networking' ? 'true' : null;
+      if (current) await expect(headerTracksLink(page), path).toHaveAttribute('aria-current', current);
       else await expect(headerTracksLink(page), path).not.toHaveAttribute('aria-current');
     }
     await open(page, '/');
