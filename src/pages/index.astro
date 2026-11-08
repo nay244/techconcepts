@@ -10,10 +10,10 @@ import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../co
 import type { Lesson, MessageKind } from '../content/schema';
 import { comingSoonTracks, tracks } from '../content/tracks';
 import { knownFrom, levelLabel } from '../lib/entries';
-import { firstSentence, logSample, resumePlaces } from '../lib/home';
+import { firstSentence, logSample } from '../lib/home';
 import { tokens } from '../styles/tokens';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroCta, { type ResumeLesson } from '../components/HeroCta';
+import HeroCta from '../components/HeroCta';
 import HeroWeb from '../components/HeroWeb.astro';
 import TrackCardProgress from '../components/TrackCardProgress';
 import '../components/site.css';
@@ -39,15 +39,9 @@ function readyEntry(slug: string): AvailableSummary {
 // Each ready lesson's last position, for both progress islands.
 const known = knownFrom(entries);
 
-// ---------- Hero: always How the Internet Works; each ready lesson can say where a returning visitor is ----------
+// ---------- Hero: always How the Internet Works; a returning visitor's second button browses the tracks ----------
 const internet = readyEntry('how-the-internet-works');
 const heroStart = { href: internet.url, label: 'Learn how the Internet Works' };
-const resumeLessons: ResumeLesson[] = available.map((entry) => ({
-  key: entry.key,
-  title: entry.title,
-  url: entry.url,
-  places: resumePlaces(lessonOf(entry)),
-}));
 
 // ---------- The exams strip: the tags that have lessons, in their usual order ----------
 const present = new Set(available.flatMap((e) => e.certTags));
@@ -100,7 +94,7 @@ const EYE = parts[0].icon;
   overHero
 >
   <HeroWeb>
-    <HeroCta client:load lessons={resumeLessons} known={known} start={heroStart}>
+    <HeroCta client:load known={known} start={heroStart}>
       <h1 id="hero-title">See how technology <span class="accent">really works.</span></h1>
       <p class="lede">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
     </HeroCta>
