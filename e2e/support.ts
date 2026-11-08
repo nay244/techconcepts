@@ -2,12 +2,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 // ---------------------------------------------------------------- the ready lessons
 
-/** A ready lesson, as the built track page lists it (`global-setup.ts`). */
+/** A ready lesson, as a built track page lists it (`global-setup.ts`). */
 export interface ReadyLesson {
   /** The last part of its address, such as `dhcp`. */
   slug: string;
   title: string;
-  /** Its page, such as `/networking/dhcp`. */
+  /** Its page, such as `/networking/dhcp` or `/how-the-internet-works/what-is-http`. */
   path: string;
 }
 
@@ -21,7 +21,7 @@ export const LESSONS_ENV = 'TECHCONCEPTS_E2E_LESSONS';
 export const nodeEnv = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env;
 
 /**
- * The ready lessons the built site's track page links to. Empty only when the global setup has not run (as with
+ * The ready lessons the built site's track pages link to. Empty only when the global setup has not run (as with
  * `--list`); `requireLessons` turns that into a failing test rather than a suite that checks nothing.
  */
 export function readyLessons(): ReadyLesson[] {
@@ -31,8 +31,8 @@ export function readyLessons(): ReadyLesson[] {
 
 /** A test that fails when no ready lesson was found, so a spec that loops over none cannot pass by checking nothing. */
 export function requireLessons(lessons: ReadyLesson[]): void {
-  test('the built track page links to the ready lessons to check', () => {
-    expect(lessons.length, 'global-setup.ts found no ready lesson on /networking').toBeGreaterThan(0);
+  test('the built track pages link to the ready lessons to check', () => {
+    expect(lessons.length, 'global-setup.ts found no ready lesson on the track pages').toBeGreaterThan(0);
   });
 }
 
@@ -43,6 +43,7 @@ export const lessonCard = (page: Page, slug: string): Locator => page.locator('m
 export const SITE_PAGES = [
   { name: 'home', path: '/' },
   { name: 'tracks', path: '/tracks' },
+  { name: 'track-internet', path: '/how-the-internet-works' },
   { name: 'track', path: '/networking' },
   { name: 'about', path: '/about' },
   { name: '404', path: '/does-not-exist' },
