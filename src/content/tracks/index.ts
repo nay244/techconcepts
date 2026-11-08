@@ -7,6 +7,28 @@ export { networkingTrack };
 /** Every track that has lessons. The order is the order they appear on Home. */
 export const tracks: Track[] = [networkingTrack];
 
+/** A track the Tracks page lists before it has any lessons: what it will be, and the cover it wears meanwhile. */
+export interface PlannedTrack {
+  id: string;
+  title: string;
+  type: Track['type'];
+  level: Track['level'];
+  blurb: string;
+  cover: CoverId;
+}
+
+/** The Tracks page's "Being written" cards, after the tracks that have lessons. Not clickable: nothing is behind them yet. */
+export const plannedTracks: PlannedTrack[] = [
+  {
+    id: 'comptia-a-plus',
+    title: 'CompTIA A+',
+    type: 'certification',
+    level: 'beginner',
+    blurb: 'Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.',
+    cover: 'aplus',
+  },
+];
+
 /**
  * Roadmap cards on Home (spec §10.1), after the How the Internet Works and Networking cards. Not clickable: there is
  * nothing behind them yet. Each wears its approved cover, still, under the kind of track it is (the Networking card

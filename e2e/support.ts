@@ -42,6 +42,7 @@ export const lessonCard = (page: Page, slug: string): Locator => page.locator('m
 /** Every page outside the lessons, by the address it is served at. */
 export const SITE_PAGES = [
   { name: 'home', path: '/' },
+  { name: 'tracks', path: '/tracks' },
   { name: 'track', path: '/networking' },
   { name: 'about', path: '/about' },
   { name: '404', path: '/does-not-exist' },
