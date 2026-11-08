@@ -3,11 +3,11 @@ import { figureIdSchema } from '../../content/schema';
 import { drawFigure } from './index';
 import type { FigureId } from './types';
 
-// Now that all four exist: each lesson's figure is one image to assistive technology, names itself for its driver,
+// Now that all of them exist: each lesson's figure is one image to assistive technology, names itself for its driver,
 // and has no film grain (ruling R2).
 test('every scene figure draws with data-figure, role="img", a non-empty aria-label and no grain', () => {
   const ids = figureIdSchema.options as readonly FigureId[];
-  expect([...ids].sort()).toEqual(['dhcp', 'firewall', 'net-map', 'subnet']);
+  expect([...ids].sort()).toEqual(['dhcp', 'firewall', 'net-map', 'osi', 'subnet']);
   for (const id of ids) {
     const { svg } = drawFigure(id);
     const root = /^<svg\b[^>]*>/.exec(svg)?.[0] ?? '';
