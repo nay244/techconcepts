@@ -28,19 +28,32 @@ export interface Resume<L extends ResumeLesson> {
 }
 
 /**
- * Where a returning visitor is (launch spec §10.1): once this browser has saved progress in a ready lesson, their
- * last lesson, if it is one of `lessons`. A lesson in progress goes on from its saved step; a lesson finished, or
- * only opened, from its Overview. Null for a first visit, and until progress has loaded, and while storage is
- * blocked. `known` is the page's `knownFrom(entries)`, as given to `useProgress`.
+ * A returning visitor's last lesson: once this browser has saved progress in a lesson the page knows, the last lesson
+ * opened, if the page knows it. Null for a first visit, until progress has loaded, and while storage is blocked.
+ * `known` is the page's `knownFrom(entries)`, as given to `useProgress`.
+ */
+export function lastKnownLesson(
+  { ready, available, data }: Pick<UseProgress, 'ready' | 'available' | 'data'>,
+  known: Record<string, number>,
+): string | null {
+  // Only a record for a lesson this page knows counts: one no track lists yet is kept in storage, but is not progress here.
+  const saved = ready && available && Object.keys(data.lessons).some((key) => Object.hasOwn(known, key));
+  return saved && data.lastLesson !== null && Object.hasOwn(known, data.lastLesson) ? data.lastLesson : null;
+}
+
+/**
+ * Where a returning visitor is (launch spec §10.1): their `lastKnownLesson`, if it is one of `lessons`. A lesson in
+ * progress goes on from its saved step; a lesson finished, or only opened, from its Overview. Null whenever
+ * `lastKnownLesson` is.
  */
 export function resumeOf<L extends ResumeLesson>(
-  { ready, available, data }: Pick<UseProgress, 'ready' | 'available' | 'data'>,
+  progress: Pick<UseProgress, 'ready' | 'available' | 'data'>,
   lessons: L[],
   known: Record<string, number>,
 ): Resume<L> | null {
-  // Only a record for a lesson this page knows counts: one no track lists yet is kept in storage, but is not progress here.
-  const saved = ready && available && Object.keys(data.lessons).some((key) => Object.hasOwn(known, key));
-  const lesson = saved ? lessons.find((l) => l.key === data.lastLesson) : undefined;
+  const { data } = progress;
+  const key = lastKnownLesson(progress, known);
+  const lesson = key === null ? undefined : lessons.find((l) => l.key === key);
   if (lesson === undefined) return null;
 
   const record = recordOf(data, lesson.key);

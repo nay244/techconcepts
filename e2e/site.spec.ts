@@ -230,8 +230,9 @@ test.describe('desktop', () => {
     await expect(page.locator('.toc .pg-title')).toHaveText('1 of 20 complete');
 
     await open(page, '/');
-    await expect(heroEyebrow(page)).toHaveText('You finished DHCP');
-    // The hero's button stays the same for a returning visitor.
+    // The hero's eyebrow and first button stay the same for a returning visitor; only the second button changes.
+    await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
+    await expect(page.locator('.hero').getByRole('link', { name: 'Browse tracks' })).toHaveAttribute('href', '#tracks');
     await expect(heroStart(page)).toHaveText(HERO_START);
     await expect(heroStart(page)).toHaveAttribute('href', INTERNET_PATH);
     await expect(networkingCard(page).locator('.meta')).toHaveText('1 of 20 done, 0 in progress');
