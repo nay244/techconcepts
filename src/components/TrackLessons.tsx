@@ -99,27 +99,30 @@ export function TrackLessons(props: Props) {
 
   return (
     <>
-      <div className="toolbar" role="group" aria-labelledby="filter-lbl">
-        <span className="toolbar-lbl" id="filter-lbl">
-          Show lessons for
-        </span>
-        <ul className="chips">
-          {[null, ...tags].map((tag) => (
-            <li key={tag ?? 'all'}>
-              <button type="button" className="chip" aria-pressed={filter === tag} onClick={() => choose(tag)}>
-                {tag === null ? 'All' : CERT_TAGS[tag]}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {/* The line the eye reads; the live region beside it, always on the page, says the same to assistive tech. */}
-        <p className="showing" aria-hidden="true">
-          {sentence}
-        </p>
-        <p className="sr-only" role="status">
-          {sentence}
-        </p>
-      </div>
+      {/* A track whose lessons carry no exam tags (How the Internet Works, until its audit) has nothing to filter by. */}
+      {tags.length > 0 ? (
+        <div className="toolbar" role="group" aria-labelledby="filter-lbl">
+          <span className="toolbar-lbl" id="filter-lbl">
+            Show lessons for
+          </span>
+          <ul className="chips">
+            {[null, ...tags].map((tag) => (
+              <li key={tag ?? 'all'}>
+                <button type="button" className="chip" aria-pressed={filter === tag} onClick={() => choose(tag)}>
+                  {tag === null ? 'All' : CERT_TAGS[tag]}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {/* The line the eye reads; the live region beside it, always on the page, says the same to assistive tech. */}
+          <p className="showing" aria-hidden="true">
+            {sentence}
+          </p>
+          <p className="sr-only" role="status">
+            {sentence}
+          </p>
+        </div>
+      ) : null}
       {shownParts.map(({ part, items }) => {
         const allSoon = part.ready === 0;
         return (
@@ -201,11 +204,14 @@ function LessonCard({ lesson, progress, art }: { lesson: ReadyLesson; progress: 
         </h3>
         <p className="l-sub">{lesson.subtitle}</p>
         <p className="l-say">{lesson.summary}</p>
-        <ul className="l-meta" aria-label={lesson.metaLabel}>
-          {lesson.meta.map((m) => (
-            <li key={m}>{m}</li>
-          ))}
-        </ul>
+        {/* A lesson with no exams yet (and one unit) has nothing to list, so no empty list is drawn. */}
+        {lesson.meta.length > 0 ? (
+          <ul className="l-meta" aria-label={lesson.metaLabel}>
+            {lesson.meta.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        ) : null}
         <div className="l-foot">
           <span className="wlp" aria-hidden="true">
             {WLP.map((w, i) => (

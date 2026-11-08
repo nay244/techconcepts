@@ -3,16 +3,18 @@
 // worked out from the track and its lessons. Only the hero's buttons, the progress card, the lessons and the cover's
 // packets run in the browser; the rest is static, and without JavaScript the page shows a first visit in full.
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
-import { internetThumb } from '../../art/figures/internet-thumb';
+import { nameTile } from '../../art/figures/name-tile';
 import { spot } from '../../art/figures/spots';
 import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../../content/registry';
 import type { Lesson } from '../../content/schema';
-import { tracks } from '../../content/tracks';
+import { internetTrack, tracks } from '../../content/tracks';
 import { knownFrom, levelLabel } from '../../lib/entries';
 import { resumePlaces } from '../../lib/home';
 import { nextUps, presentTags, trackParts } from '../../lib/track';
+import { TRACK_COVERS } from '../../lib/tracks-page';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import NetworkingCover from '../../components/NetworkingCover.astro';
+import StillCover from '../../components/StillCover.astro';
 import TrackHeroCta, { type TrackResumeLesson } from '../../components/TrackHeroCta';
 import TrackLessons from '../../components/TrackLessons';
 import TrackSidebar from '../../components/TrackSidebar';
@@ -28,8 +30,10 @@ export const getStaticPaths = (() =>
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { track, number } = Astro.props;
-// Only Networking has a page cover so far; a new track needs its own before it can be built.
-if (track.id !== 'networking') throw new Error(`The ${track.id} track has no cover for its page.`);
+// Each track names its cover in one place (TRACK_COVERS); a new track needs one before it can be built. Networking's
+// is live (click to send packets); the others are stills.
+const coverId = TRACK_COVERS[track.id];
+if (coverId === undefined) throw new Error(`The ${track.id} track has no cover for its page.`);
 
 const entries = getEntries(track.id);
 const available = entries.filter((e): e is AvailableSummary => e.available);
@@ -59,18 +63,23 @@ const parts = trackParts(track, entries, lessonOf);
 const tags = presentTags(entries);
 const planned = entries.map((e) => ({ key: e.key, title: e.title }));
 const FIGURES: Record<string, () => string> = {
-  'how-the-internet-works': internetThumb,
   subnetting: () => spot('subnet'),
   dhcp: () => spot('dhcp'),
   firewalls: () => spot('firewall'),
 };
-// Each figure goes to the lessons island as static HTML in a slot named after the lesson's number, so it is not
-// repeated in the island's props.
-const figures = available.map((entry) => {
+/** A How the Internet Works card shows its protocol's name tile, from the lesson's one unit; others their figure. */
+function figureFor(entry: AvailableSummary): string {
+  if (track.id === internetTrack.id) {
+    const unit = lessonOf(entry).units[0]!;
+    return nameTile(unit.name, unit.fullName);
+  }
   const draw = FIGURES[entry.slug];
   if (draw === undefined) throw new Error(`The ${entry.key} lesson is ready and has no figure for its card.`);
-  return { slot: `art${entry.number}`, svg: draw() };
-});
+  return draw();
+}
+// Each figure goes to the lessons island as static HTML in a slot named after the lesson's number, so it is not
+// repeated in the island's props.
+const figures = available.map((entry) => ({ slot: `art${entry.number}`, svg: figureFor(entry) }));
 ---
 
 <BaseLayout title={track.title} current="tracks" description={track.description}>
@@ -98,7 +107,7 @@ const figures = available.map((entry) => {
           Every lesson: <b>Watch</b><i aria-hidden="true">›</i><b>Learn</b><i aria-hidden="true">›</i><b>Practice</b>
         </p>
       </div>
-      <NetworkingCover label={label} />
+      {track.id === 'networking' ? <NetworkingCover label={label} /> : <StillCover label={label} title={track.title} cover={coverId} />}
     </div>
   </section>
 
@@ -425,6 +434,27 @@ const figures = available.map((entry) => {
     display: block;
     width: 100%;
     height: 100%;
+  }
+  /* A How the Internet Works card's name tile (src/art/figures/name-tile.ts): the dot grid sits behind it here, so the
+     drawing needs no ids. */
+  .l-art:has(.name-tile) {
+    background-image: radial-gradient(var(--dot) 1.4px, transparent 1.6px);
+    background-size: 11px 11px;
+  }
+  .name-tile .nt-name {
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    fill: var(--ink-strong);
+  }
+  .name-tile .nt-rule {
+    fill: var(--accent);
+  }
+  .name-tile .nt-full {
+    font: 500 22px var(--mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    fill: var(--muted);
   }
   .l-body {
     display: flex;

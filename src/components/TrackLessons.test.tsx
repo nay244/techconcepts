@@ -85,6 +85,27 @@ test('a lesson of many units shows how many protocols it has before its exams', 
   expect(within(http).getByTestId('art-1')).toBeInTheDocument();
 });
 
+/** How the Internet Works as its page builds the island: 14 ready lessons, none with exam tags until its audit. */
+function tourLessons() {
+  const tour = getEntries('how-the-internet-works');
+  const tourParts = trackParts(internetTrack, tour, (e: AvailableSummary) => getLesson(e.slug)!);
+  return render(<TrackLessons parts={tourParts} tags={presentTags(tour)} known={knownFrom(tour)} />);
+}
+
+test('a ready lesson with nothing for its meta line draws no list', () => {
+  tourLessons();
+  const http = card('HTTP');
+  expect(http.querySelector('ul.l-meta')).toBeNull();
+  expect(within(http).queryByRole('list')).toBeNull();
+});
+
+test('a track whose lessons carry no exam tags has no filter', () => {
+  tourLessons();
+  expect(screen.queryByRole('group', { name: 'Show lessons for' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'All' })).toBeNull();
+  expect(shownTitles()).toHaveLength(14);
+});
+
 test('a one-unit lesson has no protocols chip, and its figure comes from its number', () => {
   render(lessons());
   expect(within(card('Subnetting')).getByTestId('art-7')).toBeInTheDocument();
