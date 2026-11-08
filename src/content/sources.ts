@@ -143,8 +143,59 @@ export function defineSources(entries: SourceEntry[]): SourceRegistry {
   return Object.freeze(registry);
 }
 
-/** Real entries arrive with later tasks (direction doc §10 tasks 4-6). */
-export const SOURCES: SourceRegistry = defineSources([]);
+/** The registry. The OSI Model lesson brought these entries; later lessons add theirs. */
+export const SOURCES: SourceRegistry = defineSources([
+  {
+    id: 'itu-x200',
+    kind: 'itu',
+    short: 'ITU-T X.200',
+    title: 'Information technology – Open Systems Interconnection – Basic Reference Model: The basic model',
+    publisher: 'ITU-T',
+    url: 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items',
+  },
+  {
+    id: 'rfc-1122',
+    kind: 'rfc',
+    short: 'RFC 1122',
+    title: 'Requirements for Internet Hosts – Communication Layers',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc1122.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc1122.html#section-{n}',
+  },
+  {
+    id: 'nist-sp800-77r1',
+    kind: 'nist',
+    short: 'NIST SP 800-77r1',
+    title: 'Guide to IPsec VPNs',
+    publisher: 'NIST',
+    url: 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf',
+  },
+  {
+    id: 'microsoft-osi',
+    kind: 'vendor',
+    short: 'Microsoft Learn',
+    title: 'Windows network architecture and the OSI model',
+    publisher: 'Microsoft',
+    url: 'https://learn.microsoft.com/en-us/windows-hardware/drivers/network/windows-network-architecture-and-the-osi-model',
+  },
+  {
+    id: 'cisco-ipip-decap',
+    kind: 'vendor',
+    short: 'Cisco',
+    title: 'IP-in-IP Decapsulation',
+    publisher: 'Cisco',
+    url: 'https://www.cisco.com/c/en/us/td/docs/iosxr/cisco8000/interfaces-and-hardware-component/configuration-guide/interfaces-and-hardware-component-config-cisco8000/ip-in-ip-tunnels-overview/ip-in-ip-decapsulation.html',
+  },
+  {
+    id: 'rfc-2003',
+    kind: 'rfc',
+    short: 'RFC 2003',
+    title: 'IP Encapsulation within IP',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc2003.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc2003.html#section-{n}',
+  },
+]);
 
 /**
  * One citation. `defining` marks the source as the defining standard for what the claim describes, such as the RFC
