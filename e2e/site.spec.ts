@@ -295,8 +295,9 @@ test.describe('desktop', () => {
     await expect(page.locator('.toc .pg-title')).toHaveText('1 of 19 complete');
 
     await open(page, '/');
-    await expect(heroEyebrow(page)).toHaveText('You finished DHCP');
-    // The hero's button stays the same for a returning visitor.
+    // The hero's eyebrow and first button stay the same for a returning visitor; only the second button changes.
+    await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
+    await expect(page.locator('.hero').getByRole('link', { name: 'Browse tracks' })).toHaveAttribute('href', '#tracks');
     await expect(heroStart(page)).toHaveText(HERO_START);
     await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
     await expect(networkingCard(page).locator('.meta')).toHaveText('1 of 19 done, 0 in progress');
@@ -374,8 +375,10 @@ test.describe('desktop', () => {
     await expect(tracksPageCards(page).nth(0).locator('.ring')).toHaveText('3 of 14 done');
     await expect(tracksPageCards(page).nth(1).locator('.tab-here, .ring')).toHaveCount(0);
 
+    // Home says nothing of where they are; progress in this track alone makes them a returning visitor.
     await open(page, '/');
-    await expect(heroEyebrow(page)).toHaveText('You’re on step 4 of 5 in UDP');
+    await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
+    await expect(page.locator('.hero').getByRole('link', { name: 'Browse tracks' })).toHaveAttribute('href', '#tracks');
     await expect(trackCards(page).nth(0).locator('.meta')).toHaveText('3 of 14 done, 1 in progress');
   });
 
