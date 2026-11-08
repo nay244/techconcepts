@@ -35,7 +35,7 @@ test('Subnetting validates', () => {
   expect(unit.practice).toHaveLength(3);
 });
 
-test('the lesson is lesson 8, Subnetting, on the office figure with the bits board', () => {
+test('the lesson is lesson 7, Subnetting, on the office figure with the bits board', () => {
   expect(subnetting).toMatchObject({
     slug: 'subnetting',
     title: 'Subnetting',
@@ -46,7 +46,7 @@ test('the lesson is lesson 8, Subnetting, on the office figure with the bits boa
       'See how one big network is cut into smaller ones, how many devices fit in each, and how a device tells whether another device is its neighbour.',
     figure: 'subnet',
   });
-  expect(getEntries('networking').find((e) => e.slug === 'subnetting')).toMatchObject({ number: 8, available: true });
+  expect(getEntries('networking').find((e) => e.slug === 'subnetting')).toMatchObject({ number: 7, available: true });
   expect(unit).toMatchObject({
     name: 'Subnetting',
     fullName: 'Cutting one network into smaller ones',

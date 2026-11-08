@@ -4,7 +4,7 @@
 // is plain links; a small module script marks the section being read.
 import { coverStill } from '../art/figures/covers';
 import { spot } from '../art/figures/spots';
-import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
+import { getEntries, getLesson, trackTotals } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { comingSoonTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, sourceRows } from '../lib/about';
@@ -14,18 +14,13 @@ import ResetProgress from '../components/ResetProgress';
 import '../components/site.css';
 import '../components/page-hero.css';
 
+// The first track, How the Internet Works, is the one "Who it's for" names: the beginner entry.
 const track = tracks[0]!;
 
-function readyEntry(slug: string): AvailableSummary {
-  const entry = getEntries(track.id).find((e): e is AvailableSummary => e.available && e.slug === slug);
-  if (entry === undefined) throw new Error(`About needs the ${track.id}/${slug} lesson, and it is not ready.`);
-  return entry;
-}
-
-function lessonOf(entry: AvailableSummary): Lesson {
-  const lesson = getLesson(entry.slug);
-  // An available entry is built from its lesson, so this cannot happen.
-  if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
+/** A ready lesson, by slug, whichever track lists it. */
+function readyLesson(slug: string): Lesson {
+  const lesson = getLesson(slug);
+  if (lesson === undefined) throw new Error(`About needs the ${slug} lesson, and it is not ready.`);
   return lesson;
 }
 
@@ -35,8 +30,8 @@ const lessonsReady = trackTotals(tracks.flatMap((t) => getEntries(t.id))).availa
 
 // ---------- Body ----------
 const coming = comingTracksSentence(comingSoonTracks.map((t) => t.title));
-const dhcp = readyEntry('dhcp');
-const sources = sourceRows(lessonOf(dhcp).units.flatMap((u) => u.references));
+const dhcp = readyLesson('dhcp');
+const sources = sourceRows(dhcp.units.flatMap((u) => u.references));
 ---
 
 <BaseLayout

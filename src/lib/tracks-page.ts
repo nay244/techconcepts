@@ -7,7 +7,7 @@ import { knownFrom, levelLabel } from './entries';
 import { firstSentence } from './home';
 
 /** The cover each track with lessons wears on its card. A new track needs one here before the page builds. */
-export const TRACK_COVERS: Record<string, CoverId> = { networking: 'networking' };
+export const TRACK_COVERS: Record<string, CoverId> = { 'how-the-internet-works': 'web', networking: 'networking' };
 
 export interface TrackCard {
   id: string;

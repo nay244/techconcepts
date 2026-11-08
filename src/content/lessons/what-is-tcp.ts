@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * TCP, protocol 3 of How the Internet Works’ 14. The laptop and the web server shake hands, then the page comes
+ * TCP, lesson 3 of How the Internet Works’ 14. The laptop and the web server shake hands, then the page comes
  * back in three pieces. The second is lost on the way; the laptop holds the third, says exactly what it is
  * missing, gets the lost piece again, and the connection closes.
  *
@@ -443,4 +444,5 @@ const tcp: LegacyUnitInput = {
   ],
 };
 
-export default tcp;
+/** Lesson 3 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(tcp));

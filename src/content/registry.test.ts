@@ -20,7 +20,7 @@ import {
 import { lessonSchema, type Lesson, type Track } from './schema';
 import type { SourceRegistry } from './sources';
 import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeCitedLesson, makeLesson, makeTwoUnitLesson } from './test-fixtures';
-import { comingSoonTracks, networkingTrack, tracks } from './tracks';
+import { comingSoonTracks, internetTrack, networkingTrack, tracks } from './tracks';
 
 const lessonFor = (slug: string, title: string) => liftedFixture(makeLesson({ slug, title }));
 
@@ -40,7 +40,7 @@ const definedFor = (slug: string, title: string) => validateLegacyLesson(without
 const home = () => 'networking';
 
 const SLUGS = [
-  'how-the-internet-works', 'osi-model', 'packets',
+  'osi-model', 'packets',
   'ip-address', 'mac-address', 'switch', 'arp',
   'subnetting', 'router', 'dhcp',
   'ports', 'tcp-udp', 'nat', 'dns',
@@ -48,23 +48,23 @@ const SLUGS = [
   'firewalls', 'proxies', 'load-balancers', 'vpn',
 ];
 
-test('the networking track has 20 lessons in order, How the Internet Works first', () => {
+test('the networking track has 19 lessons in order, OSI Model first', () => {
   const e = buildEntries(networkingTrack, {}, home);
   expect(e.map((x) => x.slug)).toEqual(SLUGS);
-  expect(e.map((x) => x.number)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
-  expect(e[0]).toMatchObject({ title: 'How the Internet Works', partTitle: 'The big picture' });
+  expect(e.map((x) => x.number)).toEqual(Array.from({ length: 19 }, (_, i) => i + 1));
+  expect(e[0]).toMatchObject({ title: 'OSI Model', partTitle: 'The big picture' });
   expect(e.every((x) => !x.available)).toBe(true);
 });
 
-test('lesson numbers: how-the-internet-works 1, subnetting 8, dhcp 10, firewalls 17', () => {
+test('lesson numbers: subnetting 7, dhcp 9, firewalls 16', () => {
   const number = (slug: string) => buildEntries(networkingTrack, {}, home).find((x) => x.slug === slug)?.number;
-  expect([number('how-the-internet-works'), number('subnetting'), number('dhcp'), number('firewalls')]).toEqual([1, 8, 10, 17]);
+  expect([number('subnetting'), number('dhcp'), number('firewalls')]).toEqual([7, 9, 16]);
 });
 
 test('networking track metadata, parts and titles', () => {
   expect(networkingTrack).toMatchObject({ id: 'networking', title: 'Networking Concepts', level: 'beginner' });
   expect(networkingTrack.parts.map((p) => [p.id, p.title, p.lessons.length])).toEqual([
-    ['big-picture', 'The big picture', 3],
+    ['big-picture', 'The big picture', 2],
     ['local-network', 'Addresses & the local network', 4],
     ['between-networks', 'Getting between networks', 3],
     ['across-internet', 'Talking across the internet', 4],
@@ -72,16 +72,17 @@ test('networking track metadata, parts and titles', () => {
     ['protect-scale', 'Protecting & scaling traffic', 4],
   ]);
   expect(networkingTrack.parts.flatMap((p) => p.lessons.map((l) => l.title))).toEqual([
-    'How the Internet Works', 'OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router',
+    'OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router',
     'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP/HTTPS', 'TLS', 'Firewalls', 'Proxies', 'Load Balancers', 'VPN',
   ]);
   const e = buildEntries(networkingTrack, {}, home);
   expect(e.find((x) => x.slug === 'arp')).toMatchObject({ partTitle: 'Addresses & the local network' });
-  expect(e.find((x) => x.slug === 'vpn')).toMatchObject({ partTitle: 'Protecting & scaling traffic', number: 20 });
+  expect(e.find((x) => x.slug === 'vpn')).toMatchObject({ partTitle: 'Protecting & scaling traffic', number: 19 });
 });
 
 test('tracks and coming-soon tracks', () => {
-  expect(tracks).toEqual([networkingTrack]);
+  // How the Internet Works comes first: it is where a newcomer starts.
+  expect(tracks).toEqual([internetTrack, networkingTrack]);
   expect(comingSoonTracks.map((t) => t.title)).toEqual([
     'Cryptography', 'AI Concepts', 'Privilege Escalation', 'Threat & Vulnerability Management',
   ]);
@@ -120,7 +121,7 @@ test('an available entry reports units, subtitle and maxPosition', () => {
     slug: 'dhcp',
     url: '/networking/dhcp',
     canonical: '/networking/dhcp',
-    number: 10,
+    number: 9,
     title: 'DHCP',
     subtitle: dhcp.subtitle,
     partTitle: 'Getting between networks',
@@ -132,9 +133,10 @@ test('an available entry reports units, subtitle and maxPosition', () => {
   });
 
   // Two units of five steps: 16 positions, 0 to 15.
-  const internet = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
-  expect(buildEntries(networkingTrack, { 'how-the-internet-works': internet }, home)[0]).toMatchObject({
+  const http = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
+  expect(buildEntries(internetTrack, { 'what-is-http': http }, () => 'how-the-internet-works')[0]).toMatchObject({
     available: true,
+    url: '/how-the-internet-works/what-is-http',
     number: 1,
     units: 2,
     stepCount: 10,
@@ -145,11 +147,11 @@ test('an available entry reports units, subtitle and maxPosition', () => {
 test('unavailable entries carry only identity', () => {
   expect(buildEntries(networkingTrack, {}, home)[0]).toEqual({
     available: false,
-    key: 'how-the-internet-works',
+    key: 'osi-model',
     trackId: 'networking',
-    slug: 'how-the-internet-works',
+    slug: 'osi-model',
     number: 1,
-    title: 'How the Internet Works',
+    title: 'OSI Model',
     partTitle: 'The big picture',
   });
 });
@@ -193,10 +195,10 @@ test('a title that differs from the track, or a mismatched slug, throws; another
 test('trackTotals counts planned (all entries), and available', () => {
   const dhcp = lessonFor('dhcp', 'DHCP');
   const fw = lessonFor('firewalls', 'Firewalls');
-  expect(trackTotals(buildEntries(networkingTrack, {}, home))).toEqual({ available: 0, planned: 20 });
+  expect(trackTotals(buildEntries(networkingTrack, {}, home))).toEqual({ available: 0, planned: 19 });
   expect(trackTotals(buildEntries(networkingTrack, { dhcp, firewalls: fw }, home))).toEqual({
     available: 2,
-    planned: 20,
+    planned: 19,
   });
 });
 
@@ -209,14 +211,16 @@ test('entries carry no minutes', () => {
 test('getTrack, getEntries and getLesson answer from the registry', () => {
   expect(getTrack('networking')).toBe(networkingTrack);
   expect(getTrack('nope')).toBeUndefined();
-  expect(getEntries('networking')).toHaveLength(20);
+  expect(getEntries('networking')).toHaveLength(19);
+  expect(getTrack('how-the-internet-works')).toBe(internetTrack);
+  expect(getEntries('how-the-internet-works')).toHaveLength(14);
   expect(getEntries('nope')).toEqual([]);
   expect(getLesson('not-written-yet')).toBeUndefined();
   expect(getLesson('nope')).toBeUndefined();
 });
 
 test('every lesson file that exists is available in the registry under its slug', () => {
-  for (const entry of getEntries('networking')) {
+  for (const entry of tracks.flatMap((t) => getEntries(t.id))) {
     if (entry.available) expect(getLesson(entry.slug)?.slug).toBe(entry.slug);
     else expect(getLesson(entry.slug)).toBeUndefined();
   }
@@ -224,10 +228,11 @@ test('every lesson file that exists is available in the registry under its slug'
 
 // ------------------------------------------------------------ the closed legacy list
 
-test('the four ready lessons are legacy, and every legacy lesson is listed', () => {
-  const legacy = ['how-the-internet-works', 'subnetting', 'dhcp', 'firewalls'].map((s) => getLesson(s)!);
-  expect(legacy.map((l) => l.origin)).toEqual(['legacy', 'legacy', 'legacy', 'legacy']);
-  const ready = getEntries('networking').filter((e) => e.available).map((e) => getLesson(e.slug)!);
+test('the 17 ready lessons are legacy, and every legacy lesson is listed', () => {
+  const legacy = LEGACY_LESSONS.map((s) => getLesson(s));
+  expect(legacy.map((l) => l?.origin)).toEqual(LEGACY_LESSONS.map(() => 'legacy'));
+  const ready = tracks.flatMap((t) => getEntries(t.id)).filter((e) => e.available).map((e) => getLesson(e.slug)!);
+  expect(ready).toHaveLength(17);
   for (const lesson of ready.filter((l) => l.origin === 'legacy')) expect(LEGACY_LESSONS, lesson.slug).toContain(lesson.slug);
 });
 
@@ -311,7 +316,7 @@ test('lessonsFromModules rejects a default export that is not a lesson', () => {
   expect(() => lessonsFromModules({ './lessons/dhcp.ts': undefined as never })).toThrow(/defineLesson/);
 });
 
-test('a file one folder deeper (a unit of lesson 1) is not a lesson path, nor is a track folder', () => {
+test('a file one folder deeper (a part of a lesson) is not a lesson path, nor is a track folder', () => {
   const http = lessonFor('http', 'HTTP');
   expect(() => lessonsFromModules({ './lessons/how-the-internet-works/http.ts': http })).toThrow(/Unexpected lesson file path/);
   expect(() => lessonsFromModules({ './lessons/networking/dhcp.ts': definedFor('dhcp', 'DHCP') })).toThrow(/Unexpected lesson file path/);
@@ -394,7 +399,7 @@ test('the registry re-checks each track against SOURCES, so a certification trac
   expect(() => checkTracks([plain], FIXTURE_SOURCES)).toThrow(/pins exam version "V2"/);
 });
 
-test('Networking passes the re-check against the real sources', () => {
+test('every track passes the re-check against the real sources', () => {
   expect(() => checkTracks(tracks)).not.toThrow();
 });
 

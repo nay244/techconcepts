@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * IMAP, protocol 11 of How the Internet Works’ 14. Your letters are in your mailbox at mail.example.net as the part
+ * IMAP, lesson 11 of How the Internet Works’ 14. Your letters are in your mailbox at mail.example.net as the part
  * starts, and they stay there: its tray is lit throughout (the mockup’s hold0, as the scene’s start). The app logs in
  * over TLS on port 993, opens the inbox, reads Sam’s letter and marks it \Seen on the server, then waits with IDLE
  * until a new letter reaches the server from the internet and the server says so. The internet’s party stands at
@@ -581,4 +582,5 @@ const imap: LegacyUnitInput = {
   ],
 };
 
-export default imap;
+/** Lesson 11 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(imap));

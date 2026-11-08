@@ -26,7 +26,7 @@ const cta = () => <TrackHeroCta lessons={lessons} known={known} start={start} />
 const link = (name: string | RegExp) => screen.getByRole('link', { name });
 
 function expectFirstVisit(container: HTMLElement): void {
-  expect(link('Start with How the Internet Works')).toHaveAttribute('href', '/networking/how-the-internet-works');
+  expect(link('Start with Subnetting')).toHaveAttribute('href', '/networking/subnetting');
   expect(link('See all lessons')).toHaveAttribute('href', '#lessons');
   expect(screen.queryByRole('link', { name: /^Continue/ })).toBeNull();
   expect(container.querySelector('.resume')).toBeNull();
@@ -36,7 +36,7 @@ beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 test('a first visit starts with the track’s first ready lesson, or goes to the lessons', () => {
-  expect(start.title).toBe('How the Internet Works');
+  expect(start.title).toBe('Subnetting');
   const { container } = render(cta());
   expectFirstVisit(container);
 });
@@ -84,6 +84,12 @@ test('with no saved lesson progress, or a last lesson the site does not have, it
   seedProgress({ [DHCP.key]: { status: 'in-progress', furthestPosition: 3 } }, 'osi-model');
   const second = render(cta());
   expectFirstVisit(second.container);
+  second.unmount();
+
+  // A last lesson in another track is not this track's to continue.
+  seedProgress({ 'what-is-http': { status: 'in-progress', furthestPosition: 3 } }, 'what-is-http');
+  const third = render(cta());
+  expectFirstVisit(third.container);
 });
 
 test('the server renders the first visit, then hydrates to the returning visitor without warnings', async () => {

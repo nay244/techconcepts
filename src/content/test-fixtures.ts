@@ -351,7 +351,7 @@ export function liftedFixture(input: LegacyLessonInput = makeLesson()): Lesson {
   return liftLegacy(legacyLessonSchema.parse(input));
 }
 
-/** Networking's limits: what the four ready lessons fit without overrides. */
+/** Networking's limits: what the ready lessons fit without overrides. */
 export const FIXTURE_LIMITS: Limits = {
   steps: { min: 4, max: 6 },
   factsPerStep: { min: 2, max: 4 },

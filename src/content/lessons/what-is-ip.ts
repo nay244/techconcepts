@@ -1,16 +1,17 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * IP, protocol 5 of How the Internet Works’ 14. One packet to example.net: the laptop sees it isn’t local, finds the
+ * IP, lesson 5 of How the Internet Works’ 14. One packet to example.net: the laptop sees it isn’t local, finds the
  * router’s hardware address with ARP, labels the packet and hands it over. The router swaps the private source for
  * its public address (NAT), the routers on the way pass it along, and the reply comes back the same way.
  *
  * The words are the approved mockup's (internet-v2.html, from FIGS/protocols-core.mjs), ported as written, but for
  * the two MAC addresses: the mockup's 02:1a:2b:3c:4d:5e (the laptop) and 02:aa:bb:cc:dd:01 (the router) are
  * 00:00:5E:00:53:10 and 00:00:5E:00:53:01 here, from the documentation range every lesson uses (RFC 7042), and the
- * same two devices' in lesson 10. The provider's router has no address in IP's own messages; the Sequence view gives
+ * same two devices' in Networking's DHCP lesson. The provider's router has no address in IP's own messages; the Sequence view gives
  * it 198.51.100.1, as ICMP finds it at hop 2 on the same map.
  */
 
@@ -333,4 +334,5 @@ const ip: LegacyUnitInput = {
   ],
 };
 
-export default ip;
+/** Lesson 5 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(ip));

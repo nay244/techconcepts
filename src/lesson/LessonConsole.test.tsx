@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
 import type { Lesson, SceneEvent } from '../content/schema';
 import { liftedFixture, makeLesson, makeUnit, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
-import { networkingTrack } from '../content/tracks';
+import { internetTrack, networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
 import { THEME_KEY } from '../lib/theme';
 import { PROGRESS_KEY } from '../progress/store';
@@ -23,17 +23,20 @@ const still = vi.hoisted(() => ({
 vi.mock('../scenes/drivers', () => ({ DRIVERS: { dhcp: still, subnet: still, firewall: still, 'net-map': still } }));
 
 /**
- * The fixture unit, filed as DHCP (lesson 10) and Firewalls (lesson 17) in the
+ * The fixture unit, filed as DHCP (lesson 9) and Firewalls (lesson 16) in the
  * networking track. Positions: 0 Overview, 1–5 the steps (Neighbor Hello,
  * Neighbor Reply, Table Lookup, Lost Message, Retransmission), 6 Learn, 7 Practice.
  */
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 const FIREWALLS: Lesson = liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls' }));
-/** Lesson 1, of three units: Alpha 0–7, Beta 8–15, Gamma 16–23 (each Overview, 5 steps, Learn, Practice). */
+/**
+ * A lesson of three units, filed as HTTP, lesson 1 of How the Internet Works (no ready lesson has many units since the
+ * split): Alpha 0–7, Beta 8–15, Gamma 16–23 (each Overview, 5 steps, Learn, Practice).
+ */
 const THREE: Lesson = liftedFixture(
   makeLesson({
-    slug: 'how-the-internet-works',
-    title: 'How the Internet Works',
+    slug: 'what-is-http',
+    title: 'HTTP',
     units: [
       makeUnit('alpha', { name: 'Alpha', group: 'core' }),
       makeUnit('beta', { name: 'Beta', group: 'app' }),
@@ -43,17 +46,21 @@ const THREE: Lesson = liftedFixture(
 );
 /** DHCP with two table changes in a row in Neighbor Reply and in Table Lookup (`makeUnitWithTwoTableChanges`). */
 const TWO_TABLE_CHANGES: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', units: [makeUnitWithTwoTableChanges()] }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': THREE }, () => 'networking');
+const NETWORKING = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS }, () => 'networking');
+const TOUR = buildEntries(internetTrack, { 'what-is-http': THREE }, () => 'how-the-internet-works');
 const KEY = 'dhcp';
 /** Every event's wait in these tests: the stand-in drivers' duration. */
 const EVENT_MS = 1000;
 
+/** The console as the lesson's own track's page renders it. */
 function consoleFor(lesson: Lesson = DHCP, figureData?: unknown) {
+  const track = lesson === THREE ? internetTrack : networkingTrack;
+  const entries = lesson === THREE ? TOUR : NETWORKING;
   const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === lesson.slug)!;
   return (
     <LessonConsole
-      trackId="networking"
-      trackTitle="Networking Concepts"
+      trackId={track.id}
+      trackTitle={track.title}
       lesson={lesson}
       entry={entry}
       total={entries.length}
@@ -150,7 +157,7 @@ test('the top bar says Step 2 of 5, never the step title', async () => {
   // Breadcrumb, lesson number and the unit's OSI layer.
   expect(within(topBar()).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
   expect(within(topBar()).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
-  expect(within(topBar()).getByText('Lesson 10 of 20')).toBeInTheDocument();
+  expect(within(topBar()).getByText('Lesson 9 of 19')).toBeInTheDocument();
   expect(within(topBar()).getByText('OSI layer 2, Data link')).toBeInTheDocument();
 });
 
@@ -306,7 +313,7 @@ test('the end row names the next ready lesson, or says the last ready one for no
   window.history.replaceState({}, '', '/networking/dhcp?step=7');
   const { unmount } = renderConsole();
   expect(within(explanation()).getByText(/Next ready lesson:/)).toHaveTextContent(
-    'That’s the whole lesson. Next ready lesson: Firewalls, lesson 17.',
+    'That’s the whole lesson. Next ready lesson: Firewalls, lesson 16.',
   );
   expect(within(explanation()).getByRole('link', { name: 'Go to Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
   unmount();
@@ -314,7 +321,7 @@ test('the end row names the next ready lesson, or says the last ready one for no
   window.history.replaceState({}, '', '/networking/firewalls?step=7');
   renderConsole(FIREWALLS);
   expect(within(explanation()).getByText(/last ready one/)).toHaveTextContent(
-    'That’s the whole lesson, and the last ready one for now. Lessons 18 to 20 are coming soon.',
+    'That’s the whole lesson, and the last ready one for now. Lessons 17 to 19 are coming soon.',
   );
   expect(within(explanation()).getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
 });
@@ -417,21 +424,21 @@ test('the Light/Dark switch shows the theme in effect and saves a choice', async
   expect(within(group).getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('the track progress counts finished lessons out of 20', () => {
+test('the track progress counts finished lessons out of 19', () => {
   save({ status: 'finished', furthestPosition: 7 });
   renderConsole();
-  expect(within(topBar()).getByText('1 of 20 complete')).toBeInTheDocument();
+  expect(within(topBar()).getByText('1 of 19 complete')).toBeInTheDocument();
 });
 
-test('the outline moves the lesson, and All 20 lessons opens the track list in a dialog', async () => {
+test('the outline moves the lesson, and All 19 lessons opens the track list in a dialog', async () => {
   renderConsole();
   const outline = screen.getByRole('navigation', { name: 'This lesson' });
   await user.click(within(outline).getByRole('button', { name: /^Table Lookup/ }));
   expect(heading()).toHaveTextContent('Table Lookup');
   expect(within(outline).getByRole('button', { name: /^Table Lookup/ })).toHaveAttribute('aria-current', 'step');
 
-  await user.click(within(outline).getByRole('button', { name: 'All 20 lessons' }));
-  const dialog = screen.getByRole('dialog', { name: 'All 20 lessons' });
+  await user.click(within(outline).getByRole('button', { name: 'All 19 lessons' }));
+  const dialog = screen.getByRole('dialog', { name: 'All 19 lessons' });
   expect(within(dialog).getByRole('link', { name: /Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   expect(within(dialog).getByRole('link', { name: /DHCP/ })).toHaveAttribute('aria-current', 'page');
   expect(within(dialog).getAllByText('Coming soon')).toHaveLength(17);
@@ -460,7 +467,7 @@ test('after Resume or the end row’s next unit, focus lands on the explanation,
   expect(explanation()).toHaveFocus();
   unmount();
 
-  window.history.replaceState({}, '', '/networking/how-the-internet-works?step=7');
+  window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=7');
   renderConsole(THREE);
   await user.click(within(explanation()).getByRole('button', { name: 'Go to Beta' }));
   expect(within(explanation()).getByText('Beta · Overview')).toBeInTheDocument();
@@ -511,7 +518,7 @@ test('the outline ticks only the units the learner has opened on this page', asy
   unmount();
 
   // A link into Gamma: Alpha was only the server's first render, so it is not ticked.
-  window.history.replaceState({}, '', '/networking/how-the-internet-works?step=16');
+  window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=16');
   renderConsole(THREE);
   expect(within(explanation()).getByText('Gamma · Overview')).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /^Beta / }));

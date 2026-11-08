@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * FTP, protocol 12 of How the Internet Works’ 14. Commands go on the control connection to port 21, in plain text,
+ * FTP, lesson 12 of How the Internet Works’ 14. Commands go on the control connection to port 21, in plain text,
  * password included. After PASV the laptop opens a second, data connection to port 50000, drawn dashed just above
  * the first; report.pdf crosses on it, and closing it marks the end of the file. QUIT closes the control line too.
  * The table marks the password and the file, as the mockup does: look here. Its mark says "exposed".
@@ -533,4 +534,5 @@ const ftp: LegacyUnitInput = {
   ],
 };
 
-export default ftp;
+/** Lesson 12 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(ftp));

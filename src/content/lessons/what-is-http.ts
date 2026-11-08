@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * HTTP, the first of How the Internet Works’ 14 protocols. You type example.net and press Enter: the browser looks
+ * HTTP, lesson 1 of How the Internet Works’ 14. You type example.net and press Enter: the browser looks
  * the name up, opens a TCP connection to the web server, asks for the front page with GET / and draws it, then
  * fetches its stylesheet and logo over the same connection.
  *
@@ -91,7 +92,7 @@ const http: LegacyUnitInput = {
       title: 'DNS Resolution',
       sub: 'Where is example.net?',
       narrative:
-        'To send anything, the browser needs the server’s number, its **IP address**. So it asks the **DNS resolver**: “What’s the number for example.net?” Turning a name into a number this way is **DNS resolution**. The DNS part of this lesson shows how the resolver finds it. Here the answer comes straight back.',
+        'To send anything, the browser needs the server’s number, its **IP address**. So it asks the **DNS resolver**: “What’s the number for example.net?” Turning a name into a number this way is **DNS resolution**. The DNS lesson shows how the resolver finds it. Here the answer comes straight back.',
       deep: 'This is a DNS query for the A record of example.net, sent over UDP to port 53. If the browser or the laptop looked the name up recently, it skips this step and uses the remembered answer.',
       facts: [
         { label: 'Asks', value: 'the DNS resolver, 192.0.2.53' },
@@ -138,7 +139,7 @@ const http: LegacyUnitInput = {
       title: 'TCP Connection',
       sub: 'Check the line works both ways',
       narrative:
-        'Next the laptop opens a line to the server, the way you check someone can hear you before you start talking. Three short messages: hello, hello back, and OK. That’s the **TCP handshake**, and the open line is a **connection**. HTTP sends everything over it. The TCP part looks at it closely.',
+        'Next the laptop opens a line to the server, the way you check someone can hear you before you start talking. Three short messages: hello, hello back, and OK. That’s the **TCP handshake**, and the open line is a **connection**. HTTP sends everything over it. The TCP lesson looks at it closely.',
       deep: 'The laptop picks a free port of its own (here 50310) and connects to port 80, the standard port for plain HTTP. The three messages are SYN, SYN-ACK and ACK. Once it’s open, many requests can share the connection; HTTP/1.1 keeps it open by default.',
       facts: [
         { label: 'From', value: '192.168.1.100, port 50310' },
@@ -383,4 +384,5 @@ const http: LegacyUnitInput = {
   ],
 };
 
-export default http;
+/** Lesson 1 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(http));

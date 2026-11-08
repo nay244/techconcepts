@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * ICMP, protocol 8 of How the Internet Works’ 14. Ping asks example.net whether it is there. Traceroute sends probes
+ * ICMP, lesson 8 of How the Internet Works’ 14. Ping asks example.net whether it is there. Traceroute sends probes
  * with a TTL of 1, 2, 3 and so on, and the router where each runs out sends back “time exceeded”, so the probes stop
  * on the routers one hop further each time, and light them. Last, a ping to an address where nobody is comes back
  * unreachable.
@@ -450,4 +451,5 @@ const icmp: LegacyUnitInput = {
   ],
 };
 
-export default icmp;
+/** Lesson 8 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(icmp));

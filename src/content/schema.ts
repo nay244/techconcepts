@@ -349,7 +349,7 @@ export const unitSchema = z.strictObject({
   id: slugSchema,
   name: text,
   fullName: text,
-  /** One line on what the unit is for (lesson 1's protocol rows). */
+  /** One line on what the unit is for (a How the Internet Works lesson's subtitle). */
   purpose: text,
   /** Lesson 1's outline filters. */
   group: z.enum(['core', 'app', 'security']).optional(),

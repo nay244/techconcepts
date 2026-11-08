@@ -1,16 +1,18 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * DHCP, protocol 7 of How the Internet Works’ 14. The laptop joins the Wi-Fi with no address, and the router lends
- * it one in four messages, Discover, Offer, Request and Acknowledge, then renews the lease halfway through. Lesson 10
- * teaches DHCP in full. This part overlaps it, and the overlap stays as it is for now (owner: deferred).
+ * DHCP, lesson 7 of How the Internet Works’ 14. The laptop joins the Wi-Fi with no address, and the router lends
+ * it one in four messages, Discover, Offer, Request and Acknowledge, then renews the lease halfway through.
+ * Networking Concepts' DHCP lesson teaches DHCP in full. This tour lesson overlaps it on purpose (direction doc §4.5):
+ * it says what DHCP is for, and the Networking lesson how it works.
  *
  * The words are the approved mockup's (internet-v2.html, from FIGS/protocols-core.mjs), ported as written, but for
  * the laptop's MAC address: the mockup's 02:1a:2b:3c:4d:5e is 00:00:5E:00:53:10 here, from the documentation range
- * every lesson uses (RFC 7042), and the same laptop's in lesson 10. With no IP address until the end, the laptop goes
- * by it in the Sequence view, as in lesson 10.
+ * every lesson uses (RFC 7042), and the same laptop's in Networking's DHCP lesson. With no IP address until the end, the
+ * laptop goes by it in the Sequence view, as there.
  */
 
 const LAPTOP = '192.168.1.100:68';
@@ -56,7 +58,7 @@ const dhcp: LegacyUnitInput = {
     ],
   },
   overview: {
-    hook: 'A device that joins a network has no address yet. DHCP is how it gets one: it calls out, the router offers an address, and the device takes it for a while. The DHCP lesson, lesson 10, goes further.',
+    hook: 'A device that joins a network has no address yet. DHCP is how it gets one: it calls out, the router offers an address, and the device takes it for a while. Networking Concepts has a DHCP lesson that goes further.',
     description:
       'It’s like arriving at a hotel. You don’t pick your own room: you ask at the desk, they offer one, you say yes, and they give you the key for a set number of nights. Here your laptop joins your home Wi-Fi, and your router is the desk.',
     facts: [
@@ -297,7 +299,7 @@ const dhcp: LegacyUnitInput = {
       note: 'DORA: every device that joins a network goes this way. A renewal is just the last two again.',
     },
     why: 'Without DHCP, someone would have to type an address, mask, router and resolver into every phone, laptop and TV, and make sure no two clashed. DHCP does it in a second, and takes addresses back from devices that leave.',
-    deep: 'Servers hand out addresses from a pool (a scope), and can reserve one for a particular MAC so a printer always gets the same address. On bigger networks, a relay on each router forwards broadcasts to a central server. DHCP snooping on switches blocks rogue servers. IPv6 can use DHCPv6, or let devices make their own address (SLAAC). The DHCP lesson, lesson 10, goes further.',
+    deep: 'Servers hand out addresses from a pool (a scope), and can reserve one for a particular MAC so a printer always gets the same address. On bigger networks, a relay on each router forwards broadcasts to a central server. DHCP snooping on switches blocks rogue servers. IPv6 can use DHCPv6, or let devices make their own address (SLAAC). Networking Concepts has a DHCP lesson that goes further.',
     facts: [
       { label: 'Ports', value: 'UDP 67 (server), 68 (client)' },
       { label: 'Messages', value: 'Discover, Offer, Request, Ack, plus NAK, Release' },
@@ -339,4 +341,5 @@ const dhcp: LegacyUnitInput = {
   ],
 };
 
-export default dhcp;
+/** Lesson 7 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(dhcp));

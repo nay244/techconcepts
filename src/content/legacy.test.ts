@@ -3,8 +3,10 @@ import { LessonValidationError } from './define';
 import { defineLegacyLesson, LEGACY_LESSONS, legacyLessonSchema } from './legacy';
 import { liftedFixture, makeLesson, makeUnit } from './test-fixtures';
 
-test('the legacy list is exactly the four ready lessons (it may only shrink)', () => {
-  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'how-the-internet-works', 'subnetting']);
+const TOUR = ['dhcp', 'dns', 'ftp', 'http', 'https', 'icmp', 'imap', 'ip', 'pop3', 'smtp', 'ssh', 'tcp', 'tls', 'udp'];
+
+test('the legacy list is exactly the 17 ready lessons: the 14 of How the Internet Works and three of Networking (it may only shrink)', () => {
+  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'subnetting', ...TOUR.map((p) => `what-is-${p}`)]);
 });
 
 test('lifting keeps every word and adds empty citations', () => {

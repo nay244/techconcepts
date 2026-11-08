@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * POP3, protocol 10 of How the Internet Works’ 14. Two letters are waiting in your mailbox at mail.example.net as
+ * POP3, lesson 10 of How the Internet Works’ 14. Two letters are waiting in your mailbox at mail.example.net as
  * the part starts, so its tray is lit from the Overview on (the mockup’s hold0, as the scene’s start). Your mail app
  * connects over TLS on port 995, logs in, counts and lists the letters, downloads both and marks them for deleting.
  * At QUIT the server deletes them, the tray goes dark, and the letters live only on the laptop.
@@ -581,4 +582,5 @@ const pop3: LegacyUnitInput = {
   ],
 };
 
-export default pop3;
+/** Lesson 10 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(pop3));

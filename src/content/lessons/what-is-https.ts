@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * HTTPS, protocol 2 of How the Internet Works’ 14. The browser opens techconcepts.app as HTTP opens a page, with
+ * HTTPS, lesson 2 of How the Internet Works’ 14. The browser opens techconcepts.app as HTTP opens a page, with
  * one more job before it asks: after the lookup and the TCP handshake, a TLS handshake seals the line and checks the
  * site’s certificate. The page comes back sealed, the padlock comes on, and the server hands over a session ticket.
  *
@@ -91,7 +92,7 @@ const https: LegacyUnitInput = {
       sub: 'The lookup isn’t secret',
       narrative:
         'First the number, the same way as for any site: the laptop asks the **DNS resolver** where techconcepts.app is. Notice that this question isn’t sealed. Anyone watching the network can see which name you looked up, though not what you do there. HTTPS protects your conversation with the site, not the lookup before it.',
-      deep: 'Normal DNS travels as plain UDP on port 53. Encrypted DNS hides the lookup too: DNS over HTTPS (DoH, port 443) or DNS over TLS (DoT, port 853), which many browsers and phones can switch on. The DNS part of this lesson shows how the resolver finds the answer.',
+      deep: 'Normal DNS travels as plain UDP on port 53. Encrypted DNS hides the lookup too: DNS over HTTPS (DoH, port 443) or DNS over TLS (DoT, port 853), which many browsers and phones can switch on. The DNS lesson shows how the resolver finds the answer.',
       facts: [
         { label: 'Asks', value: 'the DNS resolver, 192.0.2.53' },
         { label: 'Answer', value: '198.51.100.7' },
@@ -204,7 +205,7 @@ const https: LegacyUnitInput = {
       sub: 'Agree on keys, check the ID',
       narrative:
         'Now the two sides seal the line, in a quick exchange called the **TLS handshake**. The browser says hello and offers the kinds of lock it can use. The server picks one and sends its **certificate**, an ID card signed by an organisation browsers trust, and the browser checks that it really says techconcepts.app. Meanwhile both sides do some clever maths that gives each of them the same secret key, without the key ever crossing the network. From here on, everything is **encrypted**.',
-      deep: 'This is TLS 1.3. The ClientHello carries a key share; the ServerHello, certificate, CertificateVerify and Finished come back in one flight; the client’s Finished completes it. Sealing costs one round trip. The key exchange is usually X25519. The ClientHello names the site in plain text (SNI), so a watcher sees the name; Encrypted Client Hello (ECH) can hide it. The TLS part of this lesson takes the handshake one message at a time.',
+      deep: 'This is TLS 1.3. The ClientHello carries a key share; the ServerHello, certificate, CertificateVerify and Finished come back in one flight; the client’s Finished completes it. Sealing costs one round trip. The key exchange is usually X25519. The ClientHello names the site in plain text (SNI), so a watcher sees the name; Encrypted Client Hello (ECH) can hide it. The TLS/SSL lesson takes the handshake one message at a time.',
       facts: [
         { label: 'Version', value: 'TLS 1.3' },
         { label: 'Certificate for', value: 'techconcepts.app' },
@@ -443,4 +444,5 @@ const https: LegacyUnitInput = {
   ],
 };
 
-export default https;
+/** Lesson 2 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(https));

@@ -6,12 +6,18 @@ import { FIGURE_PARTS } from '../../art/scenes/parts';
 import { deriveState, positionOf, slotsFor, stepEvents } from '../../engine/timeline';
 import { sceneViewOf } from '../../scenes/driver';
 import { netMapDriver } from '../../scenes/drivers/net-map';
-import { lessonNumbers, lessonTitles, misnamedLessons, textsOf } from '../../test/lesson-references';
+import { lessonNumbers, lessonTitles, textsOf } from '../../test/lesson-references';
 import { showSweep } from '../../test/show-sweep';
 import { checkStructure } from '../define';
 import { getEntries, getLesson } from '../registry';
-import type { MessageEvent, Unit } from '../schema';
-import internet, { UNIT_ORDER } from './how-the-internet-works';
+import type { Lesson, MessageEvent, Unit } from '../schema';
+import { internetTrack, networkingTrack, tracks } from './index';
+
+/** The track's 14 lessons, in order: one protocol each. */
+const TOUR: Lesson[] = getEntries('how-the-internet-works').map((e) => getLesson(e.slug)!);
+/** Their protocol sections stitched into one lesson, in track order, so the map's checks below walk all 14 as before. */
+const internet: Lesson = { ...TOUR[0]!, slug: 'tour', title: 'How the Internet Works', units: TOUR.flatMap((l) => l.units) };
+const PROTOCOLS = ['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls'];
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -38,10 +44,33 @@ function mountMap() {
   return { root, data, driver: netMapDriver.create(root, data) };
 }
 
-test('all 14 protocols are present, in UNIT_ORDER', () => {
-  // Protocol Explorer's order (owner): its structure and order only.
-  expect(UNIT_ORDER).toEqual(['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls']);
-  expect(internet.units.map((u) => u.id)).toEqual([...UNIT_ORDER]);
+test('the track: How the Internet Works, a beginner concept track, first in the list, with Networking’s limits', () => {
+  expect(tracks.map((t) => t.id)).toEqual(['how-the-internet-works', 'networking']);
+  expect(internetTrack).toMatchObject({
+    id: 'how-the-internet-works',
+    type: 'concept',
+    level: 'beginner',
+    title: 'How the Internet Works',
+    description:
+      'Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each. Start here if you are new to IT: Networking Concepts goes deeper.',
+  });
+  expect(internetTrack.limits).toEqual(networkingTrack.limits);
+});
+
+test('six parts in teaching order', () => {
+  expect(internetTrack.parts.map((p) => [p.title, p.lessons.map((l) => l.title)])).toEqual([
+    ['Loading a web page', ['HTTP', 'HTTPS']],
+    ['Getting the data there', ['TCP', 'UDP', 'IP']],
+    ['Behind the scenes', ['DNS', 'DHCP', 'ICMP']],
+    ['Email', ['SMTP', 'POP3', 'IMAP']],
+    ['Files and remote control', ['FTP', 'SSH']],
+    ['The seal', ['TLS/SSL']],
+  ]);
+});
+
+test('all 14 protocols are present, in the order lesson 1 taught them', () => {
+  // Protocol Explorer's order (owner), now the track's.
+  expect(TOUR.map((l) => l.units[0]!.id)).toEqual(PROTOCOLS);
 });
 
 test('78 Watch steps in all, 28 questions', () => {
@@ -49,23 +78,33 @@ test('78 Watch steps in all, 28 questions', () => {
   expect(internet.units.reduce((n, u) => n + u.practice.length, 0)).toBe(28);
 });
 
-test('the lesson is lesson 1, How the Internet Works, on the network map', () => {
-  expect(internet).toMatchObject({
-    slug: 'how-the-internet-works',
-    title: 'How the Internet Works',
-    subtitle: 'The protocols behind every page',
-    level: 'beginner',
-    certTags: ['a-plus', 'network-plus', 'security-plus', 'ccna', 'helpdesk'],
-    summary:
-      'Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS. Each one gets its own short walkthrough of what it does.',
-    figure: 'net-map',
-  });
-  expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({
-    number: 1,
-    available: true,
-    units: 14,
-    stepCount: 78,
-  });
+test('each lesson is one protocol, its fields taken from the section', () => {
+  const entries = getEntries('how-the-internet-works');
+  expect(entries).toHaveLength(14);
+  for (const [i, entry] of entries.entries()) {
+    const lesson = TOUR[i]!;
+    expect(lesson.units, entry.slug).toHaveLength(1);
+    const unit = lesson.units[0]!;
+    expect(entry).toMatchObject({
+      slug: `what-is-${unit.id}`,
+      number: i + 1,
+      available: true,
+      url: `/how-the-internet-works/what-is-${unit.id}`,
+      canonical: `/how-the-internet-works/what-is-${unit.id}`,
+    });
+    expect(lesson).toMatchObject({
+      slug: `what-is-${unit.id}`,
+      title: unit.name,
+      subtitle: unit.purpose,
+      summary: unit.overview.hook,
+      certTags: [],
+      level: 'beginner',
+      figure: 'net-map',
+    });
+  }
+});
+
+test('each protocol keeps its name, full name, purpose, group and OSI layers', () => {
   expect(internet.units.map((u) => [u.name, u.fullName, u.purpose, u.group, u.osi])).toEqual([
     ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
     ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', { layers: [7], cite: [] }],
@@ -84,35 +123,29 @@ test('the lesson is lesson 1, How the Internet Works, on the network map', () =>
   ]);
 });
 
-test('the protocol files are parts of the lesson, not lessons of their own', () => {
-  // The registry reads lessons/<slug>.ts only, so lessons/how-the-internet-works/*.ts stay out.
-  // (DNS, DHCP and TLS also have lessons of their own, 14, 10 and 16, under the same slugs as their units here.)
-  const available = getEntries('networking').filter((e) => e.available).map((e) => e.slug);
-  expect(available).toContain('how-the-internet-works');
-  for (const id of ['http', 'https', 'tcp', 'udp', 'ip', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh']) {
-    expect(getLesson(id), id).toBeUndefined();
-  }
-  expect(getLesson('how-the-internet-works')).toBe(internet);
+test('the old lesson is gone, and no folder of parts is left', () => {
+  expect(getLesson('how-the-internet-works')).toBeUndefined();
+  expect(getEntries('networking').map((e) => e.slug)).not.toContain('how-the-internet-works');
+  expect(Object.keys(import.meta.glob('../lessons/*/*.ts'))).toEqual([]);
 });
 
-test('the DHCP part and lesson 10, DHCP, both call their unit "dhcp", and each validates under its own lesson key and figure', () => {
-  // Their overlap stays as it is (owner: deferred). Sharing the unit id is safe because nothing keys on a unit id
-  // across lessons: progress is kept by lesson key, ?step= counts positions, and Practice picks live in each
-  // page's own console.
-  const lesson10 = getLesson('dhcp')!;
-  const part = unitById('dhcp');
-  expect(getEntries('networking').find((e) => e.slug === 'dhcp')).toMatchObject({ number: 10, available: true, key: 'dhcp' });
-  expect(getEntries('networking').find((e) => e.slug === 'how-the-internet-works')).toMatchObject({ key: 'how-the-internet-works' });
-  expect(checkStructure(lesson10)).toEqual([]);
-  expect(checkStructure(internet)).toEqual([]);
-  expect([lesson10.units.map((u) => u.id), part.id]).toEqual([['dhcp'], 'dhcp']);
-  expect(lesson10.figure).toBe('dhcp');
-  // The part plays on the network map, at home, with no server plate of its own.
-  expect([internet.figure, part.scene.layers]).toEqual(['net-map', []]);
+test('the DHCP tour lesson and Networking’s DHCP lesson both call their unit "dhcp", and each validates on its own', () => {
+  // Their overlap is on purpose (direction doc §4.5): the tour says what DHCP is for, Networking how it works.
+  // Sharing the unit id is safe because nothing keys on a unit id across lessons: progress is kept by lesson slug,
+  // ?step= counts positions, and Practice picks live in each page's own console.
+  const tour = getLesson('what-is-dhcp')!;
+  const depth = getLesson('dhcp')!;
+  expect(checkStructure(tour)).toEqual([]);
+  expect(checkStructure(depth)).toEqual([]);
+  expect([tour.units.map((u) => u.id), depth.units.map((u) => u.id)]).toEqual([['dhcp'], ['dhcp']]);
+  expect([tour.figure, depth.figure]).toEqual(['net-map', 'dhcp']);
+  // The tour's DHCP plays on the network map, at home, with no server plate of its own.
+  expect(tour.units[0]!.scene.layers).toEqual([]);
+  expect(tour.units[0]!.overview.hook).toMatch(/Networking Concepts has a DHCP lesson that goes further\.$/);
 });
 
 test('each protocol validates, has 5–6 steps and 2 questions', () => {
-  expect(checkStructure(internet)).toEqual([]);
+  for (const lesson of TOUR) expect(checkStructure(lesson), lesson.slug).toEqual([]);
   for (const u of internet.units) {
     expect(u.steps.length, u.id).toBeGreaterThanOrEqual(5);
     expect(u.steps.length, u.id).toBeLessThanOrEqual(6);
@@ -715,16 +748,16 @@ test('each protocol’s sources are the RFCs its facts name', () => {
   }
 });
 
-test('each “lesson N” and lesson title names a lesson of the track, and each “The X part” is a protocol of this lesson', () => {
-  // DHCP points at lesson 10, DHCP, twice, in its overview and its Go deeper; IP at the Subnetting lesson.
-  expect(lessonNumbers(internet).map(({ n }) => n)).toEqual([10, 10]);
-  expect(misnamedLessons(internet, { dhcp: 'DHCP' })).toEqual([]);
-  expect(lessonTitles(internet)).toEqual(['Subnetting', 'DHCP', 'DHCP']);
-  const titles = getEntries('networking').map((e) => e.title);
-  for (const title of lessonTitles(internet)) expect(titles).toContain(title);
-  const parts = textsOf(internet).flatMap((text) => [...text.matchAll(/\bThe (\w+) part\b/g)].map((m) => m[1]!.toLowerCase()));
-  expect(parts).toEqual(['dns', 'tcp', 'dns', 'tls', 'tls']);
-  for (const id of parts) expect(UNIT_ORDER).toContain(id);
+test('each lesson title names a lesson, and no sentence points at a part of a lesson', () => {
+  // The sections point at each other as lessons now (“The DNS lesson”), and IP at Networking’s Subnetting lesson.
+  expect(lessonNumbers(internet)).toEqual([]);
+  expect([...lessonTitles(internet)].sort()).toEqual(['DNS', 'DNS', 'Subnetting', 'TCP', 'TLS/SSL', 'TLS/SSL']);
+  const tourTitles = getEntries('how-the-internet-works').map((e) => e.title);
+  const networkingTitles = getEntries('networking').map((e) => e.title);
+  for (const title of lessonTitles(internet)) {
+    expect(title === 'Subnetting' ? networkingTitles : tourTitles, title).toContain(title);
+  }
+  for (const text of textsOf(internet)) expect(text, text).not.toMatch(/\bThe \w+ part\b|this lesson/);
 });
 
 test('no prose is left with the mockup’s markup: bold is **term**, and no tag or entity is left', () => {

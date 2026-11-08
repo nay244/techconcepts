@@ -18,7 +18,7 @@ const card = () => <TrackCardProgress known={known} totals={totals} />;
 const segments = (container: HTMLElement) => [...container.querySelectorAll('.segbar i')].map((i) => i.className || 'none');
 
 function expectFirstVisit(container: HTMLElement): void {
-  expect(screen.getByText('4 of 20 lessons ready')).toBeInTheDocument();
+  expect(screen.getByText('3 of 19 lessons ready')).toBeInTheDocument();
   expect(screen.getByText('Open track')).toBeInTheDocument();
   expect(container.querySelector('.segbar')).toBeNull();
 }
@@ -27,7 +27,7 @@ beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 test('a first visit reads the ready lessons, counted from the track', () => {
-  expect(totals).toEqual({ available: 4, planned: 20 });
+  expect(totals).toEqual({ available: 3, planned: 19 });
   const { container } = render(card());
   expectFirstVisit(container);
 });
@@ -39,16 +39,17 @@ test('a returning visitor sees done and in progress, with one bar segment per le
     'firewalls': { status: 'in-progress', furthestPosition: 1 },
   });
   const { container } = render(card());
-  expect(screen.getByText('1 of 20 done, 2 in progress')).toBeInTheDocument();
+  expect(screen.getByText('1 of 19 done, 2 in progress')).toBeInTheDocument();
   expect(screen.getByText('Continue')).toBeInTheDocument();
-  expect(screen.queryByText('4 of 20 lessons ready')).toBeNull();
+  expect(screen.queryByText('3 of 19 lessons ready')).toBeNull();
   // Done first, then in progress, then the rest; the bar repeats the words, so it is hidden from screen readers.
-  expect(segments(container)).toEqual(['done', 'prog', 'prog', ...Array<string>(17).fill('none')]);
+  expect(segments(container)).toEqual(['done', 'prog', 'prog', ...Array<string>(16).fill('none')]);
   expect(container.querySelector('.segbar')).toHaveAttribute('aria-hidden', 'true');
 });
 
 test('progress saved only for lessons the track does not have is still a first visit', () => {
-  seedProgress({ 'osi-model': { status: 'finished', furthestPosition: 4 } });
+  // A lesson not ready in this track, and a lesson of another track.
+  seedProgress({ 'osi-model': { status: 'finished', furthestPosition: 4 }, 'what-is-http': { status: 'finished', furthestPosition: 7 } });
   const { container } = render(card());
   expectFirstVisit(container);
 });
@@ -65,8 +66,8 @@ test('the server renders the first visit, then hydrates to the returning visitor
   await act(async () => {
     root = hydrateRoot(container, card());
   });
-  expect(screen.getByText('0 of 20 done, 1 in progress')).toBeInTheDocument();
-  expect(segments(container)).toHaveLength(20);
+  expect(screen.getByText('0 of 19 done, 1 in progress')).toBeInTheDocument();
+  expect(segments(container)).toHaveLength(19);
   expect(errors).not.toHaveBeenCalled();
 
   act(() => root.unmount());

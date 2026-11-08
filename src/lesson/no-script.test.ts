@@ -15,7 +15,8 @@ import LessonPage from '../pages/[track]/[lesson].astro';
 const NOTE = 'This lesson needs JavaScript to play.';
 
 async function lessonPage(slug: string): Promise<Document> {
-  const track = tracks[0]!;
+  // The lesson's own track: the tracks' slugs differ, so a slug names one.
+  const track = tracks.find((t) => getEntries(t.id).some((e) => e.slug === slug))!;
   const entries = getEntries(track.id);
   const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === slug)!;
   const props = { track, entry, entries, lesson: getLesson(slug)!, next: neighbors(entries, slug).next };
@@ -39,7 +40,7 @@ function hiddenWithoutScript(doc: Document, declaration: 'display: none' | 'visi
 
 const words = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
-test.each(['dhcp', 'how-the-internet-works'])('without JavaScript, %s says it needs JavaScript and hides every control', async (slug) => {
+test.each(['dhcp', 'what-is-http'])('without JavaScript, %s says it needs JavaScript and hides every control', async (slug) => {
   const doc = await lessonPage(slug);
   const hidden = hiddenWithoutScript(doc);
   // Kept in the layout, so the grid does not move, but out of sight and out of the accessibility tree.

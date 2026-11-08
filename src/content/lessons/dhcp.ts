@@ -4,7 +4,7 @@ import { defineLegacyLesson } from '../legacy';
 import type { Field, MessageEvent, MessageKind, Packet, TableEvent } from '../schema';
 
 /**
- * DHCP, lesson 10 of 20. A laptop joins a home Wi-Fi network and gets its
+ * DHCP, lesson 9 of 19. A laptop joins a home Wi-Fi network and gets its
  * settings from the router in four messages (RFC 2131), keeps them for a lease
  * and renews at half-time (section 4.4.5). The phone on the same Wi-Fi hears
  * the broadcasts and ignores them.
@@ -329,7 +329,7 @@ export default defineLegacyLesson({
           sub: 'The laptop asks: is anyone there?',
           narrative:
             'Your laptop just joined the Wi-Fi, but it has no address yet. It doesn’t know who to ask, so it shouts to everyone on the network at once: “Can anyone give me an address?” That shout is called a **Discover**. Every device hears it. The phone hears it too, but it isn’t the one that hands out addresses, so it ignores it.',
-          deep: 'The shout is a broadcast to 255.255.255.255, sent from 0.0.0.0 (“I have no address yet”) to UDP port 67, where DHCP servers listen. Lessons 11 and 12 cover ports and UDP.',
+          deep: 'The shout is a broadcast to 255.255.255.255, sent from 0.0.0.0 (“I have no address yet”) to UDP port 67, where DHCP servers listen. Lessons 10 and 11 cover ports and UDP.',
           facts: [
             { label: 'From', value: '0.0.0.0, UDP port 68' },
             { label: 'To', value: '255.255.255.255, UDP port 67' },
@@ -358,7 +358,7 @@ export default defineLegacyLesson({
           sub: 'The router offers a free address',
           narrative:
             'The router is the one that hands out addresses. It hears the shout, picks a free address, 192.168.1.100, and offers it to the laptop. With it come a few other settings the laptop will need, and a time limit: it can keep the address for 24 hours. That’s the **Offer**.',
-          deep: 'Along with the address, the Offer carries a subnet mask, a default gateway and a DNS server (lessons 8 and 14). It names the laptop’s MAC address, which is how the phone knows the Offer isn’t for it.',
+          deep: 'Along with the address, the Offer carries a subnet mask, a default gateway and a DNS server (lessons 7 and 13). It names the laptop’s MAC address, which is how the phone knows the Offer isn’t for it.',
           facts: [
             { label: 'Address offered', value: '192.168.1.100' },
             { label: 'Subnet mask', value: '255.255.255.0' },

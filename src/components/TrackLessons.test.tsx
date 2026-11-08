@@ -4,8 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { getEntries, getLesson, type AvailableSummary } from '../content/registry';
-import { networkingTrack } from '../content/tracks';
+import { CERT_TAGS } from '../content/certs';
+import { buildEntries, getEntries, getLesson, type AvailableSummary } from '../content/registry';
+import { liftedFixture, makeTwoUnitLesson } from '../content/test-fixtures';
+import { internetTrack, networkingTrack } from '../content/tracks';
 import { knownFrom } from '../lib/entries';
 import { presentTags, trackParts } from '../lib/track';
 import { FakeObserver } from '../test/fake-io';
@@ -21,7 +23,7 @@ const key = (slug: string) => entries.find((e) => e.slug === slug)!.key;
 
 // The page hands each ready lesson's figure in as a slot named after its number (static HTML in the real page).
 const lessons = () => (
-  <TrackLessons parts={parts} tags={tags} known={known} art1={<svg data-testid="art-1" />} art8={<svg data-testid="art-8" />} />
+  <TrackLessons parts={parts} tags={tags} known={known} art7={<svg data-testid="art-7" />} art16={<svg data-testid="art-16" />} />
 );
 
 const chip = (name: string) => screen.getByRole('button', { name });
@@ -50,36 +52,43 @@ test('every lesson is listed by part: ready ones as cards that link, the rest as
   render(lessons());
   expectEverything();
   expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(networkingTrack.parts.map((p) => p.title));
-  expect(shownTitles()).toEqual(['How the Internet Works', 'Subnetting', 'DHCP', 'Firewalls']);
+  expect(shownTitles()).toEqual(['Subnetting', 'DHCP', 'Firewalls']);
   expect(screen.getByRole('link', { name: 'Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
   expect(screen.queryByRole('link', { name: 'OSI Model' })).toBeNull();
 
   // A part with ready lessons says how many; a part with none says they are all coming soon.
+  const between = screen.getByRole('region', { name: 'Getting between networks' });
+  expect(within(between).getByText('Part 3')).toBeInTheDocument();
+  expect(between.querySelector('.part-c')).toHaveTextContent('2 of 3 ready');
+  expect(within(between).getAllByText('Coming soon')).toHaveLength(1);
   const big = screen.getByRole('region', { name: 'The big picture' });
-  expect(within(big).getByText('Part 1')).toBeInTheDocument();
-  expect(big.querySelector('.part-c')).toHaveTextContent('1 of 3 ready');
-  expect(within(big).getAllByText('Coming soon')).toHaveLength(2);
+  expect(big.querySelector('.part-c')).toHaveTextContent('2 lessons, coming soon');
   const local = screen.getByRole('region', { name: 'Addresses & the local network' });
   expect(local.querySelector('.part-c')).toHaveTextContent('4 lessons, coming soon');
-  expect(within(local).getByText('IP Address').closest('li')).toHaveTextContent('04IP Address');
+  expect(within(local).getByText('IP Address').closest('li')).toHaveTextContent('03IP Address');
 });
 
-test('lesson 1’s card shows 14 protocols, its exams and its figure; one-unit lessons have no protocols chip', () => {
-  render(lessons());
-  const internet = card('How the Internet Works');
-  expect(within(internet).getByText('Lesson 01')).toBeInTheDocument();
-  expect(within(internet).getByText('The protocols behind every page')).toBeInTheDocument();
-  const meta = within(internet).getByRole('list', { name: 'Protocols and exams' });
+test('a lesson of many units shows how many protocols it has before its exams', () => {
+  // No ready lesson has many units since the split, so a two-unit fixture stands in as HTTP in How the Internet Works.
+  const two = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
+  const tour = buildEntries(internetTrack, { 'what-is-http': two }, () => 'how-the-internet-works');
+  const tourParts = trackParts(internetTrack, tour, () => two);
+  render(<TrackLessons parts={tourParts} tags={presentTags(tour)} known={knownFrom(tour)} art1={<svg data-testid="art-1" />} />);
+  const http = card('HTTP');
+  expect(within(http).getByText('Lesson 01')).toBeInTheDocument();
+  expect(within(http).getByText(two.subtitle)).toBeInTheDocument();
+  const meta = within(http).getByRole('list', { name: 'Protocols and exams' });
   expect(within(meta).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-    '14 protocols',
-    'CompTIA A+',
-    'CompTIA Network+',
-    'CompTIA Security+',
-    'Cisco CCNA',
-    'Helpdesk',
+    '2 protocols',
+    ...two.certTags.map((t) => CERT_TAGS[t]),
   ]);
-  expect(within(internet).getByTestId('art-1')).toBeInTheDocument();
-  expect(within(card('Subnetting')).getByTestId('art-8')).toBeInTheDocument();
+  expect(within(http).getByTestId('art-1')).toBeInTheDocument();
+});
+
+test('a one-unit lesson has no protocols chip, and its figure comes from its number', () => {
+  render(lessons());
+  expect(within(card('Subnetting')).getByTestId('art-7')).toBeInTheDocument();
+  expect(within(card('Firewalls')).getByTestId('art-16')).toBeInTheDocument();
 
   // A one-unit lesson's list holds only its exams, and says so.
   const dhcp = within(card('DHCP')).getByRole('list', { name: 'Exams' });
@@ -152,13 +161,17 @@ test('a chip filters to the lessons for that exam and keeps the URL in step with
   await userEvent.click(chip('CompTIA Security+'));
   expect(window.location.search).toBe('?for=security-plus');
   expect(pressed()).toEqual(['CompTIA Security+']);
-  expect(shownTitles()).toEqual(['How the Internet Works', 'Firewalls']);
+  expect(shownTitles()).toEqual(['Firewalls']);
   // Lessons still to come and parts with nothing to show are left out.
   expect(screen.queryByText('OSI Model')).toBeNull();
-  expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['The big picture', 'Protecting & scaling traffic']);
-  expect(screen.getByRole('status')).toHaveTextContent('Showing 2 lessons for CompTIA Security+.');
-  expect(document.querySelector('.showing')).toHaveTextContent('Showing 2 lessons for CompTIA Security+.');
+  expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Protecting & scaling traffic']);
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 1 lesson for CompTIA Security+.');
+  expect(document.querySelector('.showing')).toHaveTextContent('Showing 1 lesson for CompTIA Security+.');
   expect(chip('CompTIA Security+')).toHaveFocus();
+
+  await userEvent.click(chip('Cisco CCNA'));
+  expect(window.location.search).toBe('?for=ccna');
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 3 lessons for Cisco CCNA.');
 
   await userEvent.click(chip('SOC Analyst'));
   expect(window.location.search).toBe('?for=soc-analyst');
@@ -176,9 +189,9 @@ test('?for= on arrival filters once the island has started', () => {
   window.history.replaceState(null, '', '/networking?for=network-plus');
   render(lessons());
   expect(pressed()).toEqual(['CompTIA Network+']);
-  expect(shownTitles()).toEqual(['How the Internet Works', 'Subnetting', 'DHCP', 'Firewalls']);
+  expect(shownTitles()).toEqual(['Subnetting', 'DHCP', 'Firewalls']);
   expect(screen.queryByText('Router')).toBeNull();
-  expect(screen.getByRole('status')).toHaveTextContent('Showing 4 lessons for CompTIA Network+.');
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 3 lessons for CompTIA Network+.');
 });
 
 test('an unknown ?for= shows everything, with no exam chip pressed', () => {
@@ -205,7 +218,7 @@ test('the server renders everything; a page opened with ?for= hydrates without a
   });
   expect(errors).not.toHaveBeenCalled();
   expect(pressed()).toEqual(['CompTIA Security+']);
-  expect(shownTitles()).toEqual(['How the Internet Works', 'Firewalls']);
+  expect(shownTitles()).toEqual(['Firewalls']);
 
   act(() => root.unmount());
   container.remove();
@@ -255,7 +268,7 @@ test('the parts list beside the lessons follows the part being read, among the p
   reading('part-3');
   await userEvent.click(chip('CompTIA Security+'));
   expect(first.connected).toBe(false);
-  expect(FakeObserver.all.at(-1)!.targets.map((t) => t.id)).toEqual(['part-1', 'part-6']);
+  expect(FakeObserver.all.at(-1)!.targets.map((t) => t.id)).toEqual(['part-6']);
   expect(link(3)).not.toHaveAttribute('aria-current');
   expect(link(3)).not.toHaveClass('on');
 
@@ -270,5 +283,5 @@ test('with storage blocked every lesson shows, not started', () => {
   });
   render(lessons());
   expectEverything();
-  expect(screen.getAllByText('Start lesson')).toHaveLength(4);
+  expect(screen.getAllByText('Start lesson')).toHaveLength(3);
 });

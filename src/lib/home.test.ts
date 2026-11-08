@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { getLesson } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
-import { tracks } from '../content/tracks';
+import { internetTrack, networkingTrack } from '../content/tracks';
 import { resumeLabel, slotsFor } from '../engine/timeline';
 import { firstSentence, logSample, midSentence, resumePlaces } from './home';
 
@@ -12,11 +12,14 @@ const lesson = (slug: string): Lesson => {
   return found;
 };
 const DHCP = lesson('dhcp');
-const INTERNET = lesson('how-the-internet-works');
+const HTTP = lesson('what-is-http');
 
 test('the track card carries the first sentence of the description, or all of it when it has one sentence', () => {
-  expect(firstSentence(tracks[0]!.description)).toBe(
+  expect(firstSentence(networkingTrack.description)).toBe(
     'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
+  );
+  expect(firstSentence(internetTrack.description)).toBe(
+    'Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each.',
   );
   expect(firstSentence('One sentence only.')).toBe('One sentence only.');
   expect(firstSentence('No full stop at all')).toBe('No full stop at all');
@@ -127,9 +130,12 @@ test('in a lesson of many units the unit’s name says which part', () => {
     'the Beta Learn part',
     'the Beta Practice part',
   ]);
-  // The real one too: one place for every position.
-  const places = resumePlaces(INTERNET);
-  expect(places).toHaveLength(slotsFor(INTERNET).length);
-  expect(places[0]).toBe('the HTTP Overview');
-  expect(places[1]).toBe(`HTTP step 1 of ${INTERNET.units[0]!.steps.length}`);
+});
+
+test('a How the Internet Works lesson is one unit, so its places read like DHCP’s, with no unit name', () => {
+  const places = resumePlaces(HTTP);
+  expect(places).toHaveLength(slotsFor(HTTP).length);
+  expect(places[0]).toBe('the Overview');
+  expect(places[1]).toBe(`step 1 of ${HTTP.units[0]!.steps.length}`);
+  expect(places.at(-1)).toBe('the Practice part');
 });

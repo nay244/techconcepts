@@ -188,11 +188,15 @@ test('a question’s answer points at one of its options', () => {
   expect(joined(frac)).toMatch(/answer/);
 });
 
-test('each unit needs a reference and the lesson a cert tag', () => {
+test('each unit needs a reference', () => {
   const noRef = makeTwoUnitLesson();
   unit(noRef, 1).references = [];
   expect(joined(noRef)).toMatch(/Unit "beta".*at least 1 reference/);
-  expect(joined(makeLesson({ certTags: [] }))).toMatch(/cert tag/);
+});
+
+test('a legacy lesson may wait for its audit with no cert tags (a cited lesson may not: cited.test.ts)', () => {
+  // How the Internet Works' 14 lessons: the old lesson-wide tags would claim exams some protocols are not on.
+  expect(joined(makeLesson({ certTags: [] }))).not.toMatch(/cert tag/);
 });
 
 // ---------------------------------------------------------------- ids

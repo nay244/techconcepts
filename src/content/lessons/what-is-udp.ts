@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * UDP, protocol 4 of How the Internet Works’ 14. In a voice call, the laptop sends a slice of sound every 20
+ * UDP, lesson 4 of How the Internet Works’ 14. In a voice call, the laptop sends a slice of sound every 20
  * milliseconds with no handshake and no checking. Packet 5 is lost and nobody sends it again; Sam’s voice comes back
  * the same way, and the call app, not UDP, copes with the gap. Both ways count their packets from 1, so the table
  * hides its key: it tells its rows apart by the mockup’s own names for them, in a field no column shows.
@@ -378,4 +379,5 @@ const udp: LegacyUnitInput = {
   ],
 };
 
-export default udp;
+/** Lesson 4 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(udp));

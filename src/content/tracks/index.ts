@@ -1,11 +1,15 @@
 import type { CoverId } from '../../art/figures/covers';
 import type { Track } from '../schema';
+import { internetTrack } from './how-the-internet-works';
 import { networkingTrack } from './networking';
 
-export { networkingTrack };
+export { internetTrack, networkingTrack };
 
-/** Every track that has lessons. The order is the order they appear on Home. */
-export const tracks: Track[] = [networkingTrack];
+/**
+ * Every track that has lessons, in the order the site lists them: How the Internet Works, the beginner entry, first
+ * (direction doc §6.1). The first track is where the site's Start buttons lead.
+ */
+export const tracks: Track[] = [internetTrack, networkingTrack];
 
 /** A track the Tracks page lists before it has any lessons: what it will be, and the cover it wears meanwhile. */
 export interface PlannedTrack {
