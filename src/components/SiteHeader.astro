@@ -1,4 +1,5 @@
 ---
+import { startLesson } from '../lib/start';
 import ThemeToggle from './ThemeToggle';
 import './ThemeToggle.css';
 import './site.css';
@@ -11,6 +12,8 @@ interface Props {
 }
 
 const { current, overHero = false } = Astro.props;
+// Start learning opens the first lesson of the first track.
+const start = startLesson().url;
 const links = [
   { key: 'tracks', href: '/tracks', label: 'Tracks' },
   { key: 'how', href: '/#how', label: 'How it works' },
@@ -38,7 +41,7 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
     </nav>
     <div class="head-end">
       <ThemeToggle client:load />
-      <a class="btn btn--primary btn--small" href="/networking/how-the-internet-works">Start learning</a>
+      <a class="btn btn--primary btn--small" href={start}>Start learning</a>
       <button type="button" class="icon-btn menu-btn" id="menu" aria-expanded="false" aria-controls="menu-panel" aria-label="Menu">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"></path></svg>
       </button>
@@ -46,7 +49,7 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
   </div>
   <nav class="menu-panel" id="menu-panel" aria-label="Site menu" hidden>
     {links.map((l) => <a href={l.href} aria-current={currentOf(l)}>{l.label}</a>)}
-    <a class="btn btn--primary" href="/networking/how-the-internet-works">Start learning</a>
+    <a class="btn btn--primary" href={start}>Start learning</a>
   </nav>
 </header>
 
