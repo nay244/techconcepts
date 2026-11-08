@@ -40,12 +40,18 @@ TechConcepts is **not** a game. It has nothing to do with the owner's separate I
 | **Watch** steps and scene values | **No citation of their own**, but every Watch statement and every value in a scene (ports, flags, header values, table rows) **must trace to a cited Learn statement in the same lesson**. Watch simplifies, but it **never adds a claim** (owner, Q17). Example data (RFC 5737 / RFC 1918 addresses, `00:00:5E:00:53:xx` MACs) is labelled as an example and needs no backing |
 | **Analogies** | No citation. Flagged `analogy` in the content data. The verifier still checks that each one doesn't mislead (owner, Q10) |
 
+**Two sources per claim (owner, 2026-11-08).** Every claim is confirmed by a second, independent, allowed source: another document, not another page of the same vendor. The one exception is a claim whose source is its **defining standard**, the current document that defines the thing described, such as a field's exact size in its own RFC. That citation is marked as defining and may stand alone. Analogies and objective mappings are exempt. The schema enforces the count, and the fact-checker confirms that each source states the claim. Details: `docs/content-model.md` §3 and the fact-checker design, `docs/superpowers/specs/2026-11-08-fact-checker-design.md`.
+
 ### 3.2 Allowed sources (owner, Q11)
 
 Primary references only, for every technical claim:
 - IETF RFCs, IEEE standards, IANA registries, NIST publications
+- ITU-T Recommendations, published free on `www.itu.int`. ITU-T X.200, the same text as ISO/IEC 7498-1, can be the defining standard for OSI model claims (owner, 2026-11-08)
 - Official vendor documentation (e.g. Cisco, Microsoft, Cloudflare, Palo Alto Networks docs)
+  - and the vendor's own explainer pages, such as Cisco's "What is a firewall?" (owner, 2026-11-08). A vendor's blog, forum or partner content never counts
 - Official certification objective documents (CompTIA, Cisco), for exam tags and objective mapping only
+
+**Sources must be current** (owner, 2026-11-08): the version in force today, not an obsoleted RFC or a superseded or withdrawn standard. They must also be relevant: the cited section says what the claim says.
 
 Never sources: blogs, Wikipedia, videos, forums, AI output, or secondary summaries, however reputable.
 
@@ -61,10 +67,14 @@ Each citation points to the **exact section** (e.g. RFC 2131 §3.1), not just th
 
 - An **independent fact-checker agent** with a fresh context. It hasn't seen the authoring, so the work isn't grading itself.
 - It runs on **every PR that changes lesson content**, glossary entries or objective mappings.
+  - **Changed 2026-11-08 (owner):** it runs in the build session as a separate agent with a fresh context (`.claude/agents/fact-checker.md`), after a lesson is written and before its PR opens. It is dispatched with the lesson's slug only. There is no GitHub job and no API key.
 - It checks every cited claim against the **exact passage** it cites. It also checks that every Watch item traces to Learn (§3.1), and that analogies don't mislead.
 - It writes `docs/fact-checks/<track>/<lesson>.md`, with one verdict per claim: ✅ supported / ⚠️ imprecise / ❌ wrong. Each verdict quotes the passage the verifier relied on.
+  - **Changed 2026-11-08 (owner):** the report path is `docs/fact-checks/<slug>.md`, by slug, because a lesson is shared between tracks.
 - The report also lists **every limit override** (§4.4) for the owner to approve.
+  - **Changed 2026-11-08 (owner):** overrides are listed, with their reasons, in the PR description. The owner's OK to merge approves them.
 - **Any ⚠️ or ❌ blocks the merge.** The owner signs off by reading the report.
+  - **Changed 2026-11-08 (owner):** the owner does not read reports. The fact-checker's all-pass verdict is the sign-off. A failing report is committed, the lesson is fixed, and a brand-new fact-checker checks it again. The workflow is in `docs/content-model.md` §8.
 - The build fails if a lesson is missing a citation, or if its report doesn't match its current content (e.g. via a content hash stored in the report).
 - **No "Report an error" link** for now (owner chose Q5 (a)+(b), not (c)).
 
@@ -112,6 +122,7 @@ Each citation points to the **exact section** (e.g. RFC 2131 §3.1), not just th
 3. **Watch** and **Practice** derived from Learn (Watch adds no claims).
 4. **Verifier** writes the fact-check report.
 5. **Owner** reviews the report and the content.
+   - **Changed 2026-11-08 (owner):** the owner approves the PR, not the report. The fact-checker's all-pass verdict signs off the content (§3.4).
 6. **Build**, tests, then a PR to `main` (Cloudflare deploys `main`; pushes to `main` only with the owner's OK, as before).
 
 **HTML mockups only when a lesson needs a scene type the engine doesn't have yet** (e.g. OSI Model's layer stack). Lessons that reuse existing scenes skip that step.
@@ -197,6 +208,8 @@ Until then the site stays a soft preview on `.workers.dev` and isn't promoted.
 ## 10. Ordered task list for the build session
 
 Each numbered item is its own branch and PR, merged with the owner's OK.
+
+**Order changed 2026-11-08 (owner):** task 3 (the verifier) comes next, then task 9 (finish Networking Concepts), so every new lesson ships checked. Tasks 4–8 wait. Task 4 below still says the owner reviews the first report closely; that predates the owner's decision not to read reports (§3.4), so ask the owner when task 4 starts.
 
 1. **Hygiene** (§8): merge `chore/remove-levelup` (docs only), remove the dead worktree (after copying its records), delete `home-internet-works`, commit the skills.
 2. **Content model** (§3.1, §4): source registry; citations on Learn, Go deeper, Practice and glossary; `analogy` flag; Watch-to-Learn traceability; track types; shared lessons with per-lesson progress (migrate existing saved progress without losing it); per-track limits with reasoned overrides; objective mapping for certification tracks; remove the estimate check. The schema rejects any cited field without a citation.
