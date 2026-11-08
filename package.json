@@ -14,7 +14,8 @@
     "e2e": "playwright test --grep-invert @visual",
     "e2e:visual": "playwright test --grep @visual",
     "deploy": "wrangler deploy",
-    "budgets": "node scripts/check-budgets.mjs"
+    "budgets": "node scripts/check-budgets.mjs",
+    "fact-check": "node scripts/fact-check.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.2",
