@@ -16,7 +16,7 @@ import {
 
 /** The ready lessons, as the built track page links to them. */
 const LESSONS = readyLessons();
-/** Every page of the site: the four outside the lessons, then each ready lesson. */
+/** Every page of the site: the five outside the lessons, then each ready lesson. */
 const ALL_PAGES = [...SITE_PAGES, ...LESSONS.map((lesson) => ({ name: lesson.slug, path: lesson.path }))];
 
 const heroStart = (page: Page) => page.locator('.hero .actions .btn--primary');
@@ -27,6 +27,9 @@ const INTERNET_PATH = '/networking/how-the-internet-works';
 const trackCards = (page: Page) => page.locator('.tracks > li > .card.track');
 const networkingCard = (page: Page) => page.locator('.tracks a.card.track.ready[href="/networking"]');
 /** Every lesson the track lists, ready or not, in the order it lists them. */
+/** The Tracks page's cards: a link for a track with lessons, a plain card for one still being written. */
+const tracksPageCards = (page: Page) => page.locator('.tp-grid > li > .tcard');
+const headerTracksLink = (page: Page) => page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Tracks', exact: true });
 const trackItems = (page: Page) => page.locator('main ol.lessons > li, main ol.soon-list > li');
 
 /** Walks a lesson with the next button to its last position, its last Practice, where it counts as finished. */
@@ -106,11 +109,62 @@ test.describe('desktop', () => {
     }
   });
 
-  test('Home, the track page and About show no time figure', async ({ page }) => {
-    for (const path of ['/', '/networking', '/about']) {
+  test('Home, Tracks, the track page and About show no time figure', async ({ page }) => {
+    for (const path of ['/', '/tracks', '/networking', '/about']) {
       await open(page, path);
       await expect(page.locator('body')).not.toContainText(/\b\d+ ?min\b|\bminutes\b|one sitting|Short guided/i);
     }
+  });
+
+  test('the header’s Tracks link and the footer’s All tracks link open /tracks on every page; Tracks is current on /tracks and the track page', async ({ page }) => {
+    // Every page with the site header and footer; lessons have neither.
+    for (const { path } of SITE_PAGES) {
+      await open(page, path);
+      await expect(headerTracksLink(page), path).toHaveAttribute('href', '/tracks');
+      await expect(page.getByRole('contentinfo').getByRole('link', { name: 'All tracks', exact: true }), path).toHaveAttribute('href', '/tracks');
+      // "page" only where the link is this very page; on a track page, inside the Tracks section, it is "true".
+      const current = path === '/tracks' ? 'page' : path === '/networking' ? 'true' : null;
+      if (current) await expect(headerTracksLink(page), path).toHaveAttribute('aria-current', current);
+      else await expect(headerTracksLink(page), path).not.toHaveAttribute('aria-current');
+    }
+    await open(page, '/');
+    await headerTracksLink(page).click();
+    await expect(page).toHaveURL(/\/tracks$/);
+  });
+
+  test.describe('Tracks page', () => {
+    test('Networking links to its page with "20 lessons · 4 ready"; A+ is no link and says "Being written"', async ({ page }) => {
+      await open(page, '/tracks');
+      await expect(page).toHaveTitle('Tracks · TechConcepts');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pick a track');
+      await expect(tracksPageCards(page)).toHaveCount(2);
+
+      const networking = tracksPageCards(page).nth(0);
+      await expect(networking).toHaveAttribute('href', '/networking');
+      await expect(networking.locator('.kind')).toHaveText('Concept track · Beginner');
+      await expect(networking.getByRole('heading', { level: 2 })).toHaveText('Networking Concepts');
+      await expect(networking.locator('.count')).toHaveText('20 lessons · 4 ready');
+      // A first visit: no tab, no ring.
+      await expect(networking.locator('.tab-here, .ring')).toHaveCount(0);
+
+      const aplus = tracksPageCards(page).nth(1);
+      await expect(aplus.locator('.kind')).toHaveText('Certification track · Beginner');
+      await expect(aplus.getByRole('heading', { level: 2 })).toHaveText('CompTIA A+');
+      await expect(aplus.locator('.flag')).toHaveText('Being written');
+      await expect(aplus.locator('.count')).toHaveText('No lessons yet');
+      expect(await aplus.evaluate((el) => el.tagName === 'DIV' && el.closest('a') === null && el.querySelector('a') === null)).toBe(true);
+
+      await networking.click();
+      await expect(page).toHaveURL(/\/networking$/);
+    });
+
+    test('the track page’s breadcrumb steps back to Tracks', async ({ page }) => {
+      await open(page, '/networking');
+      const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
+      await expect(crumbs.getByRole('listitem')).toHaveText(['Home', 'Tracks', 'Networking Concepts']);
+      await crumbs.getByRole('link', { name: 'Tracks', exact: true }).click();
+      await expect(page).toHaveURL(/\/tracks$/);
+    });
   });
 
   test.describe('Track page', () => {
@@ -165,7 +219,7 @@ test.describe('desktop', () => {
     });
   });
 
-  test('finishing DHCP shows Finished on the track and on Home, and Clear my progress clears both', async ({ page }) => {
+  test('finishing DHCP shows Finished on the track, on Home and on Tracks, and Clear my progress clears them', async ({ page }) => {
     const dhcp = LESSONS.find((lesson) => lesson.slug === 'dhcp');
     expect(dhcp, 'DHCP is a ready lesson').toBeDefined();
     await finishLesson(page, dhcp!.path);
@@ -183,6 +237,12 @@ test.describe('desktop', () => {
     await expect(networkingCard(page).locator('.meta')).toHaveText('1 of 20 done, 0 in progress');
     await expect(networkingCard(page).locator('.go')).toHaveText('Continue');
 
+    // DHCP was opened last, in Networking: its card on Tracks wears the tab and fills its ring by 1 of 20.
+    await open(page, '/tracks');
+    await expect(tracksPageCards(page).nth(0).locator('.tab-here')).toHaveText('Last opened');
+    await expect(tracksPageCards(page).nth(0).locator('.ring')).toHaveText('1 of 20 done');
+    await expect(tracksPageCards(page).nth(1).locator('.tab-here, .ring')).toHaveCount(0);
+
     await open(page, '/networking');
     await page.getByRole('button', { name: 'Clear my progress' }).click();
     await expect(page.getByRole('group', { name: 'Clear all progress on this device?' })).toBeFocused();
@@ -194,6 +254,8 @@ test.describe('desktop', () => {
     await open(page, '/');
     await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
     await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 20 lessons ready');
+    await open(page, '/tracks');
+    await expect(page.locator('.tp-grid').locator('.tab-here, .ring')).toHaveCount(0);
   });
 
   test('progress saved before this update still shows, then moves to the new record', async ({ page }) => {

@@ -1,6 +1,7 @@
 // @ts-nocheck -- ported drawing code; the checksum tests in figures.test.ts pin its output, so it is not re-typed line by line.
-// The six track covers, drawn at build time with the Anatomy kit. Ported from the approved mockups' figs
+// The track covers, drawn at build time with the Anatomy kit. Six are ported from the approved mockups' figs
 // (covers.mjs for the four newer covers, build3.mjs for the router and the padlock); the drawing is identical.
+// The A+ cover was drawn later, here, in the same style.
 // Film grain is left out. `data-part` hooks stay in `cover()` so a page can move the figure; stills drop them.
 import { k, G, W, H, P, at, S, L, D, n1, byDepth, poly, tubeOf, onFaceY, onFaceX, tubePieces, base } from '../common.ts';
 import { scopeIds } from '../ids.ts';
@@ -334,8 +335,71 @@ function padlock() {
   return out.join("");
 }
 
-// ---------- The six covers ----------
-export const COVER_IDS = ['networking', 'web', 'crypto', 'ai', 'privesc', 'tvm'] as const;
+// ---------- CompTIA A+: an open PC tower, one memory stick being pressed into place ----------
+// Drawn for the Tracks page after the six mockup covers, with the same kit, plate and camera. The near side (x = CX)
+// is open. The camera looks down at 30°, so the lid hides the top of the inside and the front panel hides its front:
+// the parts sit low and toward the back, where the opening shows them. They are drawn back to front, then the lid and
+// the front panel over them.
+function pcTower() {
+  const out = [];
+  const CA = { x: -40, y: -46, w: 40, d: 92, r: 3 }, FZ = 3, TOP = 92, WALL = 2.4;
+  const CX = CA.x + CA.w, CF = CA.y + CA.d, IN = CA.x + WALL, BACK = CA.y + WALL, FRONT = CF - WALL, FLOOR_Z = FZ + WALL;
+  // Feet, then the far wall, the back wall and the floor of the case.
+  for (const [x, y] of byDepth(k.corners(CA, 7))) out.push(S(k.cylinder(x, y, 3, 0, FZ, P, 18), { tone: "lo" }));
+  out.push(S(k.slabOf({ x: CA.x, y: CA.y, w: WALL, d: CA.d - WALL, r: 0.6 }, FZ, TOP - FZ, P, 2), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: IN, y: CA.y, w: CA.w - WALL, d: WALL, r: 0.6 }, FZ, TOP - FZ, P, 2), { tone: "mid" }));
+  out.push(S(k.slabOf({ x: IN, y: BACK, w: CA.w - WALL, d: FRONT - BACK, r: 0.6 }, FZ, WALL, P, 2), { tone: "mid" }));
+  // The power supply at the bottom of the back, its vents toward the opening.
+  const PSU = { x: IN, y: BACK, w: 30, d: 30, r: 1.2 };
+  out.push(S(k.slabOf(PSU, FLOOR_Z, 18, P, 3, 0.4), { tone: "mid" }));
+  let vents = "";
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 6; c++) vents += `<circle class="lm-dotc" cx="${n1(-(PSU.y + 5 + c * 4))}" cy="${n1(-(FLOOR_Z + 5 + r * 4))}" r="0.9"/>`;
+  out.push(onFaceX(PSU.x + PSU.w, vents));
+  // The motherboard on the far wall, above the power supply, with one long expansion slot.
+  const MB = { x: IN, y: BACK + 1, w: 1.4, d: 66, r: 0.4 }, ON = MB.x + MB.w;
+  out.push(S(k.slabOf(MB, 24, 62, P, 2), { tone: "lo", crease: "none" }));
+  out.push(S(k.slabOf({ x: ON, y: BACK + 6, w: 2, d: 34, r: 0.4 }, 28, 2.6, P, 2), { tone: "mid", crease: "none" }));
+  // The processor's cooler: a finned block standing off the board, its fan facing the opening.
+  const HS = { x: ON, y: BACK + 2, w: 15, d: 18, r: 1 }, HZ = 44, HH = 18;
+  out.push(S(k.slabOf(HS, HZ, HH, P, 3, 0.4), { tone: "hi", inner: L([48, 52, 56, 60].map((z) => k.sideSeam(HS, z, P, 3)).join(""), { tone: "faint" }) }));
+  const fy = HS.y + HS.d / 2, fz = HZ + HH / 2;
+  out.push(onFaceX(HS.x + HS.w, `<circle class="lm-void" cx="${n1(-fy)}" cy="${-fz}" r="7.4"/>` + [0, 1, 2, 3, 4].map((i) => { const a = (i / 5) * Math.PI * 2; return `<path class="lm-slot" d="M${n1(-fy)} ${-fz}L${n1(-fy + 6.4 * Math.cos(a))} ${n1(-fz + 6.4 * Math.sin(a))}"/>`; }).join("") + `<circle class="lm-dotc" cx="${n1(-fy)}" cy="${-fz}" r="1.6"/>`));
+  // Two memory slots in front of the cooler. The far stick is seated; the near one, lit, is on its way in.
+  const RZ = 36, RH = 30;
+  const slot = (y) => S(k.slabOf({ x: ON, y, w: 2.6, d: 3.2, r: 0.4 }, RZ - 2, RH + 4, P, 2), { tone: "lo", crease: "none" });
+  const stick = (y, gap, lit) => {
+    const s = { x: ON + 0.6 + gap, y: y + 0.7, w: 11, d: 1.8, r: 0.3 };
+    const chips = [0, 1, 2, 3].map((i) => rect("lm-inlay", s.x + 2.4, RZ + 3 + i * 7.4, 6, 5, 0.6)).join("");
+    return S(k.slabOf(s, RZ, RH, P, 2), { tone: "hi", lit, crease: "none" }) + onFaceY(s.y + s.d, chips);
+  };
+  out.push(slot(-20), stick(-20, 0, false), slot(-8), stick(-8, 5, true));
+  // A drive on the floor, in front of the power supply.
+  const SSD = { x: IN + 10, y: -12, w: 22, d: 26, r: 1 };
+  out.push(S(k.slabOf(SSD, FLOOR_Z, 4.2, P, 3, 0.4), { tone: "hi" }));
+  out.push(L(k.planOutline(k.insetPlan(SSD, 3), FLOOR_Z + 4.2, P, 3), { tone: "lo" }));
+  // The lid with its vents, then the front panel: a drive bay, the power button and its light, two ports, an intake.
+  out.push(S(k.slabOf({ x: CA.x, y: CA.y, w: CA.w, d: CA.d - WALL, r: 0.8 }, TOP, WALL, P, 3, 0.4), { tone: "hi" }));
+  out.push(D(k.dotGrid(CA.x + 8, CA.y + 16, 6, 12, 5, TOP + WALL, P), { size: 0.6, tone: "lo" }));
+  out.push(S(k.slabOf({ x: CA.x, y: FRONT, w: CA.w, d: WALL, r: 0.6 }, FZ, TOP + WALL - FZ, P, 2, 0.4), { tone: "hi" }));
+  const mid = CA.x + CA.w / 2;
+  out.push(onFaceY(CF, rect("lm-inlay", CA.x + 6, TOP - 24, CA.w - 12, 14, 2) + rect("lm-slot", CA.x + 9, TOP - 17, CA.w - 18, 1.4, 0.6)
+    + `<circle class="lm-void" cx="${n1(mid)}" cy="${-(TOP - 38)}" r="3.4"/>`
+    + rect("lm-void", mid - 8, TOP - 54, 5, 2.2, 0.5) + rect("lm-void", mid + 3, TOP - 54, 5, 2.2, 0.5)
+    + rect("lm-void", CA.x + 8, 12, CA.w - 16, 2.4, 1) + rect("lm-void", CA.x + 8, 17, CA.w - 16, 2.4, 1)));
+  out.push(`<g class="lm-leds">${dot(at([mid, CF, TOP - 45]), "lm-led on", "", 1.3)}</g>`);
+  // On the plate in front of the open side: a screwdriver and the two screws that held the side on.
+  const SD = { x: 34, y: 30, w: 20, d: 7, r: 3.2 };
+  out.push(S(k.slabOf(SD, 0, 7, P, 6, 1), { tone: "mid", inner: L([1.8, 3.5, 5.2].map((dy) => k.lineOnTop([SD.x + 4, SD.y + dy], [SD.x + SD.w - 4, SD.y + dy], 7, P)).join(""), { tone: "faint" }) }));
+  out.push(S(k.slabOf({ x: SD.x + SD.w, y: SD.y + 2.6, w: 26, d: 1.8, r: 0.6 }, 2.6, 1.8, P, 2), { tone: "hi", crease: "none" }));
+  for (const [x, y] of byDepth([[86, 10], [95, 17]])) {
+    out.push(S(k.cylinder(x, y, 2.4, 0, 1.6, P, 18), { tone: "hi" }));
+    out.push(L(k.lineOnTop([x - 1.4, y], [x + 1.4, y], 1.6, P) + k.lineOnTop([x, y - 1.4], [x, y + 1.4], 1.6, P), { tone: "lo" }));
+  }
+  return out.join("");
+}
+
+// ---------- The covers ----------
+export const COVER_IDS = ['networking', 'web', 'crypto', 'ai', 'privesc', 'tvm', 'aplus'] as const;
 export type CoverId = (typeof COVER_IDS)[number];
 
 const frame = (id: string, label: string, body: string, aria: string): string => {
@@ -351,6 +415,7 @@ const DESCRIBE: Record<CoverId, string> = {
   ai: 'A boxy machine with a grid of lights on top and three dials on the front. A belt carries a card into its left side, and another belt leads out of its right side to two trays, one marked with a circle and one with a triangle.',
   privesc: 'A three-storey building with a lift on its front and an alarm light on the roof. In front stands a badge reader with a light for each floor, and a level 1 badge waits in its holder.',
   tvm: 'A wall of fifteen panels, three of them cracked. A scanner head hangs from a rail along the top of the wall, and a console in front lists what it finds.',
+  aplus: 'An open PC tower on a plate, its side taken off. Inside are a fan, a drive and two memory sticks, one of them lit as it is pressed into place. A screwdriver lies in front.',
 };
 
 const DRAW: Record<CoverId, () => string> = {
@@ -360,6 +425,7 @@ const DRAW: Record<CoverId, () => string> = {
   ai: () => frame('ai', 'MODEL · 16 WEIGHTS', sorter(), DESCRIBE.ai),
   privesc: () => frame('lift', 'ACCESS · LEVEL 1', lift(), DESCRIBE.privesc),
   tvm: () => frame('scan', 'SCAN · 15 PANELS', scanner(), DESCRIBE.tvm),
+  aplus: () => frame('pc', 'RAM · 2 × 8 GB', pcTower(), DESCRIBE.aplus),
 };
 
 /** A cover's description in words, the same as its figure's label. */

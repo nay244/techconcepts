@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { sha256, withoutGrain } from '../../test/figure-hash';
-import { COVER_IDS, cover, coverStill, routerDrawing } from './covers.ts';
+import { COVER_IDS, cover, coverDescription, coverStill, routerDrawing } from './covers.ts';
 import { HERO_WEB, heroWebSvg } from './hero-web.ts';
 import { internetThumb } from './internet-thumb.ts';
 import { SPOTS, spot } from './spots.ts';
@@ -36,6 +36,18 @@ test('two still copies of the same cover share no ids', () => {
   expect(cover('networking')).toMatch(/data-part="packets"/);
 });
 
+test('the A+ cover is a figure on the shared plate, with one lit part and its label', () => {
+  const svg = cover('aplus');
+  expect(svg).toContain('class="iso-svg lm-svg lm-pc');
+  expect(svg).toContain('RAM · 2 × 8 GB');
+  expect(svg).toMatch(/data-lit/);
+  expect(svg).not.toMatch(/feTurbulence|grain/i);
+});
+
+test('the A+ cover says what it shows', () => {
+  expect(coverDescription('aplus')).toMatch(/PC tower/);
+});
+
 test('the live router cover is the networking cover, with the packets’ path along its cable', () => {
   const { svg, path } = routerDrawing();
   expect(cover('networking')).toContain(svg);
@@ -60,6 +72,8 @@ const EXPECTED: Record<string, string> = {
   'cover:ai': '4898d061e7ef0672f9709fe222ac857f22eab89b59dc9453d769e8ebb85e7e03',
   'cover:privesc': '81e6e65ad37084cc84eac7e142a95f36c07ef9b85040ba3bb9d629ad98733256',
   'cover:tvm': 'd1a9387a16b7fac9f941ac61588f2681f7422e189d80d0b9fc5169645a2f65d1',
+  // Drawn for the Tracks page on 2026-11-07, after the six mockup covers; pinned from its own first approved render.
+  'cover:aplus': 'fa694d51b69b6eb9ce3fea6ad1f361e2c2160b4f029340f71ecb8092b24fcc11',
   'spot:watch': 'b0a517894e64f146f1a7060c7c5c4163801f74c954703beb08ea5f2aad207cb5',
   'spot:learn': 'f48b830a8519b1d2c7f2d69bdc5fd5ea12a334eb33555ee9b71e0c859dedf66e',
   'spot:practice': '3d5e9a1240082e5e5d920c4b69bae94c3ea2be1bf0e4394e6e4de204c794dc30',
