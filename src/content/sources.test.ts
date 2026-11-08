@@ -147,3 +147,31 @@ describe('sourceListOf', () => {
     );
   });
 });
+
+describe('ITU-T and the defining-standard marker', () => {
+  const itu: SourceEntry = {
+    id: 'itu-x200',
+    kind: 'itu',
+    short: 'ITU-T X.200',
+    title: 'Open Systems Interconnection – Basic Reference Model',
+    publisher: 'ITU-T',
+    url: 'https://www.itu.int/rec/T-REC-X.200-199407-I/en',
+  };
+  test('an ITU-T Recommendation on www.itu.int is an allowed source', () => {
+    expect(defineSources([itu])['itu-x200']?.kind).toBe('itu');
+    expect(() => defineSources([{ ...itu, url: 'https://www.itu.org/rec/T-REC-X.200-199407-I/en' }])).toThrow(/www\.itu\.org/);
+  });
+  test('cite marks a defining standard only when asked', () => {
+    expect(cite('rfc2131', '3.1', { sources, defining: true }).defining).toBe(true);
+    expect('defining' in cite('rfc2131', '3.1', { sources })).toBe(false);
+  });
+  test('checkCitation accepts a defining citation', () => {
+    expect(checkCitation(cite('rfc2131', '3.1', { sources, defining: true }), sources, 'content')).toEqual([]);
+  });
+  test('an objectives citation cannot be defining', () => {
+    const c = cite('aplus-objectives', '2.6', { sources, url: objectives.url });
+    expect(checkCitation({ ...c, defining: true }, sources, 'objectives')).toEqual([
+      expect.stringContaining('objectives citation cannot be marked as a defining standard'),
+    ]);
+  });
+});

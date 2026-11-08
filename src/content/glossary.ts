@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { statementIssue } from './cited';
+import { statementIssue, twoSourceIssue } from './cited';
 import { slugSchema, text } from './primitives';
 import { statementSchema } from './schema';
 import { checkCitation, SOURCES, type SourceRegistry } from './sources';
@@ -49,7 +49,7 @@ export function defineGlossary(entries: GlossaryEntryInput[], sources: SourceReg
       );
     }
     for (const [j, s] of e.definition.entries()) {
-      const problem = statementIssue(s);
+      const problem = statementIssue(s) ?? (s.analogy === true ? undefined : twoSourceIssue(s.cite, sources));
       if (problem !== undefined) issues.push(`${name}: definition[${j}] ("${s.id}"): ${problem}`);
     }
     if (!e.definition.some((s) => s.cite.length > 0)) {

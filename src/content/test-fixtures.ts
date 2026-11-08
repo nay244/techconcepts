@@ -401,8 +401,11 @@ export const FIXTURE_SOURCES: SourceRegistry = defineSources([
   },
 ]);
 
-/** `rfc-example` at a numbered section, linked through the registry's anchor. */
-const rfc = (section: string) => cite('rfc-example', section, { sources: FIXTURE_SOURCES });
+/**
+ * `rfc-example` at a numbered section, linked through the registry's anchor. RFC 9999 is the invented Example
+ * Protocol's own definition, so each citation of it is marked as the defining standard (the two-source rule).
+ */
+const rfc = (section: string) => cite('rfc-example', section, { sources: FIXTURE_SOURCES, defining: true });
 /** `vendor-example` at a named section: the page plus a fragment, since a content citation points at the section. */
 const vendor = (section: string, fragment: string) =>
   cite('vendor-example', section, { sources: FIXTURE_SOURCES, url: `https://learn.microsoft.com/example#${fragment}` });
@@ -621,7 +624,7 @@ export function makeCitedLesson(): LessonInput {
             title: 'Lease Renewal',
             sub: 'The laptop asks to keep it',
             narrative: 'Halfway through the lease, the laptop asks to keep its address. The router agrees, and the lease starts again.',
-            deep: [{ text: 'A device asks to renew when half of its lease time has passed.', cite: [vendor('Lease renewal', 'lease-renewal')] }],
+            deep: [{ text: 'A device asks to renew when half of its lease time has passed.', cite: [vendor('Lease renewal', 'lease-renewal'), rfc('4.4')] }],
             facts: [
               { label: 'When', value: 'Halfway through', backing: { traces: ['fact-2'] } },
               { label: 'Address', value: 'Unchanged', backing: { traces: ['lead-2'] } },
@@ -671,7 +674,7 @@ export function makeCitedLesson(): LessonInput {
           terms: [
             { id: 'term-1', idea: 'Asking for an address', name: 'Lease request', cite: [rfc('3.1')] },
             { id: 'term-2', idea: 'An address lent for a set time', name: 'Lease', cite: [rfc('2.1')] },
-            { id: 'term-3', idea: 'Asking to keep it longer', name: 'Renewal', cite: [vendor('Lease renewal', 'lease-renewal')] },
+            { id: 'term-3', idea: 'Asking to keep it longer', name: 'Renewal', cite: [vendor('Lease renewal', 'lease-renewal'), rfc('4.4')] },
           ],
           pattern: {
             id: 'pattern',
@@ -695,7 +698,7 @@ export function makeCitedLesson(): LessonInput {
           ],
           facts: [
             { id: 'fact-1', label: 'Lease time', value: 'Chosen by the router', cite: [rfc('2.2')] },
-            { id: 'fact-2', label: 'Renewal', value: 'At half the lease time', cite: [vendor('Lease renewal', 'lease-renewal')] },
+            { id: 'fact-2', label: 'Renewal', value: 'At half the lease time', cite: [vendor('Lease renewal', 'lease-renewal'), rfc('4.4')] },
             { id: 'fact-3', label: 'Request sent to', value: 'Every device on the local network', cite: [rfc('3.1')] },
           ],
         },
@@ -721,7 +724,7 @@ export function makeCitedLesson(): LessonInput {
               {
                 text: 'When half of its lease time has passed',
                 feedback: 'Right. Renewing halfway leaves time to try again if a reply is lost.',
-                cite: [vendor('Lease renewal', 'lease-renewal')],
+                cite: [vendor('Lease renewal', 'lease-renewal'), rfc('4.4')],
               },
               { text: 'Only after the lease has run out', feedback: 'Not quite. By then the address is no longer lent to it.', cite: [rfc('4.1')] },
             ],

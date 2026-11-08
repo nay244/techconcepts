@@ -3,15 +3,20 @@ import { defineGlossary, GLOSSARY, type GlossaryEntryInput } from './glossary';
 import { cite } from './sources';
 import { FIXTURE_SOURCES, OBJ_URL } from './test-fixtures';
 
-/** A valid entry: one statement, cited at RFC 9999 §2.1. */
+/** A valid entry: one statement, cited at RFC 9999 §2.1, marked as the defining standard (the two-source rule). */
 const lease = (over: Partial<GlossaryEntryInput> = {}): GlossaryEntryInput => ({
   id: 'lease',
   term: 'Lease',
-  definition: [{ id: 'd1', text: 'An address lent to a device for a set time.', cite: [cite('rfc-example', '2.1', { sources: FIXTURE_SOURCES })] }],
+  definition: [{ id: 'd1', text: 'An address lent to a device for a set time.', cite: [cite('rfc-example', '2.1', { sources: FIXTURE_SOURCES, defining: true })] }],
   ...over,
 });
 /** An analogy statement: it may leave out its citation list, which parses to empty. */
 const analogy = { id: 'd2', text: 'Like borrowing a book.', analogy: true as const };
+
+test('a definition statement with one source fails', () => {
+  const one = { id: 'd1', text: 'An address lent to a device for a set time.', cite: [cite('rfc-example', '2.1', { sources: FIXTURE_SOURCES })] };
+  expect(() => defineGlossary([lease({ definition: [one] })], FIXTURE_SOURCES)).toThrow(/definition\[0\] \("d1"\): rests on one source/);
+});
 
 test('a cited entry is valid and comes back as written', () => {
   expect(defineGlossary([lease()], FIXTURE_SOURCES)).toEqual([lease()]);
