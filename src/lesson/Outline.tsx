@@ -120,7 +120,7 @@ interface AllLessonsProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 
   onClose(): void;
 }
 
-/** "All 20 lessons": the track's lessons by part, in a modal dialog, with Finished or In progress in words. */
+/** "All N lessons": the track's lessons by part, in a modal dialog, with Finished or In progress in words. */
 function AllLessons({ entries, currentKey, progress, open, onClose }: AllLessonsProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -183,7 +183,7 @@ function AllLessons({ entries, currentKey, progress, open, onClose }: AllLessons
  * Practice. A lesson of many units (lesson
  * 1's protocols) lists one row per unit, filtered by group, with the current
  * unit opened to show its parts and a check on the others the learner has
- * opened here. Below, "All 20 lessons" opens the track's list.
+ * opened here. Below, "All N lessons" opens the track's list.
  */
 export function Outline({ lesson, position, current, seen, onGo, entries, currentKey, progress }: OutlineProps) {
   const headId = useId();

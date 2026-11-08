@@ -527,7 +527,12 @@ describe('progress storage across v1 and v2', () => {
     expect(saveProgress(t.storage, next)).toBe(false);
     expect(t.values.get(LEGACY_PROGRESS_KEY)).toBe(V1);
     expect(t.values.has(PROGRESS_KEY)).toBe(false);
-    expect(Object.keys(loadProgress(memoryStorageWith(t.values)).lessons).sort()).toEqual(['dhcp', 'how-the-internet-works', 'osi-model', 'subnetting']);
+    // The old lesson 1 record (v1, at 23) loads as the How the Internet Works lessons it covered: HTTP and HTTPS
+    // finished, TCP in progress at 6.
+    const loaded = loadProgress(memoryStorageWith(t.values)).lessons;
+    expect(Object.keys(loaded).sort()).toEqual(['dhcp', 'osi-model', 'subnetting', 'what-is-http', 'what-is-https', 'what-is-tcp']);
+    expect([loaded['what-is-http']!.status, loaded['what-is-https']!.status]).toEqual(['finished', 'finished']);
+    expect(loaded['what-is-tcp']).toMatchObject({ status: 'in-progress', furthestPosition: 6 });
   });
 
   test('v1 written after migration (an old tab) is merged on the next load', () => {

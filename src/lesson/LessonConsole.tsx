@@ -155,7 +155,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   // At a step: its title, the latest row it has played, then any table changes since (stepAnnouncement). Elsewhere: the
   // place's name.
   const announcement = step === null ? resumeLabel(lesson, position) : stepAnnouncement(step.title, derived);
-  // A step may say what its empty log means (lesson 1's quiet first steps); otherwise, and always at the Overview,
+  // A step may say what its empty log means (How the Internet Works' quiet first steps); otherwise, and always at the Overview,
   // the unit's log says it, as the mockups' log does before anything has played.
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 

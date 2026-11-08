@@ -5,7 +5,7 @@ import { defineLegacyLesson } from '../legacy';
 import type { Board, Cue, NoteEvent } from '../schema';
 
 /**
- * Subnetting, lesson 8 of 20. An office cuts its one /24 into four /26s, one
+ * Subnetting, lesson 7 of 19. An office cuts its one /24 into four /26s, one
  * per team, without a single new cable: the learner sees an address split
  * into its network and host parts, works out the mask, the network and
  * broadcast addresses and the usable addresses, borrows 2 bits to cut the

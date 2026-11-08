@@ -16,13 +16,35 @@ import {
 } from './schema';
 
 /**
- * The legacy path: the four ready lessons as they were written before citations, in today's authoring shape, with
+ * The legacy path: the ready lessons as they were written before citations, in today's authoring shape, with
  * today's checks. Each is lifted into the runtime (cited) shape with empty citations and no backing, so the site
  * shows it exactly as before. Every other lesson is written in the cited shape.
  */
 
-/** The ready lessons written before citations. Closed: §10 tasks 4–6 remove each slug as it migrates; task 6 deletes this file. */
-export const LEGACY_LESSONS = ['how-the-internet-works', 'subnetting', 'dhcp', 'firewalls'] as const;
+/**
+ * The ready lessons written before citations. Closed: §10 tasks 4–6 remove each slug as it migrates; task 6 deletes
+ * this file. A legacy lesson split into parts stays legacy until it is migrated: How the Internet Works' 14 lessons
+ * keep their uncited words until each one's audit (owner, 2026-11-08: split now, audit later).
+ */
+export const LEGACY_LESSONS = [
+  'what-is-http',
+  'what-is-https',
+  'what-is-tcp',
+  'what-is-udp',
+  'what-is-ip',
+  'what-is-dns',
+  'what-is-dhcp',
+  'what-is-icmp',
+  'what-is-smtp',
+  'what-is-pop3',
+  'what-is-imap',
+  'what-is-ftp',
+  'what-is-ssh',
+  'what-is-tls',
+  'subnetting',
+  'dhcp',
+  'firewalls',
+] as const;
 
 // The parts of today's authoring shape that the cited shape changes. Everything else (the scene, its panels and log,
 // the events and packets) is the runtime schema's own.
@@ -66,7 +88,7 @@ const legacyUnitSchema = z.strictObject({
   id: slugSchema,
   name: text,
   fullName: text,
-  /** One line on what the unit is for (lesson 1's protocol rows). */
+  /** One line on what the unit is for: a How the Internet Works lesson's subtitle. */
   purpose: text,
   /** Lesson 1's outline filters. */
   group: unitSchema.shape.group,

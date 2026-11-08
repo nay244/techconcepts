@@ -10,7 +10,7 @@ import { PROGRESS_KEY } from '../progress/store';
 import { seedProgress } from '../test/progress';
 import { TrackSidebar } from './TrackSidebar';
 
-// The real track: twenty places, four of them ready.
+// The real track: nineteen places, three of them ready.
 const entries = getEntries('networking');
 const known = knownFrom(entries);
 const lessons = entries.map((e) => ({ key: e.key, title: e.title }));
@@ -48,13 +48,13 @@ test('a first visit says progress is kept in this browser, above the parts', () 
   expect(container.querySelector('.pg')!.compareDocumentPosition(parts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
-test('a returning visitor sees how many of the twenty are complete, a bar with each lesson in its place, and what is in progress', () => {
+test('a returning visitor sees how many of the nineteen are complete, a bar with each lesson in its place, and what is in progress', () => {
   seedProgress({
     [key('subnetting')]: { status: 'finished', furthestPosition: 9 },
     [key('dhcp')]: { status: 'in-progress', furthestPosition: 3 },
   });
   const { container } = render(sidebar());
-  expect(title(container)).toBe('1 of 20 complete');
+  expect(title(container)).toBe('1 of 19 complete');
   expect(container.querySelector('.pg-title b')).toHaveTextContent('1');
   const expected = entries.map((_, i) => (i === at('subnetting') ? 'done' : i === at('dhcp') ? 'prog' : 'none'));
   expect(segments(container)).toEqual(expected);
@@ -70,12 +70,12 @@ test('several in progress are named in track order; none in progress, no line', 
   });
   const first = render(sidebar());
   expect(screen.getByText('2 in progress: Subnetting, Firewalls')).toBeInTheDocument();
-  expect(title(first.container)).toBe('0 of 20 complete');
+  expect(title(first.container)).toBe('0 of 19 complete');
   first.unmount();
 
   seedProgress({ [key('dhcp')]: { status: 'finished', furthestPosition: 7 } });
   const second = render(sidebar());
-  expect(title(second.container)).toBe('1 of 20 complete');
+  expect(title(second.container)).toBe('1 of 19 complete');
   expect(second.container.querySelector('.pg-note')).toBeNull();
 });
 
@@ -161,7 +161,7 @@ test('the server renders the first visit, then hydrates to the returning visitor
   await act(async () => {
     root = hydrateRoot(container, sidebar());
   });
-  expect(title(container)).toBe('0 of 20 complete');
+  expect(title(container)).toBe('0 of 19 complete');
   expect(errors).not.toHaveBeenCalled();
 
   act(() => root.unmount());

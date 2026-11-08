@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * SMTP, protocol 9 of How the Internet Works’ 14. Alex’s mail app hands a letter to Alex’s own mail server over a
+ * SMTP, lesson 9 of How the Internet Works’ 14. Alex’s mail app hands a letter to Alex’s own mail server over a
  * sealed line, logging in first. That server looks up who takes mail for example.org, then hands the letter to
  * Sam’s mail server, where it waits in Sam’s mailbox.
  *
@@ -75,7 +76,7 @@ const smtp: LegacyUnitInput = {
       sub: 'A sealed line to your mail server',
       narrative:
         'Your mail app opens a line to your own mail server, smtp.example.net. First the usual TCP hello. Then the two set up encryption, so your password and your letter can’t be read on the way. That seal is **TLS**, and the port they meet on, 465, is one of the ports for **sending mail from an app**.',
-      deep: 'Port 465 starts TLS straight away (implicit TLS). Port 587 starts in plain text and upgrades with the STARTTLS command. Both are for submission, mail coming from a person’s app. Port 25 is for servers passing mail on, and many home networks block it going out, to stop spam. The TLS part covers the handshake.',
+      deep: 'Port 465 starts TLS straight away (implicit TLS). Port 587 starts in plain text and upgrades with the STARTTLS command. Both are for submission, mail coming from a person’s app. Port 25 is for servers passing mail on, and many home networks block it going out, to stop spam. The TLS/SSL lesson covers the handshake.',
       facts: [
         { label: 'To', value: 'smtp.example.net, 203.0.113.60' },
         { label: 'Port', value: '465: TLS from the start' },
@@ -738,4 +739,5 @@ const smtp: LegacyUnitInput = {
   ],
 };
 
-export default smtp;
+/** Lesson 9 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(smtp));

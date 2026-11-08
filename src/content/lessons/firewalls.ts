@@ -2,7 +2,7 @@ import { ADDR, change, checkResults, ruleTableRows, visits } from '../helpers/fi
 import { defineLegacyLesson } from '../legacy';
 
 /**
- * Firewalls, lesson 17 of 20. A visitor and an admin out on the internet reach
+ * Firewalls, lesson 16 of 19. A visitor and an admin out on the internet reach
  * an office web server through a firewall whose rule list is read from the
  * top: the first rule that fits decides, and whatever no rule allows is
  * blocked (NIST SP 800-41 Rev. 1). The firewall is stateful: it remembers the
@@ -117,7 +117,7 @@ const firewalls = defineLegacyLesson({
           sub: 'The firewall reads its list from the top',
           narrative:
             'A visitor out on the internet asks for the office website. Before the visit goes in, the firewall checks it against its **rule list**, starting at rule 1. Each rule says **allow** or **deny** for one kind of visit. Rule 1 says anyone may reach the website, which answers at door number 443. Door numbers like this are called **ports**. The visit fits, so the arms lift and it goes through. Rules 2 and 3 are never read.',
-          deep: 'The visit is the first packet of a TCP connection, called a SYN (lesson 12). The firewall reads the source and destination addresses in its IP header and the destination port in its TCP header. Port 443 is HTTPS (lesson 15). The web server’s address, 10.0.0.10, is private, so in real life the visit reaches it through NAT (lesson 13). The rules here see it after that.',
+          deep: 'The visit is the first packet of a TCP connection, called a SYN (lesson 11). The firewall reads the source and destination addresses in its IP header and the destination port in its TCP header. Port 443 is HTTPS (lesson 14). The web server’s address, 10.0.0.10, is private, so in real life the visit reaches it through NAT (lesson 12). The rules here see it after that.',
           facts: [
             { label: 'Visit', value: 'TCP port 443 from 203.0.113.50' },
             { label: 'Rule 1', value: 'ALLOW TCP 443, any source' },
@@ -147,7 +147,7 @@ const firewalls = defineLegacyLesson({
           sub: 'One trusted address gets in',
           narrative:
             'The admin looks after the server and needs to log in to it on port 22 too. Rule 2 opens that door, but only for one address: the admin’s, 198.51.100.7. The address a visit comes from is called its **source**. The admin’s visit doesn’t fit rule 1, but it fits rule 2, so it goes through. The door that stayed shut for the visitor opens for the admin.',
-          deep: '198.51.100.7/32 means exactly one address: all 32 bits must match (lesson 8 covers the slash). A rule that names an address only works while that address stays the same, so admin logins are often allowed from a VPN’s addresses instead (lesson 20).',
+          deep: '198.51.100.7/32 means exactly one address: all 32 bits must match (lesson 7 covers the slash). A rule that names an address only works while that address stays the same, so admin logins are often allowed from a VPN’s addresses instead (lesson 19).',
           facts: [
             { label: 'Visit', value: 'TCP port 22 from 198.51.100.7' },
             { label: 'Rule 2', value: 'ALLOW TCP 22, source 198.51.100.7/32' },

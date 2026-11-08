@@ -46,6 +46,7 @@ const art = (id: CoverId): string => cropViewBox(coverStill(id, `tracks-${id}`),
             <>
               <div class="art" aria-hidden="true" set:html={art(c.cover)} />
               {c.flag && <span class="flag">{c.flag}</span>}
+              {c.start && <span class="flag start">Start here</span>}
               <div class="body">
                 <span class="kind">{c.kind}</span>
                 <h2>{c.title}</h2>
@@ -219,6 +220,12 @@ const art = (id: CoverId): string => cropViewBox(coverStill(id, `tracks-${id}`),
     background: var(--card);
     color: var(--ink-strong);
     font: 600 12px/1.4 var(--sans);
+  }
+  /* The first track is where a newcomer starts: the same pill, in our blue. */
+  .tcard .flag.start {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-ink);
   }
 
   @media (max-width: 960px) {

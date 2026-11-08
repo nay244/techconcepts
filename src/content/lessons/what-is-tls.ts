@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * TLS/SSL, protocol 14 of How the Internet Works’ 14. The TCP line to techconcepts.app is already open as the part
+ * TLS/SSL, lesson 14 of How the Internet Works’ 14. The TCP line to techconcepts.app is already open as the part
  * starts (the mockup’s conn0, as the scene’s start), so the map draws it from the Overview on, and the handshake
  * seals that line: ClientHello, ServerHello, the certificate and CertificateVerify, then Finished both ways. The page
  * comes back as application data, then close_notify both ways, and the line closes.
@@ -394,4 +395,5 @@ const tls: LegacyUnitInput = {
   ],
 };
 
-export default tls;
+/** Lesson 14 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(tls));

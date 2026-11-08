@@ -60,8 +60,9 @@ async function overflowAt(page: Page, where: string): Promise<string | null> {
   return down === 0 && sideways === 0 ? null : `${where}: the page scrolls ${down}px down and ${sideways}px sideways`;
 }
 
+// Named by address, not title: two tracks can each have a lesson of the same name (DHCP).
 for (const lesson of LESSONS) {
-  test.describe(lesson.title, () => {
+  test.describe(lesson.path, () => {
     test.describe.configure({ timeout: 180_000 });
 
     test('→ walks Overview, every step, Learn and Practice, ← walks back, and the page never scrolls', async ({ page }) => {
@@ -385,7 +386,7 @@ test.describe('without JavaScript', () => {
   test('every lesson says it needs JavaScript to play, and shows no control that cannot work', async ({ page }) => {
     for (const lesson of LESSONS) {
       await page.goto(lesson.path);
-      const where = lesson.title;
+      const where = lesson.path;
       // Found by its class: Playwright's text matching skips what is inside a <noscript>.
       const note = page.locator('.console__log td[data-idle] noscript .log__nojs');
       await expect(note, where).toBeVisible();

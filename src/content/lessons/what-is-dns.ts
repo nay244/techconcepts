@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * DNS, protocol 6 of How the Internet Works’ 14. The laptop asks its resolver for techconcepts.app, and the
+ * DNS, lesson 6 of How the Internet Works’ 14. The laptop asks its resolver for techconcepts.app, and the
  * resolver asks its way down the name: a root server, then the .app servers, then the site’s own name server. Both
  * keep the answer for its TTL, so the next lookup needs no trips.
  *
@@ -333,4 +334,5 @@ const dns: LegacyUnitInput = {
   ],
 };
 
-export default dns;
+/** Lesson 6 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(dns));

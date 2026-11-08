@@ -1,20 +1,21 @@
 import { expect, test } from 'vitest';
-import { getEntries, getLesson, type AvailableSummary } from '../content/registry';
+import { CERT_TAGS } from '../content/certs';
+import { buildEntries, getEntries, getLesson, type AvailableSummary } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
-import { networkingTrack } from '../content/tracks';
+import { internetTrack, networkingTrack } from '../content/tracks';
 import { positionOf, slotsFor } from '../engine/timeline';
 import { cardPlaces, nextUps, presentTags, trackParts, type ReadyLesson } from './track';
 
 const entries = getEntries('networking');
 const lessonOf = (e: AvailableSummary): Lesson => getLesson(e.slug)!;
 const DHCP = getLesson('dhcp')!;
-const INTERNET = getLesson('how-the-internet-works')!;
+const SUBNETTING = getLesson('subnetting')!;
 
 test('the six parts in order, each with its number, its title, its lessons and how many are ready', () => {
   const parts = trackParts(networkingTrack, entries, lessonOf);
   expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
-    [1, 'The big picture', 1, 3],
+    [1, 'The big picture', 0, 2],
     [2, 'Addresses & the local network', 0, 4],
     [3, 'Getting between networks', 2, 3],
     [4, 'Talking across the internet', 0, 4],
@@ -23,34 +24,61 @@ test('the six parts in order, each with its number, its title, its lessons and h
   ]);
   // Every planned lesson once, numbered across the track with two digits.
   const all = parts.flatMap((p) => p.lessons);
-  expect(all.map((l) => l.n)).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0')));
-  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['How the Internet Works', 'Subnetting', 'DHCP', 'Firewalls']);
-  expect(all[1]).toEqual({ ready: false, key: 'osi-model', n: '02', title: 'OSI Model' });
+  expect(all.map((l) => l.n)).toEqual(Array.from({ length: 19 }, (_, i) => String(i + 1).padStart(2, '0')));
+  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['Subnetting', 'DHCP', 'Firewalls']);
+  expect(all[0]).toEqual({ ready: false, key: 'osi-model', n: '01', title: 'OSI Model' });
 });
 
-test('a ready lesson carries its card: words, link, protocols for a lesson of several units, and exams', () => {
+test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14', () => {
+  const parts = trackParts(internetTrack, getEntries('how-the-internet-works'), lessonOf);
+  expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
+    [1, 'Loading a web page', 2, 2],
+    [2, 'Getting the data there', 3, 3],
+    [3, 'Behind the scenes', 3, 3],
+    [4, 'Email', 3, 3],
+    [5, 'Files and remote control', 2, 2],
+    [6, 'The seal', 1, 1],
+  ]);
+  const all = parts.flatMap((p) => p.lessons);
+  expect(all.map((l) => l.n)).toEqual(Array.from({ length: 14 }, (_, i) => String(i + 1).padStart(2, '0')));
+  // No exam tags until each lesson's audit maps them, so a card has nothing in its list.
+  const http = all[0] as ReadyLesson;
+  expect(http).toMatchObject({ key: 'what-is-http', title: 'HTTP', url: '/how-the-internet-works/what-is-http', tags: [], meta: [] });
+});
+
+test('a ready lesson carries its card: words, link and exams', () => {
   const all = trackParts(networkingTrack, entries, lessonOf).flatMap((p) => p.lessons);
-  const internet = all[0] as ReadyLesson;
-  expect(internet).toMatchObject({
+  const subnetting = all.find((l) => l.ready) as ReadyLesson;
+  expect(subnetting).toMatchObject({
     ready: true,
-    key: 'how-the-internet-works',
-    n: '01',
-    number: 1,
-    title: 'How the Internet Works',
-    url: '/networking/how-the-internet-works',
-    subtitle: 'The protocols behind every page',
-    summary: INTERNET.summary,
-    tags: ['a-plus', 'network-plus', 'security-plus', 'ccna', 'helpdesk'],
+    key: 'subnetting',
+    n: '07',
+    number: 7,
+    title: 'Subnetting',
+    url: '/networking/subnetting',
+    subtitle: SUBNETTING.subtitle,
+    summary: SUBNETTING.summary,
+    tags: ['network-plus', 'ccna'],
   });
-  // 14 protocols are counted from the lesson, not written in.
-  expect(internet.meta).toEqual(['14 protocols', 'CompTIA A+', 'CompTIA Network+', 'CompTIA Security+', 'Cisco CCNA', 'Helpdesk']);
-  expect(internet.metaLabel).toBe('Protocols and exams');
-  expect(internet.places).toEqual(cardPlaces(INTERNET));
+  expect(subnetting.meta).toEqual(['CompTIA Network+', 'Cisco CCNA']);
+  expect(subnetting.metaLabel).toBe('Exams');
+  expect(subnetting.places).toEqual(cardPlaces(SUBNETTING));
 
   const dhcp = all.find((l) => l.title === 'DHCP') as ReadyLesson;
   expect(dhcp.meta).toEqual(['CompTIA A+', 'CompTIA Network+', 'Cisco CCNA', 'Helpdesk']);
   expect(dhcp.metaLabel).toBe('Exams');
   expect(dhcp.places).toHaveLength(slotsFor(DHCP).length);
+});
+
+test('a lesson of several units counts its protocols before its exams', () => {
+  // No ready lesson has several units since the split, so a two-unit fixture stands in as HTTP.
+  const two = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
+  const tour = buildEntries(internetTrack, { 'what-is-http': two }, () => 'how-the-internet-works');
+  const http = trackParts(internetTrack, tour, () => two)[0]!.lessons[0] as ReadyLesson;
+  expect(http).toMatchObject({ key: 'what-is-http', n: '01', url: '/how-the-internet-works/what-is-http' });
+  expect(http.meta).toEqual(['2 protocols', ...two.certTags.map((t) => CERT_TAGS[t])]);
+  expect(http.metaLabel).toBe('Protocols and exams');
+  expect(http.places).toEqual(cardPlaces(two));
 });
 
 test('the protocols chip counts the units of whatever lesson has several', () => {
@@ -99,5 +127,5 @@ test('a lesson the registry lists as ready but the page cannot find stops the bu
   const one = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
   expect(() =>
     trackParts(networkingTrack, entries.slice(1), (e) => (e.slug === 'dhcp' ? one : lessonOf(e))),
-  ).toThrow('The networking track lists "how-the-internet-works", which has no entry.');
+  ).toThrow('The networking track lists "osi-model", which has no entry.');
 });

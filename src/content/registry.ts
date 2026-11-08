@@ -162,7 +162,7 @@ export function lessonsFromModules(modules: Record<string, Lesson>, sources: Sou
 
 /**
  * Throws, naming the file, for a `.ts` file in a folder under `lessons/` whose folder is not the slug of a lesson. A
- * folder there holds the parts of the lesson it is named after (lesson 1's protocols); anything else would be a lesson
+ * folder there holds the parts of the lesson it is named after (none does today); anything else would be a lesson
  * file in the wrong place, silently never loaded. `paths` are glob keys like `./lessons/<dir>/<file>.ts`.
  */
 export function checkLessonFolders(paths: readonly string[], slugs: readonly string[]): void {
@@ -204,7 +204,8 @@ export function checkListings(lessons: Record<string, Lesson>, trackList: readon
 
 /**
  * Holds the legacy list closed: throws, naming each, when a lesson is legacy but not on `LEGACY_LESSONS`, or a slug on
- * the list has no lesson or a lesson that is cited. So the list only ever shrinks, as each lesson moves to citations.
+ * the list has no lesson or a lesson that is cited. So the list only ever shrinks, as each lesson moves to citations
+ * (once it grew, when How the Internet Works was split into the 14 legacy lessons it was made of).
  */
 export function checkLegacyList(lessons: readonly Lesson[]): void {
   const listed: readonly string[] = LEGACY_LESSONS;
@@ -235,7 +236,7 @@ export function checkTracks(trackList: readonly Track[], sources: SourceRegistry
 }
 
 // Test files sit beside the lessons they cover, so they are excluded here. Only files directly in `lessons/` are
-// lessons: a lesson's own parts (lesson 1's protocols in lessons/how-the-internet-works/) are not.
+// lessons: a lesson's own parts, in a folder named after it, are not.
 const modules = import.meta.glob<Lesson>(['./lessons/*.ts', '!./lessons/*.test.ts'], {
   eager: true,
   import: 'default',

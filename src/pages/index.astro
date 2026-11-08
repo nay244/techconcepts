@@ -1,16 +1,17 @@
 ---
 // Home (spec §6.1, mockup home-v6). The words are the mockup's; the numbers and the DHCP log sample are worked out
-// from the track and its lessons. Only the hero's eyebrow and second button, the Networking card's progress and the
+// from the tracks and their lessons. Only the hero's eyebrow and second button, the track cards' progress and the
 // hero's movement run in the browser; the rest is static.
 import { coverStill, type CoverId } from '../art/figures/covers';
 import { spot } from '../art/figures/spots';
 import { cropViewBox } from '../art/ids';
 import { CERT_TAGS, type CertTag } from '../content/certs';
-import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
-import type { Lesson, MessageKind } from '../content/schema';
-import { comingSoonTracks, tracks } from '../content/tracks';
+import { getEntries, getLesson, getTrack, trackTotals, type AvailableSummary } from '../content/registry';
+import type { Lesson, MessageKind, Track } from '../content/schema';
+import { comingSoonTracks } from '../content/tracks';
 import { knownFrom, levelLabel } from '../lib/entries';
 import { firstSentence, logSample } from '../lib/home';
+import { startLesson } from '../lib/start';
 import { tokens } from '../styles/tokens';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroCta from '../components/HeroCta';
@@ -18,10 +19,20 @@ import HeroWeb from '../components/HeroWeb.astro';
 import TrackCardProgress from '../components/TrackCardProgress';
 import '../components/site.css';
 
-const track = tracks[0]!;
+function trackOf(id: string): Track {
+  const found = getTrack(id);
+  if (found === undefined) throw new Error(`Home needs the ${id} track.`);
+  return found;
+}
+
+// Networking feeds the exams strip, the DHCP log sample and its own card; How the Internet Works feeds its own card.
+const track = trackOf('networking');
 const entries = getEntries(track.id);
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const totals = trackTotals(entries);
+const internetTrack = trackOf('how-the-internet-works');
+const internetEntries = getEntries(internetTrack.id);
+const internetTotals = trackTotals(internetEntries);
 
 function lessonOf(entry: AvailableSummary): Lesson {
   const lesson = getLesson(entry.slug);
@@ -36,12 +47,14 @@ function readyEntry(slug: string): AvailableSummary {
   return entry;
 }
 
-// Each ready lesson's last position, for both progress islands.
+// Each ready lesson's last position, for each track card's progress island.
 const known = knownFrom(entries);
+const internetKnown = knownFrom(internetEntries);
 
-// ---------- Hero: always How the Internet Works; a returning visitor's second button browses the tracks ----------
-const internet = readyEntry('how-the-internet-works');
-const heroStart = { href: internet.url, label: 'Learn how the Internet Works' };
+// ---------- Hero: always How the Internet Works' first lesson; a returning visitor's second button browses the tracks ----------
+const heroStart = { href: startLesson().url, label: 'Learn how the Internet Works' };
+// Progress in a ready lesson of either track makes a returning visitor.
+const heroKnown = { ...internetKnown, ...known };
 
 // ---------- The exams strip: the tags that have lessons, in their usual order ----------
 const present = new Set(available.flatMap((e) => e.certTags));
@@ -56,8 +69,7 @@ const tagColour = (kind: MessageKind): string => tokens.dark[kind];
 // ---------- Tracks ----------
 // First, How the Internet Works on its own card, wearing the web cover (a laptop asks a server for a page). It and
 // the Networking card each carry the first sentence of their own description, as the mockup does.
-const internetBlurb = firstSentence(internet.summary);
-const internetMeta = `Lesson 1, ${internet.units} protocols`;
+const internetBlurb = firstSentence(internetTrack.description);
 const networkingBlurb = firstSentence(track.description);
 const cardCover = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
 
@@ -94,7 +106,7 @@ const EYE = parts[0].icon;
   overHero
 >
   <HeroWeb>
-    <HeroCta client:load known={known} start={heroStart}>
+    <HeroCta client:load known={heroKnown} start={heroStart}>
       <h1 id="hero-title">See how technology <span class="accent">really works.</span></h1>
       <p class="lede">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
     </HeroCta>
@@ -211,15 +223,14 @@ const EYE = parts[0].icon;
     </div>
     <ul class="tracks">
       <li>
-        <a class="card track ready" href={internet.url}>
+        <a class="card track ready" href={`/${internetTrack.id}`}>
           <div class="art" aria-hidden="true" set:html={cardCover('web')} />
           <div class="body">
-            <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(lessonOf(internet).level)}</span></div>
-            <h3>{internet.title}</h3>
+            <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(internetTrack.level)}</span></div>
+            <h3>{internetTrack.title}</h3>
             <p>{internetBlurb}</p>
             <div class="foot">
-              <span class="meta">{internetMeta}</span>
-              <span class="go">Open lesson</span>
+              <TrackCardProgress client:load known={internetKnown} totals={internetTotals} />
             </div>
           </div>
         </a>

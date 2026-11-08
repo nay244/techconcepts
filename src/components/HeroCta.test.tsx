@@ -7,10 +7,11 @@ import { seedProgress } from '../test/progress';
 import { HeroCta } from './HeroCta';
 
 const DHCP = 'dhcp';
-const INTERNET = 'how-the-internet-works';
-const INTERNET_URL = '/networking/how-the-internet-works';
-// The page's `knownFrom(entries)`: each ready lesson's last position.
-const KNOWN = { [INTERNET]: 8, [DHCP]: 7 };
+// How the Internet Works' first lesson, where every Start button leads.
+const INTERNET = 'what-is-http';
+const INTERNET_URL = '/how-the-internet-works/what-is-http';
+// The page's `knownFrom(entries)` for both tracks: each ready lesson's last position.
+const KNOWN = { [INTERNET]: 7, [DHCP]: 7 };
 // What Home passes as the first button, whoever is visiting.
 const START = { href: INTERNET_URL, label: 'Learn how the Internet Works' };
 const EYEBROW = 'Free visual lessons, no sign-up';
@@ -71,8 +72,8 @@ test('a finished last lesson is a returning visitor too, with no line saying so'
 });
 
 test('a last lesson only opened, while another has progress, is a returning visitor', () => {
-  // Lesson 1 finished, then DHCP's Overview opened and left: DHCP is the last lesson but has no record.
-  seedProgress({ [INTERNET]: { status: 'finished', furthestPosition: 8 } }, DHCP);
+  // HTTP finished, then DHCP's Overview opened and left: DHCP is the last lesson but has no record.
+  seedProgress({ [INTERNET]: { status: 'finished', furthestPosition: 7 } }, DHCP);
   render(cta());
   expectReturning();
 });

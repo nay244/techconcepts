@@ -1,9 +1,10 @@
-import { eventLog, messagesFor } from '../../helpers/internet-events';
-import type { LegacyUnitInput } from '../../legacy';
-import type { TableDef } from '../../schema';
+import { eventLog, messagesFor } from '../helpers/internet-events';
+import { tourLesson } from '../helpers/tour';
+import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
+import type { TableDef } from '../schema';
 
 /**
- * SSH, protocol 13 of How the Internet Works’ 14. Version lines first, then each side’s lists (KEXINIT), then the key
+ * SSH, lesson 13 of How the Internet Works’ 14. Version lines first, then each side’s lists (KEXINIT), then the key
  * exchange, where the server’s host key is checked and NEWKEYS seals the line. The laptop logs in with a key, opens
  * a session channel and a shell, and each keystroke crosses sealed and comes back as its echo. The line stays open,
  * and sealed, to the end.
@@ -608,4 +609,5 @@ const ssh: LegacyUnitInput = {
   ],
 };
 
-export default ssh;
+/** Lesson 13 of How the Internet Works: the section above, as a lesson of its own. */
+export default defineLegacyLesson(tourLesson(ssh));

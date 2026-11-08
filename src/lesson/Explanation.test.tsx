@@ -5,17 +5,25 @@ import { expect, test, vi } from 'vitest';
 import { buildEntries, neighbors } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
-import { networkingTrack } from '../content/tracks';
+import { internetTrack, networkingTrack } from '../content/tracks';
 import { slotsFor } from '../engine/timeline';
 import { Explanation } from './Explanation';
 import { Rich } from './Rich';
 
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 const FIREWALLS: Lesson = liftedFixture(makeLesson({ slug: 'firewalls', title: 'Firewalls' }));
-const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS, 'how-the-internet-works': TWO }, () => 'networking');
+// No ready lesson has many units since the split, so a two-unit fixture stands in as HTTP, lesson 1 of How the
+// Internet Works, with HTTPS after it.
+const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
+const HTTPS: Lesson = liftedFixture(makeLesson({ slug: 'what-is-https', title: 'HTTPS' }));
+const TLS: Lesson = liftedFixture(makeLesson({ slug: 'what-is-tls', title: 'TLS/SSL' }));
+const NETWORKING = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWALLS }, () => 'networking');
+const TOUR = buildEntries(internetTrack, { 'what-is-http': TWO, 'what-is-https': HTTPS, 'what-is-tls': TLS }, () => 'how-the-internet-works');
 
+/** Shows a lesson as its own track's page does: numbered among, and leading on to, that track's lessons. */
 function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
+  const tour = TOUR.some((e) => e.slug === lesson.slug);
+  const entries = tour ? TOUR : NETWORKING;
   const entry = entries.find((e) => e.slug === lesson.slug)!;
   const slot = slotsFor(lesson)[position]!;
   return render(
@@ -29,7 +37,7 @@ function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
       next={neighbors(entries, lesson.slug).next}
       number={entry.number}
       total={entries.length}
-      trackUrl="/networking"
+      trackUrl={tour ? '/how-the-internet-works' : '/networking'}
       onGo={onGo}
     />,
   );
@@ -147,15 +155,22 @@ test('a lifted lesson renders the same Learn words as its legacy text', () => {
 
 test('the end row names the next ready lesson, or says the last ready one for now', () => {
   const { unmount } = show(7);
-  expect(screen.getByText(/Next ready lesson/)).toHaveTextContent('That’s the whole lesson. Next ready lesson: Firewalls, lesson 17.');
+  expect(screen.getByText(/Next ready lesson/)).toHaveTextContent('That’s the whole lesson. Next ready lesson: Firewalls, lesson 16.');
   expect(screen.getByRole('link', { name: 'Go to Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
   unmount();
 
   show(7, FIREWALLS);
   expect(screen.getByText(/last ready one/)).toHaveTextContent(
-    'That’s the whole lesson, and the last ready one for now. Lessons 18 to 20 are coming soon.',
+    'That’s the whole lesson, and the last ready one for now. Lessons 17 to 19 are coming soon.',
   );
   expect(screen.getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
+});
+
+test('the end row of a track’s last lesson says the track ends there, not that more is coming', () => {
+  show(7, TLS);
+  expect(screen.getByText(/whole lesson/)).toHaveTextContent('That’s the whole lesson, and the last lesson of this track.');
+  expect(screen.queryByText(/for now|coming soon/)).toBeNull();
+  expect(screen.getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/how-the-internet-works');
 });
 
 test('in a lesson of many units, a unit’s end row leads to the next unit', async () => {
@@ -170,7 +185,8 @@ test('in a lesson of many units, a unit’s end row leads to the next unit', asy
   // The last unit's end row is the lesson's.
   show(15, TWO);
   expect(screen.getByText('Beta · Practice')).toBeInTheDocument();
-  expect(screen.getByText(/Next ready lesson/)).toHaveTextContent('Next ready lesson: DHCP, lesson 10.');
+  expect(screen.getByText(/Next ready lesson/)).toHaveTextContent('Next ready lesson: HTTPS, lesson 2.');
+  expect(screen.getByRole('link', { name: 'Go to HTTPS' })).toHaveAttribute('href', '/how-the-internet-works/what-is-https');
 });
 
 test('kickers name the unit in a lesson of many units', () => {

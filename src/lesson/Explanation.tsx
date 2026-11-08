@@ -183,9 +183,16 @@ function EndRow({ lesson, unit, next, number, total, trackUrl, onJump }: EndRowP
   }
   return (
     <div className="explain__end">
+      {/* The track's last lesson: nothing more is planned after it, so nothing is "for now". */}
       <p>
-        That’s the whole lesson, and the last ready one for now.
-        {comingSoon(number, total)}
+        {number === total ? (
+          'That’s the whole lesson, and the last lesson of this track.'
+        ) : (
+          <>
+            That’s the whole lesson, and the last ready one for now.
+            {comingSoon(number, total)}
+          </>
+        )}
       </p>
       <a className="cbtn" href={trackUrl}>
         Back to the track

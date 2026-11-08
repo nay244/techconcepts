@@ -7,18 +7,21 @@ import { expect, test, vi } from 'vitest';
 import { buildEntries } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
-import { networkingTrack } from '../content/tracks';
+import { internetTrack, networkingTrack } from '../content/tracks';
 import { slotsFor } from '../engine/timeline';
 import { emptyProgress } from '../progress/store';
 import { Outline } from './Outline';
 
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 /** Alpha (core): 0 Overview, 1–5 steps, 6 Learn, 7 Practice. Beta (app): 8 Overview, 9–13 steps, 14 Learn, 15 Practice. */
-const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'how-the-internet-works', title: 'How the Internet Works' }));
-const entries = buildEntries(networkingTrack, { dhcp: DHCP, 'how-the-internet-works': TWO }, () => 'networking');
+const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
+const NETWORKING = buildEntries(networkingTrack, { dhcp: DHCP }, () => 'networking');
+const TOUR = buildEntries(internetTrack, { 'what-is-http': TWO }, () => 'how-the-internet-works');
 
+/** The outline as the lesson's own track's page renders it, among that track's lessons. */
 function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] = []) {
   const current = slotsFor(lesson)[position]!.unit;
+  const entries = lesson === TWO ? TOUR : NETWORKING;
   return render(
     <Outline
       lesson={lesson}
@@ -27,7 +30,7 @@ function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] =
       seen={new Set([...seen, current])}
       onGo={onGo}
       entries={entries}
-      currentKey={`networking/${lesson.slug}`}
+      currentKey={lesson.slug}
       progress={emptyProgress()}
     />,
   );

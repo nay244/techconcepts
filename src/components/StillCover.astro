@@ -1,0 +1,23 @@
+---
+// A track's cover on its page when the track has no live one: an approved cover on the same plate as Networking's,
+// with the track's number and name in the top corners. It is a picture only; Networking's packets stay Networking's.
+import { cover, type CoverId } from '../art/figures/covers';
+import './page-hero.css';
+
+interface Props {
+  /** The top-left corner: which track this is, "Track 1". */
+  label: string;
+  /** The top-right corner: the track's name. */
+  title: string;
+  cover: CoverId;
+}
+
+const { label, title, cover: id } = Astro.props;
+---
+
+<figure class="cover">
+  <div class="plate">
+    <span class="corner c-fig">{label}</span><span class="corner c-title">{title}</span>
+    <div class="stage" set:html={cover(id)} />
+  </div>
+</figure>

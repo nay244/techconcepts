@@ -294,7 +294,7 @@ const TOPIC: Record<string, string> = {
 };
 
 test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
-  expect(lessonNumbers(firewalls).map((x) => x.n)).toEqual([12, 15, 13, 8, 20]);
+  expect(lessonNumbers(firewalls).map((x) => x.n)).toEqual([11, 14, 12, 7, 19]);
   expect(misnamedLessons(firewalls, TOPIC)).toEqual([]);
 });
 

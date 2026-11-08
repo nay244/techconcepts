@@ -130,7 +130,7 @@ function differenceAt(got: string, want: string): string {
  * the next, each way, lands on a moment that is compared. The moments in the
  * middle of a step are shown, so they must not throw and anything they leave
  * behind is carried on, but they are not compared: a fresh copy of the network
- * map and its driver takes about 30 ms under jsdom, and lesson 1's 429 moments
+ * map and its driver takes about 30 ms under jsdom, and How the Internet Works' 429 moments
  * would triple the time the whole suite takes.
  *
  * Returns how many moments the lesson has (each position, plus each event of
