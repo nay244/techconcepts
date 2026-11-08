@@ -112,6 +112,53 @@ test('content changes change the hash', () => {
   expect(claimSheet(lesson(), retitled).hash, 'a cited source').not.toBe(before);
 });
 
+const firstNote = (l: Lesson) => {
+  for (const step of unit(l).steps) for (const e of step.events) if (e.type === 'note') return e;
+  throw new Error('the fixture has a note');
+};
+
+test('words and marks the figure shows change the hash', () => {
+  const before = sheetOf().hash;
+  const edits: [string, (l: Lesson) => void][] = [
+    ['a cue’s words', (l) => { firstNote(l).cues = [{ cue: 'status', arg: 'Free' }]; }],
+    ['a cue added', (l) => { firstMessage(l).cues = [{ cue: 'glow' }, { cue: 'status', arg: 'Lent' }]; }],
+    ['a start cue', (l) => { unit(l).scene.start = [{ cue: 'status', arg: 'Lent' }]; }],
+    ['a figure layer', (l) => { unit(l).scene.layers = ['firewall']; }],
+    ['a note’s icon', (l) => { firstNote(l).glyph = 'request'; }],
+    ['a board’s highlighted bits', (l) => { firstNote(l).board = { addr: '192.0.2.10', who: 'Laptop', prefix: 24, pick: 'net' }; }],
+  ];
+  for (const [what, edit] of edits) expect(sheetOf(changed(edit)).hash, what).not.toBe(before);
+});
+
+test('keys the author chooses are kept, even when a setting shares their name', () => {
+  const before = sheetOf().hash;
+  const edits: [string, (l: Lesson) => void][] = [
+    ['a log cell keyed id', (l) => { firstMessage(l).log = { ...firstMessage(l).log, id: 'R1' }; }],
+    ['a log cell keyed width', (l) => { firstMessage(l).log = { ...firstMessage(l).log, width: 'Wide' }; }],
+    ['a figure label keyed glyph', (l) => { unit(l).scene.labels = { glyph: 'Router' }; }],
+    [
+      'a table row cell keyed cite',
+      (l) => {
+        const panel = unit(l).scene.panel;
+        if (panel?.type !== 'table') throw new Error('the fixture has a table panel');
+        panel.table.initialRows = [{ ip: '192.0.2.20', cite: 'RFC' }];
+      },
+    ],
+  ];
+  for (const [what, edit] of edits) expect(sheetOf(changed(edit)).hash, what).not.toBe(before);
+});
+
+test('a new field left empty keeps the hash', () => {
+  const before = sheetOf().hash;
+  const loose = (o: object) => o as Record<string, unknown>;
+  const edits: [string, (l: Lesson) => void][] = [
+    ['an empty list on a step', (l) => { loose(unit(l).steps[0]!).extra = []; }],
+    ['an empty record on an event', (l) => { loose(firstMessage(l)).extra = {}; }],
+    ['no figure labels written out', (l) => { unit(l).scene.labels = {}; }],
+  ];
+  for (const [what, edit] of edits) expect(sheetOf(changed(edit)).hash, what).toBe(before);
+});
+
 test('the sheet renders every key and the hash', () => {
   const sheet = sheetOf();
   const text = renderSheet(sheet);

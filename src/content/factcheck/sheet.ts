@@ -12,8 +12,11 @@ import { sha256 } from './sha256';
  * - the parts that carry no backing at all: the title, the unit's name and each question's prompt.
  *
  * Settings that change only how something looks are left out (`DISPLAY_ONLY`), and so are the lesson's level, cert
- * tags and figure. So a layout tweak, or a new schema field with a default, leaves a lesson's report current, while
- * any change to what a reader can read makes it stale.
+ * tags and figure. Everything else a reader can read or see stays in, the figure's cues and start cues included: a
+ * cue puts words on the figure (a status line, an address bar) or marks a part of it. The hash ignores empty lists and
+ * empty records. So a layout tweak, or a new schema field whose default is empty, leaves a lesson's report current,
+ * while any change to what a reader can read or see makes it stale. A new field with any other default stales every
+ * report unless it goes in `DISPLAY_ONLY`.
  */
 
 export type ItemKind = 'claim' | 'osi' | 'traced' | 'example' | 'analogy' | 'unbacked';
@@ -39,8 +42,11 @@ export interface ClaimSheet {
   hash: string;
 }
 
-/** Keys that set only how something looks: a column's width and face, a message's speed and drop point, a cue, a glyph. */
-export const DISPLAY_ONLY: readonly string[] = ['width', 'prose', 'strong', 'fast', 'dropAt', 'cues', 'glyph', 'pick', 'keyColumn', 'hiddenKey'];
+/**
+ * Keys that set only how something looks: a column's width and face, whether a table shows its key column, a
+ * message's speed and how far along it is drawn when lost (its outcome stays), and the scene's views (the cameras).
+ */
+export const DISPLAY_ONLY: readonly string[] = ['width', 'prose', 'strong', 'hiddenKey', 'fast', 'dropAt', 'views'];
 
 /** Keys every item carries in its own fields or its key, so never in its content. */
 const OWN_FIELDS = ['cite', 'backing', 'hookBacking', 'id', 'analogy'];
@@ -48,17 +54,29 @@ const OWN_FIELDS = ['cite', 'backing', 'hookBacking', 'id', 'analogy'];
 /** What each kind of backed part leaves to the items of its own. */
 const NESTED: Record<string, readonly string[]> = {
   step: ['deep', 'facts', 'events'],
-  scene: ['packets', 'views', 'layers', 'start'],
+  scene: ['packets'],
 };
 
-/** A value with the given keys taken out at every depth, and with no undefined values. */
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Fields whose keys the author chooses, not the schema: a table or log row's column keys, and the figure's part ids
+ * in `labels`. They are kept whole, so a column keyed `id` or `width` is never taken for a setting. An event's `log` is
+ * a row (every cell is text); the scene's `log` is the log's definition, whose columns carry settings.
+ */
+const ROWS = new Set(['row', 'labels']);
+const ROW_LISTS = new Set(['rows', 'initialRows']);
+const isRow = (key: string, value: unknown): boolean =>
+  ROWS.has(key) || ROW_LISTS.has(key) || (key === 'log' && isRecord(value) && Object.values(value).every((v) => typeof v === 'string'));
+
+/** A value with the given keys taken out at every depth, except inside rows, and with no undefined values. */
 function strip(value: unknown, drop: ReadonlySet<string>): unknown {
   if (Array.isArray(value)) return value.map((v) => strip(v, drop));
-  if (typeof value === 'object' && value !== null) {
+  if (isRecord(value)) {
     return Object.fromEntries(
       Object.entries(value)
         .filter(([k, v]) => !drop.has(k) && v !== undefined)
-        .map(([k, v]) => [k, strip(v, drop)]),
+        .map(([k, v]) => [k, isRow(k, v) ? v : strip(v, drop)]),
     );
   }
   return value;
@@ -79,16 +97,21 @@ function backedKind(backing: Backing | undefined): { kind: ItemKind; traces: str
   return { kind: 'analogy' in backing ? 'analogy' : 'example', traces: [] };
 }
 
-/** JSON with every object's keys sorted, at every depth: the same value always gives the same text. */
+const isEmpty = (v: unknown): boolean => (Array.isArray(v) ? v.length === 0 : isRecord(v) && Object.keys(v).length === 0);
+
+/**
+ * JSON with every object's keys sorted, at every depth: the same value always gives the same text. A key whose value
+ * is undefined, an empty list or an empty record is left out, so a new field whose default is empty changes nothing.
+ */
 function canonical(value: unknown): string {
   const sorted = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(sorted);
-    if (typeof v === 'object' && v !== null) {
+    if (isRecord(v)) {
       return Object.fromEntries(
         Object.keys(v)
           .sort()
-          .filter((k) => (v as Record<string, unknown>)[k] !== undefined)
-          .map((k) => [k, sorted((v as Record<string, unknown>)[k])]),
+          .map((k) => [k, v[k] === undefined ? undefined : sorted(v[k])] as const)
+          .filter(([, x]) => x !== undefined && !isEmpty(x)),
       );
     }
     return v;

@@ -46,5 +46,29 @@ export function parseReport(raw: string): { header: ReportHeader; issues: [] } |
   if (!parsed.success) {
     return { issues: parsed.error.issues.map((i) => `its header's ${i.path.join('.') || 'value'} ${i.message}`) };
   }
+  const twice = [
+    ...repeatedKeys(match[1]!, Object.keys(parsed.data.verdicts)).map((k) => `its header's verdicts list "${k}" more than once`),
+    ...repeated(parsed.data.sources.map((s) => s.id)).map((id) => `its header's sources list "${id}" more than once`),
+  ];
+  if (twice.length > 0) return { issues: twice };
   return { header: parsed.data, issues: [] };
+}
+
+/** The values that appear more than once, in first-seen order. */
+function repeated(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const again = new Set<string>();
+  for (const v of values) (seen.has(v) ? again : seen).add(v);
+  return [...again];
+}
+
+/**
+ * Which of `keys` the header's JSON text writes as an object key more than once. `JSON.parse` keeps only the last of
+ * two equal keys, so a ❌ followed by a ✅ for the same item would read as ✅. Every key token is decoded, escapes and
+ * all; a verdict key is a claim-sheet key, which no other header field shares.
+ */
+function repeatedKeys(json: string, keys: readonly string[]): string[] {
+  const wanted = new Set(keys);
+  const written = [...json.matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g)].map((m) => JSON.parse(`"${m[1]}"`) as string);
+  return repeated(written.filter((k) => wanted.has(k)));
 }

@@ -41,6 +41,7 @@ Sources live in the list inside `defineSources([...])` in `src/content/sources.t
 - `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `itu`, `vendor`, `cert-objectives`. An `itu` source is an ITU-T Recommendation on `www.itu.int`, published free there. An explainer page is a `vendor` source, with no kind of its own.
 - The host of `url` must be listed for that kind in `SOURCE_HOSTS`. Hosts are exact, with no wildcards. To allow a new host, add it to `SOURCE_HOSTS` in the same change and say why in the commit.
 - `url` names one document. It is an `https` address in normal form, with a path other than `/` and no `#fragment`.
+- One document has one entry. A second entry with the same `url`, or for the same RFC on another RFC host, fails the build, because it would count as a second source (section 3).
 - `anchor` is optional. It is the same `url`, then `#`, then a fragment that holds `{n}`, the section number. With an anchor, a numbered section links itself.
 - `short` is the name readers see, such as `RFC 9999`. It may not contain `": "`.
 - A `cert-objectives` source needs a `version`, the edition of the objectives.
@@ -230,7 +231,7 @@ Every cited lesson is checked by the **fact-checker**, an independent agent defi
 **The flow for one lesson:**
 
 1. **Write** the lesson in the cited shape. Every claim has two independent sources, or one defining standard (section 3).
-2. **Print the claim sheet:** `npm run fact-check -- <slug>`. It lists every item the checker checks, with a stable key, and the content hash. The items are every part that cites, the OSI badge, every traced, example and analogy part, the title, the unit name and each question's prompt. Settings that change only how something looks are left off, so a layout tweak does not make a report stale. Changing any text or value a reader sees, a citation, or a cited source's registry entry does.
+2. **Print the claim sheet:** `npm run fact-check -- <slug>`. It lists every item the checker checks, with a stable key, and the content hash. The items are every part that cites, the OSI badge, every traced, example and analogy part, the title, the unit name and each question's prompt. A scene's items include the words and marks its cues put on the figure. Settings that change only how something looks are left off (`DISPLAY_ONLY` in `src/content/factcheck/sheet.ts`), so a layout tweak does not make a report stale. Changing any text or value a reader sees, a citation, or a cited source's registry entry does. A new schema field whose default is empty changes nothing; one with any other default makes every report stale unless it is added to `DISPLAY_ONLY`.
 3. **Dispatch** the `fact-checker` agent with the slug and nothing else: no notes, drafts or conversation. It fetches every cited section from the publisher's own site, checks every item, and writes `docs/fact-checks/<slug>.md`. It then runs `npm run fact-check -- <slug> --check`, which checks the report's form against the sheet.
 4. **The build reads the report** (the gate, below).
 5. **Fix and check again.** If any item is not ✅:
@@ -259,7 +260,7 @@ The rest of the report is for people. It gives each claim's quoted passages (or 
 
 **The gate.** The registry reads every report directly in `docs/fact-checks/`. It fails the build, and the tests, when:
 - a cited lesson has no report;
-- the report cannot be read: it has no header, or the header is not valid JSON of the right shape;
+- the report cannot be read: it has no header, the header is not valid JSON of the right shape, or it lists a key or a source twice;
 - the report is for another slug;
 - the lesson has changed since it was checked (the hash differs);
 - an item has no verdict, or a verdict names a key the lesson does not have;
@@ -267,6 +268,6 @@ The rest of the report is for people. It gives each claim's quoted passages (or 
 - a cited source is not listed, or is not current;
 - a report has no cited lesson, so stale reports don't pile up.
 
-While a new lesson has no passing report, the build and the tests fail. That is expected until the fact-checker passes it. `npm run fact-check` reads lessons without the registry, so it still prints the sheet.
+While a new lesson has no passing report, the build and the tests fail. That is expected until the fact-checker passes it. `npm run dev` only warns, so you can preview the lesson while you write it. `npm run fact-check` reads lessons without the registry, so it prints the sheet either way.
 
 **The canary.** `src/content/factcheck/canary/` holds a test lesson that cites real sources and plants known faults. It proves the fact-checker catches each fault and passes each correct claim. Its sources are not in `SOURCES` and it is never on the site. Its report is `docs/fact-checks/canary/fact-check-canary.md`, which the gate never reads. To run it again, dispatch the fact-checker with the slug `fact-check-canary`.

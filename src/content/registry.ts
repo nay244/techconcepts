@@ -251,10 +251,21 @@ checkListings(lessonsBySlug, tracks);
 /**
  * Throws when any lesson in the cited shape lacks a current fact-check report in which every item passes, or when a
  * report has no cited lesson (`factcheck/gate.ts`). `reports` is keyed by path, as `import.meta.glob` gives them.
+ *
+ * `astro dev` (mode `development`) only warns, so the author can preview a lesson before it is checked. The build
+ * (`production`) and the tests (`test`) still refuse it, so nothing unchecked ships.
  */
-export function checkFactCheckReports(lessons: readonly Lesson[], reports: Record<string, string>, sources: SourceRegistry = SOURCES): void {
+export function checkFactCheckReports(
+  lessons: readonly Lesson[],
+  reports: Record<string, string>,
+  sources: SourceRegistry = SOURCES,
+  mode: string = import.meta.env.MODE,
+): void {
   const issues = checkFactChecks(lessons, reports, sources);
-  if (issues.length > 0) throw new Error(`Fact checks:\n- ${issues.join('\n- ')}`);
+  if (issues.length === 0) return;
+  const message = `Fact checks:\n- ${issues.join('\n- ')}`;
+  if (mode !== 'development') throw new Error(message);
+  console.warn(`${message}\nastro dev shows these lessons anyway; npm run build and the tests refuse them until the fact-checker passes them.`);
 }
 
 // Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not.

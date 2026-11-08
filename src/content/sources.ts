@@ -92,6 +92,15 @@ function isFragmentOf(url: string, doc: string): boolean {
 }
 
 /** Validates every entry and returns the registry keyed by id. Throws one Error listing every issue. */
+/**
+ * What document an entry names, for telling one document from two: an RFC by its number on any RFC host, anything
+ * else by its url. Two entries for one document would count as two sources under the two-source rule.
+ */
+function documentOf(e: SourceEntry): string {
+  const rfc = e.kind === 'rfc' ? /\brfc(\d+)\b/i.exec(parse(e.url)?.pathname ?? '') : null;
+  return rfc ? `rfc:${Number(rfc[1])}` : e.url;
+}
+
 export function defineSources(entries: SourceEntry[]): SourceRegistry {
   const issues: string[] = [];
   const registry: Record<string, SourceEntry> = {};
@@ -106,6 +115,10 @@ export function defineSources(entries: SourceEntry[]): SourceRegistry {
     if (Object.hasOwn(registry, e.id)) {
       issues.push(`Duplicate source id "${e.id}"`);
       continue;
+    }
+    const same = Object.values(registry).find((other) => documentOf(other) === documentOf(e));
+    if (same !== undefined) {
+      issues.push(`${name}: names the same document as source "${same.id}"; cite that one, since one document is one source (docs/content-model.md §3)`);
     }
     registry[e.id] = e;
     const allowed = SOURCE_HOSTS[e.kind];

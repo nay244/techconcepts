@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { CERT_TAGS } from './certs';
 import { defineTrack, validateLesson } from './define';
 import { LEGACY_LESSONS, validateLegacyLesson } from './legacy';
@@ -6,6 +6,7 @@ import { checkLimits } from './limits';
 import {
   buildEntries,
   checkLegacyList,
+  checkFactCheckReports,
   checkTracks,
   getEntries,
   getLesson,
@@ -440,4 +441,23 @@ test('the build stops on a lesson that does not fit its track’s limits, naming
   );
   const reasoned = { ...long, overrides: [{ limit: 'narrativeWords' as const, max: 140, reason: 'Names all four messages in one step.' }] };
   expect(() => buildEntries(networkingTrack, { dhcp: reasoned }, home)).not.toThrow();
+});
+
+const ORPHAN = { '../../docs/fact-checks/no-such-lesson.md': 'No header.' };
+
+test('a fact-check issue stops the build and the tests', () => {
+  for (const mode of ['production', 'test']) {
+    expect(() => checkFactCheckReports([], ORPHAN, FIXTURE_SOURCES, mode), mode).toThrow(/^Fact checks:\n- .*no-such-lesson/);
+  }
+  expect(() => checkFactCheckReports([], {}, FIXTURE_SOURCES, 'production')).not.toThrow();
+});
+
+test('astro dev warns of a fact-check issue instead, so a draft lesson can be previewed', () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  try {
+    expect(() => checkFactCheckReports([], ORPHAN, FIXTURE_SOURCES, 'development')).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/^Fact checks:\n- .*no-such-lesson[\s\S]*npm run build/));
+  } finally {
+    warn.mockRestore();
+  }
 });

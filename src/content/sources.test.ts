@@ -79,6 +79,14 @@ describe('defineSources', () => {
     expect(() => defineSources([{ ...rfc, anchor: 'https://www.rfc-editor.org/rfc/rfc2131.html' }])).toThrow(/\{n\}/);
     expect(() => defineSources([{ ...objectives, version: undefined }])).toThrow(/version/);
   });
+  test('one document is one source, whatever its id', () => {
+    expect(() => defineSources([rfc, { ...rfc, id: 'dhcp-rfc' }])).toThrow(
+      /source "dhcp-rfc": names the same document as source "rfc2131"; cite that one, since one document is one source/,
+    );
+    const tracker = { ...rfc, id: 'rfc2131-tracker', url: 'https://datatracker.ietf.org/doc/html/rfc2131', anchor: undefined };
+    expect(() => defineSources([rfc, tracker])).toThrow(/source "rfc2131-tracker": names the same document as source "rfc2131"/);
+    expect(() => defineSources([rfc, { ...rfc, id: 'rfc2132', short: 'RFC 2132', url: 'https://www.rfc-editor.org/rfc/rfc2132.html', anchor: undefined }])).not.toThrow();
+  });
   test('an entry url must name a document', () => {
     const iana: SourceEntry = { id: 'iana-x', kind: 'iana', short: 'IANA X', title: 'X', publisher: 'IANA', url: 'https://www.iana.org/assignments/x' };
     expect(() => defineSources([{ ...iana, url: 'https://www.iana.org' }])).toThrow(/iana-x.*document/);
