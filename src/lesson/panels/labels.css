@@ -1,0 +1,59 @@
+.labels {
+  flex: none;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.labels-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 30px;
+}
+
+.labels-title {
+  margin-right: 8px;
+  color: var(--muted);
+  font: 700 12px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.labels-chip {
+  padding: 4px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  color: var(--ink);
+  font: 600 13px var(--mono);
+  transition: background 200ms ease, color 200ms ease;
+}
+
+.labels-chip.is-data {
+  border-style: dashed;
+}
+
+.labels-chip.is-new {
+  background: #2f7bff;
+  border-color: #a8e8ff;
+  color: #fff;
+}
+
+.labels-chip.is-read {
+  border: 2px solid var(--here);
+  padding: 3px 7px;
+  background: transparent;
+  color: var(--ink-strong);
+}
+
+.labels-note {
+  margin-left: auto;
+  color: var(--muted);
+  font: 400 13px var(--sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labels-chip {
+    transition: none;
+  }
+}
