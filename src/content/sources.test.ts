@@ -79,6 +79,14 @@ describe('defineSources', () => {
     expect(() => defineSources([{ ...rfc, anchor: 'https://www.rfc-editor.org/rfc/rfc2131.html' }])).toThrow(/\{n\}/);
     expect(() => defineSources([{ ...objectives, version: undefined }])).toThrow(/version/);
   });
+  test('one document is one source, whatever its id', () => {
+    expect(() => defineSources([rfc, { ...rfc, id: 'dhcp-rfc' }])).toThrow(
+      /source "dhcp-rfc": names the same document as source "rfc2131"; cite that one, since one document is one source/,
+    );
+    const tracker = { ...rfc, id: 'rfc2131-tracker', url: 'https://datatracker.ietf.org/doc/html/rfc2131', anchor: undefined };
+    expect(() => defineSources([rfc, tracker])).toThrow(/source "rfc2131-tracker": names the same document as source "rfc2131"/);
+    expect(() => defineSources([rfc, { ...rfc, id: 'rfc2132', short: 'RFC 2132', url: 'https://www.rfc-editor.org/rfc/rfc2132.html', anchor: undefined }])).not.toThrow();
+  });
   test('an entry url must name a document', () => {
     const iana: SourceEntry = { id: 'iana-x', kind: 'iana', short: 'IANA X', title: 'X', publisher: 'IANA', url: 'https://www.iana.org/assignments/x' };
     expect(() => defineSources([{ ...iana, url: 'https://www.iana.org' }])).toThrow(/iana-x.*document/);
@@ -145,5 +153,33 @@ describe('sourceListOf', () => {
     expect(() => sourceListOf([unknown], sources)).toThrow(
       'Unknown source "nope" (section 1); add it to SOURCES in src/content/sources.ts, or fix the id.',
     );
+  });
+});
+
+describe('ITU-T and the defining-standard marker', () => {
+  const itu: SourceEntry = {
+    id: 'itu-x200',
+    kind: 'itu',
+    short: 'ITU-T X.200',
+    title: 'Open Systems Interconnection – Basic Reference Model',
+    publisher: 'ITU-T',
+    url: 'https://www.itu.int/rec/T-REC-X.200-199407-I/en',
+  };
+  test('an ITU-T Recommendation on www.itu.int is an allowed source', () => {
+    expect(defineSources([itu])['itu-x200']?.kind).toBe('itu');
+    expect(() => defineSources([{ ...itu, url: 'https://www.itu.org/rec/T-REC-X.200-199407-I/en' }])).toThrow(/www\.itu\.org/);
+  });
+  test('cite marks a defining standard only when asked', () => {
+    expect(cite('rfc2131', '3.1', { sources, defining: true }).defining).toBe(true);
+    expect('defining' in cite('rfc2131', '3.1', { sources })).toBe(false);
+  });
+  test('checkCitation accepts a defining citation', () => {
+    expect(checkCitation(cite('rfc2131', '3.1', { sources, defining: true }), sources, 'content')).toEqual([]);
+  });
+  test('an objectives citation cannot be defining', () => {
+    const c = cite('aplus-objectives', '2.6', { sources, url: objectives.url });
+    expect(checkCitation({ ...c, defining: true }, sources, 'objectives')).toEqual([
+      expect.stringContaining('objectives citation cannot be marked as a defining standard'),
+    ]);
   });
 });

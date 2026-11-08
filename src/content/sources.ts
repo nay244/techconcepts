@@ -9,7 +9,7 @@ import type { Source } from './schema';
  * objective mapping only).
  */
 
-export const SOURCE_KINDS = ['rfc', 'ieee', 'iana', 'nist', 'vendor', 'cert-objectives'] as const;
+export const SOURCE_KINDS = ['rfc', 'ieee', 'iana', 'nist', 'itu', 'vendor', 'cert-objectives'] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
 /** Exact hosts each kind may live on. No wildcards. */
@@ -18,6 +18,8 @@ export const SOURCE_HOSTS: Record<SourceKind, readonly string[]> = {
   ieee: ['standards.ieee.org', 'ieeexplore.ieee.org'],
   iana: ['www.iana.org'],
   nist: ['csrc.nist.gov', 'nvlpubs.nist.gov', 'www.nist.gov'],
+  // ITU-T Recommendations, free to read: X.200 defines the OSI model (owner, 2026-11-08).
+  itu: ['www.itu.int'],
   vendor: ['learn.microsoft.com', 'www.cisco.com', 'developers.cloudflare.com', 'docs.paloaltonetworks.com'],
   'cert-objectives': ['www.comptia.org', 'partners.comptia.org', 'learningnetwork.cisco.com'],
 };
@@ -90,6 +92,15 @@ function isFragmentOf(url: string, doc: string): boolean {
 }
 
 /** Validates every entry and returns the registry keyed by id. Throws one Error listing every issue. */
+/**
+ * What document an entry names, for telling one document from two: an RFC by its number on any RFC host, anything
+ * else by its url. Two entries for one document would count as two sources under the two-source rule.
+ */
+function documentOf(e: SourceEntry): string {
+  const rfc = e.kind === 'rfc' ? /\brfc(\d+)\b/i.exec(parse(e.url)?.pathname ?? '') : null;
+  return rfc ? `rfc:${Number(rfc[1])}` : e.url;
+}
+
 export function defineSources(entries: SourceEntry[]): SourceRegistry {
   const issues: string[] = [];
   const registry: Record<string, SourceEntry> = {};
@@ -104,6 +115,10 @@ export function defineSources(entries: SourceEntry[]): SourceRegistry {
     if (Object.hasOwn(registry, e.id)) {
       issues.push(`Duplicate source id "${e.id}"`);
       continue;
+    }
+    const same = Object.values(registry).find((other) => documentOf(other) === documentOf(e));
+    if (same !== undefined) {
+      issues.push(`${name}: names the same document as source "${same.id}"; cite that one, since one document is one source (docs/content-model.md §3)`);
     }
     registry[e.id] = e;
     const allowed = SOURCE_HOSTS[e.kind];
@@ -131,7 +146,17 @@ export function defineSources(entries: SourceEntry[]): SourceRegistry {
 /** Real entries arrive with later tasks (direction doc §10 tasks 4-6). */
 export const SOURCES: SourceRegistry = defineSources([]);
 
-export const citationSchema = z.strictObject({ source: slugSchema, section: text, url: httpsUrl, label: text });
+/**
+ * One citation. `defining` marks the source as the defining standard for what the claim describes, such as the RFC
+ * that defines a field: such a claim may rest on that one source. Any other claim needs a second, independent source.
+ */
+export const citationSchema = z.strictObject({
+  source: slugSchema,
+  section: text,
+  url: httpsUrl,
+  label: text,
+  defining: z.literal(true).optional(),
+});
 export type Citation = z.infer<typeof citationSchema>;
 
 const NUMBERED = /^(0|[1-9]\d*)(\.(0|[1-9]\d*))*$/;
@@ -140,7 +165,13 @@ const NUMBERED = /^(0|[1-9]\d*)(\.(0|[1-9]\d*))*$/;
 const UNKNOWN_SOURCE_FIX = 'add it to SOURCES in src/content/sources.ts, or fix the id.';
 
 /** Builds a citation. A numbered section on a source with an anchor links straight to it; otherwise `opts.url` is required. */
-export function cite(source: string, section: string, opts: { url?: string; sources?: SourceRegistry } = {}): Citation {
+export function cite(source: string, section: string, opts: { url?: string; sources?: SourceRegistry; defining?: true } = {}): Citation {
+  const c = locate(source, section, opts);
+  return opts.defining === true ? { ...c, defining: true } : c;
+}
+
+/** The citation `cite` builds, before any defining-standard marker. */
+function locate(source: string, section: string, opts: { url?: string; sources?: SourceRegistry }): Citation {
   const registry = opts.sources ?? SOURCES;
   const entry = Object.hasOwn(registry, source) ? registry[source] : undefined;
   if (!entry) throw new Error(`Unknown source "${source}" (cited at section ${section}); ${UNKNOWN_SOURCE_FIX}`);
@@ -170,6 +201,9 @@ export function checkCitation(c: Citation, sources: SourceRegistry, use: 'conten
   const problems: string[] = [];
   if (use === 'content' && entry.kind === 'cert-objectives') {
     problems.push(`Source "${c.source}" (section ${c.section}) is an objectives document, which may be cited only for objective mapping, not for content`);
+  }
+  if (use === 'objectives' && c.defining === true) {
+    problems.push(`Source "${c.source}" (section ${c.section}): an objectives citation cannot be marked as a defining standard; remove the marker`);
   }
   if (use === 'objectives' && entry.kind !== 'cert-objectives') {
     problems.push(`Source "${c.source}" (section ${c.section}) is a source of kind "${entry.kind}"; objective mapping must cite a cert-objectives source`);

@@ -1,6 +1,6 @@
 # The content model
 
-How to add a source, a lesson, a track and a glossary entry, and which rules the build enforces. Read this before you write or move a lesson. Most rules here fail the build when broken, with a message that says what to fix. Rules marked *policy* do not: nothing checks them, so you must.
+How to add a source, a lesson, a track and a glossary entry, how a lesson is fact-checked, and which rules the build enforces. Read this before you write or move a lesson. Most rules here fail the build when broken, with a message that says what to fix. Rules marked *policy* do not: nothing checks them, so you must.
 
 **Every source, section number, objective and web address in the examples is invented. Look up each real one in the document itself.**
 
@@ -8,13 +8,20 @@ The real `SOURCES` registry is empty today. A lesson's first sources are added t
 
 ## 1. Sources
 
-Every fact cites a primary source: an RFC, an IEEE standard, an IANA registry, a NIST publication, or official vendor documentation. An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries.
+Every fact cites a primary source:
+- an RFC, an IEEE standard, an IANA registry, a NIST publication or an ITU-T Recommendation;
+- an allowed vendor's own documentation, or its own explainer pages, such as Cisco's "What is a firewall?" (owner, 2026-11-08).
+
+An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries.
+
+Every claim needs two independent sources, or one that is its defining standard (section 3). Each source must be current: the version in force today, not obsoleted, superseded or withdrawn (owner, 2026-11-08). The fact-checker checks currency (section 8).
 
 *Policy:* the build checks only the host of each source, so you must pick the right documents. Some pages on allowed hosts are not primary sources, and the build lets them through:
 
 - Internet-Drafts on `datatracker.ietf.org`. Cite only published RFCs.
 - Microsoft Q&A and Shows on `learn.microsoft.com`. They are a forum and videos, not documentation.
 - Conference papers on `ieeexplore.ieee.org`. They are not standards.
+- A vendor's blog, community forum or partner content, on any host. Only pages the vendor wrote as documentation or explainers count.
 
 Sources live in the list inside `defineSources([...])` in `src/content/sources.ts` (`SOURCES`). Add one entry per document:
 
@@ -31,16 +38,17 @@ Sources live in the list inside `defineSources([...])` in `src/content/sources.t
 }
 ```
 
-- `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `vendor`, `cert-objectives`.
+- `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `itu`, `vendor`, `cert-objectives`. An `itu` source is an ITU-T Recommendation on `www.itu.int`, published free there. An explainer page is a `vendor` source, with no kind of its own.
 - The host of `url` must be listed for that kind in `SOURCE_HOSTS`. Hosts are exact, with no wildcards. To allow a new host, add it to `SOURCE_HOSTS` in the same change and say why in the commit.
 - `url` names one document. It is an `https` address in normal form, with a path other than `/` and no `#fragment`.
+- One document has one entry. A second entry with the same `url`, or for the same RFC on another RFC host, fails the build, because it would count as a second source (section 3).
 - `anchor` is optional. It is the same `url`, then `#`, then a fragment that holds `{n}`, the section number. With an anchor, a numbered section links itself.
 - `short` is the name readers see, such as `RFC 9999`. It may not contain `": "`.
 - A `cert-objectives` source needs a `version`, the edition of the objectives.
 
 ## 2. Citing: `cite()`
 
-`cite(source, section, { url? })` builds a citation. Never write one by hand: the build rebuilds each citation and rejects any that differ.
+`cite(source, section, { url?, defining? })` builds a citation. Never write one by hand: the build rebuilds each citation and rejects any that differ.
 
 ```ts
 // Invented example: no id, section, address or objective here is a checked citation.
@@ -56,6 +64,15 @@ cite('rfc-example', 'Table 1', { url: 'https://www.rfc-editor.org/rfc/rfc9999.ht
 
 The bare document address is rejected, because a citation must point at the section. On a source with an anchor, an unnumbered section needs the document address plus a fragment. The one exception is an objectives document: its whole-document address is allowed, and only for objective mapping (section 5).
 
+**The defining standard.** Mark a citation `defining: true` when its source is the current document that defines the thing the claim describes: its message format, a field, a value, a procedure, or a layer. A field's exact size, for example, is defined only in its own RFC. A claim with a defining-standard citation may rest on that one source (section 3):
+
+```ts
+// Invented example: no id, section, address or objective here is a checked citation.
+cite('rfc-example', '4.1', { defining: true })
+```
+
+Do not mark a document that only mentions or explains the thing, or one that defines something else. The fact-checker fails a wrong marker. An objectives citation can never be marked.
+
 ## 3. Writing a lesson
 
 A lesson file is `src/content/lessons/<slug>.ts`. The file name is the lesson's `slug`. The default export is `defineLesson({ ... })`. The shape is in `src/content/schema.ts` (`lessonSchema`).
@@ -67,6 +84,16 @@ The cited fixture in `src/content/test-fixtures.ts` (`makeCitedLesson`) shows th
 A cited lesson has exactly one unit. Do not write `references`: each unit's source list is built from its citations.
 
 **What must cite.** Learn's lead, terms, pattern, why, Go deeper and facts. Every Go deeper paragraph, in Learn and in Watch steps. Every Practice option (its feedback explains the answer). The unit's OSI badge: `osi: { layers: [7], cite: [...] }`, or `osi: 'spans'` when no source puts the unit at a layer.
+
+**Two sources** (owner, 2026-11-08). Each part that must cite, glossary statements included, needs either:
+- citations to at least two independent sources; or
+- a citation marked as the defining standard (section 2).
+
+*Independent* means different entries in `SOURCES`, and not two pages from the same vendor. Two sections of the same RFC count as one source. A vendor page that restates an RFC counts as a second source, and so does a second RFC. Analogies cite nothing, so the rule skips them. Objective mappings are exempt: the objectives document is the only source for an objective number. A part with one source fails with:
+
+> rests on one source; cite a second, independent source that states the same thing (another document, not another page of the same vendor), or mark the citation as the defining standard with cite(..., { defining: true }).
+
+The build only counts sources. The fact-checker confirms that each one states the claim (section 8).
 
 A statement is `{ id, text, cite, analogy? }`:
 
@@ -112,12 +139,13 @@ Example data is only for made-up values: RFC 5737 and RFC 1918 addresses, `00:00
 1. exactly one unit
 2. no written `references`
 3. every part that must cite does (a statement or term may be an analogy, never both)
-4. the OSI layers are cited, or the unit `'spans'`
-5. every Watch and scene part has a backing
-6. Learn ids are unique, and every trace names a cited Learn part of this lesson
-7. every citation is one `cite()` builds, of a source that may back content
-8. no text says "lesson 3" or the like, because a shared lesson's number differs by track
-9. the structural rules: a cert tag, unique ids, and a scene, events, tables and cues that fit the figure (`FIGURE_PARTS`)
+4. every part that cites has two independent sources or a defining standard
+5. the OSI layers are cited, or the unit `'spans'`
+6. every Watch and scene part has a backing
+7. Learn ids are unique, and every trace names a cited Learn part of this lesson
+8. every citation is one `cite()` builds, of a source that may back content
+9. no text says "lesson 3" or the like, because a shared lesson's number differs by track
+10. the structural rules: a cert tag, unique ids, and a scene, events, tables and cues that fit the figure (`FIGURE_PARTS`)
 
 **Limits.** Each track sets numeric limits (`limits` in its track file, keys in `src/content/limits.ts`): `steps`, `factsPerStep`, `practiceQuestions`, `optionsPerQuestion`, `learnTerms`, `patternNames`, `narrativeWords`, `hookWords`, `deepWords`. A lesson must fit every track that lists it. The first six are `{ min, max }` ranges. The last three are word ceilings.
 
@@ -172,7 +200,7 @@ exam: { title: 'Example exam', codes: ['EX-101'], version: 'V1', source: 'exampl
 
 ## 6. The glossary
 
-`defineGlossary` in `src/content/glossary.ts` holds `GLOSSARY`. Each entry is `{ id, term, definition }`, and `definition` is a list of statements like a lesson's. Each statement cites or is an analogy, never both, and at least one cites. Ids are unique, and terms are unique ignoring case.
+`defineGlossary` in `src/content/glossary.ts` holds `GLOSSARY`. Each entry is `{ id, term, definition }`, and `definition` is a list of statements like a lesson's. Each statement cites or is an analogy, never both, and at least one cites. A statement that cites follows the two-source rule (section 3). Ids are unique, and terms are unique ignoring case.
 
 ```ts
 // Invented example: no id, section, address or objective here is a checked citation.
@@ -190,7 +218,56 @@ exam: { title: 'Example exam', codes: ['EX-101'], version: 'V1', source: 'exampl
 - No track lists the lesson.
 - A track lists the lesson under another title, or the lesson does not fit that track's limits.
 - A track fails `defineTrack` when checked again against `SOURCES`. For a certification track, that means the pinned objectives document and every objective citation must be in `SOURCES`.
+- A cited lesson has no current fact-check report in which every item passes, or a report has no cited lesson (section 8).
 
 **Shared lessons.** A lesson exists once. Tracks only reference it. It gets a URL in every track that lists it, `/<track>/<slug>`, and a canonical link to the first listing track's URL (in `tracks` order). Progress is saved by slug, so it follows the lesson into every track.
 
 **Untimed.** Lessons carry no duration anywhere: not in code, checks or copy.
+
+## 8. Fact checks
+
+Every cited lesson is checked by the **fact-checker**, an independent agent defined in `.claude/agents/fact-checker.md` (owner, 2026-11-08). It runs in the build session with a fresh context, after the lesson is written and before its pull request opens. The owner does not read its reports: its all-pass verdict is the sign-off. Lessons on the legacy list (section 4) are exempt until they move across.
+
+**The flow for one lesson:**
+
+1. **Write** the lesson in the cited shape. Every claim has two independent sources, or one defining standard (section 3).
+2. **Print the claim sheet:** `npm run fact-check -- <slug>`. It lists every item the checker checks, with a stable key, and the content hash. The items are every part that cites, the OSI badge, every traced, example and analogy part, the title, the unit name and each question's prompt. A scene's items include the words and marks its cues put on the figure. Settings that change only how something looks are left off (`DISPLAY_ONLY` in `src/content/factcheck/sheet.ts`), so a layout tweak does not make a report stale. Changing any text or value a reader sees, a citation, or a cited source's registry entry does. A new schema field whose default is empty changes nothing; one with any other default makes every report stale unless it is added to `DISPLAY_ONLY`.
+3. **Dispatch** the `fact-checker` agent with the slug and nothing else: no notes, drafts or conversation. It fetches every cited section from the publisher's own site, checks every item, and writes `docs/fact-checks/<slug>.md`. It then runs `npm run fact-check -- <slug> --check`, which checks the report's form against the sheet.
+4. **The build reads the report** (the gate, below).
+5. **Fix and check again.** If any item is not ✅:
+   1. Commit the failing report as it stands.
+   2. Fix the lesson: reword the claim, re-cite it, or cut it.
+   3. Dispatch a brand-new fact-checker on the whole lesson.
+
+   Repeat until every item passes. Only the branch's final commit has to build.
+6. **Open the pull request** with the lesson and its report. List every limit override, with its reason, in the description. The owner's OK to merge approves them.
+
+**The author's rules.** *Policy:* nothing checks these, so you must keep them.
+- Never write, edit or rewrite a report. Only the fact-checker writes one, and a new run replaces it whole.
+- Commit every failing report before you fix the lesson, so the branch history shows every run.
+- Never re-run the checker on unchanged content to get a different answer.
+- List overrides, with their reasons, in the pull request description.
+
+**The report.** `docs/fact-checks/<slug>.md`, by slug, because a lesson is shared between tracks. It opens with a fenced block whose info string is exactly `json fact-check`. That is the header the build reads, in JSON:
+- `slug` and `hash`: the sheet's hash when it was checked;
+- `checked`: the date;
+- `checker`: the model that checked it;
+- `verdicts`: every sheet key with `✅` (supported), `⚠️` (imprecise, not current or not confirmed) or `❌` (wrong);
+- `sources`: every cited source, whether it was found `current`, the date, and a `note` when it is not;
+- `overrides`: the lesson's limit overrides.
+
+The rest of the report is for people. It gives each claim's quoted passages (or what its defining standard defines), and how each source was found current.
+
+**The gate.** The registry reads every report directly in `docs/fact-checks/`. It fails the build, and the tests, when:
+- a cited lesson has no report;
+- the report cannot be read: it has no header, the header is not valid JSON of the right shape, or it lists a key or a source twice;
+- the report is for another slug;
+- the lesson has changed since it was checked (the hash differs);
+- an item has no verdict, or a verdict names a key the lesson does not have;
+- any verdict is not ✅;
+- a cited source is not listed, or is not current;
+- a report has no cited lesson, so stale reports don't pile up.
+
+While a new lesson has no passing report, the build and the tests fail. That is expected until the fact-checker passes it. `npm run dev` only warns, so you can preview the lesson while you write it. `npm run fact-check` reads lessons without the registry, so it prints the sheet either way.
+
+**The canary.** `src/content/factcheck/canary/` holds a test lesson that cites real sources and plants known faults. It proves the fact-checker catches each fault and passes each correct claim. Its sources are not in `SOURCES` and it is never on the site. Its report is `docs/fact-checks/canary/fact-check-canary.md`, which the gate never reads. To run it again, dispatch the fact-checker with the slug `fact-check-canary`.

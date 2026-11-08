@@ -2,7 +2,7 @@ import { expect, test, vi } from 'vitest';
 import { defineLesson, definedWith, LessonValidationError, validateLesson, type LessonInput } from './define';
 import { checkLimits } from './limits';
 import type { Backing } from './schema';
-import { cite } from './sources';
+import { cite, defineSources } from './sources';
 import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCitedLesson, makeLesson, OBJ_URL } from './test-fixtures';
 
 // The strict path every new lesson takes: the cited shape, the citation and backing rules, and the structural rules.
@@ -173,7 +173,7 @@ test('the derived references replace an empty written list', () => {
 test('the references follow reading order: OSI, then the Watch steps’ Go deeper, before Learn', () => {
   const l = makeCitedLesson();
   u(l).osi = 'spans';
-  u(l).steps[0]!.deep[0]!.cite = [vendorCite()];
+  u(l).steps[0]!.deep[0]!.cite = [vendorCite(), cite('rfc-example', '2.2', { sources: FIXTURE_SOURCES, defining: true })];
   expect(validateLesson(l, FIXTURE_SOURCES).units[0]!.references.map((s) => s.label)).toEqual([
     'Example vendor: Example page',
     'RFC 9999: Example Protocol',
@@ -237,7 +237,62 @@ test('the pattern, Learn facts, Go deeper and Practice options cannot be flagged
   ]);
 });
 
-// ---------------------------------------------------------------- rule 4: the OSI badge
+// ---------------------------------------------------------------- rule 4: two independent sources, or a defining standard
+
+const plainRfc = (section: string) => cite('rfc-example', section, { sources: FIXTURE_SOURCES });
+const definingRfc = (section: string) => cite('rfc-example', section, { sources: FIXTURE_SOURCES, defining: true });
+const ONE_SOURCE = 'rests on one source';
+
+test('a claim with one source fails the two-source rule', () => {
+  const l = makeCitedLesson();
+  u(l).learn.lead[0]!.cite = [plainRfc('2.1')];
+  expect(issuesOf(l)).toEqual([expect.stringMatching(/^units\[0\]\.learn\.lead\[0\] \("lead-1"\): rests on one source/)]);
+});
+
+test('two sections of one source are one source', () => {
+  const l = makeCitedLesson();
+  u(l).learn.lead[0]!.cite = [plainRfc('3.1'), plainRfc('3.2')];
+  expect(joined(l)).toContain(ONE_SOURCE);
+});
+
+test('two pages of one vendor are one source', () => {
+  const sources = defineSources([
+    ...Object.values(FIXTURE_SOURCES),
+    { id: 'vendor-other', kind: 'vendor', short: 'Other vendor page', title: 'Another page', publisher: 'Microsoft', url: 'https://learn.microsoft.com/other' },
+  ]);
+  const l = makeCitedLesson();
+  u(l).learn.lead[0]!.cite = [
+    cite('vendor-example', 'Lease renewal', { sources, url: 'https://learn.microsoft.com/example#lease-renewal' }),
+    cite('vendor-other', 'Leases', { sources, url: 'https://learn.microsoft.com/other#leases' }),
+  ];
+  expect(() => validateLesson(l, sources)).toThrow(ONE_SOURCE);
+});
+
+test('a defining standard may stand alone', () => {
+  const l = makeCitedLesson();
+  u(l).learn.lead[0]!.cite = [definingRfc('2.1')];
+  expect(issuesOf(l)).toEqual([]);
+});
+
+test('an RFC and a vendor page are two sources', () => {
+  const l = makeCitedLesson();
+  u(l).learn.lead[0]!.cite = [plainRfc('2.1'), vendorCite()];
+  expect(issuesOf(l)).toEqual([]);
+});
+
+test('the OSI badge keeps the two-source rule', () => {
+  const l = makeCitedLesson();
+  u(l).osi = { layers: [7], cite: [plainRfc('1.2')] };
+  expect(issuesOf(l)).toEqual([expect.stringMatching(/^units\[0\]\.osi: rests on one source/)]);
+});
+
+test('analogies keep no citation under the two-source rule', () => {
+  const l = makeCitedLesson();
+  u(l).learn.lead.push({ id: 'lead-3', text: 'It is a little like borrowing a library book.', analogy: true });
+  expect(issuesOf(l)).toEqual([]);
+});
+
+// ---------------------------------------------------------------- rule 4 (above) and the OSI badge
 
 test('an OSI badge that spans layers needs no citation', () => {
   const l = makeCitedLesson();
@@ -336,7 +391,8 @@ test('Learn ids are unique across statements, terms, the pattern, Go deeper and 
 
 test('a citation to a source the registry does not have is rejected, naming its place', () => {
   const l = makeCitedLesson();
-  u(l).learn.facts[0]!.cite = [{ source: 'nowhere', section: '1', url: 'https://www.rfc-editor.org/rfc/rfc1.html#section-1', label: 'RFC 1 §1' }];
+  // Marked defining, so the two-source rule has nothing to say and only the unknown source is reported.
+  u(l).learn.facts[0]!.cite = [{ source: 'nowhere', section: '1', url: 'https://www.rfc-editor.org/rfc/rfc1.html#section-1', label: 'RFC 1 §1', defining: true }];
   expect(issuesOf(l)).toEqual([
     'units[0].learn.facts[0] ("fact-1"), citation 1: Unknown source "nowhere" (section 1); add it to SOURCES in src/content/sources.ts, or fix the id.',
   ]);
