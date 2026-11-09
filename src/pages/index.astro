@@ -417,17 +417,25 @@ const questions = [
     font-size: 16px;
     line-height: 1.45;
   }
+  /* The count and the button each stay on one line; if a card is too narrow for both, the button moves under, still
+     at the right, level with the other cards' buttons. */
   .home-track__foot {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px 12px;
     margin-top: auto;
     padding-top: 14px;
   }
   .home-track__count {
     color: var(--muted);
     font: 500 13px/1.2 var(--mono);
+    white-space: nowrap;
+  }
+  .home-track__go {
+    margin-left: auto;
+    white-space: nowrap;
   }
 
   /* ---------- See a lesson from the inside: a two-page blueprint sheet ---------- */
