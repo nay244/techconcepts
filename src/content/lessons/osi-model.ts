@@ -462,7 +462,7 @@ export default defineLesson({
             },
             {
               text: 'Removes the header of the layer above',
-              feedback: 'Not quite. Going down, a layer doesn’t read or change what the layer above handed it.',
+              feedback: 'Not quite. Going down, a layer doesn’t read what the layer above handed it.',
               cite: [x200('5.6.1.4')],
             },
             {
