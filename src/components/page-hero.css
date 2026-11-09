@@ -12,11 +12,8 @@
   inset: 0 0 auto;
   z-index: -1;
   height: 640px;
-  background-image:
-    radial-gradient(var(--dot) 1.2px, transparent 1.4px), radial-gradient(ellipse 60% 60% at 75% 10%, var(--accent-soft), transparent 70%);
-  background-size:
-    24px 24px,
-    100% 100%;
+  background-image: radial-gradient(ellipse 60% 60% at 75% 10%, var(--accent-soft), transparent 70%);
+  background-size: 100% 100%;
   -webkit-mask-image: radial-gradient(ellipse 80% 80% at 60% 10%, #000 30%, transparent 75%);
   mask-image: radial-gradient(ellipse 80% 80% at 60% 10%, #000 30%, transparent 75%);
 }

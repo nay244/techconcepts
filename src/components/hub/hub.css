@@ -1,0 +1,16 @@
+/* The lesson console's track strip, one square per lesson (done blue, current amber, ready outlined, not ready faint). */
+.strip { display: flex; align-items: center; gap: 14px; }
+.strip__sq { display: flex; flex-wrap: wrap; gap: 3px; }
+.strip__sq i { width: 9px; height: 12px; border-radius: 2px; box-shadow: inset 0 0 0 1.5px var(--line-strong); opacity: 0.6; }
+.strip__sq i[data-state='ready'] { box-shadow: inset 0 0 0 1.5px var(--muted); opacity: 1; }
+.strip__sq i[data-state='done'] { background: var(--accent); box-shadow: none; opacity: 1; }
+.strip__sq i[data-state='current'] { background: var(--here); box-shadow: none; opacity: 1; }
+.strip__w { font: 500 13px/1 var(--mono); color: var(--muted); white-space: nowrap; }
+
+/* Where you are inside a lesson: Watch, Learn, Practice. */
+.wlp { display: inline-flex; gap: 10px; }
+.wlp__p { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--sans); color: var(--muted); }
+.wlp__p i { width: 18px; height: 5px; border-radius: 3px; background: var(--line-strong); }
+.wlp__p.is-done i { background: var(--accent); }
+.wlp__p.is-now { color: var(--here); font-weight: 700; }
+.wlp__p.is-now i { background: var(--here); }

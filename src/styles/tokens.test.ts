@@ -39,6 +39,18 @@ function distance(a: string, b: string): number {
   return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
 }
 
+test('ground and its dots are defined for both themes', () => {
+  expect(tokens.light.ground).toBe('#f4f7fb');
+  expect(tokens.dark.ground).toBe('#060c17');
+  expect(tokens.light['ground-dot']).toBe('rgba(31, 99, 192, 0.13)');
+  expect(tokens.dark['ground-dot']).toBe('rgba(127, 176, 234, 0.13)');
+  for (const theme of ['light', 'dark'] as const) {
+    for (const name of ['ink', 'ink-strong', 'muted'] as const) {
+      expect(contrastRatio(tokens[theme][name], tokens[theme].ground), `${name} on ground, ${theme}`).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+});
+
 const MIN_DISTANCE = 0.08;
 // Ruling R4: the one exception. Light response and blocked are fixed by the approved mockups and are 0.077 apart.
 const EXCEPTION = { theme: 'light', a: 'response', b: 'blocked', min: 0.07 } as const;
