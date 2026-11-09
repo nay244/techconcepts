@@ -63,6 +63,7 @@ const parts = trackParts(track, entries, lessonOf);
 const tags = presentTags(entries);
 const planned = entries.map((e) => ({ key: e.key, title: e.title }));
 const FIGURES: Record<string, () => string> = {
+  'osi-model': () => spot('osi'),
   subnetting: () => spot('subnet'),
   dhcp: () => spot('dhcp'),
   firewalls: () => spot('firewall'),

@@ -80,6 +80,8 @@ const EXPECTED: Record<string, string> = {
   'spot:subnet': '841d398bd78c4e35fc5f47fea35060e97ddad297312b9138429c778cc083ba1b',
   'spot:dhcp': 'f78beddc71e112c7aa568d07a3a9d4e24a5acdc31dcc58147b3ab59421177a21',
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
+  // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
+  'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
   'hero-web': '00847544a78e5bdb839cecc17586f305e1f75fb75416ecd5b0fe2d448c9c81bf',
   'hero-web-data': 'ee57f4896264baaf7022b4b7d0dbe2c63fd8a695216149d1462d99a13b292ea5',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
@@ -96,6 +98,17 @@ test('the figures match the mockups', async () => {
   actual['internet-thumb'] = await sha(internetThumb());
   actual['router-path'] = await sha256(JSON.stringify(routerDrawing().path));
   expect(actual).toEqual(EXPECTED);
+});
+
+test('the OSI spot is seven numbered blocks with block 4 lit', () => {
+  const svg = spot('osi');
+  const blocks = svg.split('<g class="lm-osi-block"').slice(1);
+  expect(blocks).toHaveLength(7);
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect(blocks[3]).toMatch(/data-lit/);
+  blocks.forEach((b, i) => expect(b).toContain(`>${i + 1}</text>`));
+  expect(svg).toContain('OSI · SEVEN LAYERS');
+  expect(svg).toContain('aria-label="A stack of seven solid blocks, one for each layer, numbered 1 at the bottom to 7 at the top. Block 4 is lit."');
 });
 
 test('the hero caption has one line for each moment', () => {

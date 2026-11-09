@@ -1,6 +1,7 @@
 ---
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
 import { drawFigure } from '../../art/scenes';
+import { fillLabels } from '../../art/scenes/labels';
 import { getEntries, getLesson, neighbors, type AvailableSummary } from '../../content/registry';
 import { tracks } from '../../content/tracks';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -27,7 +28,11 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { track, entry, entries, lesson, next } = Astro.props;
 // Drawn here, at build time: the island gets the SVG as static markup and its driver's data as a prop.
-const { svg, data } = drawFigure(lesson.figure);
+// The console opens on the first unit, so its words are written into the figure's label slots now (a figure without
+// slots is unchanged).
+const drawn = drawFigure(lesson.figure);
+const data = drawn.data;
+const svg = fillLabels(drawn.svg, lesson.units[0]!.scene.labels);
 // The console has its own top bar and <main id="main">, so the layout adds no header, main or footer.
 ---
 

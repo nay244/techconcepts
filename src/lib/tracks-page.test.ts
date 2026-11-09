@@ -25,7 +25,7 @@ test('a ready track links to its page, with its counts and type', () => {
   expect(card('networking')).toMatchObject({
     href: '/networking',
     kind: 'Concept track · Beginner',
-    count: '19 lessons · 3 ready',
+    count: '19 lessons · 4 ready',
     flag: null,
     planned: 19,
     cover: 'networking',
@@ -34,7 +34,7 @@ test('a ready track links to its page, with its counts and type', () => {
     'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
   );
   // The progress island reads the ready lessons' last positions, as Home's card does.
-  expect(Object.keys(card('networking').known)).toHaveLength(3);
+  expect(Object.keys(card('networking').known)).toHaveLength(4);
 });
 
 test('a planned track is no link, says so, and has no progress', () => {

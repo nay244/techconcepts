@@ -53,12 +53,12 @@ test.describe('desktop', () => {
   requireLessons(LESSONS);
 
   test.describe('Home', () => {
-    test('is titled TechConcepts and says "3 of 19 lessons ready"', async ({ page }) => {
+    test('is titled TechConcepts and says "4 of 19 lessons ready"', async ({ page }) => {
       await open(page, '/');
       await expect(page).toHaveTitle('TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       await expect(networkingCard(page)).toHaveAttribute('href', '/networking');
-      await expect(networkingCard(page).locator('.meta')).toHaveText('3 of 19 lessons ready');
+      await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 19 lessons ready');
       await expect(networkingCard(page).locator('.go')).toHaveText('Open track');
       await expect(heroStart(page)).toHaveText(HERO_START);
       await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
@@ -153,7 +153,7 @@ test.describe('desktop', () => {
   });
 
   test.describe('Tracks page', () => {
-    test('How the Internet Works comes first, flagged Start here; Networking has "19 lessons · 3 ready"; A+ is no link and says "Being written"', async ({ page }) => {
+    test('How the Internet Works comes first, flagged Start here; Networking has "19 lessons · 4 ready"; A+ is no link and says "Being written"', async ({ page }) => {
       await open(page, '/tracks');
       await expect(page).toHaveTitle('Tracks · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pick a track');
@@ -170,7 +170,7 @@ test.describe('desktop', () => {
       const networking = tracksPageCards(page).nth(1);
       await expect(networking).toHaveAttribute('href', '/networking');
       await expect(networking.locator('.kind')).toHaveText('Concept track · Beginner');
-      await expect(networking.locator('.count')).toHaveText('19 lessons · 3 ready');
+      await expect(networking.locator('.count')).toHaveText('19 lessons · 4 ready');
       await expect(networking.locator('.flag')).toHaveCount(0);
       // A first visit: no tab, no ring.
       await expect(page.locator('.tp-grid').locator('.tab-here, .ring')).toHaveCount(0);
@@ -196,7 +196,7 @@ test.describe('desktop', () => {
   });
 
   test.describe('Track page', () => {
-    test('Networking is Track 2 and has 19 lessons, 16 of them Coming soon, with Subnetting the first ready', async ({ page }) => {
+    test('Networking is Track 2 and has 19 lessons, 15 of them Coming soon, with OSI Model the first ready', async ({ page }) => {
       await open(page, '/networking');
       await expect(page).toHaveTitle('Networking Concepts · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
@@ -204,15 +204,15 @@ test.describe('desktop', () => {
       await expect(page.locator('.cover .c-fig')).toHaveText('Track 2');
       await expect(page.locator('[data-router-cover]')).toHaveCount(1);
       await expect(page.locator('.stats')).toContainText(/lessons planned\s*19/);
-      await expect(page.locator('.stats')).toContainText(/ready now\s*3/);
+      await expect(page.locator('.stats')).toContainText(/ready now\s*4/);
       await expect(page.locator('.stats')).not.toContainText(/minutes in all/);
-      // Part 1 lost How the Internet Works: both its lessons are still to come.
-      await expect(page.locator('main section.part').first().locator('.part-c')).toHaveText('2 lessons, coming soon');
+      // Part 1 lost How the Internet Works: OSI Model is ready, the other lesson is still to come.
+      await expect(page.locator('main section.part').first().locator('.part-c')).toHaveText('1 of 2 ready');
 
       await expect(trackItems(page)).toHaveCount(19);
-      await expect(page.locator('main li.lesson')).toHaveCount(3);
+      await expect(page.locator('main li.lesson')).toHaveCount(4);
       const soon = page.locator('main ol.lessons > li.soon-row, main ol.soon-list > li');
-      await expect(soon).toHaveCount(16);
+      await expect(soon).toHaveCount(15);
       await expect(soon.locator('a')).toHaveCount(0);
       for (const row of await page.locator('main li.soon-row').all()) await expect(row.locator('.badge')).toHaveText('Coming soon');
       for (const list of await page.locator('main ol.soon-list').all()) {
@@ -220,8 +220,8 @@ test.describe('desktop', () => {
       }
 
       const first = page.locator('main li.lesson').first();
-      await expect(first.locator('.l-num')).toHaveText('Lesson 07');
-      await expect(first.locator('a.l-link')).toHaveText('Subnetting');
+      await expect(first.locator('.l-num')).toHaveText('Lesson 01');
+      await expect(first.locator('a.l-link')).toHaveText('OSI Model');
       // The list is named for what it holds: a one-unit lesson's card lists only exams.
       await expect(first.getByRole('list', { name: 'Exams', exact: true })).toBeVisible();
       const dhcp = trackItems(page).filter({ has: page.getByRole('link', { name: 'DHCP', exact: true }) });
@@ -322,7 +322,7 @@ test.describe('desktop', () => {
 
     await open(page, '/');
     await expect(heroEyebrow(page)).toHaveText('Free visual lessons, no sign-up');
-    await expect(networkingCard(page).locator('.meta')).toHaveText('3 of 19 lessons ready');
+    await expect(networkingCard(page).locator('.meta')).toHaveText('4 of 19 lessons ready');
     await open(page, '/tracks');
     await expect(page.locator('.tp-grid').locator('.tab-here, .ring')).toHaveCount(0);
   });
