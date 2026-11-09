@@ -57,7 +57,7 @@ const EXCEPTION = { theme: 'light', a: 'response', b: 'blocked', min: 0.07 } as 
 
 const SITE = [
   'bg', 'bg-soft', 'card', 'card-2', 'tile', 'line', 'line-strong', 'ink', 'ink-strong', 'muted', 'accent', 'accent-ink',
-  'accent-soft', 'accent-line', 'here', 'here-soft', 'focus', 'dot', 'hero-bg', 'hero-glow', 'shadow-sm', 'shadow-lg', 'btn-shadow',
+  'accent-soft', 'accent-line', 'here', 'here-soft', 'focus', 'dot', 'shadow-sm', 'shadow-lg', 'btn-shadow',
   'allowed-text',
 ] as const;
 
@@ -69,8 +69,8 @@ const TEXT = ['ink', 'ink-strong', 'muted', 'accent', 'allowed-text', 'blocked',
 
 /**
  * Every ground words sit on, in a theme: the page and card surfaces, the figures' background, and the marigold tint
- * on each surface it is laid on: the page (the track page's Resume), a card (the console's current place and current
- * lesson, a lesson card's In progress) and Home's hero (the welcome-back eyebrow).
+ * on each surface it is laid on: the page (the track page's Resume) and a card (the console's current place and
+ * current lesson, a lesson card's In progress).
  */
 function grounds(theme: 'light' | 'dark'): Record<string, string> {
   const t = tokens[theme];
@@ -83,14 +83,14 @@ function grounds(theme: 'light' | 'dark'): Record<string, string> {
     'fig-bg': figBg(theme),
     'here-soft on bg': over(t['here-soft'], t.bg),
     'here-soft on card': over(t['here-soft'], t.card),
-    'here-soft on hero-bg': over(t['here-soft'], t['hero-bg']),
   };
 }
 
-/** Pairs that never meet on the site, each with the reason. */
-const NEVER_MEET: Record<string, string> = {
-  'here on here-soft on hero-bg': "the hero's only marigold tint is the welcome-back eyebrow, and its words are ink-strong",
-};
+/**
+ * Pairs that never meet on the site, each with the reason, as `'<text> on <ground>'`. None today: Home's hero, whose
+ * welcome-back eyebrow was the one marigold tint with ink-strong words, went with the insideout redesign.
+ */
+const NEVER_MEET: Record<string, string> = {};
 
 test('contrastRatio sanity', () => expect(contrastRatio('#000000', '#ffffff')).toBeCloseTo(21, 0));
 

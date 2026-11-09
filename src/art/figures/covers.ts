@@ -437,8 +437,5 @@ export const cover = (id: CoverId): string => DRAW[id]();
 /** A still copy of a cover: no hooks, and every id tagged so two copies on a page never share one. */
 export const coverStill = (id: CoverId, tag: string): string => scopeIds(cover(id), tag);
 
-/** The web cover's body and the shuttle's path on screen (in the cover's own frame); the home hero rides it. */
-export const webDrawing = (): { svg: string; path: number[][] } => web();
-
 /** The router cover's body and the packets' path on screen (in the cover's own frame); the track page sends them along it. */
 export const routerDrawing = (): { svg: string; path: number[][] } => router();

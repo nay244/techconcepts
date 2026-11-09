@@ -34,9 +34,8 @@ export const plannedTracks: PlannedTrack[] = [
 ];
 
 /**
- * Roadmap cards on Home (spec §10.1), after the How the Internet Works and Networking cards. Not clickable: there is
- * nothing behind them yet. Each wears its approved cover, still, under the kind of track it is (the Networking card
- * wears the `networking` cover, and How the Internet Works the `web` one).
+ * The tracks further out, which About names among the tracks planned. Home showed them as roadmap cards until the
+ * insideout redesign; each keeps the approved cover it wore there, and the kind of track it is.
  */
 export const comingSoonTracks: { title: string; blurb: string; kind: string; cover: CoverId }[] = [
   {
