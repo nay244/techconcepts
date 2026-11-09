@@ -38,7 +38,8 @@ Sources live in the list inside `defineSources([...])` in `src/content/sources.t
 }
 ```
 
-- `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `itu`, `vendor`, `cert-objectives`. An `itu` source is an ITU-T Recommendation on `www.itu.int`, published free there. An explainer page is a `vendor` source, with no kind of its own.
+- `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `itu`, `standards-body`, `government`, `security-reference`, `internet-registry`, `vendor`, `cert-objectives`. An `itu` source is an ITU-T Recommendation on `www.itu.int`, published free there. An explainer page is a `vendor` source, with no kind of its own.
+- The four kinds after `itu` are the groups the owner added on 2026-11-08 (direction doc §3.2): other standards bodies and industry groups, government security agencies besides NIST, security reference programmes, and internet registries other than IANA. They start with no hosts. A publisher's own host is added with the first lesson that cites it.
 - The host of `url` must be listed for that kind in `SOURCE_HOSTS`. Hosts are exact, with no wildcards. To allow a new host, add it to `SOURCE_HOSTS` in the same change and say why in the commit.
 - `url` names one document. It is an `https` address in normal form, with a path other than `/` and no `#fragment`.
 - One document has one entry. A second entry with the same `url`, or for the same RFC on another RFC host, fails the build, because it would count as a second source (section 3).

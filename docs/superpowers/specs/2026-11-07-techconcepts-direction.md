@@ -47,6 +47,11 @@ TechConcepts is **not** a game. It has nothing to do with the owner's separate I
 Primary references only, for every technical claim:
 - IETF RFCs, IEEE standards, IANA registries, NIST publications
 - ITU-T Recommendations, published free on `www.itu.int`. ITU-T X.200, the same text as ISO/IEC 7498-1, can be the defining standard for OSI model claims (owner, 2026-11-08)
+- Four more groups, each from its own site (owner, 2026-11-08):
+  - other standards bodies and industry groups: W3C, WHATWG, the Wi-Fi Alliance, ETSI, 3GPP, the Unicode Consortium, Ecma International, the Bluetooth SIG, USB-IF, the UEFI Forum and NVM Express
+  - government security agencies besides NIST: CISA, the UK's NCSC and ENISA
+  - security reference programmes: MITRE's CVE, CWE and ATT&CK, and FIRST's CVSS specification
+  - internet registries: ICANN and the five regional internet registries (ARIN, RIPE NCC, APNIC, LACNIC and AFRINIC)
 - Official vendor documentation (e.g. Cisco, Microsoft, Cloudflare, Palo Alto Networks docs)
   - and the vendor's own explainer pages, such as Cisco's "What is a firewall?" (owner, 2026-11-08). A vendor's blog, forum or partner content never counts
 - Official certification objective documents (CompTIA, Cisco), for exam tags and objective mapping only

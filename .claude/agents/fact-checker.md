@@ -60,25 +60,33 @@ A part is ✅ only if all of these hold for every claim in it:
   - **IANA registry:** the live registry.
   - **NIST publication:** not withdrawn, and not superseded by a newer revision.
   - **ITU-T Recommendation:** ITU-T lists it as in force, not superseded.
+  - **Another standards body or industry group:** the version the group lists as current, such as a W3C Recommendation or a WHATWG Living Standard. Not a draft, and not superseded or withdrawn. An explainer page is live and describes current practice.
+  - **Government agency page or publication:** the page is live and not marked archived, retired or superseded.
+  - **Security reference:** a CVE, CWE or ATT&CK entry that is not rejected, deprecated or revoked, or the current version of the CVSS specification.
+  - **Internet registry page or policy:** the page is live, and a policy is the version in force.
   - **Vendor documentation or explainer page:** the page is live and describes a current product or current practice.
   - **The claim itself:** it describes current practice, not a superseded one. For example, saying HTTPS runs over SSL fails.
   - Record the date you checked each source.
 - **Confirmed.** Either:
   - **Two independent sources.** Two of the part's citations each state the claim themselves, and you quote both. *Independent* means:
     - they are different documents. Two source ids that name the same document, such as one RFC on two sites, are one source;
-    - they are not two pages from the same vendor. A vendor page that restates an RFC counts, and so does a second RFC.
+    - they are not two pages from one publisher's site, such as two pages of one vendor, one agency or one registry. A vendor page that restates an RFC counts, and so does a second standard, such as a second RFC.
   - **A defining standard.** A citation marked "(defining standard)" states the claim. You confirm it is the current document that defines this thing, such as its message format, field, value, procedure or layer. Say what it defines. A marker on a document that does not define the thing is ❌ for that claim, even when the claim is true.
 - **Allowed.** Every cited source really is one of the allowed kinds, and its page comes from the publisher itself. The allowed kinds are:
   - IETF RFCs, IEEE standards, IANA registries, NIST publications and ITU-T Recommendations;
+  - the standards, specifications and explainer pages of W3C, WHATWG, the Wi-Fi Alliance, ETSI, 3GPP, the Unicode Consortium, Ecma International, the Bluetooth SIG, USB-IF, the UEFI Forum and NVM Express;
+  - the guidance pages and publications of CISA, the UK's NCSC and ENISA;
+  - the entries and specifications of MITRE's CVE, CWE and ATT&CK, and FIRST's CVSS;
+  - the pages and policies of ICANN and the five regional internet registries: ARIN, RIPE NCC, APNIC, LACNIC and AFRINIC;
   - an allowed vendor's own documentation and explainer pages;
   - an official certification objectives document, for objective mapping only.
 
   The build checks only hosts, so you must reject:
-  - an Internet-Draft;
+  - a draft that is not yet its group's standard, such as an Internet-Draft or a W3C Working Draft;
   - a Microsoft Q&A or Shows page;
   - a conference paper;
-  - a vendor's blog, community forum or partner content;
-  - any page the vendor did not write.
+  - a blog, news post, community forum or partner content, on a vendor's site or any other allowed site;
+  - any page the publisher did not write.
 
   Never count Wikipedia, videos, forums, AI output or anyone's summary.
 
