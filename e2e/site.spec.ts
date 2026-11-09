@@ -78,6 +78,37 @@ test.describe('desktop', () => {
       await expect(kicker(page)).toHaveText('Overview');
     });
 
+    test('Home: How it works, Questions and See a lesson each land their section clear of the sticky header', async ({ page }) => {
+      const nav = page.getByRole('navigation', { name: 'Site', exact: true });
+      const links = [
+        { id: 'how', link: nav.getByRole('link', { name: 'How it works', exact: true }) },
+        { id: 'faq', link: nav.getByRole('link', { name: 'Questions', exact: true }) },
+        { id: 'inside', link: page.locator('.hero').getByRole('link', { name: 'See a lesson', exact: true }) },
+      ];
+      for (const { id, link } of links) {
+        await open(page, '/');
+        await link.click();
+        await expect(page).toHaveURL(new RegExp(`/#${id}$`));
+        // Wait for the scroll to settle (it is smooth, except under reduced motion), with the heading on screen.
+        const measure = () =>
+          page.evaluate((sectionId) => {
+            const h2 = document.querySelector(`#${sectionId} h2`)!.getBoundingClientRect();
+            const head = document.querySelector('.site-head')!.getBoundingClientRect();
+            return { y: window.scrollY, h2Top: h2.top, h2Bottom: h2.bottom, headBottom: head.bottom, height: window.innerHeight };
+          }, id);
+        await expect
+          .poll(async () => {
+            const a = await measure();
+            await page.waitForTimeout(120);
+            const b = await measure();
+            return a.y === b.y && b.y > 0 && b.h2Bottom <= b.height;
+          }, { message: `#${id} settles on screen` })
+          .toBe(true);
+        const at = await measure();
+        expect(at.h2Top, `#${id}'s heading starts below the header`).toBeGreaterThanOrEqual(at.headBottom);
+      }
+    });
+
     test('Home: three track cards in order, linking to their Tracks panels, with no exam tags', async ({ page }) => {
       await open(page, '/');
       await expect(page.locator('#tracks').getByRole('heading', { level: 2 })).toHaveText('Choose where to start.');
@@ -97,6 +128,19 @@ test.describe('desktop', () => {
       for (const card of await trackCards(page).all()) await expect(card.locator('a, button')).toHaveCount(0);
       await expect(page.locator('main a[href*="?for="]')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/Network\+|Security\+|CCNA|lessons done|in progress/i);
+
+      // The card hover (spec §5.7): under the pointer a card takes the 1.5px ring in the accent, which no style of the
+      // page's own may cancel.
+      const accent = await page.evaluate(() => {
+        const probe = document.body.appendChild(document.createElement('i'));
+        probe.style.color = 'var(--accent)';
+        const colour = getComputedStyle(probe).color;
+        probe.remove();
+        return colour;
+      });
+      const first = trackCards(page).nth(0);
+      await first.hover();
+      await expect.poll(() => first.evaluate((el) => getComputedStyle(el).boxShadow)).toContain(`${accent} 0px 0px 0px 1.5px inset`);
 
       await trackCards(page).nth(1).click();
       await expect(page).toHaveURL(/\/tracks#networking$/);

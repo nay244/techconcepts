@@ -8,7 +8,7 @@
   min-height: 48px;
   padding: 0 22px;
   border: 1px solid var(--line-strong);
-  border-radius: 10px;
+  border-radius: var(--r-btn);
   background: var(--card);
   color: var(--ink-strong);
   font: 600 16px/1.2 var(--sans);
@@ -164,8 +164,10 @@
   color: var(--accent);
 }
 
-/* Card hover: rises 2px and takes an accent ring. */
+/* Card hover: rises 2px and takes an accent ring. The card's resting shadow is set here too, so a page styling its
+   card does not set a box-shadow of its own that ties with `.lift:hover` and hides the ring. */
 .lift {
+  box-shadow: var(--shadow-sm);
   transition:
     transform 180ms var(--ease-out),
     box-shadow 180ms var(--ease-out);

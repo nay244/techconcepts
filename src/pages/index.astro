@@ -280,6 +280,10 @@ const questions = [
   .band {
     padding: 110px 0;
   }
+  /* A section the header links to lands clear of the sticky header (68px), as About's and the track page's do. */
+  .band[id] {
+    scroll-margin-top: 92px;
+  }
   .band--after {
     padding-top: 20px;
   }
@@ -339,7 +343,8 @@ const questions = [
   .hero-art {
     position: absolute;
     z-index: 1;
-    width: clamp(220px, 21vw, 330px);
+    /* 236px at 1280 and 302px at 1440, so the covers beside the title keep 32px or more clear of it; 330px from 1508. */
+    width: clamp(200px, calc(41.25vw - 292px), 330px);
     pointer-events: none;
   }
   .hero-art :global(svg) {
@@ -349,7 +354,7 @@ const questions = [
   }
   .hero-art--l {
     top: 12%;
-    left: max(1vw, calc(50% - 700px));
+    left: max(1vw, calc(50% - 720px));
   }
   .hero-art--l2 {
     top: 56%;
@@ -358,7 +363,7 @@ const questions = [
   }
   .hero-art--r {
     top: 22%;
-    right: max(1vw, calc(50% - 700px));
+    right: max(1vw, calc(50% - 720px));
   }
 
   /* ---------- Tracks ---------- */
@@ -377,7 +382,7 @@ const questions = [
     overflow: hidden;
     border-radius: var(--r-card);
     background: var(--card);
-    box-shadow: var(--shadow-sm);
+    /* Its shadow, resting and on hover, is .lift's (site.css). */
     color: inherit;
     text-decoration: none;
   }

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { drawFigure } from '../art/scenes';
-import { getLesson } from '../content/registry';
+import { getEntries, getLesson } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeTwoUnitLesson } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
@@ -108,6 +108,26 @@ test('the inside sheet’s figure is the lesson’s own, with its words written 
   expect(figure).toContain('<g class="osi-L on" id="osi-L-laptop-7"><g class="iso-solid" data-lit=""');
   expect(figure).toContain('<g class="osi-call focus" id="osi-call-laptop">');
   expect(figure.match(/class="osi-call focus"/g)).toHaveLength(1);
+});
+
+test('the inside sheet refuses a lesson that is not ready in the track, by name', () => {
+  const planned = getEntries('networking').find((e) => !e.available);
+  if (planned === undefined) throw new Error('Networking has no lesson still to come.');
+  expect(() => insideSheet('networking', planned.slug)).toThrow(new RegExp(`networking/${planned.slug}.*not ready`));
+  // Ready, but in another track only.
+  expect(() => insideSheet('how-the-internet-works', 'osi-model')).toThrow(/how-the-internet-works\/osi-model.*not ready/);
+  expect(() => insideSheet('no-such-track', 'osi-model')).toThrow(/not ready/);
+});
+
+test('the inside sheet refuses a lesson drawn on another figure, since it lights the OSI one', () => {
+  expect(() => insideSheet('networking', 'dhcp')).toThrow(/OSI figure.*dhcp draws "dhcp"/);
+});
+
+test('the inside sheet refuses to show more Watch steps than the lesson has', () => {
+  const steps = OSI.units[0]!.steps.length;
+  expect(() => insideSheet('networking', 'osi-model', steps)).not.toThrow();
+  expect(() => insideSheet('networking', 'osi-model', steps + 1)).toThrow(RangeError);
+  expect(() => insideSheet('networking', 'osi-model', steps + 1)).toThrow(`has ${steps} Watch steps; the sheet shows ${steps + 1}`);
 });
 
 test('lighting the OSI figure: a layer cue lights its block and its machine’s callout; other cues are left alone', () => {

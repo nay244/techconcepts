@@ -21,8 +21,6 @@ export type TokenName =
   | 'here-soft'
   | 'focus'
   | 'dot'
-  | 'hero-bg'
-  | 'hero-glow'
   | 'shadow-sm'
   | 'shadow-lg'
   | 'btn-shadow'
@@ -80,8 +78,6 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     'here-soft': 'rgba(214, 146, 20, 0.12)',
     focus: '#0b1a33',
     dot: 'rgba(31, 99, 192, 0.16)',
-    'hero-bg': '#f5f8fc',
-    'hero-glow': 'rgba(31, 99, 192, 0.06)',
     'shadow-sm': '0 1px 2px rgba(11, 26, 51, 0.04), 0 8px 24px -12px rgba(11, 26, 51, 0.16)',
     'shadow-lg': '0 1px 2px rgba(11, 26, 51, 0.05), 0 28px 56px -28px rgba(11, 26, 51, 0.30)',
     'btn-shadow': '0 10px 24px -12px rgba(31, 99, 192, 0.75)',
@@ -116,8 +112,6 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     'here-soft': 'rgba(245, 184, 61, 0.12)',
     focus: '#ffffff',
     dot: 'rgba(127, 176, 234, 0.16)',
-    'hero-bg': '#050b15',
-    'hero-glow': 'rgba(90, 169, 255, 0.07)',
     'shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6)',
     'shadow-lg': '0 1px 2px rgba(0, 0, 0, 0.3), 0 30px 60px -28px rgba(0, 0, 0, 0.75)',
     'btn-shadow': '0 10px 28px -12px rgba(90, 169, 255, 0.6)',
