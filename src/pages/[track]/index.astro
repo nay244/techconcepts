@@ -3,12 +3,11 @@
 // worked out from the track and its lessons. Only the hero's buttons, the progress card, the lessons and the cover's
 // packets run in the browser; the rest is static, and without JavaScript the page shows a first visit in full.
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
-import { nameTile } from '../../art/figures/name-tile';
-import { spot } from '../../art/figures/spots';
 import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../../content/registry';
 import type { Lesson } from '../../content/schema';
-import { internetTrack, tracks } from '../../content/tracks';
+import { tracks } from '../../content/tracks';
 import { knownFrom, levelLabel } from '../../lib/entries';
+import { lessonFigure } from '../../lib/figures';
 import { resumePlaces } from '../../lib/home';
 import { nextUps, presentTags, trackParts } from '../../lib/track';
 import { TRACK_COVERS } from '../../lib/tracks-page';
@@ -62,25 +61,9 @@ const label = `Track ${number}`;
 const parts = trackParts(track, entries, lessonOf);
 const tags = presentTags(entries);
 const planned = entries.map((e) => ({ key: e.key, title: e.title }));
-const FIGURES: Record<string, () => string> = {
-  'osi-model': () => spot('osi'),
-  subnetting: () => spot('subnet'),
-  dhcp: () => spot('dhcp'),
-  firewalls: () => spot('firewall'),
-};
-/** A How the Internet Works card shows its protocol's name tile, from the lesson's one unit; others their figure. */
-function figureFor(entry: AvailableSummary): string {
-  if (track.id === internetTrack.id) {
-    const unit = lessonOf(entry).units[0]!;
-    return nameTile(unit.name, unit.fullName);
-  }
-  const draw = FIGURES[entry.slug];
-  if (draw === undefined) throw new Error(`The ${entry.key} lesson is ready and has no figure for its card.`);
-  return draw();
-}
 // Each figure goes to the lessons island as static HTML in a slot named after the lesson's number, so it is not
 // repeated in the island's props.
-const figures = available.map((entry) => ({ slot: `art${entry.number}`, svg: figureFor(entry) }));
+const figures = available.map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(track.id, entry) }));
 ---
 
 <BaseLayout title={track.title} current="tracks" description={track.description}>
