@@ -4,16 +4,16 @@ import { cite } from '../sources';
 
 /**
  * OSI Model, the first lesson of the Networking track and the first in the cited shape. One message goes from a
- * laptop to a web server: down the laptop's seven layers, each adding its header; across the cable to a router, which
- * reads only up to layer 3; and up the server's seven layers, each reading and removing its twin's header. The last
- * step lights the twins together. X.200 defines the model, so every citation of it is marked as the defining standard.
+ * laptop to a web server: down the laptop's seven layers, each from 7 to 2 adding its header; across the cable to a
+ * router, which reads only up to layer 3 and adds its own header 2 going back down; and up the server's seven layers,
+ * each from 2 to 7 reading and removing its twin's header. The last step lights the twins together. X.200 defines the model, so every citation of it is marked as the defining standard.
  */
 
 // ---------------------------------------------------------------- citations
 
 const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
 /** X.200's PDF page for each section cited (spec §6, measured with pdftotext). */
-const X200_PAGE: Record<string, number> = { '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.6': 33, '7.1.2.1': 36, '7.2.2.2': 37, '7.3.2.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.5.2.1': 45, '7.5.2.4': 45, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53, '7.7.4.6.1': 56 };
+const X200_PAGE: Record<string, number> = { '1.1': 5, '1.2': 5, '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.4': 12, '5.2.2.5': 12, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.3': 32, '6.1.6': 33, '6.2.1': 33, '7.1.2.1': 36, '7.2.2.2': 37, '7.3.2.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.5.2.1': 45, '7.5.2.3': 45, '7.5.2.4': 45, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53, '7.7.4.6.1': 56 };
 const x200 = (section: string) => cite('itu-x200', section, { url: `${X200}#page=${X200_PAGE[section]}`, defining: true });
 /** The Foreword, on PDF page 2, says the same text is published as ISO/IEC 7498-1. */
 const X200_FOREWORD = cite('itu-x200', 'Foreword', { url: `${X200}#page=2`, defining: true });
@@ -156,7 +156,7 @@ export default defineLesson({
           ],
         },
         parties: [],
-        backing: { traces: ['lead-1', 'lead-4', 'lead-5', 'fact-3'] },
+        backing: { traces: ['lead-1', 'lead-2', 'lead-4', 'lead-5', 'fact-3'] },
       },
       overview: {
         hook: 'Sending a message across a network is one big job. The OSI model splits it into seven smaller jobs, stacked one on top of another. Each one is a **layer**. A layer does its own job and leans on the layer below it.',
@@ -200,13 +200,13 @@ export default defineLesson({
         {
           id: 'encapsulation',
           title: 'Encapsulation',
-          sub: 'Each layer adds its own header',
+          sub: 'Layers 6 to 2 add their own headers',
           narrative:
-            'Each layer below does the same. It takes everything the layer above handed it, adds **its own header** in front, and passes the bundle down. By layer 2, the message carries six headers, one for each layer from 2 to 7. Wrapping each layer’s bundle inside a bigger one on the way down is called **encapsulation**.',
+            'Each layer below it, down to layer 2, does the same. It takes everything the layer above handed it, adds **its own header** in front, and passes the bundle down. By layer 2, the message carries six headers, one for each layer from 2 to 7. Wrapping each layer’s bundle inside a bigger one on the way down is called **encapsulation**.',
           deep: [
             {
               text: 'Layer 6, the Presentation Layer, gives the applications at both ends a common representation of the data they send. Layer 5, the Session Layer, lets the two ends organize and synchronize their dialogue and manage their data exchange.',
-              cite: [x200('7.2.2.2'), x200('7.3.2.1')],
+              cite: [x200('6.1.2'), x200('7.2.2.2'), x200('7.3.2.1')],
             },
           ],
           facts: [
@@ -253,7 +253,7 @@ export default defineLesson({
           title: 'Relay',
           sub: 'A router reads up to layer 3',
           narrative:
-            'The router only passes the message on, so it needs just the **lowest three layers**. Its layer 1 takes in the bits. Its layer 2 reads **header 2**. Its layer 3 reads **header 3** and works out where the message goes next. Then the message goes back down and out along the next cable. The router never reads headers 4 to 7: those are for the web server. A machine in the middle that only passes data on is called a **relay**.',
+            'The router only passes the message on, so it needs just the **lowest three layers**. Its layer 1 takes in the bits. Its layer 2 reads **header 2**. Its layer 3 reads **header 3** and works out where the message goes next. Then the message goes back down: layer 2 adds a new **header 2** of its own, and layer 1 sends the bits along the next cable. The router never reads headers 4 to 7: those are for the web server. A machine in the middle that only passes data on is called a **relay**.',
           deep: [
             {
               text: 'In X.200, a system that only passes data on to other systems is a relay open system, and the functions that forward data are in its lower layers.',
@@ -262,31 +262,40 @@ export default defineLesson({
           ],
           facts: [
             { label: 'Uses', value: 'layers 1 to 3', backing: { traces: ['lead-5'] } },
-            { label: 'Reads', value: 'headers 2 and 3', backing: { traces: ['lead-5'] } },
+            { label: 'Reads', value: 'headers 2 and 3', backing: { traces: ['lead-5', 'lead-6'] } },
           ],
           events: [
-            layer({ id: 'router-1', place: 'router', n: 1, plain: 'Takes in the bits.', labels: { list: ALL }, traces: ['lead-5'] }),
-            layer({ id: 'router-2', place: 'router', n: 2, plain: 'Reads header 2.', labels: { list: ALL, mark: { n: 2, kind: 'read' } }, traces: ['lead-5'] }),
+            layer({ id: 'router-1', place: 'router', n: 1, plain: 'Takes in the bits.', labels: { list: ALL }, traces: ['lead-4', 'lead-5'] }),
+            layer({ id: 'router-2', place: 'router', n: 2, plain: 'Reads header 2.', labels: { list: ALL, mark: { n: 2, kind: 'read' } }, traces: ['lead-5', 'lead-6'] }),
+            // Layer 2 has read its header and passed the rest up, so layer 3 sees five (lead-6).
             layer({
               id: 'router-3',
               place: 'router',
               n: 3,
               plain: 'Reads header 3 and works out where the message goes next.',
-              labels: { list: ALL, mark: { n: 3, kind: 'read' } },
-              traces: ['lead-5'],
+              labels: { list: from(3), mark: { n: 3, kind: 'read' } },
+              traces: ['lead-5', 'lead-6'],
             }),
-            layer({ id: 'router-2-down', place: 'router', n: 2, plain: 'Passes the message back down.', labels: { list: ALL }, traces: ['lead-5'] }),
-            layer({ id: 'router-1-down', place: 'router', n: 1, plain: 'Sends it on as bits.', labels: { list: ALL }, traces: ['lead-5'] }),
+            // Going back down, layer 2 adds its own header 2 for the next hop, as it did at the laptop (lead-3, lead-5).
+            layer({
+              id: 'router-2-down',
+              place: 'router',
+              n: 2,
+              plain: 'Adds its own header 2 in front, as a layer does going down.',
+              labels: { list: ALL, mark: { n: 2, kind: 'new' } },
+              traces: ['lead-3', 'lead-5'],
+            }),
+            layer({ id: 'router-1-down', place: 'router', n: 1, plain: 'Sends it on as bits.', labels: { list: ALL }, traces: ['lead-4', 'lead-5'] }),
             bits({ id: 'bits-to-server', from: 'router', to: 'server', plain: 'The bits cross the cable to the web server.', traces: ['lead-4', 'lead-5'] }),
           ],
-          backing: { traces: ['lead-4', 'lead-5', 'lead-6', 'why-2', 'term-relay'] },
+          backing: { traces: ['lead-3', 'lead-4', 'lead-5', 'lead-6', 'why-2', 'term-relay'] },
         },
         {
           id: 'decapsulation',
           title: 'Decapsulation',
-          sub: 'Each layer reads its twin’s header',
+          sub: 'Each header comes off at its twin',
           narrative:
-            'At the web server, the bundle climbs back up, layer by layer. Each layer reads the header **its twin** added, the one meant for it. Then it removes that header and passes the rest up. When layer 7 is done, only the message itself is left. Removing an outer header to reach what’s inside is called **decapsulation**.',
+            'At the web server, the bundle climbs back up, layer by layer. From layer 2 up, each layer reads the header **its twin** added, the one meant for it. Then it removes that header and passes the rest up. When layer 7 is done, only the message itself is left. Removing an outer header to reach what’s inside is called **decapsulation**.',
           deep: [
             {
               text: 'In X.200, what a layer carries for the layer above is a service-data-unit. It keeps its identity on the way between the twin layers above, and the layer carrying it does not interpret it.',
@@ -295,7 +304,7 @@ export default defineLesson({
           ],
           facts: [
             { label: 'Order', value: '1 up to 7', backing: { traces: ['lead-4'] } },
-            { label: 'Each layer', value: 'reads and removes its twin’s header', backing: { traces: ['lead-6'] } },
+            { label: 'Each header', value: 'read and removed by its twin', backing: { traces: ['lead-6'] } },
           ],
           events: [
             layer({ id: 'server-1', place: 'server', n: 1, plain: 'Takes in the bits.', labels: { list: ALL }, traces: ['lead-4', 'lead-6', 'term-decap'] }),
@@ -317,11 +326,11 @@ export default defineLesson({
           title: 'Peer Layers',
           sub: 'Each layer talks to its twin',
           narrative:
-            'Look at the whole trip again. Each layer only ever works with **the same layer** at the other end, its twin, through the headers they share. **Layers 4 to 7** work straight from your laptop to the web server. **Layers 1 to 3** work one hop at a time, so the router takes part in those. Twin layers like these are called **peer layers**.',
+            'Look at the whole trip again. Each header was written for **the same layer** on another machine, its twin, and read there. **Layers 4 to 7** work straight from your laptop to the web server. **Layers 1 to 3** work one hop at a time, so the router takes part in those. Twin layers like these are called **peer layers**.',
           deep: [
             {
               text: 'In X.200, how twin layers work together is governed by that layer’s protocol. Transport protocols, at layer 4, run only between the two end systems.',
-              cite: [x200('5.2.2.7'), x200('7.4.2.3')],
+              cite: [x200('5.2.2.7'), x200('6.1.2'), x200('7.4.2.3')],
             },
           ],
           facts: [
@@ -341,36 +350,41 @@ export default defineLesson({
           },
           {
             id: 'lead-2',
-            text: 'OSI is short for Open Systems Interconnection. Each layer has its own job, and each one except the top offers a service to the layer above it.',
-            cite: [x200('5.2.2.3'), MICROSOFT_INTRO_NAME],
+            text: 'OSI is short for Open Systems Interconnection, and the model is also called the **OSI Reference Model**. Each layer has its own job, and each one except the top offers a service to the layer above it.',
+            cite: [x200('1.1'), x200('1.2'), x200('5.2.2.3'), x200('5.2.2.5'), x200('6.2.1'), MICROSOFT_INTRO_NAME],
           },
           {
             id: 'lead-3',
-            text: 'On the way down, each layer adds its own control information in front of what the layer above handed it. That information is the layer’s **header**.',
+            text: 'On the way down, a layer adds its own control information to what the layer above handed it, usually as a **header** in front.',
             cite: [x200('5.6.1.1'), x200('5.6.1.3'), NIST_FOOTNOTE_6, rfc1122('1.3.3')],
           },
           {
             id: 'lead-4',
             text: 'The lowest layer sends the whole bundle as **bits** over the physical medium, such as a cable. At the other end, it is passed back up, layer by layer.',
-            cite: [x200('7.7.2'), x200('7.7.4.6.1'), NIST_2_1],
+            cite: [x200('5.2.2.4'), x200('7.7.2'), x200('7.7.4.6.1'), NIST_2_1],
           },
           {
             id: 'lead-5',
             text: 'In between, a **router** passes the message on, using only layers 1 to 3. Its work goes one hop at a time, from one machine to the next. It needs layer 3, the Network Layer, because that is the layer that routes messages across networks.',
-            cite: [x200('6.1.6'), x200('7.5.2.1'), x200('7.5.2.4'), NIST_2_1, rfc1122('1.1.1'), microsoft('Network layer', 'network-layer')],
+            cite: [x200('6.1.2'), x200('6.1.6'), x200('7.5.2.1'), x200('7.5.2.4'), NIST_2_1, rfc1122('1.1.1'), microsoft('Network layer', 'network-layer')],
           },
           {
             id: 'lead-6',
-            text: 'Going up, each layer reads the header its **twin** added, the control information meant for it. Then it passes the rest up to the layer above without reading it.',
-            cite: [x200('5.6.1.1'), x200('5.6.1.4')],
+            text: 'Going up, a layer reads the control information its **twin** added, usually as a header. Then it passes the rest up to the layer above without reading it.',
+            cite: [x200('5.6.1.1'), x200('5.6.1.4'), NIST_FOOTNOTE_6, rfc1122('1.3.3')],
           },
           { id: 'lead-7', text: 'A header works like a note stuck on a parcel, written for the same layer at the other end.', analogy: true },
         ],
         terms: [
-          { id: 'term-layer', idea: 'One job in the stack, with its own place in the order', name: 'Layer', cite: [x200('5.2.2.1'), x200('6.1.2')] },
+          {
+            id: 'term-layer',
+            idea: 'One job in the stack, with its own place in the order',
+            name: 'Layer',
+            cite: [x200('5.2.2.1'), x200('5.2.2.5'), x200('6.1.2'), x200('6.2.1')],
+          },
           {
             id: 'term-header',
-            idea: 'The information a layer puts in front of what it carries, such as addresses',
+            idea: 'The information a layer puts in front of what it carries',
             name: 'Header',
             cite: [NIST_FOOTNOTE_6, rfc1122('1.3.3')],
           },
@@ -386,31 +400,36 @@ export default defineLesson({
             name: 'Decapsulation',
             cite: [CISCO_DECAP, cite('rfc-2003', '1'), cite('rfc-2003', '3')],
           },
-          { id: 'term-peer', idea: 'The same layer on another machine, working with it by that layer’s own rules', name: 'Peer layer', cite: [x200('5.2.1.3'), x200('5.2.2.7')] },
+          {
+            id: 'term-peer',
+            idea: 'The same layer on another machine, working with it by that layer’s own rules',
+            name: 'Peer layer',
+            cite: [x200('5.2.1.3'), x200('5.2.2.7'), x200('6.1.3')],
+          },
           { id: 'term-relay', idea: 'A machine in the middle that only passes data on to other machines', name: 'Relay', cite: [x200('6.1.6')] },
         ],
         pattern: {
           id: 'pattern',
           names: ['Application Layer', 'Encapsulation', 'Physical Layer', 'Relay', 'Decapsulation', 'Peer Layers'],
           note: 'Down the layers at the sender, across each link, up the layers at the receiver.',
-          cite: [x200('6.1.6'), NIST_2_1, CISCO_DECAP, cite('rfc-2003', '1')],
+          cite: [x200('5.2.2.4'), x200('6.1.6'), NIST_2_1, CISCO_DECAP, cite('rfc-2003', '1')],
         },
         why: [
           {
             id: 'why-1',
             text: 'Why split the job? Each layer can use the service of the layer below without knowing the details of how that service is done.',
-            cite: [x200('5.2.2.3'), MICROSOFT_INTRO_SHIELD],
+            cite: [x200('5.2.2.3'), x200('6.2.1'), x200('7.4.2.1'), x200('7.5.2.3'), MICROSOFT_INTRO_SHIELD],
           },
           {
             id: 'why-2',
             text: 'Layers 4 to 7 work only between the two end machines: the Transport Layer’s protocols run only between them, and layers 5 to 7 sit on top. So a router never needs to read those headers.',
-            cite: [x200('7.4.2.3')],
+            cite: [x200('5.2.2.3'), x200('6.1.2'), x200('6.1.6'), x200('7.4.2.3'), x200('7.5.2.4')],
           },
         ],
         deep: [
           {
             id: 'deep-1',
-            text: 'In X.200, a header holds **protocol-control-information**, which twin layers exchange to coordinate. A layer’s whole unit is its **protocol-data-unit**: that information plus, possibly, data from above.',
+            text: 'X.200 calls a layer’s control information **protocol-control-information** (PCI), which twin layers exchange to coordinate. The PCI plus, possibly, data from above makes the layer’s **protocol-data-unit**.',
             cite: [x200('5.6.1.1'), x200('5.6.1.3')],
           },
           {
@@ -420,7 +439,7 @@ export default defineLesson({
           },
           {
             id: 'deep-3',
-            text: 'A TCP **segment** is a TCP header followed by application data. An IP **datagram**, or **packet**, is an IP header followed by transport data. A **frame** is a link-layer header followed by a packet.',
+            text: 'A **segment** is a TCP header followed by application data. An IP **datagram** is an IP header followed by transport data; it travels as one **packet**, or as several when fragmented. A **frame** is a link-layer header followed by a packet.',
             cite: [rfc1122('1.3.3', true), NIST_FOOTNOTE_6],
           },
         ],
@@ -437,19 +456,19 @@ export default defineLesson({
           prompt: 'Going down the layers on the sender, what does each layer do?',
           options: [
             {
-              text: 'Adds its own header',
-              feedback: 'Right. Each layer adds its own control information, its header, to what the layer above handed it.',
-              cite: [x200('5.6.1.3'), NIST_2_1],
+              text: 'Adds its own control information, usually a header',
+              feedback: 'Right. Going down, a layer adds its own control information to what the layer above handed it, usually as a header in front.',
+              cite: [x200('5.6.1.3'), NIST_2_1, NIST_FOOTNOTE_6, rfc1122('1.3.3')],
             },
             {
               text: 'Removes the header of the layer above',
-              feedback: 'Not quite. Going down, a layer doesn’t read or change what the layer above handed it. It passes it on whole.',
+              feedback: 'Not quite. Going down, a layer doesn’t read or change what the layer above handed it.',
               cite: [x200('5.6.1.4')],
             },
             {
               text: 'Sends it straight to the cable',
-              feedback: 'Not quite. Each layer gets its service from the layer just below it, so the message goes down one layer at a time.',
-              cite: [x200('5.2.2.3')],
+              feedback: 'Not quite. Each layer above the lowest gets its service from the layer just below it, so the message goes down one layer at a time.',
+              cite: [x200('5.2.2.3'), x200('5.2.2.4')],
             },
           ],
           answer: 0,
@@ -461,17 +480,17 @@ export default defineLesson({
             {
               text: 'Layers 1 to 3',
               feedback: 'Right. A machine that only passes data on needs just the lower layers, up to the Network Layer, which routes messages across networks.',
-              cite: [x200('6.1.6'), NIST_2_1],
+              cite: [x200('6.1.2'), x200('6.1.6'), x200('7.5.2.1'), NIST_2_1],
             },
             {
               text: 'All seven',
               feedback: 'Not quite. Transport protocols, at layer 4, run only between the two end machines, so the router in the middle has no part in them.',
-              cite: [x200('7.4.2.3')],
+              cite: [x200('6.1.2'), x200('7.4.2.3')],
             },
             {
               text: 'Only layer 1',
               feedback: 'Not quite. To send the message on toward the right network, it needs layer 3, the Network Layer, which routes messages across networks.',
-              cite: [x200('7.5.2.1'), NIST_2_1],
+              cite: [x200('6.1.2'), x200('7.5.2.1'), NIST_2_1],
             },
           ],
           answer: 0,

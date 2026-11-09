@@ -2,13 +2,14 @@
 import { afterEach, expect, test } from 'vitest';
 import { OSI_WORDS } from '../../art/scenes/osi-stacks';
 import { showSweep } from '../../test/show-sweep';
-import { citationsOf } from '../cited';
+import { type CitedPart, citationsOf, citedPartsOf } from '../cited';
 import { checkStructure } from '../define';
 import { checkLimits } from '../limits';
 import type { Backing, Lesson, MessageEvent, MessageLabels, SceneEvent } from '../schema';
+import type { Citation } from '../sources';
 // `src/test/lesson-references.ts` re-exports `textsOf` from here, but it also loads the registry, whose fact-check gate
 // refuses this lesson until its report exists; the function is the same.
-import { textsOf } from '../texts';
+import { textsAt, textsOf } from '../texts';
 import { networkingTrack } from '../tracks';
 import osiModel from './osi-model';
 
@@ -61,8 +62,16 @@ test('the headers go on outermost-last going down and come off going up', () => 
   expect(pairs(1)).toEqual([6, 5, 4, 3, 2].map((n) => [from(n), { n, kind: 'new' }]));
   // Layer 1 adds none, and the bits carry all six.
   expect(pairs(2)).toEqual([[from(2)], [from(2)]]);
-  // The router reads headers 2 and 3, and the message leaves it with the same six.
-  expect(pairs(3)).toEqual([[from(2)], [from(2), { n: 2, kind: 'read' }], [from(2), { n: 3, kind: 'read' }], [from(2)], [from(2)], [from(2)]]);
+  // The router's layer 2 reads header 2 and passes the rest up, so layer 3 sees five (lead-6). Going back down, layer 2
+  // adds its own header 2 for the next hop (lead-3, lead-5), and the message leaves with six again.
+  expect(pairs(3)).toEqual([
+    [from(2)],
+    [from(2), { n: 2, kind: 'read' }],
+    [from(3), { n: 3, kind: 'read' }],
+    [from(2), { n: 2, kind: 'new' }],
+    [from(2)],
+    [from(2)],
+  ]);
   // The server's layer 1 takes the bits; each layer above reads its header, the outermost left, and it comes off.
   expect(pairs(4)).toEqual([[from(2)], ...[2, 3, 4, 5, 6, 7].map((n) => [from(n), { n, kind: 'read' }])]);
   expect(pairs(5)).toEqual(Array.from({ length: 7 }, () => [[]]));
@@ -96,7 +105,8 @@ test('Learn has the spec’s ids', () => {
 test('peer and router rest on the sections that say them, and RFC 1122 is cited by the page each section starts on', () => {
   const sections = (cites: { source: string; section: string }[]) => cites.map((c) => `${c.source} ${c.section}`);
   // X.200 5.2.1.3 defines peer-(N)-entities; RFC 1122 §1.1.1 names the machines joining networks "IP routers".
-  expect(sections(unit.learn.terms.find((t) => t.id === 'term-peer')!.cite)).toEqual(['itu-x200 5.2.1.3', 'itu-x200 5.2.2.7']);
+  // 6.1.3's Figure 11 draws the peer protocol between two open systems: the twin is on another machine.
+  expect(sections(unit.learn.terms.find((t) => t.id === 'term-peer')!.cite)).toEqual(['itu-x200 5.2.1.3', 'itu-x200 5.2.2.7', 'itu-x200 6.1.3']);
   expect(sections(unit.learn.lead.find((s) => s.id === 'lead-5')!.cite)).toContain('rfc-1122 1.1.1');
   // rfc1122.html has no id below the top-level sections, but it marks every page.
   const rfc1122 = [...new Map(citationsOf(unit).filter((c) => c.source === 'rfc-1122').map((c) => [c.section, c.url])).entries()].sort();
@@ -116,7 +126,10 @@ test('every X.200 link names a PDF page', () => {
 
 const tracesOf = (backing: Backing | undefined): string[] => (backing !== undefined && 'traces' in backing ? backing.traces : []);
 
-/** Each part of Watch and the scene: what it says, and the traces that back it (a step's fact or event takes its step's too). */
+/**
+ * Each part of Watch and the scene: what it says, and the traces that back it. A step's fact or event is judged by its
+ * own traces, as the fact-checker reads its Traces line; the step's narrative, title and sub by the step's.
+ */
 function watchParts(): { at: string; texts: string[]; traces: string[] }[] {
   const { scene, overview } = unit;
   return [
@@ -128,11 +141,11 @@ function watchParts(): { at: string; texts: string[]; traces: string[] }[] {
       const own = tracesOf(s.backing);
       return [
         { at: `step "${s.id}"`, texts: [s.title, s.sub, s.narrative], traces: own },
-        ...s.facts.map((f) => ({ at: `step "${s.id}" fact "${f.label}"`, texts: [f.label, f.value], traces: [...tracesOf(f.backing), ...own] })),
+        ...s.facts.map((f) => ({ at: `step "${s.id}" fact "${f.label}"`, texts: [f.label, f.value], traces: tracesOf(f.backing) })),
         ...s.events.map((e) => ({
           at: `step "${s.id}" event "${e.id}"`,
           texts: e.type === 'table' ? [e.summary] : textsOf({ log: e.log, plain: e.plain }),
-          traces: [...tracesOf(e.backing), ...own],
+          traces: tracesOf(e.backing),
         })),
       ];
     }),
@@ -150,15 +163,96 @@ function learnTexts(): Map<string, string> {
   ]);
 }
 
-test('Watch’s "cable" and "hop" rest on Learn statements that say them', () => {
+/** The Watch parts that say `word` but trace no Learn part that says it. */
+function unbackedFor(word: RegExp): string[] {
   const learn = learnTexts();
-  for (const word of [/\bcable\b/i, /\bhop\b/i]) {
-    const saying = watchParts().filter((p) => p.texts.some((t) => word.test(t)));
-    // Watch says each word somewhere, so the check below is not empty.
-    expect(saying.length, String(word)).toBeGreaterThan(0);
-    const unbacked = saying.filter((p) => !p.traces.some((id) => word.test(learn.get(id) ?? ''))).map((p) => `${p.at} (traces ${p.traces.join(', ')})`);
-    expect(unbacked, String(word)).toEqual([]);
+  const saying = watchParts().filter((p) => p.texts.some((t) => word.test(t)));
+  // Watch says each word somewhere, so the check is not empty.
+  expect(saying.length, String(word)).toBeGreaterThan(0);
+  return saying.filter((p) => !p.traces.some((id) => word.test(learn.get(id) ?? ''))).map((p) => `${p.at} (traces ${p.traces.join(', ')})`);
+}
+
+test('Watch’s "cable" and "hop" rest on Learn statements that say them', () => {
+  for (const word of [/\bcable\b/i, /\bhop\b/i]) expect(unbackedFor(word), String(word)).toEqual([]);
+});
+
+test('Watch’s bits, reading, adding, jobs and reference model rest on Learn statements that say them', () => {
+  // The router's events and facts, and the scene's plate and legend, were the parts the first fact-check found tracing
+  // Learn statements that don't say these.
+  for (const word of [/\bbits\b/i, /\breads?\b/i, /\badds?\b/i, /\bjobs?\b/i, /\breference model\b/i]) {
+    expect(unbackedFor(word), String(word)).toEqual([]);
   }
+  // Going back down, the router's layer 2 adds a header of its own: nothing says it replaces one.
+  expect(readerTexts(osiModel).filter((t) => /\breplac/i.test(t))).toEqual([]);
+});
+
+/** What a cited part says, without its citations. */
+const saidBy = (p: CitedPart): string[] =>
+  textsAt(p.value)
+    .filter((t) => !t.path.startsWith('cite'))
+    .map((t) => t.text);
+
+test('every part that gives a layer’s number cites X.200 6.1.2, the one section that numbers the layers', () => {
+  const numbering = citedPartsOf(osiModel).filter((p) => saidBy(p).some((t) => /\blayers? [1-7]\b/i.test(t)));
+  expect(numbering.length).toBeGreaterThan(6);
+  expect(numbering.filter((p) => !p.cite.some((c) => c.source === 'itu-x200' && c.section === '6.1.2')).map((p) => p.at)).toEqual([]);
+});
+
+test('each clause the first fact-check found on one source cites an X.200 section that states it', () => {
+  const { learn } = unit;
+  const statement = (id: string): Citation[] => [...learn.lead, ...learn.terms, ...learn.why, learn.pattern].find((s) => s.id === id)!.cite;
+  const option = (q: string, i: number): Citation[] => unit.practice.find((p) => p.id === q)!.options[i]!.cite;
+  const wanted: [string, Citation[], string[]][] = [
+    // The expansion of OSI (1.2) and the Reference Model's name (1.1); each layer's own functions (5.2.2.5, 6.2.1 c and d).
+    ['lead-2', statement('lead-2'), ['1.1', '1.2', '5.2.2.5', '6.2.1']],
+    // Each layer above the lowest works through the one below, so at the far end the bundle comes back up layer by layer.
+    ['lead-4', statement('lead-4'), ['5.2.2.4']],
+    ['term-layer', statement('term-layer'), ['5.2.2.5', '6.2.1']],
+    ['pattern', statement('pattern'), ['5.2.2.4']],
+    // Principle f: a layer can be redesigned without changing the services the layers beside it expect; 7.4.2.1 and
+    // 7.5.2.3 say the same of the Transport and Network Layers.
+    ['why-1', statement('why-1'), ['6.2.1', '7.4.2.1', '7.5.2.3']],
+    // A system that only passes data on need not contain the higher layers (5.2.2.3's NOTE, 6.1.6's Figure 12), and any
+    // relaying is in the Network Layer or below (7.5.2.4).
+    ['why-2', statement('why-2'), ['5.2.2.3', '6.1.2', '6.1.6', '7.4.2.3', '7.5.2.4']],
+    ['router-layers, the right option', option('router-layers', 0), ['6.1.2', '6.1.6', '7.5.2.1']],
+    ['going-down, "Sends it straight to the cable"', option('going-down', 2), ['5.2.2.3', '5.2.2.4']],
+  ];
+  for (const [at, cites, sections] of wanted) {
+    expect(
+      cites.filter((c) => c.source === 'itu-x200').map((c) => c.section),
+      at,
+    ).toEqual(expect.arrayContaining(sections));
+  }
+});
+
+test('nothing said in X.200’s name uses "header", a word X.200 never uses', () => {
+  const inX200sName = citedPartsOf(osiModel).filter((p) => saidBy(p).some((t) => /\bX\.200\b/.test(t)));
+  expect(inX200sName.length).toBeGreaterThan(4);
+  expect(inX200sName.filter((p) => saidBy(p).some((t) => /\bheaders?\b/i.test(t))).map((p) => p.at)).toEqual([]);
+});
+
+test('Learn and Practice say a layer’s control information is usually a header in front, not always', () => {
+  const lead = (id: string) => unit.learn.lead.find((s) => s.id === id)!.text;
+  const right = unit.practice.find((q) => q.id === 'going-down')!.options[0]!;
+  // X.200 sets no position for it (Figure 9, Note 2), and NIST says only "typically" a header.
+  for (const text of [lead('lead-3'), lead('lead-6'), right.text, right.feedback]) expect(text).toMatch(/\busually\b/);
+  // Layer 1 adds no header in Watch, so lead-3 does not say each or every layer does.
+  expect(lead('lead-3')).not.toMatch(/\b(each|every) layer\b/i);
+});
+
+test('the first fact-check’s precision fixes hold', () => {
+  const going = unit.practice.find((q) => q.id === 'going-down')!.options;
+  // A layer may split what the layer above handed it (segmenting, X.200 5.8.1.9), so nothing says it stays whole.
+  expect(going[1]!.feedback).not.toMatch(/\bwhole\b/);
+  // The lowest layer has no layer below to serve it (X.200 5.2.2.4).
+  expect(going[2]!.feedback).toMatch(/\babove the lowest\b/);
+  // RFC 1122 §1.3.3: a packet may be a whole datagram or a fragment of one.
+  const deep3 = unit.learn.deep.find((p) => p.id === 'deep-3')!.text;
+  expect(deep3).not.toMatch(/datagram\*\*, or \*\*packet/);
+  expect(deep3).toMatch(/\bfragment/);
+  // Step 6 says what its traces say: a header is written for its twin and read there, not that a layer works only with it.
+  expect(unit.steps[5]!.narrative).not.toMatch(/\bonly ever\b/);
 });
 
 /** A copy of the lesson with one change to the event `id`. */
