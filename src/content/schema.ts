@@ -36,7 +36,7 @@ const count = z.number().int().min(0);
 export const messageKindSchema = z.enum(['request', 'response', 'control', 'broadcast', 'encrypted']);
 export const certTagSchema = z.enum(CERT_TAG_IDS);
 /** The scene figures (`FigureId`); `parts.test.ts` keeps this list and `FIGURE_PARTS` the same. */
-export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map'] satisfies FigureId[]);
+export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map', 'osi'] satisfies FigureId[]);
 
 export const sourceSchema = z.strictObject({ label: text, url: httpsUrl });
 export const factSchema = z.strictObject({ label: text, value: text });
@@ -120,6 +120,24 @@ export const boardSchema = z.strictObject({
   third: z.strictObject({ who: text, addr: text, mode: z.enum(['net', 'bcast', 'cmp']) }).optional(),
 });
 
+/**
+ * The headers a message has at one moment (OSI Model): the layers of the headers it carries, lowest (outermost) first,
+ * and optionally the one a device has just added (`new`) or read (`read`). Layer 1 is the wire and has no header.
+ */
+export const messageLabelsSchema = z
+  .strictObject({
+    list: z
+      .array(z.int().min(2).max(7))
+      .refine((list) => list.every((n, i) => i === 0 || n > list[i - 1]!), {
+        message: 'must list distinct layers 2 to 7, lowest (outermost) first',
+      }),
+    mark: z.strictObject({ n: z.int().min(2).max(7), kind: z.enum(['new', 'read']) }).optional(),
+  })
+  .refine((labels) => labels.mark === undefined || labels.list.includes(labels.mark.n), {
+    message: 'mark.n must be one of the layers in list',
+    path: ['mark'],
+  });
+
 export const messageEventSchema = z.strictObject({
   type: z.literal('message'),
   id: text,
@@ -154,6 +172,8 @@ export const messageEventSchema = z.strictObject({
   /** The event in plain words: the log's `plain` column and the live region read it. */
   plain: text,
   cues: z.array(cueSchema).optional(),
+  /** The headers the message has now; only a figure that shows them (`FigureParts.labels`) takes it. */
+  labels: messageLabelsSchema.optional(),
   backing: backingSchema.optional(),
 });
 
@@ -163,6 +183,7 @@ export const noteEventSchema = z.strictObject({
   log: rowSchema,
   plain: text,
   cues: z.array(cueSchema).optional(),
+  labels: messageLabelsSchema.optional(),
   board: boardSchema.optional(),
   /**
    * The log's glyph for the note, a message kind's, when the note stands for something the figure sends: Subnetting
@@ -239,6 +260,8 @@ export const panelSchema = z.discriminatedUnion('type', [
   z.strictObject({ type: z.literal('table'), table: tableDefSchema }),
   z.strictObject({ type: z.literal('rules'), rules: tableDefSchema, conns: tableDefSchema }),
   z.strictObject({ type: z.literal('bits') }),
+  /** The headers a message has at each moment (`labels` on its events); the OSI Model figure shows them. */
+  z.strictObject({ type: z.literal('labels') }),
 ]);
 
 /** The log under the scene. A column keyed `plain` shows each event's `plain` text; the console adds `#` itself. */
@@ -445,6 +468,7 @@ export type Cue = z.infer<typeof cueSchema>;
 export type Field = z.infer<typeof fieldSchema>;
 export type Layer = z.infer<typeof layerSchema>;
 export type Packet = z.infer<typeof packetSchema>;
+export type MessageLabels = z.infer<typeof messageLabelsSchema>;
 export type Board = z.infer<typeof boardSchema>;
 export type MessageEvent = z.infer<typeof messageEventSchema>;
 export type NoteEvent = z.infer<typeof noteEventSchema>;

@@ -1,6 +1,7 @@
 import { drawDhcp } from './dhcp';
 import { drawFirewall } from './firewall';
 import { drawNetMap } from './net-map';
+import { drawOsi } from './osi';
 import { drawSubnet } from './subnet';
 import type { DrawnFigure, FigureId } from './types';
 
@@ -10,6 +11,7 @@ const DRAW: Record<FigureId, () => DrawnFigure> = {
   subnet: drawSubnet,
   firewall: drawFirewall,
   'net-map': drawNetMap,
+  osi: drawOsi,
 };
 
 /** Draws a scene figure at build time: its SVG markup and the data its driver reads. */

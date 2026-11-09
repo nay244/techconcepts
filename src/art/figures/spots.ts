@@ -166,10 +166,23 @@ function firewall() {
   return figure("wall", "RULES · TOP DOWN", out.join(""), "A brick wall with a gate in the middle and a list of three rules on its right half. A lit packet marked 443 passes through the gate; a packet marked 23 waits outside with a red stop mark.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall'] as const;
+// ---------- Lesson 01, OSI Model: seven blocks in a stack, layer 4 lit ----------
+function osi() {
+  const out = [], BP = { x: -32, y: -22, w: 64, d: 44, r: 4 }, LH = 8, STEP = 10;
+  out.push(S(k.slabOf(k.insetPlan(BP, -3), 0, 2, P, 6, 0.5), { tone: "lo" }));
+  for (let n = 1; n <= 7; n++) {
+    const z = 2 + (n - 1) * STEP, lit = n === 4;
+    const slab = lit ? S(k.slabOf(BP, z, LH, P, 6, 0.9), { tone: "hi", lit: true }) : S(k.slabOf(BP, z, LH, P, 6, 0.9), { tone: "mid", inner: L(k.sideSeam(BP, z + LH - 1.6, P, 6), { tone: "faint" }) });
+    const num = onFaceY(BP.y + BP.d, `<text class="lm-pkt-t${lit ? " lm-on-lit" : ""}" x="${BP.x + 6}" y="${n1(-(z + 2.6))}">${n}</text>`);
+    out.push(`<g class="lm-osi-block" data-layer="${n}">${slab}${num}</g>`);
+  }
+  return figure("osi", "OSI · SEVEN LAYERS", out.join(""), "A stack of seven solid blocks, one for each layer, numbered 1 at the bottom to 7 at the top. Block 4 is lit.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

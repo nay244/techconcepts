@@ -103,6 +103,17 @@ function checkScene(c: UnitContext, at: string): void {
     if (!parts.layers.includes(layer)) issues.push(`${at}: layer "${layer}" is not one the ${figure} figure has.`);
   }
   checkStart(c, at);
+  if (parts.words !== undefined) {
+    for (const word of parts.words) {
+      if (!Object.hasOwn(scene.labels, word)) issues.push(`${at}: the scene's labels need "${word}" for the ${figure} figure.`);
+    }
+    for (const word of Object.keys(scene.labels)) {
+      if (!parts.words.includes(word)) issues.push(`${at}: the scene's labels give "${word}", which the ${figure} figure does not show.`);
+    }
+  }
+  if (scene.panel?.type === 'labels' && !parts.labels) {
+    issues.push(`${at}: the labels panel needs a figure that shows a message's headers; the ${figure} figure does not.`);
+  }
   if (figure === 'net-map' && scene.title.length > MAX_NET_MAP_TITLE) {
     issues.push(`${at}: the scene title is ${scene.title.length} characters; the limit is ${MAX_NET_MAP_TITLE} on the net-map figure.`);
   }
@@ -161,6 +172,17 @@ function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext): void
     if (type === undefined) c.issues.push(`${where}: cue "${cue}" is not one the ${c.figure} figure has.`);
     else if (type === 'text' && arg === undefined) c.issues.push(`${where}: cue "${cue}" needs an arg.`);
     else if (type === 'flag' && arg !== undefined) c.issues.push(`${where}: cue "${cue}" is a flag and takes no arg.`);
+    else if (type === 'text' && arg !== undefined) {
+      const allowed = Object.hasOwn(c.parts.args ?? {}, cue) ? c.parts.args![cue] : undefined;
+      if (allowed === undefined || allowed.includes(arg)) continue;
+      if (allowed.length > 4) {
+        c.issues.push(`${where}: cue "${cue}" arg "${arg}" is not one the ${c.figure} figure can show.`);
+      } else {
+        const quoted = allowed.map((a) => `"${a}"`);
+        const list = quoted.length === 1 ? quoted[0]! : `${quoted.slice(0, -1).join(', ')} or ${quoted.at(-1)}`;
+        c.issues.push(`${where}: cue "${cue}" takes ${list}, not "${arg}".`);
+      }
+    }
   }
 }
 
@@ -198,6 +220,11 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   checkLogRow(e.log, where, c);
   checkCues(e.cues, where, c);
 
+  if (e.labels !== undefined) {
+    if (!c.parts.labels) issues.push(`${where} has labels, but the ${figure} figure shows none.`);
+    else if (c.unit.scene.panel?.type !== 'labels') issues.push(`${where} has labels, but the unit's panel is not a labels panel.`);
+  }
+
   if (e.type === 'note') {
     if (e.board !== undefined && !c.parts.board) issues.push(`${where} has a board, but the ${figure} figure has none.`);
     // A glyph's colour and shape never say what it is alone: the legend says it in words.
@@ -212,6 +239,9 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   };
   place('is sent from', e.from);
   place('is sent to', e.to);
+  if (c.parts.routes !== undefined && !c.parts.routes.includes(`${e.from}>${e.to}`)) {
+    issues.push(`${where} rides from "${e.from}" to "${e.to}", a way the ${figure} figure does not have.`);
+  }
 
   if (e.outcome === 'dropped' && e.dropAt === undefined) issues.push(`${where} is dropped, so it needs "dropAt".`);
   if (e.outcome !== 'dropped' && e.dropAt !== undefined) issues.push(`${where} has "dropAt" but is not dropped.`);

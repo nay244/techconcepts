@@ -166,7 +166,7 @@ test('the board is a real table: a caption, column headers and a header for each
 
 /** The derived state at a step, with the board the latest note set. */
 function derivedWith(board: Board | null, step = 3): DerivedState {
-  return { unit: 0, slot: { unit: 0, kind: 'step', step }, log: [], tables: {}, cues: [], board, active: null, events: [] };
+  return { unit: 0, slot: { unit: 0, kind: 'step', step }, log: [], tables: {}, cues: [], board, labels: null, active: null, events: [] };
 }
 
 test('the unit’s bits panel shows the latest board a note has set', () => {

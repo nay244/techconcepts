@@ -154,6 +154,7 @@ test('the Overview applies nothing: tables at their starting rows, no log, cues,
     tables: { t: { rows: [], highlight: null, missed: [] } },
     cues: [],
     board: null,
+    labels: null,
     active: null,
     events: [],
   });
@@ -457,3 +458,18 @@ test.each([
   ['?a=1&step=4', 4],
   ['step=3', 3],
 ])('parseStepParam(%j) is %j in a one-unit lesson', (q, want) => expect(parseStepParam(q, ONE)).toBe(want));
+
+test('the latest labels carry across steps, and none before any', () => {
+  const L1 = { list: [7], mark: { n: 7, kind: 'new' as const } };
+  const input = makeLesson();
+  const n1 = input.units[0]!.steps[2]!.events[1]!;
+  if (n1.type !== 'note') throw new Error('n1 should be a note');
+  n1.labels = L1;
+  const L = build(input);
+
+  for (const [p, i] of [[0, 0], [1, 1], [2, 2], [3, 0], [3, 1]] as const) expect(deriveState(L, p, i).labels).toBeNull();
+  expect(deriveState(L, 3, 2).labels).toEqual(L1);
+  expect(deriveState(L, 4, 0).labels).toEqual(L1); // a later step, none of its events played
+  expect(deriveState(L, 4, 1).labels).toEqual(L1); // an event without labels leaves them
+  expect(deriveState(L, 7, 0).labels).toEqual(L1);
+});

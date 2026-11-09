@@ -2,6 +2,7 @@ import type { Panel, SceneEvent, TableEvent } from '../../content/schema';
 import { appliedEvents, type DerivedState } from '../../engine/timeline';
 import { landedEvent, type PanelMark } from '../../scenes/driver';
 import { BitsBoard } from './BitsBoard';
+import { LabelsPanel } from './LabelsPanel';
 import { RulesPanel } from './RulesPanel';
 import { TablePanel } from './TablePanel';
 
@@ -26,13 +27,17 @@ function lastTableEvent(derived: DerivedState, tableId: string): TableEvent | nu
 }
 
 /**
- * What sits below the scene: a device's table, Subnetting's bits board, or a
- * firewall's rule list and the connections it remembers.
+ * What sits below the scene: a device's table, Subnetting's bits board, the
+ * OSI Model's strip of the message's headers, or a firewall's rule list and the
+ * connections it remembers.
  *
  * The bits board shows the latest board a note has set, and while a note
  * plays, that note's board: the bits change as the figure starts the note, as
  * in the mockup, not once it has played. It is remounted for each step, so a
  * step's board starts out settled and only the changes within the step come in.
+ *
+ * The headers strip shows the `labels` of the note or message that plays, and
+ * otherwise the latest ones an applied event set.
  *
  * The rule list shows the marks the driver reports while a visit plays. With
  * none reported, it shows the marks of the visit or reply that landed last,
@@ -52,6 +57,10 @@ export function UnitPanel({ panel, derived, marks, playing = null }: UnitPanelPr
     const { slot } = derived;
     const board = playing?.type === 'note' && playing.board !== undefined ? playing.board : derived.board;
     return <BitsBoard key={`${slot.unit}:${slot.kind}:${slot.step}`} board={board} />;
+  }
+  if (panel?.type === 'labels') {
+    const labels = (playing?.type === 'note' || playing?.type === 'message') && playing.labels !== undefined ? playing.labels : derived.labels;
+    return <LabelsPanel labels={labels} />;
   }
   if (panel?.type !== 'table') return null;
   const state = Object.hasOwn(derived.tables, panel.table.id) ? derived.tables[panel.table.id]! : null;

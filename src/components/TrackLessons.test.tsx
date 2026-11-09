@@ -52,9 +52,9 @@ test('every lesson is listed by part: ready ones as cards that link, the rest as
   render(lessons());
   expectEverything();
   expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(networkingTrack.parts.map((p) => p.title));
-  expect(shownTitles()).toEqual(['Subnetting', 'DHCP', 'Firewalls']);
+  expect(shownTitles()).toEqual(['OSI Model', 'Subnetting', 'DHCP', 'Firewalls']);
   expect(screen.getByRole('link', { name: 'Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
-  expect(screen.queryByRole('link', { name: 'OSI Model' })).toBeNull();
+  expect(screen.getByRole('link', { name: 'OSI Model' })).toHaveAttribute('href', '/networking/osi-model');
 
   // A part with ready lessons says how many; a part with none says they are all coming soon.
   const between = screen.getByRole('region', { name: 'Getting between networks' });
@@ -62,7 +62,7 @@ test('every lesson is listed by part: ready ones as cards that link, the rest as
   expect(between.querySelector('.part-c')).toHaveTextContent('2 of 3 ready');
   expect(within(between).getAllByText('Coming soon')).toHaveLength(1);
   const big = screen.getByRole('region', { name: 'The big picture' });
-  expect(big.querySelector('.part-c')).toHaveTextContent('2 lessons, coming soon');
+  expect(big.querySelector('.part-c')).toHaveTextContent('1 of 2 ready');
   const local = screen.getByRole('region', { name: 'Addresses & the local network' });
   expect(local.querySelector('.part-c')).toHaveTextContent('4 lessons, coming soon');
   expect(within(local).getByText('IP Address').closest('li')).toHaveTextContent('03IP Address');
@@ -192,7 +192,7 @@ test('a chip filters to the lessons for that exam and keeps the URL in step with
 
   await userEvent.click(chip('Cisco CCNA'));
   expect(window.location.search).toBe('?for=ccna');
-  expect(screen.getByRole('status')).toHaveTextContent('Showing 3 lessons for Cisco CCNA.');
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 4 lessons for Cisco CCNA.');
 
   await userEvent.click(chip('SOC Analyst'));
   expect(window.location.search).toBe('?for=soc-analyst');
@@ -210,9 +210,9 @@ test('?for= on arrival filters once the island has started', () => {
   window.history.replaceState(null, '', '/networking?for=network-plus');
   render(lessons());
   expect(pressed()).toEqual(['CompTIA Network+']);
-  expect(shownTitles()).toEqual(['Subnetting', 'DHCP', 'Firewalls']);
+  expect(shownTitles()).toEqual(['OSI Model', 'Subnetting', 'DHCP', 'Firewalls']);
   expect(screen.queryByText('Router')).toBeNull();
-  expect(screen.getByRole('status')).toHaveTextContent('Showing 3 lessons for CompTIA Network+.');
+  expect(screen.getByRole('status')).toHaveTextContent('Showing 4 lessons for CompTIA Network+.');
 });
 
 test('an unknown ?for= shows everything, with no exam chip pressed', () => {
@@ -304,5 +304,5 @@ test('with storage blocked every lesson shows, not started', () => {
   });
   render(lessons());
   expectEverything();
-  expect(screen.getAllByText('Start lesson')).toHaveLength(3);
+  expect(screen.getAllByText('Start lesson')).toHaveLength(4);
 });

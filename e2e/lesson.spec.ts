@@ -27,8 +27,11 @@ import {
 const LESSONS = readyLessons();
 requireLessons(LESSONS);
 
-/** Subnetting's Watch is about the address itself, so it has no Network / Sequence switch (spec §6.3, §12). */
-const NO_SEQUENCE = new Set(['subnetting']);
+/**
+ * Subnetting's Watch is about the address itself, and the OSI Model's scene has the Network view only (its figure is
+ * the layers, not a message between machines), so neither has a Network / Sequence switch (spec §6.3, §12).
+ */
+const NO_SEQUENCE = new Set(['subnetting', 'osi-model']);
 
 /** How long a Play run may take: the longest first unit runs about 46 s at 1× and 23 s at 2×. */
 const RUN_TIMEOUT = 120_000;
@@ -343,6 +346,17 @@ test.describe('lesson specifics', () => {
         'The router writes down that 192.168.1.100 belongs to the laptop for 24 hours.',
       { timeout: 30_000 },
     );
+  });
+
+  test('OSI Model: the Data Link Layer, once played, shows six headers, layer 2 just added', async ({ page }) => {
+    const osi = lessonNamed('osi-model');
+    // Steps 2 to 6 are layers 6 to 2 on the laptop, one each; step 6 is layer 2's.
+    await open(page, `${osi.path}?step=6`);
+    await expect(page.locator('[aria-live="polite"][data-announce]')).toHaveText(/adds header 2 in front\.$/, { timeout: 30_000 });
+    await expect(page.locator('.labels .sr-only')).toHaveText('Headers on the message: layer 2 (just added), 3, 4, 5, 6, 7, then the data.');
+    // The log keeps the unit's events so far: one for each of layers 7 to 2.
+    await expect(logRows(page)).toHaveCount(6);
+    await expect(page.locator('#osi-L-laptop-2.on')).toHaveCount(1);
   });
 
   test('Firewalls: the matched rule row is in view at every step', async ({ page }) => {

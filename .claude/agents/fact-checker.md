@@ -32,6 +32,7 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - Prefer raw text through `curl -sL`. RFCs are at `https://www.rfc-editor.org/rfc/rfcNNNN.txt`, and IANA registries have `.txt` or `.xml` forms.
    - Save an HTML page as it is, then read the passage from it (strip tags with a short script if that helps).
    - Read a PDF with the Read tool.
+   - Read a long PDF (ITU-T X.200, a NIST SP) at the page its citation names: download it to the temporary directory, then run `pdftotext -f N -l N <file> -`, or use the Read tool with `pages`. A `#page=N` fragment names PDF page N, counted from the file's first page, not the number printed on the page.
    - Use WebFetch only when there is no raw form. Never quote a WebFetch summary as a passage: a quote is the source's own words, copied exactly.
    - Use WebSearch only to find a source's current version or status. A search result is never a source.
 3. **Check every item** by the rules below. Read each cited section in this run. Never answer from memory, even when you are sure.

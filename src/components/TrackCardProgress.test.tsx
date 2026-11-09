@@ -18,7 +18,7 @@ const card = () => <TrackCardProgress known={known} totals={totals} />;
 const segments = (container: HTMLElement) => [...container.querySelectorAll('.segbar i')].map((i) => i.className || 'none');
 
 function expectFirstVisit(container: HTMLElement): void {
-  expect(screen.getByText('3 of 19 lessons ready')).toBeInTheDocument();
+  expect(screen.getByText('4 of 19 lessons ready')).toBeInTheDocument();
   expect(screen.getByText('Open track')).toBeInTheDocument();
   expect(container.querySelector('.segbar')).toBeNull();
 }
@@ -27,7 +27,7 @@ beforeEach(() => window.localStorage.clear());
 afterEach(() => vi.restoreAllMocks());
 
 test('a first visit reads the ready lessons, counted from the track', () => {
-  expect(totals).toEqual({ available: 3, planned: 19 });
+  expect(totals).toEqual({ available: 4, planned: 19 });
   const { container } = render(card());
   expectFirstVisit(container);
 });
@@ -41,15 +41,15 @@ test('a returning visitor sees done and in progress, with one bar segment per le
   const { container } = render(card());
   expect(screen.getByText('1 of 19 done, 2 in progress')).toBeInTheDocument();
   expect(screen.getByText('Continue')).toBeInTheDocument();
-  expect(screen.queryByText('3 of 19 lessons ready')).toBeNull();
+  expect(screen.queryByText('4 of 19 lessons ready')).toBeNull();
   // Done first, then in progress, then the rest; the bar repeats the words, so it is hidden from screen readers.
   expect(segments(container)).toEqual(['done', 'prog', 'prog', ...Array<string>(16).fill('none')]);
   expect(container.querySelector('.segbar')).toHaveAttribute('aria-hidden', 'true');
 });
 
 test('progress saved only for lessons the track does not have is still a first visit', () => {
-  // A lesson not ready in this track, and a lesson of another track.
-  seedProgress({ 'osi-model': { status: 'finished', furthestPosition: 4 }, 'what-is-http': { status: 'finished', furthestPosition: 7 } });
+  // A lesson not in this track (a planned one, IP Address), and a lesson of another track.
+  seedProgress({ 'ip-address': { status: 'finished', furthestPosition: 4 }, 'what-is-http': { status: 'finished', furthestPosition: 7 } });
   const { container } = render(card());
   expectFirstVisit(container);
 });

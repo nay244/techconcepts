@@ -1,0 +1,24 @@
+/* The OSI Model scene's own parts (src/art/scenes/osi.ts), from the approved mockup's sceneCss and liveCss
+   (osi-scene.mjs). The callouts sit on the page's figure background, so
+   they take the site's ink and line tokens and follow the theme; the parts on the plate take the lumen finish's tokens
+   and stay the same in both themes. The name of the place the current event is about turns marigold (--here). */
+.osi .osi-call .osi-name { font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--ink-strong); }
+.osi .osi-call .osi-sub { font: 400 13px/1 var(--sans); fill: var(--muted); }
+.osi .osi-call.focus .osi-name { fill: var(--here); }
+.osi .osi-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; }
+.osi .osi-lead-dot { fill: var(--muted); }
+/* A block is drawn once, unlit. The driver lights it with the kit's lit state (`data-lit` on its slab, src/art/lumen.css)
+   and `on` on its group: then, as the mockup's lit block, it has no seam and its engraving is dark on the lit face. */
+.osi .osi-L.on .osi-seam { display: none; }
+.osi .osi-L.on .iso-face-text { fill: color-mix(in srgb, var(--lit-b) 30%, #000); }
+.osi .osi-peer { fill: none; stroke: var(--lit-a); stroke-width: 1px; stroke-dasharray: 3 3; opacity: .8; }
+.osi .osi-peers { opacity: 0; transition: opacity 350ms ease; }
+.osi .osi-peers.on { opacity: 1; }
+.osi .osi-tag { opacity: 0; }
+.osi .osi-tag-t { font: 700 3.2px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .1em; }
+/* Reduced motion keeps every light and line, and only drops the peer lines' fade. */
+@media (prefers-reduced-motion: reduce) {
+  .osi .osi-peers { transition: none; }
+}
+/* While the driver's show settles the figure, every part changes at once, not over its fade. */
+.osi[data-settling] * { transition: none !important; animation: none !important; }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { checkCitation, cite, defineSources, sourceListOf, type SourceEntry } from './sources';
+import { checkCitation, cite, defineSources, SOURCES, sourceListOf, type SourceEntry } from './sources';
 
 const rfc: SourceEntry = {
   id: 'rfc2131',
@@ -181,5 +181,32 @@ describe('ITU-T and the defining-standard marker', () => {
     expect(checkCitation({ ...c, defining: true }, sources, 'objectives')).toEqual([
       expect.stringContaining('objectives citation cannot be marked as a defining standard'),
     ]);
+  });
+});
+
+describe('the OSI Model lesson’s sources', () => {
+  const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
+  const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
+
+  test('SOURCES holds the OSI Model lesson’s sources', () => {
+    expect(Object.keys(SOURCES)).toEqual(['itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003']);
+    expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
+  });
+
+  test('an X.200 section is cited by its PDF page, as the defining standard', () => {
+    expect(cite('itu-x200', '6.1.2', { url: `${X200}#page=32`, defining: true })).toEqual({
+      source: 'itu-x200', section: '6.1.2', url: `${X200}#page=32`, label: 'ITU-T X.200, 6.1.2', defining: true,
+    });
+  });
+
+  test('NIST SP 800-77r1 §2.1 is page 20; RFC 1122’s sections link by page, RFC 2003’s by anchor', () => {
+    expect(cite('nist-sp800-77r1', '2.1', { url: `${NIST}#page=20` }).label).toBe('NIST SP 800-77r1, 2.1');
+    // rfc1122.html has ids for its top-level sections and its pages only, so §1.3.3 is cited at page 17, where it starts.
+    const RFC1122 = 'https://www.rfc-editor.org/rfc/rfc1122.html';
+    expect(cite('rfc-1122', '1.3.3', { url: `${RFC1122}#page-17` })).toEqual({
+      source: 'rfc-1122', section: '1.3.3', url: `${RFC1122}#page-17`, label: 'RFC 1122, 1.3.3',
+    });
+    expect(() => cite('rfc-1122', '1.3.3')).toThrow(/needs a URL/);
+    expect(cite('rfc-2003', '1').url).toBe('https://www.rfc-editor.org/rfc/rfc2003.html#section-1');
   });
 });

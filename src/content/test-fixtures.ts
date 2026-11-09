@@ -35,6 +35,13 @@ export const FIXTURE_PARTS: Record<FigureId, FigureParts> = {
   subnet: fixtureParts({ board: true, start: false }),
   firewall: fixtureParts({ board: false, start: false }),
   'net-map': fixtureParts({ board: false, start: true }),
+  osi: {
+    ...fixtureParts({ board: false, start: false }),
+    args: { status: ['on', 'off'] },
+    routes: ['laptop>router'],
+    words: ['plate'],
+    labels: true,
+  },
 };
 
 function fixtureParts({ board, start }: { board: boolean; start: boolean }): FigureParts {

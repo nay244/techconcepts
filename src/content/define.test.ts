@@ -669,3 +669,79 @@ test('the same objective may appear in different lessons, and a lesson may list 
 test('a certification track against the empty real registry has no source to pin to', () => {
   expect(() => defineTrack(makeCertTrack())).toThrow(/"example-objectives"/);
 });
+
+// ---------------------------------------------------------------- a message's headers (osi)
+
+/** The fixture as an osi lesson: the scene gives its one word, and the panel is a labels panel. */
+function osiLesson(): LegacyLessonInput {
+  const l = makeLesson({ figure: 'osi' });
+  unit(l).scene.labels = { plate: 'P' };
+  unit(l).scene.panel = { type: 'labels' };
+  // The fixture's table events name table `t`, which a labels panel does not have.
+  for (const step of unit(l).steps) step.events = step.events.filter((e) => e.type !== 'table');
+  return l;
+}
+const labelsOf = (list: number[], mark?: { n: number; kind: 'new' | 'read' }) => ({ list, ...(mark === undefined ? {} : { mark }) });
+
+test("a cue's arg must be one the figure can show", () => {
+  const l = osiLesson();
+  ev(l, 0, 0).cues = [{ cue: 'status', arg: 'busy' }];
+  expect(joined(l)).toMatch(/message "m1": cue "status" takes "on" or "off", not "busy"/);
+  ev(l, 0, 0).cues = [{ cue: 'status', arg: 'on' }];
+  expect(joined(l)).not.toMatch(/message "m1": cue "status" takes/);
+});
+
+test('a message rides only a way the figure has', () => {
+  const l = osiLesson();
+  ev(l, 0, 0).to = 'phone';
+  expect(joined(l)).toMatch(/message "m1" rides from "laptop" to "phone", a way the osi figure does not have/);
+  const d = makeLesson();
+  ev(d, 0, 0).to = 'phone';
+  expect(joined(d)).not.toMatch(/a way the/);
+});
+
+test('the scene gives every word the figure shows, and no other', () => {
+  const l = osiLesson();
+  unit(l).scene.labels = {};
+  expect(issuesOf(l)).toContain(`Unit "neighbors": the scene's labels need "plate" for the osi figure.`);
+  unit(l).scene.labels = { plate: 'P', plat: 'x' };
+  expect(issuesOf(l)).toContain(`Unit "neighbors": the scene's labels give "plat", which the osi figure does not show.`);
+  const free = makeLesson({ figure: 'net-map' });
+  unit(free).scene.labels = { anything: 'x' };
+  expect(issuesOf(free)).toEqual([]);
+});
+
+test('labels ride only on a figure that shows them, in a unit with a labels panel', () => {
+  const d = makeLesson();
+  ev(d, 2, 1).labels = labelsOf([7]);
+  expect(joined(d)).toMatch(/note "n1" has labels, but the dhcp figure shows none/);
+
+  const t = makeLesson({ figure: 'osi' });
+  unit(t).scene.labels = { plate: 'P' };
+  ev(t, 2, 1).labels = labelsOf([7]);
+  expect(joined(t)).toMatch(/note "n1" has labels, but the unit's panel is not a labels panel/);
+
+  const m = osiLesson();
+  ev(m, 0, 0).labels = labelsOf([7]);
+  expect(joined(m)).not.toMatch(/has labels/);
+
+  const p = makeLesson();
+  unit(p).scene.panel = { type: 'labels' };
+  expect(issuesOf(p)).toContain('Unit "neighbors": the labels panel needs a figure that shows a message\'s headers; the dhcp figure does not.');
+});
+
+test('a labels list holds distinct layers 2 to 7, outermost first, and its mark is one of them', () => {
+  for (const list of [[7, 5], [5, 5], [1, 2], [8]]) {
+    const l = osiLesson();
+    ev(l, 0, 0).labels = labelsOf(list);
+    expect(joined(l)).toMatch(/labels\.list/);
+  }
+  const bad = osiLesson();
+  ev(bad, 0, 0).labels = labelsOf([5, 6], { n: 4, kind: 'new' });
+  expect(joined(bad)).toMatch(/labels\.mark/);
+  for (const labels of [labelsOf([]), labelsOf([2, 3, 4], { n: 3, kind: 'read' })]) {
+    const l = osiLesson();
+    ev(l, 0, 0).labels = labels;
+    expect(joined(l)).not.toMatch(/labels\.(list|mark)/);
+  }
+});

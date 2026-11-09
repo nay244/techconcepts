@@ -40,7 +40,7 @@ function hiddenWithoutScript(doc: Document, declaration: 'display: none' | 'visi
 
 const words = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
-test.each(['dhcp', 'what-is-http'])('without JavaScript, %s says it needs JavaScript and hides every control', async (slug) => {
+test.each(['dhcp', 'what-is-http', 'osi-model'])('without JavaScript, %s says it needs JavaScript and hides every control', async (slug) => {
   const doc = await lessonPage(slug);
   const hidden = hiddenWithoutScript(doc);
   // Kept in the layout, so the grid does not move, but out of sight and out of the accessibility tree.
@@ -73,4 +73,10 @@ test.each(['dhcp', 'what-is-http'])('without JavaScript, %s says it needs JavaSc
   for (const selector of ['.console__explain', '.explain__title', '.console__stage svg[data-figure]', '.topbar__crumb h1', '.topbar__crumb a'])
     expect(isHidden(doc.querySelector(selector)!), selector).toBe(false);
   expect(words(doc.querySelector('.explain__title'))).not.toBe('');
+});
+
+test('without JavaScript, the OSI figure shows its words', async () => {
+  const doc = await lessonPage('osi-model');
+  const text = words(doc.querySelector('svg[data-figure="osi"]'));
+  for (const part of ['APPLICATION', 'PHYSICAL', 'Your laptop', 'passes it on', 'Web server', 'OSI REFERENCE MODEL · SEVEN LAYERS']) expect(text).toContain(part);
 });

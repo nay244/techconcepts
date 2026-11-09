@@ -1,4 +1,5 @@
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from './net-map-layers';
+import { OSI_CUE_ARGS, OSI_ROUTES, OSI_WORDS } from './osi-stacks';
 import type { FigureId, FigureParts } from './types';
 
 /**
@@ -55,5 +56,20 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     board: false,
     // Its driver settles a unit's start under the cues that have played.
     start: true,
+  },
+  osi: {
+    places: ['laptop', 'router', 'server'],
+    // `layer` lights one block, `<place>:<n>`; `peer` lights layer `<n>` in every stack that has it and shows its
+    // peer lines (src/scenes/drivers/osi.ts). Each takes only what the figure draws: the router has three layers.
+    cues: { layer: 'text', peer: 'text' },
+    args: OSI_CUE_ARGS,
+    // A message rides the cable from the laptop to the router, or from the router to the server.
+    routes: OSI_ROUTES,
+    // Every word on the figure comes from the unit's `scene.labels`, so the fact-checker checks it.
+    words: OSI_WORDS,
+    layers: [],
+    board: false,
+    start: false,
+    labels: true,
   },
 };

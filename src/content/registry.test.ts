@@ -229,11 +229,13 @@ test('every lesson file that exists is available in the registry under its slug'
 
 // ------------------------------------------------------------ the closed legacy list
 
-test('the 17 ready lessons are legacy, and every legacy lesson is listed', () => {
+test('the 18 ready lessons are the 17 legacy ones and the cited OSI Model, and every legacy lesson is listed', () => {
   const legacy = LEGACY_LESSONS.map((s) => getLesson(s));
   expect(legacy.map((l) => l?.origin)).toEqual(LEGACY_LESSONS.map(() => 'legacy'));
   const ready = tracks.flatMap((t) => getEntries(t.id)).filter((e) => e.available).map((e) => getLesson(e.slug)!);
-  expect(ready).toHaveLength(17);
+  expect(ready).toHaveLength(18);
+  expect(ready.filter((l) => l.origin === 'legacy')).toHaveLength(17);
+  expect(ready.filter((l) => l.origin !== 'legacy').map((l) => [l.slug, l.origin])).toEqual([['osi-model', 'cited']]);
   for (const lesson of ready.filter((l) => l.origin === 'legacy')) expect(LEGACY_LESSONS, lesson.slug).toContain(lesson.slug);
 });
 

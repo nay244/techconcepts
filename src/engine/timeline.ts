@@ -1,4 +1,4 @@
-import type { Board, Lesson, MessageKind, Row, SceneEvent } from '../content/schema';
+import type { Board, Lesson, MessageKind, MessageLabels, Row, SceneEvent } from '../content/schema';
 import { applyTableEvent, highlightFor, initialTables, tablesOf, type TableState } from './tables';
 
 /**
@@ -139,6 +139,8 @@ export interface DerivedState {
   cues: AppliedCue[];
   /** The latest board a note has shown, or null before any. */
   board: Board | null;
+  /** The headers the message has, from the latest note or message that carried `labels`, or null before any. */
+  labels: MessageLabels | null;
   /** The last applied event of the current step, or null (always null off a step). */
   active: SceneEvent | null;
   /** The events that play at this position: `stepEvents`. */
@@ -216,6 +218,7 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number): De
   const log: LogRow[] = [];
   const cues: AppliedCue[] = [];
   let board: Board | null = null;
+  let labels: MessageLabels | null = null;
   let active: SceneEvent | null = null;
 
   for (const { event, current } of applied) {
@@ -237,9 +240,11 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number): De
     }
     // A note without a board leaves the board as it was.
     if (event.type === 'note' && event.board !== undefined) board = event.board;
+    // Likewise an event without labels leaves the message's headers as they were.
+    if (event.labels !== undefined) labels = event.labels;
   }
 
-  return { unit: slot.unit, slot, log, tables, cues, board, active, events };
+  return { unit: slot.unit, slot, log, tables, cues, board, labels, active, events };
 }
 
 /**

@@ -15,7 +15,7 @@ const SUBNETTING = getLesson('subnetting')!;
 test('the six parts in order, each with its number, its title, its lessons and how many are ready', () => {
   const parts = trackParts(networkingTrack, entries, lessonOf);
   expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
-    [1, 'The big picture', 0, 2],
+    [1, 'The big picture', 1, 2],
     [2, 'Addresses & the local network', 0, 4],
     [3, 'Getting between networks', 2, 3],
     [4, 'Talking across the internet', 0, 4],
@@ -25,8 +25,8 @@ test('the six parts in order, each with its number, its title, its lessons and h
   // Every planned lesson once, numbered across the track with two digits.
   const all = parts.flatMap((p) => p.lessons);
   expect(all.map((l) => l.n)).toEqual(Array.from({ length: 19 }, (_, i) => String(i + 1).padStart(2, '0')));
-  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['Subnetting', 'DHCP', 'Firewalls']);
-  expect(all[0]).toEqual({ ready: false, key: 'osi-model', n: '01', title: 'OSI Model' });
+  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Subnetting', 'DHCP', 'Firewalls']);
+  expect(all[1]).toEqual({ ready: false, key: 'packets', n: '02', title: 'Packets' });
 });
 
 test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14', () => {
@@ -48,7 +48,7 @@ test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14',
 
 test('a ready lesson carries its card: words, link and exams', () => {
   const all = trackParts(networkingTrack, entries, lessonOf).flatMap((p) => p.lessons);
-  const subnetting = all.find((l) => l.ready) as ReadyLesson;
+  const subnetting = all.find((l) => l.title === 'Subnetting') as ReadyLesson;
   expect(subnetting).toMatchObject({
     ready: true,
     key: 'subnetting',
