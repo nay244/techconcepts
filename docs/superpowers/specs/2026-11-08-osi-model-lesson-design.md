@@ -182,7 +182,7 @@ The sources are added to `SOURCES` in `src/content/sources.ts` in the same chang
 | id | kind | Document | url (the document) | How a section is cited |
 |---|---|---|---|---|
 | `itu-x200` | itu | ITU-T X.200 (07/94), *Information technology – Open Systems Interconnection – Basic Reference Model: The basic model*. In force; same text as ISO/IEC 7498-1. | `https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items` (the PDF) | No anchor. `url` + `#page=N` (PDF page), section in `section` |
-| `rfc-1122` | rfc | RFC 1122, *Requirements for Internet Hosts – Communication Layers*. Internet Standard, not obsoleted. | `https://www.rfc-editor.org/rfc/rfc1122.html` | anchor `#section-{n}` (1.1.3, 1.3.3) |
+| `rfc-1122` | rfc | RFC 1122, *Requirements for Internet Hosts – Communication Layers*. Internet Standard, not obsoleted. | `https://www.rfc-editor.org/rfc/rfc1122.html` | No anchor: the page has ids only for top-level sections. `url` + `#page-N` (1.1.1: 6, 1.1.3: 8, 1.3.3: 17), section in `section` |
 | `nist-sp800-77r1` | nist | NIST SP 800-77 Rev. 1, *Guide to IPsec VPNs* (June 2020) | `https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf` | `#page=20` for §2.1 |
 | `microsoft-osi` | vendor (Microsoft) | *Windows network architecture and the OSI model*, Microsoft Learn (ms.date 2025-01-31) | `https://learn.microsoft.com/en-us/windows-hardware/drivers/network/windows-network-architecture-and-the-osi-model` | `#physical-layer`, `#data-link-layer`, `#network-layer`, `#transport-layer`; the intro by a text fragment (`#:~:text=…`) |
 
