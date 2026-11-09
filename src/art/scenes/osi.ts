@@ -2,7 +2,7 @@
 // The OSI Model lesson's scene: three stacks of layer blocks on one plate. Left, the sending laptop's seven layers;
 // in the middle, a router's three; right, the web server's seven. Same layer, same height, so a layer lines up with
 // its twin across the plate. A cable joins the bottoms of the stacks. Ported from the approved mockup's live figure,
-// `liveSvg()` in .superpowers/brainstorm/2830-1793891117/figs/osi-scene.mjs (style A, solid blocks); its geometry,
+// `liveSvg()` in osi-scene.mjs (style A, solid blocks); its geometry,
 // camera, frame and callouts are the mockup's. Two things differ on purpose. Each block is drawn once, unlit: the
 // driver lights it with the kit's lit state (`data-lit`), where the mockup drew every block twice. And the figure says
 // no words of its own: each word (a layer's name, a callout's lines, the plate's engraving) is an empty slot marked

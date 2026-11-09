@@ -7,7 +7,7 @@ import { along, animate } from '../motion';
 
 /**
  * Moves the OSI Model figure (src/art/scenes/osi.ts), as the approved mockup's `show`, `rideTag` and `tick` do
- * (.superpowers/brainstorm/2830-1793891117/figs/osi-watch.mjs):
+ * (osi-watch.mjs):
  *
  * - A note's cues light blocks. `layer <place>:<n>` lights that one block, and the callout of its machine turns
  *   current. `peer <n>` lights layer n in every stack that has it (its twins: two or three blocks, the one place

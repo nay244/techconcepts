@@ -1,5 +1,5 @@
 /* The OSI Model scene's own parts (src/art/scenes/osi.ts), from the approved mockup's sceneCss and liveCss
-   (.superpowers/brainstorm/2830-1793891117/figs/osi-scene.mjs). The callouts sit on the page's figure background, so
+   (osi-scene.mjs). The callouts sit on the page's figure background, so
    they take the site's ink and line tokens and follow the theme; the parts on the plate take the lumen finish's tokens
    and stay the same in both themes. The name of the place the current event is about turns marigold (--here). */
 .osi .osi-call .osi-name { font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--ink-strong); }
