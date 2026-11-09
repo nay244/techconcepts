@@ -24,6 +24,21 @@ const messages = events.filter((e): e is MessageEvent => e.type === 'message');
 /** Layers `n` up to 7: the headers a message carries once layer `n` has added its own. */
 const from = (n: number): number[] => Array.from({ length: 8 - n }, (_, i) => n + i);
 
+const stepNamed = (id: string) => {
+  const step = unit.steps.find((s) => s.id === id);
+  if (step === undefined) throw new Error(`No step "${id}"`);
+  return step;
+};
+
+/** The steps for layers 6 to 2 on the laptop, each with its layer. */
+const LAYER_STEPS: [string, number][] = [
+  ['presentation', 6],
+  ['session', 5],
+  ['transport', 4],
+  ['network', 3],
+  ['data-link', 2],
+];
+
 test('the lesson keeps the Networking limits', () => {
   expect(checkLimits(osiModel, networkingTrack.limits)).toEqual([]);
 });
@@ -36,14 +51,31 @@ test('the lesson is what the spec says', () => {
   expect(unit.scene.views).toEqual(['network']);
   expect(unit.scene.panel).toEqual({ type: 'labels' });
   expect(Object.keys(unit.scene.labels).sort()).toEqual([...OSI_WORDS].sort());
-  expect(unit.steps.map((s) => s.title)).toEqual(['Application Layer', 'Encapsulation', 'Physical Layer', 'Relay', 'Decapsulation', 'Peer Layers']);
+  expect(unit.steps.map((s) => s.title)).toEqual([
+    'Application Layer',
+    'Presentation Layer',
+    'Session Layer',
+    'Transport Layer',
+    'Network Layer',
+    'Data Link Layer',
+    'Physical Layer',
+    'Relay',
+    'Decapsulation',
+    'Peer Layers',
+  ]);
+  // One step for each layer on the way down, so the lesson is over the track's six (owner, 2026-11-08).
+  expect(osiModel.overrides).toEqual([{ limit: 'steps', max: 10, reason: expect.any(String) }]);
 });
 
 test('each step plays the cues the spec lists', () => {
   const cues = unit.steps.map((s) => s.events.flatMap((e) => (e.type === 'table' ? [] : (e.cues ?? [])).map((c) => `${c.cue} ${c.arg}`)));
   expect(cues).toEqual([
     ['layer laptop:7'],
-    ['layer laptop:6', 'layer laptop:5', 'layer laptop:4', 'layer laptop:3', 'layer laptop:2'],
+    ['layer laptop:6'],
+    ['layer laptop:5'],
+    ['layer laptop:4'],
+    ['layer laptop:3'],
+    ['layer laptop:2'],
     ['layer laptop:1'],
     ['layer router:1', 'layer router:2', 'layer router:3', 'layer router:2', 'layer router:1'],
     ['layer server:1', 'layer server:2', 'layer server:3', 'layer server:4', 'layer server:5', 'layer server:6', 'layer server:7'],
@@ -52,19 +84,19 @@ test('each step plays the cues the spec lists', () => {
 });
 
 test('the headers go on outermost-last going down and come off going up', () => {
-  const pairs = (step: number) =>
-    unit.steps[step]!.events.map((e) => {
+  const pairs = (id: string) =>
+    stepNamed(id).events.map((e) => {
       const labels: MessageLabels | undefined = e.type === 'table' ? undefined : e.labels;
       return labels?.mark === undefined ? [labels?.list] : [labels.list, labels.mark];
     });
   // Layer 7 adds the first header; each layer below adds its own in front, as the outermost.
-  expect(pairs(0)).toEqual([[[7], { n: 7, kind: 'new' }]]);
-  expect(pairs(1)).toEqual([6, 5, 4, 3, 2].map((n) => [from(n), { n, kind: 'new' }]));
+  expect(pairs('application')).toEqual([[[7], { n: 7, kind: 'new' }]]);
+  for (const [id, n] of LAYER_STEPS) expect(pairs(id), id).toEqual([[from(n), { n, kind: 'new' }]]);
   // Layer 1 adds none, and the bits carry all six.
-  expect(pairs(2)).toEqual([[from(2)], [from(2)]]);
+  expect(pairs('physical')).toEqual([[from(2)], [from(2)]]);
   // The router's layer 2 reads header 2 and passes the rest up, so layer 3 sees five (lead-6). Going back down, layer 2
   // adds its own header 2 for the next hop (lead-3, lead-5), and the message leaves with six again.
-  expect(pairs(3)).toEqual([
+  expect(pairs('relay')).toEqual([
     [from(2)],
     [from(2), { n: 2, kind: 'read' }],
     [from(3), { n: 3, kind: 'read' }],
@@ -73,8 +105,8 @@ test('the headers go on outermost-last going down and come off going up', () => 
     [from(2)],
   ]);
   // The server's layer 1 takes the bits; each layer above reads its header, the outermost left, and it comes off.
-  expect(pairs(4)).toEqual([[from(2)], ...[2, 3, 4, 5, 6, 7].map((n) => [from(n), { n, kind: 'read' }])]);
-  expect(pairs(5)).toEqual(Array.from({ length: 7 }, () => [[]]));
+  expect(pairs('decapsulation')).toEqual([[from(2)], ...[2, 3, 4, 5, 6, 7].map((n) => [from(n), { n, kind: 'read' }])]);
+  expect(pairs('peer-layers')).toEqual(Array.from({ length: 7 }, () => [[]]));
 });
 
 test('the bits ride only the two cables, as 0101', () => {
@@ -86,11 +118,12 @@ test('the bits ride only the two cables, as 0101', () => {
 
 test('Learn has the spec’s ids', () => {
   const { learn } = unit;
-  expect(learn.lead.map((s) => s.id)).toEqual(['lead-1', 'lead-2', 'lead-3', 'lead-4', 'lead-5', 'lead-6', 'lead-7']);
+  expect(learn.lead.map((s) => s.id)).toEqual(['lead-1', 'lead-2', 'job-6', 'job-5', 'job-4', 'job-3', 'job-2', 'lead-3', 'lead-4', 'lead-5', 'lead-6', 'lead-7']);
   expect(learn.lead.filter((s) => s.analogy === true).map((s) => s.id)).toEqual(['lead-7']);
   expect(learn.terms.map((t) => t.id)).toEqual(['term-layer', 'term-header', 'term-encap', 'term-decap', 'term-peer', 'term-relay']);
   expect(learn.pattern.id).toBe('pattern');
-  expect(learn.pattern.names).toEqual(unit.steps.map((s) => s.title));
+  // Down, across, up: the three moves the pattern's note names, each a step title or a term.
+  expect(learn.pattern.names).toEqual(['Encapsulation', 'Relay', 'Decapsulation']);
   expect(learn.why.map((s) => s.id)).toEqual(['why-1', 'why-2']);
   expect(learn.deep.map((p) => p.id)).toEqual(['deep-1', 'deep-2', 'deep-3']);
   // §5's fact-2 is two facts, Top and Bottom, and each fact has its own id.
@@ -252,7 +285,7 @@ test('the first fact-check’s precision fixes hold', () => {
   expect(deep3).not.toMatch(/datagram\*\*, or \*\*packet/);
   expect(deep3).toMatch(/\bfragment/);
   // Step 6 says what its traces say: a header is written for its twin and read there, not that a layer works only with it.
-  expect(unit.steps[5]!.narrative).not.toMatch(/\bonly ever\b/);
+  expect(stepNamed('peer-layers').narrative).not.toMatch(/\bonly ever\b/);
 });
 
 /** A copy of the lesson with one change to the event `id`. */
@@ -326,7 +359,43 @@ test('a reader sees "header", never "label"', () => {
 });
 
 test('the figure shows the same thing however it is reached', () => {
-  // 9 positions (the Overview, 6 steps, Learn, Practice) and each of the 28 events once more.
+  // 13 positions (the Overview, 10 steps, Learn, Practice) and each of the 28 events once more.
   expect(events).toHaveLength(28);
-  expect(showSweep(osiModel)).toBe(37);
+  expect(showSweep(osiModel)).toBe(41);
+});
+
+test('layers 6 to 2 each have a step of their own, saying their own job', () => {
+  const { learn } = unit;
+  // The X.200 section that gives each layer's purpose, which its job statement must cite.
+  const purpose: Record<number, string> = { 6: '7.2.2.2', 5: '7.3.2.1', 4: '7.4.2.1', 3: '7.5.4.2.1', 2: '7.6.2.2' };
+  const plains: string[] = [];
+  for (const [id, n] of LAYER_STEPS) {
+    const step = stepNamed(id);
+    expect(step.title, id).toBe(`${['', 'Physical', 'Data Link', 'Network', 'Transport', 'Session', 'Presentation'][n]} Layer`);
+    // The step lights its layer once, and says more than that a header went on.
+    expect(step.events.map((e) => (e.type === 'table' ? '' : e.cues?.map((c) => c.arg).join())), id).toEqual([`laptop:${n}`]);
+    const plain = step.events[0]!.type === 'table' ? '' : step.events[0]!.plain;
+    expect(plain.replace(/,? and adds header \d( in front)?\.$/, '').length, id).toBeGreaterThan(20);
+    plains.push(plain);
+    // Its job is a Learn statement, which the step and its event trace and which cites X.200 at that layer's purpose.
+    const job = learn.lead.find((s) => s.id === `job-${n}`);
+    expect(job, id).toBeDefined();
+    expect(tracesOf(step.backing), id).toContain(`job-${n}`);
+    expect(tracesOf(step.events[0]!.backing), id).toContain(`job-${n}`);
+    expect(
+      job!.cite.filter((c) => c.source === 'itu-x200').map((c) => c.section),
+      id,
+    ).toEqual(expect.arrayContaining(['6.1.2', purpose[n]!]));
+  }
+  expect(new Set(plains).size).toBe(plains.length);
+  expect(new Set(LAYER_STEPS.map(([id]) => stepNamed(id).narrative)).size).toBe(LAYER_STEPS.length);
+});
+
+test('the layers say only what their sources say', () => {
+  const job = (n: number) => unit.learn.lead.find((s) => s.id === `job-${n}`)!.text;
+  // NIST: the Transport Layer "can optionally assure the reliability"; UDP is unreliable. So layer 4 can, not does.
+  expect(job(4)).toMatch(/\bcan\b/);
+  expect(job(4)).not.toMatch(/\b(always|guarantees?|ensures?|makes sure)\b/i);
+  // Explainers put encryption and compression at layer 6; X.200 does not, so the lesson does not either.
+  expect(readerTexts(osiModel).filter((t) => /\b(encrypt|compress)/i.test(t))).toEqual([]);
 });

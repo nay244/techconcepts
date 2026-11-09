@@ -348,13 +348,13 @@ test.describe('lesson specifics', () => {
     );
   });
 
-  test('OSI Model: Encapsulation, once played, shows six headers, layer 2 just added', async ({ page }) => {
+  test('OSI Model: the Data Link Layer, once played, shows six headers, layer 2 just added', async ({ page }) => {
     const osi = lessonNamed('osi-model');
-    // Step 2 adds headers 6 to 2 on the laptop; its last event is layer 2's.
-    await open(page, `${osi.path}?step=2`);
-    await expect(page.locator('[aria-live="polite"][data-announce]')).toHaveText(/Adds header 2 in front\.$/, { timeout: 30_000 });
+    // Steps 2 to 6 are layers 6 to 2 on the laptop, one each; step 6 is layer 2's.
+    await open(page, `${osi.path}?step=6`);
+    await expect(page.locator('[aria-live="polite"][data-announce]')).toHaveText(/adds header 2 in front\.$/, { timeout: 30_000 });
     await expect(page.locator('.labels .sr-only')).toHaveText('Headers on the message: layer 2 (just added), 3, 4, 5, 6, 7, then the data.');
-    // The log keeps the unit's events so far: step 1's layer 7, then step 2's layers 6 to 2.
+    // The log keeps the unit's events so far: one for each of layers 7 to 2.
     await expect(logRows(page)).toHaveCount(6);
     await expect(page.locator('#osi-L-laptop-2.on')).toHaveCount(1);
   });

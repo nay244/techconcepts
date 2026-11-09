@@ -98,7 +98,7 @@ The strip under the scene shows which headers the message carries at this point,
 
 ## 5. The lesson
 
-`src/content/lessons/osi-model.ts`, cited shape, one unit, `figure: 'osi'`. In the voice of `lesson-voice-beginner-first`: plain words first, the term after, exam detail in Go deeper. Within the Networking limits: 6 steps; 2 to 4 facts a step; narratives of 120 words or fewer; a hook of 80 words or fewer; Go deeper paragraphs of 90 words or fewer. No overrides are expected.
+`src/content/lessons/osi-model.ts`, cited shape, one unit, `figure: 'osi'`. In the voice of `lesson-voice-beginner-first`: plain words first, the term after, exam detail in Go deeper. Within the Networking limits, except the step count: 10 steps, one for each layer on the way down, with a `steps` override to 10 *(owner, 2026-11-08, after the first PR: layers 6 to 2 all read the same in one step, so a beginner couldn't tell them apart)*; 2 to 4 facts a step; narratives of 120 words or fewer; a hook of 80 words or fewer; Go deeper paragraphs of 90 words or fewer. No overrides are expected.
 
 **Metadata**
 - title `OSI Model`
@@ -115,25 +115,34 @@ The strip under the scene shows which headers the message carries at this point,
 | # | Title · sub | What plays | Facts → Learn |
 |---|---|---|---|
 | 1 | **Application Layer** · The message enters at the top | `layer laptop:7`; labels `[7]` new 7 | Layer · 7 Application → lead-1; Adds · its own header → lead-3 |
-| 2 | **Encapsulation** · Layers 6 to 2 add their own headers | `layer laptop:6` … `laptop:2`, each adding its number, marked new | Layers · 6 down to 2 → lead-1; Each one adds · a header → lead-3; Called · encapsulation → term-encap |
-| 3 | **Physical Layer** · The bundle leaves as bits | `layer laptop:1`; message laptop → router | Layer · 1 Physical → lead-1; Sends · bits → lead-4 |
-| 4 | **Relay** · A router reads up to layer 3 | `router:1`, `router:2` (read 2), `router:3` (headers 3 to 7, read 3), `router:2` (new 2), `router:1`; message router → server | Uses · layers 1 to 3 → lead-5; Reads · headers 2 and 3 → lead-5, lead-6 |
-| 5 | **Decapsulation** *(fallback in §10, not needed)* · Each header comes off at its twin | `server:1`, then `server:2` … `server:7`, each reading and removing its number | Order · 1 up to 7 → lead-4; Each layer · reads and removes its twin's header → lead-6 |
-| 6 | **Peer Layers** · Each layer talks to its twin | `peer 7` … `peer 1`; labels `[]` | Layers 4 to 7 · end to end → why-2; Layers 1 to 3 · hop by hop → lead-5 |
+| 2 | **Presentation Layer** · Both ends agree how the data is written | `layer laptop:6`; new 6 | Layer · 6 Presentation → lead-1; Gives both ends · a common way to represent the data → job-6 |
+| 3 | **Session Layer** · Opens the conversation and keeps it in order | `layer laptop:5`; new 5 | Layer · 5 Session → lead-1; Sets up · a session between the two ends, Can set · synchronization points → job-5 |
+| 4 | **Transport Layer** · Carries the data from end to end | `layer laptop:4`; new 4 | Layer · 4 Transport → lead-1; Works · end to end → job-4, why-2; Can · split the data into pieces and keep them in order → job-4 |
+| 5 | **Network Layer** · Finds the way across networks | `layer laptop:3`; new 3 | Layer · 3 Network → lead-1; Finds · a route across networks, Uses · network addresses → job-3 |
+| 6 | **Data Link Layer** · Carries it to the next machine | `layer laptop:2`; new 2 | Layer · 2 Data Link → lead-1; Carries it · one link at a time, Detects · errors from layer 1 → job-2; Called · encapsulation → term-encap |
+| 7 | **Physical Layer** · The bundle leaves as bits | `layer laptop:1`; message laptop → router | Layer · 1 Physical → lead-1; Sends · bits → lead-4 |
+| 8 | **Relay** · A router reads up to layer 3 | `router:1`, `router:2` (read 2), `router:3` (headers 3 to 7, read 3), `router:2` (new 2), `router:1`; message router → server | Uses · layers 1 to 3 → lead-5; Reads · headers 2 and 3 → lead-5, lead-6 |
+| 9 | **Decapsulation** *(fallback in §10, not needed)* · Each header comes off at its twin | `server:1`, then `server:2` … `server:7`, each reading and removing its number | Order · 1 up to 7 → lead-4; Each layer · reads and removes its twin's header → lead-6 |
+| 10 | **Peer Layers** · Each layer talks to its twin | `peer 7` … `peer 1`; labels `[]` | Layers 4 to 7 · end to end → why-2; Layers 1 to 3 · hop by hop → lead-5 |
 
 **Narratives.** The mockup's words, revised to say **header** where it said "label":
 - Step 1 introduces the idea, then the term: "adds a small note in front, called a **header**, for layer 7 on the other side".
-- Step 3 drops "adds no label". No source states it. The strip simply doesn't change at layer 1.
-- Step 4 says the router reads headers 2 and 3 and "works out where the message goes next". Then, going back down, its layer 2 "adds a new **header 2** of its own", as any layer does going down (lead-3). It never says "replaces". *(Amended; see §1.)*
-- Step 5 says each layer "reads the header its twin added", and doesn't name the machine that added it. Call made after the builder check: for layers 1 to 3 the twin is the router (step 6, lead-5). "The header your laptop added" would be wrong for those layers: the header the server's layer 2 reads is the one the router's layer 2 added (see §1's amendment). The server's log rows say "Reads header n and removes it", with no machine named.
+- Steps 2 to 6 each say what their layer does, in plain words, then that it adds its header. Each traces its `job-N` statement. *(Amended 2026-11-08: these five steps replace one Encapsulation step.)* Cloudflare's OSI explainer, which the owner pointed to, guided the plain wording but is not cited: its pages refuse the fact-checker's reader (403), and its encryption and compression at layer 6 are not in X.200.
+- Step 7 drops "adds no label". No source states it. The strip simply doesn't change at layer 1.
+- Step 8 says the router reads headers 2 and 3 and "works out where the message goes next". Then, going back down, its layer 2 "adds a new **header 2** of its own", as any layer does going down (lead-3). It never says "replaces". *(Amended; see §1.)*
+- Step 9 says each layer "reads the header its twin added", and doesn't name the machine that added it. Call made after the builder check: for layers 1 to 3 the twin is the router (step 10, lead-5). "The header your laptop added" would be wrong for those layers: the header the server's layer 2 reads is the one the router's layer 2 added (see §1's amendment). The server's log rows say "Reads header n and removes it", with no machine named.
 
 **Step Go deeper** (one paragraph each):
 1. The Application Layer is an application's only way into the OSI environment, so nothing sits above it. Source: X.200 7.1.2.1.
-2. Layers 6 and 5. The Presentation Layer gives both ends a common representation of data; the Session Layer organizes and synchronizes their dialogue. Source: X.200 7.2.2.2 and 7.3.2.1.
-3. The Physical Layer provides the means for bit transmission over a physical medium. The Data Link Layer recognizes a sequence of bits as its unit, which is sometimes called framing, and detects errors from the layer below. Sources: X.200 7.7.2, 7.6.4.5 and 7.6.2.2; Microsoft #physical-layer.
-4. In the standard, a system that only passes data on is a *relay open system*, and the functions for forwarding are in the lower layers. Source: X.200 6.1.6.
-5. Each layer passes the data inside, untouched, to the layer above. A layer doesn't interpret the data it carries for the layer above. Source: X.200 5.6.1.4.
-6. Same-layer cooperation is governed by that layer's protocol. Transport protocols run only between the two end systems. Source: X.200 5.2.2.7 and 7.4.2.3.
+2. Presentation: the transfer syntax, which layer 6 selects so both ends accept it (X.200 7.2.1.2, 7.2.2.3); the internet's application layer combines OSI's Presentation and Application (RFC 1122 §1.1.3 def).
+3. Session: its services, and synchronization points (X.200 7.3.1.4, 7.3.3.1.1).
+4. Transport: its possible functions (X.200 7.4.2.5, 7.4.4.1.1); TCP and UDP (RFC 1122 §1.1.3 def; NIST §2.1).
+5. Network: relaying is in the Network Layer or below (X.200 7.4.2.4, 7.5.2.4); IP guarantees no delivery (RFC 1122 §1.1.3 def; NIST §2.1).
+6. Data Link: built on physical connections; framing; detects and possibly corrects errors (X.200 7.6.2.1, 7.6.2.2, 7.6.4.5).
+7. The Physical Layer provides the means for bit transmission over a physical medium. The Data Link Layer recognizes a sequence of bits as its unit, which is sometimes called framing, and detects errors from the layer below. Sources: X.200 7.7.2, 7.6.4.5 and 7.6.2.2; Microsoft #physical-layer.
+8. In the standard, a system that only passes data on is a *relay open system*, and the functions for forwarding are in the lower layers. Source: X.200 6.1.6.
+9. Each layer passes the data inside, untouched, to the layer above. A layer doesn't interpret the data it carries for the layer above. Source: X.200 5.6.1.4.
+10. Same-layer cooperation is governed by that layer's protocol. Transport protocols run only between the two end systems. Source: X.200 5.2.2.7 and 7.4.2.3.
 
 **Learn** (ids are stable; "def" marks a defining-standard citation, which may stand alone):
 
@@ -141,6 +150,11 @@ The strip under the scene shows which headers the message carries at this point,
 |---|---|---|
 | lead-1 | Networking is split into **seven layers**, numbered 1 at the bottom to 7 at the top: Physical, Data Link, Network, Transport, Session, Presentation, Application. | X.200 6.1.2 def |
 | lead-2 | Each layer does its own job and offers a service to the layer above it. | X.200 5.2.2.3 def; Microsoft (intro, text fragment) |
+| job-6 | Layer 6, the Presentation Layer, gives both ends a common way to represent the data; they agree how it is written while it travels. | X.200 6.1.2, 7.2.1.2, 7.2.2.2, 7.2.2.3 def |
+| job-5 | Layer 5, the Session Layer, sets up a session, keeps the exchange orderly, ends it, and can set synchronization points. | X.200 6.1.2, 7.3.1.4, 7.3.2.1 def |
+| job-4 | Layer 4, the Transport Layer, works end to end; depending on the protocol, it *can* split, order, recover and pace the data. | X.200 6.1.2, 7.4.2.1, 7.4.2.3, 7.4.4.1.1 def; NIST §2.1; Microsoft #transport-layer |
+| job-3 | Layer 3, the Network Layer, finds a route between network addresses, across several networks. | X.200 6.1.2, 7.5.2.3, 7.5.4.2.1 def; NIST §2.1; Microsoft #network-layer |
+| job-2 | Layer 2, the Data Link Layer, carries data across one link at a time and detects errors from the Physical Layer. | X.200 6.1.2, 7.5.2.4, 7.6.2.1, 7.6.2.2 def; NIST §2.1; Microsoft #data-link-layer |
 | lead-3 | On the way down, a layer adds its own control information to what the layer above handed it, usually as a **header** in front. *(Hedged after the fact-check: NIST says "typically", and X.200 Fig. 9 Note 2 allows otherwise.)* | X.200 5.6.1.1, 5.6.1.3 def; NIST SP 800-77r1 §2.1 (footnote 6); RFC 1122 §1.3.3 |
 | lead-4 | The lowest layer sends the whole bundle as bits over the physical medium, and at the other end it is passed back up, layer by layer. | X.200 7.7.2 def; NIST SP 800-77r1 §2.1 |
 | lead-5 | A **router** passes messages on using only layers 1 to 3: the Network Layer is the one that routes across networks. | X.200 6.1.6, 7.5.2.1 def; NIST SP 800-77r1 §2.1; Microsoft #network-layer |
@@ -152,7 +166,7 @@ The strip under the scene shows which headers the message carries at this point,
 | term-decap | Removing an outer header to reach what's inside → **Decapsulation** (fallback in §10) | Cisco IP-in-IP Decapsulation; RFC 2003 (section to be read) |
 | term-peer | The same layer on the other machine → **Peer layer** | X.200 5.2.2.7 def |
 | term-relay | A machine in the middle that only passes data on → **Relay** | X.200 6.1.6 def |
-| pattern | Application Layer, Encapsulation, Physical Layer, Relay, Decapsulation, Peer Layers. Note: "Down the layers at the sender, across each link, up the layers at the receiver." | X.200 6.1.6 def; NIST SP 800-77r1 §2.1; Cisco IP-in-IP and RFC 2003 for Decapsulation |
+| pattern | Encapsulation, Relay, Decapsulation *(amended: the three moves of its note, now that the steps are per layer)*. Note: "Down the layers at the sender, across each link, up the layers at the receiver." | X.200 6.1.6 def; NIST SP 800-77r1 §2.1; Cisco IP-in-IP and RFC 2003 for Decapsulation |
 | why-1 | Splitting the job lets a layer change without the others noticing: each relies only on the service of the layer below. | X.200 5.2.2.3 def; Microsoft (intro) |
 | why-2 | Layers 4 to 7 run only on the two end machines, so a router never needs to read them. | X.200 7.4.2.3 def |
 | deep-1 | In the standard, a header is *protocol-control-information*, and a layer's whole unit is its *protocol-data-unit*: the header plus the data from the layer above. | X.200 5.6.1.1, 5.6.1.3 def |
