@@ -139,16 +139,31 @@ test.describe('desktop', () => {
     await expect(page).toHaveURL(/\/tracks$/);
   });
 
-  test('on every page Start learning opens the first lesson, and the footer lists How the Internet Works above Networking', async ({ page }) => {
+  test('Start learning opens /tracks on Home, About and 404, and is absent on Tracks and the track pages; the footer lists How the Internet Works above Networking', async ({ page }) => {
+    const hasNoStart = ['/tracks', '/networking', INTERNET_TRACK];
     for (const { path } of SITE_PAGES) {
       await open(page, path);
-      await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveText('Start learning');
-      await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveAttribute('href', START_PATH);
-      await expect(page.locator('#menu-panel a.btn--primary'), path).toHaveAttribute('href', START_PATH);
+      if (hasNoStart.includes(path)) {
+        await expect(page.locator('.site-head a.btn--primary'), path).toHaveCount(0);
+      } else {
+        await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveText('Start learning');
+        await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveAttribute('href', '/tracks');
+        await expect(page.locator('#menu-panel a.btn--primary'), path).toHaveAttribute('href', '/tracks');
+      }
       const footer = page.getByRole('contentinfo');
       await expect(footer.getByRole('link', { name: 'How the Internet Works', exact: true }), path).toHaveAttribute('href', INTERNET_TRACK);
       const order = await footer.locator('a').evaluateAll((links) => links.map((a) => a.getAttribute('href')));
       expect(order.indexOf(INTERNET_TRACK), path).toBeLessThan(order.indexOf('/networking'));
+    }
+  });
+
+  test('the header links are Tracks, How it works, Questions and About', async ({ page }) => {
+    for (const { path } of SITE_PAGES) {
+      await open(page, path);
+      const nav = page.getByRole('navigation', { name: 'Site', exact: true });
+      await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'How it works', 'Questions', 'About']);
+      expect(await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/tracks', '/#how', '/#faq', '/about']);
+      await expect(nav.getByRole('link', { name: 'Practice' }), path).toHaveCount(0);
     }
   });
 
