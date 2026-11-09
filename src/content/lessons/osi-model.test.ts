@@ -5,7 +5,7 @@ import { showSweep } from '../../test/show-sweep';
 import { citationsOf } from '../cited';
 import { checkStructure } from '../define';
 import { checkLimits } from '../limits';
-import type { Lesson, MessageEvent, MessageLabels, SceneEvent } from '../schema';
+import type { Backing, Lesson, MessageEvent, MessageLabels, SceneEvent } from '../schema';
 // `src/test/lesson-references.ts` re-exports `textsOf` from here, but it also loads the registry, whose fact-check gate
 // refuses this lesson until its report exists; the function is the same.
 import { textsOf } from '../texts';
@@ -106,6 +106,59 @@ test('peer and router rest on the sections that say them, and RFC 1122 is cited 
     ['1.1.3', page(8)],
     ['1.3.3', page(17)],
   ]);
+});
+
+test('every X.200 link names a PDF page', () => {
+  const x200 = citationsOf(unit).filter((c) => c.source === 'itu-x200');
+  expect(x200.length).toBeGreaterThan(0);
+  expect(x200.filter((c) => !/#page=\d+$/.test(c.url)).map((c) => `${c.section}: ${c.url}`)).toEqual([]);
+});
+
+const tracesOf = (backing: Backing | undefined): string[] => (backing !== undefined && 'traces' in backing ? backing.traces : []);
+
+/** Each part of Watch and the scene: what it says, and the traces that back it (a step's fact or event takes its step's too). */
+function watchParts(): { at: string; texts: string[]; traces: string[] }[] {
+  const { scene, overview } = unit;
+  return [
+    { at: 'scene', texts: textsOf({ title: scene.title, labels: scene.labels, log: scene.log }), traces: tracesOf(scene.backing) },
+    { at: 'overview hook', texts: [overview.hook], traces: tracesOf(overview.hookBacking) },
+    { at: 'overview description', texts: [overview.description], traces: tracesOf(overview.backing) },
+    ...overview.facts.map((f) => ({ at: `overview fact "${f.label}"`, texts: [f.label, f.value], traces: tracesOf(f.backing) })),
+    ...unit.steps.flatMap((s) => {
+      const own = tracesOf(s.backing);
+      return [
+        { at: `step "${s.id}"`, texts: [s.title, s.sub, s.narrative], traces: own },
+        ...s.facts.map((f) => ({ at: `step "${s.id}" fact "${f.label}"`, texts: [f.label, f.value], traces: [...tracesOf(f.backing), ...own] })),
+        ...s.events.map((e) => ({
+          at: `step "${s.id}" event "${e.id}"`,
+          texts: e.type === 'table' ? [e.summary] : textsOf({ log: e.log, plain: e.plain }),
+          traces: [...tracesOf(e.backing), ...own],
+        })),
+      ];
+    }),
+  ];
+}
+
+/** Every Learn part a trace may name, by id, with all its words. */
+function learnTexts(): Map<string, string> {
+  const { learn } = unit;
+  return new Map([
+    ...[...learn.lead, ...learn.why, ...learn.deep].map((s) => [s.id, s.text] as const),
+    ...learn.terms.map((t) => [t.id, `${t.idea} ${t.name}`] as const),
+    [learn.pattern.id, [...learn.pattern.names, learn.pattern.note].join(' ')] as const,
+    ...learn.facts.map((f) => [f.id, `${f.label} ${f.value}`] as const),
+  ]);
+}
+
+test('Watch’s "cable" and "hop" rest on Learn statements that say them', () => {
+  const learn = learnTexts();
+  for (const word of [/\bcable\b/i, /\bhop\b/i]) {
+    const saying = watchParts().filter((p) => p.texts.some((t) => word.test(t)));
+    // Watch says each word somewhere, so the check below is not empty.
+    expect(saying.length, String(word)).toBeGreaterThan(0);
+    const unbacked = saying.filter((p) => !p.traces.some((id) => word.test(learn.get(id) ?? ''))).map((p) => `${p.at} (traces ${p.traces.join(', ')})`);
+    expect(unbacked, String(word)).toEqual([]);
+  }
 });
 
 /** A copy of the lesson with one change to the event `id`. */

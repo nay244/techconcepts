@@ -13,7 +13,7 @@ import { cite } from '../sources';
 
 const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
 /** X.200's PDF page for each section cited (spec §6, measured with pdftotext). */
-const X200_PAGE: Record<string, number> = { '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.6': 33, '7.1.2.1': 36, '7.2.2.2': 37, '7.3.2.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.5.2.1': 45, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53 };
+const X200_PAGE: Record<string, number> = { '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.6': 33, '7.1.2.1': 36, '7.2.2.2': 37, '7.3.2.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.5.2.1': 45, '7.5.2.4': 45, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53, '7.7.4.6.1': 56 };
 const x200 = (section: string) => cite('itu-x200', section, { url: `${X200}#page=${X200_PAGE[section]}`, defining: true });
 /** The Foreword, on PDF page 2, says the same text is published as ISO/IEC 7498-1. */
 const X200_FOREWORD = cite('itu-x200', 'Foreword', { url: `${X200}#page=2`, defining: true });
@@ -277,9 +277,9 @@ export default defineLesson({
             }),
             layer({ id: 'router-2-down', place: 'router', n: 2, plain: 'Passes the message back down.', labels: { list: ALL }, traces: ['lead-5'] }),
             layer({ id: 'router-1-down', place: 'router', n: 1, plain: 'Sends it on as bits.', labels: { list: ALL }, traces: ['lead-5'] }),
-            bits({ id: 'bits-to-server', from: 'router', to: 'server', plain: 'The bits cross the cable to the web server.', traces: ['lead-5'] }),
+            bits({ id: 'bits-to-server', from: 'router', to: 'server', plain: 'The bits cross the cable to the web server.', traces: ['lead-4', 'lead-5'] }),
           ],
-          backing: { traces: ['lead-5', 'lead-6', 'why-2', 'term-relay'] },
+          backing: { traces: ['lead-4', 'lead-5', 'lead-6', 'why-2', 'term-relay'] },
         },
         {
           id: 'decapsulation',
@@ -351,13 +351,13 @@ export default defineLesson({
           },
           {
             id: 'lead-4',
-            text: 'The lowest layer sends the whole bundle as **bits** over the physical medium. At the other end, it is passed back up, layer by layer.',
-            cite: [x200('7.7.2'), NIST_2_1],
+            text: 'The lowest layer sends the whole bundle as **bits** over the physical medium, such as a cable. At the other end, it is passed back up, layer by layer.',
+            cite: [x200('7.7.2'), x200('7.7.4.6.1'), NIST_2_1],
           },
           {
             id: 'lead-5',
-            text: 'In between, a **router** passes the message on using only layers 1 to 3. It needs layer 3, the Network Layer, because that is the layer that routes messages across networks.',
-            cite: [x200('6.1.6'), x200('7.5.2.1'), NIST_2_1, rfc1122('1.1.1'), microsoft('Network layer', 'network-layer')],
+            text: 'In between, a **router** passes the message on, using only layers 1 to 3. Its work goes one hop at a time, from one machine to the next. It needs layer 3, the Network Layer, because that is the layer that routes messages across networks.',
+            cite: [x200('6.1.6'), x200('7.5.2.1'), x200('7.5.2.4'), NIST_2_1, rfc1122('1.1.1'), microsoft('Network layer', 'network-layer')],
           },
           {
             id: 'lead-6',
@@ -420,7 +420,7 @@ export default defineLesson({
           },
           {
             id: 'deep-3',
-            text: 'A TCP **segment** is a TCP header followed by application data. An IP **datagram** is an IP header followed by transport data. A **frame** is a link-layer header followed by a **packet**.',
+            text: 'A TCP **segment** is a TCP header followed by application data. An IP **datagram**, or **packet**, is an IP header followed by transport data. A **frame** is a link-layer header followed by a packet.',
             cite: [rfc1122('1.3.3', true), NIST_FOOTNOTE_6],
           },
         ],
