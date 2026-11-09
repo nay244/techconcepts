@@ -124,13 +124,14 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
     font: 500 14px/1 var(--sans);
     text-decoration: none;
   }
-  .pillnav a:hover {
+  .pillnav a:not([aria-current]):hover {
     color: var(--ink-strong);
-    background: color-mix(in srgb, var(--card) 60%, transparent);
   }
   .pillnav a[aria-current] {
     background: var(--card);
-    box-shadow: var(--shadow-sm);
+    box-shadow:
+      inset 0 0 0 1px var(--line-strong),
+      var(--shadow-sm);
     color: var(--ink-strong);
   }
   .head-end {
@@ -154,8 +155,8 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
   .site-head[data-over-hero].solid,
   .site-head[data-over-hero]:has(.menu-panel:not([hidden])) {
     background: color-mix(in srgb, var(--ground) 82%, transparent);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
   }
   .site-head[data-over-hero] .icon-btn {
     background: color-mix(in srgb, var(--card) 70%, transparent);

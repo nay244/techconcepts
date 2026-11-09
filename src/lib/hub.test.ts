@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import { emptyProgress, type LessonProgress, type ProgressData } from '../progress/store';
-import { actionLabel, lessonHref, lessonStatus, stripStates, stripWords, upNext } from './hub';
+import { STATUS_WORDS, UP_NEXT_KICKER, actionLabel, lessonHref, lessonStatus, stripStates, stripWords, upNext } from './hub';
 
 function ready(key: string, n: number, maxPosition = 12): AvailableSummary {
   return {
@@ -126,4 +126,9 @@ describe('actionLabel', () => {
     expect(actionLabel('in-progress')).toBe('Continue');
     expect(actionLabel('done')).toBe('Watch again');
   });
+});
+
+it('pins the status words and the up-next kickers', () => {
+  expect(STATUS_WORDS).toEqual({ 'not-started': 'Not started', 'in-progress': 'In progress', done: '✓ Done', 'not-ready': 'Not ready yet' });
+  expect(UP_NEXT_KICKER).toEqual({ start: 'Start here', next: 'Up next', 'done-so-far': '✓ Done so far' });
 });
