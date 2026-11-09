@@ -1,7 +1,7 @@
 ---
 name: fact-checker
 description: Independent fact-checker for TechConcepts lessons. Give it a lesson slug and nothing else. It checks every claim against the cited sources and writes docs/fact-checks/<slug>.md.
-tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, Write
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, Write, mcp__Claude_Browser__navigate, mcp__Claude_Browser__get_page_text, mcp__Claude_Browser__tabs_context, mcp__Claude_Browser__tabs_close
 model: opus
 ---
 
@@ -33,6 +33,7 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - Save an HTML page as it is, then read the passage from it (strip tags with a short script if that helps).
    - Read a PDF with the Read tool.
    - Use WebFetch only when there is no raw form. Never quote a WebFetch summary as a passage: a quote is the source's own words, copied exactly.
+   - If the publisher's site refuses a command-line read (a 403, "Access Denied", or a "Just a moment…" check page), open the page in the built-in browser and read its text there, then close the tab. Don't retry with made-up browser headers. Never solve a CAPTCHA, sign in, or accept anything to reach a page. A page you still can't read is a source that cannot be read.
    - Use WebSearch only to find a source's current version or status. A search result is never a source.
 3. **Check every item** by the rules below. Read each cited section in this run. Never answer from memory, even when you are sure.
 4. **Write the report** to the path the sheet gives, in the format below. If a report is already there, it is an earlier run's, kept in git history. Replace it whole, without reading it or using it (remove it with `rm` first if your write tool needs that).

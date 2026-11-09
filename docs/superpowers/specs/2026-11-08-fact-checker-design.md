@@ -177,6 +177,7 @@ Lessons on the closed `LEGACY_LESSONS` list are exempt until tasks 4–6 move th
 - **Where it lives:** `.claude/agents/fact-checker.md`, committed, so every session has the same checker. It is our own text, not a third-party skill, so the licence rule for committed skills doesn't apply.
 - **Model:** the most capable available.
 - **Tools:** read the repository, run the claim-sheet command, fetch web pages (and search, to find a source's current version), and write its report. Its instructions forbid changing anything else.
+  - *Added 2026-11-08 (owner):* when a publisher's site refuses a command-line read, as Cloudflare's and Cisco's did during the OSI Model fact-check, it reads the page in the built-in browser instead. It never solves a CAPTCHA, signs in or accepts anything to reach a page, and a page it still can't read is a source that cannot be read. The allowed sources are unchanged.
 - **Independence:** it is dispatched with the slug alone, and every run starts from nothing. Written rules and the branch history keep this honest, not a technical lock. There is no hook blocking the author from `docs/fact-checks/`, because that would be committed configuration for little gain.
 - **Strictness is in its instructions:** the rules of §5, the verdict meanings, "from the source, in this run, never from memory", and "when in doubt, ⚠️".
 
