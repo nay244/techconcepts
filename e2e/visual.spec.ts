@@ -90,10 +90,6 @@ test.describe('screenshots', { tag: '@visual' }, () => {
           test(name, async ({ page }, testInfo) => {
             const errors = collectErrors(page);
             await open(page, path);
-            if (name === 'home') {
-              // The hero plays once as it comes into view: shoot its last frame, as the mockup ends.
-              await expect(page.locator('[data-hero] [data-hud-play]')).toHaveAttribute('aria-label', 'Replay the animation', { timeout: 60_000 });
-            }
             await shoot(page, name, testInfo.project.outputDir);
             expect(errors).toEqual([]);
           });

@@ -1,11 +1,10 @@
 import { expect, test } from 'vitest';
 import { sha256, withoutGrain } from '../../test/figure-hash';
 import { COVER_IDS, cover, coverDescription, coverStill, routerDrawing } from './covers.ts';
-import { HERO_WEB, heroWebSvg } from './hero-web.ts';
 import { internetThumb } from './internet-thumb.ts';
 import { SPOTS, spot } from './spots.ts';
 
-const ALL = (): string[] => [...COVER_IDS.map(cover), ...SPOTS.map(spot), heroWebSvg(), internetThumb()];
+const ALL = (): string[] => [...COVER_IDS.map(cover), ...SPOTS.map(spot), internetThumb()];
 
 /** An aria-label with words in it: a label of only spaces says nothing. */
 const LABEL = /aria-label="[^"]*\S[^"]*"/;
@@ -59,7 +58,6 @@ test('the live router cover is the networking cover, with the packets’ path al
 // by a one-off script from the approved mockup scripts and pages (never read by this test):
 //   cover:*       the figures embedded in illustrations-v3.html (build3.mjs / covers.mjs)
 //   spot:*        spots.mjs
-//   hero-web*     hero-web.mjs heroSvg() and heroData()
 //   internet-thumb the internet art embedded in track-v2.html (track2.mjs internetArt() over hero.mjs)
 //   router-path   the Networking cover's packet path in its page script (lumen-assets.mjs routerLive, build3.mjs F1.path)
 // withoutGrain() drops film grain (R2); the drawing is otherwise identical.
@@ -82,8 +80,6 @@ const EXPECTED: Record<string, string> = {
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
   'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
-  'hero-web': '00847544a78e5bdb839cecc17586f305e1f75fb75416ecd5b0fe2d448c9c81bf',
-  'hero-web-data': 'ee57f4896264baaf7022b4b7d0dbe2c63fd8a695216149d1462d99a13b292ea5',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
   'router-path': '8478e385264220f9d007a9fc1f1c38f71723265a79baf01b7ca0b1eae0900133',
 };
@@ -92,9 +88,6 @@ test('the figures match the mockups', async () => {
   const actual: Record<string, string> = {};
   for (const id of COVER_IDS) actual[`cover:${id}`] = await sha(cover(id));
   for (const kind of SPOTS) actual[`spot:${kind}`] = await sha(spot(kind));
-  actual['hero-web'] = await sha(heroWebSvg());
-  const { DRAW, T, PATH, ZERO, TAG_DY } = HERO_WEB;
-  actual['hero-web-data'] = await sha256(JSON.stringify({ DRAW, T, PATH, ZERO, TAG_DY }));
   actual['internet-thumb'] = await sha(internetThumb());
   actual['router-path'] = await sha256(JSON.stringify(routerDrawing().path));
   expect(actual).toEqual(EXPECTED);
@@ -109,12 +102,4 @@ test('the OSI spot is seven numbered blocks with block 4 lit', () => {
   blocks.forEach((b, i) => expect(b).toContain(`>${i + 1}</text>`));
   expect(svg).toContain('OSI · SEVEN LAYERS');
   expect(svg).toContain('aria-label="A stack of seven solid blocks, one for each layer, numbered 1 at the bottom to 7 at the top. Block 4 is lit."');
-});
-
-test('the hero caption has one line for each moment', () => {
-  expect(HERO_WEB.STEPS).toHaveLength(6);
-  HERO_WEB.STEPS.forEach(([title, text]) => {
-    expect(title).not.toBe('');
-    expect(text).not.toBe('');
-  });
 });

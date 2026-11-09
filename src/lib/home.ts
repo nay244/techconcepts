@@ -1,7 +1,16 @@
-// Home's words that are worked out from the lessons when the page is built: the message-log sample on the
-// big card, where a returning visitor is, and the track card's blurb. Nothing here runs in the browser.
-import type { Lesson, MessageKind } from '../content/schema';
-import { deriveState, positionOf, resumeLabel, slotsFor } from '../engine/timeline';
+// Home's words and pictures that are worked out from the tracks and lessons when the page is built: the track cards,
+// the OSI Model sheet "from the inside" with its links into each part, and the track card's blurb (Tracks uses it too),
+// and where a returning visitor is (the track page). Nothing here runs in the browser.
+import type { CoverId } from '../art/figures/covers';
+import { drawFigure } from '../art/scenes';
+import { fillLabels } from '../art/scenes/labels';
+import { getEntries, getLesson, getTrack, trackTotals, type AvailableSummary } from '../content/registry';
+import type { Cue, Lesson } from '../content/schema';
+import { plannedTracks, tracks } from '../content/tracks';
+import { positionOf, resumeLabel, slotsFor } from '../engine/timeline';
+import { levelLabel } from './entries';
+import { STATUS_WORDS } from './hub';
+import { TRACK_COVERS } from './tracks-page';
 
 const two = (n: number): string => String(n).padStart(2, '0');
 
@@ -11,77 +20,136 @@ export function firstSentence(text: string): string {
   return end === -1 ? text : text.slice(0, end + 1);
 }
 
-/**
- * A device's label as it reads after the arrow, mid-sentence, as home-v6 writes it ("Router → laptop"): its first
- * letter in lower case, unless the first word is an acronym ("DNS resolver"). It assumes a common noun, as every
- * party Home samples (DHCP's) is: a proper noun ("Sam's laptop") would be lower-cased too.
- */
-export function midSentence(label: string): string {
-  if (label === '' || /^[A-Z]{2}/.test(label)) return label;
-  return label[0]!.toLowerCase() + label.slice(1);
-}
+// ---------------------------------------------------------------- track cards
 
-export interface SampleRow {
-  /** The row's number, two digits. */
-  n: string;
-  from: string;
-  /** 'everyone' for a broadcast, whichever device answers it; otherwise the device, mid-sentence ('laptop'). */
-  to: string;
-  kind: MessageKind;
-  /** The words on the message's tag; null when it has none, and then no tag is shown. */
-  tag: string | null;
-  plain: string;
-  current: boolean;
-}
-
-export interface LogSample {
-  rows: SampleRow[];
-  /** The step the last row belongs to, counting from 1, and how many steps the unit has. */
-  step: number;
-  steps: number;
-  /** The row after the sample, shown as "Later" with its step's plain sub-heading; null when there is none. */
-  later: { n: string; sub: string } | null;
+export interface HomeTrackCard {
+  id: string;
+  title: string;
+  /** The track's panel on Tracks, `/tracks#<id>`, for a track with lessons and one without alike. */
+  href: string;
+  cover: CoverId;
+  /** The small labels over the title: a plain one is grey, the others in the accent. */
+  chips: { text: string; plain: boolean }[];
+  blurb: string;
+  /** '14 lessons' when all are ready, '4 of 19 lessons ready' when some are, 'Lessons on the way' when none are. */
+  count: string;
+  /** The words on the card's button. */
+  go: string;
+  /** False for a track with no lessons yet. */
+  ready: boolean;
 }
 
 /**
- * The first `count` rows of a one-unit lesson's message log as it stands at Learn, when every step has played,
- * the last of them current. Every one must be a message, since each row shows who sent it to whom.
+ * Home's three cards: every track with lessons in the site's order, the first flagged "Start here", then each planned
+ * track. Only numbers the tracks give: no progress, no exams.
  */
-export function logSample(lesson: Lesson, count = 4): LogSample {
-  const unit = lesson.units[0]!;
-  const log = deriveState(lesson, positionOf(lesson, 0, 'learn'), 0).log;
-  if (log.length < count) {
-    throw new RangeError(`Lesson "${lesson.slug}" has ${log.length} log rows; the sample needs ${count}.`);
-  }
-  const party = (place: string | null): string => unit.scene.parties.find((p) => p.place === place)?.label ?? String(place);
-  const stepOf = (eventId: string): number => {
-    const i = unit.steps.findIndex((s) => s.events.some((e) => e.id === eventId));
-    if (i === -1) throw new Error(`Lesson "${lesson.slug}" has no step that plays event "${eventId}".`);
-    return i + 1;
-  };
-
-  const rows = log.slice(0, count).map((row, i): SampleRow => {
-    if (row.kind === null) {
-      throw new RangeError(`Lesson "${lesson.slug}": log row ${row.n} is a note, and the sample shows messages only.`);
-    }
+export function homeTrackCards(): HomeTrackCard[] {
+  const ready = tracks.map((track, i): HomeTrackCard => {
+    const cover = TRACK_COVERS[track.id];
+    if (cover === undefined) throw new Error(`The ${track.id} track has no cover for Home's card.`);
+    const { available, planned } = trackTotals(getEntries(track.id));
+    const chips = [{ text: levelLabel(track.level), plain: false }];
+    if (i === 0) chips.push({ text: 'Start here', plain: true });
     return {
-      n: two(row.n),
-      from: party(row.from),
-      to: row.kind === 'broadcast' ? 'everyone' : midSentence(party(row.to)),
-      kind: row.kind,
-      tag: row.tag,
-      plain: row.plain,
-      current: i === count - 1,
+      id: track.id,
+      title: track.title,
+      href: `/tracks#${track.id}`,
+      cover,
+      chips,
+      blurb: firstSentence(track.description),
+      count: available === planned ? `${planned} lessons` : `${available} of ${planned} lessons ready`,
+      go: 'See the lessons →',
+      ready: true,
     };
   });
-  const after = log[count];
+  const later = plannedTracks.map(
+    (track): HomeTrackCard => ({
+      id: track.id,
+      title: track.title,
+      href: `/tracks#${track.id}`,
+      cover: track.cover,
+      chips: [{ text: STATUS_WORDS['not-ready'], plain: true }],
+      blurb: track.blurb,
+      count: 'Lessons on the way',
+      go: 'See the track',
+      ready: false,
+    }),
+  );
+  return [...ready, ...later];
+}
+
+// ---------------------------------------------------------------- a lesson from the inside
+
+/**
+ * The OSI Model figure lit as the lesson's driver lights it for these cues (src/scenes/drivers/osi.ts): each `layer`
+ * cue's block takes `on` on its group and the kit's lit state (`data-lit`) on its slab, and its machine's callout turns
+ * current (`focus`). Other cues (`peer`) are left alone. Throws for a block the figure does not have.
+ */
+export function osiLitAt(svg: string, cues: readonly Cue[]): string {
+  let out = svg;
+  for (const { cue, arg = '' } of cues) {
+    if (cue !== 'layer') continue;
+    const [place, n] = arg.split(':');
+    const group = `<g class="osi-L" id="osi-L-${place}-${n}">`;
+    const slab = '<g class="iso-solid"';
+    const at = out.indexOf(group);
+    if (at === -1 || !out.startsWith(slab, at + group.length)) throw new Error(`The OSI figure has no block #osi-L-${place}-${n} to light.`);
+    out = `${out.slice(0, at)}<g class="osi-L on" id="osi-L-${place}-${n}">${slab} data-lit=""${out.slice(at + group.length + slab.length)}`;
+    const call = `<g class="osi-call" id="osi-call-${place}">`;
+    if (out.includes(call)) out = out.replace(call, `<g class="osi-call focus" id="osi-call-${place}">`);
+  }
+  return out;
+}
+
+export interface InsideSheet {
+  /** 'Networking Concepts · lesson 1'. */
+  label: string;
+  title: string;
+  /** The lesson's page in the track, where it opens at its Overview. */
+  url: string;
+  /** The Overview's opening words, with the lesson's `**bold**` marks left for the page to set. */
+  hook: string;
+  /** The scene's title, 'Your laptop to a web server'. */
+  scene: string;
+  /** The first Watch steps: their number (two digits), technical title and plain-words subtitle. */
+  steps: { n: string; title: string; sub: string }[];
+  /** The lesson's figure, its words written in and lit as its first step leaves it. */
+  figure: string;
+  /** The lesson's page at its first Watch step, its Learn and its Practice. */
+  parts: { watch: string; learn: string; practice: string };
+}
+
+/**
+ * A lesson as Home shows it "from the inside": OSI Model of Networking Concepts unless told otherwise, from its first
+ * unit. Throws when the lesson is not ready in that track, or has fewer Watch steps than the sheet shows.
+ */
+export function insideSheet(trackId = 'networking', slug = 'osi-model', count = 3): InsideSheet {
+  const track = getTrack(trackId);
+  const entry = getEntries(trackId).find((e): e is AvailableSummary => e.available && e.slug === slug);
+  const lesson: Lesson | undefined = getLesson(slug);
+  if (track === undefined || entry === undefined || lesson === undefined) {
+    throw new Error(`Home's inside sheet needs the ${trackId}/${slug} lesson, and it is not ready.`);
+  }
+  if (lesson.figure !== 'osi') throw new Error(`Home's inside sheet lights the OSI figure; ${slug} draws "${lesson.figure}".`);
+  const unit = lesson.units[0]!;
+  if (unit.steps.length < count) throw new RangeError(`Lesson "${slug}" has ${unit.steps.length} Watch steps; the sheet shows ${count}.`);
+  // As the driver draws a step once it has played: what the step's last note or message lights.
+  const landed = unit.steps[0]!.events.filter((e) => e.type === 'note' || e.type === 'message').at(-1);
+  const cues = landed?.cues ?? [];
+  const at = (kind: 'step' | 'learn' | 'practice'): string => `${entry.url}?step=${positionOf(lesson, 0, kind)}`;
   return {
-    rows,
-    step: stepOf(log[count - 1]!.eventId),
-    steps: unit.steps.length,
-    later: after === undefined ? null : { n: two(after.n), sub: unit.steps[stepOf(after.eventId) - 1]!.sub },
+    label: `${track.title} · lesson ${entry.number}`,
+    title: lesson.title,
+    url: entry.url,
+    hook: unit.overview.hook,
+    scene: unit.scene.title,
+    steps: unit.steps.slice(0, count).map((s, i) => ({ n: two(i + 1), title: s.title, sub: s.sub })),
+    figure: osiLitAt(fillLabels(drawFigure(lesson.figure).svg, unit.scene.labels), cues),
+    parts: { watch: at('step'), learn: at('learn'), practice: at('practice') },
   };
 }
+
+// ---------------------------------------------------------------- where a returning visitor is
 
 /**
  * Where each position of a lesson is, worded to sit in "You’re on … in <lesson>": a step keeps resumeLabel's words

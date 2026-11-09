@@ -11,7 +11,7 @@ test('text is smoothed the browser’s way, as in the approved mockups, so it ke
 });
 
 test('headings and the lesson’s titles wrap where the mockups’ do, not balanced', () => {
-  // Only the home hero's title is balanced in its mockup, and it sets that itself (HeroWeb.astro).
+  // A page whose mockup balances a title sets that itself, in its own styles.
   expect(globalCss).not.toMatch(/text-wrap:\s*balance/);
   expect(consoleCss).not.toMatch(/text-wrap:\s*balance/);
 });

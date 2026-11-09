@@ -1,312 +1,290 @@
 ---
-// Home (spec §6.1, mockup home-v6). The words are the mockup's; the numbers and the DHCP log sample are worked out
-// from the tracks and their lessons. Only the hero's eyebrow and second button, the track cards' progress and the
-// hero's movement run in the browser; the rest is static.
+// Home (spec §6.1), as the adopted insideout-study mockup's Home. Every number and every lesson word on it is worked
+// out from the tracks and lessons when the page is built (src/lib/home.ts); the art is the site's own covers, spots and
+// the OSI Model lesson's figure. Nothing on it reads progress: a returning visitor sees the same page.
 import { coverStill, type CoverId } from '../art/figures/covers';
 import { spot } from '../art/figures/spots';
 import { cropViewBox } from '../art/ids';
-import { CERT_TAGS, type CertTag } from '../content/certs';
-import { getEntries, getLesson, getTrack, trackTotals, type AvailableSummary } from '../content/registry';
-import type { Lesson, MessageKind, Track } from '../content/schema';
-import { comingSoonTracks } from '../content/tracks';
-import { knownFrom, levelLabel } from '../lib/entries';
-import { firstSentence, logSample } from '../lib/home';
+import { homeTrackCards, insideSheet } from '../lib/home';
 import { startLesson } from '../lib/start';
-import { tokens } from '../styles/tokens';
+import Rich from '../lesson/Rich';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroCta from '../components/HeroCta';
-import HeroWeb from '../components/HeroWeb.astro';
-import TrackCardProgress from '../components/TrackCardProgress';
 import '../components/site.css';
 
-function trackOf(id: string): Track {
-  const found = getTrack(id);
-  if (found === undefined) throw new Error(`Home needs the ${id} track.`);
-  return found;
-}
+const start = startLesson();
+const cards = homeTrackCards();
+const sheet = insideSheet();
 
-// Networking feeds the exams strip, the DHCP log sample and its own card; How the Internet Works feeds its own card.
-const track = trackOf('networking');
-const entries = getEntries(track.id);
-const available = entries.filter((e): e is AvailableSummary => e.available);
-const totals = trackTotals(entries);
-const internetTrack = trackOf('how-the-internet-works');
-const internetEntries = getEntries(internetTrack.id);
-const internetTotals = trackTotals(internetEntries);
+// A cover, cropped close to its plate. Each copy on the page tags its own ids.
+const coverArt = (id: CoverId, tag: string): string => cropViewBox(coverStill(id, `home-${tag}-${id}`), '30 20 540 378');
 
-function lessonOf(entry: AvailableSummary): Lesson {
-  const lesson = getLesson(entry.slug);
-  // An available entry is built from its lesson, so this cannot happen.
-  if (lesson === undefined) throw new Error(`No lesson file for ${entry.key}.`);
-  return lesson;
-}
+// The lesson's title with its last word in the accent, as the mockup sets "OSI Model".
+const cut = sheet.title.lastIndexOf(' ');
+const titleHead = cut === -1 ? '' : sheet.title.slice(0, cut + 1);
+const titleLast = sheet.title.slice(cut + 1);
 
-function readyEntry(slug: string): AvailableSummary {
-  const entry = available.find((e) => e.slug === slug);
-  if (entry === undefined) throw new Error(`Home needs the ${track.id}/${slug} lesson, and it is not ready.`);
-  return entry;
-}
-
-// Each ready lesson's last position, for each track card's progress island.
-const known = knownFrom(entries);
-const internetKnown = knownFrom(internetEntries);
-
-// ---------- Hero: always How the Internet Works' first lesson; a returning visitor's second button browses the tracks ----------
-const heroStart = { href: startLesson().url, label: 'Learn how the Internet Works' };
-// Progress in a ready lesson of either track makes a returning visitor.
-const heroKnown = { ...internetKnown, ...known };
-
-// ---------- The exams strip: the tags that have lessons, in their usual order ----------
-const present = new Set(available.flatMap((e) => e.certTags));
-const certTags = (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.has(tag));
-
-// ---------- The big card: the first rows of DHCP's log as it stands at Learn, the last one current ----------
-const dhcpEntry = readyEntry('dhcp');
-const sample = logSample(lessonOf(dhcpEntry));
-// The log sample sits on a dark console in both themes, so its tags take the dark theme's message colours.
-const tagColour = (kind: MessageKind): string => tokens.dark[kind];
-
-// ---------- Tracks ----------
-// First, How the Internet Works on its own card, wearing the web cover (a laptop asks a server for a page). It and
-// the Networking card each carry the first sentence of their own description, as the mockup does.
-const internetBlurb = firstSentence(internetTrack.description);
-const networkingBlurb = firstSentence(track.description);
-const cardCover = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
-
-// ---------- How a lesson works ----------
-// Each part's number, two digits: 01, 02, 03.
-const two = (n: number): string => String(n).padStart(2, '0');
 const parts = [
   {
     kind: 'watch',
-    name: 'Watch',
-    line: 'See it happen. Devices send messages to one another, one step at a time, and you can go forward and back at your own pace.',
-    icon: '<path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+    word: 'Watch',
+    rest: ' it happen',
+    text: 'Devices send messages to one another, one step at a time, and you can go forward and back at your own pace.',
+    button: 'See a Watch part →',
+    href: sheet.parts.watch,
   },
   {
     kind: 'learn',
-    name: 'Learn',
-    line: 'Find out what happened and why, in plain words. Each idea comes first, then its technical name, and a Go deeper section holds the exam-level detail.',
-    icon: '<path d="M3.5 5.5c2.8-1 5.6-.6 8.5 1.3 2.9-1.9 5.7-2.3 8.5-1.3v13c-2.8-1-5.6-.6-8.5 1.3-2.9-1.9-5.7-2.3-8.5-1.3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 6.8v13" stroke="currentColor" stroke-width="1.8"/>',
+    word: 'Learn',
+    rest: ' what happened',
+    text: 'Find out what happened and why, in plain words. Each idea comes first, then its technical name, and a Go deeper section holds the exam-level detail.',
+    button: 'See a Learn part →',
+    href: sheet.parts.learn,
   },
   {
     kind: 'practice',
-    name: 'Practice',
-    line: 'Answer a few questions to see what stuck. They are just for you: nothing is scored or saved.',
-    icon: '<rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.5l2.7 2.7L16 9.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    word: 'Practice',
+    rest: ' what stuck',
+    text: 'Answer a few questions to see what stuck. Nothing is scored or saved.',
+    button: 'See a Practice part →',
+    href: sheet.parts.practice,
   },
 ] as const;
 
-const EYE = parts[0].icon;
+// Drafted for the owner's approval (spec §6.1): each answer says only what is true of the site today.
+const questions = [
+  {
+    q: 'Where do I start?',
+    a: 'With How the Internet Works. It is the first of the three tracks, and the button at the top of this page opens its first lesson.',
+  },
+  {
+    q: 'Do I need an account?',
+    a: 'No. There is nothing to sign up for. Your progress is saved in this browser only, and you can clear it any time.',
+  },
+  {
+    q: 'Where do the facts come from?',
+    a: 'From published sources, mostly the standards that say how each protocol works, such as RFCs. Every lesson lists its sources, with links, under Go deeper in its Learn part.',
+  },
+  { q: 'Is Practice scored?', a: 'No. Practice is just for you. Nothing is scored or saved.' },
+];
 ---
 
 <BaseLayout
   title="TechConcepts"
   description="Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words."
-  overHero
 >
-  <HeroWeb>
-    <HeroCta client:load known={heroKnown} start={heroStart}>
-      <h1 id="hero-title">See how technology <span class="accent">really works.</span></h1>
-      <p class="lede">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
-    </HeroCta>
-  </HeroWeb>
-
-  <div class="wrap exams">
-    <p>Each lesson shows which exams and jobs it helps with</p>
-    <ul>
-      {
-        certTags.map((tag) => (
-          <li>
-            <a href={`/${track.id}?for=${tag}`}>{CERT_TAGS[tag]}</a>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
-
-  <section class="section wrap" aria-labelledby="why-title">
-    <div class="section-head">
-      <span class="eyebrow"><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>Why it works</span>
-      <h2 id="why-title">Learn by <span class="accent">watching it happen.</span></h2>
-      <p>Reading about a network is hard. Watching one is easier. Every lesson is a small simulation you move through at your own pace.</p>
-    </div>
-    <div class="bento">
-      <article class="card big">
-        <div class="big-top">
-          <div>
-            <div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true" set:html={EYE} /></div>
-            <h3>Step through what really happens</h3>
-            <p>Devices send each other messages, one step at a time. Go forward, go back, and read what each message means beside it.</p>
-          </div>
-          <span class="count"><b>{dhcpEntry.stepCount}</b> steps in {dhcpEntry.title}</span>
-        </div>
-        <div class="log-sample">
-          <div class="log-sample-bar">
-            <span id="sample-title">{dhcpEntry.title}: how a device gets its address</span>
-            <span id="sample-where">Step {sample.step} of {sample.steps}</span>
-          </div>
-          <ol aria-labelledby="sample-title sample-where">
-            {
-              sample.rows.map((row) => (
-                <li class={row.current ? 'here' : undefined} aria-current={row.current ? 'step' : undefined}>
-                  <span class="num">{row.n}</span>
-                  <span class="who">
-                    {row.from} <span aria-hidden="true">→</span>
-                    <span class="sr-only">to</span> {row.to}
-                  </span>
-                  {row.tag === null ? <span /> : <span class="msg" style={`color: ${tagColour(row.kind)}`}>{row.tag}</span>}
-                  <span class="say">{row.plain}</span>
-                </li>
-              ))
-            }
-            {
-              sample.later && (
-                <li class="later">
-                  <span class="num">{sample.later.n}</span>
-                  <span class="who">Later</span>
-                  <span />
-                  <span class="say">{sample.later.sub}</span>
-                </li>
-              )
-            }
-          </ol>
-        </div>
-      </article>
-      <article class="card small">
-        <div class="ico">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9l-5 4v-14z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M8 9.5h8M8 12.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-        </div>
-        <h3>Plain words first</h3>
-        <p>Each step explains the idea in everyday language, then names the technical term. Exam-level detail waits in a Go deeper section, for when you want it.</p>
-      </article>
-      <article class="card small">
-        <div class="ico">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 6.6-1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-        </div>
-        <h3>Nothing to sign up for</h3>
-        <p>No account and no email. Your progress is saved in this browser only, and you can clear it any time.</p>
-      </article>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-art hero-art--l" aria-hidden="true" set:html={coverArt('web', 'hero')} />
+    <div class="hero-art hero-art--l2" aria-hidden="true" set:html={coverArt('aplus', 'hero')} />
+    <div class="hero-art hero-art--r" aria-hidden="true" set:html={coverArt('networking', 'hero')} />
+    <div class="hero-copy">
+      <span class="h-chip hero-chip">Free visual lessons, no sign-up</span>
+      <h1 id="hero-title" class="disp">See how technology <span class="accent">really works.</span></h1>
+      <p class="hero-sub">Short, visual lessons on networks, the web, security and AI. Watch each idea happen one step at a time, explained in plain words.</p>
+      <div class="hero-actions">
+        <a class="btn btn--primary btn--lg" href={start.url}>Learn how the Internet Works</a>
+        <a class="h-link" href="#inside">See a lesson</a>
+      </div>
     </div>
   </section>
 
-  <section class="section wrap" id="how" aria-labelledby="how-title">
-    <div class="section-head">
-      <span class="eyebrow"><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>How a lesson works</span>
-      <h2 id="how-title">Watch, learn, <span class="accent">then practice.</span></h2>
-      <p>Three parts, always in this order.</p>
-    </div>
-    <ol class="timeline">
-      {
-        parts.map((part, i) => (
-          <li>
-            <div class="ico">
-              <svg viewBox="0 0 24 24" aria-hidden="true" set:html={part.icon} />
-            </div>
-            <div>
-              <p class="num">{two(i + 1)}</p>
-              <h3>{part.name}</h3>
-              <p>{part.line}</p>
-            </div>
-            <div class="art" set:html={spot(part.kind)} />
-          </li>
-        ))
-      }
-    </ol>
-  </section>
-
-  <section class="section wrap" id="tracks" aria-labelledby="tracks-title">
-    <div class="section-head">
-      <span class="eyebrow"><svg viewBox="0 0 14 10" aria-hidden="true"><polygon points="7,1 13,5 7,9 1,5" fill="currentColor"></polygon></svg>Tracks</span>
-      <h2 id="tracks-title">Start with <span class="accent">networking.</span></h2>
-      <p>A track is a set of lessons in order. Networking comes first, because everything else builds on it. More tracks are on the way.</p>
-    </div>
-    <ul class="tracks">
-      <li>
-        <a class="card track ready" href={`/${internetTrack.id}`}>
-          <div class="art" aria-hidden="true" set:html={cardCover('web')} />
-          <div class="body">
-            <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(internetTrack.level)}</span></div>
-            <h3>{internetTrack.title}</h3>
-            <p>{internetBlurb}</p>
-            <div class="foot">
-              <TrackCardProgress client:load known={internetKnown} totals={internetTotals} />
-            </div>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="card track ready" href={`/${track.id}`}>
-          <div class="art" aria-hidden="true" set:html={cardCover('networking')} />
-          <div class="body">
-            <div class="top"><span class="kind">Networking</span><span class="badge">{levelLabel(track.level)}</span></div>
-            <h3>{track.title}</h3>
-            <p>{networkingBlurb}</p>
-            <div class="foot">
-              <TrackCardProgress client:load known={known} totals={totals} />
-            </div>
-          </div>
-        </a>
-      </li>
-      {
-        comingSoonTracks.map((t) => (
-          <li>
-            <div class="card track later">
-              <div class="art" set:html={cardCover(t.cover)} />
-              <div class="body">
-                <div class="top">
-                  <span class="kind">{t.kind}</span>
-                  <span class="badge soon">Coming soon</span>
+  <section class="band" id="tracks" aria-labelledby="tracks-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="tracks-title" class="disp">Choose where to <em>start.</em></h2>
+        <p>Three tracks, in the order to take them.</p>
+      </div>
+      <ul class="home-tracks">
+        {
+          cards.map((card) => (
+            <li>
+              <a class="home-track lift" href={card.href}>
+                <div class="home-track__art" aria-hidden="true" set:html={coverArt(card.cover, 'card')} />
+                <div class="home-track__body">
+                  <div class="home-track__meta">
+                    {card.chips.map((chip) => (
+                      <span class:list={['h-chip', { 'h-chip--plain': chip.plain }]}>{chip.text}</span>
+                    ))}
+                  </div>
+                  <h3 class="disp">{card.title}</h3>
+                  <p>{card.blurb}</p>
+                  <div class="home-track__foot">
+                    <span class="home-track__count">{card.count}</span>
+                    <span class:list={['btn', 'btn--small', 'home-track__go', { 'btn--primary': card.ready }]}>{card.go}</span>
+                  </div>
                 </div>
-                <h3>{t.title}</h3>
-                <p>{t.blurb}</p>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="band band--after" id="inside" aria-labelledby="inside-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="inside-title" class="disp">See a lesson from the <em>inside.</em></h2>
+        <p>One message, from your laptop to a web server, a layer at a time.</p>
+      </div>
+      <div class="sheet">
+        <div class="sheet__page">
+          <p class="label sheet__label">{sheet.label}</p>
+          <h3 class="disp">{titleHead}<em>{titleLast}</em></h3>
+          <p class="sheet__hook"><Rich text={sheet.hook} /></p>
+          <div class="ex">
+            <p class="label label--here ex__head">Watch · steps 1 to {sheet.steps.length}</p>
+            <ol class="sheet__steps">
+              {
+                sheet.steps.map((step) => (
+                  <li>
+                    <span class="n">{step.n}</span>
+                    <span>
+                      <b class="t">{step.title}</b>
+                      <span class="s">{step.sub}</span>
+                    </span>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+        </div>
+        <div class="sheet__page sheet__page--fig">
+          <div class="sheet__head"><span class="label">{sheet.scene}</span><span class="label">fig. 1</span></div>
+          <div class="sheet__fig" set:html={sheet.figure} />
+        </div>
+      </div>
+      <p class="sheet__more"><a class="h-link" href={sheet.url}>Open the whole lesson →</a></p>
+    </div>
+  </section>
+
+  <section class="band band--after" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="how-title" class="disp">Watch, learn, <em>then practice.</em></h2>
+        <p>Three parts, always in this order.</p>
+      </div>
+      <div class="feats">
+        {
+          parts.map((part, i) => (
+            <article class="feat">
+              <div class="feat__art" aria-hidden="true" set:html={spot(part.kind)} />
+              <div class="feat__copy">
+                <span class="label">{String(i + 1).padStart(2, '0')}</span>
+                <h3 class="disp"><em>{part.word}</em>{part.rest}</h3>
+                <p>{part.text}</p>
+                <a class="btn btn--primary" href={part.href}>{part.button}</a>
               </div>
-            </div>
-          </li>
-        ))
-      }
-    </ul>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="free-title">
+    <div class="wrap">
+      <div class="free">
+        <div class="free__l">
+          <h2 id="free-title" class="disp">Nothing to <em>sign up for.</em></h2>
+          <p>No account and no email. Your progress is saved in this browser only, and you can clear it any time.</p>
+        </div>
+        <div class="free__r">
+          <ul class="ticks">
+            <li>Every lesson, free</li>
+            <li>No account, no email</li>
+            <li>Progress stays in this browser</li>
+            <li>Every lesson links to its sources</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--faq" id="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="faq-title" class="disp">Questions</h2>
+      </div>
+      <div class="faq">
+        {
+          questions.map((item, i) => (
+            <details open={i === 0}>
+              <summary>{item.q}</summary>
+              <p>{item.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
   </section>
 </BaseLayout>
 
-<style is:global>
-  html {
+<style>
+  :global(html) {
     scroll-behavior: smooth;
   }
 
-  /* ---------- The exams strip ---------- */
-  .exams {
-    padding: 64px 0 0;
-    text-align: center;
-  }
-  .exams p {
-    margin: 0 0 18px;
-    color: var(--muted);
-    font: 500 14.5px/1.4 var(--sans);
-  }
-  .exams ul {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px 44px;
+  /* ---------- Shared on this page ---------- */
+  .disp {
     margin: 0;
-    padding: 0;
-    list-style: none;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.04;
   }
-  .exams a {
-    color: color-mix(in srgb, var(--ink-strong) 55%, var(--bg));
-    font: 700 19px/1.2 var(--sans);
-    letter-spacing: -0.01em;
-    text-decoration: none;
-    transition: color 150ms ease;
+  .disp em {
+    color: var(--accent);
+    font-style: normal;
   }
-  .exams a:hover {
+  .label {
+    margin: 0;
+    color: var(--muted);
+    font: 700 11.5px/1.2 var(--mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .label--here {
+    color: var(--here);
+  }
+  .h-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+    color: var(--accent);
+    font: 700 11px/1.4 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .h-chip--plain {
+    background: var(--card-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--muted);
+  }
+  .h-link {
     color: var(--ink-strong);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--line-strong);
+    text-underline-offset: 0.3em;
   }
-
-  /* ---------- Sections ---------- */
-  .section {
-    padding-top: 120px;
+  .h-link:hover {
+    text-decoration-color: currentColor;
+  }
+  .btn--lg {
+    min-height: 56px;
+    padding: 0 26px;
+    font-size: 17px;
+  }
+  .band {
+    padding: 110px 0;
+  }
+  .band--after {
+    padding-top: 20px;
+  }
+  .band--faq {
+    padding-top: 0;
   }
   .section-head {
     max-width: 720px;
@@ -314,338 +292,435 @@ const EYE = parts[0].icon;
     text-align: center;
   }
   .section-head h2 {
-    margin: 18px 0 12px;
-    color: var(--ink-strong);
-    font: 700 clamp(32px, 1.4rem + 1.6vw, 44px) / 1.1 var(--sans);
-    letter-spacing: -0.025em;
+    font-size: 44px;
   }
   .section-head p {
-    max-width: 38em;
-    margin: 0 auto;
-    color: var(--ink);
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: 18.5px;
   }
-  .ico {
+
+  /* ---------- Hero: the words in the middle, three covers around them ---------- */
+  .hero {
+    position: relative;
     display: grid;
     place-items: center;
-    width: 42px;
-    height: 42px;
-    margin-bottom: 18px;
-    border: 1px solid var(--accent-line);
-    border-radius: 11px;
-    background: var(--accent-soft);
-    color: var(--accent);
-  }
-  .ico svg {
-    width: 20px;
-    height: 20px;
-  }
-  .card h3 {
-    margin: 0 0 8px;
-    color: var(--ink-strong);
-    font: 700 21px/1.3 var(--sans);
-    letter-spacing: -0.01em;
-  }
-  .card p {
-    margin: 0;
-    font-size: 16px;
-  }
-
-  /* ---------- Why it works ---------- */
-  .bento {
-    display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-    gap: 18px;
-  }
-  .bento .big {
-    display: flex;
-    flex-direction: column;
-    grid-row: span 2;
-    padding: 30px;
-  }
-  .bento .small {
-    padding: 26px;
-  }
-  .big-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-  }
-  .count {
-    padding: 6px 10px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--muted);
-    font: 500 13px/1 var(--mono);
-    white-space: nowrap;
-  }
-  .count b {
-    color: var(--accent);
-  }
-  /* A lesson's message log, on the console's dark ground in both themes. */
-  .log-sample {
-    position: relative;
-    flex: 1;
-    margin-top: 24px;
+    min-height: calc(100vh - 68px);
+    padding: 40px 32px 80px;
     overflow: hidden;
-    border: 1px solid #1d3553;
-    border-radius: 12px;
-    background: #0a1220;
-    color: #d8e4f4;
   }
-  .log-sample-bar {
+  .hero-copy {
+    position: relative;
+    z-index: 2;
+    max-width: 760px;
+    text-align: center;
+  }
+  .hero-chip {
+    margin-bottom: 26px;
+  }
+  .hero h1 {
+    font-size: 80px;
+  }
+  .hero-sub {
+    max-width: 470px;
+    margin: 26px auto 0;
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.48;
+  }
+  .hero-actions {
     display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 11px 16px;
-    border-bottom: 1px solid #1d3553;
-    color: #93a8c6;
-    font: 500 12.5px/1.3 var(--mono);
-  }
-  .log-sample ol {
-    margin: 0;
-    padding: 8px 0;
-    list-style: none;
-  }
-  .log-sample li {
-    display: grid;
-    grid-template-columns: 30px 150px 96px minmax(0, 1fr);
     align-items: center;
-    gap: 10px;
-    padding: 9px 16px;
-    border-inline-start: 3px solid transparent;
-    font: 500 13.5px/1.35 var(--mono);
+    justify-content: center;
+    gap: 28px;
+    margin-top: 34px;
   }
-  /* Lighter than the mockup's #5f7899, which is under 4.5:1 on the console and on the current row. */
-  .log-sample .num {
-    color: #7088a6;
-  }
-  .log-sample .who {
-    color: #b9c9e0;
-  }
-  .log-sample .msg {
-    justify-self: start;
-    padding: 5px 7px;
-    border: 1px solid currentColor;
-    border-radius: 5px;
-    font: 700 11px/1 var(--mono);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .log-sample .say {
-    color: #f2f7ff;
-    font: 400 14.5px/1.4 var(--sans);
-  }
-  /* The current row, in the console's marigold. */
-  .log-sample li.here {
-    border-inline-start-color: #f5b83d;
-    background: rgba(245, 184, 61, 0.08);
-  }
-  .log-sample li.later .say {
-    color: #7d93b3;
-    font-style: italic;
-  }
-
-  /* ---------- How a lesson works ---------- */
-  .timeline {
-    position: relative;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0;
-    list-style: none;
-  }
-  .timeline li {
-    position: relative;
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) 300px;
-    align-items: start;
-    gap: 22px;
-    padding-bottom: 40px;
-  }
-  .timeline li:not(:last-child)::before {
-    content: '';
+  .hero-art {
     position: absolute;
-    inset-inline-start: 23px;
-    top: 52px;
-    bottom: 6px;
-    width: 1.5px;
-    background: var(--line-strong);
+    z-index: 1;
+    width: clamp(220px, 21vw, 330px);
+    pointer-events: none;
   }
-  .timeline .ico {
-    width: 48px;
-    height: 48px;
-    margin: 0;
-    background: var(--card);
-  }
-  .timeline .num {
-    margin: 4px 0 8px;
-    color: var(--accent);
-    font: 700 13px/1 var(--mono);
-    letter-spacing: 0.04em;
-  }
-  .timeline h3 {
-    margin: 0 0 6px;
-    color: var(--ink-strong);
-    font: 700 23px/1.25 var(--sans);
-  }
-  .timeline p {
-    max-width: 34em;
-    margin: 0;
-  }
-  .timeline .art {
-    aspect-ratio: 528 / 372;
-    overflow: hidden;
-    border: 1px solid var(--fig-line);
-    border-radius: 12px;
-    background: var(--fig-bg);
-  }
-  .timeline .art svg {
+  .hero-art :global(svg) {
     display: block;
     width: 100%;
-    height: 100%;
+    height: auto;
+  }
+  .hero-art--l {
+    top: 12%;
+    left: max(1vw, calc(50% - 700px));
+  }
+  .hero-art--l2 {
+    top: 56%;
+    left: max(1vw, calc(50% - 690px));
+    width: clamp(180px, 17vw, 270px);
+  }
+  .hero-art--r {
+    top: 22%;
+    right: max(1vw, calc(50% - 700px));
   }
 
   /* ---------- Tracks ---------- */
-  .tracks {
+  .home-tracks {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    gap: 22px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
-  .track {
+  .home-track {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-    text-decoration: none;
-    transition:
-      transform 200ms var(--ease-out),
-      box-shadow 200ms ease,
-      border-color 200ms ease;
-  }
-  a.track {
+    border-radius: var(--r-card);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
     color: inherit;
+    text-decoration: none;
   }
-  a.track:hover {
-    border-color: var(--accent-line);
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-3px);
-  }
-  a.track:active {
-    transform: translateY(-1px) scale(0.99);
-  }
-  .track.ready {
-    border-color: var(--accent-line);
-  }
-  .track .art {
-    height: 216px;
-    border-bottom: 1px solid var(--fig-line);
+  .home-track__art {
+    aspect-ratio: 540 / 378;
+    border-bottom: 1px solid var(--line);
     background: var(--fig-bg);
   }
-  .track .art svg {
+  .home-track__art :global(svg) {
     display: block;
     width: 100%;
     height: 100%;
   }
-  .track .body {
+  .home-track__body {
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 20px 22px 22px;
+    gap: 10px;
+    padding: 24px 26px 26px;
   }
-  .track .top {
+  .home-track__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .home-track h3 {
+    font-size: 30px;
+  }
+  .home-track p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .home-track__foot {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .track .kind {
-    color: var(--accent);
-    font: 600 13.5px/1.2 var(--sans);
-  }
-  .track h3 {
-    font-size: 20px;
-  }
-  .track p {
-    color: var(--ink);
-    font-size: 15.5px;
-  }
-  .track .foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
     gap: 12px;
     margin-top: auto;
-    padding-top: 18px;
+    padding-top: 14px;
   }
-  .track .foot .meta {
+  .home-track__count {
     color: var(--muted);
-    font: 500 13.5px/1.3 var(--mono);
-  }
-  .track .go {
-    margin-inline-start: auto;
-    color: var(--accent);
-    font: 700 15px/1 var(--sans);
-  }
-  a.track:hover .go {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .track.later {
-    background: var(--card-2);
-    box-shadow: none;
-  }
-  .track.later .art .lm-svg {
-    opacity: 0.82;
+    font: 500 13px/1.2 var(--mono);
   }
 
+  /* ---------- See a lesson from the inside: a two-page blueprint sheet ---------- */
+  .sheet {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 1080px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: var(--r-card);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+  .sheet__page {
+    padding: 34px 38px 36px;
+  }
+  .sheet__page--fig {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px dashed var(--line-strong);
+    background: var(--card-2);
+  }
+  .sheet__label {
+    margin-bottom: 18px;
+  }
+  .sheet h3 {
+    margin: 6px 0 10px;
+    font-size: 34px;
+  }
+  .sheet__hook {
+    margin: 0;
+    font-size: 15.5px;
+    line-height: 1.65;
+  }
+  .sheet__hook :global(b) {
+    color: var(--ink-strong);
+  }
+  .ex {
+    margin-top: 22px;
+    overflow: hidden;
+    border-radius: var(--r-tile);
+    background: var(--card);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .ex__head {
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sheet__steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sheet__steps li {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: baseline;
+    gap: 10px;
+    padding: 11px 18px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .sheet__steps li:first-child {
+    border-top: 0;
+  }
+  .sheet__steps .n {
+    color: var(--muted);
+    font: 700 13px/1 var(--mono);
+  }
+  .sheet__steps .t {
+    display: block;
+    color: var(--ink-strong);
+    font-size: 14.5px;
+  }
+  .sheet__steps .s {
+    display: block;
+    color: var(--muted);
+  }
+  .sheet__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .sheet__fig {
+    display: grid;
+    flex: 1;
+    place-items: center;
+    padding: 10px 6px;
+    border-radius: var(--r-tile);
+    background: var(--fig-bg);
+  }
+  .sheet__fig :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .sheet__more {
+    margin: 28px 0 0;
+    text-align: center;
+  }
+
+  /* ---------- Watch, learn, then practice: three cards, the art swapping sides ---------- */
+  .feats {
+    display: grid;
+    gap: 26px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  .feat {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    min-height: 360px;
+    overflow: hidden;
+    border-radius: var(--r-card);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+  .feat:nth-child(even) {
+    grid-template-columns: 1fr 1.05fr;
+  }
+  .feat:nth-child(even) .feat__art {
+    order: 2;
+  }
+  .feat__art {
+    display: grid;
+    place-items: center;
+    padding: 18px 26px;
+    background: var(--fig-bg);
+  }
+  .feat__art :global(svg) {
+    display: block;
+    width: 100%;
+    max-width: 470px;
+    height: auto;
+  }
+  .feat__copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    padding: 44px 54px;
+  }
+  .feat__copy h3 {
+    font-size: 40px;
+  }
+  .feat__copy p {
+    max-width: 400px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1.5;
+  }
+  .feat__copy .btn {
+    align-self: flex-start;
+    margin-top: 6px;
+  }
+
+  /* ---------- Nothing to sign up for ---------- */
+  .free {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 900px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: var(--r-card);
+    background: var(--card);
+    box-shadow: var(--shadow-sm);
+  }
+  .free__l {
+    padding: 40px 44px;
+  }
+  .free__l h2 {
+    margin-bottom: 14px;
+    font-size: 36px;
+  }
+  .free__l p {
+    margin: 0;
+    color: var(--muted);
+  }
+  .free__r {
+    padding: 40px 44px;
+    border-left: 1px solid var(--line);
+    background: var(--card-2);
+  }
+  .ticks {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ticks li {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 16.5px;
+  }
+  .ticks li::before {
+    content: '✓';
+    color: var(--allowed-text);
+    font-weight: 700;
+  }
+
+  /* ---------- Questions ---------- */
+  .faq {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .faq details {
+    border-top: 1px solid var(--line);
+  }
+  .faq details:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+  .faq summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 4px;
+    color: var(--ink-strong);
+    font-size: 19px;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+  }
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq summary::after {
+    content: '+';
+    color: var(--muted);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1;
+    transition: transform 200ms var(--ease-out);
+  }
+  .faq details[open] summary::after {
+    transform: rotate(45deg);
+  }
+  .faq details p {
+    max-width: 640px;
+    margin: 0;
+    padding: 0 4px 22px;
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  /* ---------- Narrow screens: not designed yet (task 8), only kept from breaking ---------- */
   @media (max-width: 960px) {
-    .bento {
+    .hero-art {
+      display: none;
+    }
+    .home-tracks {
       grid-template-columns: 1fr;
     }
-    .bento .big {
-      grid-row: auto;
+    .sheet,
+    .feat,
+    .feat:nth-child(even),
+    .free {
+      grid-template-columns: 1fr;
     }
-    .tracks {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .feat:nth-child(even) .feat__art {
+      order: 0;
     }
-    .timeline li {
-      grid-template-columns: 48px minmax(0, 1fr);
-    }
-    .timeline .art {
-      display: none;
+    .sheet__page--fig,
+    .free__r {
+      border-left: 0;
+      border-top: 1px dashed var(--line-strong);
     }
   }
   @media (max-width: 720px) {
-    .exams {
-      padding-top: 48px;
+    .hero h1 {
+      font-size: 48px;
     }
-    .exams ul {
-      gap: 10px 26px;
-    }
-    .section {
-      padding-top: 88px;
-    }
-    .bento .big,
-    .bento .small {
-      padding: 22px;
-    }
-    .big-top {
+    .hero-actions {
       flex-direction: column;
+      gap: 18px;
     }
-    .log-sample li {
-      grid-template-columns: 26px minmax(0, 1fr) auto;
-      row-gap: 4px;
-      padding: 10px 14px;
+    .band {
+      padding: 72px 0;
     }
-    .log-sample .say {
-      grid-column: 2 / -1;
+    .band--after,
+    .band--faq {
+      padding-top: 0;
     }
-    .tracks {
-      grid-template-columns: 1fr;
+    .section-head h2 {
+      font-size: 34px;
+    }
+    .sheet__page,
+    .feat__copy,
+    .free__l,
+    .free__r {
+      padding: 26px 22px;
+    }
+    .feat__copy h3 {
+      font-size: 32px;
     }
   }
 </style>
