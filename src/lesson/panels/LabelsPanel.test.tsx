@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// @ts-expect-error - no @types/node in this project; vitest runs under node
 import { readFileSync } from 'node:fs';
 import { render } from '@testing-library/react';
 import { expect, test } from 'vitest';
