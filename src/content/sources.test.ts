@@ -156,6 +156,37 @@ describe('sourceListOf', () => {
   });
 });
 
+describe('the four source groups added by the owner on 2026-11-08', () => {
+  // One real page per group; each publisher's host joins SOURCE_HOSTS with the first lesson that cites it.
+  test.each([
+    ['standards-body', 'W3C', 'https://www.w3.org/TR/WCAG22/'],
+    ['government', 'CISA', 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog'],
+    ['security-reference', 'FIRST', 'https://www.first.org/cvss/v4.0/specification-document'],
+    ['internet-registry', 'ARIN', 'https://www.arin.net/resources/guide/ipv6/'],
+  ] as const)('a %s source is a kind of its own, refused until its host is listed', (kind, publisher, url) => {
+    const entry: SourceEntry = { id: 'example', kind, short: publisher, title: 'Example page', publisher, url };
+    expect(() => defineSources([entry])).toThrow(
+      new RegExp(`no host is allowed yet for ${kind}; add .+ to SOURCE_HOSTS in the change that first cites it`),
+    );
+  });
+});
+
+describe('community sources, added by the owner on 2026-11-09', () => {
+  test('a blog, forum or post is a community source, refused until its host is listed', () => {
+    const entry: SourceEntry = {
+      id: 'example-post',
+      kind: 'community',
+      short: 'Example blog',
+      title: 'How DHCP works',
+      publisher: 'Example blog',
+      url: 'https://blog.example.com/how-dhcp-works',
+    };
+    expect(() => defineSources([entry])).toThrow(
+      /no host is allowed yet for community; add blog\.example\.com, if it is the publisher's own, to SOURCE_HOSTS/,
+    );
+  });
+});
+
 describe('ITU-T and the defining-standard marker', () => {
   const itu: SourceEntry = {
     id: 'itu-x200',

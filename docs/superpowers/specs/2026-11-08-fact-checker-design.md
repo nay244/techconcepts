@@ -46,8 +46,10 @@ The owner also accepted these points when they were played back in conversation:
 - **A second source that isn't allowed.** Corroboration uses the same allowed sources as every citation:
   - RFCs, IEEE, IANA, NIST and ITU-T
   - an allowed vendor's own documentation and explainer pages
+  - *Added 2026-11-08 (owner):* four more groups, listed in direction doc §3.2: other standards bodies and industry groups, government security agencies besides NIST, security reference programmes, and internet registries. Two pages from one publisher's site count once, as two pages of one vendor do.
 
   It never uses blogs (a vendor's blog included), Wikipedia, videos, forums, AI output, or anyone else's summary.
+  - *Changed 2026-11-09 (owner):* blogs, forums and posts are now allowed as community sources. Two independent sources that agree confirm a claim, whatever their kind; primary sources are preferred, not required, and the report marks a claim that rests only on community sources. Wikipedia, videos, AI output and pages written to sell something still never count.
 - **A verdict from memory.** Every passage is read from the source itself, in this run.
 
 ## 4. The flow for one lesson

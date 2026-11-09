@@ -4,12 +4,27 @@ import type { Source } from './schema';
 
 /**
  * The primary-source registry and exact-section citations (direction doc §3.1, §3.2). Every factual statement
- * cites a source in this registry at the section it comes from. Only primary hosts are allowed: RFCs, IEEE,
- * IANA, NIST, official vendor documentation, and official certification objective documents (for exam tags and
- * objective mapping only).
+ * cites a source in this registry at the section it comes from. Primary sources are preferred: RFCs, IEEE,
+ * IANA, NIST, ITU-T, the four groups the owner added on 2026-11-08 (other standards bodies, government security
+ * agencies, security reference programmes, internet registries) and official vendor documentation. Since 2026-11-09
+ * blogs, forums and posts count too, as `community` sources. Official certification objective documents are for exam
+ * tags and objective mapping only.
  */
 
-export const SOURCE_KINDS = ['rfc', 'ieee', 'iana', 'nist', 'itu', 'vendor', 'cert-objectives'] as const;
+export const SOURCE_KINDS = [
+  'rfc',
+  'ieee',
+  'iana',
+  'nist',
+  'itu',
+  'standards-body',
+  'government',
+  'security-reference',
+  'internet-registry',
+  'community',
+  'vendor',
+  'cert-objectives',
+] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
 /** Exact hosts each kind may live on. No wildcards. */
@@ -20,6 +35,19 @@ export const SOURCE_HOSTS: Record<SourceKind, readonly string[]> = {
   nist: ['csrc.nist.gov', 'nvlpubs.nist.gov', 'www.nist.gov'],
   // ITU-T Recommendations, free to read: X.200 defines the OSI model (owner, 2026-11-08).
   itu: ['www.itu.int'],
+  // The four groups the owner added on 2026-11-08 (direction doc §3.2). No host is listed until a lesson cites one:
+  // each publisher's own host joins here in that change.
+  // W3C, WHATWG, Wi-Fi Alliance, ETSI, 3GPP, Unicode, Ecma, Bluetooth SIG, USB-IF, UEFI Forum, NVM Express.
+  'standards-body': [],
+  // CISA, the UK's NCSC, ENISA. NIST keeps its own kind.
+  government: [],
+  // MITRE's CVE, CWE and ATT&CK; FIRST's CVSS.
+  'security-reference': [],
+  // ICANN and the five regional internet registries: ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC. IANA keeps its own kind.
+  'internet-registry': [],
+  // Blogs (a vendor's included), forums and posts, readable without signing in (owner, 2026-11-09). Each site's host
+  // joins here with the first lesson that cites it. Wikipedia, videos and AI output never count.
+  community: [],
   vendor: ['learn.microsoft.com', 'www.cisco.com', 'developers.cloudflare.com', 'docs.paloaltonetworks.com'],
   'cert-objectives': ['www.comptia.org', 'partners.comptia.org', 'learningnetwork.cisco.com'],
 };
@@ -126,7 +154,9 @@ export function defineSources(entries: SourceEntry[]): SourceRegistry {
     const docIssue = documentProblem(e.url);
     if (docIssue) issues.push(`${name}: ${docIssue}`);
     if (!host) issues.push(`${name}: the host of url cannot be read`);
-    else if (!allowed.includes(host)) {
+    else if (allowed.length === 0) {
+      issues.push(`${name}: no host is allowed yet for ${e.kind}; add ${host}, if it is the publisher's own, to SOURCE_HOSTS in the change that first cites it`);
+    } else if (!allowed.includes(host)) {
       issues.push(`${name}: ${host} is not an allowed host for ${e.kind} (allowed: ${allowed.join(', ')})`);
     }
     if (e.anchor !== undefined) {
