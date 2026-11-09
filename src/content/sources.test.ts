@@ -171,6 +171,22 @@ describe('the four source groups added by the owner on 2026-11-08', () => {
   });
 });
 
+describe('community sources, added by the owner on 2026-11-09', () => {
+  test('a blog, forum or post is a community source, refused until its host is listed', () => {
+    const entry: SourceEntry = {
+      id: 'example-post',
+      kind: 'community',
+      short: 'Example blog',
+      title: 'How DHCP works',
+      publisher: 'Example blog',
+      url: 'https://blog.example.com/how-dhcp-works',
+    };
+    expect(() => defineSources([entry])).toThrow(
+      /no host is allowed yet for community; add blog\.example\.com, if it is the publisher's own, to SOURCE_HOSTS/,
+    );
+  });
+});
+
 describe('ITU-T and the defining-standard marker', () => {
   const itu: SourceEntry = {
     id: 'itu-x200',

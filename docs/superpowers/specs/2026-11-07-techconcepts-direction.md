@@ -44,7 +44,7 @@ TechConcepts is **not** a game. It has nothing to do with the owner's separate I
 
 ### 3.2 Allowed sources (owner, Q11)
 
-Primary references only, for every technical claim:
+Primary references are preferred for every technical claim (owner, 2026-11-09; until then they were required):
 - IETF RFCs, IEEE standards, IANA registries, NIST publications
 - ITU-T Recommendations, published free on `www.itu.int`. ITU-T X.200, the same text as ISO/IEC 7498-1, can be the defining standard for OSI model claims (owner, 2026-11-08)
 - Four more groups, each from its own site (owner, 2026-11-08):
@@ -53,12 +53,13 @@ Primary references only, for every technical claim:
   - security reference programmes: MITRE's CVE, CWE and ATT&CK, and FIRST's CVSS specification
   - internet registries: ICANN and the five regional internet registries (ARIN, RIPE NCC, APNIC, LACNIC and AFRINIC)
 - Official vendor documentation (e.g. Cisco, Microsoft, Cloudflare, Palo Alto Networks docs)
-  - and the vendor's own explainer pages, such as Cisco's "What is a firewall?" (owner, 2026-11-08). A vendor's blog, forum or partner content never counts
+  - and the vendor's own explainer pages, such as Cisco's "What is a firewall?" (owner, 2026-11-08). A vendor's blog or forum counts only as a community source (owner, 2026-11-09), and its partner content never counts
 - Official certification objective documents (CompTIA, Cisco), for exam tags and objective mapping only
+- Community sources (owner, 2026-11-09): blogs, a vendor's blog included, forums and posts, readable without signing in. Like any source, each is cited, and a claim needs a second, independent source that states it too. Two community sources that agree are enough, but a lesson cites a standard or official page wherever one says the same thing. Only a defining standard can confirm a claim alone
 
 **Sources must be current** (owner, 2026-11-08): the version in force today, not an obsoleted RFC or a superseded or withdrawn standard. They must also be relevant: the cited section says what the claim says.
 
-Never sources: blogs, Wikipedia, videos, forums, AI output, or secondary summaries, however reputable.
+Never sources: Wikipedia, videos, AI output, or a page written to sell something. (Until 2026-11-09 blogs, forums and secondary summaries were never sources too; the owner allowed them as community sources that day.)
 
 Each citation points to the **exact section** (e.g. RFC 2131 §3.1), not just the document.
 

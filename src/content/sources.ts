@@ -4,10 +4,11 @@ import type { Source } from './schema';
 
 /**
  * The primary-source registry and exact-section citations (direction doc §3.1, §3.2). Every factual statement
- * cites a source in this registry at the section it comes from. Only primary hosts are allowed: RFCs, IEEE,
+ * cites a source in this registry at the section it comes from. Primary sources are preferred: RFCs, IEEE,
  * IANA, NIST, ITU-T, the four groups the owner added on 2026-11-08 (other standards bodies, government security
- * agencies, security reference programmes, internet registries), official vendor documentation, and official
- * certification objective documents (for exam tags and objective mapping only).
+ * agencies, security reference programmes, internet registries) and official vendor documentation. Since 2026-11-09
+ * blogs, forums and posts count too, as `community` sources. Official certification objective documents are for exam
+ * tags and objective mapping only.
  */
 
 export const SOURCE_KINDS = [
@@ -20,6 +21,7 @@ export const SOURCE_KINDS = [
   'government',
   'security-reference',
   'internet-registry',
+  'community',
   'vendor',
   'cert-objectives',
 ] as const;
@@ -43,6 +45,9 @@ export const SOURCE_HOSTS: Record<SourceKind, readonly string[]> = {
   'security-reference': [],
   // ICANN and the five regional internet registries: ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC. IANA keeps its own kind.
   'internet-registry': [],
+  // Blogs (a vendor's included), forums and posts, readable without signing in (owner, 2026-11-09). Each site's host
+  // joins here with the first lesson that cites it. Wikipedia, videos and AI output never count.
+  community: [],
   vendor: ['learn.microsoft.com', 'www.cisco.com', 'developers.cloudflare.com', 'docs.paloaltonetworks.com'],
   'cert-objectives': ['www.comptia.org', 'partners.comptia.org', 'learningnetwork.cisco.com'],
 };

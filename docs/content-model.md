@@ -8,20 +8,23 @@ The real `SOURCES` registry is empty today. A lesson's first sources are added t
 
 ## 1. Sources
 
-Every fact cites a primary source:
+Every fact cites a source. A primary source is preferred:
 - an RFC, an IEEE standard, an IANA registry, a NIST publication or an ITU-T Recommendation;
+- a source from the four groups the owner added on 2026-11-08 (other standards bodies, government security agencies, security reference programmes, internet registries);
 - an allowed vendor's own documentation, or its own explainer pages, such as Cisco's "What is a firewall?" (owner, 2026-11-08).
 
-An official certification objectives document is allowed only for exam tags and objective mapping. No blogs, Wikipedia, videos, forums or summaries.
+Since 2026-11-09 a blog (a vendor's included), a forum or a post counts too, as a `community` source, when it can be read without signing in (owner). Cite a standard or official page wherever one says the same thing.
+
+An official certification objectives document is allowed only for exam tags and objective mapping. Never Wikipedia, videos, AI output, or a page written to sell something.
 
 Every claim needs two independent sources, or one that is its defining standard (section 3). Each source must be current: the version in force today, not obsoleted, superseded or withdrawn (owner, 2026-11-08). The fact-checker checks currency (section 8).
 
 *Policy:* the build checks only the host of each source, so you must pick the right documents. Some pages on allowed hosts are not primary sources, and the build lets them through:
 
 - Internet-Drafts on `datatracker.ietf.org`. Cite only published RFCs.
-- Microsoft Q&A and Shows on `learn.microsoft.com`. They are a forum and videos, not documentation.
+- Microsoft Q&A and Shows on `learn.microsoft.com`. Shows are videos, which never count. A Q&A page is a forum: register it as a `community` source, not `vendor`.
 - Conference papers on `ieeexplore.ieee.org`. They are not standards.
-- A vendor's blog, community forum or partner content, on any host. Only pages the vendor wrote as documentation or explainers count.
+- A vendor's blog or community forum is a `community` source, not `vendor`. Only pages the vendor wrote as documentation or explainers are `vendor` sources. Partner and sponsored content never counts.
 
 Sources live in the list inside `defineSources([...])` in `src/content/sources.ts` (`SOURCES`). Add one entry per document:
 
@@ -38,8 +41,9 @@ Sources live in the list inside `defineSources([...])` in `src/content/sources.t
 }
 ```
 
-- `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `itu`, `standards-body`, `government`, `security-reference`, `internet-registry`, `vendor`, `cert-objectives`. An `itu` source is an ITU-T Recommendation on `www.itu.int`, published free there. An explainer page is a `vendor` source, with no kind of its own.
+- `kind` is one of `SOURCE_KINDS`: `rfc`, `ieee`, `iana`, `nist`, `itu`, `standards-body`, `government`, `security-reference`, `internet-registry`, `community`, `vendor`, `cert-objectives`. An `itu` source is an ITU-T Recommendation on `www.itu.int`, published free there. An explainer page is a `vendor` source, with no kind of its own.
 - The four kinds after `itu` are the groups the owner added on 2026-11-08 (direction doc §3.2): other standards bodies and industry groups, government security agencies besides NIST, security reference programmes, and internet registries other than IANA. They start with no hosts. A publisher's own host is added with the first lesson that cites it.
+- `community` (owner, 2026-11-09) is a blog, forum or post. It also starts with no hosts, and each site's host is added with the first lesson that cites it.
 - The host of `url` must be listed for that kind in `SOURCE_HOSTS`. Hosts are exact, with no wildcards. To allow a new host, add it to `SOURCE_HOSTS` in the same change and say why in the commit.
 - `url` names one document. It is an `https` address in normal form, with a path other than `/` and no `#fragment`.
 - One document has one entry. A second entry with the same `url`, or for the same RFC on another RFC host, fails the build, because it would count as a second source (section 3).

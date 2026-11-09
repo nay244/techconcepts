@@ -65,12 +65,15 @@ A part is ✅ only if all of these hold for every claim in it:
   - **Security reference:** a CVE, CWE or ATT&CK entry that is not rejected, deprecated or revoked, or the current version of the CVSS specification.
   - **Internet registry page or policy:** the page is live, and a policy is the version in force.
   - **Vendor documentation or explainer page:** the page is live and describes a current product or current practice.
+  - **Community source (blog, forum or post):** the page is live and the claim still describes current practice, however old the post is.
   - **The claim itself:** it describes current practice, not a superseded one. For example, saying HTTPS runs over SSL fails.
   - Record the date you checked each source.
 - **Confirmed.** Either:
   - **Two independent sources.** Two of the part's citations each state the claim themselves, and you quote both. *Independent* means:
     - they are different documents. Two source ids that name the same document, such as one RFC on two sites, are one source;
-    - they are not two pages from one publisher's site, such as two pages of one vendor, one agency or one registry. A vendor page that restates an RFC counts, and so does a second standard, such as a second RFC.
+    - they are not two pages from one publisher's site, such as two pages of one vendor, one agency or one registry. A vendor page that restates an RFC counts, and so does a second standard, such as a second RFC;
+    - two community sources have different authors on different sites, and neither copies the other or rests only on it. If a post's only basis for the claim is the other cited source, they are one source.
+  - **Primary sources are preferred, not required.** Two community sources that agree confirm a claim. When a claim rests only on community sources, it can still be ✅, and you add a line under it in the report: "Community sources only".
   - **A defining standard.** A citation marked "(defining standard)" states the claim. You confirm it is the current document that defines this thing, such as its message format, field, value, procedure or layer. Say what it defines. A marker on a document that does not define the thing is ❌ for that claim, even when the claim is true.
 - **Allowed.** Every cited source really is one of the allowed kinds, and its page comes from the publisher itself. The allowed kinds are:
   - IETF RFCs, IEEE standards, IANA registries, NIST publications and ITU-T Recommendations;
@@ -79,16 +82,18 @@ A part is ✅ only if all of these hold for every claim in it:
   - the entries and specifications of MITRE's CVE, CWE and ATT&CK, and FIRST's CVSS;
   - the pages and policies of ICANN and the five regional internet registries: ARIN, RIPE NCC, APNIC, LACNIC and AFRINIC;
   - an allowed vendor's own documentation and explainer pages;
+  - a community source: a blog (a vendor's included), a forum answer or a post, readable without signing in;
   - an official certification objectives document, for objective mapping only.
 
   The build checks only hosts, so you must reject:
   - a draft that is not yet its group's standard, such as an Internet-Draft or a W3C Working Draft;
-  - a Microsoft Q&A or Shows page;
+  - a Shows page or any other video;
+  - a forum or blog page, such as a Microsoft Q&A page, registered as a `vendor` source: it is a community source;
   - a conference paper;
-  - a blog, news post, community forum or partner content, on a vendor's site or any other allowed site;
+  - a page written to sell something, such as partner or sponsored content;
   - any page the publisher did not write.
 
-  Never count Wikipedia, videos, forums, AI output or anyone's summary.
+  Never count Wikipedia, videos or AI output.
 
 If a source cannot be fetched or read, no claim that rests on it can be ✅.
 
@@ -148,6 +153,7 @@ After the header, for people:
    - its key, its text and its verdict;
    - each citation, with the passage you relied on, quoted verbatim (the sentence or two you need, no more), or "defining standard: <what it defines>";
    - a currency note;
+   - "Community sources only", when no citation behind a ✅ is a standard or official page;
    - for anything not ✅, one line saying exactly what is wrong.
 2. **The traced, example and analogy parts, and the unbacked items:** the key, the verdict, and, for anything not ✅, what is wrong.
 3. **The sources:** each one, how you found it current (or not), and the date.
