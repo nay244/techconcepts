@@ -3,6 +3,8 @@ import type { Theme } from '../lib/theme';
 export type TokenName =
   | 'bg'
   | 'bg-soft'
+  | 'ground'
+  | 'ground-dot'
   | 'card'
   | 'card-2'
   | 'tile'
@@ -60,6 +62,8 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
   light: {
     bg: '#ffffff',
     'bg-soft': '#f4f7fb',
+    ground: '#f4f7fb',
+    'ground-dot': 'rgba(31, 99, 192, 0.13)',
     card: '#ffffff',
     'card-2': '#f8fafd',
     tile: '#eef3f9',
@@ -94,6 +98,8 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
   dark: {
     bg: '#060c17',
     'bg-soft': '#0a1322',
+    ground: '#060c17',
+    'ground-dot': 'rgba(127, 176, 234, 0.13)',
     card: '#0c1728',
     'card-2': '#0a1424',
     tile: '#142339',
