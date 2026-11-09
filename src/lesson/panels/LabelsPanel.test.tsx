@@ -1,7 +1,15 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
 import { render } from '@testing-library/react';
 import { expect, test } from 'vitest';
+import { contrastRatio } from '../../lib/contrast';
+import { tokens } from '../../styles/tokens';
 import { headersSentence, LabelsPanel } from './LabelsPanel';
+
+// Read from the project root: under jsdom import.meta.url is not a file URL.
+const labelsCss: string = readFileSync('src/lesson/panels/labels.css', 'utf8');
+/** The body of the first rule whose selector is exactly `selector`. */
+const rule = (selector: string) => labelsCss.split(`\n${selector} {`)[1]?.split('}')[0] ?? '';
 
 const chips = (container: HTMLElement) => [...container.querySelectorAll('.labels-chip')].map((c) => c.textContent);
 const note = (container: HTMLElement) => container.querySelector('.labels-note')!.textContent;
@@ -50,4 +58,20 @@ test('headersSentence', () => {
 test('the panel has no live region of its own', () => {
   const { container } = render(<LabelsPanel labels={{ list: [7], mark: { n: 7, kind: 'new' } }} />);
   expect(container.querySelector('[aria-live]')).toBeNull();
+});
+
+test('a new chip is filled with the accent and its ink, a read chip outlined in the here colour', () => {
+  expect(rule('.labels-chip.is-new')).toMatch(/background:\s*var\(--accent\);/);
+  expect(rule('.labels-chip.is-new')).toMatch(/color:\s*var\(--accent-ink\);/);
+  expect(rule('.labels-chip.is-read')).toMatch(/border:\s*2px solid var\(--here\);/);
+  expect(rule('.labels-chip.is-read')).toMatch(/color:\s*var\(--ink-strong\);/);
+});
+
+test.each(['light', 'dark'] as const)('every chip word reaches 4.5:1 and the read mark 3:1 in the %s theme', (theme) => {
+  const t = tokens[theme];
+  // The panel sits on the card colour; a new chip's word sits on its own fill.
+  expect(contrastRatio(t['accent-ink'], t.accent), 'new chip word').toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t.ink, t.card), 'chip word').toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t['ink-strong'], t.card), 'read chip word').toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t.here, t.card), 'read mark').toBeGreaterThanOrEqual(3);
 });

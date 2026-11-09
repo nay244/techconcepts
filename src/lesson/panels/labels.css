@@ -33,10 +33,11 @@
   border-style: dashed;
 }
 
+/* Filled like the Play button: white on the lit blue was 3.89:1, under 4.5:1 for words this size. */
 .labels-chip.is-new {
-  background: #2f7bff;
-  border-color: #a8e8ff;
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .labels-chip.is-read {
