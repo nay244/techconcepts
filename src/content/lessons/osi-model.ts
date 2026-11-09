@@ -13,7 +13,7 @@ import { cite } from '../sources';
 
 const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
 /** X.200's PDF page for each section cited (spec §6, measured with pdftotext). */
-const X200_PAGE: Record<string, number> = { '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.6': 33, '7.1.2.1': 36, '7.2.2.2': 37, '7.3.2.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.5.2.1': 45, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53 };
+const X200_PAGE: Record<string, number> = { '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.6': 33, '7.1.2.1': 36, '7.2.2.2': 37, '7.3.2.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.5.2.1': 45, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53 };
 const x200 = (section: string) => cite('itu-x200', section, { url: `${X200}#page=${X200_PAGE[section]}`, defining: true });
 /** The Foreword, on PDF page 2, says the same text is published as ISO/IEC 7498-1. */
 const X200_FOREWORD = cite('itu-x200', 'Foreword', { url: `${X200}#page=2`, defining: true });
@@ -23,7 +23,13 @@ const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-
 const NIST_2_1 = cite('nist-sp800-77r1', '2.1', { url: `${NIST}#page=20` });
 const NIST_FOOTNOTE_6 = cite('nist-sp800-77r1', '2.1, footnote 6', { url: `${NIST}#page=20` });
 
-const rfc1122 = (section: string, defining?: true) => cite('rfc-1122', section, defining ? { defining } : {});
+/**
+ * RFC 1122's page for each section cited, from its contents and the html's `id="page-N"` marks: the html has no id for
+ * a section below the top level, so a section is cited by the page it starts on.
+ */
+const RFC1122_PAGE: Record<string, number> = { '1.1.1': 6, '1.1.3': 8, '1.3.3': 17 };
+const rfc1122 = (section: string, defining?: true) =>
+  cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${RFC1122_PAGE[section]}`, ...(defining ? { defining } : {}) });
 
 const MICROSOFT = 'https://learn.microsoft.com/en-us/windows-hardware/drivers/network/windows-network-architecture-and-the-osi-model';
 const microsoft = (section: string, fragment: string) => cite('microsoft-osi', section, { url: `${MICROSOFT}#${fragment}` });
@@ -351,7 +357,7 @@ export default defineLesson({
           {
             id: 'lead-5',
             text: 'In between, a **router** passes the message on using only layers 1 to 3. It needs layer 3, the Network Layer, because that is the layer that routes messages across networks.',
-            cite: [x200('6.1.6'), x200('7.5.2.1'), NIST_2_1, microsoft('Network layer', 'network-layer')],
+            cite: [x200('6.1.6'), x200('7.5.2.1'), NIST_2_1, rfc1122('1.1.1'), microsoft('Network layer', 'network-layer')],
           },
           {
             id: 'lead-6',
@@ -380,7 +386,7 @@ export default defineLesson({
             name: 'Decapsulation',
             cite: [CISCO_DECAP, cite('rfc-2003', '1'), cite('rfc-2003', '3')],
           },
-          { id: 'term-peer', idea: 'The same layer on another machine, working with it by that layer’s own rules', name: 'Peer layer', cite: [x200('5.2.2.7')] },
+          { id: 'term-peer', idea: 'The same layer on another machine, working with it by that layer’s own rules', name: 'Peer layer', cite: [x200('5.2.1.3'), x200('5.2.2.7')] },
           { id: 'term-relay', idea: 'A machine in the middle that only passes data on to other machines', name: 'Relay', cite: [x200('6.1.6')] },
         ],
         pattern: {

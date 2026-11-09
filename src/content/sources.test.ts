@@ -199,8 +199,14 @@ describe('the OSI Model lesson’s sources', () => {
     });
   });
 
-  test('NIST SP 800-77r1 §2.1 is page 20; RFC sections link by anchor', () => {
+  test('NIST SP 800-77r1 §2.1 is page 20; RFC 1122’s sections link by page, RFC 2003’s by anchor', () => {
     expect(cite('nist-sp800-77r1', '2.1', { url: `${NIST}#page=20` }).label).toBe('NIST SP 800-77r1, 2.1');
-    expect(cite('rfc-1122', '1.3.3').url).toBe('https://www.rfc-editor.org/rfc/rfc1122.html#section-1.3.3');
+    // rfc1122.html has ids for its top-level sections and its pages only, so §1.3.3 is cited at page 17, where it starts.
+    const RFC1122 = 'https://www.rfc-editor.org/rfc/rfc1122.html';
+    expect(cite('rfc-1122', '1.3.3', { url: `${RFC1122}#page-17` })).toEqual({
+      source: 'rfc-1122', section: '1.3.3', url: `${RFC1122}#page-17`, label: 'RFC 1122, 1.3.3',
+    });
+    expect(() => cite('rfc-1122', '1.3.3')).toThrow(/needs a URL/);
+    expect(cite('rfc-2003', '1').url).toBe('https://www.rfc-editor.org/rfc/rfc2003.html#section-1');
   });
 });

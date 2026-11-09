@@ -2,6 +2,7 @@
 import { afterEach, expect, test } from 'vitest';
 import { OSI_WORDS } from '../../art/scenes/osi-stacks';
 import { showSweep } from '../../test/show-sweep';
+import { citationsOf } from '../cited';
 import { checkStructure } from '../define';
 import { checkLimits } from '../limits';
 import type { Lesson, MessageEvent, MessageLabels, SceneEvent } from '../schema';
@@ -89,6 +90,21 @@ test('Learn has the spec’s ids', () => {
     ['fact-2-top', 'Top', '7 Application'],
     ['fact-2-bottom', 'Bottom', '1 Physical'],
     ['fact-3', 'Defined in', 'ITU-T X.200, the same text as ISO/IEC 7498-1'],
+  ]);
+});
+
+test('peer and router rest on the sections that say them, and RFC 1122 is cited by the page each section starts on', () => {
+  const sections = (cites: { source: string; section: string }[]) => cites.map((c) => `${c.source} ${c.section}`);
+  // X.200 5.2.1.3 defines peer-(N)-entities; RFC 1122 §1.1.1 names the machines joining networks "IP routers".
+  expect(sections(unit.learn.terms.find((t) => t.id === 'term-peer')!.cite)).toEqual(['itu-x200 5.2.1.3', 'itu-x200 5.2.2.7']);
+  expect(sections(unit.learn.lead.find((s) => s.id === 'lead-5')!.cite)).toContain('rfc-1122 1.1.1');
+  // rfc1122.html has no id below the top-level sections, but it marks every page.
+  const rfc1122 = [...new Map(citationsOf(unit).filter((c) => c.source === 'rfc-1122').map((c) => [c.section, c.url])).entries()].sort();
+  const page = (n: number) => `https://www.rfc-editor.org/rfc/rfc1122.html#page-${n}`;
+  expect(rfc1122).toEqual([
+    ['1.1.1', page(6)],
+    ['1.1.3', page(8)],
+    ['1.3.3', page(17)],
   ]);
 });
 

@@ -153,6 +153,8 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'ITU-T',
     url: 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items',
   },
+  // No anchor: rfc1122.html has ids for its top-level sections and its pages (`#page-N`) only, so a section is cited
+  // by the page it starts on.
   {
     id: 'rfc-1122',
     kind: 'rfc',
@@ -160,7 +162,6 @@ export const SOURCES: SourceRegistry = defineSources([
     title: 'Requirements for Internet Hosts – Communication Layers',
     publisher: 'IETF',
     url: 'https://www.rfc-editor.org/rfc/rfc1122.html',
-    anchor: 'https://www.rfc-editor.org/rfc/rfc1122.html#section-{n}',
   },
   {
     id: 'nist-sp800-77r1',
