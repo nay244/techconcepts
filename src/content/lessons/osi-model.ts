@@ -307,7 +307,7 @@ export default defineLesson({
             '**Layer 3, the Network Layer**, works out the way. Between your laptop and the web server there can be several networks, one after another, with routers passing the message on. Layer 3 finds a **route** to the web server’s **network address**, so the message can cross them all. The layers above never need to know which way it goes. Then layer 3 adds its own header and passes the bundle down.',
           deep: [
             {
-              text: 'In X.200, any relaying between the two end systems happens in the Network Layer or below, and the Transport Layer is relieved of any concern with routing.',
+              text: 'In X.200, the relaying that supports the network service between the two end systems happens in the Network Layer or below, so the Transport Layer is relieved of any concern with routing and relaying.',
               cite: [x200('7.4.2.4'), x200('7.5.2.4')],
             },
             {

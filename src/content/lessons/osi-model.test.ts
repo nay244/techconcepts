@@ -410,3 +410,15 @@ test('framing is said only of connection mode, where X.200 7.6.4 lists it', () =
     expect(p.cite.filter((c) => c.source === 'itu-x200').map((c) => c.section), p.at).toContain('7.6.4');
   }
 });
+
+test('relaying is said only of what supports the network service, as X.200 7.5.2.4 says', () => {
+  // 7.5.2.4 puts the relay functions "used to support the network-service" in the Network Layer or below; 6.5.2.4 and
+  // 6.5.2.5 allow relaying in the Application Layer too, so no part says all relaying is low.
+  const relaying = citedPartsOf(osiModel).filter((p) => saidBy(p).some((t) => /\brelaying\b/i.test(t)));
+  expect(relaying.length).toBeGreaterThan(0);
+  for (const p of relaying) {
+    const said = saidBy(p).join(' ');
+    expect(said, p.at).toMatch(/\bsupports? the network service\b/i);
+    expect(said, p.at).not.toMatch(/\bany relaying\b/i);
+  }
+});
