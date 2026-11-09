@@ -399,3 +399,14 @@ test('the layers say only what their sources say', () => {
   // Explainers put encryption and compression at layer 6; X.200 does not, so the lesson does not either.
   expect(readerTexts(osiModel).filter((t) => /\b(encrypt|compress)/i.test(t))).toEqual([]);
 });
+
+test('framing is said only of connection mode, where X.200 7.6.4 lists it', () => {
+  // X.200 7.6.4: error detection is a Data Link function in both modes; delimiting and synchronization (framing,
+  // 7.6.4.5) is one of those "also performed" in connection-mode only.
+  const framing = citedPartsOf(osiModel).filter((p) => saidBy(p).some((t) => /\bframing\b/i.test(t)));
+  expect(framing.length).toBeGreaterThan(0);
+  for (const p of framing) {
+    expect(saidBy(p).join(' '), p.at).toMatch(/\bin connection mode\b/i);
+    expect(p.cite.filter((c) => c.source === 'itu-x200').map((c) => c.section), p.at).toContain('7.6.4');
+  }
+});

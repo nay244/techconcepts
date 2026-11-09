@@ -14,7 +14,7 @@ import { cite } from '../sources';
 
 const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
 /** X.200's PDF page for each section cited (spec §6, measured with pdftotext). */
-const X200_PAGE: Record<string, number> = { '1.1': 5, '1.2': 5, '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.4': 12, '5.2.2.5': 12, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.3': 32, '6.1.6': 33, '6.2.1': 33, '7.1.2.1': 36, '7.2.1.2': 37, '7.2.2.2': 37, '7.2.2.3': 37, '7.3.1.4': 39, '7.3.2.1': 39, '7.3.3.1.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.4.2.4': 41, '7.4.2.5': 41, '7.4.4.1.1': 42, '7.5.2.1': 45, '7.5.2.3': 45, '7.5.2.4': 45, '7.5.4.2.1': 48, '7.6.2.1': 50, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53, '7.7.4.6.1': 56 };
+const X200_PAGE: Record<string, number> = { '1.1': 5, '1.2': 5, '5.2.1.3': 10, '5.2.2.1': 10, '5.2.2.3': 11, '5.2.2.4': 12, '5.2.2.5': 12, '5.2.2.7': 12, '5.6.1.1': 19, '5.6.1.3': 19, '5.6.1.4': 19, '6.1.2': 32, '6.1.3': 32, '6.1.6': 33, '6.2.1': 33, '7.1.2.1': 36, '7.2.1.2': 37, '7.2.2.2': 37, '7.2.2.3': 37, '7.3.1.4': 39, '7.3.2.1': 39, '7.3.3.1.1': 39, '7.4.2.1': 41, '7.4.2.3': 41, '7.4.2.4': 41, '7.4.2.5': 41, '7.4.4.1.1': 42, '7.5.2.1': 45, '7.5.2.3': 45, '7.5.2.4': 45, '7.5.4.2.1': 48, '7.6.2.1': 50, '7.6.4': 51, '7.6.2.2': 50, '7.6.4.5': 52, '7.7.2': 53, '7.7.4.6.1': 56 };
 const x200 = (section: string) => cite('itu-x200', section, { url: `${X200}#page=${X200_PAGE[section]}`, defining: true });
 /** The Foreword, on PDF page 2, says the same text is published as ISO/IEC 7498-1. */
 const X200_FOREWORD = cite('itu-x200', 'Foreword', { url: `${X200}#page=2`, defining: true });
@@ -340,8 +340,8 @@ export default defineLesson({
             '**Layer 2, the Data Link Layer**, looks after one stretch of the trip: **one link**, from your laptop to the next machine along the way. Here, that’s the router. It also detects **errors** that happen down in layer 1, on the cable. Layer 2 adds **header 2** in front. Now the message carries six headers, one for each layer from 2 to 7. Wrapping each layer’s bundle inside a bigger one on the way down is called **encapsulation**.',
           deep: [
             {
-              text: 'In X.200, a data link is built on one or more physical connections. The Data Link Layer recognizes a run of bits as one unit of its own, which is sometimes called framing, and it detects errors that occur in the Physical Layer, and possibly corrects them.',
-              cite: [x200('7.6.2.1'), x200('7.6.2.2'), x200('7.6.4.5')],
+              text: 'In X.200, a data link is built on one or more physical connections, and the Data Link Layer detects errors that occur in the Physical Layer, and possibly corrects them. In connection mode, it also recognizes a run of bits as one unit of its own, which is sometimes called framing.',
+              cite: [x200('7.6.2.1'), x200('7.6.2.2'), x200('7.6.4'), x200('7.6.4.5')],
             },
           ],
           facts: [
