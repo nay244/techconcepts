@@ -19,7 +19,9 @@ It is the first lesson written to the cited shape (`docs/content-model.md` §3) 
 - Phone and tablet layouts (task 8). Design and check at desktop widths, keeping layouts fluid.
 
 **Anti-goals**
-- Watch saying anything Learn doesn't. In particular, Watch does not show the router replacing the layer-2 header for the next link: no source for it has been read yet.
+- Watch saying anything Learn doesn't.
+
+  *Amended 2026-11-08, after the fact-check.* This line first also ruled out showing the router replacing the layer-2 header, because no source for it had been read. The fact-checker found that drawing header 2 unchanged through the router contradicts lead-3 and lead-6, which are sourced, and contradicts layer 2 working one hop at a time (lead-5). So the router now follows Learn's general rules. Its layer 3 sees headers 3 to 7, because layer 2 has read its header and passed the rest up. Going back down, its layer 2 adds its own header 2, as any layer does going down. No Watch text says "replaces". This reverses the original anti-goal, so the PR asks the owner to approve it.
 - Presenting the internet's protocols as OSI protocols. The internet uses its own four-layer model (RFC 1122 §1.1.3). Learn says so in Go deeper, and the badge says "Spans layers".
 
 ## 2. Decided
@@ -27,6 +29,7 @@ It is the first lesson written to the cited shape (`docs/content-model.md` §3) 
 - **Owner, 2026-11-08: scene style A, solid blocks.** Each layer is a block on a spine, with its number and name engraved on the front. The block doing the work is the lit part. Three stacks stand on one plate: the laptop's seven, a router's three, and the web server's seven. The same layer sits at the same height in every stack, so twins line up. A cable joins the bottoms. Style B (open rack) was set aside.
 - **Owner, 2026-11-08: the Watch mockup is approved.** That covers six steps, the message strip under the scene, and the log of what each layer did. The mockup's script and screens are git-ignored: `.superpowers/brainstorm/2830-1793891117/figs/osi-scene.mjs` (figure), `osi-watch.mjs` (page), and `.superpowers/brainstorm/32739-1794175764/content/osi-watch-5.html` (last screen).
 - The draft words in the mockup are replaced by §5 below.
+- *Added at build:* the lesson's card on the track page and Home uses a new spot, `osi` in `src/art/figures/spots.ts`. It is one stack of seven solid blocks, drawn as the figure draws them, with block 4 lit and the plate engraved "OSI · SEVEN LAYERS". Every ready lesson needs a card figure, and neither this spec nor the mockup gave one.
 
 ## 3. The figure `osi`
 
@@ -89,7 +92,7 @@ The strip under the scene shows which headers the message carries at this point,
   - The field is allowed only when the figure's parts say `labels: true` and the unit's panel is `labels`, as `board` is for Subnetting.
 - **Component.** `src/lesson/panels/LabelsPanel.tsx` and `labels.css`, chosen in `UnitPanel`. It shows the latest `labels` from the events played so far in the unit, carried across steps as the console's state already is. Before any event, it shows the data alone.
   - Each header is a chip `L<n>`, then a dashed `data` chip.
-  - A `new` mark fills the chip in our blue (`#2f7bff`, edge `#a8e8ff`). A `read` mark outlines it in the marigold "here" accent.
+  - A `new` mark fills the chip with the accent and its ink (`--accent`, `--accent-ink`), as the Play button is filled. A `read` mark outlines it in the marigold "here" accent. *(Amended: the first colours, white on `#2f7bff`, reached only 3.89:1.)*
   - On the right it shows "<n> headers, outermost first", or "No headers yet".
 - **Accessibility.** The panel's text, read as a whole, says the same: "Headers on the message: layer 4 (just added), 5, 6, 7, then the data." Colour is never the only signal; the mark also changes the chip's border. Changes are announced through the console's existing live region, not a second one.
 
@@ -112,17 +115,17 @@ The strip under the scene shows which headers the message carries at this point,
 | # | Title · sub | What plays | Facts → Learn |
 |---|---|---|---|
 | 1 | **Application Layer** · The message enters at the top | `layer laptop:7`; labels `[7]` new 7 | Layer · 7 Application → lead-1; Adds · its own header → lead-3 |
-| 2 | **Encapsulation** · Each layer adds its own header | `layer laptop:6` … `laptop:2`, each adding its number, marked new | Layers · 6 down to 2 → lead-1; Each one adds · a header → lead-3; Called · encapsulation → term-encap |
+| 2 | **Encapsulation** · Layers 6 to 2 add their own headers | `layer laptop:6` … `laptop:2`, each adding its number, marked new | Layers · 6 down to 2 → lead-1; Each one adds · a header → lead-3; Called · encapsulation → term-encap |
 | 3 | **Physical Layer** · The bundle leaves as bits | `layer laptop:1`; message laptop → router | Layer · 1 Physical → lead-1; Sends · bits → lead-4 |
-| 4 | **Relay** · A router reads up to layer 3 | `router:1`, `router:2` (read 2), `router:3` (read 3), `router:2`, `router:1`; message router → server | Uses · layers 1 to 3 → lead-5; Reads · headers 2 and 3 → lead-5 |
-| 5 | **Decapsulation** *(fallback in §10)* · Each layer reads its twin's header | `server:1`, then `server:2` … `server:7`, each reading and removing its number | Order · 1 up to 7 → lead-4; Each layer · reads and removes its twin's header → lead-6 |
+| 4 | **Relay** · A router reads up to layer 3 | `router:1`, `router:2` (read 2), `router:3` (headers 3 to 7, read 3), `router:2` (new 2), `router:1`; message router → server | Uses · layers 1 to 3 → lead-5; Reads · headers 2 and 3 → lead-5, lead-6 |
+| 5 | **Decapsulation** *(fallback in §10, not needed)* · Each header comes off at its twin | `server:1`, then `server:2` … `server:7`, each reading and removing its number | Order · 1 up to 7 → lead-4; Each layer · reads and removes its twin's header → lead-6 |
 | 6 | **Peer Layers** · Each layer talks to its twin | `peer 7` … `peer 1`; labels `[]` | Layers 4 to 7 · end to end → why-2; Layers 1 to 3 · hop by hop → lead-5 |
 
 **Narratives.** The mockup's words, revised to say **header** where it said "label":
 - Step 1 introduces the idea, then the term: "adds a small note in front, called a **header**, for layer 7 on the other side".
 - Step 3 drops "adds no label". No source states it. The strip simply doesn't change at layer 1.
-- Step 4 says the router reads headers 2 and 3 and "works out where the message goes next". It doesn't say the router replaces header 2.
-- Step 5 says each layer "reads the header its twin added", and doesn't name the machine that added it. Call made after the builder check: for layers 1 to 3 the twin is the router (step 6, lead-5). "The header your laptop added" would be wrong for those layers, and showing the router's new layer-2 header would need a source that hasn't been read yet. The server's log rows say "Reads header n and removes it", with no machine named.
+- Step 4 says the router reads headers 2 and 3 and "works out where the message goes next". Then, going back down, its layer 2 "adds a new **header 2** of its own", as any layer does going down (lead-3). It never says "replaces". *(Amended; see §1.)*
+- Step 5 says each layer "reads the header its twin added", and doesn't name the machine that added it. Call made after the builder check: for layers 1 to 3 the twin is the router (step 6, lead-5). "The header your laptop added" would be wrong for those layers: the header the server's layer 2 reads is the one the router's layer 2 added (see §1's amendment). The server's log rows say "Reads header n and removes it", with no machine named.
 
 **Step Go deeper** (one paragraph each):
 1. The Application Layer is an application's only way into the OSI environment, so nothing sits above it. Source: X.200 7.1.2.1.
@@ -138,7 +141,7 @@ The strip under the scene shows which headers the message carries at this point,
 |---|---|---|
 | lead-1 | Networking is split into **seven layers**, numbered 1 at the bottom to 7 at the top: Physical, Data Link, Network, Transport, Session, Presentation, Application. | X.200 6.1.2 def |
 | lead-2 | Each layer does its own job and offers a service to the layer above it. | X.200 5.2.2.3 def; Microsoft (intro, text fragment) |
-| lead-3 | On the way down, each layer adds its own control information in front, a **header**, to what the layer above handed it. | X.200 5.6.1.1, 5.6.1.3 def; NIST SP 800-77r1 §2.1 (footnote 6); RFC 1122 §1.3.3 |
+| lead-3 | On the way down, a layer adds its own control information to what the layer above handed it, usually as a **header** in front. *(Hedged after the fact-check: NIST says "typically", and X.200 Fig. 9 Note 2 allows otherwise.)* | X.200 5.6.1.1, 5.6.1.3 def; NIST SP 800-77r1 §2.1 (footnote 6); RFC 1122 §1.3.3 |
 | lead-4 | The lowest layer sends the whole bundle as bits over the physical medium, and at the other end it is passed back up, layer by layer. | X.200 7.7.2 def; NIST SP 800-77r1 §2.1 |
 | lead-5 | A **router** passes messages on using only layers 1 to 3: the Network Layer is the one that routes across networks. | X.200 6.1.6, 7.5.2.1 def; NIST SP 800-77r1 §2.1; Microsoft #network-layer |
 | lead-6 | Going up, each layer reads the header its twin added, then passes the rest up. | X.200 5.6.1.1, 5.6.1.4 def |
@@ -157,11 +160,11 @@ The strip under the scene shows which headers the message carries at this point,
 | deep-3 | Exam names for each unit: a TCP **segment**, an IP **datagram** or **packet**, a link-layer **frame**, each a header followed by the unit above. | RFC 1122 §1.3.3 def; NIST SP 800-77r1 §2.1 (footnote 6) |
 | fact-1 | Layers · 7 | X.200 6.1.2 def |
 | fact-2 | Top · 7 Application; Bottom · 1 Physical (two facts) | X.200 6.1.2 def |
-| fact-3 | Defined in · ITU-T X.200, the same text as ISO/IEC 7498-1 | X.200 (title page) def |
+| fact-3 | Defined in · ITU-T X.200, the same text as ISO/IEC 7498-1 | X.200 Foreword (PDF page 2) def |
 
 **Practice** (unscored; each option's feedback cites):
 1. "Going down the layers on the sender, what does each layer do?"
-   - **Adds its own header in front** ✓ (X.200 5.6.1.3 def; NIST §2.1)
+   - **Adds its own control information, usually a header** ✓ (X.200 5.6.1.3 def; NIST §2.1)
    - Removes the header of the layer above ✗: that happens at the receiver, going up (X.200 5.6.1.4 def)
    - Sends it straight to the cable ✗: each layer hands it to the layer below (X.200 5.2.2.3 def)
 2. "A router passes your message on. Which layers does it use?"
@@ -230,7 +233,7 @@ The sources are added to `SOURCES` in `src/content/sources.ts` in the same chang
   - a message between laptop and server directly is rejected.
 - **Panel:** chips, marks, carried state across steps, and the text read as a whole.
 - **Lesson:** it validates against `SOURCES`; every Watch item traces to Learn; the limits hold; the claim sheet is stable.
-- **e2e:** the lesson page loads from the track page. Play runs all six steps with no console errors. The panel and log update. axe finds no violations in either theme. The track page and Home count the lesson as available.
+- **e2e:** the lesson page loads from the track page. Play runs all six steps with no console errors. The panel and log update. axe finds no violations in either theme (met by the `accessibility` skill's WCAG 2.2 audit, as the plan's Task 8 says: the project has no axe dependency and none may be added). The track page and Home count the lesson as available.
 - **Before saying done:** `npx vitest run`, `npm run build` (astro check plus budgets) and `npm run e2e`, with results reported as they are.
 
 ## 9. Left to the builder

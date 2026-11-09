@@ -19,7 +19,7 @@
 - Never write absolute paths containing the project folder name into tracked files.
 - Design and check at desktop widths only (1280×800 to 1920×1080); layouts stay fluid.
 - Voice: beginner-first, plain words first, the term after; exam detail only in Go deeper. Say **header**, never "label", in anything a reader sees.
-- Watch says nothing Learn doesn't. No router replacing the layer-2 header. No mnemonic. Badge `osi: 'spans'`.
+- Watch says nothing Learn doesn't. No mnemonic. Badge `osi: 'spans'`. (Amended after the fact-check: the router follows Learn's general rules, and going down its layer 2 adds its own header 2; see the spec's §1.)
 - Every Learn statement, Go deeper paragraph and Practice option cites at the exact section; every Watch part traces to Learn. Two independent sources per claim unless one citation is marked `defining: true`.
 - Networking limits: 4–6 steps, 2–4 facts a step, 2–3 questions of 2–4 options, 3–10 terms, 2–6 pattern names, narratives ≤ 120 words, hook ≤ 80, Go deeper ≤ 90.
 - Budgets: 250 KB gzipped HTML per page, 200 KB gzipped JS per lesson page.
@@ -79,15 +79,17 @@ test('an X.200 section is cited by its PDF page, as the defining standard', () =
   });
 });
 
-test('NIST SP 800-77r1 §2.1 is page 20; RFC sections link by anchor', () => {
+test('NIST SP 800-77r1 §2.1 is page 20; RFC 1122 is cited by page', () => {
   expect(cite('nist-sp800-77r1', '2.1', { url: `${NIST}#page=20` }).label).toBe('NIST SP 800-77r1, 2.1');
-  expect(cite('rfc-1122', '1.3.3').url).toBe('https://www.rfc-editor.org/rfc/rfc1122.html#section-1.3.3');
+  // Amended: rfc1122.html has ids for top-level sections and pages only, so RFC 1122 has no anchor.
+  expect(cite('rfc-1122', '1.3.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-17' }).label).toBe('RFC 1122, 1.3.3');
+  expect(() => cite('rfc-1122', '1.3.3')).toThrow(/needs a URL/);
 });
 ```
 
 - [ ] **Step 3: Run them to see them fail.** Run: `npx vitest run src/content/sources.test.ts`. Expected: FAIL with `Unknown source "itu-x200"`.
 
-- [ ] **Step 4: Add the entries to `defineSources([...])`** with the values in §6's table: kinds as listed; `short` `ITU-T X.200`, `RFC 1122`, `NIST SP 800-77r1`, `Microsoft Learn`, `Cisco`, `RFC 2003`; `title` the document titles in §6 and §10; `publisher` `ITU-T`, `IETF`, `NIST`, `Microsoft`, `Cisco`, `IETF`; `url` exactly as §6 and §10 give them; `anchor` only for the two RFCs (`…/rfcNNNN.html#section-{n}`). Replace the stale comment with one line naming the lesson that brought them.
+- [ ] **Step 4: Add the entries to `defineSources([...])`** with the values in §6's table: kinds as listed; `short` `ITU-T X.200`, `RFC 1122`, `NIST SP 800-77r1`, `Microsoft Learn`, `Cisco`, `RFC 2003`; `title` the document titles in §6 and §10; `publisher` `ITU-T`, `IETF`, `NIST`, `Microsoft`, `Cisco`, `IETF`; `url` exactly as §6 and §10 give them; `anchor` only for RFC 2003 (`…/rfc2003.html#section-{n}`); RFC 1122 has none and is cited by page (amended, see the spec's §6). Replace the stale comment with one line naming the lesson that brought them.
 
 - [ ] **Step 5: Run them to see them pass.** Run: `npx vitest run src/content/sources.test.ts`. Expected: PASS.
 
@@ -254,7 +256,7 @@ git commit -m "feat: the OSI driver: lights a layer or its twins, builds the pee
 - Produces: `DerivedState.labels: MessageLabels | null` (the latest applied note's or message's `labels`; carried across steps as `board` is; null before any). `LabelsPanel({ labels }: { labels: MessageLabels | null })`. `headersSentence(labels: MessageLabels | null): string`.
 
 The panel's words (the panel's own; not lesson content):
-- Chips `L<n>` for each layer in `list`, in order, then a dashed `data` chip. A `new` mark: class `is-new`, filled `#2f7bff`, edge `#a8e8ff`, text `#fff`. A `read` mark: class `is-read`, 2px border `var(--here)`, plain fill.
+- Chips `L<n>` for each layer in `list`, in order, then a dashed `data` chip. A `new` mark: class `is-new`, filled `var(--accent)`, edge `var(--accent)`, text `var(--accent-ink)` (amended: `#fff` on `#2f7bff` was 3.89:1). A `read` mark: class `is-read`, 2px border `var(--here)`, plain fill.
 - Note on the right: `1 header, outermost first`; `<n> headers, outermost first`; `No headers yet` for null; `No headers left` for an empty list (step 6, after the server read them all: "No headers yet" would be wrong there).
 - `headersSentence`: `Headers on the message: layer 4 (just added), 5, 6, 7, then the data.`; a read mark says `(being read)`; `[7]` new 7 → `Headers on the message: layer 7 (just added), then the data.`; null → `Headers on the message: none yet, just the data.`; `[]` → `Headers on the message: none left, just the data.`
 - Markup: a `div.labels` with `role="group"` and `aria-label="The message"`, holding `<p className="sr-only">{headersSentence(labels)}</p>` and an `aria-hidden="true"` row of chips and the note. No `aria-live`: the event's own `plain` words reach the console's live region already.
@@ -310,7 +312,7 @@ Every X.200 citation is marked defining: X.200 is the standard that defines the 
 | 1 Application Layer | note `laptop-7` · `layer laptop:7` | `[7]` new 7 | lead-1, lead-3 |
 | 2 Encapsulation | notes `laptop-6` … `laptop-2` · `layer laptop:<n>` | `[n…7]` new n | lead-1, lead-3, term-encap |
 | 3 Physical Layer | note `laptop-1` · `layer laptop:1`; message `bits-to-router` laptop→router, tag `0101`, kind `request`, log where `Laptop → Router` | `[2…7]`, no mark (both) | lead-4 |
-| 4 Relay | notes `router-1`, `router-2`, `router-3`, `router-2-down`, `router-1-down` · `layer router:1`, `:2`, `:3`, `:2`, `:1`; message `bits-to-server` router→server, tag `0101`, kind `request`, log where `Router → Web server` | `[2…7]`; read 2 at `router-2`, read 3 at `router-3`, otherwise no mark | lead-5 |
+| 4 Relay | notes `router-1`, `router-2`, `router-3`, `router-2-down`, `router-1-down` · `layer router:1`, `:2`, `:3`, `:2`, `:1`; message `bits-to-server` router→server, tag `0101`, kind `request`, log where `Router → Web server` | `[2…7]` read 2 at `router-2`; `[3…7]` read 3 at `router-3`; `[2…7]` new 2 at `router-2-down`; otherwise `[2…7]`, no mark | lead-3, lead-4, lead-5, lead-6 |
 | 5 Decapsulation | notes `server-1` … `server-7` · `layer server:<n>` | `server-1`: `[2…7]` no mark; `server-n` (n ≥ 2): `[n…7]` read n | lead-4, lead-6, term-decap (fallback: term-up) |
 | 6 Peer Layers | notes `peer-7` … `peer-1` · `peer <n>`; log where `Laptop ↔ Web server` (4–7) or `Laptop ↔ Router ↔ Web server` (1–3) | `[]` | term-peer, why-2 (4–7); term-peer, lead-5 (1–3) |
 
