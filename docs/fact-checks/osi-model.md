@@ -1,7 +1,7 @@
 ```json fact-check
 {
   "slug": "osi-model",
-  "hash": "a89a965da31279456caf5ab33c6e7d537afd48ca51c76c6cd279e74f983ddd5c",
+  "hash": "cd9b1cf300b223c033e80d8ec558bb4e2e08a0a8a347260bced718087c91cb6a",
   "checked": "2026-11-08",
   "checker": "claude-opus-5-5",
   "verdicts": {
@@ -84,7 +84,7 @@
     "units[0].steps[2].deep[0] (step \"session\", Go deeper)": "✅",
     "units[0].steps[3].deep[0] (step \"transport\", Go deeper)": "✅",
     "units[0].steps[3].deep[1] (step \"transport\", Go deeper)": "✅",
-    "units[0].steps[4].deep[0] (step \"network\", Go deeper)": "⚠️",
+    "units[0].steps[4].deep[0] (step \"network\", Go deeper)": "✅",
     "units[0].steps[4].deep[1] (step \"network\", Go deeper)": "✅",
     "units[0].steps[5].deep[0] (step \"data-link\", Go deeper)": "✅",
     "units[0].steps[6].deep[0] (step \"physical\", Go deeper)": "✅",
@@ -176,463 +176,467 @@
 
 # Fact-check report: osi-model
 
-Checked 2026-11-08 by claude-opus-5-5, against the claim sheet with hash `a89a965da31279456caf5ab33c6e7d537afd48ca51c76c6cd279e74f983ddd5c`.
+Checked 2026-11-08 by claude-opus-5-5 against the claim sheet with the hash in the header above. Every source was fetched from its publisher in this run and every cited section was read in this run:
 
-127 items: 126 ✅, 1 ⚠️, 0 ❌.
+- ITU-T X.200 (07/94), as a PDF from itu.int, read page by page with `pdftotext` (PDF pages 2, 5, 10–12, 19, 32–34, 36–43, 45–48, 50–53, 56). Figure 12 on PDF page 33 was also viewed as an image.
+- RFC 1122 and RFC 2003, as plain text from rfc-editor.org.
+- NIST SP 800-77r1, as a PDF from nvlpubs.nist.gov, PDF pages 19–21.
+- The Microsoft Learn page, as HTML from learn.microsoft.com.
+- The Cisco page. A plain `curl` was refused by the site, so it was opened in a real browser and its article text was read verbatim.
 
-Every source was fetched from its publisher in this run: ITU-T X.200 (07/94) as a PDF from itu.int (read page by page with pdftotext; the `#page=N` targets were checked and each lands on the cited clause), NIST SP 800-77r1 as a PDF from nvlpubs.nist.gov (section 2.1, PDF pages 20 to 22), RFC 1122 and RFC 2003 as raw text from rfc-editor.org, and the Microsoft Learn and Cisco pages as HTML from their own sites. Quotes below are kept to the shortest verbatim fragment that carries the claim.
+Verdicts: 127 ✅, 0 ⚠️, 0 ❌.
 
 ## 1. Claims
 
-### units[0].osi
+Currency for every X.200 citation: ITU-T lists X.200 (07/94) as "In force" (checked 2026-11-08). For every RFC 1122 citation: it is not obsoleted, and none of its updates changes §1.1.1, §1.1.3 or §1.3.3 (see section 3). For every NIST citation: SP 800-77 Rev. 1 is final, with no withdrawal and no superseding revision (checked 2026-11-08). The Microsoft and Cisco pages are live and current (checked 2026-11-08).
 
-- Content: `"spans"` (the OSI Model topic covers all seven layers, not one).
-- Verdict: ✅
-- Citations: none on the item. X.200 6.1.2 sets out the model as seven layers ("The Reference Model contains seven layers"). No allowed source met in this run (X.200, RFC 1122, NIST SP 800-77r1, Microsoft Learn, Cisco, RFC 2003) puts the OSI model at a single layer.
-- Currency: X.200 (07/94) is listed by ITU-T as in force.
+### units[0].osi — ✅
 
-### units[0].steps[0].deep[0] (step "application", Go deeper)
+Text: `"spans"`, for the topic OSI Model.
 
-- Text: In X.200, the Application Layer is an application’s only way into the OSI environment. As the highest layer, it has no boundary with a layer above it.
-- Verdict: ✅
-- ITU-T X.200, 7.1.2.1 (defining standard: X.200 defines the OSI Basic Reference Model and each of its seven layers, here the Application Layer): "provides the sole means for the application process to access the OSIE" and "Hence the Application Layer has no boundary with a higher layer."
-- Currency: X.200 (07/94) in force (ITU-T, checked 2026-11-08).
+- The topic is the seven-layer model itself. X.200 6.1.2 (defining standard: the OSI layers): "The Reference Model contains seven layers". No allowed source read in this run puts the OSI model at a single layer.
+- Currency: X.200 (07/94) is in force.
 
-### units[0].steps[1].deep[0] (step "presentation", Go deeper)
+### units[0].steps[0].deep[0] (step "application", Go deeper) — ✅
 
-- Text: In X.200, the way data is written while it travels between two systems is its **transfer syntax**. Layer 6 selects transfer syntaxes that both ends accept, and keeps the meaning of the application’s data intact on the way.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: the seven OSI layers and their numbers): "b) the Presentation Layer (layer 6);"
-- ITU-T X.200, 7.2.1.2 (defining standard: the term transfer syntax): "transfer syntax: The abstract and concrete syntax used in the transfer of data between open systems."
-- ITU-T X.200, 7.2.2.3 (defining standard: the Presentation Layer's purpose): "the Presentation Layer is responsible for selecting mutually acceptable transfer syntaxes" and "ensures that the information content of the Application Layer data is preserved during transfer."
-- Currency: X.200 (07/94) in force.
+Text: "In X.200, the Application Layer is an application’s only way into the OSI environment. As the highest layer, it has no boundary with a layer above it."
 
-### units[0].steps[1].deep[1] (step "presentation", Go deeper)
+- ITU-T X.200 7.1.2.1 (defining standard: the OSI Application Layer's purpose): "As the highest layer in the Reference Model of Open Systems Interconnection, the Application Layer provides the sole means for the application process to access the OSIE. Hence the Application Layer has no boundary with a higher layer."
+- Currency: X.200 (07/94) is in force.
 
-- Text: The internet’s own protocols have no separate presentation layer: their application layer essentially combines the functions of OSI’s Presentation and Application layers.
-- Verdict: ✅
-- RFC 1122, 1.1.3 (defining standard: RFC 1122, STD 3, defines the protocol layers an Internet host implements, including the Internet application layer): "The Internet suite does not further subdivide the application layer" and "The application layer of the Internet suite essentially combines the functions of the top two layers -- Presentation and Application -- of the OSI reference model."
-- Currency: RFC 1122 is an Internet Standard (STD 3), not obsoleted. Its nine updating RFCs (1349, 4379, 5884, 6093, 6298, 6633, 6864, 8029, 9293) touch ToS, MPLS, ICMP Source Quench, the IPv4 ID field and TCP requirements; none changes section 1.1.3's layer description.
+### units[0].steps[1].deep[0] (step "presentation", Go deeper) — ✅
 
-### units[0].steps[2].deep[0] (step "session", Go deeper)
+Text: "In X.200, the way data is written while it travels between two systems is its **transfer syntax**. Layer 6 selects transfer syntaxes that both ends accept, and keeps the meaning of the application’s data intact on the way."
 
-- Text: In X.200, the Session Layer’s services include setting up and releasing a **session-connection**, sending data over it, and synchronization. Synchronization lets the two ends mark points in their dialogue, and later go back to one they agree on.
-- Verdict: ✅
-- ITU-T X.200, 7.3.1.4 (defining standard: the session-connection synchronization facility): "allows presentation-entities to define and to identify synchronization points and to reset a session-connection to a predefined state and to agree on a resynchronization point."
-- ITU-T X.200, 7.3.3.1.1 (defining standard: the Session Layer's services): "a) session-connection establishment; b) session-connection release; c) normal data transfer;" and "f) session-connection synchronization;"
-- Currency: X.200 (07/94) in force.
+- X.200 6.1.2 (defining standard: the layer numbers): "b) the Presentation Layer (layer 6);"
+- X.200 7.2.1.2 (defining standard: the term transfer syntax): "transfer syntax: The abstract and concrete syntax used in the transfer of data between open systems."
+- X.200 7.2.2.3 (defining standard: the Presentation Layer's purpose): "The Presentation Layer ensures that the information content of the Application Layer data is preserved during transfer." and "Knowing the set of abstract syntaxes to be used by the application-entities, the Presentation Layer is responsible for selecting mutually acceptable transfer syntaxes."
+- Currency: X.200 (07/94) is in force.
 
-### units[0].steps[3].deep[0] (step "transport", Go deeper)
+### units[0].steps[1].deep[1] (step "presentation", Go deeper) — ✅
 
-- Text: In X.200, Transport Layer functions can include end-to-end sequence control, error detection and recovery, segmenting, and flow control. Which ones are used depends on the quality of the network service below.
-- Verdict: ✅
-- ITU-T X.200, 7.4.2.5 (defining standard: the Transport Layer's purpose): "The transport functions invoked in the Transport Layer to provide a requested service quality depend on the quality of the network-service."
-- ITU-T X.200, 7.4.4.1.1 (defining standard: the Transport Layer's functions): "the Transport Layer functions may include:" listing "end-to-end sequence control", "end-to-end error detection", "end-to-end error recovery", "end-to-end segmenting, blocking, and concatenation" and "end-to-end flow control". The list is for connection-mode; the claim's "can include" keeps it a possibility, so no condition is lost.
-- Currency: X.200 (07/94) in force.
+Text: "The internet’s own protocols have no separate presentation layer: their application layer essentially combines the functions of OSI’s Presentation and Application layers."
 
-### units[0].steps[3].deep[1] (step "transport", Go deeper)
+- RFC 1122 §1.1.3 (defining standard: the layers of the Internet protocol suite, in STD 3): "The Internet suite does not further subdivide the application layer, although some of the Internet application layer protocols do contain some internal sub-layering. The application layer of the Internet suite essentially combines the functions of the top two layers -- Presentation and Application -- of the OSI reference model."
+- Currency: RFC 1122 is an Internet Standard and is not obsoleted. None of its nine updates touches §1.1.3's layer description.
 
-- Text: On the internet, the two main transport protocols are **TCP**, which is reliable and also puts data back in order and controls its flow, and **UDP**, a connectionless “datagram” service.
-- Verdict: ✅
-- RFC 1122, 1.1.3 (defining standard: RFC 1122, STD 3, defines the Internet host's transport layer and names its primary protocols): "There are two primary transport layer protocols at present:" (TCP and UDP) and "TCP is a reliable connection-oriented transport service that provides end-to-end reliability, resequencing, and flow control. UDP is a connectionless ("datagram") transport service."
-- NIST SP 800-77r1, 2.1 (second source for TCP and UDP being the main ones, TCP reliable, UDP connectionless): "TCP, which provides reliable connection-oriented communications, and the User Datagram Protocol (UDP), which provides unreliable connectionless communications, are commonly used transport layer protocols."
-- Currency: RFC 1122 not obsoleted. RFC 9293 updates RFC 1122 and replaces its TCP requirements; read in this run, it still says "TCP provides a reliable, in-order, byte-stream service" and refers to TCP flow control, so the claim still holds. NIST SP 800-77r1 (2020) current. TCP and UDP are still the two main transport protocols in current practice.
+### units[0].steps[2].deep[0] (step "session", Go deeper) — ✅
 
-### units[0].steps[4].deep[0] (step "network", Go deeper)
+Text: "In X.200, the Session Layer’s services include setting up and releasing a **session-connection**, sending data over it, and synchronization. Synchronization lets the two ends mark points in their dialogue, and later go back to one they agree on."
 
-- Text: In X.200, any relaying between the two end systems happens in the Network Layer or below, and the Transport Layer is relieved of any concern with routing.
-- Verdict: ⚠️
-- ITU-T X.200, 7.4.2.4 (defining standard: the Transport Layer's purpose): "The Transport Layer is relieved of any concern with routing and relaying"
-- ITU-T X.200, 7.5.2.4 (defining standard: the Network Layer's purpose): "Any relay functions and hop-by-hop service enhancement protocols used to support the network-service between the OSI end systems are operating below the Transport Layer, i.e. within the Network Layer or below."
-- Currency: X.200 (07/94) in force.
-- What is wrong: the claim drops 7.5.2.4's condition "used to support the network-service" and turns it into "any relaying". X.200 itself says otherwise elsewhere: 6.5.2.4 says forwarding functions are "provided in the lower three layers (see 6.1) or in the Application Layer", and 6.5.2.5 says "relaying may be performed in application-entities". Stating it for relaying that supports the network service (or for routers) would match the source.
+- X.200 7.3.3.1.1 (defining standard: the Session Layer's services): "In connection-mode, the services provided by the Session Layer are described below: a) session-connection establishment; b) session-connection release; c) normal data transfer;" … "f) session-connection synchronization;"
+- X.200 7.3.1.4 (defining standard: session-connection synchronization): "session-connection synchronization: A facility of the session-service which allows presentation-entities to define and to identify synchronization points and to reset a session-connection to a predefined state and to agree on a resynchronization point."
+- Note: the list is X.200's connection-mode list. The claim speaks only of session-connections, which exist only in connection mode, and it says "include", so no condition is lost.
+- Currency: X.200 (07/94) is in force.
 
-### units[0].steps[4].deep[1] (step "network", Go deeper)
+### units[0].steps[3].deep[0] (step "transport", Go deeper) — ✅
 
-- Text: On the internet, the main network layer protocol is **IP**, the Internet Protocol. IP itself guarantees no delivery: data may arrive out of order or not at all, and the layers above make delivery reliable when that is needed.
-- Verdict: ✅
-- RFC 1122, 1.1.3 (defining standard: RFC 1122, STD 3, defines the Internet layer of the host protocol suite and IP's role in it): "All Internet transport protocols use the Internet Protocol (IP) to carry data from source host to destination host." and "IP is a connectionless or datagram internetwork service, providing no end-to-end delivery guarantees. Thus, IP datagrams may arrive at the destination host damaged, duplicated, out of order, or not at all. The layers above IP are responsible for reliable delivery service when it is required."
-- NIST SP 800-77r1, 2.1 (second source for IP as the main network layer protocol): "IP is the fundamental network layer protocol for TCP/IP."
-- Currency: RFC 1122 not obsoleted; RFC 6864 updates only its IPv4 ID text (3.2.1.5), not this passage. NIST SP 800-77r1 current.
+Text: "In X.200, Transport Layer functions can include end-to-end sequence control, error detection and recovery, segmenting, and flow control. Which ones are used depends on the quality of the network service below."
 
-### units[0].steps[5].deep[0] (step "data-link", Go deeper)
+- X.200 7.4.4.1.1 (defining standard: the Transport Layer's functions): "In connection-mode, the Transport Layer functions may include:" … "d) end-to-end sequence control on individual connections; e) end-to-end error detection and any necessary monitoring of the quality of service; f) end-to-end error recovery; g) end-to-end segmenting, blocking, and concatenation; h) end-to-end flow control on individual connections;"
+- X.200 7.4.2.5 (defining standard: the Transport Layer's purpose): "The transport functions invoked in the Transport Layer to provide a requested service quality depend on the quality of the network-service."
+- Note: X.200 lists these functions for connection mode. The claim says only that the functions *can* include them, so it does not overstate.
+- Currency: X.200 (07/94) is in force.
 
-- Text: In X.200, a data link is built on one or more physical connections, and the Data Link Layer detects errors that occur in the Physical Layer, and possibly corrects them. In connection mode, it also recognizes a run of bits as one unit of its own, which is sometimes called framing.
-- Verdict: ✅
-- ITU-T X.200, 7.6.2.1 (defining standard: the Data Link Layer's purpose): "A data-link-connection is built upon one or several physical-connections."
-- ITU-T X.200, 7.6.2.2 (defining standard: the Data Link Layer's purpose): "The Data Link Layer detects and possibly corrects errors which may occur in the Physical Layer."
-- ITU-T X.200, 7.6.4 (defining standard: the Data Link Layer's functions): "In connection-mode, the following functions are also performed by the Data Link Layer:" including "e) delimiting and synchronization;"
-- ITU-T X.200, 7.6.4.5 (defining standard: the delimiting and synchronization function): "recognition of a sequence of physical-service-data-units (i.e. bits, see 7.7.3.2)" "as a data-link-protocol-data-unit" and "These functions are sometimes referred to as framing."
-- Currency: X.200 (07/94) in force.
+### units[0].steps[3].deep[1] (step "transport", Go deeper) — ✅
 
-### units[0].steps[6].deep[0] (step "physical", Go deeper)
+Text: "On the internet, the two main transport protocols are **TCP**, which is reliable and also puts data back in order and controls its flow, and **UDP**, a connectionless “datagram” service."
 
-- Text: The Physical Layer provides the means to transmit bits over a physical medium.
-- Verdict: ✅
-- ITU-T X.200, 7.7.2 (defining standard: the Physical Layer's purpose): "provides the mechanical, electrical, functional and procedural means" "for bit transmission between data-link-entities" and "Physical Layer entities are interconnected by means of a physical medium."
-- Microsoft Learn, Physical layer: "manages the reception and transmission of the unstructured raw bit stream over a physical medium."
-- Currency: X.200 in force; the Microsoft Learn page is live (last updated 2025-01-31) and documents current Windows.
+- RFC 1122 §1.1.3 (defining standard: the Internet suite's transport layer and its primary protocols): "There are two primary transport layer protocols at present:" … "TCP is a reliable connection-oriented transport service that provides end-to-end reliability, resequencing, and flow control. UDP is a connectionless ("datagram") transport service."
+- NIST SP 800-77r1 §2.1: "TCP, which provides reliable connection-oriented communications, and the User Datagram Protocol (UDP), which provides unreliable connectionless communications, are commonly used transport layer protocols."
+- Currency: RFC 1122 is not obsoleted. RFC 9293 (2022) updates RFC 1122's TCP requirements, and it still says "TCP provides a reliable, in-order, byte-stream service to applications." NIST (2020) still names TCP and UDP as the common transport protocols, so the claim is current practice.
 
-### units[0].steps[7].deep[0] (step "relay", Go deeper)
+### units[0].steps[4].deep[0] (step "network", Go deeper) — ✅
 
-- Text: In X.200, a system that only passes data on to other systems is a relay open system, and the functions that forward data are in its lower layers.
-- Verdict: ✅
-- ITU-T X.200, 6.1.6 (defining standard: relay open systems in the OSI model): "some open systems act only as relay open systems, passing data to other open systems. The functions and protocols which support the forwarding of data are then provided in the lower layers."
-- Currency: X.200 (07/94) in force.
+Text: "In X.200, the relaying that supports the network service between the two end systems happens in the Network Layer or below, so the Transport Layer is relieved of any concern with routing and relaying."
 
-### units[0].steps[8].deep[0] (step "decapsulation", Go deeper)
+- X.200 7.5.2.4 (defining standard: the Network Layer's purpose): "Any relay functions and hop-by-hop service enhancement protocols used to support the network-service between the OSI end systems are operating below the Transport Layer, i.e. within the Network Layer or below."
+- X.200 7.4.2.4 (defining standard: the Transport Layer's purpose): "The Transport Layer is relieved of any concern with routing and relaying since the network-service provides data transfer from any transport-entity to any other, including the case of tandem subnetworks (see 7.5.1)."
+- Currency: X.200 (07/94) is in force.
 
-- Text: In X.200, what a layer carries for the layer above is a service-data-unit. It keeps its identity on the way between the twin layers above, and the layer carrying it does not interpret it.
-- Verdict: ✅
-- ITU-T X.200, 5.6.1.4 (defining standard: the (N)-service-data-unit): "An amount of information whose identity is preserved when transferred between peer-(N+1)-entities and which is not interpreted by the supporting (N)-entities."
-- Currency: X.200 (07/94) in force.
+### units[0].steps[4].deep[1] (step "network", Go deeper) — ✅
 
-### units[0].steps[9].deep[0] (step "peer-layers", Go deeper)
+Text: "On the internet, the main network layer protocol is **IP**, the Internet Protocol. IP itself guarantees no delivery: data may arrive out of order or not at all, and the layers above make delivery reliable when that is needed."
 
-- Text: In X.200, how twin layers work together is governed by that layer’s protocol. Transport protocols, at layer 4, run only between the two end systems.
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.7 (defining standard: (N)-protocols between (N)-entities): "Cooperation between (N)-entities is governed by one or more (N)-protocols."
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "d) the Transport Layer (layer 4);"
-- ITU-T X.200, 7.4.2.3 (defining standard: the Transport Layer's purpose): "transport-protocols operate only between OSI end open systems."
-- Currency: X.200 (07/94) in force.
+- RFC 1122 §1.1.3 (defining standard: the Internet suite's internet layer): "All Internet transport protocols use the Internet Protocol (IP) to carry data from source host to destination host. IP is a connectionless or datagram internetwork service, providing no end-to-end delivery guarantees. Thus, IP datagrams may arrive at the destination host damaged, duplicated, out of order, or not at all. The layers above IP are responsible for reliable delivery service when it is required."
+- NIST SP 800-77r1 §2.1: "Network Layer. This layer routes packets across networks. IP is the fundamental network layer protocol for TCP/IP."
+- Currency: RFC 1122 is not obsoleted. Its IP-related updates (RFC 1349 on TOS, RFC 6864 on the IPv4 ID field, RFC 6633 on Source Quench) do not change IP's lack of a delivery guarantee.
 
-### units[0].learn.lead[0] ("lead-1")
+### units[0].steps[5].deep[0] (step "data-link", Go deeper) — ✅
 
-- Text: The **OSI model** splits networking into **seven layers**, numbered from 1 at the bottom to 7 at the top: Physical, Data Link, Network, Transport, Session, Presentation and Application.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: the seven OSI layers, their names and numbers): "The Reference Model contains seven layers:" listing Application (layer 7), Presentation (layer 6), Session (layer 5), Transport (layer 4), Network (layer 3), Data Link (layer 2) and Physical (layer 1). Figure 11 on the same page draws Application at the top and Physical at the bottom.
-- Currency: X.200 (07/94) in force.
+Text: "In X.200, a data link is built on one or more physical connections, and the Data Link Layer detects errors that occur in the Physical Layer, and possibly corrects them. In connection mode, it also recognizes a run of bits as one unit of its own, which is sometimes called framing."
 
-### units[0].learn.lead[1] ("lead-2")
+- X.200 7.6.2.1 (defining standard: the Data Link Layer's purpose): "A data-link-connection is built upon one or several physical-connections."
+- X.200 7.6.2.2 (defining standard): "The Data Link Layer detects and possibly corrects errors which may occur in the Physical Layer."
+- X.200 7.6.4 (defining standard: the Data Link Layer's functions): "In connection-mode, the following functions are also performed by the Data Link Layer:" … "e) delimiting and synchronization;"
+- X.200 7.6.4.5 (defining standard): "These functions provide recognition of a sequence of physical-service-data-units (i.e. bits, see 7.7.3.2) transmitted over the physical-connection, as a data-link-protocol-data-unit. NOTE – These functions are sometimes referred to as framing."
+- Currency: X.200 (07/94) is in force.
 
-- Text: OSI is short for Open Systems Interconnection, and the model is also called the **OSI Reference Model**. Each layer has its own job, and each one except the top offers a service to the layer above it.
-- Verdict: ✅
-- ITU-T X.200, 1.1 (defining standard: the model's name and purpose): "this Reference Model of Open Systems Interconnection"
-- ITU-T X.200, 1.2 (defining standard: the term OSI): "The term Open Systems Interconnection (OSI) qualifies standards"
-- ITU-T X.200, 5.2.2.3 (defining standard: layer services): "Except for the highest layer, each (N)-layer provides (N+1)-entities in the (N+1)-layer with an (N)-service"
-- ITU-T X.200, 5.2.2.5 (defining standard): "The services of an (N)-layer are provided to the (N+1)-layer using the (N)-functions performed within the (N)-layer"
-- ITU-T X.200, 6.2.1 (defining standard: the layering principles): "c) Create separate layers to handle functions that are manifestly different"
-- Microsoft Learn, Introduction: "The ISO Open Systems Interconnection (OSI) Reference model" and "a specific set of functions allocated to each layer. Each layer offers specific services to higher layers"
-- Currency: X.200 in force; Microsoft Learn page live.
+### units[0].steps[6].deep[0] (step "physical", Go deeper) — ✅
 
-### units[0].learn.lead[2] ("job-6")
+Text: "The Physical Layer provides the means to transmit bits over a physical medium."
 
-- Text: **Layer 6, the Presentation Layer**, gives the apps at both ends a **common way to represent the data** they exchange, so the apps don’t have to sort that out themselves. The two ends agree on how the data is written while it travels, and its meaning is kept on the way.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "b) the Presentation Layer (layer 6);"
-- ITU-T X.200, 7.2.1.2 (defining standard: transfer syntax): "The abstract and concrete syntax used in the transfer of data between open systems."
-- ITU-T X.200, 7.2.2.2 (defining standard: the Presentation Layer's purpose): "provides for common representation of the data transferred between application-entities. This relieves application-entities of any concern with the problem of “common” representation of information"
-- ITU-T X.200, 7.2.2.3 (defining standard): "ensures that the information content of the Application Layer data is preserved during transfer" and "selecting mutually acceptable transfer syntaxes."
-- Currency: X.200 (07/94) in force.
+- X.200 7.7.2 (defining standard: the Physical Layer's purpose): "The Physical Layer provides the mechanical, electrical, functional and procedural means to activate, maintain, and de-activate physical-connections for bit transmission between data-link-entities." and "Physical Layer entities are interconnected by means of a physical medium."
+- Microsoft Learn, Physical layer: "This layer manages the reception and transmission of the unstructured raw bit stream over a physical medium."
+- Currency: X.200 is in force. The Microsoft page is live, last updated 2025-01-31.
 
-### units[0].learn.lead[3] ("job-5")
+### units[0].steps[7].deep[0] (step "relay", Go deeper) — ✅
 
-- Text: **Layer 5, the Session Layer**, organizes the **dialogue**, the conversation between the two ends. It sets up a **session** between them, keeps their exchange orderly, and ends the session in an orderly way. It can also set **synchronization points**, a kind of checkpoint, so the two ends can reset the session to a point they agree on.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "c) the Session Layer (layer 5);"
-- ITU-T X.200, 7.3.1.4 (defining standard: session-connection synchronization): "define and to identify synchronization points and to reset a session-connection to a predefined state and to agree on a resynchronization point."
-- ITU-T X.200, 7.3.2.1 (defining standard: the Session Layer's purpose): "to organize and to synchronize their dialogue" and "to establish a session-connection between two presentation-entities, to support orderly data exchange interactions, and to release the connection in an orderly manner."
-- Note: X.200 7.3.3.7.3 says the Session Layer is not responsible for any checkpointing action tied to synchronization. The lesson's "a kind of checkpoint" names the marker, not a saved state, so it does not mislead.
-- Currency: X.200 (07/94) in force.
+Text: "In X.200, a system that only passes data on to other systems is a relay open system, and the functions that forward data are in its lower layers."
 
-### units[0].learn.lead[4] ("job-4")
+- X.200 6.1.6 (defining standard: the OSI relay open system): "When the physical media for OSI do not link all open systems directly, some open systems act only as relay open systems, passing data to other open systems. The functions and protocols which support the forwarding of data are then provided in the lower layers."
+- Currency: X.200 (07/94) is in force.
 
-- Text: **Layer 4, the Transport Layer**, works **end to end**: its protocols run only between the two end machines. It carries the data across for the layers above, so they don’t have to worry about how. Depending on the protocol, it can split the data into **pieces**, keep them in order, recover from errors, and control how fast the data flows.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "d) the Transport Layer (layer 4);"
-- ITU-T X.200, 7.4.2.1 (defining standard: the Transport Layer's purpose): "relieves them from any concern with the detailed way in which reliable and cost effective transfer of data is achieved."
-- ITU-T X.200, 7.4.2.3 (defining standard): "transport-protocols operate only between OSI end open systems."
-- ITU-T X.200, 7.4.4.1.1 (defining standard: Transport Layer functions): "may include:" "end-to-end sequence control", "end-to-end error recovery", "end-to-end segmenting" and "end-to-end flow control".
-- NIST SP 800-77r1, 2.1: "The transport layer can optionally assure the reliability of communications."
-- Microsoft Learn, Transport layer: "relieves the higher-layer protocols from being concerned about data transfer with their peers."
-- Currency: all three sources current.
+### units[0].steps[8].deep[0] (step "decapsulation", Go deeper) — ✅
 
-### units[0].learn.lead[5] ("job-3")
+Text: "In X.200, what a layer carries for the layer above is a service-data-unit. It keeps its identity on the way between the twin layers above, and the layer carrying it does not interpret it."
 
-- Text: **Layer 3, the Network Layer**, finds a **route** between **network addresses**, so a message can cross several networks, one after another. The layers above don’t need to know how the route is chosen.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "e) the Network Layer (layer 3);"
-- ITU-T X.200, 7.5.2.3 (defining standard: the Network Layer's purpose): "provides to the transport-entities independence from routing and relay consideration" and "This includes the case where several subnetworks are used in tandem"
-- ITU-T X.200, 7.5.4.2.1 (defining standard: routing and relaying): "Routing functions determine an appropriate route between network-addresses."
-- NIST SP 800-77r1, 2.1: "This layer routes packets across networks."
+- X.200 5.6.1.4 (defining standard: the service-data-unit): "(N)-service-data-unit: An amount of information whose identity is preserved when transferred between peer-(N+1)-entities and which is not interpreted by the supporting (N)-entities."
+- Currency: X.200 (07/94) is in force.
+
+### units[0].steps[9].deep[0] (step "peer-layers", Go deeper) — ✅
+
+Text: "In X.200, how twin layers work together is governed by that layer’s protocol. Transport protocols, at layer 4, run only between the two end systems."
+
+- X.200 5.2.2.7 (defining standard: (N)-protocols): "Cooperation between (N)-entities is governed by one or more (N)-protocols."
+- X.200 6.1.2 (defining standard: the layer numbers): "d) the Transport Layer (layer 4);"
+- X.200 7.4.2.3 (defining standard): "Therefore, the Transport Layer is OSI end open system oriented and transport-protocols operate only between OSI end open systems."
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.lead[0] ("lead-1") — ✅
+
+Text: "The **OSI model** splits networking into **seven layers**, numbered from 1 at the bottom to 7 at the top: Physical, Data Link, Network, Transport, Session, Presentation and Application."
+
+- X.200 6.1.2 (defining standard: the seven OSI layers and their numbers): "The Reference Model contains seven layers: a) the Application Layer (layer 7); b) the Presentation Layer (layer 6); c) the Session Layer (layer 5); d) the Transport Layer (layer 4); e) the Network Layer (layer 3); f) the Data Link Layer (layer 2); and g) the Physical Layer (layer 1)." The list goes straight into Figure 11 (6.1.3), which stacks Application at the top and Physical at the bottom.
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.lead[1] ("lead-2") — ✅
+
+Text: "OSI is short for Open Systems Interconnection, and the model is also called the **OSI Reference Model**. Each layer has its own job, and each one except the top offers a service to the layer above it."
+
+- X.200 1.2 (defining standard: the term OSI): "The term Open Systems Interconnection (OSI) qualifies standards for the exchange of information among systems that are “open” to one another for this purpose by virtue of their mutual use of the applicable standards."
+- X.200 1.1 (defining standard): "The purpose of this Reference Model of Open Systems Interconnection is to provide a common basis for the coordination of standards development for the purpose of systems interconnection"
+- X.200 5.2.2.3 (defining standard: the layer service relationship): "Except for the highest layer, each (N)-layer provides (N+1)-entities in the (N+1)-layer with an (N)-service at (N)-SAP(s)."
+- X.200 5.2.2.5 (defining standard): "The services of an (N)-layer are provided to the (N+1)-layer using the (N)-functions performed within the (N)-layer and as necessary the services available from the (N–1)-layer."
+- X.200 6.2.1 (defining standard: the layering principles): "c) Create separate layers to handle functions that are manifestly different in the process performed or the technology involved."
+- Microsoft Learn, Introduction: "The ISO Open Systems Interconnection (OSI) Reference model describes networking as "a series of protocol layers with a specific set of functions allocated to each layer. Each layer offers specific services to higher layers"
+- Currency: X.200 is in force. The Microsoft page is live.
+
+### units[0].learn.lead[2] ("job-6") — ✅
+
+Text: "**Layer 6, the Presentation Layer**, gives the apps at both ends a **common way to represent the data** they exchange, so the apps don’t have to sort that out themselves. The two ends agree on how the data is written while it travels, and its meaning is kept on the way."
+
+- X.200 6.1.2 (defining standard: the layer numbers): "b) the Presentation Layer (layer 6);"
+- X.200 7.2.2.2 (defining standard: the Presentation Layer's purpose): "The Presentation Layer provides for common representation of the data transferred between application-entities. This relieves application-entities of any concern with the problem of “common” representation of information, i.e. it provides them with syntax independence."
+- X.200 7.2.2.3 (defining standard): "The Presentation Layer ensures that the information content of the Application Layer data is preserved during transfer." and "the Presentation Layer is responsible for selecting mutually acceptable transfer syntaxes."
+- X.200 7.2.1.2 (defining standard): "transfer syntax: The abstract and concrete syntax used in the transfer of data between open systems."
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.lead[3] ("job-5") — ✅
+
+Text: "**Layer 5, the Session Layer**, organizes the **dialogue**, the conversation between the two ends. It sets up a **session** between them, keeps their exchange orderly, and ends the session in an orderly way. It can also set **synchronization points**, a kind of checkpoint, so the two ends can reset the session to a point they agree on."
+
+- X.200 6.1.2 (defining standard: the layer numbers): "c) the Session Layer (layer 5);"
+- X.200 7.3.2.1 (defining standard: the Session Layer's purpose): "The purpose of the Session Layer is to provide the means necessary for cooperating presentation-entities to organize and to synchronize their dialogue and to manage their data exchange. To do this, the Session Layer provides services to establish a session-connection between two presentation-entities, to support orderly data exchange interactions, and to release the connection in an orderly manner."
+- X.200 7.3.1.4 (defining standard): "allows presentation-entities to define and to identify synchronization points and to reset a session-connection to a predefined state and to agree on a resynchronization point."
+- Note: X.200 7.3.3.7.3 says the Session Layer is not responsible for the checkpointing that goes with synchronization. The lesson's "a kind of checkpoint" glosses the point itself and claims no state-saving, so it is not wrong.
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.lead[4] ("job-4") — ✅
+
+Text: "**Layer 4, the Transport Layer**, works **end to end**: its protocols run only between the two end machines. It carries the data across for the layers above, so they don’t have to worry about how. Depending on the protocol, it can split the data into **pieces**, keep them in order, recover from errors, and control how fast the data flows."
+
+- X.200 6.1.2 (defining standard: the layer numbers): "d) the Transport Layer (layer 4);"
+- X.200 7.4.2.3 (defining standard: the Transport Layer's purpose): "transport-protocols operate only between OSI end open systems."
+- X.200 7.4.2.1 (defining standard): "The transport-service provides transparent transfer of data between session-entities and relieves them from any concern with the detailed way in which reliable and cost effective transfer of data is achieved."
+- X.200 7.4.4.1.1 (defining standard: the Transport Layer's functions): "In connection-mode, the Transport Layer functions may include:" … "d) end-to-end sequence control on individual connections;" … "f) end-to-end error recovery; g) end-to-end segmenting, blocking, and concatenation; h) end-to-end flow control on individual connections;"
+- NIST SP 800-77r1 §2.1: "The transport layer can optionally assure the reliability of communications. TCP, which provides reliable connection-oriented communications, and the User Datagram Protocol (UDP), which provides unreliable connectionless communications, are commonly used transport layer protocols."
+- Microsoft Learn, Transport layer: "The transport layer ensures that messages are delivered error free, in sequence, and with no loss or duplication. This layer relieves the higher-layer protocols from being concerned about data transfer with their peers."
+- Currency: X.200 is in force, NIST is current, and the Microsoft page is live.
+
+### units[0].learn.lead[5] ("job-3") — ✅
+
+Text: "**Layer 3, the Network Layer**, finds a **route** between **network addresses**, so a message can cross several networks, one after another. The layers above don’t need to know how the route is chosen."
+
+- X.200 6.1.2 (defining standard: the layer numbers): "e) the Network Layer (layer 3);"
+- X.200 7.5.4.2.1 (defining standard: Network Layer routing): "Routing functions determine an appropriate route between network-addresses."
+- X.200 7.5.2.3 (defining standard: the Network Layer's purpose): "It provides to the transport-entities independence from routing and relay consideration associated with the establishment and operation of a given network-connection. This includes the case where several subnetworks are used in tandem (see 7.5.4.2) or in parallel."
+- NIST SP 800-77r1 §2.1: "Network Layer. This layer routes packets across networks."
+- Microsoft Learn, Network layer: "This layer determines the physical path that the data should take"
+- Currency: X.200 is in force, NIST is current, and the Microsoft page is live.
+
+### units[0].learn.lead[6] ("job-2") — ✅
+
+Text: "**Layer 2, the Data Link Layer**, carries the data across **one link** at a time, from one machine to the next. It detects errors that happen in the Physical Layer below it, and may correct them."
+
+- X.200 6.1.2 (defining standard: the layer numbers): "f) the Data Link Layer (layer 2);"
+- X.200 7.6.2.1 (defining standard: the Data Link Layer's purpose): "The Data Link Layer provides functional and procedural means for connectionless-mode among network-entities, and for connection-mode for the establishment, maintenance, and release data-link-connections among network-entities"
+- X.200 7.5.2.4 (defining standard): "Any relay functions and hop-by-hop service enhancement protocols used to support the network-service between the OSI end systems are operating below the Transport Layer, i.e. within the Network Layer or below."
+- X.200 7.6.2.2 (defining standard): "The Data Link Layer detects and possibly corrects errors which may occur in the Physical Layer."
+- NIST SP 800-77r1 §2.1: "Data Link Layer. This layer handles communications between the physical network components."
+- Microsoft Learn, Data link layer: "The data link layer sends frames between physical addresses and is responsible for error detection and recovery occurring in the physical layer." Its LLC subsection adds: "The LLC sublayer provides error-free transfer of data frames from one node to another."
+- Currency: X.200 is in force, NIST is current, and the Microsoft page is live.
+
+### units[0].learn.lead[7] ("lead-3") — ✅
+
+Text: "On the way down, a layer adds its own control information to what the layer above handed it, usually as a **header** in front."
+
+- X.200 5.6.1.1 (defining standard: protocol-control-information): "(N)-protocol-control information: Information exchanged between (N)-entities to co-ordinate their joint operation."
+- X.200 5.6.1.3 (defining standard: the protocol-data-unit): "(N)-protocol-data-unit: A unit of data specified in an (N)-protocol and consisting of (N)-protocol-control-information and possibly (N)-user-data."
+- NIST SP 800-77r1 §2.1, footnote 6: "At each layer, the logical units are typically composed of a header and a payload. The payload consists of the information passed down from the previous layer, while the header contains layer-specific information such as addresses." The body text adds: "the data is passed from the highest layer through intermediate layers to the lowest layer, with each layer adding additional information."
+- RFC 1122 §1.3.3: "A segment consists of a TCP header followed by application data." and "A frame is the unit of transmission in a link layer protocol, and consists of a link-layer header followed by a packet."
+- Currency: all current (see above).
+
+### units[0].learn.lead[8] ("lead-4") — ✅
+
+Text: "The lowest layer sends the whole bundle as **bits** over the physical medium, such as a cable. At the other end, it is passed back up, layer by layer."
+
+- X.200 5.2.2.4 (defining standard: layering): "In order to co-operate, (N)-entities in any layer, other than those in the lowest layer, communicate by means of the set of services provided by the (N–1)-layer (see Figure 4). The entities in the lowest layer are assumed to communicate directly via the physical media which connect them."
+- X.200 7.7.2 (defining standard: the Physical Layer's purpose): "The Physical Layer provides the mechanical, electrical, functional and procedural means to activate, maintain, and de-activate physical-connections for bit transmission between data-link-entities."
+- X.200 7.7.4.6.1 NOTE (defining standard): "For open systems to communicate in the real environment, real physical connections should be made as, for example, in Figure 19 a)." Figure 19 labels its media "Metallic cable" and "Optical fibre".
+- NIST SP 800-77r1 §2.1: "The lowest layer sends the accumulated data through the physical network; the data is then passed up through the layers to its destination."
+- Currency: X.200 is in force and NIST is current.
+
+### units[0].learn.lead[9] ("lead-5") — ✅
+
+Text: "In between, a **router** passes the message on, using only layers 1 to 3. Its work goes one hop at a time, from one machine to the next. It needs layer 3, the Network Layer, because that is the layer that routes messages across networks."
+
+- X.200 6.1.6 (defining standard: the relay open system): "some open systems act only as relay open systems, passing data to other open systems. The functions and protocols which support the forwarding of data are then provided in the lower layers." Its Figure 12 draws the relay open system with Network, Data Link and Physical layers only (viewed as an image in this run).
+- X.200 6.1.2 (defining standard: the layer numbers): "e) the Network Layer (layer 3);"
+- X.200 7.5.2.1 (defining standard): "The Network Layer provides the functional and procedural means for connectionless-mode or connection-mode transmission among transport-entities and, therefore, provides to the transport-entities independence of routing and relay considerations."
+- X.200 7.5.2.4 (defining standard): "Any relay functions and hop-by-hop service enhancement protocols used to support the network-service between the OSI end systems are operating below the Transport Layer, i.e. within the Network Layer or below."
+- RFC 1122 §1.1.1: "The networks are interconnected using packet-switching computers called "gateways" or "IP routers" by the Internet community, and "Intermediate Systems" by the OSI world [INTRO:13]."
+- NIST SP 800-77r1 §2.1: "Network Layer. This layer routes packets across networks."
 - Microsoft Learn, Network layer: "This layer determines the physical path that the data should take"
 - Currency: all current.
 
-### units[0].learn.lead[6] ("job-2")
+### units[0].learn.lead[10] ("lead-6") — ✅
 
-- Text: **Layer 2, the Data Link Layer**, carries the data across **one link** at a time, from one machine to the next. It detects errors that happen in the Physical Layer below it, and may correct them.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "f) the Data Link Layer (layer 2);"
-- ITU-T X.200, 7.5.2.4 (defining standard): "Any relay functions and hop-by-hop service enhancement protocols" "are operating" "within the Network Layer or below."
-- ITU-T X.200, 7.6.2.1 (defining standard): "A data-link-connection is built upon one or several physical-connections."
-- ITU-T X.200, 7.6.2.2 (defining standard): "The Data Link Layer detects and possibly corrects errors which may occur in the Physical Layer."
-- NIST SP 800-77r1, 2.1: "Data link layer controls are applied to all communications on a specific physical link" and "An internet-based connection is typically composed of several physical links chained together"
-- Microsoft Learn, Data link layer: "responsible for error detection and recovery occurring in the physical layer" and (LLC) "error-free transfer of data frames from one node to another."
+Text: "Going up, a layer reads the control information its **twin** added, usually as a header. Then it passes the rest up to the layer above without reading it."
+
+- X.200 5.6.1.1 (defining standard: protocol-control-information): "(N)-protocol-control information: Information exchanged between (N)-entities to co-ordinate their joint operation."
+- X.200 5.6.1.4 (defining standard: the service-data-unit): "(N)-service-data-unit: An amount of information whose identity is preserved when transferred between peer-(N+1)-entities and which is not interpreted by the supporting (N)-entities."
+- NIST SP 800-77r1 §2.1, footnote 6: "At each layer, the logical units are typically composed of a header and a payload."
+- RFC 1122 §1.3.3: "An IP datagram consists of an IP header followed by transport layer data, i.e., of an IP header followed by a message."
 - Currency: all current.
 
-### units[0].learn.lead[7] ("lead-3")
+### units[0].learn.terms[0] ("term-layer") — ✅
 
-- Text: On the way down, a layer adds its own control information to what the layer above handed it, usually as a **header** in front.
-- Verdict: ✅
-- ITU-T X.200, 5.6.1.1 (defining standard: protocol-control-information): "Information exchanged between (N)-entities to co-ordinate their joint operation."
-- ITU-T X.200, 5.6.1.3 (defining standard: protocol-data-unit): "consisting of (N)-protocol-control-information and possibly (N)-user-data."
-- NIST SP 800-77r1, 2.1, footnote 6: "At each layer, the logical units are typically composed of a header and a payload. The payload consists of the information passed down from the previous layer, while the header contains layer-specific information such as addresses."
-- RFC 1122, 1.3.3: "A segment consists of a TCP header followed by application data." and "An IP datagram consists of an IP header followed by transport layer data"
-- Note: "usually" matches NIST's "typically" and X.200's Figure 9 note that no position is implied; RFC 1122 gives the header-in-front order.
-- Currency: all current.
+Text: Layer: "One job in the stack, with its own place in the order".
 
-### units[0].learn.lead[8] ("lead-4")
+- X.200 5.2.2.1 (defining standard: the (N)-layer): "According to this technique, each open system is viewed as logically composed of an ordered set of (N)-subsystems, represented for convenience in the vertical sequence shown in Figure 3." and "(N)-subsystems of the same rank (N) collectively form the (N)-layer of the Reference Model of Open Systems Interconnection."
+- X.200 5.2.2.5 (defining standard): "The services of an (N)-layer are provided to the (N+1)-layer using the (N)-functions performed within the (N)-layer"
+- X.200 6.1.2 (defining standard): "The Reference Model contains seven layers:"
+- X.200 6.2.1 (defining standard): "c) Create separate layers to handle functions that are manifestly different in the process performed or the technology involved."
+- Currency: X.200 (07/94) is in force.
 
-- Text: The lowest layer sends the whole bundle as **bits** over the physical medium, such as a cable. At the other end, it is passed back up, layer by layer.
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.4 (defining standard): "The entities in the lowest layer are assumed to communicate directly via the physical media which connect them."
-- ITU-T X.200, 7.7.2 (defining standard: the Physical Layer's purpose): "physical-connections for bit transmission between data-link-entities"
-- ITU-T X.200, 7.7.4.6.1 (defining standard): its NOTE points to Figure 19 a) for "real physical connections", and the figure labels them "Metallic cable" and "Optical fibre".
-- NIST SP 800-77r1, 2.1: "The lowest layer sends the accumulated data through the physical network; the data is then passed up through the layers to its destination."
-- Currency: all current.
+### units[0].learn.terms[1] ("term-header") — ✅
 
-### units[0].learn.lead[9] ("lead-5")
+Text: Header: "The information a layer puts in front of what it carries".
 
-- Text: In between, a **router** passes the message on, using only layers 1 to 3. Its work goes one hop at a time, from one machine to the next. It needs layer 3, the Network Layer, because that is the layer that routes messages across networks.
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard: layer numbers): "e) the Network Layer (layer 3);"
-- ITU-T X.200, 6.1.6 (defining standard: relay open systems): "some open systems act only as relay open systems, passing data to other open systems" and Figure 12 draws the relay open system with only the Network, Data Link and Physical layers.
-- ITU-T X.200, 7.5.2.1 (defining standard): "provides to the transport-entities independence of routing and relay considerations."
-- ITU-T X.200, 7.5.2.4 (defining standard): "hop-by-hop service enhancement protocols" operating "within the Network Layer or below."
-- NIST SP 800-77r1, 2.1: "This layer routes packets across networks."
-- RFC 1122, 1.1.1: the networks are interconnected by "packet-switching computers called "gateways" or "IP routers" by the Internet community, and "Intermediate Systems" by the OSI world"
-- Microsoft Learn, Network layer: "This layer determines the physical path that the data should take"
-- Currency: all current.
-
-### units[0].learn.lead[10] ("lead-6")
-
-- Text: Going up, a layer reads the control information its **twin** added, usually as a header. Then it passes the rest up to the layer above without reading it.
-- Verdict: ✅
-- ITU-T X.200, 5.6.1.1 (defining standard): "Information exchanged between (N)-entities to co-ordinate their joint operation."
-- ITU-T X.200, 5.6.1.4 (defining standard: service-data-unit): "not interpreted by the supporting (N)-entities."
-- NIST SP 800-77r1, 2.1, footnote 6: "the logical units are typically composed of a header and a payload" (and 2.1 body: "the data is then passed up through the layers to its destination").
-- RFC 1122, 1.3.3: "A frame is the unit of transmission in a link layer protocol, and consists of a link-layer header followed by a packet."
-- Currency: all current.
-
-### units[0].learn.terms[0] ("term-layer")
-
-- Content: Layer: "One job in the stack, with its own place in the order"
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.1 (defining standard: layering): "each open system is viewed as logically composed of an ordered set of (N)-subsystems"
-- ITU-T X.200, 5.2.2.5 (defining standard): "the (N)-functions performed within the (N)-layer"
-- ITU-T X.200, 6.1.2 (defining standard): "The Reference Model contains seven layers"
-- ITU-T X.200, 6.2.1 (defining standard): "c) Create separate layers to handle functions that are manifestly different" and "d) Collect similar functions into the same layer."
-- Currency: X.200 in force.
-
-### units[0].learn.terms[1] ("term-header")
-
-- Content: Header: "The information a layer puts in front of what it carries"
-- Verdict: ✅
-- NIST SP 800-77r1, 2.1, footnote 6: "The payload consists of the information passed down from the previous layer, while the header contains layer-specific information such as addresses."
-- RFC 1122, 1.3.3: "An IP datagram consists of an IP header followed by transport layer data"
-- Currency: both current (RFC 9293, which updates RFC 1122, also defines a header as control information "at the beginning" of a unit).
-
-### units[0].learn.terms[2] ("term-encap")
-
-- Content: Encapsulation: "Each layer’s data wrapped in a bigger bundle by the layer below it"
-- Verdict: ✅
-- NIST SP 800-77r1, 2.1: "Essentially, the data produced by a layer is encapsulated in a larger container by the layer below it."
-- RFC 1122, 1.3.3: "A segment is transmitted by encapsulation inside an IP datagram." and "a message must be encapsulated inside a datagram."
+- NIST SP 800-77r1 §2.1, footnote 6: "At each layer, the logical units are typically composed of a header and a payload. The payload consists of the information passed down from the previous layer, while the header contains layer-specific information such as addresses."
+- RFC 1122 §1.3.3: "A segment consists of a TCP header followed by application data." and "An IP datagram consists of an IP header followed by transport layer data"
+- Two independent sources: a NIST publication and an IETF RFC.
 - Currency: both current.
 
-### units[0].learn.terms[3] ("term-decap")
+### units[0].learn.terms[2] ("term-encap") — ✅
 
-- Content: Decapsulation: "Removing an outer header to reach what’s inside"
-- Verdict: ✅
-- Cisco, IP-in-IP Decapsulation: "IP-in-IP decapsulation" "removes the outer IP header of an encapsulated packet"
+Text: Encapsulation: "Each layer’s data wrapped in a bigger bundle by the layer below it".
+
+- NIST SP 800-77r1 §2.1: "Essentially, the data produced by a layer is encapsulated in a larger container by the layer below it."
+- RFC 1122 §1.3.3: "A segment is transmitted by encapsulation inside an IP datagram." and "To be transmitted end-to-end through the Internet, a message must be encapsulated inside a datagram."
+- Currency: both current.
+
+### units[0].learn.terms[3] ("term-decap") — ✅
+
+Text: Decapsulation: "Removing an outer header to reach what’s inside".
+
+- Cisco, IP-in-IP Decapsulation: "This topic describes IP-in-IP decapsulation on the Cisco 8000 Series Router, which removes the outer IP header of an encapsulated packet so that the router can direct the packet to the next hop through the network."
+- RFC 2003 §1: "Once the encapsulated datagram arrives at this intermediate destination node, it is decapsulated, yielding the original IP datagram, which is then delivered to the destination indicated by the original Destination Address field."
+- RFC 2003 §3: "To encapsulate an IP datagram using IP in IP encapsulation, an outer IP header [10] is inserted before the datagram's existing IP header, as follows:"
+- Two independent sources: Cisco's own documentation and an IETF RFC.
+- Currency: the Cisco page is live and documents a current Cisco 8000 IOS XR feature. RFC 2003 is not obsoleted. Its updates (RFC 3168 on ECN in tunnels, RFC 6864 on the IPv4 ID field) do not change what decapsulation does.
+
+### units[0].learn.terms[4] ("term-peer") — ✅
+
+Text: Peer layer: "The same layer on another machine, working with it by that layer’s own rules".
+
+- X.200 5.2.1.3 (defining standard: peer entities): "peer-(N)-entities: Entities within the same (N)-layer."
+- X.200 5.2.2.7 (defining standard: (N)-protocols): "Cooperation between (N)-entities is governed by one or more (N)-protocols."
+- X.200 6.1.3 (defining standard): "These layers are illustrated in Figure 11." Figure 11 is titled "Seven layer reference model and peer protocols" and draws a "Peer protocol" between two open systems.
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.terms[5] ("term-relay") — ✅
+
+Text: Relay: "A machine in the middle that only passes data on to other machines".
+
+- X.200 6.1.6 (defining standard: the relay open system): "When the physical media for OSI do not link all open systems directly, some open systems act only as relay open systems, passing data to other open systems."
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.pattern ("pattern") — ✅
+
+Text: Encapsulation → Relay → Decapsulation: "Down the layers at the sender, across each link, up the layers at the receiver."
+
+- X.200 5.2.2.4 (defining standard: layering): "(N)-entities in any layer, other than those in the lowest layer, communicate by means of the set of services provided by the (N–1)-layer (see Figure 4). The entities in the lowest layer are assumed to communicate directly via the physical media which connect them."
+- X.200 6.1.6 (defining standard: relay): "some open systems act only as relay open systems, passing data to other open systems."
+- NIST SP 800-77r1 §2.1: "the data is passed from the highest layer through intermediate layers to the lowest layer, with each layer adding additional information." and "The lowest layer sends the accumulated data through the physical network; the data is then passed up through the layers to its destination. Essentially, the data produced by a layer is encapsulated in a larger container by the layer below it."
+- Cisco, IP-in-IP Decapsulation: "which removes the outer IP header of an encapsulated packet"
 - RFC 2003 §1: "it is decapsulated, yielding the original IP datagram"
-- RFC 2003 §3: "an outer IP header [10] is inserted before the datagram's existing IP header"
-- Currency: the Cisco page is live (updated September 8, 2026) for the current Cisco 8000 Series routers on IOS XR. RFC 2003 is a Proposed Standard, not obsoleted; its updates (RFC 3168 on ECN, RFC 6864 on the IPv4 ID field) do not change the definition.
-
-### units[0].learn.terms[4] ("term-peer")
-
-- Content: Peer layer: "The same layer on another machine, working with it by that layer’s own rules"
-- Verdict: ✅
-- ITU-T X.200, 5.2.1.3 (defining standard: peer entities): "peer-(N)-entities: Entities within the same (N)-layer."
-- ITU-T X.200, 5.2.2.7 (defining standard): "Cooperation between (N)-entities is governed by one or more (N)-protocols."
-- ITU-T X.200, 6.1.3 (defining standard): "These layers are illustrated in Figure 11." Figure 11 is "Seven layer reference model and peer protocols", drawn between two open systems.
-- Currency: X.200 in force.
-
-### units[0].learn.terms[5] ("term-relay")
-
-- Content: Relay: "A machine in the middle that only passes data on to other machines"
-- Verdict: ✅
-- ITU-T X.200, 6.1.6 (defining standard: relay open systems): "some open systems act only as relay open systems, passing data to other open systems."
-- Currency: X.200 in force.
-
-### units[0].learn.pattern ("pattern")
-
-- Content: Encapsulation, Relay, Decapsulation: "Down the layers at the sender, across each link, up the layers at the receiver."
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.4 (defining standard): "The entities in the lowest layer are assumed to communicate directly via the physical media which connect them."
-- ITU-T X.200, 6.1.6 (defining standard: relay): "some open systems act only as relay open systems, passing data to other open systems."
-- NIST SP 800-77r1, 2.1: "the data is passed from the highest layer through intermediate layers to the lowest layer" and "the data is then passed up through the layers to its destination."
-- Cisco, IP-in-IP Decapsulation: "removes the outer IP header of an encapsulated packet"
-- RFC 2003 §1: "This use of encapsulation and decapsulation of a datagram is frequently referred to as "tunneling" the datagram"
 - Currency: all current.
 
-### units[0].learn.why[0] ("why-1")
+### units[0].learn.why[0] ("why-1") — ✅
 
-- Text: Why split the job? Each layer can use the service of the layer below without knowing the details of how that service is done.
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.3 (defining standard): "each (N)-layer provides (N+1)-entities in the (N+1)-layer with an (N)-service"
-- ITU-T X.200, 6.2.1 (defining standard): "f)" a layer can be redesigned "without changing the services expected from and provided to the adjacent layers."
-- ITU-T X.200, 7.4.2.1 (defining standard): "relieves them from any concern with the detailed way in which reliable and cost effective transfer of data is achieved."
-- ITU-T X.200, 7.5.2.3 (defining standard): "It makes invisible to transport-entities how underlying resources such as data-link-connections are used"
-- Microsoft Learn, Introduction: "shielding these layers from the details of how the services are implemented."
-- Currency: all current.
+Text: "Why split the job? Each layer can use the service of the layer below without knowing the details of how that service is done."
 
-### units[0].learn.why[1] ("why-2")
+- Microsoft Learn, Introduction: "Each layer offers specific services to higher layers while shielding these layers from the details of how the services are implemented."
+- X.200 5.2.2.3 (defining standard: layering): "Except for the highest layer, each (N)-layer provides (N+1)-entities in the (N+1)-layer with an (N)-service at (N)-SAP(s)."
+- X.200 6.2.1 (defining standard: the layering principles): "j) Allow changes of functions or protocols to be made within a layer without affecting other layers"
+- X.200 7.4.2.1 (defining standard): "relieves them from any concern with the detailed way in which reliable and cost effective transfer of data is achieved."
+- X.200 7.5.2.3 (defining standard): "It makes invisible to transport-entities how underlying resources such as data-link-connections are used to provide network-connections."
+- Currency: X.200 is in force and the Microsoft page is live.
 
-- Text: Layers 4 to 7 work only between the two end machines: the Transport Layer’s protocols run only between them, and layers 5 to 7 sit on top. So a router never needs to read those headers.
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.3 (defining standard), NOTE: "Not all open systems provide the initial source or final destination of data. Such open systems need not contain the higher layers of the architecture"
-- ITU-T X.200, 6.1.2 (defining standard): layers 5 to 7 are Session, Presentation and Application, above "d) the Transport Layer (layer 4);"
-- ITU-T X.200, 6.1.6 (defining standard): forwarding functions "are then provided in the lower layers"; Figure 12 runs the Transport to Application peer arrows straight between the two end open systems, over the relay.
-- ITU-T X.200, 7.4.2.3 (defining standard): "transport-protocols operate only between OSI end open systems."
-- ITU-T X.200, 7.5.2.4 (defining standard): relay functions "are operating below the Transport Layer"
-- Currency: X.200 in force.
+### units[0].learn.why[1] ("why-2") — ✅
 
-### units[0].learn.deep[0] ("deep-1", Learn's Go deeper)
+Text: "Layers 4 to 7 work only between the two end machines: the Transport Layer’s protocols run only between them, and layers 5 to 7 sit on top. So a router never needs to read those headers."
 
-- Text: X.200 calls a layer’s control information **protocol-control-information** (PCI), which twin layers exchange to coordinate. The PCI plus, possibly, data from above makes the layer’s **protocol-data-unit**.
-- Verdict: ✅
-- ITU-T X.200, 5.6.1.1 (defining standard: PCI): "(N)-protocol-control information: Information exchanged between (N)-entities to co-ordinate their joint operation."
-- ITU-T X.200, 5.6.1.3 (defining standard: PDU): "consisting of (N)-protocol-control-information and possibly (N)-user-data."
-- Currency: X.200 in force.
+- X.200 7.4.2.3 (defining standard): "Therefore, the Transport Layer is OSI end open system oriented and transport-protocols operate only between OSI end open systems."
+- X.200 6.1.2 (defining standard: the layer order): layers 5 to 7 are "the Session Layer (layer 5)", "the Presentation Layer (layer 6)" and "the Application Layer (layer 7)".
+- X.200 5.2.2.3 NOTE (defining standard): "Not all open systems provide the initial source or final destination of data. Such open systems need not contain the higher layers of the architecture (see Figure 12)."
+- X.200 6.1.6 (defining standard): "The functions and protocols which support the forwarding of data are then provided in the lower layers." Its Figure 12 gives the relay only layers 1 to 3.
+- X.200 7.5.2.4 (defining standard): "Any relay functions and hop-by-hop service enhancement protocols used to support the network-service between the OSI end systems are operating below the Transport Layer, i.e. within the Network Layer or below."
+- Currency: X.200 (07/94) is in force.
 
-### units[0].learn.deep[1] ("deep-2", Learn's Go deeper)
+### units[0].learn.deep[0] ("deep-1", Learn's Go deeper) — ✅
 
-- Text: The internet’s own protocols use four layers: Application, Transport, Internet and Link. NIST calls the lower two Network and Data Link.
-- Verdict: ✅
-- RFC 1122, 1.1.3 (defining standard: the Internet host protocol layers): "The protocol layers used in the Internet architecture are as follows" with the headings Application Layer, Transport Layer, Internet Layer and Link Layer.
-- NIST SP 800-77r1, 2.1: "IP communications are roughly composed of four layers that work together." Its list and Figure 1 name them Application, Transport, Network and Data Link.
+Text: "X.200 calls a layer’s control information **protocol-control-information** (PCI), which twin layers exchange to coordinate. The PCI plus, possibly, data from above makes the layer’s **protocol-data-unit**."
+
+- X.200 5.6.1.1 (defining standard: PCI): "(N)-protocol-control information: Information exchanged between (N)-entities to co-ordinate their joint operation." The abbreviation is X.200's own: the key to its Figure 9 in the same clause reads "PCI Protocol-control-information".
+- X.200 5.6.1.3 (defining standard: the PDU): "(N)-protocol-data-unit: A unit of data specified in an (N)-protocol and consisting of (N)-protocol-control-information and possibly (N)-user-data."
+- Currency: X.200 (07/94) is in force.
+
+### units[0].learn.deep[1] ("deep-2", Learn's Go deeper) — ✅
+
+Text: "The internet’s own protocols use four layers: Application, Transport, Internet and Link. NIST calls the lower two Network and Data Link."
+
+- RFC 1122 §1.1.3 (defining standard: the Internet suite's layers): "The protocol layers used in the Internet architecture are as follows [INTRO:4]:". The layers it then lists are "Application Layer", "Transport Layer", "Internet Layer" and "Link Layer".
+- NIST SP 800-77r1 §2.1: "IP communications are roughly composed of four layers that work together." Its Figure 1 names them "Application Layer", "Transport Layer", "Network Layer" and "Data Link Layer".
 - Currency: both current.
 
-### units[0].learn.deep[2] ("deep-3", Learn's Go deeper)
+### units[0].learn.deep[2] ("deep-3", Learn's Go deeper) — ✅
 
-- Text: A **segment** is a TCP header followed by application data. An IP **datagram** is an IP header followed by transport data; it travels as one **packet**, or as several when fragmented. A **frame** is a link-layer header followed by a packet.
-- Verdict: ✅
-- RFC 1122, 1.3.3 (defining standard: the Internet Standard terminology for these data units): "A segment consists of a TCP header followed by application data."; "An IP datagram consists of an IP header followed by transport layer data"; "A packet may be a complete IP datagram or a fragment of an IP datagram."; a frame "consists of a link-layer header followed by a packet."
-- NIST SP 800-77r1, 2.1, footnote 6: "At each layer, the logical units are typically composed of a header and a payload."
-- Currency: RFC 1122 not obsoleted. RFC 9293 still sends "each TCP segment" "as an Internet Protocol (IP) datagram"; RFC 6864 still says "IP supports datagram fragmentation". NIST current.
+Text: "A **segment** is a TCP header followed by application data. An IP **datagram** is an IP header followed by transport data; it travels as one **packet**, or as several when fragmented. A **frame** is a link-layer header followed by a packet."
 
-### units[0].learn.facts[0] ("fact-1")
+- RFC 1122 §1.3.3 (defining standard: these terms for Internet hosts): "A segment consists of a TCP header followed by application data." "An IP datagram consists of an IP header followed by transport layer data" "A packet may be a complete IP datagram or a fragment of an IP datagram." "A frame is the unit of transmission in a link layer protocol, and consists of a link-layer header followed by a packet."
+- NIST SP 800-77r1 §2.1, footnote 6: "At each layer, the logical units are typically composed of a header and a payload."
+- Currency: RFC 1122 is not obsoleted. RFC 9293 still describes TCP data as conveyed "via TCP segments, with each TCP segment sent as an Internet Protocol (IP) datagram."
 
-- Content: Layers: 7
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "The Reference Model contains seven layers"
-- Currency: X.200 in force.
+### units[0].learn.facts[0] ("fact-1") — ✅
 
-### units[0].learn.facts[1] ("fact-2-top")
+Text: Layers: 7.
 
-- Content: Top: 7 Application
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "a) the Application Layer (layer 7);"
-- Currency: X.200 in force.
+- X.200 6.1.2 (defining standard): "The Reference Model contains seven layers:"
+- Currency: in force.
 
-### units[0].learn.facts[2] ("fact-2-bottom")
+### units[0].learn.facts[1] ("fact-2-top") — ✅
 
-- Content: Bottom: 1 Physical
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "g) the Physical Layer (layer 1)."
-- Currency: X.200 in force.
+Text: Top: 7 Application.
 
-### units[0].learn.facts[3] ("fact-3")
+- X.200 6.1.2 (defining standard): "a) the Application Layer (layer 7);" This is the first and highest entry of the seven.
+- Currency: in force.
 
-- Content: Defined in: ITU-T X.200, the same text as ISO/IEC 7498-1
-- Verdict: ✅
-- ITU-T X.200, Foreword (defining standard: X.200 is the Recommendation that defines the OSI Basic Reference Model): "The identical text is also published as ISO/IEC International Standard 7498-1."
-- Currency: X.200 (07/94) in force; it replaced X.200 (11/88), which ITU-T lists as superseded.
+### units[0].learn.facts[2] ("fact-2-bottom") — ✅
 
-### units[0].practice[0].options[0] (question "going-down")
+Text: Bottom: 1 Physical.
 
-- Content: "Adds its own control information, usually a header" (right: true). Feedback: "Right. Going down, a layer adds its own control information to what the layer above handed it, usually as a header in front."
-- Verdict: ✅
-- ITU-T X.200, 5.6.1.3 (defining standard): "consisting of (N)-protocol-control-information and possibly (N)-user-data."
-- NIST SP 800-77r1, 2.1: "with each layer adding additional information."
-- NIST SP 800-77r1, 2.1, footnote 6: "the logical units are typically composed of a header and a payload."
-- RFC 1122, 1.3.3: "A segment consists of a TCP header followed by application data."
-- Correct as the answer. Currency: all current.
+- X.200 6.1.2 (defining standard): "g) the Physical Layer (layer 1)."
+- Currency: in force.
 
-### units[0].practice[0].options[1] (question "going-down")
+### units[0].learn.facts[3] ("fact-3") — ✅
 
-- Content: "Removes the header of the layer above" (right: false). Feedback: "Not quite. Going down, a layer doesn’t read what the layer above handed it."
-- Verdict: ✅
-- ITU-T X.200, 5.6.1.4 (defining standard: service-data-unit): "not interpreted by the supporting (N)-entities."
-- Correctly wrong; the feedback holds. Currency: X.200 in force.
+Text: Defined in: "ITU-T X.200, the same text as ISO/IEC 7498-1".
 
-### units[0].practice[0].options[2] (question "going-down")
+- X.200 Foreword (defining standard: the OSI Basic Reference Model): "The text of ITU-T Recommendation X.200 was approved on 1st of July 1994. The identical text is also published as ISO/IEC International Standard 7498-1."
+- Currency: X.200 (07/94) is in force.
 
-- Content: "Sends it straight to the cable" (right: false). Feedback: "Not quite. Each layer above the lowest gets its service from the layer just below it, so the message goes down one layer at a time."
-- Verdict: ✅
-- ITU-T X.200, 5.2.2.3 (defining standard): "Except for the highest layer, each (N)-layer provides (N+1)-entities in the (N+1)-layer with an (N)-service"
-- ITU-T X.200, 5.2.2.4 (defining standard): "(N)-entities in any layer, other than those in the lowest layer, communicate by means of the set of services provided by the (N–1)-layer"
-- Correctly wrong; the feedback holds. Currency: X.200 in force.
+### units[0].practice[0].options[0] (question "going-down") — ✅
 
-### units[0].practice[1].options[0] (question "router-layers")
+Text: "Adds its own control information, usually a header". Feedback: "Right. Going down, a layer adds its own control information to what the layer above handed it, usually as a header in front."
 
-- Content: "Layers 1 to 3" (right: true). Feedback: "Right. A machine that only passes data on needs just the lower layers, up to the Network Layer, which routes messages across networks."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "e) the Network Layer (layer 3);"
-- ITU-T X.200, 6.1.6 (defining standard): forwarding functions "are then provided in the lower layers"; Figure 12's relay open system has only the Network, Data Link and Physical layers.
-- ITU-T X.200, 7.5.2.1 (defining standard): "independence of routing and relay considerations."
-- NIST SP 800-77r1, 2.1: "This layer routes packets across networks."
-- Correct as the answer. Currency: all current.
+- X.200 5.6.1.3 (defining standard): "consisting of (N)-protocol-control-information and possibly (N)-user-data."
+- NIST SP 800-77r1 §2.1: "with each layer adding additional information."
+- NIST SP 800-77r1 §2.1, footnote 6: "the logical units are typically composed of a header and a payload. The payload consists of the information passed down from the previous layer"
+- RFC 1122 §1.3.3: "A segment consists of a TCP header followed by application data."
+- The option is right, and its feedback is correct for that.
 
-### units[0].practice[1].options[1] (question "router-layers")
+### units[0].practice[0].options[1] (question "going-down") — ✅
 
-- Content: "All seven" (right: false). Feedback: "Not quite. Transport protocols, at layer 4, run only between the two end machines, so the router in the middle has no part in them."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "d) the Transport Layer (layer 4);"
-- ITU-T X.200, 7.4.2.3 (defining standard): "transport-protocols operate only between OSI end open systems."
-- Correctly wrong; the feedback holds. Currency: X.200 in force.
+Text: "Removes the header of the layer above". Feedback: "Not quite. Going down, a layer doesn’t read what the layer above handed it."
 
-### units[0].practice[1].options[2] (question "router-layers")
+- X.200 5.6.1.4 (defining standard): "(N)-service-data-unit: An amount of information whose identity is preserved when transferred between peer-(N+1)-entities and which is not interpreted by the supporting (N)-entities."
+- The option is wrong, and its feedback is correct for that.
 
-- Content: "Only layer 1" (right: false). Feedback: "Not quite. To send the message on toward the right network, it needs layer 3, the Network Layer, which routes messages across networks."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "e) the Network Layer (layer 3);"
-- ITU-T X.200, 7.5.2.1 (defining standard): "independence of routing and relay considerations."
-- NIST SP 800-77r1, 2.1: "This layer routes packets across networks."
-- Correctly wrong; the feedback holds. Currency: all current.
+### units[0].practice[0].options[2] (question "going-down") — ✅
 
-### units[0].practice[2].options[0] (question "layer-4")
+Text: "Sends it straight to the cable". Feedback: "Not quite. Each layer above the lowest gets its service from the layer just below it, so the message goes down one layer at a time."
 
-- Content: "Transport" (right: true). Feedback: "Right. Layer 4 is the Transport Layer."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "d) the Transport Layer (layer 4);"
-- Currency: X.200 in force.
+- X.200 5.2.2.3 (defining standard): "Except for the highest layer, each (N)-layer provides (N+1)-entities in the (N+1)-layer with an (N)-service at (N)-SAP(s)."
+- X.200 5.2.2.4 (defining standard): "(N)-entities in any layer, other than those in the lowest layer, communicate by means of the set of services provided by the (N–1)-layer"
+- The option is wrong, and its feedback is correct for that.
 
-### units[0].practice[2].options[1] (question "layer-4")
+### units[0].practice[1].options[0] (question "router-layers") — ✅
 
-- Content: "Network" (right: false). Feedback: "Not quite. The Network Layer is layer 3. Layer 4 is the Transport Layer."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "e) the Network Layer (layer 3);" and "d) the Transport Layer (layer 4);"
-- Currency: X.200 in force.
+Text: "Layers 1 to 3". Feedback: "Right. A machine that only passes data on needs just the lower layers, up to the Network Layer, which routes messages across networks."
 
-### units[0].practice[2].options[2] (question "layer-4")
+- X.200 6.1.6 (defining standard): "some open systems act only as relay open systems, passing data to other open systems. The functions and protocols which support the forwarding of data are then provided in the lower layers." Its Figure 12 shows the relay with layers 1 to 3.
+- X.200 6.1.2 (defining standard): "e) the Network Layer (layer 3);"
+- X.200 7.5.2.1 (defining standard): "provides to the transport-entities independence of routing and relay considerations."
+- NIST SP 800-77r1 §2.1: "Network Layer. This layer routes packets across networks."
+- The option is right, and its feedback is correct for that.
 
-- Content: "Session" (right: false). Feedback: "Not quite. The Session Layer is layer 5. Layer 4 is the Transport Layer."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "c) the Session Layer (layer 5);" and "d) the Transport Layer (layer 4);"
-- Currency: X.200 in force.
+### units[0].practice[1].options[1] (question "router-layers") — ✅
 
-### units[0].practice[2].options[3] (question "layer-4")
+Text: "All seven". Feedback: "Not quite. Transport protocols, at layer 4, run only between the two end machines, so the router in the middle has no part in them."
 
-- Content: "Data Link" (right: false). Feedback: "Not quite. The Data Link Layer is layer 2. Layer 4 is the Transport Layer."
-- Verdict: ✅
-- ITU-T X.200, 6.1.2 (defining standard): "f) the Data Link Layer (layer 2);" and "d) the Transport Layer (layer 4);"
-- Currency: X.200 in force.
+- X.200 6.1.2 (defining standard): "d) the Transport Layer (layer 4);"
+- X.200 7.4.2.3 (defining standard): "transport-protocols operate only between OSI end open systems."
+- The option is wrong, and its feedback is correct for that.
 
-## 2. Traced, example, analogy and unbacked parts
+### units[0].practice[1].options[2] (question "router-layers") — ✅
 
-Every traced item says nothing beyond the Learn parts its `Traces:` line names. The Watch steps simplify (for example, they always draw a header where lead-3 says "usually"), but none adds a value, name, outcome or condition.
+Text: "Only layer 1". Feedback: "Not quite. To send the message on toward the right network, it needs layer 3, the Network Layer, which routes messages across networks."
+
+- X.200 6.1.2 (defining standard): "e) the Network Layer (layer 3);"
+- X.200 7.5.2.1 (defining standard): "provides to the transport-entities independence of routing and relay considerations."
+- NIST SP 800-77r1 §2.1: "Network Layer. This layer routes packets across networks."
+- The option is wrong, and its feedback is correct for that.
+
+### units[0].practice[2].options[0] (question "layer-4") — ✅
+
+Text: "Transport". Feedback: "Right. Layer 4 is the Transport Layer."
+
+- X.200 6.1.2 (defining standard): "d) the Transport Layer (layer 4);"
+
+### units[0].practice[2].options[1] (question "layer-4") — ✅
+
+Text: "Network". Feedback: "Not quite. The Network Layer is layer 3. Layer 4 is the Transport Layer."
+
+- X.200 6.1.2 (defining standard): "e) the Network Layer (layer 3);" and "d) the Transport Layer (layer 4);"
+
+### units[0].practice[2].options[2] (question "layer-4") — ✅
+
+Text: "Session". Feedback: "Not quite. The Session Layer is layer 5. Layer 4 is the Transport Layer."
+
+- X.200 6.1.2 (defining standard): "c) the Session Layer (layer 5);" and "d) the Transport Layer (layer 4);"
+
+### units[0].practice[2].options[3] (question "layer-4") — ✅
+
+Text: "Data Link". Feedback: "Not quite. The Data Link Layer is layer 2. Layer 4 is the Transport Layer."
+
+- X.200 6.1.2 (defining standard): "f) the Data Link Layer (layer 2);" and "d) the Transport Layer (layer 4);"
+
+## 2. Traced, example and analogy parts, and unbacked items
+
+Every traced item was checked against the Learn parts named on its `Traces:` line. None adds a value, number, name, outcome or condition that those parts do not state. "Your laptop", "a web server" and "a router" are the lesson's example setting. The header counts (six headers from 2 to 7) follow from lead-3 and lead-4. The router reading only headers 2 and 3 follows from lead-5 and lead-6. Removing a header on the way up follows from lead-6 and term-decap.
 
 | Key | Kind | Verdict |
 |---|---|---|
@@ -714,21 +718,22 @@ Every traced item says nothing beyond the Learn parts its `Traces:` line names. 
 | units[0].practice[2].prompt (question "layer-4") | unbacked | ✅ |
 
 Notes:
-- The Example fact ("a laptop and a web server") holds only made-up scenario parts, with no addresses or other values.
-- The analogy (a header as a note stuck on a parcel, for the same layer at the other end) matches lead-3 and lead-6 and does not mislead.
-- The three prompts carry no false premise: each layer does something going down (lead-3), a router does pass the message on (lead-5), and there is a layer 4 (lead-1).
+
+- `units[0].overview.facts[1]` ("a laptop and a web server") is generic example data. It holds no real address or name.
+- `units[0].learn.lead[11]` (a header as a note stuck on a parcel, written for the same layer at the other end) matches lead-6 and term-peer, and does not mislead a beginner.
+- The three prompts make no claim beyond the cited parts and have no false premise. NIST §2.1 says each layer adds information on the way down, lead-5 says a router passes the message on, and X.200 6.1.2 defines layer 4.
 
 ## 3. Sources
 
-| Source | Current | Checked | How |
+| Id | Current | Checked | How |
 |---|---|---|---|
-| `cisco-ipip-decap` | yes | 2026-11-08 | Fetched from cisco.com. The page is live ("Updated : September 8, 2026") in the configuration guide for the current Cisco 8000 Series routers on IOS XR. It is Cisco's own product documentation, not a blog, forum or partner page. |
-| `itu-x200` | yes | 2026-11-08 | PDF fetched from itu.int. The ITU-T Recommendation page lists X.200 (07/94) under "In force components"; X.200 (11/88) is the superseded one. |
-| `microsoft-osi` | yes | 2026-11-08 | Fetched from learn.microsoft.com. The page is live ("Last updated on 2025-01-31") and is Microsoft's own Windows driver documentation (not Q&A or Shows). The four anchors cited (#physical-layer, #data-link-layer, #network-layer, #transport-layer) are present. |
-| `nist-sp800-77r1` | yes | 2026-11-08 | PDF fetched from nvlpubs.nist.gov. The CSRC page shows it as final (June 2020); the document history lists no later revision, withdrawal or superseding publication. |
-| `rfc-1122` | yes | 2026-11-08 | Text fetched from rfc-editor.org. The RFC Editor's info page lists it as an Internet Standard (STD 3), not obsoleted, updated by RFCs 1349, 4379, 5884, 6093, 6298, 6633, 6864, 8029 and 9293. RFC 9293 (TCP) and RFC 6864 (IPv4 ID) were read for the claims they touch; the claims still hold. The rest do not touch the cited sections. |
-| `rfc-2003` | yes | 2026-11-08 | Text fetched from rfc-editor.org. The info page lists it as a Proposed Standard, not obsoleted, updated by RFC 3168 (ECN in tunnels) and RFC 6864 (IPv4 ID field). Both were read where they touch RFC 2003; neither changes the encapsulation or decapsulation definition. |
+| cisco-ipip-decap | yes | 2026-11-08 | The page is live on cisco.com, Cisco's own configuration guide for Cisco 8000 Series Routers on IOS XR, and documents a current product feature. A plain `curl` was refused by the site (Access Denied), so the article text was read verbatim in a real browser. |
+| itu-x200 | yes | 2026-11-08 | ITU-T's X.200 page lists "X.200 (07/94)" as "In force". Only X.200 (11/88) is listed as superseded. |
+| microsoft-osi | yes | 2026-11-08 | The page is live on learn.microsoft.com, Microsoft's own Windows driver documentation (not Q&A or Shows), last updated 2025-01-31. |
+| nist-sp800-77r1 | yes | 2026-11-08 | NIST's CSRC page for SP 800-77 Rev. 1 shows it as published June 2020 and superseding SP 800-77 (2005). It shows no withdrawal and no newer revision. |
+| rfc-1122 | yes | 2026-11-08 | rfc-editor.org/info/rfc1122 shows it as an Internet Standard (STD 3), not obsoleted. It is updated by RFC 1349, 4379, 5884, 6093, 6298, 6633, 6864, 8029 and 9293. The relevant updates were read: RFC 9293 replaces only the TCP-requirement portions and still describes TCP as reliable and in-order, and RFC 6864 covers only the IPv4 ID field. None changes §1.1.1, §1.1.3 or §1.3.3 as cited. |
+| rfc-2003 | yes | 2026-11-08 | rfc-editor.org/info/rfc2003 shows it as a Proposed Standard, not obsoleted. It is updated by RFC 3168 (ECN handling in IP-in-IP tunnels, its §9.1) and RFC 6864 (IPv4 ID field). Neither changes §1 or §3 as cited. |
 
 ## 4. Limit overrides
 
-- `steps`: One Watch step for each layer on the way down, so a beginner sees each layer’s own job; then the router, the way up and the twins.
+- steps: One Watch step for each layer on the way down, so a beginner sees each layer’s own job; then the router, the way up and the twins.
