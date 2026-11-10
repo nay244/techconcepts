@@ -158,13 +158,22 @@ Each starts from the layout in 2.8.
 
 | Change | What it fixed |
 |---|---|
-| The log moves from under the scene to under the explanation, in the right-hand column, and each message is a short entry (from, to, time, then one sentence) and no longer a five-column table. | The scene grows from 733×398 to 680×624. The log no longer holds a quarter of the screen empty: until the first message it is one line. The same entry works at phone width. |
-| The right-hand column is wider: 446px at 1440, from 389px. | The DHCP Overview no longer scrolls. |
+| **The log stays under the scene while watching** (owner's question, 2026-11-10: "why not place the event log below the Watch?"). Claude's first prototype moved it under the explanation; measuring both settled it, below. Each message is a short entry (from, to, time, then one sentence) and no longer a seven-column table. Until the first message the log is one line; from then on it keeps one height (216px at 900 tall) and scrolls to the newest. | The wire and its record share a column, and the words have the other. The log no longer holds a quarter of the screen empty before anything has happened. The same entry works at phone width. |
+| The explanation column runs the full height of the page, at the old width (389px at 1440). | The DHCP Overview no longer scrolls: it has 826px, from 550px. |
 | In Learn and Practice the columns swap: the words take the wide middle column at a 66-character measure, and the scene, its table and the log step to the right. | Reading no longer happens in a 389px column beside a dimmed scene. Sources sit at the foot of the text, numbered to match the claims. |
 | The outline shows a step's second line only for the step you are on. | DHCP's eight places take 411px of the 826px column, so a longer outline such as OSI Model's has room. Not yet tried with OSI Model's own outline. |
 | The step controls sit under the scene; the theme button and OSI badge are not in the prototype's top bar. | To settle in the build: where the theme button and the layer badge go. |
 | On a phone the scene is pinned under the top bar (a third of the screen), the rest is three tabs (Explain, Steps, Log), and Back and Next are pinned at the bottom. | The whole lesson fits one 812px screen with nothing above the scene, from a 2,412px stack. Hypothesis 2.9 holds. |
 | The stamp in the top bar reads "Not checked yet, 2 sources" for DHCP. | An unchecked lesson says so, in the same place a checked one will say "Verified" with its date. |
 
-Still to fix in the build: outline rows are 41px tall on a phone and need 44; the lease table has no place on a phone yet.
+**Why the log is under the scene.** The drawing is as wide as its column allows and no taller, so height given to the scene's box buys nothing. Measured at 1440×900 on the DHCP lesson:
+
+| | Drawing | Words column | Empty space while watching |
+|---|---|---|---|
+| Log under the explanation (first prototype) | 648×308 | 446px wide | 328px inside the log at step 2, 107px at step 5 |
+| Log under the scene (taken) | 705×336 | 389px wide | about 570px under a step's two short paragraphs |
+
+The first prototype's "bigger scene" was a taller box around a smaller drawing; this document said the scene grew, and that was wrong. Under the scene, the drawing is 9% wider. The cost is the empty space under a step's words. That space is the natural home for a look inside the current message (direction option 6, the packet inspector), still to be decided in step 4.
+
+Still to fix in the build: outline rows are 41px tall on a phone and need 44; the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
 
