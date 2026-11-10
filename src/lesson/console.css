@@ -26,10 +26,8 @@
   height: 100dvh;
   padding: 12px;
   overflow: hidden;
-  /* The blueprint dot grid shows between the panels, as on every other page. */
-  background-color: var(--ground);
-  background-image: radial-gradient(var(--ground-dot) 1px, transparent 1.2px);
-  background-size: 22px 22px;
+  /* No background of its own: the body's blueprint dot grid (global.css) shows
+     between the panels, as on every other page. */
   color: var(--ink);
   font: 15px/1.5 var(--sans);
 }
@@ -140,11 +138,9 @@
   font: 700 17px/1 var(--mono);
 }
 
-/* It takes the bar's spare room, so the OSI and progress blocks sit beside the
-   theme button, as in internet-v2, subnet-v1 and firewalls-v1 (lesson-v3, the
-   oldest, left the room after them). It gives way first when the bar is short
-   of room, down to 340px, so the blocks after it (the theme switch last) are
-   never pushed out of sight. */
+/* It takes the bar's spare room, so the OSI chips sit beside the theme button.
+   It gives way first when the bar is short of room, down to 340px, so the
+   blocks after it (the theme button last) are never pushed out of sight. */
 .topbar__now {
   flex: 1 1 auto;
   gap: 6px;
@@ -269,7 +265,6 @@
   background: var(--accent);
   color: var(--bg);
 }
-
 
 .topbar__tools {
   flex-direction: row;

@@ -52,8 +52,8 @@ function Logo() {
  * The lesson's top bar: the logo; where the learner is (Tracks / track / lesson, "Lesson
  * 10 of 20", a segment per step of the current unit plus Learn and Practice,
  * and "Step 2 of 5", never the step's title, which can be too long); the unit's
- * OSI layers; and the round theme button the site's headers use. The segments and
- * the 20 places are drawn for the eye and said in words beside them.
+ * OSI layers; and the round theme button the site's headers use. The segments are
+ * drawn for the eye and said in words beside them.
  */
 export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion }: TopBarProps) {
   const start = positionOf(lesson, slot.unit, 'overview');
