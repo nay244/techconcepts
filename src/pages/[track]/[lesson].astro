@@ -1,5 +1,6 @@
 ---
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { lessonFigure } from '../../lib/figures';
 import { drawFigure } from '../../art/scenes';
 import { fillLabels } from '../../art/scenes/labels';
 import { getEntries, getLesson, neighbors, type AvailableSummary } from '../../content/registry';
@@ -33,6 +34,8 @@ const { track, entry, entries, lesson, next } = Astro.props;
 const drawn = drawFigure(lesson.figure);
 const data = drawn.data;
 const svg = fillLabels(drawn.svg, lesson.units[0]!.scene.labels);
+// The next lesson's own art for the Up next card at the end of Practice (null on a track's last ready lesson).
+const nextFigure = next === null ? null : lessonFigure(track.id, next);
 // The console has its own top bar and <main id="main">, so the layout adds no header, main or footer.
 ---
 
@@ -45,6 +48,7 @@ const svg = fillLabels(drawn.svg, lesson.units[0]!.scene.labels);
     entry={entry}
     total={entries.length}
     next={next}
+    nextFigure={nextFigure}
     entries={entries}
     figureData={data}
   >

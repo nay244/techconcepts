@@ -65,6 +65,7 @@ function consoleFor(lesson: Lesson = DHCP, figureData?: unknown) {
       entry={entry}
       total={entries.length}
       next={neighbors(entries, lesson.slug).next}
+      nextFigure={neighbors(entries, lesson.slug).next === null ? null : '<svg class="stub-figure" viewBox="0 0 4 3"></svg>'}
       entries={entries}
       figureData={figureData}
     />
@@ -312,10 +313,8 @@ test('the speed button cycles and names the next speed', async () => {
 test('the end row names the next ready lesson, or says the last ready one for now', async () => {
   window.history.replaceState({}, '', '/networking/dhcp?step=7');
   const { unmount } = renderConsole();
-  expect(within(explanation()).getByText(/Next ready lesson:/)).toHaveTextContent(
-    'That’s the whole lesson. Next ready lesson: Firewalls, lesson 16.',
-  );
-  expect(within(explanation()).getByRole('link', { name: 'Go to Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
+  expect(within(explanation()).getByText('That’s the whole lesson.')).toBeInTheDocument();
+  expect(within(explanation()).getByRole('link', { name: /^Up next Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   unmount();
 
   window.history.replaceState({}, '', '/networking/firewalls?step=7');
