@@ -270,3 +270,32 @@ The owner, 2026-11-10: "Do not reference the old homepage layout. Create your ow
 **Kept from the owner's earlier decisions:** no Continue or resume link, nothing that reads progress, no exam tags, no time figures.
 
 **Not done:** the demo has no motion beyond a 200ms fade (the real lesson moves each message along its way). The header's small Start learning button is 40px tall, as before.
+
+## 10. Claude's own takes on the Lesson and Tracks pages (prototypes, undecided)
+
+The owner, 2026-11-10: the Lesson and Tracks pages "are fine but have a go at your own take on them with your original design idea and show a side by side." These are prototypes for that comparison. Nothing here is decided and no site code changed.
+
+One idea runs through both, and through Home's tracks: **a sequence is drawn as a cable with stops.** Tracks on Home, lessons on Tracks, steps in a lesson.
+
+**Lesson: a stage and a line.**
+
+- The stage has no panels. The step's words sit on the same ground as the scene they describe, at the left; the scene has the rest.
+- The lesson's line runs along the bottom: one stop per place (Overview, each step, Learn, Practice). Under each step are the messages it sent, appearing as the lesson reaches them. The outline and the event log become one object, because a lesson's steps and its messages are the same sequence.
+- In Learn and Practice the words take the stage and the scene steps aside, as in §7.
+- On a phone: the line is a strip of squares under the bar, the scene is pinned, the words scroll, and Back and Next are pinned at the bottom. A watch step fits one 812px screen; the current page is a 2,309px stack.
+
+What the take leaves out or has not placed, each of which the current page has: the log's addresses, ports, protocol and size columns; Play and the speed control; the Network and Sequence views; the OSI layer chips; Go deeper; the lesson's own table (files, leases, rules); the list of all the track's lessons; the theme button.
+
+**Tracks: every track is a cable.**
+
+- Each track is a heading and one cable. Every lesson is a stop on it: filled if it can be opened, dashed if it is not ready, green once done, orange for the one to take next. The track's parts are labelled over the stops they hold.
+- The next lesson hangs from its own stop as a card with Start or Continue and "See the whole track".
+- A track with no lessons yet is a heading and a short stub of cable.
+- It shows where the gaps are: Networking's four ready lessons are stops 1, 7, 9 and 16 of 19.
+
+Against an earlier decision: on 2026-11-09 the owner rejected listing every lesson on the Tracks page. This take shows every lesson as a small stop, not as a card, and is offered knowing that.
+
+The page is 1,508px tall at 1440 wide without a footer; the current one is 1,851px with its footer, so the heights are not like for like.
+
+The prototypes and the two side-by-side sheets are in the ignored `.superpowers/revamp/look/take/` (`lesson.html`, `tracks.html`, `tracks-returning.html`, `shots/side-by-side-*.png`), served as `look-prototypes`.
+
