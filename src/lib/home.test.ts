@@ -1,136 +1,101 @@
 import { expect, test } from 'vitest';
-import { drawFigure } from '../art/scenes';
-import { getEntries, getLesson } from '../content/registry';
-import type { Lesson } from '../content/schema';
-import { positionOf } from '../engine/timeline';
+import { getEntries, getLesson, trackTotals } from '../content/registry';
+import { plannedTracks, tracks } from '../content/tracks';
+import { homeDemo, homeQuestions, homeStops } from './home';
 import { STATUS_WORDS } from './hub';
-import { homeTrackCards, insideSheet, osiLitAt } from './home';
 
-const lesson = (slug: string): Lesson => {
-  const found = getLesson(slug);
-  if (found === undefined) throw new Error(`no ${slug}`);
-  return found;
-};
-const OSI = lesson('osi-model');
+// ---------------------------------------------------------------- the lesson you can try on Home
 
-test('Home’s track cards: the two tracks with lessons in order, then A+, each linking to its panel on Tracks', () => {
-  const cards = homeTrackCards();
-  expect(cards.map((c) => c.id)).toEqual(['how-the-internet-works', 'networking', 'comptia-a-plus']);
-  expect(cards.map((c) => c.href)).toEqual(['/tracks#how-the-internet-works', '/tracks#networking', '/tracks#comptia-a-plus']);
-  expect(cards.map((c) => c.cover)).toEqual(['web', 'networking', 'aplus']);
-  expect(cards.map((c) => c.title)).toEqual(['How the Internet Works', 'Networking Concepts', 'CompTIA A+']);
-});
-
-test('a track with every lesson ready counts them; one with some ready says how many of how many', () => {
-  const [internet, networking] = homeTrackCards();
-  expect(internet).toMatchObject({
-    count: '14 lessons',
-    go: 'See the lessons →',
-    ready: true,
-    chips: [
-      { text: 'Beginner', plain: false },
-      { text: 'Start here', plain: true },
-    ],
-    blurb: 'Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each.',
-  });
-  expect(networking).toMatchObject({
-    count: '4 of 19 lessons ready',
-    go: 'See the lessons →',
-    ready: true,
-    chips: [{ text: 'Beginner', plain: false }],
-    blurb: 'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
+test('the demo is the DHCP lesson: its first four Watch steps, in the lesson’s own words', () => {
+  const demo = homeDemo();
+  const unit = getLesson('dhcp')!.units[0]!;
+  expect(demo.lesson).toMatchObject({ title: 'DHCP', fullName: 'Dynamic Host Configuration Protocol', url: '/networking/dhcp' });
+  expect(demo.steps.map((s) => s.title)).toEqual(['DHCP Discover', 'DHCP Offer', 'DHCP Request', 'DHCP Acknowledge']);
+  demo.steps.forEach((step, i) => {
+    expect(step).toEqual({ n: i + 1, id: unit.steps[i]!.id, title: unit.steps[i]!.title, sub: unit.steps[i]!.sub, narrative: unit.steps[i]!.narrative });
   });
 });
 
-test('A+ has no lessons yet: it says Not ready yet, its planned blurb, and that lessons are on the way', () => {
-  const aplus = homeTrackCards()[2]!;
-  expect(aplus).toMatchObject({
-    count: 'Lessons on the way',
-    go: 'See the track',
-    ready: false,
-    chips: [{ text: STATUS_WORDS['not-ready'], plain: true }],
-    blurb: 'Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.',
+test('the demo’s Learn part is the lesson’s lead, its ideas with their names, and its sources', () => {
+  const { learn } = homeDemo();
+  const unit = getLesson('dhcp')!.units[0]!;
+  expect(learn.lead).toBe(unit.learn.lead[0]!.text);
+  expect(learn.terms.length).toBeGreaterThanOrEqual(4);
+  expect(learn.terms).toEqual(unit.learn.terms.slice(0, learn.terms.length).map((t) => ({ idea: t.idea, name: t.name })));
+  expect(learn.sources).toEqual(unit.references.map((r) => ({ label: r.label, url: r.url })));
+  expect(learn.sources.every((s) => s.url.startsWith('https://'))).toBe(true);
+});
+
+test('the demo’s Practice part is the lesson’s first question, with exactly one right answer', () => {
+  const { practice } = homeDemo();
+  const question = getLesson('dhcp')!.units[0]!.practice[0]!;
+  expect(practice.prompt).toBe(question.prompt);
+  expect(practice.options.map((o) => o.text)).toEqual(question.options.map((o) => o.text));
+  expect(practice.options.filter((o) => o.right)).toHaveLength(1);
+  expect(practice.options.findIndex((o) => o.right)).toBe(question.answer);
+  // Every choice explains itself, right or wrong.
+  expect(practice.options.every((o) => o.feedback.length > 20)).toBe(true);
+});
+
+test('the demo’s scene is the lesson’s own drawing, and each step’s message tag has a place on it', () => {
+  const demo = homeDemo();
+  expect(demo.scene).toMatch(/^<svg data-figure="dhcp"/);
+  expect(demo.scene).toMatch(/ role="img" aria-label="[^"]{40,}"/);
+  expect(demo.tags.map((t) => t.step)).toEqual([1, 2, 3, 4]);
+  for (const tag of demo.tags) {
+    // The tag is a part the scene really has.
+    expect(demo.scene).toContain(`id="dh-tag-${tag.id}"`);
+    expect(Number.isFinite(tag.x) && Number.isFinite(tag.y)).toBe(true);
+  }
+  // In flight the tags are up in the air (above the plate: a negative y on screen); the last has landed lower, at the laptop.
+  expect(demo.tags[0]!.y).toBeLessThan(demo.tags[3]!.y);
+  expect(new Set(demo.tags.map((t) => t.id)).size).toBe(4);
+});
+
+test('the demo links into the full lesson at its start, its Learn part and its Practice part', () => {
+  const { parts } = homeDemo();
+  expect(parts.watch).toMatch(/^\/networking\/dhcp\?step=\d+$/);
+  expect(parts.learn).toMatch(/^\/networking\/dhcp\?step=\d+$/);
+  expect(parts.practice).toMatch(/^\/networking\/dhcp\?step=\d+$/);
+  expect(new Set(Object.values(parts)).size).toBe(3);
+});
+
+// ---------------------------------------------------------------- questions that open a lesson
+
+test('each question on Home opens a ready lesson of the first track, named as the track names it', () => {
+  const questions = homeQuestions();
+  const entries = getEntries(tracks[0]!.id);
+  expect(questions).toHaveLength(4);
+  for (const q of questions) {
+    expect(q.question).toMatch(/\?$/);
+    const entry = entries.find((e) => e.available && e.url === q.url);
+    expect(entry, q.question).toBeDefined();
+    expect(q.name).toBe(entry!.title);
+    expect(q.number).toBe(String(entry!.number).padStart(2, '0'));
+    expect(q.purpose.length).toBeGreaterThan(5);
+  }
+  expect(new Set(questions.map((q) => q.url)).size).toBe(4);
+});
+
+// ---------------------------------------------------------------- the tracks, in order
+
+test('Home’s stops are every track with lessons, in the site’s order, then the planned ones', () => {
+  const stops = homeStops();
+  expect(stops.map((s) => s.id)).toEqual([...tracks.map((t) => t.id), ...plannedTracks.map((t) => t.id)]);
+  expect(stops.map((s) => s.href)).toEqual(stops.map((s) => `/tracks#${s.id}`));
+});
+
+test('a stop counts its lessons from the content, and a planned track says it is not ready', () => {
+  const stops = homeStops();
+  tracks.forEach((track, i) => {
+    const { available, planned } = trackTotals(getEntries(track.id));
+    expect(stops[i]).toMatchObject({ title: track.title, ready: true, lessons: { ready: available, planned } });
+    expect(stops[i]!.count).toBe(available === planned ? `${planned} lessons` : `${available} of ${planned} lessons ready`);
+    expect(stops[i]!.cover).toBeTruthy();
   });
-  expect(aplus.chips[0]!.text).toBe('Not ready yet');
-});
-
-test('the inside sheet is OSI Model’s: its place in the track, its Overview words and its first three steps', () => {
-  const sheet = insideSheet();
-  const unit = OSI.units[0]!;
-  expect(sheet.label).toBe('Networking Concepts · lesson 1');
-  expect(sheet.title).toBe('OSI Model');
-  expect(sheet.url).toBe('/networking/osi-model');
-  expect(sheet.hook).toBe(unit.overview.hook);
-  expect(sheet.scene).toBe(unit.scene.title);
-  expect(sheet.steps).toEqual([
-    { n: '01', title: 'Application Layer', sub: 'The message enters at the top' },
-    { n: '02', title: 'Presentation Layer', sub: 'Both ends agree how the data is written' },
-    { n: '03', title: 'Session Layer', sub: 'Opens the conversation and keeps it in order' },
-  ]);
-  expect(sheet.steps).toEqual(unit.steps.slice(0, 3).map((s, i) => ({ n: `0${i + 1}`, title: s.title, sub: s.sub })));
-});
-
-test('the inside sheet’s part links open the lesson at its first step, its Learn and its Practice', () => {
-  const { parts } = insideSheet();
-  expect(parts).toEqual({
-    watch: '/networking/osi-model?step=1',
-    learn: `/networking/osi-model?step=${positionOf(OSI, 0, 'learn')}`,
-    practice: `/networking/osi-model?step=${positionOf(OSI, 0, 'practice')}`,
-  });
-  // OSI Model has ten steps after its Overview: Learn is position 11 and Practice 12.
-  expect(parts.learn).toBe('/networking/osi-model?step=11');
-  expect(parts.practice).toBe('/networking/osi-model?step=12');
-});
-
-test('the inside sheet’s figure is the lesson’s own, with its words written in and the first step’s block lit', () => {
-  const { figure } = insideSheet();
-  expect(figure).toMatch(/^<svg data-figure="osi"/);
-  expect(figure).toContain('>APPLICATION</tspan>');
-  expect(figure).toContain('>Your laptop</text>');
-  // One block lit, layer 7 on the laptop, and the laptop's callout current.
-  expect(figure.match(/class="osi-L on"/g)).toHaveLength(1);
-  expect(figure).toContain('<g class="osi-L on" id="osi-L-laptop-7"><g class="iso-solid" data-lit=""');
-  expect(figure).toContain('<g class="osi-call focus" id="osi-call-laptop">');
-  expect(figure.match(/class="osi-call focus"/g)).toHaveLength(1);
-});
-
-test('the inside sheet refuses a lesson that is not ready in the track, by name', () => {
-  const planned = getEntries('networking').find((e) => !e.available);
-  if (planned === undefined) throw new Error('Networking has no lesson still to come.');
-  expect(() => insideSheet('networking', planned.slug)).toThrow(new RegExp(`networking/${planned.slug}.*not ready`));
-  // Ready, but in another track only.
-  expect(() => insideSheet('how-the-internet-works', 'osi-model')).toThrow(/how-the-internet-works\/osi-model.*not ready/);
-  expect(() => insideSheet('no-such-track', 'osi-model')).toThrow(/not ready/);
-});
-
-test('the inside sheet refuses a lesson drawn on another figure, since it lights the OSI one', () => {
-  expect(() => insideSheet('networking', 'dhcp')).toThrow(/OSI figure.*dhcp draws "dhcp"/);
-});
-
-test('the inside sheet refuses to show more Watch steps than the lesson has', () => {
-  const steps = OSI.units[0]!.steps.length;
-  expect(() => insideSheet('networking', 'osi-model', steps)).not.toThrow();
-  expect(() => insideSheet('networking', 'osi-model', steps + 1)).toThrow(RangeError);
-  expect(() => insideSheet('networking', 'osi-model', steps + 1)).toThrow(`has ${steps} Watch steps; the sheet shows ${steps + 1}`);
-});
-
-test('lighting the OSI figure: a layer cue lights its block and its machine’s callout; other cues are left alone', () => {
-  const svg = drawFigure('osi').svg;
-  const lit = osiLitAt(svg, [
-    { cue: 'layer', arg: 'server:3' },
-    { cue: 'peer', arg: '4' },
-  ]);
-  expect(lit.match(/class="osi-L on"/g)).toHaveLength(1);
-  expect(lit).toMatch(/<g class="osi-L on" id="osi-L-server-3"><g class="iso-solid" data-lit=""/);
-  expect(lit).toContain('<g class="osi-call focus" id="osi-call-server">');
-  // Nothing else changes: the lit figure is the drawn one with those three attributes added.
-  const unlit = lit
-    .replace('<g class="osi-L on" id="osi-L-server-3"><g class="iso-solid" data-lit=""', '<g class="osi-L" id="osi-L-server-3"><g class="iso-solid"')
-    .replace('<g class="osi-call focus" id="osi-call-server">', '<g class="osi-call" id="osi-call-server">');
-  expect(unlit).toBe(svg);
-});
-
-test('lighting a block the figure does not have is refused by name', () => {
-  const svg = drawFigure('osi').svg;
-  expect(() => osiLitAt(svg, [{ cue: 'layer', arg: 'router:7' }])).toThrow(/osi-L-router-7/);
+  for (const stop of stops.slice(tracks.length)) {
+    expect(stop).toMatchObject({ ready: false, count: STATUS_WORDS['not-ready'], lessons: { ready: 0, planned: 0 } });
+  }
+  // The first is where a beginner starts, and only the first says so.
+  expect(stops.map((s) => s.order)).toEqual(['Start here', 'Then go deeper', 'For the exam']);
 });

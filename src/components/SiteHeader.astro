@@ -15,8 +15,8 @@ const { current, overHero = false } = Astro.props;
 const showStart = current !== 'tracks';
 const links = [
   { key: 'tracks', href: '/tracks', label: 'Tracks' },
-  { key: 'how', href: '/#how', label: 'How it works' },
-  { key: 'faq', href: '/#faq', label: 'Questions' },
+  { key: 'how', href: '/#try', label: 'How a lesson works' },
+  { key: 'sources', href: '/#sources', label: 'Sources' },
   { key: 'about', href: '/about', label: 'About' },
 ] as const;
 // The current section's link is "page" when it is this very page (/tracks), and "true" when this page sits inside its

@@ -17,7 +17,6 @@ const SOURCES = {
   'net-map.css': read('../art/scenes/net-map.css'),
   'console.css': read('../lesson/console.css'),
   'site.css': read('../components/site.css'),
-  'index.astro': read('../pages/index.astro'),
   'about.astro': read('../pages/about.astro'),
 };
 type Source = keyof typeof SOURCES;
@@ -83,8 +82,6 @@ const GREEN_TEXT: GreenText[] = [
   { source: 'console.css', selector: '.explain__finished', grounds: (theme) => ({ card: tokens[theme].card }) },
   // A lesson card's Finished badge, on its own green tint over the card.
   { source: 'site.css', selector: '.badge.done', grounds: (theme) => ({ badge: mix(tokens[theme].allowed, tokens[theme].card, 10) }) },
-  // Home's ticks beside "Nothing to sign up for", on the card's second panel.
-  { source: 'index.astro', selector: '.ticks li::before', grounds: (theme) => ({ 'card-2': tokens[theme]['card-2'] }) },
   // About's "Progress reset" status, on the page.
   { source: 'about.astro', selector: ".a-reset [role='status']", grounds: (theme) => ({ bg: tokens[theme].bg }) },
 ];
@@ -92,7 +89,6 @@ const GREEN_TEXT: GreenText[] = [
 test('the tinted grounds are the ones the CSS paints', () => {
   expect(rule('console.css', ".practice__option[data-result='right']")).toMatch(/background:\s*color-mix\(in srgb, var\(--allowed\) 10%, var\(--card\)\)/);
   expect(rule('site.css', '.badge.done')).toMatch(/background:\s*color-mix\(in srgb, var\(--allowed\) 10%, transparent\)/);
-  expect(rule('index.astro', '.free__r')).toMatch(/background:\s*var\(--card-2\)/);
   expect(rule('console.css', ".outline__lesson[aria-current='page']")).toMatch(/background:\s*var\(--here-soft\)/);
 });
 

@@ -78,7 +78,7 @@ Each numbered step is its own branch.
 3. **The shell.** DONE 2026-11-10. The Patch tokens, the heading face, light as the default theme, the figures' two finishes, the header and footer, and the new logo and favicon, in both themes. Every page wears it. What it left for the page steps is at the end of §6.
 4. **The Lesson page.** Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
 5. **The Tracks page.** Start from one panel per track (2.8), in the new look, on phone and desktop.
-6. **Home, the track page, About and 404, new layouts.** The track page puts each lesson's figure in its HTML once (audit plan 005). Home still has no Continue link.
+6. **Home, the track page, About and 404, new layouts.** Home: DONE 2026-11-10, an original page (§9). Still to do: the track page, which puts each lesson's figure in its HTML once (audit plan 005), About and 404.
 
 Done when every page wears the one new look in both themes, a reader on a 375px phone can do a whole lesson without the page scrolling past the scene, and every cited claim is one tap from its source.
 
@@ -236,3 +236,33 @@ The owner chose "Lifted lid" on 2026-11-10 from six ideas. Claude then drew five
 Wired in with the shell on 2026-11-10: the header and footer through `logoMark()`, the lesson's top bar through `src/components/LogoMark.tsx`, and `public/favicon.svg` written by `scripts/generate-favicon.mjs`, with a test that fails when the file and the drawing differ. Still to follow: the share image (`scripts/generate-og-image.mjs`).
 
 The five passed over, so nobody redraws them: Port (a socket with its link light; the runner-up), Twisted pair (muddy at 16 pixels), Message on the wire (read as a tool), Under the loupe (read as a search icon), Step marker (read as a video button). The sheets are in the ignored `.superpowers/revamp/look/art/`.
+
+## 9. Home
+
+The owner, 2026-11-10: "Do not reference the old homepage layout. Create your own original homepage for this web site with your own design ideas." So this page starts from the site's job, not from the page it replaces.
+
+**The idea: the page is a small lesson.** A beginner should not have to take the site's word for what a lesson is. Under the headline they can do one: step through the four messages that get a laptop its address, read the Learn part, and answer a question. It is the DHCP lesson's own scene and words, worked out from the content when the page is built, so it cannot drift from the lesson.
+
+| Section | What it is | Why |
+|---|---|---|
+| The opening | The site's line set very large, one sentence, two buttons, and three plain facts: free, no account, progress stays in this browser | The line is the promise; the facts answer the three things a newcomer asks before clicking |
+| Try one, right here | The DHCP scene with three parts, Watch, Learn and Practice. Watch steps through four messages and the scene follows: the message tag in the air, the phone ignoring a shout, the address landing on the laptop and in the lease table | It shows the product by being it, and explains Watch, Learn and Practice without a paragraph about them |
+| Or start from something you have wondered | Four questions, each opening the lesson of the first track that answers it: DNS, HTTPS, SMTP, TCP | A beginner arrives with a question more often than with a syllabus |
+| Three tracks, in the order to take them | The tracks as stops along one cable: start here, then go deeper, for the exam. Each links to its panel on the Tracks page | The order is real, so it is drawn as an order |
+| Where the facts come from | The `sources` figure and how many lessons have been checked so far, counted from the content | The site says what is and is not verified, on its front page |
+| Lift the lid | The `inside` figure and the way into lesson 1 | The last thing on the page is the first step |
+
+**How the demo works.** It has no script. Three groups of radio buttons (the part, the step, the answer) come before its panel, and CSS shows, hides and moves things from which are checked. The scene's own parts are switched the same way; each step's message tag is placed with the scene's camera numbers at build time. So it works with JavaScript off, from the keyboard (arrow keys move between steps), and adds nothing to the page's 1.3 KB of script.
+
+**What went, and where its content lives now.**
+
+- The questions list (FAQ). Its four answers are in the opening's three facts, the tracks' order words, the sources section, and "Nothing is scored" in the demo.
+- The separate Watch, Learn and Practice cards. The demo is all three.
+- The header's "How it works" and "Questions" links are now "How a lesson works" (the demo) and "Sources".
+
+**Measured, 1440×900 and 375×812.** The page is 4,134px tall on desktop and 5,421px on a phone, from 5,530px and 7,722px. Its HTML is 93 KB gzipped, from 145 KB. No sideways scroll at either size; every control in the demo is at least 44px tall.
+
+**Kept from the owner's earlier decisions:** no Continue or resume link, nothing that reads progress, no exam tags, no time figures.
+
+**Not done:** the demo has no motion beyond a 200ms fade (the real lesson animates the message along its path). The header's small Start learning button is 40px tall, as before.
+

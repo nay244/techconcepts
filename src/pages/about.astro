@@ -8,6 +8,7 @@ import { getEntries, getLesson, trackTotals } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
+import { lessonCheckCounts } from '../lib/checked';
 import { analyticsToken } from '../lib/analytics';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ResetProgress from '../components/ResetProgress';
@@ -34,11 +35,9 @@ const lessonsReady = trackTotals(tracks.flatMap((t) => getEntries(t.id))).availa
 const coming = comingTracksSentence([...plannedTracks, ...comingSoonTracks].map((t) => t.title));
 const dhcp = readyLesson('dhcp');
 const sources = sourceRows(dhcp.units.flatMap((u) => u.references));
-// Every ready lesson once (two tracks may list one lesson), and how many have passed the fact-checker. A lesson in
-// the cited shape builds only with a passing report (src/content/factcheck/gate.ts), so "cited" means checked.
-const readySlugs = [...new Set(tracks.flatMap((t) => getEntries(t.id)).flatMap((e) => (e.available ? [e.slug] : [])))];
-const checkedLessons = readySlugs.filter((slug) => readyLesson(slug).origin === 'cited').length;
-const factCheck = factCheckSentence(checkedLessons, readySlugs.length);
+// How many ready lessons have passed the fact-checker (src/lib/checked.ts); Home says the same sentence.
+const checks = lessonCheckCounts();
+const factCheck = factCheckSentence(checks.checked, checks.total);
 ---
 
 <BaseLayout

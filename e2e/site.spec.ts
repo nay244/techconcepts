@@ -21,16 +21,22 @@ const NETWORKING_LESSONS = LESSONS.filter((lesson) => lesson.path.startsWith('/n
 /** Every page of the site: the six outside the lessons, then each ready lesson. */
 const ALL_PAGES = [...SITE_PAGES, ...LESSONS.map((lesson) => ({ name: lesson.slug, path: lesson.path }))];
 
-const heroStart = (page: Page) => page.locator('.hero .hero-actions .btn--primary');
-const heroChip = (page: Page) => page.locator('.hero .hero-chip');
+const heroStart = (page: Page) => page.locator('main .open .open__acts .btn--primary');
+/** The three plain facts under Home's buttons: the page a returning visitor sees is the same one. */
+const homeFacts = (page: Page) => page.locator('main .open .open__facts');
+const HOME_FACTS = 'Free. No account. Your progress stays in this browser.';
 /** The hero's first button, for every visitor: it always opens How the Internet Works' first lesson. */
-const HERO_START = 'Learn how the Internet Works';
+const HERO_START = 'Start with lesson 1: HTTP';
 /** Where every Start button leads: the first lesson of the first track. */
 const START_PATH = '/how-the-internet-works/what-is-http';
 const INTERNET_TRACK = '/how-the-internet-works';
 const INTERNET_PARTS = ['Loading a web page', 'Getting the data there', 'Behind the scenes', 'Email', 'Files and remote control', 'The seal'];
 /** Home's track cards: one link each, to the track's panel on Tracks. */
-const trackCards = (page: Page) => page.locator('#tracks .home-tracks > li > a.home-track');
+/** Home's three tracks, in order along the cable. */
+const trackCards = (page: Page) => page.locator('main .cable > li.leg');
+/** Home's small lesson: the DHCP demo and the words it is showing. */
+const demo = (page: Page) => page.locator('main .demo');
+const DHCP_PATH = '/networking/dhcp';
 /** The lesson Home shows from the inside, and links into at each of its parts. */
 const OSI_PATH = '/networking/osi-model';
 /** Every lesson the track lists, ready or not, in the order it lists them. */
@@ -65,35 +71,34 @@ test.describe('desktop', () => {
   requireLessons(LESSONS);
 
   test.describe('Home', () => {
-    test('Home: hero button opens the first lesson; See a lesson goes to #inside', async ({ page }) => {
+    test('Home: one heading, the start button opens the first lesson, and See the tracks opens /tracks', async ({ page }) => {
       await open(page, '/');
       await expect(page).toHaveTitle('TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('See how technology really works.');
-      await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
-      // Three covers stand beside the words, as decoration only.
-      await expect(page.locator('.hero .hero-art[aria-hidden="true"] > svg')).toHaveCount(3);
+      await expect(homeFacts(page)).toHaveText(HOME_FACTS);
       await expect(heroStart(page)).toHaveText(HERO_START);
       await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
+      await expect(page.locator('main .open').getByRole('link', { name: 'See the tracks', exact: true })).toHaveAttribute('href', '/tracks');
+      // The page's sections, in order.
+      await expect(page.locator('main').getByRole('heading', { level: 2 })).toHaveText([
+        'Try one, right here',
+        'Or start from something you have wondered',
+        'Three tracks, in the order to take them',
+        'Where the facts come from',
+        'Lift the lid',
+      ]);
 
-      const see = page.locator('.hero').getByRole('link', { name: 'See a lesson', exact: true });
-      await expect(see).toHaveAttribute('href', '#inside');
-      await see.click();
-      await expect(page).toHaveURL(/\/#inside$/);
-      await expect(page.locator('#inside')).toBeInViewport();
-
-      await open(page, '/');
       await heroStart(page).click();
       await expect(page).toHaveURL(new RegExp(`${START_PATH}$`));
       await expect(kicker(page)).toHaveText('Overview');
     });
 
-    test('Home: How it works, Questions and See a lesson each land their section clear of the sticky header', async ({ page }) => {
+    test('Home: How a lesson works and Sources each land their section clear of the sticky header', async ({ page }) => {
       const nav = page.getByRole('navigation', { name: 'Site', exact: true });
       const links = [
-        { id: 'how', link: nav.getByRole('link', { name: 'How it works', exact: true }) },
-        { id: 'faq', link: nav.getByRole('link', { name: 'Questions', exact: true }) },
-        { id: 'inside', link: page.locator('.hero').getByRole('link', { name: 'See a lesson', exact: true }) },
+        { id: 'try', link: nav.getByRole('link', { name: 'How a lesson works', exact: true }) },
+        { id: 'sources', link: nav.getByRole('link', { name: 'Sources', exact: true }) },
       ];
       for (const { id, link } of links) {
         await open(page, '/');
@@ -119,94 +124,147 @@ test.describe('desktop', () => {
       }
     });
 
-    test('Home: three track cards in order, linking to their Tracks panels, with no exam tags', async ({ page }) => {
+    test('Home: the demo steps through DHCP’s four messages, each moving the scene', async ({ page }) => {
       await open(page, '/');
-      await expect(page.locator('#tracks').getByRole('heading', { level: 2 })).toHaveText('Choose where to start.');
+      const d = demo(page);
+      const scene = d.locator('svg[data-figure="dhcp"]');
+      await expect(scene).toBeVisible();
+      const shown = (id: string) => scene.locator(`#${id}`).evaluate((el) => getComputedStyle(el).opacity);
+      const titles = ['DHCP Discover', 'DHCP Offer', 'DHCP Request', 'DHCP Acknowledge'];
+      await expect(d.locator('.demo__row b')).toHaveText(titles);
+      const tags = ['discover', 'offer', 'request', 'ack'];
+
+      // Step 1: the Discover is in the air, and the laptop has no address.
+      await expect(d.locator('.demo__say:visible')).toHaveCount(1);
+      await expect(d.locator('.demo__say:visible')).toContainText('it has no address yet');
+      await expect.poll(() => shown('dh-tag-discover')).toBe('1');
+      expect(await shown('dh-lap-ip')).toBe('0');
+      expect(await shown('dh-lease-row')).toBe('0');
+
+      for (let step = 2; step <= 4; step++) {
+        await d.locator('.demo__next:visible').click();
+        await expect(page.locator(`#demo-s${step}`)).toBeChecked();
+        await expect(d.locator('.demo__say:visible')).toHaveCount(1);
+        // Only this step's tag shows.
+        await expect.poll(() => shown(`dh-tag-${tags[step - 1]}`)).toBe('1');
+        await expect.poll(() => shown(`dh-tag-${tags[step - 2]}`)).toBe('0');
+      }
+      // Step 4: the address has landed. The laptop shows it and the router has written it down.
+      await expect(d.locator('.demo__say:visible')).toContainText('192.168.1.100 is yours for 24 hours');
+      await expect.poll(() => shown('dh-lap-ip')).toBe('1');
+      await expect.poll(() => shown('dh-lease-row')).toBe('1');
+      await expect(d.locator('.demo__next:visible')).toHaveText('Go to Learn');
+    });
+
+    test('Home: the demo’s Learn part names the ideas and links its sources; its Practice part explains each answer', async ({ page }) => {
+      await open(page, '/');
+      const d = demo(page);
+      await d.locator('.demo__parts label', { hasText: 'Learn' }).click();
+      await expect(page.locator('#demo-learn')).toBeChecked();
+      await expect(d.locator('.demo__pane--watch')).toBeHidden();
+      await expect(d.locator('.demo__pane--learn .demo__lead')).toContainText('Four short messages later it had one');
+      await expect(d.locator('.demo__terms dd')).toContainText(['Broadcast', 'Discover', 'Offer']);
+      const sources = d.locator('.demo__src a');
+      await expect(sources).toHaveText(['RFC 2131: Dynamic Host Configuration Protocol', 'RFC 2132: DHCP Options and BOOTP Vendor Extensions']);
+      await expect(sources.first()).toHaveAttribute('href', 'https://www.rfc-editor.org/rfc/rfc2131');
+
+      await d.locator('.demo__pane--learn .demo__next').click();
+      await expect(page.locator('#demo-practice')).toBeChecked();
+      await expect(d.locator('.demo__pane--practice .demo__lead')).toContainText('Why does it shout its first message to everyone?');
+      // No answer is given until one is chosen, and nothing is scored.
+      await expect(d.locator('.demo__why:visible')).toHaveCount(0);
+      await d.locator('.demo__pick').nth(1).click();
+      await expect(d.locator('.demo__why:visible')).toHaveCount(1);
+      await expect(d.locator('.demo__why:visible')).toContainText('Not quite.');
+      await d.locator('.demo__pick').nth(0).click();
+      await expect(d.locator('.demo__why:visible')).toHaveCount(1);
+      await expect(d.locator('.demo__why:visible')).toContainText('Right.');
+      await expect(d.locator('.demo__after')).toContainText('Nothing is scored.');
+      await expect(page.locator('main')).not.toContainText(/score:|points|streak/i);
+
+      const whole = d.getByRole('link', { name: 'Open the whole lesson', exact: true });
+      await expect(whole).toHaveAttribute('href', DHCP_PATH);
+      await whole.click();
+      await expect(page).toHaveURL(new RegExp(`${DHCP_PATH}$`));
+      await expect(kicker(page)).toHaveText('Overview');
+    });
+
+    test('Home: the demo works from the keyboard, and each control has a name', async ({ page }) => {
+      await open(page, '/');
+      const d = demo(page);
+      await expect(page.getByRole('radio', { name: 'Watch part', exact: true })).toBeChecked();
+      await expect(page.getByRole('radio', { name: 'Watch, step 1 of 4: DHCP Discover', exact: true })).toBeChecked();
+      await page.locator('#demo-s1').focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('#demo-s2')).toBeChecked();
+      await expect(d.locator('.demo__say:visible')).toContainText('offers it to the laptop');
+      // The focused step shows where the keyboard is.
+      expect(await d.locator('.demo__row[for="demo-s2"]').evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
+      await page.locator('#demo-watch').focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('#demo-learn')).toBeChecked();
+      await expect(d.locator('.demo__pane--learn')).toBeVisible();
+      await expect(page.getByRole('radio', { name: /^Answer: / })).toHaveCount(3);
+    });
+
+    test('Home: four questions, each opening a ready lesson of How the Internet Works', async ({ page }) => {
+      await open(page, '/');
+      const rows = page.locator('main .ask__row');
+      await expect(rows).toHaveCount(4);
+      await expect(rows.locator('.ask__q')).toHaveText([
+        'How does a website’s name turn into a number?',
+        'Who can read a web page on its way to you?',
+        'Where does an email go when you press Send?',
+        'What if part of a message gets lost on the way?',
+      ]);
+      await expect(rows.locator('.ask__a b')).toHaveText(['DNS', 'HTTPS', 'SMTP', 'TCP']);
+      const ready = new Set(LESSONS.map((lesson) => lesson.path));
+      for (const href of await rows.evaluateAll((as) => as.map((a) => a.getAttribute('href')!))) {
+        expect(href.startsWith(`${INTERNET_TRACK}/`), href).toBe(true);
+        expect(ready.has(href), `${href} is a ready lesson`).toBe(true);
+      }
+      await rows.first().click();
+      await expect(page).toHaveURL(/\/how-the-internet-works\/what-is-dns$/);
+      await expect(kicker(page)).toHaveText('Overview');
+    });
+
+    test('Home: three tracks in order, each linking to its Tracks panel, with no exam tags', async ({ page }) => {
+      await open(page, '/');
       await expect(trackCards(page)).toHaveCount(3);
       await expect(trackCards(page).locator('h3')).toHaveText(['How the Internet Works', 'Networking Concepts', 'CompTIA A+']);
-      expect(await trackCards(page).evaluateAll((cards) => cards.map((a) => a.getAttribute('href')))).toEqual([
+      await expect(trackCards(page).locator('.leg__order')).toHaveText(['Start here', 'Then go deeper', 'For the exam']);
+      expect(await trackCards(page).locator('h3 a').evaluateAll((links) => links.map((a) => a.getAttribute('href')))).toEqual([
         '/tracks#how-the-internet-works',
         '/tracks#networking',
         '/tracks#comptia-a-plus',
       ]);
-      await expect(trackCards(page).locator('.home-track__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Lessons on the way']);
-      await expect(trackCards(page).locator('.home-track__go')).toHaveText(['See the lessons →', 'See the lessons →', 'See the track']);
-      await expect(trackCards(page).nth(0).locator('.h-chip')).toHaveText(['Beginner', 'Start here']);
-      await expect(trackCards(page).nth(1).locator('.h-chip')).toHaveText(['Beginner']);
-      await expect(trackCards(page).nth(2).locator('.h-chip')).toHaveText(['Not ready yet']);
-      // Each card is one link, and nothing on Home shows progress or an exam to filter by.
-      for (const card of await trackCards(page).all()) await expect(card.locator('a, button')).toHaveCount(0);
+      await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Not ready yet']);
+      // One segment per planned lesson, the ready ones filled; a track with no lessons draws none.
+      await expect(trackCards(page).nth(0).locator('.leg__run i[data-ready]')).toHaveCount(14);
+      await expect(trackCards(page).nth(1).locator('.leg__run i')).toHaveCount(19);
+      await expect(trackCards(page).nth(1).locator('.leg__run i[data-ready]')).toHaveCount(4);
+      await expect(trackCards(page).nth(2).locator('.leg__run')).toHaveCount(0);
+      // Nothing on Home shows progress or an exam to filter by.
       await expect(page.locator('main a[href*="?for="]')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/Network\+|Security\+|CCNA|lessons done|in progress/i);
 
-      // The card hover (spec §5.7): under the pointer a card takes the 1.5px ring in the accent, which no style of the
-      // page's own may cancel.
-      const accent = await page.evaluate(() => {
-        const probe = document.body.appendChild(document.createElement('i'));
-        probe.style.color = 'var(--accent)';
-        const colour = getComputedStyle(probe).color;
-        probe.remove();
-        return colour;
-      });
-      const first = trackCards(page).nth(0);
-      await first.hover();
-      await expect.poll(() => first.evaluate((el) => getComputedStyle(el).boxShadow)).toContain(`${accent} 0px 0px 0px 1.5px inset`);
-
-      await trackCards(page).nth(1).click();
+      await trackCards(page).nth(1).locator('h3 a').click();
       await expect(page).toHaveURL(/\/tracks#networking$/);
     });
 
-    test('Home: the inside sheet shows OSI Model’s first three steps and opens the lesson', async ({ page }) => {
+    test('Home: says how many lessons have been checked, and links to how a lesson is made', async ({ page }) => {
       await open(page, '/');
-      const inside = page.locator('#inside');
-      await expect(inside.getByRole('heading', { level: 2 })).toHaveText('See a lesson from the inside.');
-      await expect(inside.locator('.sheet__label')).toHaveText('Networking Concepts · lesson 1');
-      await expect(inside.getByRole('heading', { level: 3 })).toHaveText('OSI Model');
-      await expect(inside.locator('.sheet__hook')).toContainText('The OSI model splits it into seven smaller jobs');
-      const steps = inside.locator('.sheet__steps > li');
-      await expect(steps.locator('.n')).toHaveText(['01', '02', '03']);
-      await expect(steps.locator('.t')).toHaveText(['Application Layer', 'Presentation Layer', 'Session Layer']);
-      await expect(steps.locator('.s')).toHaveText([
-        'The message enters at the top',
-        'Both ends agree how the data is written',
-        'Opens the conversation and keeps it in order',
-      ]);
-      // The lesson's own figure, with its words in place and the first step's block lit: layer 7 on the laptop.
-      const figure = inside.locator('svg[data-figure="osi"]');
-      await expect(figure).toBeVisible();
-      await expect(figure).toContainText('APPLICATION');
-      await expect(figure.locator('.osi-L.on')).toHaveCount(1);
-      await expect(figure.locator('#osi-L-laptop-7')).toHaveClass(/\bon\b/);
-
-      const whole = inside.getByRole('link', { name: 'Open the whole lesson →' });
-      await expect(whole).toHaveAttribute('href', OSI_PATH);
-      await whole.click();
-      await expect(page).toHaveURL(new RegExp(`${OSI_PATH}$`));
-      await expect(kicker(page)).toHaveText('Overview');
-    });
-
-    test('Home: Watch, Learn and Practice buttons open OSI Model at step 1, Learn and Practice', async ({ page }) => {
-      await open(page, '/');
-      const how = page.locator('#how');
-      await expect(how.getByRole('heading', { level: 2 })).toHaveText('Watch, learn, then practice.');
-      await expect(how.getByRole('heading', { level: 3 })).toHaveText(['Watch it happen', 'Learn what happened', 'Practice what stuck']);
-      await expect(how.getByRole('link', { name: 'See a Watch part →' })).toHaveAttribute('href', `${OSI_PATH}?step=1`);
-      const parts = [
-        ['See a Watch part →', /^Watch · Step 1 of \d+$/],
-        ['See a Learn part →', /^Learn$/],
-        ['See a Practice part →', /^Practice$/],
-      ] as const;
-      for (const [name, place] of parts) {
-        await open(page, '/');
-        const button = page.locator('#how').getByRole('link', { name });
-        await expect(button, name).toHaveAttribute('href', new RegExp(`^${OSI_PATH}\\?step=\\d+$`));
-        await button.click();
-        await expect(kicker(page), name).toHaveText(place);
-      }
+      const facts = page.locator('main #sources');
+      await expect(facts.getByRole('heading', { level: 2 })).toHaveText('Where the facts come from');
+      await expect(facts).toContainText(/So far \d+ of \d+ lessons ha(s|ve) also been through an independent check/);
+      await expect(facts).not.toContainText(/every lesson is checked|all lessons are checked/i);
+      await expect(facts.getByRole('link', { name: 'How a lesson is made and checked', exact: true })).toHaveAttribute('href', '/about#facts');
+      // The figure is decoration here: the words carry the meaning.
+      await expect(facts.locator('.facts__art[aria-hidden="true"] > svg')).toHaveCount(1);
     });
 
     test('Home: no Continue or resume link', async ({ page }) => {
-      const resume = /continue|resume|pick up|watch again|where you left/i;
+      const resume = /continue|resume|pick up where|watch again|where you left/i;
       await open(page, '/');
       await expect(page.getByRole('link', { name: resume })).toHaveCount(0);
       await expect(page.getByRole('button', { name: resume })).toHaveCount(0);
@@ -219,16 +277,8 @@ test.describe('desktop', () => {
       await expect(page.getByRole('button', { name: resume })).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/You’re on|lessons done|in progress/i);
       await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
-    });
-
-    test('Home: the questions, the first one open, and Practice is not scored', async ({ page }) => {
-      await open(page, '/');
-      const faq = page.locator('#faq');
-      await expect(faq.getByRole('heading', { level: 2 })).toHaveText('Questions');
-      await expect(faq.locator('details > summary')).toHaveText(['Where do I start?', 'Do I need an account?', 'Where do the facts come from?', 'Is Practice scored?']);
-      await expect(faq.locator('details[open]')).toHaveCount(1);
-      await expect(faq.locator('details').first()).toHaveAttribute('open', '');
-      await expect(faq.locator('details').last()).toContainText('No. Practice is just for you. Nothing is scored or saved.');
+      // The demo starts over too: it keeps nothing.
+      await expect(page.locator('#demo-s1')).toBeChecked();
     });
   });
 
@@ -304,12 +354,12 @@ test.describe('desktop', () => {
     await expect(page.locator('.site-head .theme-toggle')).toHaveAccessibleName(`Switch to ${before} theme`);
   });
 
-  test('the header links are Tracks, How it works, Questions and About', async ({ page }) => {
+  test('the header links are Tracks, How a lesson works, Sources and About', async ({ page }) => {
     for (const { path } of SITE_PAGES) {
       await open(page, path);
       const nav = page.getByRole('navigation', { name: 'Site', exact: true });
-      await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'How it works', 'Questions', 'About']);
-      expect(await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/tracks', '/#how', '/#faq', '/about']);
+      await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'How a lesson works', 'Sources', 'About']);
+      expect(await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/tracks', '/#try', '/#sources', '/about']);
       await expect(nav.getByRole('link', { name: 'Practice' }), path).toHaveCount(0);
     }
   });
@@ -562,11 +612,10 @@ test.describe('desktop', () => {
 
     await open(page, '/');
     // Home shows no progress: a returning visitor sees the same hero and the same track cards as a first visit.
-    await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
+    await expect(homeFacts(page)).toHaveText(HOME_FACTS);
     await expect(heroStart(page)).toHaveText(HERO_START);
     await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
-    await expect(trackCards(page).locator('.home-track__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Lessons on the way']);
-    await expect(trackCards(page).nth(1).locator('.home-track__go')).toHaveText('See the lessons →');
+    await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Not ready yet']);
 
     // On Tracks, Networking's strip counts DHCP done, and its panel moves on to the next lesson not done; How the
     // Internet Works still reads as a first visit.
@@ -594,8 +643,8 @@ test.describe('desktop', () => {
     await expect(stripWords(page)).toHaveText('0 of 19 lessons done · 4 ready');
 
     await open(page, '/');
-    await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
-    await expect(trackCards(page).nth(1).locator('.home-track__count')).toHaveText('4 of 19 lessons ready');
+    await expect(homeFacts(page)).toHaveText(HOME_FACTS);
+    await expect(trackCards(page).nth(1).locator('.leg__count')).toHaveText('4 of 19 lessons ready');
     await open(page, '/tracks');
     await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('0 of 19 lessons done · 4 ready');
     await expect(panelOf(page, 'networking').locator('a.next .next__k')).toHaveText('Start here');
@@ -663,8 +712,8 @@ test.describe('desktop', () => {
 
     // Home says nothing of where they are: its first track card reads as on a first visit.
     await open(page, '/');
-    await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
-    await expect(trackCards(page).nth(0).locator('.home-track__count')).toHaveText('14 lessons');
+    await expect(homeFacts(page)).toHaveText(HOME_FACTS);
+    await expect(trackCards(page).nth(0).locator('.leg__count')).toHaveText('14 lessons');
   });
 
   test('About states where progress lives, credits the inspirations and the kit, and resets', async ({ page }) => {
@@ -698,7 +747,7 @@ test.describe('desktop', () => {
     await expect(page.getByRole('button', { name: 'Reset progress' })).toBeFocused();
 
     await open(page, '/');
-    await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
+    await expect(homeFacts(page)).toHaveText(HOME_FACTS);
   });
 
   test('/does-not-exist serves the 404 page, with the site header and footer', async ({ page }) => {
@@ -760,6 +809,18 @@ test.describe('without JavaScript', () => {
     await expect(sideButton(page)).toHaveAttribute('href', NETWORKING_LESSONS[0]!.path);
     // No control is left that cannot work.
     await expect(page.locator('button:visible')).toHaveCount(0);
+  });
+
+  test('Home’s demo needs no script: it steps, shows Learn and answers a question', async ({ page }) => {
+    await page.goto('/');
+    const d = demo(page);
+    await expect(d.locator('.demo__say:visible')).toContainText('it has no address yet');
+    await d.locator('.demo__next:visible').click();
+    await expect(d.locator('.demo__say:visible')).toContainText('offers it to the laptop');
+    await expect.poll(() => d.locator('#dh-tag-offer').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    await d.locator('.demo__parts label', { hasText: 'Practice' }).click();
+    await d.locator('.demo__pick').nth(0).click();
+    await expect(d.locator('.demo__why:visible')).toContainText('Right.');
   });
 });
 
