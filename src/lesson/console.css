@@ -1185,9 +1185,9 @@ a.outline__lesson:hover {
   }
 }
 
-/* ---------------------------------------------------------------- small screens
-   Not designed yet (desktop first): below 1100 px the panels stack and the page
-   scrolls, so everything still loads and can be reached. */
+/* ---------------------------------------------------------------- narrow screens
+   Below 1100 px the panels stack and the page scrolls, so everything still loads and can be reached. A tablet gets
+   this; so does a phone with JavaScript off. A phone with it on gets the layout at the foot of this file. */
 @media (max-width: 1099px) {
   .console {
     grid-template-columns: minmax(0, 1fr);
@@ -1225,5 +1225,211 @@ a.outline__lesson:hover {
   }
   .log__head {
     flex-wrap: wrap;
+  }
+}
+
+/* The phone's tabs (LessonConsole.tsx). Only the phone layout below shows them. */
+.console__tabs {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- phones
+   One screen, like the desktop, and no page scroll (docs/direction.md §7). The scene is pinned under the top bar, so
+   it is in view for every step. Under it, one of three parts shows at a time, chosen by the tabs: the words, the
+   lesson's outline, or the log. Back, Play and Next are pinned at the bottom, under the thumb.
+
+   It needs the tabs, and so JavaScript: without it (`:root.js` is set by the boot script) the page keeps the stacked
+   layout above, where everything can still be reached by scrolling. */
+@media (max-width: 760px) {
+  :root.js .console {
+    --ph-top: 52px;
+    --ph-stage: 34dvh;
+    --ph-tabs: 48px;
+    --ph-ctl: calc(64px + env(safe-area-inset-bottom));
+    display: block;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  /* Reading (Learn, Practice): the words get the room, and the scene stays as a reference. */
+  :root.js .console[data-reading] {
+    --ph-stage: 18dvh;
+  }
+  :root.js .console__panel {
+    border-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* The top bar: the mark, the lesson's name and where you are in it, and the theme button. */
+  :root.js .console__top {
+    position: fixed;
+    inset: 0 0 auto;
+    flex-wrap: nowrap;
+    height: var(--ph-top);
+    border-bottom: 1px solid var(--line-strong);
+  }
+  :root.js .console__top > * {
+    padding-block: 0;
+    padding-inline: 12px;
+    border-inline-end: 0;
+  }
+  :root.js .topbar__brand {
+    min-width: 0;
+    padding-inline-end: 0;
+  }
+  :root.js .topbar__brand b,
+  :root.js .topbar__crumb > a,
+  :root.js .topbar__crumb > span,
+  :root.js .topbar__crumb > em,
+  :root.js .topbar__osi {
+    display: none;
+  }
+  :root.js .topbar__now {
+    flex: 1 1 0;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  /* The scene. Its table, when the lesson has one, is under it: the stage scrolls to it. */
+  :root.js .console__stage {
+    position: fixed;
+    inset: var(--ph-top) 0 auto;
+    height: var(--ph-stage);
+    min-height: 0;
+    overflow: auto;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  :root.js .stage__head {
+    min-height: 40px;
+    padding: 4px 12px;
+  }
+  :root.js .stage__title {
+    display: none;
+  }
+  :root.js .console__scene {
+    flex: none;
+    height: calc(var(--ph-stage) - 41px);
+  }
+
+  /* The tabs. */
+  :root.js .console__tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    position: fixed;
+    inset: calc(var(--ph-top) + var(--ph-stage)) 0 auto;
+    height: var(--ph-tabs);
+    border-bottom: 1px solid var(--line-strong);
+    background: var(--bg-soft);
+  }
+  :root.js .console__tabs button {
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--ink);
+    font: 600 17px/1 var(--display);
+    letter-spacing: 0.01em;
+    cursor: pointer;
+  }
+  :root.js .console__tabs button + button {
+    border-left: 1px solid var(--line);
+  }
+  :root.js .console__tabs button[aria-pressed='true'] {
+    border-bottom-color: var(--here);
+    background: var(--card);
+    color: var(--ink-strong);
+  }
+
+  /* The three parts share the space between the tabs and the controls; each scrolls inside itself. */
+  :root.js .console__outline,
+  :root.js .console__explain,
+  :root.js .console__log {
+    position: fixed;
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-tabs)) 0 var(--ph-ctl);
+    max-height: none;
+    overflow: auto;
+  }
+  :root.js .console:not([data-tab='steps']) .console__outline,
+  :root.js .console:not([data-tab='explain']) .console__explain {
+    display: none;
+  }
+  /* The log is hidden, not removed, when it is not its turn: its head holds the playback controls, which stay. */
+  :root.js .console:not([data-tab='log']) .console__log {
+    visibility: hidden;
+  }
+  :root.js .log__head {
+    flex-wrap: wrap;
+  }
+  /* The log's rows as stacked entries: a table of seven columns does not fit. Each value has its column's name
+     before it, and the words (the prose columns) take a line of their own. */
+  :root.js .log__table,
+  :root.js .log__table tbody {
+    display: block;
+  }
+  :root.js .log__table colgroup {
+    display: none;
+  }
+  /* The headings are still read out; each cell shows its own. */
+  :root.js .log__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  :root.js .log__table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 14px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  :root.js .log__table td {
+    display: block;
+    padding: 0;
+    border-bottom: 0;
+  }
+  :root.js .log__table td[data-label]::before {
+    content: attr(data-label) ' ';
+    color: var(--muted);
+    font: 600 12.5px/1 var(--display);
+    letter-spacing: 0.02em;
+  }
+  :root.js .log__table td.log__prose {
+    flex-basis: 100%;
+  }
+  :root.js .log__table td.log__prose::before {
+    content: none;
+  }
+  :root.js .log__table td.log__idle {
+    flex: 1;
+  }
+
+  /* The top bar says where you are in words; the row of segments does not fit beside them. */
+  :root.js .topbar__segments {
+    display: none;
+  }
+
+  /* Back, Play and Next, at the bottom whatever is showing. */
+  :root.js .console__controls {
+    visibility: visible;
+    position: fixed;
+    inset: auto 0 0;
+    gap: 8px;
+    height: var(--ph-ctl);
+    margin: 0;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line-strong);
+    background: var(--card);
+  }
+  :root.js .console__controls .cbtn {
+    height: 48px;
+    min-width: 48px;
+  }
+  :root.js .console__controls .cbtn--play {
+    flex: 1;
   }
 }

@@ -5,6 +5,7 @@ import {
   hydrated,
   kicker,
   lessonCard,
+  logRows,
   moveBy,
   nextButton,
   open,
@@ -278,6 +279,14 @@ test.describe('desktop', () => {
       // The demo starts over too: it keeps nothing.
       await expect(page.locator('#demo-s1')).toBeChecked();
     });
+  });
+
+  test('on a desktop the lesson shows its three parts at once, and the phone tabs are not there', async ({ page }) => {
+    await open(page, LESSONS.find((l) => l.slug === 'dhcp')!.path);
+    await expect(page.locator('.console__tabs')).toBeHidden();
+    await expect(page.locator('.console__outline')).toBeVisible();
+    await expect(page.locator('.console__explain')).toBeVisible();
+    await expect(page.locator('.console__log')).toBeVisible();
   });
 
   test('the skip link is the first stop on every page, and reaches the main region', async ({ page }) => {
@@ -825,7 +834,7 @@ test.describe('without JavaScript', () => {
 test.describe('phone', { tag: '@phone' }, () => {
   requireLessons(LESSONS);
 
-  for (const { name, path } of ALL_PAGES) {
+  for (const { name, path } of SITE_PAGES) {
     test(`${path} loads and scrolls with no errors`, async ({ page }) => {
       const errors = collectErrors(page);
       const response = await page.goto(path);
@@ -848,4 +857,94 @@ test.describe('phone', { tag: '@phone' }, () => {
       expect(errors).toEqual([]);
     });
   }
+
+  // ---------------------------------------------------------------- the lesson on a phone (docs/direction.md §7)
+
+  /** Where a part of the console is on screen, or null when it is not shown. */
+  const boxOf = (page: Page, selector: string) =>
+    page.locator(selector).evaluate((el) => {
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return null;
+      const b = el.getBoundingClientRect();
+      return { top: Math.round(b.top), bottom: Math.round(b.bottom), height: Math.round(b.height) };
+    });
+  const tab = (page: Page, name: 'Explain' | 'Steps' | 'Log') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
+
+  for (const lesson of LESSONS) {
+    test(`${lesson.path} fits one phone screen: the scene on top, the controls at the bottom, and no page scroll`, async ({ page }) => {
+      const errors = collectErrors(page);
+      const response = await page.goto(lesson.path);
+      expect(response?.status()).toBe(200);
+      await hydrated(page);
+      await page.waitForLoadState('load');
+      const screen = page.viewportSize()!;
+      const overflow = await pageOverflow(page);
+      expect(overflow.down, 'the page is no taller than the screen').toBeLessThanOrEqual(1);
+      expect(overflow.sideways, 'the page is no wider than the screen').toBeLessThanOrEqual(1);
+
+      // The scene is in the top half, at least a quarter of the screen tall.
+      const scene = (await boxOf(page, '.console__scene'))!;
+      expect(scene.top).toBeLessThan(screen.height * 0.15);
+      expect(scene.bottom).toBeLessThan(screen.height * 0.5);
+      expect(scene.height).toBeGreaterThan(screen.height * 0.25);
+      // Back, Play and Next are at the foot of the screen, each big enough for a thumb.
+      const controls = (await boxOf(page, '.console__controls'))!;
+      expect(controls.bottom).toBe(screen.height);
+      for (const button of await page.locator('.console__controls button').all()) expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      // One part shows under the tabs, the words first; the other two wait.
+      await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+      expect(await boxOf(page, '.console__explain')).not.toBeNull();
+      expect(await boxOf(page, '.console__outline')).toBeNull();
+      expect(await boxOf(page, '.console__log')).toBeNull();
+      await expect(kicker(page)).toBeVisible();
+      expect(errors).toEqual([]);
+    });
+  }
+
+  test('a lesson on a phone: the tabs show the steps and the log, a step chosen returns to the words, and the scene never moves', async ({ page }) => {
+    const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
+    await open(page, dhcp.path);
+    const sceneAt = async () => (await boxOf(page, '.console__scene'))!.top;
+    const top = await sceneAt();
+
+    await tab(page, 'Steps').click();
+    expect(await boxOf(page, '.console__outline')).not.toBeNull();
+    expect(await boxOf(page, '.console__explain')).toBeNull();
+    expect(await sceneAt()).toBe(top);
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
+    // Choosing a step goes there and shows its words.
+    await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+    await expect(kicker(page)).toHaveText('Watch · Step 2 of 5');
+    await expect(page.locator('.topbar__where')).toBeVisible();
+    await expect(page.locator('.topbar__where')).toHaveText('Step 2 of 5');
+
+    // Next works from the foot of the screen whichever part is showing, and the log fills.
+    await tab(page, 'Log').click();
+    expect(await boxOf(page, '.console__log')).not.toBeNull();
+    await moveBy(page, () => nextButton(page).click());
+    await expect(page.locator('.topbar__where')).toHaveText('Step 3 of 5');
+    await expect(logRows(page).first()).toBeVisible();
+    // A row is a stacked entry: its cells sit inside the screen's width, each with its column's name.
+    const row = logRows(page).first();
+    expect((await row.boundingBox())!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(await row.locator('td[data-label]').first().evaluate((td) => getComputedStyle(td, '::before').content)).toMatch(/^"[A-Z]/);
+    await expect(page.getByRole('table', { name: 'Event log' }).getByRole('row').first()).toBeAttached();
+    expect(await sceneAt()).toBe(top);
+    expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
+  });
+
+  test('a lesson on a phone: in Learn the scene gives way to the words, which scroll inside themselves', async ({ page }) => {
+    const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
+    await open(page, dhcp.path);
+    const watching = (await boxOf(page, '.console__scene'))!.height;
+    await tab(page, 'Steps').click();
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await expect(kicker(page)).toHaveText('Learn');
+    await expect.poll(async () => (await boxOf(page, '.console__scene'))!.height).toBeLessThan(watching * 0.7);
+    const words = page.locator('.console__explain');
+    expect(await words.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
+    // The controls are still at the foot.
+    expect((await boxOf(page, '.console__controls'))!.bottom).toBe(page.viewportSize()!.height);
+  });
 });

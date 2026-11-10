@@ -20,6 +20,14 @@ import { useLessonShortcuts } from './useLessonShortcuts';
 import { useReducedMotion } from './useReducedMotion';
 import './console.css';
 
+/** What a phone shows under the scene: the words, the lesson's outline, or the event log. */
+type Tab = 'explain' | 'steps' | 'log';
+const TABS: readonly { id: Tab; label: string }[] = [
+  { id: 'explain', label: 'Explain' },
+  { id: 'steps', label: 'Steps' },
+  { id: 'log', label: 'Log' },
+];
+
 export interface LessonConsoleProps {
   trackId: string;
   trackTitle: string;
@@ -87,6 +95,22 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     },
     [go],
   );
+
+  // ---------------------------------------------------------------- the phone's tabs
+
+  // On a phone the scene stays put and one of three parts shows under it (console.css). On a wider screen all three
+  // are on show at once, the buttons are hidden, and this state changes nothing.
+  const [tab, setTab] = useState<Tab>('explain');
+  /** Going to a place from the Steps tab shows the words for it. */
+  const goFromOutline = useCallback(
+    (target: Position) => {
+      go(target);
+      setTab('explain');
+    },
+    [go],
+  );
+  /** Learn and Practice are for reading: the phone gives the words more of the screen. */
+  const reading = slot.kind === 'learn' || slot.kind === 'practice';
 
   // ---------------------------------------------------------------- in memory only
 
@@ -160,7 +184,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 
   return (
-    <div className="console">
+    <div className="console" data-tab={tab} data-reading={reading ? '' : undefined}>
       <TopBar
         lesson={lesson}
         trackTitle={trackTitle}
@@ -177,11 +201,18 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         position={position}
         current={derived.unit}
         seen={seen}
-        onGo={go}
+        onGo={goFromOutline}
         entries={entries}
         currentKey={entry.key}
         progress={progress.data}
       />
+      <div className="console__tabs" role="group" aria-label="Show">
+        {TABS.map(({ id, label }) => (
+          <button key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)}>
+            {label}
+          </button>
+        ))}
+      </div>
       <main id="main" className="console__main">
         <ScenePanel
           unit={unit}

@@ -112,6 +112,9 @@ export const NO_SCRIPT_NOTE = 'This lesson needs JavaScript to play.';
  * blocked colour and say so in words. The table scrolls inside itself and
  * keeps the latest row in view.
  *
+ * On a phone each row is drawn as a stacked entry (console.css): every part states its table role, so the restyled
+ * rows are still rows, and each cell carries its column's name (`data-label`) to show beside its value.
+ *
  * The server draws the empty log, so its idle row also holds a `<noscript>`
  * note: with JavaScript off it stands where the log would say "Press Play".
  * React never draws a `<noscript>`'s children in the browser, so with
@@ -149,27 +152,29 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
         {controls}
       </div>
       <div ref={scroller} className="log__scroll" role="region" aria-labelledby={titleId} tabIndex={0}>
-        <table className="log__table" aria-labelledby={titleId}>
+        <table className="log__table" role="table" aria-labelledby={titleId}>
           <colgroup>
             <col style={{ width: NUMBER_WIDTH }} />
             {log.columns.map((column) => (
               <col key={column.key} style={column.width === undefined ? undefined : { width: column.width }} />
             ))}
           </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">#</th>
+          <thead role="rowgroup">
+            <tr role="row">
+              <th role="columnheader" scope="col">
+                #
+              </th>
               {log.columns.map((column) => (
-                <th key={column.key} scope="col">
+                <th key={column.key} role="columnheader" scope="col">
                   {column.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {rows.length === 0 ? (
-              <tr>
-                <td className="log__idle" colSpan={log.columns.length + 1} data-idle="">
+              <tr role="row">
+                <td role="cell" className="log__idle" colSpan={log.columns.length + 1} data-idle="">
                   <span className="log__idle-words">{idle}</span>
                   <noscript>
                     <span className="log__nojs">{NO_SCRIPT_NOTE}</span>
@@ -180,8 +185,8 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
               rows.map((row) => {
                 const missed = row.outcome === 'blocked' || row.outcome === 'dropped' ? row.outcome : null;
                 return (
-                  <tr key={row.eventId} data-outcome={missed ?? undefined} data-fresh={row.eventId === fresh ? '' : undefined}>
-                    <td>
+                  <tr key={row.eventId} role="row" data-outcome={missed ?? undefined} data-fresh={row.eventId === fresh ? '' : undefined}>
+                    <td role="cell">
                       <span className="log__num">
                         <Glyph kind={glyphFor(row, noteKind)} />
                         {row.n}
@@ -191,7 +196,7 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
                       const plain = column.key === 'plain';
                       const text = plain ? row.plain : Object.hasOwn(row.cells, column.key) ? row.cells[column.key] : '';
                       return (
-                        <td key={column.key} className={cellClass(column)}>
+                        <td key={column.key} role="cell" className={cellClass(column)} data-label={column.label}>
                           {missed !== null && column.key === flagColumn ? (
                             <>
                               <span className="log__flag">{OUTCOME_WORD[missed]}</span>{' '}

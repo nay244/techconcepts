@@ -564,3 +564,46 @@ test('Practice picks are still there after a visit elsewhere, are gone on reload
   expect(option()).toHaveAttribute('aria-pressed', 'false');
   expect(within(explanation()).queryByText('Not quite.')).toBeNull();
 });
+
+// ---------------------------------------------------------------- the phone's tabs
+
+test('the console offers Explain, Steps and Log as a group of buttons, with Explain showing first', () => {
+  const { container } = renderConsole();
+  const show = screen.getByRole('group', { name: 'Show' });
+  const buttons = within(show).getAllByRole('button');
+  expect(buttons.map((b) => b.textContent)).toEqual(['Explain', 'Steps', 'Log']);
+  expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+  // The console says which is showing, for the phone layout's CSS to act on.
+  expect(container.querySelector('.console')).toHaveAttribute('data-tab', 'explain');
+});
+
+test('choosing a tab marks it and the console; choosing a place in Steps goes there and returns to Explain', async () => {
+  const { container } = renderConsole();
+  const consoleEl = container.querySelector('.console')!;
+  const tab = (name: string) => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name });
+
+  await user.click(tab('Log'));
+  expect(consoleEl).toHaveAttribute('data-tab', 'log');
+  expect(tab('Log')).toHaveAttribute('aria-pressed', 'true');
+  expect(tab('Explain')).toHaveAttribute('aria-pressed', 'false');
+
+  await user.click(tab('Steps'));
+  expect(consoleEl).toHaveAttribute('data-tab', 'steps');
+  const outline = screen.getByRole('navigation', { name: 'This lesson' });
+  await user.click(within(outline).getAllByRole('button')[2]!);
+  // The place changed, and the words for it are what shows.
+  expect(consoleEl).toHaveAttribute('data-tab', 'explain');
+  expect(tab('Explain')).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByText(/^Watch · Step 2 of \d+$/)).toBeInTheDocument();
+});
+
+test('the console says when the learner is reading, so the phone can give the words more room', async () => {
+  const { container } = renderConsole();
+  const consoleEl = container.querySelector('.console')!;
+  expect(consoleEl).not.toHaveAttribute('data-reading');
+  const outline = screen.getByRole('navigation', { name: 'This lesson' });
+  await user.click(within(outline).getByRole('button', { name: /^What happened and why/ }));
+  expect(consoleEl).toHaveAttribute('data-reading', '');
+  await user.click(within(outline).getAllByRole('button')[1]!);
+  expect(consoleEl).not.toHaveAttribute('data-reading');
+});

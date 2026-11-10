@@ -76,7 +76,7 @@ Each numbered step is its own branch.
 1. **Baseline.** DONE 2026-11-10. 96 screenshots (24 pages, 1440×900 and 375×812, both themes) and the lesson's measurements, in §4.
 2. **The look.** DONE 2026-11-10. Three directions prototyped on the Lesson page and Home; Patch taken (2.12). Its tokens are in §6 and the Lesson page changes it showed are in §7.
 3. **The shell.** DONE 2026-11-10. The Patch tokens, the heading face, light as the default theme, the figures' two finishes, the header and footer, and the new logo and favicon, in both themes. Every page wears it. What it left for the page steps is at the end of §6.
-4. **The Lesson page.** The owner keeps the current page (§10): its layout stays, and it already wears the new look from the shell. Open, to confirm with the owner before any of it is built: whether the changes the earlier prototype settled in §7 still stand. What follows was the plan before that decision. Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
+4. **The Lesson page.** The owner keeps the current page (§10): its layout stays, and it already wears the new look from the shell. The owner then asked for the phone layout ("Add phone layout", 2026-11-10): DONE that day, as §7 records. Not confirmed with the owner, so not built: the other changes the earlier prototype settled in §7 (the wider reading column in Learn, numbered source links, the Verified stamp). What follows was the plan before that decision. Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
 5. **The Tracks page.** The owner keeps the current page (§10): one panel per track, already in the new look from the shell. Left to do: its page-level small capitals ("Start here"), per §6.
 6. **Home, the track page, About and 404, new layouts.** Home: DONE 2026-11-10, an original page (§9). Still to do: the track page, which puts each lesson's figure in its HTML once (audit plan 005), About and 404.
 
@@ -191,6 +191,17 @@ Each starts from the layout in 2.8.
 With the sidebar back at 268px (the table above), the drawing is 685×326.
 
 The first prototype's "bigger scene" was a taller box around a smaller drawing; this document said the scene grew, and that was wrong. Under the scene, the drawing was 9% wider, and is 6% wider with the wider sidebar. The cost is the empty space under a step's words. That space is the natural home for a look inside the current message (direction option 6, the packet inspector), still to be decided in step 4.
+
+**The phone layout, as built (2026-11-10).** Below 761px wide, with JavaScript on:
+
+- The lesson is one screen with no page scroll. Measured at 390×844 on DHCP: the top bar is 52px, the scene runs from 92px to 338px, and Back, Play and Next fill the last 64px. Before, the page was a 2,412px stack with the scene 913px down.
+- Under the scene, three tabs choose what shows: **Explain** (the words, first), **Steps** (the lesson's outline) and **Log**. Choosing a step returns to Explain. Each part scrolls inside itself.
+- In Learn and Practice the scene shrinks to 18% of the screen's height, from 34%, and the words take the room.
+- The log's rows are stacked entries: each value has its column's name before it, and the words take a line of their own. The table states its roles, so it is still read as a table.
+- The top bar keeps the mark, the lesson's name, "Step 2 of 5" and the theme button. The track's name, the row of step segments and the OSI layer chips are not shown at this width.
+- The lesson's own table (leases, files, rules) is under the scene: the scene's area scrolls to it.
+- Between 761px and 1099px, and on a phone with JavaScript off, the page keeps the older stacked layout.
+- The desktop layout is unchanged. The tabs exist in the page at every width and are hidden above 760px.
 
 Still to fix in the build: the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
 

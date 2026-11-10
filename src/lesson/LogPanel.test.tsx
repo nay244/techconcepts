@@ -192,3 +192,20 @@ test('the playback controls sit in its header', () => {
   const title = screen.getByRole('heading', { name: 'Firewall log' });
   expect(title.parentElement).toContainElement(screen.getByRole('button', { name: 'Play' }));
 });
+
+// On a phone the rows are drawn as stacked entries, not a grid (console.css). The table keeps its meaning there
+// because each part says its role outright, and each cell carries its column's name to show beside its value.
+test('every cell names its column, and the table states its roles so a restyled row is still a row', () => {
+  const { container } = render(<LogPanel log={LOG} rows={ROWS} idle="Nothing yet." />);
+  const table = container.querySelector('table')!;
+  expect(table).toHaveAttribute('role', 'table');
+  expect([...table.querySelectorAll('thead, tbody')].map((g) => g.getAttribute('role'))).toEqual(['rowgroup', 'rowgroup']);
+  expect([...table.querySelectorAll('tr')].every((r) => r.getAttribute('role') === 'row')).toBe(true);
+  expect([...table.querySelectorAll('th')].every((h) => h.getAttribute('role') === 'columnheader')).toBe(true);
+  const first = [...table.querySelectorAll('tbody tr')][0]!;
+  const cells = [...first.querySelectorAll('td')];
+  expect(cells.every((c) => c.getAttribute('role') === 'cell')).toBe(true);
+  // The number cell needs no name; every other cell has its column's.
+  expect(cells.slice(1).map((c) => c.getAttribute('data-label'))).toEqual(LOG.columns.map((c) => c.label));
+  expect(cells[0]).not.toHaveAttribute('data-label');
+});

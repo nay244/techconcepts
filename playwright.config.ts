@@ -46,7 +46,7 @@ export default defineConfig({
     { name: 'd1440-light', ...notVisual, use: { viewport: { width: 1440, height: 900 }, colorScheme: 'light' } },
     { name: 'd1920', ...notVisual, use: { viewport: { width: 1920, height: 1080 } } },
     { name: 'reduced-motion', ...notVisual, use: { viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' } },
-    // Small screens are not designed yet: the phone only loads and scrolls every page (site.spec.ts).
+    // The phone: every site page loads and scrolls, and every lesson fits one screen with its tabs (site.spec.ts).
     { name: 'phone', testMatch: /site\.spec\.ts$/, grep: /@phone/, use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },
   ],
 });
