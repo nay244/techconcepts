@@ -1,44 +1,90 @@
 ---
+// The page for an address the site does not have. Its picture is a patch panel with every port linked but 404
+// (src/art/figures/pages.ts), and its one fact is what the number means, with the lesson it comes from.
+import { pageFigure } from '../art/figures/pages';
+import { startLesson } from '../lib/start';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../components/site.css';
+
+// Lesson 1 is HTTP, where status codes are met.
+const lesson = startLesson();
 ---
 
-<BaseLayout canonical={null} title="Page not found" description="That page does not exist. Head back to the TechConcepts home page or the Networking Concepts track.">
+<BaseLayout canonical={null} title="Page not found" description="That page does not exist. Head back to the TechConcepts home page or the tracks.">
   <div class="wrap notfound">
-    <p class="notfound__code" aria-hidden="true">404</p>
-    <h1>That page isn't here</h1>
-    <p class="notfound__lede">The link may be old, or the address may have a typo. Here are two good places to pick up from.</p>
-    <p class="notfound__actions">
-      <a class="btn btn--primary" href="/">Go to Home</a>
-      <a class="btn" href="/networking">Browse Networking Concepts</a>
-    </p>
+    <div class="notfound__words">
+      <p class="notfound__code">Error 404</p>
+      <h1>That page isn't here</h1>
+      <p class="notfound__lede">The link may be old, or the address may have a typo.</p>
+      <p class="notfound__actions">
+        <a class="btn btn--primary" href="/">Go to Home</a>
+        <a class="btn" href="/tracks">See the tracks</a>
+      </p>
+      <p class="notfound__why">
+        The server is working, but it has nothing at this address. That is what the number 404 means.
+        <a href={lesson.url}>Lesson {lesson.number}, {lesson.title}</a> shows where it comes from.
+      </p>
+    </div>
+    <div class="notfound__art">
+      <Fragment set:html={pageFigure('notFound')} />
+    </div>
   </div>
 </BaseLayout>
 
-<style is:global>
+<style>
   .notfound {
-    max-width: 44rem;
-    padding-block: var(--space-8);
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(24px, 4vw, 64px);
+    align-items: center;
+    padding-block: clamp(32px, 6vw, 88px);
   }
   .notfound__code {
-    margin: 0 0 var(--space-3);
-    color: var(--accent);
-    font: 700 14px/1 var(--mono);
-    letter-spacing: 0.12em;
+    display: inline-block;
+    margin: 0 0 14px;
+    padding: 4px 10px;
+    /* A strip of label tape, like the port's own label. */
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: var(--card);
+    color: var(--ink-strong);
+    font: 600 15px/1.2 var(--display);
+    letter-spacing: 0.02em;
   }
   .notfound h1 {
-    font-size: clamp(2rem, 4vw, 2.75rem);
-    letter-spacing: -0.01em;
+    margin: 0;
+    font-size: clamp(44px, 6.4vw, 88px);
+    line-height: 0.94;
+    letter-spacing: -0.005em;
   }
   .notfound__lede {
-    max-width: 34rem;
-    color: var(--ink);
-    font-size: var(--text-lg);
+    max-width: 30em;
+    margin: 18px 0 0;
+    color: var(--ink-strong);
+    font-size: 19px;
   }
   .notfound__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
-    margin-top: var(--space-5);
+    gap: 10px;
+    margin: 22px 0 0;
+  }
+  .notfound__why {
+    max-width: 32em;
+    margin: 28px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-strong);
+    font-size: 16px;
+  }
+  .notfound__why a {
+    color: var(--link);
+  }
+  @media (max-width: 860px) {
+    .notfound {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .notfound__art {
+      order: -1;
+    }
   }
 </style>

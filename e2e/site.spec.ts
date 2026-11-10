@@ -763,8 +763,14 @@ test.describe('desktop', () => {
     await hydrated(page);
     await expect(page).toHaveTitle('Page not found · TechConcepts');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText("That page isn't here");
-    await expect(page.getByRole('link', { name: 'Go to Home' })).toHaveAttribute('href', '/');
-    await expect(page.getByRole('link', { name: 'Browse Networking Concepts' })).toHaveAttribute('href', '/networking');
+    const main = page.locator('main');
+    await expect(main.getByRole('link', { name: 'Go to Home', exact: true })).toHaveAttribute('href', '/');
+    await expect(main.getByRole('link', { name: 'See the tracks', exact: true })).toHaveAttribute('href', '/tracks');
+    // The page says what the number means, and points at the lesson it comes from.
+    await expect(main).toContainText('The server is working, but it has nothing at this address.');
+    await expect(main.getByRole('link', { name: 'Lesson 1, HTTP', exact: true })).toHaveAttribute('href', START_PATH);
+    // The figure is the page's picture of it: a panel of ports with port 404 unlinked.
+    await expect(main.getByRole('img', { name: /Port 404 is empty and its light is off/ })).toBeVisible();
     await expect(page.locator('header.site-head')).toBeVisible();
     await expect(page.locator('footer.site-foot')).toBeVisible();
   });
