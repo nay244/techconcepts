@@ -174,9 +174,9 @@ Each starts from the layout in 2.8.
 | Log under the explanation (first prototype) | 648×308 | 446px wide | 328px inside the log at step 2, 107px at step 5 |
 | Log under the scene (taken) | 705×336 | 389px wide | about 570px under a step's two short paragraphs |
 
-With the sidebar back at 268px (below), the drawing is 685×326.
+With the sidebar back at 268px (the table above), the drawing is 685×326.
 
 The first prototype's "bigger scene" was a taller box around a smaller drawing; this document said the scene grew, and that was wrong. Under the scene, the drawing was 9% wider, and is 6% wider with the wider sidebar. The cost is the empty space under a step's words. That space is the natural home for a look inside the current message (direction option 6, the packet inspector), still to be decided in step 4.
 
-Still to fix in the build: outline rows are 41px tall on a phone and need 44; the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
+Still to fix in the build: the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
 
