@@ -50,8 +50,10 @@ function lessonOf(entry: AvailableSummary): Lesson {
 }
 
 const parts = trackParts(track, entries, lessonOf);
-// Each ready lesson's figure goes to both islands as static HTML in a slot named after the lesson's number, so it is
-// not repeated in their props: the route shows each one, the side card the one up next.
+// Each ready lesson's figure is static HTML in a slot named after the lesson's number. The route gets them all and
+// shows each one. The side card gets only the first: the lesson a first visit shows, which must be there without
+// JavaScript. For a returning visitor it borrows the figure from the route (TrackSide.tsx), so the page's HTML holds
+// each figure once and not twice.
 const figures = entries
   .filter((e): e is AvailableSummary => e.available)
   .map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(track.id, entry) }));
@@ -73,7 +75,7 @@ const last = track.title.slice(cut + 1);
     <h1 class="disp">{head}<em>{last}</em></h1>
     <p class="lede">{track.description}</p>
     <TrackSide client:load entries={entries} known={known}>
-      {figures.map(({ slot, svg }) => <Fragment slot={slot} set:html={svg} />)}
+      {figures.slice(0, 1).map(({ slot, svg }) => <Fragment slot={slot} set:html={svg} />)}
     </TrackSide>
   </div>
 
@@ -208,6 +210,25 @@ const last = track.title.slice(cut + 1);
     }
     .routebox :global(.stop__art) {
       flex-basis: auto;
+    }
+    /* A lesson that is not ready has nothing to picture. On a phone it is two short lines, so a track with many
+       still to write is not mostly placeholders. */
+    .routebox :global(.stop--soon) {
+      margin-bottom: 8px;
+    }
+    .routebox :global(.stop--soon .stop__art) {
+      display: none;
+    }
+    .routebox :global(.stop--soon .stop__tile) {
+      gap: 0;
+      padding-block: 10px;
+    }
+    .routebox :global(.stop--soon .stop__info h3) {
+      margin-top: 2px;
+      font-size: 20px;
+    }
+    .routebox :global(.stop--soon .stop__node) {
+      top: 10px;
     }
   }
   @media (max-width: 560px) {

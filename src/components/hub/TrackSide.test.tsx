@@ -112,4 +112,54 @@ describe('TrackSide', () => {
     act(() => root.unmount());
     container.remove();
   });
+
+  /** A stop's figure as the route leaves it on the page: marked with the lesson's number. `wrapped` adds Astro's slot wrapper. */
+  function routeFigure(number: number, wrapped = false): HTMLElement {
+    const slot = document.createElement('span');
+    slot.className = 'stop__slot';
+    slot.dataset.art = String(number);
+    slot.innerHTML = wrapped ? `<astro-slot name="art${number}"><svg data-testid="route-fig"></svg></astro-slot>` : '<svg data-testid="route-fig"></svg>';
+    document.body.append(slot);
+    return slot;
+  }
+
+  test('a lesson the card has no figure for borrows a copy of the route’s, and leaves the route’s in place', () => {
+    seedProgress({ [second.key]: { status: 'in-progress', furthestPosition: 2 } }, second.key);
+    const slot = routeFigure(second.number);
+    try {
+      render(side({ [`art${first.number}`]: <svg data-testid="first" /> }));
+      expect(within(cardOf()).getByRole('link', { name: 'Continue' })).toHaveAttribute('href', `${second.url}?step=2`);
+      const copy = within(cardOf()).getByTestId('route-fig');
+      expect(copy.closest('.side-now__art')).toHaveAttribute('aria-hidden', 'true');
+      // A copy, not the route's own node: the stop keeps its figure.
+      expect(copy).not.toBe(slot.querySelector('svg'));
+      expect(slot.querySelector('svg')).not.toBeNull();
+      expect(within(cardOf()).queryByTestId('first')).toBeNull();
+    } finally {
+      slot.remove();
+    }
+  });
+
+  test('on the built page it borrows what is inside Astro’s slot wrapper, not the wrapper', () => {
+    seedProgress({ [second.key]: { status: 'in-progress', furthestPosition: 2 } }, second.key);
+    const slot = routeFigure(second.number, true);
+    try {
+      render(side({ [`art${first.number}`]: <svg data-testid="first" /> }));
+      const art = cardOf().querySelector('.side-now__art') as HTMLElement;
+      expect(within(art).getByTestId('route-fig')).toBeInTheDocument();
+      expect(art.querySelector('astro-slot')).toBeNull();
+    } finally {
+      slot.remove();
+    }
+  });
+
+  test('with no route on the page the frame stays empty and nothing fails', () => {
+    seedProgress({ [second.key]: { status: 'in-progress', furthestPosition: 2 } }, second.key);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(side({ [`art${first.number}`]: <svg data-testid="first" /> }));
+    const art = cardOf().querySelector('.side-now__art') as HTMLElement;
+    expect(art).not.toBeNull();
+    expect(art.childElementCount).toBe(0);
+    expect(errors).not.toHaveBeenCalled();
+  });
 });

@@ -699,6 +699,9 @@ test.describe('desktop', () => {
     await expect(stripWords(page)).toHaveText('3 of 14 lessons done');
     // The side card goes on where they were, and the route rings UDP's stop.
     await expect(page.locator('main .side .side-now__t')).toHaveText('UDP');
+    // The side card was given only HTTP's name tile; UDP's is a copy of the one on UDP's stop.
+    await expect(page.locator('main .side .side-now__art svg.name-tile')).toHaveAttribute('aria-label', 'User Datagram Protocol');
+    await expect(lessonCard(page, 'what-is-udp').locator('.stop__art svg.name-tile')).toHaveAttribute('aria-label', 'User Datagram Protocol');
     await expect(sideButton(page)).toHaveText('Continue');
     await expect(sideButton(page)).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
     await expect(lessonCard(page, 'what-is-udp')).toHaveClass(/\bstop--now\b/);

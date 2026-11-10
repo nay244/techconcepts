@@ -166,4 +166,11 @@ describe('TrackRoute', () => {
     act(() => root.unmount());
     container.remove();
   });
+
+  test("each ready stop's figure is marked with the lesson's number, for the side card to borrow", () => {
+    render(route({ [`art${ready[0]!.number}`]: <svg data-testid="fig" /> }));
+    for (const e of ready) expect(document.querySelector(`.stop__slot[data-art="${e.number}"]`), e.title).not.toBeNull();
+    expect(document.querySelector(`.stop__slot[data-art="${ready[0]!.number}"] [data-testid="fig"]`)).not.toBeNull();
+    expect(document.querySelectorAll('.stop__slot[data-art]')).toHaveLength(ready.length);
+  });
 });

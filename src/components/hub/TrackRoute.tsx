@@ -116,8 +116,9 @@ function ReadyStop({ lesson, entry, data, isNow, isNext, art }: ReadyProps) {
       <span className="stop__node">{lesson.n}</span>
       <div className="stop__tile">
         <a className="stop__art l-art" href={href} tabIndex={-1} aria-hidden="true">
-          {/* Keyed by lesson, as the side card's is: a slot's HTML is never re-rendered, so it needs a fresh mount. */}
-          <span key={lesson.key} className="stop__slot">
+          {/* Keyed by lesson, as the side card's is: a slot's HTML is never re-rendered, so it needs a fresh mount.
+              data-art is how the side card finds this figure when it has to borrow it (TrackSide.tsx). */}
+          <span key={lesson.key} className="stop__slot" data-art={lesson.number}>
             {art}
           </span>
         </a>
