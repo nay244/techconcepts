@@ -29,10 +29,20 @@ interface Props {
    * `null` means no canonical link at all (the 404 page, which is no address to name); og:url stays the page's own.
    */
   canonical?: string | null;
+  /**
+   * Whether the layout renders the site footer after the page (default true). A split page turns it off and renders
+   * <SiteFooter /> itself, at the end of the part that scrolls.
+   */
+  footer?: boolean;
+  /**
+   * A split page: a fixed card beside a route that scrolls on its own. Adds class="split" to the body, which on a large
+   * screen locks the window to one screen so only the route scrolls. Below that it is an ordinary page.
+   */
+  split?: boolean;
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png', chrome = true, current, overHero = false, canonical } = Astro.props;
+const { title, description, image = '/og-default.png', chrome = true, current, overHero = false, canonical, footer = true, split = false } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -78,7 +88,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body>
+  <body class:list={{ split }}>
     <LumenDefs />
     <a class="skip-link" href="#main">Skip to content</a>
     {
@@ -88,7 +98,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
           <main id="main">
             <slot />
           </main>
-          <SiteFooter />
+          {footer && <SiteFooter />}
         </>
       ) : (
         <slot />
