@@ -361,7 +361,7 @@ function serverLayer(key, s) {
 const ARIA = "A network map. On the left, your home: a laptop and its router. In the middle, the internet: five routers joined by cables. Behind it, the DNS resolver, a card-index cabinet. On the right, the servers this protocol talks to.";
 const RING_R = 10, RING_AT = at([HP.x + HP.w / 2, HP.y + HP.d / 2, 0]);
 
-function mapSvg() {
+function mapSvg(only) {
   const base = buildBase();
   const layers = Object.entries(NET_MAP_LAYERS).map(([key, s]) => serverLayer(key, s));
   const boxes = [], calls = baseCallouts().map((c) => calloutSvg(c, boxes));
@@ -370,7 +370,9 @@ function mapSvg() {
   const pts = [...base.pts, ...boxes.flatMap(([x0, y0, x1, y1]) => [[x0, y0], [x1, y1]]), ...layers.flatMap((l) => l.pts), ...[SLOT.E, SLOT.SE].flatMap((p) => k.boxCorners(p, FLOOR, 0)).map(at)];
   const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), PAD = 18;
   const vb = [Math.min(...xs) - PAD, Math.min(...ys) - PAD, Math.max(...xs) - Math.min(...xs) + 2 * PAD, Math.max(...ys) - Math.min(...ys) + 2 * PAD].map((v) => Math.round(v));
-  const slot = (name) => layers.map((l) => `<g data-layer="${l.key}" display="none">${l.parts[name]}</g>`).join("");
+  // Every layer, hidden, for a lesson's driver to show; or only the named ones, shown, for a still copy (Home's demo).
+  const drawn = only ? layers.filter((l) => only.includes(l.key)) : layers;
+  const slot = (name) => drawn.map((l) => `<g data-layer="${l.key}"${only ? "" : ' display="none"'}>${l.parts[name]}</g>`).join("");
   const tags = Array.from({ length: NET_MAP_TAG_MAX }, (_, i) => `<g class="nm-tag" id="${ID}-tag-${i + 1}" style="opacity:0">${tag(i + 1)}</g>`).join("");
   const svg = `<svg data-figure="net-map" class="lm-svg nm" viewBox="${vb.join(" ")}" role="img" aria-label="${ARIA}">${base.under}<g id="${ID}-l-under">${slot("under")}</g>` +
     `<g class="lm-body"><g id="${ID}-l-plates">${slot("plates")}</g>${base.plates}<g id="${ID}-ring" style="opacity:0"><path class="nm-ring" d="${k.ring(0, 0, RING_R, 0, P, 72)}"/></g>${base.cables}<g id="${ID}-l-cables">${slot("cables")}</g><g id="${ID}-conns"></g>` +
@@ -403,9 +405,12 @@ function camera() {
   return { M: [(ex[0] - o[0]) / 1000, (ey[0] - o[0]) / 1000, (ez[0] - o[0]) / 1000, (ex[1] - o[1]) / 1000, (ey[1] - o[1]) / 1000, (ez[1] - o[1]) / 1000], O: o.map((v) => +v.toFixed(2)), TZ, ring: { at: RING_AT.map((v) => +v.toFixed(2)), o: o.map((v) => +v.toFixed(2)), r: RING_R } };
 }
 
-/** The network map, drawn at build time: its SVG and the data its driver reads. */
-export function drawNetMap(): DrawnFigure {
-  const { svg, layers } = mapSvg();
+/**
+ * The network map, drawn at build time: its SVG and the data its driver reads. With `only`, the SVG holds just those
+ * layers and shows them, for a page with no driver to switch layers on; the frame and the data are the same either way.
+ */
+export function drawNetMap(only?: readonly string[]): DrawnFigure {
+  const { svg, layers } = mapSvg(only);
   const data: NetMapData = { ...camera(), routes: routesOf(layers) };
   return { svg, data };
 }

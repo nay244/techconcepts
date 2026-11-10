@@ -1,24 +1,64 @@
 import { expect, test } from 'vitest';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
-import { plannedTracks, tracks } from '../content/tracks';
-import { homeDemo, homeQuestions, homeStops } from './home';
-import { STATUS_WORDS } from './hub';
+import { tracks } from '../content/tracks';
+import { homeDemo, homeStops } from './home';
+
+const HTTP = () => getLesson('what-is-http')!.units[0]!;
 
 // ---------------------------------------------------------------- the lesson you can try on Home
 
-test('the demo is the DHCP lesson: its first four Watch steps, in the lesson’s own words', () => {
+test('the demo is lesson 1, HTTP: every Watch step of how a web page arrives, in the lesson’s own words', () => {
   const demo = homeDemo();
-  const unit = getLesson('dhcp')!.units[0]!;
-  expect(demo.lesson).toMatchObject({ title: 'DHCP', fullName: 'Dynamic Host Configuration Protocol', url: '/networking/dhcp' });
-  expect(demo.steps.map((s) => s.title)).toEqual(['DHCP Discover', 'DHCP Offer', 'DHCP Request', 'DHCP Acknowledge']);
+  const unit = HTTP();
+  expect(demo.lesson).toMatchObject({ title: 'HTTP', fullName: 'HyperText Transfer Protocol', url: '/how-the-internet-works/what-is-http', number: 1, track: 'How the Internet Works' });
+  expect(demo.steps.map((s) => s.title)).toEqual(['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render Page']);
   demo.steps.forEach((step, i) => {
-    expect(step).toEqual({ n: i + 1, id: unit.steps[i]!.id, title: unit.steps[i]!.title, sub: unit.steps[i]!.sub, narrative: unit.steps[i]!.narrative });
+    expect(step).toMatchObject({ n: i + 1, id: unit.steps[i]!.id, title: unit.steps[i]!.title, sub: unit.steps[i]!.sub, narrative: unit.steps[i]!.narrative });
   });
+});
+
+test('each step lists the messages it sends, between the scene’s own parties', () => {
+  const demo = homeDemo();
+  const unit = HTTP();
+  const labels = new Set(unit.scene.parties.map((p) => p.label));
+  // Typing the address sends nothing; every step after it sends at least a question and its answer.
+  expect(demo.steps[0]!.messages).toEqual([]);
+  demo.steps.slice(1).forEach((step, i) => {
+    const sent = unit.steps[i + 1]!.events.filter((e) => e.type === 'message');
+    expect(step.messages.map((m) => m.tag), step.title).toEqual(sent.map((e) => e.tag));
+    expect(step.messages.length, step.title).toBeGreaterThanOrEqual(2);
+    for (const m of step.messages) {
+      expect(labels.has(m.from) && labels.has(m.to), `${m.from} → ${m.to}`).toBe(true);
+      expect(['request', 'response']).toContain(m.kind);
+    }
+  });
+  expect(demo.steps[1]!.messages[0]).toMatchObject({ from: 'Laptop', to: 'DNS resolver', tag: 'LOOKUP' });
+  expect(demo.steps[3]!.messages.map((m) => m.tag)).toEqual(['GET /', '200 OK']);
+});
+
+test('the demo’s scene is the lesson’s map with only its own layer, and each step lights a real way across it', () => {
+  const demo = homeDemo();
+  expect(demo.scene).toMatch(/^<svg data-figure="net-map"/);
+  expect(demo.scene).toMatch(/ role="img" aria-label="[^"]{40,}"/);
+  expect([...demo.scene.matchAll(/data-layer="([^"]+)"/g)].every((m) => m[1] === 'http:web')).toBe(true);
+  expect(demo.scene).not.toContain('display="none"><g data-layer');
+  // The lesson's labels are filled in: the address the visitor types.
+  expect(demo.scene).toContain('example.net');
+  // One lit way per step that sends something, drawn in the scene itself, hidden until its step.
+  expect(demo.steps[0]!.lights).toEqual({ trail: false, busy: ['nm-busy-laptop'] });
+  for (const step of demo.steps.slice(1)) {
+    expect(step.lights.trail, step.title).toBe(true);
+    expect(demo.scene).toMatch(new RegExp(`<polyline class="nm-trail home-trail" data-step="${step.n}" points="[-\\d. ,]{20,}"`));
+    for (const id of step.lights.busy) expect(demo.scene, id).toContain(`id="${id}"`);
+  }
+  expect(demo.steps[1]!.lights.busy).toEqual(['nm-busy-laptop', 'nm-busy-resolver']);
+  expect(demo.steps[3]!.lights.busy).toEqual(['nm-busy-laptop', 'nm-http-busy-web']);
+  expect(demo.scene.match(/class="nm-trail home-trail"/g)).toHaveLength(demo.steps.length - 1);
 });
 
 test('the demo’s Learn part is the lesson’s lead, its ideas with their names, and its sources', () => {
   const { learn } = homeDemo();
-  const unit = getLesson('dhcp')!.units[0]!;
+  const unit = HTTP();
   expect(learn.lead).toBe(unit.learn.lead[0]!.text);
   expect(learn.terms.length).toBeGreaterThanOrEqual(4);
   expect(learn.terms).toEqual(unit.learn.terms.slice(0, learn.terms.length).map((t) => ({ idea: t.idea, name: t.name })));
@@ -26,76 +66,45 @@ test('the demo’s Learn part is the lesson’s lead, its ideas with their names
   expect(learn.sources.every((s) => s.url.startsWith('https://'))).toBe(true);
 });
 
+test('Learn ends on the sealed version: HTTPS, the next lesson, in that lesson’s own words', () => {
+  const { sealed } = homeDemo();
+  const https = getLesson('what-is-https')!;
+  expect(sealed).toEqual({ title: 'HTTPS', lead: https.units[0]!.learn.lead[0]!.text, url: '/how-the-internet-works/what-is-https', number: 2 });
+  expect(sealed.lead).toContain('seal the line');
+});
+
 test('the demo’s Practice part is the lesson’s first question, with exactly one right answer', () => {
   const { practice } = homeDemo();
-  const question = getLesson('dhcp')!.units[0]!.practice[0]!;
+  const question = HTTP().practice[0]!;
   expect(practice.prompt).toBe(question.prompt);
   expect(practice.options.map((o) => o.text)).toEqual(question.options.map((o) => o.text));
   expect(practice.options.filter((o) => o.right)).toHaveLength(1);
   expect(practice.options.findIndex((o) => o.right)).toBe(question.answer);
-  // Every choice explains itself, right or wrong.
   expect(practice.options.every((o) => o.feedback.length > 20)).toBe(true);
-});
-
-test('the demo’s scene is the lesson’s own drawing, and each step’s message tag has a place on it', () => {
-  const demo = homeDemo();
-  expect(demo.scene).toMatch(/^<svg data-figure="dhcp"/);
-  expect(demo.scene).toMatch(/ role="img" aria-label="[^"]{40,}"/);
-  expect(demo.tags.map((t) => t.step)).toEqual([1, 2, 3, 4]);
-  for (const tag of demo.tags) {
-    // The tag is a part the scene really has.
-    expect(demo.scene).toContain(`id="dh-tag-${tag.id}"`);
-    expect(Number.isFinite(tag.x) && Number.isFinite(tag.y)).toBe(true);
-  }
-  // In flight the tags are up in the air (above the plate: a negative y on screen); the last has landed lower, at the laptop.
-  expect(demo.tags[0]!.y).toBeLessThan(demo.tags[3]!.y);
-  expect(new Set(demo.tags.map((t) => t.id)).size).toBe(4);
 });
 
 test('the demo links into the full lesson at its start, its Learn part and its Practice part', () => {
   const { parts } = homeDemo();
-  expect(parts.watch).toMatch(/^\/networking\/dhcp\?step=\d+$/);
-  expect(parts.learn).toMatch(/^\/networking\/dhcp\?step=\d+$/);
-  expect(parts.practice).toMatch(/^\/networking\/dhcp\?step=\d+$/);
+  for (const url of Object.values(parts)) expect(url).toMatch(/^\/how-the-internet-works\/what-is-http\?step=\d+$/);
   expect(new Set(Object.values(parts)).size).toBe(3);
 });
 
-// ---------------------------------------------------------------- questions that open a lesson
+// ---------------------------------------------------------------- the basics, in order
 
-test('each question on Home opens a ready lesson of the first track, named as the track names it', () => {
-  const questions = homeQuestions();
-  const entries = getEntries(tracks[0]!.id);
-  expect(questions).toHaveLength(4);
-  for (const q of questions) {
-    expect(q.question).toMatch(/\?$/);
-    const entry = entries.find((e) => e.available && e.url === q.url);
-    expect(entry, q.question).toBeDefined();
-    expect(q.name).toBe(entry!.title);
-    expect(q.number).toBe(String(entry!.number).padStart(2, '0'));
-    expect(q.purpose.length).toBeGreaterThan(5);
-  }
-  expect(new Set(questions.map((q) => q.url)).size).toBe(4);
-});
-
-// ---------------------------------------------------------------- the tracks, in order
-
-test('Home’s stops are every track with lessons, in the site’s order, then the planned ones', () => {
+test('Home’s stops are the tracks that have lessons, in the site’s order, and no planned track', () => {
   const stops = homeStops();
-  expect(stops.map((s) => s.id)).toEqual([...tracks.map((t) => t.id), ...plannedTracks.map((t) => t.id)]);
+  expect(stops.map((s) => s.id)).toEqual(tracks.map((t) => t.id));
+  expect(stops.map((s) => s.title)).toEqual(['How the Internet Works', 'Networking Concepts']);
   expect(stops.map((s) => s.href)).toEqual(stops.map((s) => `/tracks#${s.id}`));
+  expect(stops.map((s) => s.order)).toEqual(['Start here', 'Then go deeper']);
 });
 
-test('a stop counts its lessons from the content, and a planned track says it is not ready', () => {
+test('a stop counts its lessons from the content', () => {
   const stops = homeStops();
   tracks.forEach((track, i) => {
     const { available, planned } = trackTotals(getEntries(track.id));
-    expect(stops[i]).toMatchObject({ title: track.title, ready: true, lessons: { ready: available, planned } });
+    expect(stops[i]).toMatchObject({ title: track.title, lessons: { ready: available, planned } });
     expect(stops[i]!.count).toBe(available === planned ? `${planned} lessons` : `${available} of ${planned} lessons ready`);
     expect(stops[i]!.cover).toBeTruthy();
   });
-  for (const stop of stops.slice(tracks.length)) {
-    expect(stop).toMatchObject({ ready: false, count: STATUS_WORDS['not-ready'], lessons: { ready: 0, planned: 0 } });
-  }
-  // The first is where a beginner starts, and only the first says so.
-  expect(stops.map((s) => s.order)).toEqual(['Start here', 'Then go deeper', 'For the exam']);
 });

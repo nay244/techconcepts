@@ -1,111 +1,135 @@
 // Home's words and pictures, worked out from the tracks and lessons when the page is built: the small lesson a visitor
-// can try on the page, the questions that open a lesson, and the tracks in order. Nothing here runs in the browser,
-// and nothing here reads progress: a returning visitor sees the same page.
+// can try on the page, and the tracks to begin with. Nothing here runs in the browser, and nothing here reads
+// progress: a returning visitor sees the same page.
 import type { CoverId } from '../art/figures/covers';
-import { drawFigure } from '../art/scenes';
-import type { DhcpSceneData } from '../art/scenes/dhcp';
-import { fillLabels } from '../art/scenes/labels';
+import { drawNetMap, type NetMapData } from '../art/scenes/net-map';
 import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
-import { plannedTracks, tracks } from '../content/tracks';
+import { tracks } from '../content/tracks';
 import { positionOf } from '../engine/timeline';
-import { STATUS_WORDS } from './hub';
 import { firstSentence } from './text';
 import { TRACK_COVERS } from './tracks-page';
 
-const two = (n: number): string => String(n).padStart(2, '0');
-
 // ---------------------------------------------------------------- the lesson you can try on Home
+
+export interface HomeDemoStep {
+  n: number;
+  id: string;
+  title: string;
+  sub: string;
+  narrative: string;
+  /** What the step sends, in order: who to whom, and the words on the message. */
+  messages: { from: string; to: string; tag: string; kind: string }[];
+  /** What the scene shows for the step: whether a way across the map is lit, and the ids of the parts at work. */
+  lights: { trail: boolean; busy: string[] };
+}
 
 export interface HomeDemo {
   /** The lesson the demo is a part of, and where the whole of it is. */
   lesson: { title: string; fullName: string; url: string; number: number; track: string };
-  /** The Watch steps shown, in the lesson's own words. */
-  steps: { n: number; id: string; title: string; sub: string; narrative: string }[];
+  /** Every Watch step, in the lesson's own words. */
+  steps: HomeDemoStep[];
   learn: { lead: string; terms: { idea: string; name: string }[]; sources: { label: string; url: string }[] };
+  /** The same exchange with the line sealed: the next lesson, in its own words. */
+  sealed: { title: string; lead: string; url: string; number: number };
   /** The lesson's first question. Each choice explains itself; one is right. */
   practice: { prompt: string; options: { text: string; feedback: string; right: boolean }[] };
-  /** The lesson's scene, as its page draws it before anything has played. */
+  /** The lesson's map with only its own layer, and one lit way drawn in for each step that sends something. */
   scene: string;
-  /** Where each step's message tag sits on the scene, in the drawing's own units from its origin. */
-  tags: { step: number; id: string; x: number; y: number }[];
   /** The full lesson, opened at its first step, its Learn part and its Practice part. */
   parts: { watch: string; learn: string; practice: string };
 }
 
-/** How many Watch steps the demo shows: the four messages that get the laptop its address. */
-const DEMO_STEPS = 4;
-/** How far along its way through the air each step's tag is drawn, of 32. The last has landed at the laptop. */
-const TAG_AT = [16, 16, 16, 2] as const;
+/** The driver's own trail and its edge, where the demo's lit ways are drawn in beside them (src/art/scenes/net-map.ts). */
+const TRAIL = '<polyline class="nm-trail" id="nm-trail" points="" style="opacity:0"/>';
+
+const escape = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /**
- * The lesson a visitor can try on Home: DHCP's first four Watch steps, its Learn part and its first question, every
- * word of it the lesson's own. Throws when the lesson is not ready, is not drawn on the DHCP scene, or is too short.
+ * Writes words into one of the map's empty text slots, by its id. On a lesson page the driver does this when it
+ * starts (src/scenes/drivers/net-map.ts); Home's copy has no driver, so its words go in when the page is built.
  */
-export function homeDemo(trackId = 'networking', slug = 'dhcp'): HomeDemo {
-  const track = tracks.find((t) => t.id === trackId);
-  const entry = getEntries(trackId).find((e): e is AvailableSummary => e.available && e.slug === slug);
-  const lesson = getLesson(slug);
-  if (track === undefined || entry === undefined || lesson === undefined) throw new Error(`Home's demo needs the ${trackId}/${slug} lesson, and it is not ready.`);
-  if (lesson.figure !== 'dhcp') throw new Error(`Home's demo steps the DHCP scene; ${slug} draws "${lesson.figure}".`);
+function write(svg: string, id: string, words: string): string {
+  const slot = new RegExp(`(<text\\b[^>]*\\sid="${id}"[^>]*>)(</text>)`);
+  if (!slot.test(svg)) throw new Error(`The network map has no empty #${id} for Home's demo to write in.`);
+  return svg.replace(slot, (_whole, open: string, close: string) => `${open}${escape(words)}${close}`);
+}
+
+/** How many ideas the Learn part lists: enough to show the pattern, the idea first and then its name. */
+const TERMS = 6;
+
+/**
+ * The lesson a visitor can try on Home: lesson 1, HTTP. Every Watch step of how a web page arrives, its Learn part
+ * and its first question, each word of it the lesson's own; and a pointer to the sealed version, HTTPS, the lesson
+ * after it. Throws when a lesson is not ready, or is not drawn on the network map.
+ */
+export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): HomeDemo {
+  const track = tracks[0]!;
+  const entries = getEntries(track.id);
+  const entryOf = (s: string): AvailableSummary => {
+    const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === s);
+    if (entry === undefined) throw new Error(`Home's demo needs the ${track.id}/${s} lesson, and it is not ready.`);
+    return entry;
+  };
+  const [entry, sealedEntry] = [entryOf(slug), entryOf(sealedSlug)];
+  const [lesson, sealedLesson] = [getLesson(slug)!, getLesson(sealedSlug)!];
+  if (lesson.figure !== 'net-map') throw new Error(`Home's demo lights the network map; ${slug} draws "${lesson.figure}".`);
   const unit = lesson.units[0]!;
   const question = unit.practice[0];
-  if (unit.steps.length < DEMO_STEPS || question === undefined) throw new RangeError(`Home's demo needs ${DEMO_STEPS} Watch steps and a question; "${slug}" is short of them.`);
+  if (question === undefined) throw new RangeError(`Home's demo ends on a question; "${slug}" has none.`);
 
-  const figure = drawFigure(lesson.figure);
-  const { M, arc } = figure.data as DhcpSceneData;
-  const steps = unit.steps.slice(0, DEMO_STEPS);
+  const figure = drawNetMap(unit.scene.layers);
+  const { M, O, TZ, routes } = figure.data as NetMapData;
+  const labelOf = new Map(unit.scene.parties.map((p) => [p.place, p.label]));
+  const named = (place: string): string => labelOf.get(place) ?? place;
+  // A place's light: the map's own for home, the resolver and the routers; a server's is named for its layer.
+  const layerOf = new Map(unit.scene.layers.map((key) => [key.split(':')[1]!, key.split(':')[0]!]));
+  const busyOf = (place: string): string => (layerOf.has(place) ? `nm-${layerOf.get(place)}-busy-${place}` : `nm-busy-${place}`);
+
+  const trails: string[] = [];
+  const steps = unit.steps.map((step, i): HomeDemoStep => {
+    const sent = step.events.filter((e) => e.type === 'message');
+    const first = sent[0];
+    if (first !== undefined) {
+      const route = routes[`${first.from}>${first.to}`];
+      if (route === undefined) throw new Error(`The map has no way from ${first.from} to ${first.to} for Home's demo.`);
+      // Along the cables' tops, in the figure's own frame, as the driver draws a trail.
+      const points = route.map(([x, y]) => `${(O[0] + M[0]! * x + M[1]! * y + M[2]! * TZ).toFixed(1)},${(O[1] + M[3]! * x + M[4]! * y + M[5]! * TZ).toFixed(1)}`).join(' ');
+      trails.push(`<polyline class="nm-trail home-trail" data-step="${i + 1}" points="${points}"/>`);
+    }
+    // The laptop is at work in every step; so is whoever it is talking to.
+    const busy = [...new Set(['laptop', ...sent.flatMap((e) => [e.from, e.to])])].map(busyOf);
+    return {
+      n: i + 1,
+      id: step.id,
+      title: step.title,
+      sub: step.sub,
+      narrative: step.narrative,
+      messages: sent.map((e) => ({ from: named(e.from), to: named(e.to), tag: e.tag, kind: e.kind })),
+      lights: { trail: first !== undefined, busy },
+    };
+  });
+
+  // The words the lesson gives the laptop: what it wants, and the address in its browser.
+  const labels = unit.scene.labels;
+  const drawn = write(write(figure.svg, 'nm-lapState', labels.laptop ?? ''), 'nm-url', labels.url ?? '');
+  if (!drawn.includes(TRAIL)) throw new Error("The network map's trail is not where Home's demo draws beside it.");
   const at = (kind: 'step' | 'learn' | 'practice'): string => `${entry.url}?step=${positionOf(lesson, 0, kind)}`;
   return {
     lesson: { title: lesson.title, fullName: unit.fullName, url: entry.url, number: entry.number, track: track.title },
-    steps: steps.map((s, i) => ({ n: i + 1, id: s.id, title: s.title, sub: s.sub, narrative: s.narrative })),
+    steps,
     learn: {
       lead: unit.learn.lead[0]!.text,
-      terms: unit.learn.terms.slice(0, 5).map((t) => ({ idea: t.idea, name: t.name })),
+      terms: unit.learn.terms.slice(0, TERMS).map((t) => ({ idea: t.idea, name: t.name })),
       sources: unit.references.map((r) => ({ label: r.label, url: r.url })),
     },
+    sealed: { title: sealedLesson.title, lead: sealedLesson.units[0]!.learn.lead[0]!.text, url: sealedEntry.url, number: sealedEntry.number },
     practice: { prompt: question.prompt, options: question.options.map((o, i) => ({ text: o.text, feedback: o.feedback, right: i === question.answer })) },
-    scene: fillLabels(figure.svg, unit.scene.labels),
-    tags: steps.map((s, i) => {
-      // The scene's camera as the driver uses it: a point's place on screen, from the drawing's origin.
-      const [x, y, z] = arc[TAG_AT[i]!]!;
-      return { step: i + 1, id: s.id === 'acknowledge' ? 'ack' : s.id, x: +(M[0]! * x + M[1]! * y + M[2]! * z).toFixed(1), y: +(M[3]! * x + M[4]! * y + M[5]! * z).toFixed(1) };
-    }),
+    scene: drawn.replace(TRAIL, `${TRAIL}${trails.join('')}`),
     parts: { watch: at('step'), learn: at('learn'), practice: at('practice') },
   };
 }
 
-// ---------------------------------------------------------------- questions that open a lesson
-
-export interface HomeQuestion {
-  question: string;
-  /** The lesson that answers it: its name, the one line the track gives it, its number and its address. */
-  name: string;
-  purpose: string;
-  number: string;
-  url: string;
-}
-
-/** Something a beginner may have wondered, and the first-track lesson whose opening answers it. */
-const QUESTIONS: readonly { slug: string; question: string }[] = [
-  { slug: 'what-is-dns', question: 'How does a website’s name turn into a number?' },
-  { slug: 'what-is-https', question: 'Who can read a web page on its way to you?' },
-  { slug: 'what-is-smtp', question: 'Where does an email go when you press Send?' },
-  { slug: 'what-is-tcp', question: 'What if part of a message gets lost on the way?' },
-];
-
-/** Home's questions, each with the ready lesson of the first track that it opens. Throws when one is not ready. */
-export function homeQuestions(): HomeQuestion[] {
-  const first = tracks[0]!;
-  const entries = getEntries(first.id);
-  return QUESTIONS.map(({ slug, question }) => {
-    const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === slug);
-    const lesson = getLesson(slug);
-    if (entry === undefined || lesson === undefined) throw new Error(`Home asks a question the ${first.id}/${slug} lesson answers, and it is not ready.`);
-    return { question, name: entry.title, purpose: lesson.units[0]!.purpose, number: two(entry.number), url: entry.url };
-  });
-}
-
-// ---------------------------------------------------------------- the tracks, in order
+// ---------------------------------------------------------------- the basics, in order
 
 export interface HomeStop {
   id: string;
@@ -116,46 +140,32 @@ export interface HomeStop {
   /** Its panel on the Tracks page. */
   href: string;
   cover: CoverId;
-  /** "14 lessons", "4 of 19 lessons ready", or the not-ready word for a track with none yet. */
+  /** "14 lessons", or "4 of 19 lessons ready". */
   count: string;
   lessons: { ready: number; planned: number };
-  ready: boolean;
 }
 
-/** The order words, by place: the beginner entry, the depth, and the certification track being written. */
-const ORDER = ['Start here', 'Then go deeper', 'For the exam'] as const;
+/** The order words, by place: the beginner entry, then the depth. */
+const ORDER = ['Start here', 'Then go deeper'] as const;
 
 /**
- * Home's stops along the cable: every track with lessons in the site's order, then each planned track. Only numbers
- * the tracks give: no progress, no exams.
+ * Home's stops along the cable: every track that has lessons, in the site's order. A track still being written is
+ * not listed here; the Tracks page has it. Only numbers the tracks give: no progress, no exams.
  */
 export function homeStops(): HomeStop[] {
-  const ready = tracks.map((track): Omit<HomeStop, 'order'> => {
+  return tracks.map((track, i): HomeStop => {
     const cover = TRACK_COVERS[track.id];
     if (cover === undefined) throw new Error(`The ${track.id} track has no cover for Home.`);
     const { available, planned } = trackTotals(getEntries(track.id));
     return {
       id: track.id,
       title: track.title,
+      order: ORDER[i] ?? ORDER[ORDER.length - 1]!,
       blurb: firstSentence(track.description),
       href: `/tracks#${track.id}`,
       cover,
       count: available === planned ? `${planned} lessons` : `${available} of ${planned} lessons ready`,
       lessons: { ready: available, planned },
-      ready: true,
     };
   });
-  const later = plannedTracks.map(
-    (track): Omit<HomeStop, 'order'> => ({
-      id: track.id,
-      title: track.title,
-      blurb: track.blurb,
-      href: `/tracks#${track.id}`,
-      cover: track.cover,
-      count: STATUS_WORDS['not-ready'],
-      lessons: { ready: 0, planned: 0 },
-      ready: false,
-    }),
-  );
-  return [...ready, ...later].map((stop, i) => ({ ...stop, order: ORDER[i] ?? ORDER[ORDER.length - 1]! }));
 }

@@ -32,11 +32,11 @@ const START_PATH = '/how-the-internet-works/what-is-http';
 const INTERNET_TRACK = '/how-the-internet-works';
 const INTERNET_PARTS = ['Loading a web page', 'Getting the data there', 'Behind the scenes', 'Email', 'Files and remote control', 'The seal'];
 /** Home's track cards: one link each, to the track's panel on Tracks. */
-/** Home's three tracks, in order along the cable. */
+/** Home's tracks to begin with, in order along the cable. */
 const trackCards = (page: Page) => page.locator('main .cable > li.leg');
-/** Home's small lesson: the DHCP demo and the words it is showing. */
+/** Home's small lesson: lesson 1, HTTP, and the words it is showing. */
 const demo = (page: Page) => page.locator('main .demo');
-const DHCP_PATH = '/networking/dhcp';
+
 /** The lesson Home shows from the inside, and links into at each of its parts. */
 const OSI_PATH = '/networking/osi-model';
 /** Every lesson the track lists, ready or not, in the order it lists them. */
@@ -83,8 +83,7 @@ test.describe('desktop', () => {
       // The page's sections, in order.
       await expect(page.locator('main').getByRole('heading', { level: 2 })).toHaveText([
         'Try one, right here',
-        'Or start from something you have wondered',
-        'Three tracks, in the order to take them',
+        'Get started with the basics',
         'Where the facts come from',
         'Lift the lid',
       ]);
@@ -124,53 +123,72 @@ test.describe('desktop', () => {
       }
     });
 
-    test('Home: the demo steps through DHCP’s four messages, each moving the scene', async ({ page }) => {
+    test('Home: the demo steps through how a web page arrives over HTTP, lighting the way each message takes', async ({ page }) => {
       await open(page, '/');
       const d = demo(page);
-      const scene = d.locator('svg[data-figure="dhcp"]');
+      const scene = d.locator('svg[data-figure="net-map"]');
       await expect(scene).toBeVisible();
-      const shown = (id: string) => scene.locator(`#${id}`).evaluate((el) => getComputedStyle(el).opacity);
-      const titles = ['DHCP Discover', 'DHCP Offer', 'DHCP Request', 'DHCP Acknowledge'];
-      await expect(d.locator('.demo__row b')).toHaveText(titles);
-      const tags = ['discover', 'offer', 'request', 'ack'];
+      const opacity = (selector: string) => scene.locator(selector).first().evaluate((el) => getComputedStyle(el).opacity);
+      await expect(d.locator('.demo__row b')).toHaveText(['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render Page']);
+      // The map shows this lesson's server and the address the visitor types, with no driver to put them there.
+      await expect(scene).toContainText('Web server');
+      await expect(scene.locator('#nm-url')).toHaveText('example.net');
 
-      // Step 1: the Discover is in the air, and the laptop has no address.
+      // Step 1: typing the address sends nothing, so no way is lit and no message is listed.
       await expect(d.locator('.demo__say:visible')).toHaveCount(1);
-      await expect(d.locator('.demo__say:visible')).toContainText('it has no address yet');
-      await expect.poll(() => shown('dh-tag-discover')).toBe('1');
-      expect(await shown('dh-lap-ip')).toBe('0');
-      expect(await shown('dh-lease-row')).toBe('0');
+      await expect(d.locator('.demo__say:visible')).toContainText('You type example.net and press Enter');
+      await expect(d.locator('.demo__msgs:visible')).toHaveCount(0);
+      for (const step of [2, 3, 4, 5]) expect(await opacity(`.home-trail[data-step="${step}"]`)).toBe('0');
+      expect(await opacity('#nm-page [data-part="text"]')).toBe('0');
 
-      for (let step = 2; step <= 4; step++) {
-        await d.locator('.demo__next:visible').click();
-        await expect(page.locator(`#demo-s${step}`)).toBeChecked();
-        await expect(d.locator('.demo__say:visible')).toHaveCount(1);
-        // Only this step's tag shows.
-        await expect.poll(() => shown(`dh-tag-${tags[step - 1]}`)).toBe('1');
-        await expect.poll(() => shown(`dh-tag-${tags[step - 2]}`)).toBe('0');
-      }
-      // Step 4: the address has landed. The laptop shows it and the router has written it down.
-      await expect(d.locator('.demo__say:visible')).toContainText('192.168.1.100 is yours for 24 hours');
-      await expect.poll(() => shown('dh-lap-ip')).toBe('1');
-      await expect.poll(() => shown('dh-lease-row')).toBe('1');
+      // Step 2: the laptop asks the resolver, and the way between them lights up.
+      await d.locator('.demo__next:visible').click();
+      await expect(page.locator('#demo-s2')).toBeChecked();
+      await expect(d.locator('.demo__msgs:visible li')).toHaveText([/Laptop to DNS resolver\s*LOOKUP/, /DNS resolver to Laptop\s*ANSWER/]);
+      await expect.poll(() => opacity('.home-trail[data-step="2"]')).not.toBe('0');
+      await expect.poll(() => opacity('#nm-busy-resolver')).toBe('1');
+
+      // Step 3: the connection to the web server. Only one way is lit at a time.
+      await d.locator('.demo__next:visible').click();
+      await expect.poll(() => opacity('.home-trail[data-step="3"]')).not.toBe('0');
+      await expect.poll(() => opacity('.home-trail[data-step="2"]')).toBe('0');
+      await expect.poll(() => opacity('#nm-http-busy-web')).toBe('1');
+
+      // Step 4: the request and its answer; the page's words reach the laptop.
+      await d.locator('.demo__next:visible').click();
+      await expect(d.locator('.demo__msgs:visible b')).toHaveText(['GET /', '200 OK']);
+      await expect.poll(() => opacity('#nm-page [data-part="text"]')).toBe('1');
+      expect(await opacity('#nm-page [data-part="pic"]')).toBe('0');
+
+      // Step 5: the browser fetches the rest, and the page is whole.
+      await d.locator('.demo__next:visible').click();
+      await expect(page.locator('#demo-s5')).toBeChecked();
+      await expect.poll(() => opacity('#nm-page [data-part="pic"]')).toBe('1');
+      await expect(d.locator('.demo__say:visible')).toHaveCount(1);
       await expect(d.locator('.demo__next:visible')).toHaveText('Go to Learn');
     });
 
-    test('Home: the demo’s Learn part names the ideas and links its sources; its Practice part explains each answer', async ({ page }) => {
+    test('Home: the demo’s Learn part names the ideas, points on to HTTPS and links its sources; Practice explains each answer', async ({ page }) => {
       await open(page, '/');
       const d = demo(page);
       await d.locator('.demo__parts label', { hasText: 'Learn' }).click();
       await expect(page.locator('#demo-learn')).toBeChecked();
       await expect(d.locator('.demo__pane--watch')).toBeHidden();
-      await expect(d.locator('.demo__pane--learn .demo__lead')).toContainText('Four short messages later it had one');
-      await expect(d.locator('.demo__terms dd')).toContainText(['Broadcast', 'Discover', 'Offer']);
+      await expect(d.locator('.demo__pane--learn .demo__lead')).toContainText('A web page is a conversation in plain text.');
+      await expect(d.locator('.demo__terms dd')).toContainText(['Client', 'URL', 'IP address']);
+      // The same exchange with the line sealed is the next lesson.
+      const sealed = d.locator('.demo__sealed');
+      await expect(sealed).toContainText('And HTTPS?');
+      await expect(sealed).toContainText('HTTPS is HTTP with one extra job before the asking: seal the line.');
+      await expect(sealed.getByRole('link')).toHaveText('Lesson 2: HTTPS');
+      await expect(sealed.getByRole('link')).toHaveAttribute('href', '/how-the-internet-works/what-is-https');
       const sources = d.locator('.demo__src a');
-      await expect(sources).toHaveText(['RFC 2131: Dynamic Host Configuration Protocol', 'RFC 2132: DHCP Options and BOOTP Vendor Extensions']);
-      await expect(sources.first()).toHaveAttribute('href', 'https://www.rfc-editor.org/rfc/rfc2131');
+      await expect(sources).toHaveText(['RFC 9110: HTTP Semantics', 'RFC 9112: HTTP/1.1']);
+      await expect(sources.first()).toHaveAttribute('href', 'https://www.rfc-editor.org/rfc/rfc9110');
 
       await d.locator('.demo__pane--learn .demo__next').click();
       await expect(page.locator('#demo-practice')).toBeChecked();
-      await expect(d.locator('.demo__pane--practice .demo__lead')).toContainText('Why does it shout its first message to everyone?');
+      await expect(d.locator('.demo__pane--practice .demo__lead')).toContainText('The server replies 404. What does that mean?');
       // No answer is given until one is chosen, and nothing is scored.
       await expect(d.locator('.demo__why:visible')).toHaveCount(0);
       await d.locator('.demo__pick').nth(1).click();
@@ -183,9 +201,9 @@ test.describe('desktop', () => {
       await expect(page.locator('main')).not.toContainText(/score:|points|streak/i);
 
       const whole = d.getByRole('link', { name: 'Open the whole lesson', exact: true });
-      await expect(whole).toHaveAttribute('href', DHCP_PATH);
+      await expect(whole).toHaveAttribute('href', START_PATH);
       await whole.click();
-      await expect(page).toHaveURL(new RegExp(`${DHCP_PATH}$`));
+      await expect(page).toHaveURL(new RegExp(`${START_PATH}$`));
       await expect(kicker(page)).toHaveText('Overview');
     });
 
@@ -193,11 +211,12 @@ test.describe('desktop', () => {
       await open(page, '/');
       const d = demo(page);
       await expect(page.getByRole('radio', { name: 'Watch part', exact: true })).toBeChecked();
-      await expect(page.getByRole('radio', { name: 'Watch, step 1 of 4: DHCP Discover', exact: true })).toBeChecked();
+      await expect(page.getByRole('radio', { name: 'Watch, step 1 of 5: Client Request', exact: true })).toBeChecked();
       await page.locator('#demo-s1').focus();
       await page.keyboard.press('ArrowRight');
       await expect(page.locator('#demo-s2')).toBeChecked();
-      await expect(d.locator('.demo__say:visible')).toContainText('offers it to the laptop');
+      await expect(d.locator('.demo__say:visible')).toContainText('example.net');
+      await expect(d.locator('.demo__msgs:visible li')).toHaveCount(2);
       // The focused step shows where the keyboard is.
       expect(await d.locator('.demo__row[for="demo-s2"]').evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
       await page.locator('#demo-watch').focus();
@@ -207,43 +226,22 @@ test.describe('desktop', () => {
       await expect(page.getByRole('radio', { name: /^Answer: / })).toHaveCount(3);
     });
 
-    test('Home: four questions, each opening a ready lesson of How the Internet Works', async ({ page }) => {
+    test('Home: the two tracks to begin with, in order, each linking to its Tracks panel, with no exam tags', async ({ page }) => {
       await open(page, '/');
-      const rows = page.locator('main .ask__row');
-      await expect(rows).toHaveCount(4);
-      await expect(rows.locator('.ask__q')).toHaveText([
-        'How does a website’s name turn into a number?',
-        'Who can read a web page on its way to you?',
-        'Where does an email go when you press Send?',
-        'What if part of a message gets lost on the way?',
-      ]);
-      await expect(rows.locator('.ask__a b')).toHaveText(['DNS', 'HTTPS', 'SMTP', 'TCP']);
-      const ready = new Set(LESSONS.map((lesson) => lesson.path));
-      for (const href of await rows.evaluateAll((as) => as.map((a) => a.getAttribute('href')!))) {
-        expect(href.startsWith(`${INTERNET_TRACK}/`), href).toBe(true);
-        expect(ready.has(href), `${href} is a ready lesson`).toBe(true);
-      }
-      await rows.first().click();
-      await expect(page).toHaveURL(/\/how-the-internet-works\/what-is-dns$/);
-      await expect(kicker(page)).toHaveText('Overview');
-    });
-
-    test('Home: three tracks in order, each linking to its Tracks panel, with no exam tags', async ({ page }) => {
-      await open(page, '/');
-      await expect(trackCards(page)).toHaveCount(3);
-      await expect(trackCards(page).locator('h3')).toHaveText(['How the Internet Works', 'Networking Concepts', 'CompTIA A+']);
-      await expect(trackCards(page).locator('.leg__order')).toHaveText(['Start here', 'Then go deeper', 'For the exam']);
+      // Only tracks with lessons: the one still being written is on the Tracks page, not here.
+      await expect(trackCards(page)).toHaveCount(2);
+      await expect(trackCards(page).locator('h3')).toHaveText(['How the Internet Works', 'Networking Concepts']);
+      await expect(page.locator('main .order')).not.toContainText('CompTIA');
+      await expect(trackCards(page).locator('.leg__order')).toHaveText(['Start here', 'Then go deeper']);
       expect(await trackCards(page).locator('h3 a').evaluateAll((links) => links.map((a) => a.getAttribute('href')))).toEqual([
         '/tracks#how-the-internet-works',
         '/tracks#networking',
-        '/tracks#comptia-a-plus',
       ]);
-      await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Not ready yet']);
-      // One segment per planned lesson, the ready ones filled; a track with no lessons draws none.
+      await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '4 of 19 lessons ready']);
+      // One segment per planned lesson, the ready ones filled.
       await expect(trackCards(page).nth(0).locator('.leg__run i[data-ready]')).toHaveCount(14);
       await expect(trackCards(page).nth(1).locator('.leg__run i')).toHaveCount(19);
       await expect(trackCards(page).nth(1).locator('.leg__run i[data-ready]')).toHaveCount(4);
-      await expect(trackCards(page).nth(2).locator('.leg__run')).toHaveCount(0);
       // Nothing on Home shows progress or an exam to filter by.
       await expect(page.locator('main a[href*="?for="]')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/Network\+|Security\+|CCNA|lessons done|in progress/i);
@@ -615,7 +613,7 @@ test.describe('desktop', () => {
     await expect(homeFacts(page)).toHaveText(HOME_FACTS);
     await expect(heroStart(page)).toHaveText(HERO_START);
     await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
-    await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Not ready yet']);
+    await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '4 of 19 lessons ready']);
 
     // On Tracks, Networking's strip counts DHCP done, and its panel moves on to the next lesson not done; How the
     // Internet Works still reads as a first visit.
@@ -814,10 +812,10 @@ test.describe('without JavaScript', () => {
   test('Home’s demo needs no script: it steps, shows Learn and answers a question', async ({ page }) => {
     await page.goto('/');
     const d = demo(page);
-    await expect(d.locator('.demo__say:visible')).toContainText('it has no address yet');
+    await expect(d.locator('.demo__say:visible')).toContainText('You type example.net and press Enter');
     await d.locator('.demo__next:visible').click();
-    await expect(d.locator('.demo__say:visible')).toContainText('offers it to the laptop');
-    await expect.poll(() => d.locator('#dh-tag-offer').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    await expect(d.locator('.demo__msgs:visible li')).toHaveCount(2);
+    await expect.poll(() => d.locator('.home-trail[data-step="2"]').evaluate((el) => getComputedStyle(el).opacity)).not.toBe('0');
     await d.locator('.demo__parts label', { hasText: 'Practice' }).click();
     await d.locator('.demo__pick').nth(0).click();
     await expect(d.locator('.demo__why:visible')).toContainText('Right.');

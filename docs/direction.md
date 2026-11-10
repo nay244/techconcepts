@@ -241,28 +241,32 @@ The five passed over, so nobody redraws them: Port (a socket with its link light
 
 The owner, 2026-11-10: "Do not reference the old homepage layout. Create your own original homepage for this web site with your own design ideas." So this page starts from the site's job, not from the page it replaces.
 
-**The idea: the page is a small lesson.** A beginner should not have to take the site's word for what a lesson is. Under the headline they can do one: step through the four messages that get a laptop its address, read the Learn part, and answer a question. It is the DHCP lesson's own scene and words, worked out from the content when the page is built, so it cannot drift from the lesson.
+**The idea: the page is a small lesson.** A beginner should not have to take the site's word for what a lesson is. Under the headline they can do one: lesson 1, how a web page arrives over HTTP. It is that lesson's own map and words, worked out from the content when the page is built, so it cannot drift from the lesson.
 
 | Section | What it is | Why |
 |---|---|---|
 | The opening | The site's line set very large, one sentence, two buttons, and three plain facts: free, no account, progress stays in this browser | The line is the promise; the facts answer the three things a newcomer asks before clicking |
-| Try one, right here | The DHCP scene with three parts, Watch, Learn and Practice. Watch steps through four messages and the scene follows: the message tag in the air, the phone ignoring a shout, the address landing on the laptop and in the lease table | It shows the product by being it, and explains Watch, Learn and Practice without a paragraph about them |
-| Or start from something you have wondered | Four questions, each opening the lesson of the first track that answers it: DNS, HTTPS, SMTP, TCP | A beginner arrives with a question more often than with a syllabus |
-| Three tracks, in the order to take them | The tracks as stops along one cable: start here, then go deeper, for the exam. Each links to its panel on the Tracks page | The order is real, so it is drawn as an order |
+| Try one, right here | Lesson 1 in small, with three parts: Watch, Learn and Practice. Watch has the lesson's five steps: type the address, look up the name, open the connection, ask for the page, draw it. The map follows: the way each message takes lights up, the server at work lights up, and the page reaches the laptop's screen. Each step lists the messages it sends. Learn ends by pointing on to HTTPS, the next lesson | It shows the product by being it, and explains Watch, Learn and Practice without a paragraph about them |
+| Get started with the basics | The two tracks that have lessons, as stops along one cable: start here, then go deeper. Each links to its panel on the Tracks page | A newcomer needs the way in, not the whole catalogue |
 | Where the facts come from | The `sources` figure and how many lessons have been checked so far, counted from the content | The site says what is and is not verified, on its front page |
 | Lift the lid | The `inside` figure and the way into lesson 1 | The last thing on the page is the first step |
 
-**How the demo works.** It has no script. Three groups of radio buttons (the part, the step, the answer) come before its panel, and CSS shows, hides and moves things from which are checked. The scene's own parts are switched the same way; each step's message tag is placed with the scene's camera numbers at build time. So it works with JavaScript off, from the keyboard (arrow keys move between steps), and adds nothing to the page's 1.3 KB of script.
+**The owner's changes to the first version, 2026-11-10.**
+
+- The demo shows "a simple HTTP/HTTPS exchange of how a web connection works". It was the DHCP lesson. It is now lesson 1, HTTP, which is also where the Start button leads; HTTPS is named in Learn, in that lesson's own words, with a link.
+- "Or start from something you have wondered", four questions that each opened a lesson, is removed.
+- "Three tracks, in the order to take them" is "Get started with the basics", and CompTIA A+ is not listed there. It is still on the Tracks page.
+
+**How the demo works.** It has no script. Three groups of radio buttons (the part, the step, the answer) come before its panel, and CSS shows, hides and lights things from which are checked. The map is drawn with only this lesson's layer (`drawNetMap(['http:web'])`), and the way each step's messages take is drawn into it at build time from the map's own routes. So it works with JavaScript off, from the keyboard (arrow keys move between steps), and adds nothing to the page's 1.3 KB of script.
 
 **What went, and where its content lives now.**
 
-- The questions list (FAQ). Its four answers are in the opening's three facts, the tracks' order words, the sources section, and "Nothing is scored" in the demo.
+- The questions list (FAQ). Its answers are in the opening's three facts, the tracks' order words, the sources section, and "Nothing is scored" in the demo.
 - The separate Watch, Learn and Practice cards. The demo is all three.
 - The header's "How it works" and "Questions" links are now "How a lesson works" (the demo) and "Sources".
 
-**Measured, 1440×900 and 375×812.** The page is 4,218px tall on desktop and 5,421px on a phone, from 5,530px and 7,722px. Its HTML is 93 KB gzipped, from 145 KB. No sideways scroll at either size; every control in the demo is at least 44px tall.
+**Measured, 1440×900 and 375×812.** The page is 3,761px tall on desktop and 4,176px on a phone, from 5,530px and 7,722px. Its HTML is 114 KB gzipped, from 145 KB; the map is most of it. No sideways scroll at either size; every control in the demo is at least 44px tall.
 
 **Kept from the owner's earlier decisions:** no Continue or resume link, nothing that reads progress, no exam tags, no time figures.
 
-**Not done:** the demo has no motion beyond a 200ms fade (the real lesson animates the message along its path). The header's small Start learning button is 40px tall, as before.
-
+**Not done:** the demo has no motion beyond a 200ms fade (the real lesson moves each message along its way). The header's small Start learning button is 40px tall, as before.

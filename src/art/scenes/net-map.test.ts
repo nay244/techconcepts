@@ -121,3 +121,17 @@ test('one tag for each label length, its words left for the driver', () => {
 test('drawFigure draws the network map', () => {
   expect(drawFigure('net-map')).toEqual(drawNetMap());
 });
+
+test('asked for some layers only, the map holds just those, shown, in the same frame and with the same routes', () => {
+  const whole = drawNetMap();
+  const part = drawNetMap(['http:web']);
+  expect(part.data).toEqual(whole.data);
+  expect(/viewBox="[^"]+"/.exec(part.svg)![0]).toBe(/viewBox="[^"]+"/.exec(whole.svg)![0]);
+  const layers = [...part.svg.matchAll(/<g data-layer="([^"]+)"([^>]*)>/g)];
+  expect(new Set(layers.map((m) => m[1]))).toEqual(new Set(['http:web']));
+  // Shown: no display="none" on the layer's groups, unlike the whole map's.
+  expect(layers.every((m) => !m[2]!.includes('display'))).toBe(true);
+  expect(whole.svg).toContain('<g data-layer="http:web" display="none">');
+  // And much smaller: the other thirteen layers are not there.
+  expect(part.svg.length).toBeLessThan(whole.svg.length / 2);
+});

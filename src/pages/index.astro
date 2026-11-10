@@ -1,7 +1,7 @@
 ---
-// Home (docs/direction.md §9). The page is a small lesson: under the headline a visitor can step through four real
-// messages of the DHCP lesson, read its Learn part and answer its first question, all without a script. Then come
-// four questions that each open a lesson, the tracks in the order to take them, and where the facts come from.
+// Home (docs/direction.md §9). The page is a small lesson: under the headline a visitor can step through lesson 1,
+// how a web page arrives over HTTP, read its Learn part and answer its first question, all without a script. Then
+// come the tracks to begin with, where the facts come from, and the way into lesson 1.
 // Every lesson word and every number is worked out from the content when the page is built (src/lib/home.ts).
 // Nothing reads progress: a returning visitor sees the same page.
 import { coverStill, type CoverId } from '../art/figures/covers';
@@ -9,16 +9,15 @@ import { pageFigure } from '../art/figures/pages';
 import { cropViewBox } from '../art/ids';
 import { factCheckSentence } from '../lib/about';
 import { lessonCheckCounts } from '../lib/checked';
-import { homeDemo, homeQuestions, homeStops } from '../lib/home';
+import { homeDemo, homeStops } from '../lib/home';
 import { startLesson } from '../lib/start';
 import Rich from '../lesson/Rich';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import '../art/scenes/dhcp.css';
+import '../art/scenes/net-map.css';
 import '../components/site.css';
 
 const start = startLesson();
 const demo = homeDemo();
-const questions = homeQuestions();
 const stops = homeStops();
 const checks = lessonCheckCounts();
 const factCheck = factCheckSentence(checks.checked, checks.total);
@@ -32,12 +31,14 @@ const coverArt = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}
 
 // ---------- The demo's states, as CSS ----------
 // The demo is three groups of radio buttons (the part, the step, the answer) that come before its panel, so a checked
-// button can show, hide and move things in the panel with the sibling selector alone. The scene's own parts are
-// switched the same way: its driver's inline `opacity:0` is why those rules are !important.
+// button can show, hide and light things in the panel with the sibling selector alone. The scene's own parts are
+// switched the same way; where its driver would set an inline `opacity:0`, the rule is !important.
 const UI = '.demo__ui';
 const when = (...ids: string[]): string => `${ids.map((id) => `#${id}:checked`).join(' ~ ')} ~ ${UI}`;
 const focus = (id: string): string => `#${id}:focus-visible ~ ${UI} label[for="${id}"]{outline:2px solid var(--focus);outline-offset:2px}`;
-const css: string[] = [];
+// Before any step: no way is lit, and the laptop's screen is empty. (The map is drawn with the page loaded, and a
+// lesson's driver clears it when it starts; here the first rule does.)
+const css: string[] = ['.home-trail{opacity:0;transition:opacity 200ms ease}', `${UI} #nm-page [data-part]{opacity:0}`];
 for (const part of PARTS) {
   css.push(`${when(`demo-${part}`)} .demo__pane--${part}{display:block}`);
   css.push(`${when(`demo-${part}`)} .demo__parts label[for="demo-${part}"]{background:var(--card);color:var(--ink-strong);box-shadow:inset 0 -2px 0 var(--here)}`);
@@ -54,16 +55,16 @@ for (const step of demo.steps) {
     css.push(`${when(id)} .demo__row[for="demo-s${done.n}"] .demo__n{border-color:var(--allowed);background:var(--allowed);color:var(--accent-ink)}`);
   }
   css.push(focus(id));
-  const tag = demo.tags.find((t) => t.step === step.n)!;
-  css.push(`${when('demo-watch', id)} #dh-tag-${tag.id}{opacity:1!important;transform:translate(${tag.x}px,${tag.y}px)}`);
+  // The way the step's messages take lights up, and so does everything at work on it.
+  if (step.lights.trail) css.push(`${when('demo-watch', id)} .home-trail[data-step="${step.n}"]{opacity:.9}`);
+  css.push(`${step.lights.busy.map((busy) => `${when('demo-watch', id)} #${busy}`).join(',')}{opacity:1}`);
 }
-// While a message is in the air its path shows; a shout to everyone reaches the phone, which ignores it.
-css.push(`${demo.steps.slice(0, -1).map((s) => `${when('demo-watch', `demo-s${s.n}`)} #dh-arc`).join(',')}{opacity:1!important}`);
-css.push(`${[1, 3].map((n) => `${when('demo-watch', `demo-s${n}`)} #dh-ignore`).join(',')}{opacity:1}`);
-// Once the last message has landed (and in Learn and Practice, which come after it) the laptop has its address.
-const landed = [when('demo-watch', `demo-s${last}`), when('demo-learn'), when('demo-practice')];
-css.push(`${landed.map((s) => `${s} #dh-lap-ip,${s} #dh-lease-row`).join(',')}{opacity:1!important}`);
-css.push(`${landed.map((s) => `${s} #dh-lap-noip,${s} #dh-laptop-ip`).join(',')}{opacity:0}`);
+// The page on the laptop: its words arrive with the server's answer, in the last step but one; its pictures once the
+// browser has fetched the rest, in the last step, and they stay through Learn and Practice.
+const words = [when('demo-watch', `demo-s${last - 1}`), when('demo-watch', `demo-s${last}`), when('demo-learn'), when('demo-practice')];
+const pictures = words.slice(1);
+css.push(`${words.map((s) => `${s} #nm-page [data-part="text"]`).join(',')}{opacity:1!important}`);
+css.push(`${pictures.map((s) => `${s} #nm-page [data-part="pic"]`).join(',')}{opacity:1!important}`);
 demo.practice.options.forEach((option, i) => {
   const id = `demo-a${i + 1}`;
   css.push(`${when(id)} .demo__why--${i + 1}{display:block}`);
@@ -92,9 +93,7 @@ demo.practice.options.forEach((option, i) => {
     <header class="try__head">
       <h2 id="try-title">Try one, right here</h2>
       <p>
-        A laptop joins the Wi-Fi and gets its address. This is part of lesson {demo.lesson.number} of {demo.lesson.track}, <a href={demo.lesson.url}
-          >{demo.lesson.title}</a
-        >.
+        A browser asks a web server for a page. This is lesson {demo.lesson.number} of {demo.lesson.track}, <a href={demo.lesson.url}>{demo.lesson.title}</a>.
       </p>
     </header>
 
@@ -136,9 +135,23 @@ demo.practice.options.forEach((option, i) => {
           <div class="demo__says" aria-live="polite">
             {
               demo.steps.map((step) => (
-                <p class={`demo__say demo__say--${step.n}`}>
-                  <Rich text={step.narrative} />
-                </p>
+                <div class={`demo__say demo__say--${step.n}`}>
+                  <p>
+                    <Rich text={step.narrative} />
+                  </p>
+                  {step.messages.length > 0 && (
+                    <ul class="demo__msgs">
+                      {step.messages.map((m) => (
+                        <li data-kind={m.kind}>
+                          <span>
+                            {m.from} to {m.to}
+                          </span>
+                          <b>{m.tag}</b>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               ))
             }
           </div>
@@ -171,6 +184,13 @@ demo.practice.options.forEach((option, i) => {
               ))
             }
           </dl>
+          <p class="demo__sealed">
+            <b>And {demo.sealed.title}?</b>
+            <Rich text={demo.sealed.lead} />
+            <a href={demo.sealed.url}>
+              Lesson {demo.sealed.number}: {demo.sealed.title}
+            </a>
+          </p>
           <p class="demo__src">
             Sources:
             {
@@ -215,35 +235,13 @@ demo.practice.options.forEach((option, i) => {
     </div>
   </section>
 
-  <section class="ask" aria-labelledby="ask-title">
-    <div class="wrap">
-      <h2 id="ask-title">Or start from something you have wondered</h2>
-      <ul class="ask__list">
-        {
-          questions.map((q) => (
-            <li>
-              <a class="ask__row" href={q.url}>
-                <span class="ask__q">{q.question}</span>
-                <span class="ask__a">
-                  <b>{q.name}</b>
-                  {q.purpose}
-                </span>
-                <span class="ask__n">Lesson {q.number}</span>
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </section>
-
   <section class="order" aria-labelledby="order-title">
     <div class="wrap">
-      <h2 id="order-title">Three tracks, in the order to take them</h2>
+      <h2 id="order-title">Get started with the basics</h2>
       <ol class="cable">
         {
           stops.map((stop) => (
-            <li class="leg" data-ready={stop.ready ? '' : undefined}>
+            <li class="leg">
               <div class="leg__art" aria-hidden="true">
                 <Fragment set:html={coverArt(stop.cover)} />
               </div>
@@ -253,13 +251,11 @@ demo.practice.options.forEach((option, i) => {
               </h3>
               <p class="leg__blurb">{stop.blurb}</p>
               <p class="leg__count">
-                {stop.ready && (
-                  <span class="leg__run" aria-hidden="true">
-                    {Array.from({ length: stop.lessons.planned }, (_, i) => (
-                      <i data-ready={i < stop.lessons.ready ? '' : undefined} />
-                    ))}
-                  </span>
-                )}
+                <span class="leg__run" aria-hidden="true">
+                  {Array.from({ length: stop.lessons.planned }, (_, i) => (
+                    <i data-ready={i < stop.lessons.ready ? '' : undefined} />
+                  ))}
+                </span>
                 {stop.count}
               </p>
             </li>
@@ -427,12 +423,6 @@ demo.practice.options.forEach((option, i) => {
     width: 100%;
     max-height: 100%;
   }
-  .demo__scene :global(.dh-tag),
-  .demo__scene :global(#dh-arc),
-  .demo__scene :global(#dh-lap-ip),
-  .demo__scene :global(#dh-lease-row) {
-    transition: opacity 200ms ease;
-  }
   @media (prefers-reduced-motion: reduce) {
     .demo__scene :global(*) {
       transition: none !important;
@@ -496,6 +486,53 @@ demo.practice.options.forEach((option, i) => {
     color: var(--ink-strong);
     font-size: 16px;
     line-height: 1.5;
+  }
+  .demo__say p {
+    margin: 0;
+  }
+  /* What the step sends: who to whom, and the words on the message. A request is the blue pair, a reply the brown. */
+  .demo__msgs {
+    display: grid;
+    gap: 4px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14.5px;
+  }
+  .demo__msgs li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 8px 5px 10px;
+    border-left: 3px solid var(--request);
+    background: var(--card-2);
+    color: var(--ink);
+  }
+  .demo__msgs li[data-kind='response'] {
+    border-left-color: var(--response);
+  }
+  .demo__msgs b {
+    color: var(--ink-strong);
+    font: 700 13px/1.6 var(--mono);
+    white-space: nowrap;
+  }
+  .demo__sealed {
+    margin: 14px 0 0;
+    padding: 10px 12px;
+    border-left: 3px solid var(--encrypted);
+    background: var(--card-2);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  .demo__sealed b {
+    display: block;
+    color: var(--ink-strong);
+    font: 600 16px/1.3 var(--display);
+  }
+  .demo__sealed a {
+    display: block;
+    margin-top: 4px;
+    color: var(--link);
   }
   .demo__nexts {
     margin-top: 14px;
@@ -571,50 +608,6 @@ demo.practice.options.forEach((option, i) => {
     border-left-color: var(--allowed);
   }
 
-  /* ---------- Questions that open a lesson ---------- */
-  .ask {
-    padding: clamp(48px, 7vw, 96px) 0;
-    border-top: 1px solid var(--line-strong);
-    background: var(--card);
-  }
-  .ask__list {
-    margin: 28px 0 0;
-    padding: 0;
-    list-style: none;
-    border-top: 1px solid var(--line-strong);
-  }
-  .ask__row {
-    display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto;
-    gap: 6px 24px;
-    align-items: baseline;
-    padding: 20px 4px;
-    border-bottom: 1px solid var(--line-strong);
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .ask__q {
-    color: var(--ink-strong);
-    font: 600 clamp(22px, 2.6vw, 30px) / 1.15 var(--display);
-    text-decoration: underline;
-    text-decoration-color: transparent;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.18em;
-  }
-  .ask__row:hover .ask__q {
-    text-decoration-color: var(--here);
-  }
-  .ask__a b {
-    margin-right: 10px;
-    color: var(--ink-strong);
-    font: 600 17px/1.3 var(--display);
-  }
-  .ask__n {
-    color: var(--muted);
-    font: 500 14px/1.3 var(--mono);
-    white-space: nowrap;
-  }
-
   /* ---------- The tracks, in order, along one cable ---------- */
   .order {
     padding: clamp(48px, 7vw, 96px) 0;
@@ -622,7 +615,7 @@ demo.practice.options.forEach((option, i) => {
   }
   .cable {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 28px;
     margin: 28px 0 0;
     padding: 0;
@@ -654,9 +647,6 @@ demo.practice.options.forEach((option, i) => {
     height: 13px;
     border: 2px solid var(--ink-strong);
     border-radius: 2px;
-    background: var(--ground);
-  }
-  .leg[data-ready]::after {
     background: var(--ink-strong);
   }
   .leg__art {
@@ -664,9 +654,6 @@ demo.practice.options.forEach((option, i) => {
     border-radius: var(--r-card);
     background: var(--fig-bg);
     overflow: hidden;
-  }
-  .leg:not([data-ready]) .leg__art {
-    opacity: 0.7;
   }
   .leg__order {
     margin: 16px 0 2px;
@@ -758,12 +745,6 @@ demo.practice.options.forEach((option, i) => {
     }
     .demo__pane {
       min-height: 0;
-    }
-    .ask__row {
-      grid-template-columns: minmax(0, 1fr) auto;
-    }
-    .ask__q {
-      grid-column: 1 / -1;
     }
     .cable {
       grid-template-columns: minmax(0, 1fr);
