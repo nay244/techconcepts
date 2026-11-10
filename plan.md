@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: waiting for the owner's go.** Nothing below has started.
+**Status: at the design gate since 2026-11-10.** Phase 1 is done: four prototypes and specs are in `prototypes/`, waiting for the owner's approval. No build unit has started.
 
 ## Inputs
 
