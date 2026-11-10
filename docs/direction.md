@@ -76,8 +76,8 @@ Each numbered step is its own branch.
 1. **Baseline.** DONE 2026-11-10. 96 screenshots (24 pages, 1440×900 and 375×812, both themes) and the lesson's measurements, in §4.
 2. **The look.** DONE 2026-11-10. Three directions prototyped on the Lesson page and Home; Patch taken (2.12). Its tokens are in §6 and the Lesson page changes it showed are in §7.
 3. **The shell.** DONE 2026-11-10. The Patch tokens, the heading face, light as the default theme, the figures' two finishes, the header and footer, and the new logo and favicon, in both themes. Every page wears it. What it left for the page steps is at the end of §6.
-4. **The Lesson page.** Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
-5. **The Tracks page.** Start from one panel per track (2.8), in the new look, on phone and desktop.
+4. **The Lesson page.** The owner keeps the current page (§10): its layout stays, and it already wears the new look from the shell. Open, to confirm with the owner before any of it is built: whether the changes the earlier prototype settled in §7 still stand. What follows was the plan before that decision. Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
+5. **The Tracks page.** The owner keeps the current page (§10): one panel per track, already in the new look from the shell. Left to do: its page-level small capitals ("Start here"), per §6.
 6. **Home, the track page, About and 404, new layouts.** Home: DONE 2026-11-10, an original page (§9). Still to do: the track page, which puts each lesson's figure in its HTML once (audit plan 005), About and 404.
 
 Done when every page wears the one new look in both themes, a reader on a 375px phone can do a whole lesson without the page scrolling past the scene, and every cited claim is one tap from its source.
@@ -239,6 +239,8 @@ The five passed over, so nobody redraws them: Port (a socket with its link light
 
 ## 9. Home
 
+**Adopted by the owner, 2026-11-10**, with the three changes listed below.
+
 The owner, 2026-11-10: "Do not reference the old homepage layout. Create your own original homepage for this web site with your own design ideas." So this page starts from the site's job, not from the page it replaces.
 
 **The idea: the page is a small lesson.** A beginner should not have to take the site's word for what a lesson is. Under the headline they can do one: lesson 1, how a web page arrives over HTTP. It is that lesson's own map and words, worked out from the content when the page is built, so it cannot drift from the lesson.
@@ -271,9 +273,11 @@ The owner, 2026-11-10: "Do not reference the old homepage layout. Create your ow
 
 **Not done:** the demo has no motion beyond a 200ms fade (the real lesson moves each message along its way). The header's small Start learning button is 40px tall, as before.
 
-## 10. Claude's own takes on the Lesson and Tracks pages (prototypes, undecided)
+## 10. Claude's own takes on the Lesson and Tracks pages (not adopted)
 
-The owner, 2026-11-10: the Lesson and Tracks pages "are fine but have a go at your own take on them with your original design idea and show a side by side." These are prototypes for that comparison. Nothing here is decided and no site code changed.
+**Decided by the owner, 2026-11-10, after the side by side: "Let's adopt the new homepage and keep our current track and lesson page."** The two takes below are not built. They stay here so nobody proposes them again.
+
+The owner had asked: the Lesson and Tracks pages "are fine but have a go at your own take on them with your original design idea and show a side by side." These were the prototypes for that comparison. No site code changed.
 
 One idea runs through both, and through Home's tracks: **a sequence is drawn as a cable with stops.** Tracks on Home, lessons on Tracks, steps in a lesson.
 
