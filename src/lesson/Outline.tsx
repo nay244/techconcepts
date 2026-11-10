@@ -3,6 +3,7 @@ import type { LessonSummary } from '../content/registry';
 import type { Lesson, Unit } from '../content/schema';
 import { positionOf, type Position } from '../engine/timeline';
 import { byPart, STATUS_TEXT } from '../lib/entries';
+import { STATUS_WORDS } from '../lib/hub';
 import type { LessonProgress, ProgressData } from '../progress/store';
 import { LEARN_SUB, LEARN_TITLE } from './Explanation';
 import { questionsTitle } from './Practice';
@@ -99,7 +100,7 @@ function LessonLink({ entry, current, status }: { entry: LessonSummary; current:
       ) : (
         <span className="outline__lesson-status" data-status="soon">
           <span className="sr-only">, </span>
-          Coming soon
+          {STATUS_WORDS['not-ready']}
         </span>
       )}
     </>
@@ -120,7 +121,7 @@ interface AllLessonsProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 
   onClose(): void;
 }
 
-/** "All N lessons": the track's lessons by part, in a modal dialog, with Finished or In progress in words. */
+/** "All N lessons": the track's lessons by part, in a modal dialog, with ✓ Done or In progress in words. */
 function AllLessons({ entries, currentKey, progress, open, onClose }: AllLessonsProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();

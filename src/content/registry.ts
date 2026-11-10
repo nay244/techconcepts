@@ -120,7 +120,7 @@ export function neighbors(
   return { prev, next, nextPlanned: following !== undefined && !following.available };
 }
 
-/** `planned` counts every entry in the track (the "of 20" in "4 of 20 complete"). */
+/** `planned` counts every entry in the track (the "of 20" in a track's lesson count). */
 export function trackTotals(entries: LessonSummary[]): { available: number; planned: number } {
   return { available: entries.filter((e) => e.available).length, planned: entries.length };
 }

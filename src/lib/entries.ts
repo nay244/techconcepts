@@ -1,8 +1,9 @@
 import type { LessonSummary } from '../content/registry';
 import type { LessonProgress } from '../progress/store';
+import { STATUS_WORDS } from './hub';
 
 /** The words shown beside a lesson that has saved progress. */
-export const STATUS_TEXT: Record<LessonProgress['status'], string> = { finished: 'Finished', 'in-progress': 'In progress' };
+export const STATUS_TEXT: Record<LessonProgress['status'], string> = { finished: STATUS_WORDS.done, 'in-progress': STATUS_WORDS['in-progress'] };
 
 /** Consecutive entries that share a part, in order. */
 export function byPart(entries: LessonSummary[]): { title: string; entries: LessonSummary[] }[] {

@@ -4,6 +4,7 @@ import type { Lesson } from '../content/schema';
 import { usePlayback } from '../engine/playback';
 import { deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
+import { STATUS_WORDS } from '../lib/hub';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import { DRIVERS } from '../scenes/drivers';
@@ -46,10 +47,7 @@ const NO_PICKS: Picks = {};
 function FinishedMarker() {
   return (
     <p className="explain__finished">
-      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-        <path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      Finished
+      {STATUS_WORDS.done}
     </p>
   );
 }

@@ -59,7 +59,7 @@ const GREEN_TEXT: GreenText[] = [
   },
   // "Right." in the feedback under the options, on the Explanation panel.
   { source: 'console.css', selector: '.practice__feedback b', grounds: (theme) => ({ card: tokens[theme].card }) },
-  // "Finished" in the All lessons list: on the dialog, on a row under the pointer, and on the current lesson's row.
+  // "✓ Done" in the All lessons list: on the dialog, on a row under the pointer, and on the current lesson's row.
   {
     source: 'console.css',
     selector: ".outline__lesson-status[data-status='finished']",
@@ -79,7 +79,7 @@ const GREEN_TEXT: GreenText[] = [
     selector: ".outline__item[data-state='done'] .outline__mark",
     grounds: (theme) => ({ card: tokens[theme].card, 'row on hover': tokens[theme].tile }),
   },
-  // "Finished" above a finished lesson's Overview, on the Explanation panel.
+  // "✓ Done" above a finished lesson's Overview, on the Explanation panel.
   { source: 'console.css', selector: '.explain__finished', grounds: (theme) => ({ card: tokens[theme].card }) },
   // A lesson card's Finished badge, on its own green tint over the card.
   { source: 'site.css', selector: '.badge.done', grounds: (theme) => ({ badge: mix(tokens[theme].allowed, tokens[theme].card, 10) }) },

@@ -67,7 +67,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <style is:inline set:html={tokensToCss()} />
     {
       /* Without JavaScript nothing can switch the theme or play a lesson, so those controls are hidden: the
-         header's theme toggle; and in the lesson console its Light/Dark switch, the view switch, the playback
+         header's theme toggle (the console's too); and in the lesson console the view switch, the playback
          controls, and the log's "Press Play" words, where LogPanel's own no-script note says the lesson needs
          JavaScript. The page's stylesheets load after this one and set these controls' display at the same
          specificity, so the rules are !important.

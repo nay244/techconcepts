@@ -325,7 +325,7 @@ test('the end row names the next ready lesson, or says the last ready one for no
   expect(within(explanation()).getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
 });
 
-test('a saved lesson offers Resume at its furthest step; a finished one says Finished', async () => {
+test('a saved lesson offers Resume at its furthest step; a finished one says ✓ Done', async () => {
   save({ status: 'in-progress', furthestPosition: 2 });
   const { unmount } = renderConsole();
   await user.click(screen.getByRole('button', { name: 'Resume at step 2 of 5' }));
@@ -334,7 +334,7 @@ test('a saved lesson offers Resume at its furthest step; a finished one says Fin
 
   save({ status: 'finished', furthestPosition: 7 });
   renderConsole();
-  expect(within(explanation()).getByText('Finished')).toBeInTheDocument();
+  expect(within(explanation()).getByText('✓ Done')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /^Resume at/ })).toBeNull();
 });
 
@@ -451,7 +451,7 @@ test('the outline moves the lesson, and All 19 lessons opens the track list in a
   const dialog = screen.getByRole('dialog', { name: 'All 19 lessons' });
   expect(within(dialog).getByRole('link', { name: /Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   expect(within(dialog).getByRole('link', { name: /DHCP/ })).toHaveAttribute('aria-current', 'page');
-  expect(within(dialog).getAllByText('Coming soon')).toHaveLength(17);
+  expect(within(dialog).getAllByText('Not ready yet')).toHaveLength(17);
   await user.click(within(dialog).getByRole('button', { name: 'Close' }));
   expect(dialog).not.toHaveAttribute('open');
 });

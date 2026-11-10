@@ -3,7 +3,7 @@ import '../components/site.css';
 import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
 import { positionOf, type Position, type Slot } from '../engine/timeline';
-import { lessonLine } from '../lib/hub';
+import { lessonLine, UP_NEXT_KICKER } from '../lib/hub';
 import { wrapAtDots } from '../lib/wrapAtDots';
 import { placeLabel } from './placeLabel';
 import { Practice, questionsTitle, type Picks } from './Practice';
@@ -19,7 +19,7 @@ export interface ExplanationProps {
   /** What the position shows, and its unit (the console's derived state). */
   slot: Slot;
   unit: Unit;
-  /** Shown on the lesson's first Overview: the "Resume at …" button or the "Finished" marker. */
+  /** Shown on the lesson's first Overview: the "Resume at …" button or the "✓ Done" marker. */
   resume?: ReactNode;
   /** The next ready lesson in the track, or null when this is the last one. */
   next: AvailableSummary | null;
@@ -181,7 +181,7 @@ function EndRow({ lesson, unit, next, nextFigure, number, total, trackUrl, onJum
           {/* The art is decoration; the link's name reads "Up next", the title, then the line. */}
           <span className="upnext__art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: nextFigure ?? '' }} />
           <span className="upnext__text">
-            <span className="upnext__k">Up next</span>{' '}
+            <span className="upnext__k">{UP_NEXT_KICKER.next}</span>{' '}
             <b>{next.title}</b>{' '}
             <span className="upnext__line">{lessonLine(next)}</span>
           </span>
