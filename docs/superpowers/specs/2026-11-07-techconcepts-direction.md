@@ -1,5 +1,7 @@
 # TechConcepts: Direction after the Redesign
 
+> **Superseded in part, 2026-11-10.** The revamp's direction and roadmap are in `docs/direction.md`, which wins wherever the two differ. §3 (accuracy system), §4 (content model) and §5 (how a lesson is made) here still hold; §10's task order does not.
+
 - **Date:** 2026-11-07
 - **Status:** Agreed with the owner, 2026-11-07, in a structured "grill-me" interview (Q1–Q39 below)
 - **Builds on:** `2026-11-03-techconcepts-networking-launch-design.md` (launch spec) and `2026-11-05-techconcepts-redesign-build-design.md` (redesign spec). Both still hold **unless this document changes them**. §9 lists every change.
