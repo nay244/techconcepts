@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: at the design gate since 2026-11-10.** Phase 1 is done: four prototypes and specs are in `prototypes/`, waiting for the owner's approval. No build unit has started.
+**Status: phase 2 (build) is running.** The owner approved all four designs on 2026-11-10, each with its recommended variant. They are frozen: a builder implements them, and a change goes back to the designer.
 
 ## Inputs
 
@@ -30,6 +30,17 @@ D1 to D4 do not depend on each other and run in parallel, each after S1.
 ## Design gate
 
 The orchestrator shows the owner the four prototypes and specs, with each one's recommendation and open questions, and stops. Approval freezes a design.
+
+**Approved 2026-11-10 ("Approve all"):**
+
+| Design | Approved variant | Where the designer's open questions stand |
+|---|---|---|
+| D1 | B: wider words, and the log folded while reading | The log starts folded, as the spec says. |
+| D2 | A: the table in its own tab | Tabs are named by kind, and OSI Model's strip is hidden in Learn and Practice on a phone, both as the spec says. Subnetting's bits board is not in this job. |
+| D3 | A: the phone layout grown, and the desktop layout with the outline in a tab | A phone on its side keeps today's stacked page. Above 760px the stamp shows in the top bar and, from D2, on the Overview's first line. |
+| D4 | A: the light ground | A text description of the image (`og:image:alt`) is not in B4. |
+
+The owner was shown these questions with the designs and approved without changing an answer, so each stands as its spec has it.
 
 ## Phase 2: build
 
