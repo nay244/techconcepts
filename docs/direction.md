@@ -260,7 +260,7 @@ The owner, 2026-11-10: "Do not reference the old homepage layout. Create your ow
 - The separate Watch, Learn and Practice cards. The demo is all three.
 - The header's "How it works" and "Questions" links are now "How a lesson works" (the demo) and "Sources".
 
-**Measured, 1440×900 and 375×812.** The page is 4,134px tall on desktop and 5,421px on a phone, from 5,530px and 7,722px. Its HTML is 93 KB gzipped, from 145 KB. No sideways scroll at either size; every control in the demo is at least 44px tall.
+**Measured, 1440×900 and 375×812.** The page is 4,218px tall on desktop and 5,421px on a phone, from 5,530px and 7,722px. Its HTML is 93 KB gzipped, from 145 KB. No sideways scroll at either size; every control in the demo is at least 44px tall.
 
 **Kept from the owner's earlier decisions:** no Continue or resume link, nothing that reads progress, no exam tags, no time figures.
 
