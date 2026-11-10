@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import { emptyProgress, type LessonProgress, type ProgressData } from '../progress/store';
-import { STATUS_WORDS, UP_NEXT_KICKER, actionLabel, lessonHref, lessonStatus, stripStates, stripWords, upNext } from './hub';
+import { STATUS_WORDS, UP_NEXT_KICKER, actionLabel, lessonHref, lessonLine, lessonStatus, stripStates, stripWords, upNext } from './hub';
 
 function ready(key: string, n: number, maxPosition = 12): AvailableSummary {
   return {
@@ -131,4 +131,11 @@ describe('actionLabel', () => {
 it('pins the status words and the up-next kickers', () => {
   expect(STATUS_WORDS).toEqual({ 'not-started': 'Not started', 'in-progress': 'In progress', done: '✓ Done', 'not-ready': 'Not ready yet' });
   expect(UP_NEXT_KICKER).toEqual({ start: 'Start here', next: 'Up next', 'done-so-far': '✓ Done so far' });
+});
+
+describe('lessonLine', () => {
+  it('is the two-digit lesson number and the subtitle', () => {
+    expect(lessonLine({ ...ready('a', 9), subtitle: 'Getting an address automatically' })).toBe('Lesson 09 · Getting an address automatically');
+    expect(lessonLine({ ...ready('b', 12), subtitle: 'x' })).toBe('Lesson 12 · x');
+  });
 });

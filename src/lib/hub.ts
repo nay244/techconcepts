@@ -97,6 +97,11 @@ export function actionLabel(status: LessonStatus): 'Start' | 'Continue' | 'Watch
   return 'Start';
 }
 
+/** The line under an up-next title, such as `Lesson 09 · Getting an address automatically`. */
+export function lessonLine(entry: AvailableSummary): string {
+  return `Lesson ${String(entry.number).padStart(2, '0')} · ${entry.subtitle}`;
+}
+
 /** The small heading above the up-next lesson. */
 export const UP_NEXT_KICKER: Record<UpNextKind, string> = {
   start: 'Start here',
