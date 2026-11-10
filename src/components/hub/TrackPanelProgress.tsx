@@ -50,7 +50,8 @@ export default function TrackPanelProgress(props: Props) {
     );
     card = (
       <a className="next lift" href={href}>
-        <span className="next__art l-art" aria-hidden="true">
+        {/* Keyed by lesson: Astro's slot wrapper never re-renders, so a new lesson's figure needs a fresh mount. */}
+        <span key={entry.key} className="next__art l-art" aria-hidden="true">
           {props[`art${entry.number}`]}
         </span>
         <span>

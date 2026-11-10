@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
+import { memo } from 'react';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildEntries } from '../../content/registry';
 import type { AvailableSummary } from '../../content/registry';
@@ -50,6 +51,27 @@ describe('TrackPanelProgress', () => {
     expect(cardOf()).toHaveAttribute('href', `${dhcp.url}?step=4`);
     expect(cardOf().textContent).toContain('Lesson ' + String(dhcp.number).padStart(2, '0') + ' · Getting an address automatically');
     expect(document.querySelectorAll('.strip__sq i[data-state="current"]')).toHaveLength(1);
+  });
+
+  test('the card swaps its figure when progress loads, though a slot never re-renders', () => {
+    // Astro hands each slot over as static HTML wrapped in a component that never updates (React.memo, () => true), so
+    // the first-visit figure would stay put unless the card's art is remounted for the new lesson.
+    const Frozen = memo(({ id }: { id: string }) => <svg data-testid={id} />, () => true);
+    const later = available[1]!;
+    seedProgress({ [later.key]: { status: 'in-progress', furthestPosition: 2 } }, later.key);
+    render(
+      <TrackPanelProgress
+        entries={entries}
+        known={known}
+        trackUrl="/networking"
+        {...{ [`art${first.number}`]: <Frozen id="first" />, [`art${later.number}`]: <Frozen id="later" /> }}
+      >
+        {null}
+      </TrackPanelProgress>,
+    );
+    expect(cardOf()).toHaveAttribute('href', `${later.url}?step=2`);
+    expect(within(cardOf() as HTMLElement).getByTestId('later')).toBeInTheDocument();
+    expect(within(cardOf() as HTMLElement).queryByTestId('first')).toBeNull();
   });
 
   test('a finished lesson makes the next unfinished one Start', () => {

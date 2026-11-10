@@ -59,6 +59,64 @@
 .accent {
   color: var(--accent);
 }
+
+/* ---- The insideout pages' display heading, small mono label and chip (Home, Tracks, the track panels) ---- */
+/* A big heading; the words in `em` are set in the accent. Each page sets its size. */
+.disp {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+}
+.disp em {
+  color: var(--accent);
+  font-style: normal;
+}
+.label {
+  margin: 0;
+  color: var(--muted);
+  font: 700 11.5px/1.2 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.label--here {
+  color: var(--here);
+}
+.h-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  color: var(--accent);
+  font: 700 11px/1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.h-chip--plain {
+  background: var(--card-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+}
+
+/* A How the Internet Works lesson's name tile (src/art/figures/name-tile.ts), on every page that shows its card: the
+   drawing carries no colours or type of its own. */
+.name-tile .nt-name {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  fill: var(--ink-strong);
+}
+.name-tile .nt-rule {
+  fill: var(--accent);
+}
+.name-tile .nt-full {
+  font: 500 22px var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  fill: var(--muted);
+}
 .card {
   border: 1px solid var(--line);
   border-radius: 16px;
