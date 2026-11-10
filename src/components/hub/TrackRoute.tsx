@@ -4,6 +4,7 @@ import { STATUS_WORDS, actionLabel, lessonHref, lessonStatus } from '../../lib/h
 import type { ReadyLesson, SoonLesson, TrackPart } from '../../lib/track';
 import { resumePosition, type ProgressData } from '../../progress/store';
 import '../site.css';
+import './hub.css';
 import PartsMarker from './PartsMarker';
 import { useUpNext } from './useUpNext';
 
@@ -53,7 +54,7 @@ export default function TrackRoute(props: Props) {
             </h2>
             <p>{`${part.lessons.length} ${part.lessons.length === 1 ? 'lesson' : 'lessons'}`}</p>
           </header>
-          <ol className="route-stops">
+          <ol className="route-stops" role="list">
             {part.lessons.map((lesson) =>
               lesson.ready ? (
                 <ReadyStop

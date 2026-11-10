@@ -109,7 +109,7 @@ describe('TrackRoute', () => {
     expect(levels.every((l) => l === 2 || l === 3)).toBe(true);
   });
 
-  test('a stop swaps its figure when progress loads, though a slot never re-renders', () => {
+  test('a stop shows its lesson figure, in a keyed element', () => {
     const Frozen = memo(({ id }: { id: string }) => <svg data-testid={id} />, () => true);
     seedProgress({ 'osi-model': { status: 'in-progress', furthestPosition: osiLearn } }, 'osi-model');
     render(route({ [`art${osi.number}`]: <Frozen id="osi" /> }));
@@ -123,6 +123,7 @@ describe('TrackRoute', () => {
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
       throw new DOMException('blocked', 'SecurityError');
     });
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.resetModules();
     const { default: Blocked } = await import('./TrackRoute');
     render(<Blocked parts={parts} entries={entries} known={known} />);
@@ -130,6 +131,16 @@ describe('TrackRoute', () => {
     expect(within(stop).getByText('Not started')).toBeInTheDocument();
     expect(within(stop).getByRole('link', { name: 'Start' })).toHaveClass('btn--primary');
     expect(document.querySelector('.stop--now')).toBeNull();
+    expect(errors).not.toHaveBeenCalled();
+  });
+
+  test('every ready lesson done: the last stop is done, not amber, and offers Watch again as primary', () => {
+    seedProgress(Object.fromEntries(ready.map((e) => [e.key, { status: 'finished' as const, furthestPosition: e.maxPosition }])), ready.at(-1)!.key);
+    render(route());
+    const last = stopOf(ready.at(-1)!.title);
+    expect(last).toHaveClass('stop--done');
+    expect(document.querySelector('.stop--now')).toBeNull();
+    expect(within(last).getByRole('link', { name: 'Watch again' })).toHaveClass('btn--primary');
   });
 
   test('hydrates the first-visit server render with saved progress and no mismatch, then shows the up-next stop', async () => {

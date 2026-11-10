@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { LessonSummary } from '../../content/registry';
 import { UP_NEXT_KICKER, lessonLine, stripStates, stripWords } from '../../lib/hub';
 import '../site.css';
+import './hub.css';
 import TrackStrip from './TrackStrip';
 import { useUpNext } from './useUpNext';
 

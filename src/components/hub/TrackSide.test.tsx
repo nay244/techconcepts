@@ -82,11 +82,13 @@ describe('TrackSide', () => {
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
       throw new DOMException('blocked', 'SecurityError');
     });
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.resetModules();
     const { default: Blocked } = await import('./TrackSide');
     render(<Blocked entries={entries} known={known} />);
     expect(within(cardOf()).getByText('Start here')).toBeInTheDocument();
     expect(within(cardOf()).getByRole('link', { name: 'Start' })).toHaveAttribute('href', first.url);
+    expect(errors).not.toHaveBeenCalled();
   });
 
   test('hydrates the first-visit server render with saved progress and no mismatch, then shows the lesson to continue', async () => {

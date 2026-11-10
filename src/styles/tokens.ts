@@ -19,6 +19,7 @@ export type TokenName =
   | 'accent-line'
   | 'here'
   | 'here-soft'
+  | 'here-ink'
   | 'focus'
   | 'dot'
   | 'shadow-sm'
@@ -76,6 +77,7 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     'accent-line': 'rgba(31, 99, 192, 0.22)',
     here: '#9b6200',
     'here-soft': 'rgba(214, 146, 20, 0.12)',
+    'here-ink': '#ffffff',
     focus: '#0b1a33',
     dot: 'rgba(31, 99, 192, 0.16)',
     'shadow-sm': '0 1px 2px rgba(11, 26, 51, 0.04), 0 8px 24px -12px rgba(11, 26, 51, 0.16)',
@@ -110,6 +112,7 @@ export const tokens: Record<Theme, Record<TokenName, string>> = {
     'accent-line': 'rgba(90, 169, 255, 0.30)',
     here: '#f5b83d',
     'here-soft': 'rgba(245, 184, 61, 0.12)',
+    'here-ink': '#1a1205',
     focus: '#ffffff',
     dot: 'rgba(127, 176, 234, 0.16)',
     'shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6)',

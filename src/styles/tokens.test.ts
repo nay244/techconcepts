@@ -57,7 +57,7 @@ const EXCEPTION = { theme: 'light', a: 'response', b: 'blocked', min: 0.07 } as 
 
 const SITE = [
   'bg', 'bg-soft', 'card', 'card-2', 'tile', 'line', 'line-strong', 'ink', 'ink-strong', 'muted', 'accent', 'accent-ink',
-  'accent-soft', 'accent-line', 'here', 'here-soft', 'focus', 'dot', 'shadow-sm', 'shadow-lg', 'btn-shadow',
+  'accent-soft', 'accent-line', 'here', 'here-soft', 'here-ink', 'focus', 'dot', 'shadow-sm', 'shadow-lg', 'btn-shadow',
   'allowed-text',
 ] as const;
 
