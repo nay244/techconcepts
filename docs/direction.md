@@ -50,17 +50,21 @@ One phase at a time, in this order. Each item is its own branch off `revamp` and
 - `CLAUDE.md` written (the audit found the repo had none).
 - This document.
 
-### Phase 1: an honest baseline — TODO
+### Phase 1: an honest baseline — DONE 2026-11-10
 
 Four of the five audit plans, kept in the original project's `plans/` folder. Bring each plan's text into the branch that carries it out. Plan 005 (the track page draws each lesson figure once) moves to phase 2: that page gets a new layout there, and the new one is built to the plan's target from the start.
 
-| Item | Done when |
-|---|---|
-| 001 CI on every pull request and push to `main` | the workflow file parses and each command in it passes locally |
-| 002 The About page says only what the site does today | About reads "1 of 18 lessons" checked, from the data |
-| 003 README and deploy doc match the code | every stale passage plan 003 lists is corrected |
-| 004 Header theme button without React | Home and 404 JavaScript drops from about 73 KB to about 1 KB |
-| The preview tells search engines to stay away | the `.workers.dev` build serves a noindex signal and the canonical links stop pointing at a domain that is not connected |
+| Item | Branch | Result |
+|---|---|---|
+| 001 CI on every pull request and push to `main` or `revamp` | `chore/ci-workflow` | The workflow parses and each command in it passes here. It has not run on GitHub: nothing is pushed. |
+| 002 The About page says only what the site does today | `fix/about-claims` | About counts 7 tracks and says "So far 1 of 18 lessons has also been through an independent check", worked out from the content. |
+| 003 README and deploy doc match the code | `docs/readme-refresh` | All 17 stale statements corrected. |
+| 004 Header theme button without React | `feat/theme-button-without-react` | Home and 404 load 1.3 KB of JavaScript, down from 73.0 KB. |
+| `workers.dev` addresses tell search engines to stay away | `chore/preview-noindex` | `public/_headers` sends `X-Robots-Tag: noindex` on every `workers.dev` host. Not yet seen on Cloudflare: check with `curl -I` on the preview after the first push. |
+
+The canonical links still name `techconcepts.app`. That is right once the domain is connected and has no effect on a page that is not indexed, so they stay. Known and left for launch: `og:image` and `og:url` also name that domain, so a link to the preview shared today shows no picture.
+
+Each branch is merged into `revamp` here. After all five: 1,334 unit tests pass, all 25 pages build within budget, and the full end-to-end run across the seven projects ends with 778 passed and none failed (141 skipped by design: playback checks run in two projects only).
 
 ### Phase 2: a new look and new layouts, on phone and desktop together — TODO
 
