@@ -51,7 +51,7 @@ const soonArt = (id: CoverId): string => cropViewBox(coverStill(id, `tracks-${id
               <p class="panel__who">{c.blurb}</p>
               <span class="h-chip h-chip--plain panel__chip">{STATUS_WORDS['not-ready']}</span>
               <div class="panel__cta">
-                <span class="btn panel__off" aria-disabled="true">Lessons on the way</span>
+                <span class="btn panel__off">Lessons on the way</span>
               </div>
               <div class="next next--soon">
                 <span class="next__art" aria-hidden="true" set:html={soonArt(c.cover)} />
@@ -149,9 +149,12 @@ const soonArt = (id: CoverId): string => cropViewBox(coverStill(id, `tracks-${id
     justify-self: start;
     margin-top: 26px;
   }
+  /* A plain span shaped like a button, muted so it does not read as one to press: no link, no focus, no hover. */
   .panel__off,
   .panel__off:hover {
+    border-color: var(--line);
     background: var(--card);
+    color: var(--muted);
     cursor: default;
   }
   .panel__off:active {

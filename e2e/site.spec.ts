@@ -376,8 +376,9 @@ test.describe('desktop', () => {
       await expect(aplus).toContainText('Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.');
       await expect(aplus.locator('.h-chip')).toHaveText('Not ready yet');
       const soon = aplus.getByText('Lessons on the way', { exact: true });
-      await expect(soon).toHaveAttribute('aria-disabled', 'true');
+      // A plain span, not a control: nothing to press and nothing to focus.
       expect(await soon.evaluate((el) => el.tagName)).toBe('SPAN');
+      await expect(soon).not.toHaveAttribute('role');
       await expect(soon).not.toHaveAttribute('tabindex');
       const card = aplus.locator('.next');
       await expect(card.locator('.next__k')).toHaveText('Coming soon');
@@ -513,8 +514,12 @@ test.describe('desktop', () => {
     await expect(networking.locator('.strip__w')).toHaveText('1 of 19 lessons done · 4 ready');
     await expect(networking.locator('.strip__sq i[data-state="done"]')).toHaveCount(1);
     await expect(networking.locator('a.next .next__k')).toHaveText('Up next');
-    await expect(networking.locator('a.next .next__t')).not.toHaveText('DHCP');
+    // The next lesson is the first ready one in the track's order that is not done: here, the first that is not DHCP.
+    const nextUp = NETWORKING_LESSONS.find((lesson) => lesson.slug !== 'dhcp')!;
+    await expect(networking.locator('a.next .next__t')).toHaveText(nextUp.title);
+    await expect(networking.locator('a.next')).toHaveAttribute('href', nextUp.path);
     await expect(networking.locator('.panel__cta .btn')).toHaveText('Start');
+    await expect(networking.locator('.panel__cta .btn')).toHaveAttribute('href', nextUp.path);
     await expect(panelOf(page, 'how-the-internet-works').locator('.strip__w')).toHaveText('0 of 14 lessons done');
     await expect(panelOf(page, 'how-the-internet-works').locator('a.next .next__k')).toHaveText('Start here');
 

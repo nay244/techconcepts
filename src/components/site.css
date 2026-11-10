@@ -61,6 +61,8 @@
 }
 
 /* ---- The insideout pages' display heading, small mono label and chip (Home, Tracks, the track panels) ---- */
+/* These are global, on every page that loads site.css: lesson components and other islands must not use the class
+   names .disp, .label or .h-chip for anything else. */
 /* A big heading; the words in `em` are set in the accent. Each page sets its size. */
 .disp {
   margin: 0;
