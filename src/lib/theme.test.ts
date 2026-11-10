@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { THEME_KEY, applyTheme, readAppliedTheme, themeBootScript, useTheme } from './theme';
+import { THEME_KEY, applyTheme, readAppliedTheme, themeBootScript } from './theme';
+import { useTheme } from './useTheme';
 
 test('the theme key is namespaced', () => {
   expect(THEME_KEY).toBe('techconcepts:theme');

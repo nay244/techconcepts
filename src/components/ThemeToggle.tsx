@@ -1,5 +1,6 @@
 import { createSafeStorage } from '../lib/storage';
-import { THEME_KEY, applyTheme, useTheme } from '../lib/theme';
+import { THEME_KEY, applyTheme } from '../lib/theme';
+import { useTheme } from '../lib/useTheme';
 import type { Theme } from '../lib/theme';
 import './ThemeToggle.css';
 

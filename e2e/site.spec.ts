@@ -287,6 +287,23 @@ test.describe('desktop', () => {
     }
   });
 
+  test("the header's theme button switches the theme, saves it, and names the theme it switches to", async ({ page }) => {
+    await open(page, '/');
+    const html = page.locator('html');
+    const before = (await html.getAttribute('data-theme')) === 'light' ? 'light' : 'dark';
+    const after = before === 'dark' ? 'light' : 'dark';
+    const button = page.locator('.site-head .theme-toggle');
+    await expect(button).toHaveAccessibleName(`Switch to ${after} theme`);
+    await button.click();
+    await expect(html).toHaveAttribute('data-theme', after);
+    await expect(button).toHaveAccessibleName(`Switch to ${before} theme`);
+    expect(await page.evaluate(() => window.localStorage.getItem('techconcepts:theme'))).toBe(after);
+    // The choice holds on the next page, where the button is wired afresh.
+    await open(page, '/about');
+    await expect(html).toHaveAttribute('data-theme', after);
+    await expect(page.locator('.site-head .theme-toggle')).toHaveAccessibleName(`Switch to ${before} theme`);
+  });
+
   test('the header links are Tracks, How it works, Questions and About', async ({ page }) => {
     for (const { path } of SITE_PAGES) {
       await open(page, path);

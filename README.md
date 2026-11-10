@@ -47,7 +47,7 @@ On GitHub, every pull request and every push to `main` or `revamp` runs `npm tes
 - `src/lesson/` the lesson console: the top bar, the outline, the explanation (Overview, each Watch step, Learn, Go deeper), Practice, the playback controls, the scene and its log, `panels/` (a table, a firewall's rules, the bits board, the headers a message carries) and the keyboard shortcuts
 - `src/progress/` saved progress (`techconcepts:v2`, keyed by lesson slug), the hook that reads it, and `internet-split.ts`, which turns progress saved in the old one-lesson How the Internet Works into its 14 lessons
 - `src/lib/` small helpers, mostly plain TypeScript: safe storage, the theme, contrast maths (for the colour tests), analytics, formatting, page addresses, the data Home, Tracks, the track page and About show, `hub.ts` (each lesson's status and the lesson to take next), `figures.ts` (the figure on each lesson's card), and `wrapAtDots.tsx`, a React helper that lets an address wrap only at its dots
-- `src/scripts/` small page scripts that run without React: the header that turns solid on scroll (`site-head.ts`) and About's "On this page" list (`about-toc.ts`)
+- `src/scripts/` small page scripts that run without React: the header that turns solid on scroll (`site-head.ts`) and About's "On this page" list (`about-toc.ts`), and the header's theme button (`theme-toggle.ts`)
 - `src/styles/` colour tokens (`tokens.ts`) and base CSS (`global.css`)
 - `src/test/` helpers the tests share
 - `e2e/` Playwright tests; `scripts/` tools (the budgets check and the social image); `docs/deploy.md` deploying to Cloudflare; `docs/content-model.md` the authoring reference for sources, citations, lessons, limits and tracks
