@@ -419,26 +419,11 @@ const figures = available.map((entry) => ({ slot: `art${entry.number}`, svg: les
     width: 100%;
     height: 100%;
   }
-  /* A How the Internet Works card's name tile (src/art/figures/name-tile.ts): the dot grid sits behind it here, so the
-     drawing needs no ids. */
+  /* A How the Internet Works card's name tile (src/art/figures/name-tile.ts; its type and colours are site.css's): the
+     dot grid sits behind it here, so the drawing needs no ids. */
   .l-art:has(.name-tile) {
     background-image: radial-gradient(var(--dot) 1.4px, transparent 1.6px);
     background-size: 11px 11px;
-  }
-  .name-tile .nt-name {
-    font-family: var(--mono);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    fill: var(--ink-strong);
-  }
-  .name-tile .nt-rule {
-    fill: var(--accent);
-  }
-  .name-tile .nt-full {
-    font: 500 22px var(--mono);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    fill: var(--muted);
   }
   .l-body {
     display: flex;

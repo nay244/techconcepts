@@ -34,8 +34,9 @@ const trackCards = (page: Page) => page.locator('#tracks .home-tracks > li > a.h
 /** The lesson Home shows from the inside, and links into at each of its parts. */
 const OSI_PATH = '/networking/osi-model';
 /** Every lesson the track lists, ready or not, in the order it lists them. */
-/** The Tracks page's cards: a link for a track with lessons, a plain card for one still being written. */
-const tracksPageCards = (page: Page) => page.locator('.tp-grid > li > .tcard');
+/** The Tracks page's panels, one per track, in Home's order. */
+const trackPanels = (page: Page) => page.locator('main article.panel');
+const panelOf = (page: Page, id: string) => page.locator(`main article.panel#${id}`);
 const headerTracksLink = (page: Page) => page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Tracks', exact: true });
 const trackItems = (page: Page) => page.locator('main ol.lessons > li, main ol.soon-list > li');
 const trackEyebrow = (page: Page) => page.locator('.t-hero .eyebrow');
@@ -288,37 +289,106 @@ test.describe('desktop', () => {
   });
 
   test.describe('Tracks page', () => {
-    test('How the Internet Works comes first, flagged Start here; Networking has "19 lessons · 4 ready"; A+ is no link and says "Being written"', async ({ page }) => {
+    test("Tracks: How the Internet Works then Networking then A+, each panel id'd for Home's links", async ({ page }) => {
       await open(page, '/tracks');
       await expect(page).toHaveTitle('Tracks · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pick a track');
-      await expect(tracksPageCards(page).getByRole('heading', { level: 2 })).toHaveText(['How the Internet Works', 'Networking Concepts', 'CompTIA A+']);
+      await expect(page.locator('main')).toContainText('Each track is a set of short visual lessons, taken in order.');
+      expect(await trackPanels(page).evaluateAll((panels) => panels.map((p) => p.id))).toEqual(['how-the-internet-works', 'networking', 'comptia-a-plus']);
+      await expect(trackPanels(page).getByRole('heading', { level: 2 })).toHaveText(['How the Internet Works', 'Networking Concepts', 'CompTIA A+']);
+      // A track's name links to its page; A+ has no page yet.
+      await expect(panelOf(page, 'how-the-internet-works').getByRole('heading', { level: 2 }).getByRole('link')).toHaveAttribute('href', INTERNET_TRACK);
+      await expect(panelOf(page, 'networking').getByRole('heading', { level: 2 }).getByRole('link')).toHaveAttribute('href', '/networking');
+      await expect(panelOf(page, 'comptia-a-plus').getByRole('heading', { level: 2 }).getByRole('link')).toHaveCount(0);
+      for (const id of ['how-the-internet-works', 'networking']) {
+        await expect(panelOf(page, id).getByRole('link', { name: 'See the whole track', exact: true }), id).toHaveAttribute('href', `/${id}`);
+      }
 
-      const internet = tracksPageCards(page).nth(0);
-      await expect(internet).toHaveAttribute('href', INTERNET_TRACK);
-      await expect(internet.locator('.kind')).toHaveText('Concept track · Beginner');
-      await expect(internet.locator('.count')).toHaveText('14 lessons · 14 ready');
-      await expect(internet.locator('.flag.start')).toHaveText('Start here');
-      // Only the first card says where to start.
-      await expect(page.locator('.tp-grid .flag.start')).toHaveCount(1);
+      // The closing line points a newcomer at the first two panels.
+      const outro = page.locator('main .outro');
+      await expect(outro).toHaveText(
+        'New to IT? Start with How the Internet Works, then go deeper with Networking Concepts. Every lesson is Watch, Learn, then Practice.',
+      );
+      await expect(outro.getByRole('link', { name: 'How the Internet Works', exact: true })).toHaveAttribute('href', '#how-the-internet-works');
+      await expect(outro.getByRole('link', { name: 'Networking Concepts', exact: true })).toHaveAttribute('href', '#networking');
 
-      const networking = tracksPageCards(page).nth(1);
-      await expect(networking).toHaveAttribute('href', '/networking');
-      await expect(networking.locator('.kind')).toHaveText('Concept track · Beginner');
-      await expect(networking.locator('.count')).toHaveText('19 lessons · 4 ready');
-      await expect(networking.locator('.flag')).toHaveCount(0);
-      // A first visit: no tab, no ring.
-      await expect(page.locator('.tp-grid').locator('.tab-here, .ring')).toHaveCount(0);
+      // Home's links land each panel clear of the sticky header, once any smooth scroll has settled.
+      await open(page, '/tracks#networking');
+      const measure = () =>
+        page.evaluate(() => {
+          const panel = document.querySelector('#networking')!.getBoundingClientRect();
+          const head = document.querySelector('.site-head')!.getBoundingClientRect();
+          return { y: window.scrollY, panelTop: panel.top, headBottom: head.bottom };
+        });
+      await expect
+        .poll(async () => {
+          const a = await measure();
+          await page.waitForTimeout(120);
+          const b = await measure();
+          return a.y === b.y && b.y > 0;
+        }, { message: '#networking settles' })
+        .toBe(true);
+      const at = await measure();
+      expect(at.panelTop, "the Networking panel's top is below the header").toBeGreaterThanOrEqual(at.headBottom);
 
-      const aplus = tracksPageCards(page).nth(2);
-      await expect(aplus.locator('.kind')).toHaveText('Certification track · Beginner');
-      await expect(aplus.getByRole('heading', { level: 2 })).toHaveText('CompTIA A+');
-      await expect(aplus.locator('.flag')).toHaveText('Being written');
-      await expect(aplus.locator('.count')).toHaveText('No lessons yet');
-      expect(await aplus.evaluate((el) => el.tagName === 'DIV' && el.closest('a') === null && el.querySelector('a') === null)).toBe(true);
-
-      await networking.click();
+      await panelOf(page, 'networking').getByRole('heading', { level: 2 }).getByRole('link').click();
       await expect(page).toHaveURL(/\/networking$/);
+    });
+
+    test('Tracks: first visit says Start and Start here, the strip reads "0 of 19 lessons done · 4 ready"', async ({ page }) => {
+      await open(page, '/tracks');
+      const internet = panelOf(page, 'how-the-internet-works');
+      const networking = panelOf(page, 'networking');
+      await expect(internet.locator('.strip__w')).toHaveText('0 of 14 lessons done');
+      await expect(networking.locator('.strip__w')).toHaveText('0 of 19 lessons done · 4 ready');
+      await expect(internet.locator('.strip__sq i')).toHaveCount(14);
+      await expect(networking.locator('.strip__sq i')).toHaveCount(19);
+      // A first visit has no square marked current.
+      await expect(page.locator('main .strip__sq i[data-state="current"]')).toHaveCount(0);
+
+      const firstNetworking = NETWORKING_LESSONS[0]!.path;
+      for (const [panel, first] of [
+        [internet, START_PATH],
+        [networking, firstNetworking],
+      ] as const) {
+        await expect(panel.locator('.panel__cta .btn')).toHaveText('Start');
+        await expect(panel.locator('.panel__cta .btn')).toHaveAttribute('href', first);
+        const card = panel.locator('a.next');
+        await expect(card.locator('.next__k')).toHaveText('Start here');
+        await expect(card).toHaveAttribute('href', first);
+        await expect(card.locator('.next__art svg')).toHaveCount(1);
+      }
+      await expect(internet.locator('a.next .next__t')).toHaveText('HTTP');
+      await expect(internet.locator('a.next .next__s')).toHaveText(/^Lesson 01 · /);
+      // Nothing on the page offers to go on from somewhere.
+      await expect(page.getByRole('link', { name: /continue|resume/i })).toHaveCount(0);
+      await expect(page.locator('main')).not.toContainText(/Last opened|Up next|%/);
+
+      await networking.locator('a.next').click();
+      await expect(page).toHaveURL(new RegExp(`${firstNetworking}$`));
+      await expect(kicker(page)).toHaveText('Overview');
+    });
+
+    test('Tracks: A+ is Not ready yet with no lesson link', async ({ page }) => {
+      await open(page, '/tracks');
+      const aplus = panelOf(page, 'comptia-a-plus');
+      await expect(aplus.getByRole('heading', { level: 2 })).toHaveText('CompTIA A+');
+      await expect(aplus).toContainText('Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.');
+      await expect(aplus.locator('.h-chip')).toHaveText('Not ready yet');
+      const soon = aplus.getByText('Lessons on the way', { exact: true });
+      // A plain span, not a control: nothing to press and nothing to focus.
+      expect(await soon.evaluate((el) => el.tagName)).toBe('SPAN');
+      await expect(soon).not.toHaveAttribute('role');
+      await expect(soon).not.toHaveAttribute('tabindex');
+      const card = aplus.locator('.next');
+      await expect(card.locator('.next__k')).toHaveText('Coming soon');
+      await expect(card.locator('.next__t')).toHaveText('Lesson 1 is being written');
+      await expect(card.locator('.next__s')).toHaveText('Each lesson will follow the A+ exam objectives.');
+      await expect(card.locator('.next__art svg')).toHaveCount(1);
+      await expect(card).not.toHaveClass(/\blift\b/);
+      // No link and no control anywhere in the panel, and no strip: A+ has no lessons yet.
+      await expect(aplus.locator('a, button, [tabindex]')).toHaveCount(0);
+      await expect(aplus.locator('.strip')).toHaveCount(0);
     });
 
     test('the track page’s breadcrumb steps back to Tracks', async ({ page }) => {
@@ -419,7 +489,7 @@ test.describe('desktop', () => {
     });
   });
 
-  test('finishing DHCP shows Finished on the track and on Tracks, leaves Home as it was, and Clear my progress clears them', async ({ page }) => {
+  test('finishing DHCP shows Finished on the track and 1 of 19 done on Tracks, leaves Home as it was, and Clear my progress clears them', async ({ page }) => {
     const dhcp = LESSONS.find((lesson) => lesson.slug === 'dhcp');
     expect(dhcp, 'DHCP is a ready lesson').toBeDefined();
     await finishLesson(page, dhcp!.path);
@@ -437,12 +507,21 @@ test.describe('desktop', () => {
     await expect(trackCards(page).locator('.home-track__count')).toHaveText(['14 lessons', '4 of 19 lessons ready', 'Lessons on the way']);
     await expect(trackCards(page).nth(1).locator('.home-track__go')).toHaveText('See the lessons →');
 
-    // DHCP was opened last, in Networking: its card on Tracks wears the tab and fills its ring by 1 of 19.
+    // On Tracks, Networking's strip counts DHCP done, and its panel moves on to the next lesson not done; How the
+    // Internet Works still reads as a first visit.
     await open(page, '/tracks');
-    await expect(tracksPageCards(page).nth(1).locator('.tab-here')).toHaveText('Last opened');
-    await expect(tracksPageCards(page).nth(1).locator('.ring')).toHaveText('1 of 19 done');
-    await expect(tracksPageCards(page).nth(0).locator('.tab-here, .ring')).toHaveCount(0);
-    await expect(tracksPageCards(page).nth(2).locator('.tab-here, .ring')).toHaveCount(0);
+    const networking = panelOf(page, 'networking');
+    await expect(networking.locator('.strip__w')).toHaveText('1 of 19 lessons done · 4 ready');
+    await expect(networking.locator('.strip__sq i[data-state="done"]')).toHaveCount(1);
+    await expect(networking.locator('a.next .next__k')).toHaveText('Up next');
+    // The next lesson is the first ready one in the track's order that is not done: here, the first that is not DHCP.
+    const nextUp = NETWORKING_LESSONS.find((lesson) => lesson.slug !== 'dhcp')!;
+    await expect(networking.locator('a.next .next__t')).toHaveText(nextUp.title);
+    await expect(networking.locator('a.next')).toHaveAttribute('href', nextUp.path);
+    await expect(networking.locator('.panel__cta .btn')).toHaveText('Start');
+    await expect(networking.locator('.panel__cta .btn')).toHaveAttribute('href', nextUp.path);
+    await expect(panelOf(page, 'how-the-internet-works').locator('.strip__w')).toHaveText('0 of 14 lessons done');
+    await expect(panelOf(page, 'how-the-internet-works').locator('a.next .next__k')).toHaveText('Start here');
 
     await open(page, '/networking');
     await page.getByRole('button', { name: 'Clear my progress' }).click();
@@ -456,7 +535,8 @@ test.describe('desktop', () => {
     await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
     await expect(trackCards(page).nth(1).locator('.home-track__count')).toHaveText('4 of 19 lessons ready');
     await open(page, '/tracks');
-    await expect(page.locator('.tp-grid').locator('.tab-here, .ring')).toHaveCount(0);
+    await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('0 of 19 lessons done · 4 ready');
+    await expect(panelOf(page, 'networking').locator('a.next .next__k')).toHaveText('Start here');
   });
 
   test('progress saved before this update still shows, then moves to the new record', async ({ page }) => {
@@ -502,10 +582,19 @@ test.describe('desktop', () => {
     // The track's hero goes on where they were.
     await expect(page.getByRole('link', { name: 'Continue UDP' })).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
 
+    // Tracks goes on where they were too: How the Internet Works' panel continues UDP; Networking reads as a first visit.
     await open(page, '/tracks');
-    await expect(tracksPageCards(page).nth(0).locator('.tab-here')).toHaveText('Last opened');
-    await expect(tracksPageCards(page).nth(0).locator('.ring')).toHaveText('3 of 14 done');
-    await expect(tracksPageCards(page).nth(1).locator('.tab-here, .ring')).toHaveCount(0);
+    const internet = panelOf(page, 'how-the-internet-works');
+    await expect(internet.locator('.strip__w')).toHaveText('3 of 14 lessons done');
+    await expect(internet.locator('.panel__cta .btn')).toHaveText('Continue');
+    await expect(internet.locator('.panel__cta .btn')).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
+    await expect(internet.locator('a.next .next__k')).toHaveText('Up next');
+    await expect(internet.locator('a.next .next__t')).toHaveText('UDP');
+    // The card's figure follows: UDP's name tile, not the first visit's HTTP.
+    await expect(internet.locator('a.next .next__art svg.name-tile')).toHaveAttribute('aria-label', 'User Datagram Protocol');
+    await expect(internet.locator('.strip__sq i[data-state="current"]')).toHaveCount(1);
+    await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('0 of 19 lessons done · 4 ready');
+    await expect(panelOf(page, 'networking').locator('.panel__cta .btn')).toHaveText('Start');
 
     // Home says nothing of where they are: its first track card reads as on a first visit.
     await open(page, '/');

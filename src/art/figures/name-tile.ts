@@ -1,7 +1,8 @@
 /**
  * A How the Internet Works lesson card's picture (design 2026-11-08, mockup option A): the protocol's name set large
- * on the blueprint plate, a short rule in our blue under it, and its full name below. The look (type, colours, the dot
- * grid behind it) is the track page's CSS, so the drawing carries no ids and any number of tiles share one page.
+ * on the blueprint plate, a short rule in our blue under it, and its full name below. The look is CSS (type and colours
+ * in site.css, the dot grid behind it where each card sets it), so the drawing carries no ids and any number of tiles
+ * share one page.
  */
 
 const W = 528;

@@ -14,8 +14,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   try {
     const page = await browser.newPage({ baseURL });
     await page.goto('/tracks');
-    const trackPaths = await page.locator('main .tp-grid a.tcard').evaluateAll((cards) =>
-      cards.map((card) => new URL((card as HTMLAnchorElement).href).pathname),
+    const trackPaths = await page.locator('main article.panel h2 a').evaluateAll((links) =>
+      links.map((link) => new URL((link as HTMLAnchorElement).href).pathname),
     );
     if (trackPaths.length === 0) throw new Error('The Tracks page links to no track.');
     const lessons: ReadyLesson[] = [];

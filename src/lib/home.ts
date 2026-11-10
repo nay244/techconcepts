@@ -1,6 +1,6 @@
 // Home's words and pictures that are worked out from the tracks and lessons when the page is built: the track cards,
-// the OSI Model sheet "from the inside" with its links into each part, and the track card's blurb (Tracks uses it too),
-// and where a returning visitor is (the track page). Nothing here runs in the browser.
+// the OSI Model sheet "from the inside" with its links into each part, and where a returning visitor is (the track
+// page). Nothing here runs in the browser.
 import type { CoverId } from '../art/figures/covers';
 import { drawFigure } from '../art/scenes';
 import { fillLabels } from '../art/scenes/labels';
@@ -10,15 +10,10 @@ import { plannedTracks, tracks } from '../content/tracks';
 import { positionOf, resumeLabel, slotsFor } from '../engine/timeline';
 import { levelLabel } from './entries';
 import { STATUS_WORDS } from './hub';
+import { firstSentence } from './text';
 import { TRACK_COVERS } from './tracks-page';
 
 const two = (n: number): string => String(n).padStart(2, '0');
-
-/** The first sentence: up to the first full stop that a space follows, or all of it when there is no such stop. */
-export function firstSentence(text: string): string {
-  const end = text.indexOf('. ');
-  return end === -1 ? text : text.slice(0, end + 1);
-}
 
 // ---------------------------------------------------------------- track cards
 

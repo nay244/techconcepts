@@ -1,55 +1,43 @@
 import { expect, test } from 'vitest';
-import { trackCards } from './tracks-page';
+import { trackCards, type PlannedTrackCard, type ReadyTrackCard } from './tracks-page';
 
-const card = (id: string) => trackCards().find((c) => c.id === id)!;
+const ready = (id: string) => trackCards().find((c): c is ReadyTrackCard => c.ready && c.id === id)!;
 
 test('How the Internet Works first, then Networking, then A+', () => {
   expect(trackCards().map((c) => c.id)).toEqual(['how-the-internet-works', 'networking', 'comptia-a-plus']);
 });
 
-test('How the Internet Works wears the web cover, with all 14 lessons ready', () => {
-  expect(card('how-the-internet-works')).toMatchObject({
-    href: '/how-the-internet-works',
-    kind: 'Concept track · Beginner',
-    count: '14 lessons · 14 ready',
-    cover: 'web',
-    planned: 14,
-  });
-  expect(card('how-the-internet-works').blurb).toBe(
-    'Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each.',
-  );
-  expect(Object.keys(card('how-the-internet-works').known)).toHaveLength(14);
+test('How the Internet Works links to its page, with all 14 lessons ready and a figure for each', () => {
+  const card = ready('how-the-internet-works');
+  expect(card).toMatchObject({ ready: true, title: 'How the Internet Works', href: '/how-the-internet-works' });
+  expect(card.blurb).toBe('Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each.');
+  expect(card.entries).toHaveLength(14);
+  expect(Object.keys(card.known)).toHaveLength(14);
+  expect(card.figures.map((f) => f.slot)).toEqual(Array.from({ length: 14 }, (_, i) => `art${i + 1}`));
+  for (const { svg } of card.figures) expect(svg).toMatch(/^<svg/);
 });
 
-test('a ready track links to its page, with its counts and type', () => {
-  expect(card('networking')).toMatchObject({
-    href: '/networking',
-    kind: 'Concept track · Beginner',
-    count: '19 lessons · 4 ready',
-    flag: null,
-    planned: 19,
-    cover: 'networking',
-  });
-  expect(card('networking').blurb).toBe(
+test('a track with some lessons ready lists every lesson, and a figure for each ready one', () => {
+  const card = ready('networking');
+  expect(card).toMatchObject({ ready: true, title: 'Networking Concepts', href: '/networking' });
+  expect(card.blurb).toBe(
     'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
   );
-  // The progress island reads the ready lessons' last positions, as Home's card does.
-  expect(Object.keys(card('networking').known)).toHaveLength(4);
+  expect(card.entries).toHaveLength(19);
+  // The progress island reads the ready lessons' last positions, as the track page does.
+  expect(Object.keys(card.known)).toHaveLength(4);
+  const readyNumbers = card.entries.filter((e) => e.available).map((e) => `art${e.number}`);
+  expect(card.figures.map((f) => f.slot)).toEqual(readyNumbers);
+  for (const { svg } of card.figures) expect(svg).toMatch(/^<svg/);
 });
 
-test('a planned track is no link, says so, and has no progress', () => {
-  expect(card('comptia-a-plus')).toMatchObject({
-    href: null,
-    kind: 'Certification track · Beginner',
-    count: 'No lessons yet',
-    flag: 'Being written',
-    known: {},
-    planned: 0,
+test('a planned track is no link, has no lessons, and wears its cover', () => {
+  const card = trackCards().find((c) => c.id === 'comptia-a-plus') as PlannedTrackCard;
+  expect(card).toEqual({
+    ready: false,
+    id: 'comptia-a-plus',
+    title: 'CompTIA A+',
+    blurb: 'Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.',
     cover: 'aplus',
   });
-  expect(card('comptia-a-plus').blurb).toBe('Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.');
-});
-
-test('the first track is where to start', () => {
-  expect(trackCards().map((c) => c.start)).toEqual([true, false, false]);
 });

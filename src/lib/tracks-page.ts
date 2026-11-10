@@ -1,73 +1,62 @@
-// The Tracks page's cards, worked out from the tracks when the page is built. Nothing here runs in the browser.
+// The Tracks page's panels, worked out from the tracks when the page is built. Nothing here runs in the browser.
 import type { CoverId } from '../art/figures/covers';
-import { getEntries, trackTotals } from '../content/registry';
-import type { Track } from '../content/schema';
+import { getEntries, type AvailableSummary, type LessonSummary } from '../content/registry';
 import { plannedTracks, tracks } from '../content/tracks';
-import { knownFrom, levelLabel } from './entries';
-import { firstSentence } from './home';
+import { knownFrom } from './entries';
+import { lessonFigure } from './figures';
+import { firstSentence } from './text';
 
-/** The cover each track with lessons wears on its card. A new track needs one here before the page builds. */
+/** The cover each track with lessons wears on Home's card and its own page. A new track needs one here before the site builds. */
 export const TRACK_COVERS: Record<string, CoverId> = { 'how-the-internet-works': 'web', networking: 'networking' };
 
-export interface TrackCard {
+/** A track with lessons: its panel shows this visitor's progress and the lesson to take next. */
+export interface ReadyTrackCard {
+  ready: true;
+  /** The panel's id, which Home's track cards link to (`/tracks#<id>`). */
   id: string;
   title: string;
-  /** The track's page; null for a track that has no lessons yet. */
-  href: string | null;
-  /** 'Concept track · Beginner'. */
-  kind: string;
+  /** The track's own page. */
+  href: string;
+  /** Who it is for: the first sentence of the track's description. */
   blurb: string;
-  cover: CoverId;
-  /** '19 lessons · 3 ready', or 'No lessons yet'. */
-  count: string;
-  /** 'Being written' for a track with no lessons yet. */
-  flag: string | null;
-  /** True only for the first track, where a newcomer starts: its card is flagged "Start here". */
-  start: boolean;
-  /** Each ready lesson's key and last position, for the progress island; empty for a track with no lessons. */
+  /** Every lesson the track lists, ready or not, in order, for the progress island. */
+  entries: LessonSummary[];
+  /** Each ready lesson's key and last position, for the progress island. */
   known: Record<string, number>;
-  /** How many lessons the track plans; 0 for a track with no lessons. */
-  planned: number;
+  /** Each ready lesson's figure, for the island's slot named after the lesson's number (`art<number>`). */
+  figures: { slot: string; svg: string }[];
 }
 
-const kindOf = (type: Track['type'], level: Track['level']): string =>
-  `${type === 'concept' ? 'Concept' : 'Certification'} track · ${levelLabel(level)}`;
+/** A track with no lessons yet: no link, no progress, and our cover on its "Coming soon" card. */
+export interface PlannedTrackCard {
+  ready: false;
+  id: string;
+  title: string;
+  blurb: string;
+  cover: CoverId;
+}
+
+export type TrackCard = ReadyTrackCard | PlannedTrackCard;
 
 /** Every track with lessons, in Home's order, then the tracks still being written. */
 export function trackCards(): TrackCard[] {
-  const ready = tracks.map((track, i): TrackCard => {
-    const cover = TRACK_COVERS[track.id];
-    if (cover === undefined) throw new Error(`The ${track.id} track has no cover for the Tracks page.`);
+  const ready = tracks.map((track): ReadyTrackCard => {
     const entries = getEntries(track.id);
-    const { available, planned } = trackTotals(entries);
     return {
+      ready: true,
       id: track.id,
       title: track.title,
       href: `/${track.id}`,
-      kind: kindOf(track.type, track.level),
       blurb: firstSentence(track.description),
-      cover,
-      count: `${planned} lessons · ${available} ready`,
-      flag: null,
-      start: i === 0,
+      entries,
       known: knownFrom(entries),
-      planned,
+      figures: entries
+        .filter((e): e is AvailableSummary => e.available)
+        .map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(track.id, entry) })),
     };
   });
   const later = plannedTracks.map(
-    (track): TrackCard => ({
-      id: track.id,
-      title: track.title,
-      href: null,
-      kind: kindOf(track.type, track.level),
-      blurb: track.blurb,
-      cover: track.cover,
-      count: 'No lessons yet',
-      flag: 'Being written',
-      start: false,
-      known: {},
-      planned: 0,
-    }),
+    (track): PlannedTrackCard => ({ ready: false, id: track.id, title: track.title, blurb: track.blurb, cover: track.cover }),
   );
   return [...ready, ...later];
 }

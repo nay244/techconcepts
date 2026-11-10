@@ -3,10 +3,9 @@ import { drawFigure } from '../art/scenes';
 import { getEntries, getLesson } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeTwoUnitLesson } from '../content/test-fixtures';
-import { internetTrack, networkingTrack } from '../content/tracks';
 import { positionOf, resumeLabel, slotsFor } from '../engine/timeline';
 import { STATUS_WORDS } from './hub';
-import { firstSentence, homeTrackCards, insideSheet, osiLitAt, resumePlaces } from './home';
+import { homeTrackCards, insideSheet, osiLitAt, resumePlaces } from './home';
 
 const lesson = (slug: string): Lesson => {
   const found = getLesson(slug);
@@ -16,18 +15,6 @@ const lesson = (slug: string): Lesson => {
 const DHCP = lesson('dhcp');
 const HTTP = lesson('what-is-http');
 const OSI = lesson('osi-model');
-
-test('the track card carries the first sentence of the description, or all of it when it has one sentence', () => {
-  expect(firstSentence(networkingTrack.description)).toBe(
-    'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
-  );
-  expect(firstSentence(internetTrack.description)).toBe(
-    'Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each.',
-  );
-  expect(firstSentence('One sentence only.')).toBe('One sentence only.');
-  expect(firstSentence('No full stop at all')).toBe('No full stop at all');
-  expect(firstSentence('First. Second. Third.')).toBe('First.');
-});
 
 test('Home’s track cards: the two tracks with lessons in order, then A+, each linking to its panel on Tracks', () => {
   const cards = homeTrackCards();
