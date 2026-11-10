@@ -190,6 +190,13 @@ const last = track.title.slice(cut + 1);
     .routebox__in {
       padding: 0 0 80px;
     }
+    /* That 80px is the whole gap, and the footer lines up with the closing line above it. */
+    .routebox :global(.site-foot) {
+      margin-top: 0;
+    }
+    .routebox :global(.site-foot > .wrap) {
+      padding-inline: 0;
+    }
   }
 
   /* ---------- Narrow screens: not designed yet (task 8), only kept from breaking ---------- */
