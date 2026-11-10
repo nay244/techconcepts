@@ -21,6 +21,8 @@ Node 22.18 or newer is required (`.node-version` pins 24).
 
 The budget check prints every page's gzipped size and fails when a page breaks a budget: the HTML of any page must stay at or under 250 KB gzipped, and the JavaScript a lesson page loads at or under 200 KB gzipped in all. It is the last step of `npm run build`, so a breach fails the build, on Cloudflare too.
 
+On GitHub, every pull request and every push to `main` or `revamp` runs `npm test`, `npm run build`, and the end-to-end tests in one desktop project and on the phone (`.github/workflows/ci.yml`). The other desktop sizes, the light theme and reduced motion are a local run: `npm run e2e`.
+
 ## Layout
 
 - `src/pages/` the pages: Home, the track page (`[track]/index.astro`), the lesson page (`[track]/[lesson].astro`), About and 404
