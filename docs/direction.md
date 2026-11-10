@@ -208,18 +208,17 @@ Each has a sentence-long description for screen readers and tests beside it. Non
 
 Not done in this pass: motion (the references animate on click; these are still); the 4× close-up review the Anatomy skill asks for, done properly on every junction; redrawing any of the 19 older figures to the denser standard.
 
-### Logo ideas
+### The logo: Lifted lid
 
-Six marks, one ink colour and the orange accent, each tried at 96, 32, 20 and 16 pixels and beside the name:
+The owner chose "Lifted lid" on 2026-11-10 from six ideas. Claude then drew five refinements of it and took the one called "Solid tray".
 
-| Mark | Idea | Verdict |
-|---|---|---|
-| Lifted lid | A lid lifted off its tray, one message between | **Recommended.** Says what the site does, grows out of today's two diamonds, matches the `inside` figure, holds at 16px |
-| Port | A network socket with its link light on | Runner-up. The simplest and strongest at small sizes; needs the viewer to know the object |
-| Twisted pair | Two cable strands crossing, one orange | Distinctive, and Patch's own motif; muddy at 16px |
-| Message on the wire | A T-junction with a message on it | Reads as a tool, not a T |
-| Under the loupe | A block seen through a lens | Reads as a search icon |
-| Step marker | The lesson's lit square with a play triangle | Reads as any video button |
+- **The mark** is three shapes on a 2:1 isometric grid: a solid lid, a solid tray of the same width, and one orange message in the gap, touching neither. The site opens things up so you can see inside. It matches the `inside` figure.
+- **Why solid tray.** The first drawing had two thin rims under the lid, which read as the common "layers" icon. Two solid halves read as one case pulled apart, and hold at 16 pixels.
+- **One source.** `src/art/logo.ts` is the only drawing: `logoMark()` for pages, where the ink is the text colour and the message is `--logo-accent`; `logoTile()` for the favicon and app icon, on a dark tile with fixed colours, because a browser tab can be light or dark.
+- **Beside the name.** "TechConcepts" in Barlow Semi Condensed 700, one colour. The mark is 1.3 times the type size and sits 0.36 of the type size from the name.
+- **Clear space** is half the mark's width on every side. **Smallest size** is 16 pixels.
+- **One ink.** Where only one colour prints, the message takes the ink colour too.
 
-No logo is chosen. The SVG files and the sheet are in the ignored `.superpowers/revamp/look/art/logos/`.
+Not wired in yet. Today the old mark is drawn by hand in three places (the header, the footer, the lesson's top bar) and the favicon is a different drawing again. All four change to `logo.ts` with the shell (phase 2, step 3). The share image (`scripts/generate-og-image.mjs`) follows.
 
+The five passed over, so nobody redraws them: Port (a socket with its link light; the runner-up), Twisted pair (muddy at 16 pixels), Message on the wire (read as a tool), Under the loupe (read as a search icon), Step marker (read as a video button). The sheets are in the ignored `.superpowers/revamp/look/art/`.
