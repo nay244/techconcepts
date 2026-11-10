@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
   SITE_PAGES,
   collectErrors,
@@ -38,9 +38,18 @@ const OSI_PATH = '/networking/osi-model';
 const trackPanels = (page: Page) => page.locator('main article.panel');
 const panelOf = (page: Page, id: string) => page.locator(`main article.panel#${id}`);
 const headerTracksLink = (page: Page) => page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Tracks', exact: true });
-const trackItems = (page: Page) => page.locator('main ol.lessons > li, main ol.soon-list > li');
-const trackEyebrow = (page: Page) => page.locator('.t-hero .eyebrow');
-const partTitles = (page: Page) => page.getByRole('navigation', { name: 'Parts of this track' }).locator('a > span:nth-child(2)');
+/** The track page's route: every lesson the track lists, ready or not, as a stop in its part, in order. */
+const routeStops = (page: Page) => page.locator('main .route .route-stage li.stop');
+const readyStops = (page: Page) => page.locator('main .route li.stop:not(.stop--soon)');
+const soonStops = (page: Page) => page.locator('main .route li.stop--soon');
+const stageTitles = (page: Page) => page.locator('main .route .route-stage h2');
+/** The track page's scroll pane, which holds the route, the closing line and the footer. */
+const routeBox = (page: Page) => page.locator('main .routebox');
+/** The track page's side card: the strip's words and the up-next card's button. */
+const stripWords = (page: Page) => page.locator('main .side .strip__w');
+const sideButton = (page: Page) => page.locator('main .side .side-now__btn');
+/** A stop's status words: Not started, In progress, ✓ Done or Not ready yet. */
+const stateOf = (stop: Locator) => stop.locator('.stop__k');
 
 /** Walks a lesson with the next button to its last position, its last Practice, where it counts as finished. */
 async function finishLesson(page: Page, path: string): Promise<void> {
@@ -390,72 +399,128 @@ test.describe('desktop', () => {
       await expect(aplus.locator('a, button, [tabindex]')).toHaveCount(0);
       await expect(aplus.locator('.strip')).toHaveCount(0);
     });
-
-    test('the track page’s breadcrumb steps back to Tracks', async ({ page }) => {
-      await open(page, '/networking');
-      const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
-      await expect(crumbs.getByRole('listitem')).toHaveText(['Home', 'Tracks', 'Networking Concepts']);
-      await crumbs.getByRole('link', { name: 'Tracks', exact: true }).click();
-      await expect(page).toHaveURL(/\/tracks$/);
-    });
   });
 
   test.describe('Track page', () => {
-    test('Networking is Track 2 and has 19 lessons, 15 of them Coming soon, with OSI Model the first ready', async ({ page }) => {
+    test('Track page: Networking lists 19 stops in its parts, 15 Not ready yet, OSI Model first ready with Start', async ({ page }) => {
       await open(page, '/networking');
       await expect(page).toHaveTitle('Networking Concepts · TechConcepts');
-      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-      await expect(trackEyebrow(page)).toHaveText('Track 2 · Beginner');
-      await expect(page.locator('.cover .c-fig')).toHaveText('Track 2');
-      await expect(page.locator('[data-router-cover]')).toHaveCount(1);
-      await expect(page.locator('.stats')).toContainText(/lessons planned\s*19/);
-      await expect(page.locator('.stats')).toContainText(/ready now\s*4/);
-      await expect(page.locator('.stats')).not.toContainText(/minutes in all/);
-      // Part 1 lost How the Internet Works: OSI Model is ready, the other lesson is still to come.
-      await expect(page.locator('main section.part').first().locator('.part-c')).toHaveText('1 of 2 ready');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Networking Concepts');
+      // The last word of the title is in the accent.
+      await expect(page.locator('h1 em')).toHaveText('Concepts');
 
-      await expect(trackItems(page)).toHaveCount(19);
-      await expect(page.locator('main li.lesson')).toHaveCount(4);
-      const soon = page.locator('main ol.lessons > li.soon-row, main ol.soon-list > li');
-      await expect(soon).toHaveCount(15);
-      await expect(soon.locator('a')).toHaveCount(0);
-      for (const row of await page.locator('main li.soon-row').all()) await expect(row.locator('.badge')).toHaveText('Coming soon');
-      for (const list of await page.locator('main ol.soon-list').all()) {
-        await expect(list.locator('xpath=ancestor::section[1]').locator('.part-c')).toContainText('coming soon');
+      // Every lesson is a stop inside its part, and each part counts its own stops.
+      await expect(routeStops(page)).toHaveCount(19);
+      for (const stage of await page.locator('main .route .route-stage').all()) {
+        const n = await stage.locator('li.stop').count();
+        await expect(stage.locator('.route-stage__head p')).toHaveText(`${n} ${n === 1 ? 'lesson' : 'lessons'}`);
       }
+      await expect(readyStops(page)).toHaveCount(4);
+      await expect(soonStops(page)).toHaveCount(15);
+      await expect(soonStops(page).locator('a')).toHaveCount(0);
+      for (const stop of await soonStops(page).all()) await expect(stateOf(stop)).toHaveText('Not ready yet');
 
-      const first = page.locator('main li.lesson').first();
-      await expect(first.locator('.l-num')).toHaveText('Lesson 01');
-      await expect(first.locator('a.l-link')).toHaveText('OSI Model');
-      // The list is named for what it holds: a one-unit lesson's card lists only exams.
-      await expect(first.getByRole('list', { name: 'Exams', exact: true })).toBeVisible();
-      const dhcp = trackItems(page).filter({ has: page.getByRole('link', { name: 'DHCP', exact: true }) });
-      await expect(dhcp.getByRole('list', { name: 'Exams', exact: true })).toBeVisible();
+      // A first visit: OSI Model is the first ready stop, Not started, and its Start is the route's one primary button.
+      const first = readyStops(page).first();
+      await expect(first.locator('h3')).toHaveText('OSI Model');
+      await expect(stateOf(first)).toHaveText('Not started');
+      await expect(first.locator('.stop__acts .btn')).toHaveText('Start');
+      await expect(first.locator('.stop__acts .btn')).toHaveAttribute('href', OSI_PATH);
+      await expect(first.locator('.stop__acts .btn')).toHaveClass(/\bbtn--primary\b/);
+      await expect(page.locator('main .route .btn--primary')).toHaveCount(1);
+      await expect(page.locator('main .side .side-now__k')).toHaveText('Start here');
+      await expect(sideButton(page)).toHaveText('Start');
+      await expect(sideButton(page)).toHaveAttribute('href', OSI_PATH);
+      await expect(stripWords(page)).toHaveText('0 of 19 lessons done · 4 ready');
+
+      // Gone: the cover, the counts, the exam chips and Clear my progress. Nothing on the page is a button.
+      await expect(page.locator('main .cover, main .stats, main .toolbar')).toHaveCount(0);
+      await expect(page.locator('main button')).toHaveCount(0);
+
+      // After the last stop, the line about the lessons still to come, then the way to the gentler track.
+      await expect(page.locator('main .route__end')).toHaveText(
+        'Lessons not ready yet stay on the route, so you can see what is coming. New to IT? How the Internet Works is the gentler start.',
+      );
+      await expect(page.locator('main .route__end a')).toHaveAttribute('href', INTERNET_TRACK);
     });
 
-    test('How the Internet Works: Track 1, the web cover, six parts, a name tile on each of 14 lessons', async ({ page }) => {
+    test('Track page: How the Internet Works has six parts and a name tile on each of 14 stops', async ({ page }) => {
       await open(page, INTERNET_TRACK);
       await expect(page).toHaveTitle('How the Internet Works · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('How the Internet Works');
-      await expect(trackEyebrow(page)).toHaveText('Track 1 · Beginner');
-      await expect(page.locator('.cover .c-fig')).toHaveText('Track 1');
-      await expect(page.locator('.cover .c-title')).toHaveText('How the Internet Works');
-      // A still cover: the click-to-send-packets cover stays Networking's.
-      await expect(page.locator('[data-router-cover]')).toHaveCount(0);
-      await expect(page.locator('.cover .stage svg')).toHaveAttribute('role', 'img');
-      await expect(page.locator('.stats')).toContainText(/lessons planned\s*14/);
-      await expect(page.locator('.stats')).toContainText(/ready now\s*14/);
-      await expect(partTitles(page)).toHaveText(INTERNET_PARTS);
-      await expect(page.getByRole('link', { name: 'Start with HTTP' })).toHaveAttribute('href', START_PATH);
+      await expect(page.locator('h1 em')).toHaveText('Works');
+      await expect(stageTitles(page)).toHaveText(INTERNET_PARTS);
 
-      const cards = page.locator('main li.lesson');
-      await expect(cards).toHaveCount(14);
-      for (const card of await cards.all()) await expect(card.locator('.l-art svg.name-tile')).toHaveCount(1);
-      // No exam tags until each lesson's audit: no empty lists, and nothing to filter by.
-      await expect(page.locator('main ul.l-meta')).toHaveCount(0);
-      await expect(page.locator('main .toolbar')).toHaveCount(0);
+      await expect(routeStops(page)).toHaveCount(14);
+      await expect(soonStops(page)).toHaveCount(0);
+      for (const stop of await readyStops(page).all()) await expect(stop.locator('.stop__art svg.name-tile')).toHaveCount(1);
       await expect(lessonCard(page, 'what-is-tls').locator('.name-tile')).toHaveAttribute('aria-label', 'Transport Layer Security (SSL is its old name)');
       await expect(lessonCard(page, 'what-is-tls').locator('.nt-full')).toHaveCount(2);
+      // The side card starts with HTTP.
+      await expect(sideButton(page)).toHaveText('Start');
+      await expect(sideButton(page)).toHaveAttribute('href', START_PATH);
+      await expect(stripWords(page)).toHaveText('0 of 14 lessons done');
+
+      // Every lesson is ready, so the closing line only points on to Networking.
+      await expect(page.locator('main .route__end')).toHaveText('Ready for more? Networking Concepts goes deeper.');
+      await expect(page.locator('main .route__end a')).toHaveAttribute('href', '/networking');
+    });
+
+    test("Track page: at 1440×900 the window does not scroll; the route scrolls to its last stop and the side card's button does not move", async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await open(page, '/networking');
+      const before = await sideButton(page).boundingBox();
+      expect(before, 'the side card has a button').not.toBeNull();
+      expect((await pageOverflow(page)).down, 'the page fits the window').toBe(0);
+      // The route is longer than its pane, so it has somewhere to scroll.
+      const pane = await routeBox(page).evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+      expect(pane.scroll).toBeGreaterThan(pane.client);
+
+      // Wheel over the route until it reaches its end.
+      const box = (await routeBox(page).boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await expect
+        .poll(async () => {
+          await page.mouse.wheel(0, 1200);
+          return routeBox(page).evaluate((el) => Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1);
+        })
+        .toBe(true);
+      await settledFrame(page);
+      await expect(routeStops(page).last()).toBeInViewport();
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+      expect(await sideButton(page).boundingBox()).toEqual(before);
+      await expect(page.locator('header.site-head')).toBeInViewport();
+    });
+
+    test("Track page: at 1280×720 the side card's button is in view", async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      for (const path of ['/networking', INTERNET_TRACK]) {
+        await open(page, path);
+        // On a short screen the card drops its figure, so its button fits.
+        await expect(page.locator('main .side .side-now__art'), path).toBeHidden();
+        await expect(sideButton(page), path).toBeInViewport({ ratio: 1 });
+        expect(await page.evaluate(() => window.scrollY), path).toBe(0);
+      }
+    });
+
+    test('Track page: ?for=network-plus lists every lesson, no error', async ({ page }) => {
+      const errors = collectErrors(page);
+      await open(page, '/networking?for=network-plus');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Networking Concepts');
+      await expect(routeStops(page)).toHaveCount(19);
+      await expect(readyStops(page)).toHaveCount(NETWORKING_LESSONS.length);
+      await expect(page.locator('main button')).toHaveCount(0);
+      expect(errors).toEqual([]);
+    });
+
+    test('Track page: breadcrumb Tracks goes to /tracks', async ({ page }) => {
+      await open(page, '/networking');
+      const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' });
+      await expect(crumbs).toHaveText(/^Tracks\s*\/\s*Networking Concepts$/);
+      expect(((await crumbs.textContent()) ?? '').split('/')).toHaveLength(2);
+      await expect(crumbs.locator('[aria-current="page"]')).toHaveText('Networking Concepts');
+      await crumbs.getByRole('link', { name: 'Tracks', exact: true }).click();
+      await expect(page).toHaveURL(/\/tracks$/);
     });
 
     test('the old lesson address forwards to the track', async ({ page }) => {
@@ -465,39 +530,18 @@ test.describe('desktop', () => {
         await expect(page.getByRole('heading', { level: 1 }), path).toHaveText('How the Internet Works');
       }
     });
-
-    test('?for= filters the lessons, the chips keep the URL in step, and an unknown value shows everything', async ({ page }) => {
-      await open(page, '/networking?for=security-plus');
-      await expect(page.getByRole('button', { name: 'CompTIA Security+', exact: true })).toHaveAttribute('aria-pressed', 'true');
-      const shown = page.locator('main li.lesson');
-      await expect(shown).not.toHaveCount(0);
-      const count = await shown.count();
-      expect(count).toBeLessThan(NETWORKING_LESSONS.length);
-      for (const card of await shown.all()) await expect(card.locator('.l-meta')).toContainText('CompTIA Security+');
-      await expect(page.locator('main li.soon-row, main ol.soon-list > li')).toHaveCount(0);
-      await expect(page.locator('.toolbar .showing')).toHaveText(`Showing ${count} ${count === 1 ? 'lesson' : 'lessons'} for CompTIA Security+.`);
-
-      await page.getByRole('button', { name: 'All', exact: true }).click();
-      await expect(page).toHaveURL(/\/networking$/);
-      await expect(trackItems(page)).toHaveCount(19);
-      await page.getByRole('button', { name: 'CompTIA Network+', exact: true }).click();
-      await expect(page).toHaveURL(/\?for=network-plus$/);
-
-      await open(page, '/networking?for=bogus');
-      await expect(page.getByRole('button', { name: 'All', exact: true })).toHaveAttribute('aria-pressed', 'true');
-      await expect(trackItems(page)).toHaveCount(19);
-    });
   });
 
-  test('finishing DHCP shows Finished on the track and 1 of 19 done on Tracks, leaves Home as it was, and Clear my progress clears them', async ({ page }) => {
+  test('finishing DHCP shows ✓ Done on the track and 1 of 19 done on Tracks, leaves Home as it was, and Reset progress on About clears them', async ({ page }) => {
     const dhcp = LESSONS.find((lesson) => lesson.slug === 'dhcp');
     expect(dhcp, 'DHCP is a ready lesson').toBeDefined();
     await finishLesson(page, dhcp!.path);
 
     await open(page, '/networking');
     const card = lessonCard(page, 'dhcp');
-    await expect(card.locator('.badge')).toHaveText('Finished');
-    await expect(page.locator('.toc .pg-title')).toHaveText('1 of 19 complete');
+    await expect(stateOf(card)).toHaveText('✓ Done');
+    await expect(card.locator('.stop__acts .btn')).toHaveText('Watch again');
+    await expect(stripWords(page)).toHaveText('1 of 19 lessons done · 4 ready');
 
     await open(page, '/');
     // Home shows no progress: a returning visitor sees the same hero and the same track cards as a first visit.
@@ -523,13 +567,14 @@ test.describe('desktop', () => {
     await expect(panelOf(page, 'how-the-internet-works').locator('.strip__w')).toHaveText('0 of 14 lessons done');
     await expect(panelOf(page, 'how-the-internet-works').locator('a.next .next__k')).toHaveText('Start here');
 
+    // Clearing progress lives on About now; the track page reads as a first visit after it.
+    await open(page, '/about');
+    await page.getByRole('button', { name: 'Reset progress' }).click();
+    await page.getByRole('button', { name: 'Reset', exact: true }).click();
+    await expect(page.locator('.a-reset [role="status"]')).toHaveText('Progress cleared');
     await open(page, '/networking');
-    await page.getByRole('button', { name: 'Clear my progress' }).click();
-    await expect(page.getByRole('group', { name: 'Clear all progress on this device?' })).toBeFocused();
-    await page.getByRole('button', { name: 'Clear', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Progress cleared' })).toHaveCount(1);
-    await expect(card.locator('.badge')).toHaveCount(0);
-    await expect(page.locator('.toc .pg-title')).toHaveText('Your progress');
+    await expect(stateOf(card)).toHaveText('Not started');
+    await expect(stripWords(page)).toHaveText('0 of 19 lessons done · 4 ready');
 
     await open(page, '/');
     await expect(heroChip(page)).toHaveText('Free visual lessons, no sign-up');
@@ -550,7 +595,7 @@ test.describe('desktop', () => {
     await page.evaluate((value) => window.localStorage.setItem('techconcepts:v1', value), v1);
 
     await open(page, '/networking');
-    await expect(lessonCard(page, 'dhcp')).toContainText('Finished');
+    await expect(stateOf(lessonCard(page, 'dhcp'))).toHaveText('✓ Done');
 
     await open(page, '/networking/subnetting?step=1');
     await expect
@@ -575,12 +620,15 @@ test.describe('desktop', () => {
 
     // Step 30 of the old lesson was step 4 of UDP: HTTP, HTTPS and TCP before it are finished.
     await open(page, INTERNET_TRACK);
-    for (const slug of ['what-is-http', 'what-is-https', 'what-is-tcp']) await expect(lessonCard(page, slug).locator('.badge'), slug).toHaveText('Finished');
-    await expect(lessonCard(page, 'what-is-udp').locator('.badge')).toHaveText('In progress');
-    await expect(lessonCard(page, 'what-is-ip').locator('.badge')).toHaveCount(0);
-    await expect(page.locator('.toc .pg-title')).toHaveText('3 of 14 complete');
-    // The track's hero goes on where they were.
-    await expect(page.getByRole('link', { name: 'Continue UDP' })).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
+    for (const slug of ['what-is-http', 'what-is-https', 'what-is-tcp']) await expect(stateOf(lessonCard(page, slug)), slug).toHaveText('✓ Done');
+    await expect(stateOf(lessonCard(page, 'what-is-udp'))).toHaveText('In progress');
+    await expect(stateOf(lessonCard(page, 'what-is-ip'))).toHaveText('Not started');
+    await expect(stripWords(page)).toHaveText('3 of 14 lessons done');
+    // The side card goes on where they were, and the route rings UDP's stop.
+    await expect(page.locator('main .side .side-now__t')).toHaveText('UDP');
+    await expect(sideButton(page)).toHaveText('Continue');
+    await expect(sideButton(page)).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
+    await expect(lessonCard(page, 'what-is-udp')).toHaveClass(/\bstop--now\b/);
 
     // Tracks goes on where they were too: How the Internet Works' panel continues UDP; Networking reads as a first visit.
     await open(page, '/tracks');
@@ -676,23 +724,23 @@ test.describe('without JavaScript', () => {
     }
   });
 
-  test('the track page hides its exam chips, which need JavaScript to filter, and still shows every lesson', async ({ page }) => {
+  test('every lesson is listed and the first ready one says Start', async ({ page }) => {
     await page.goto('/networking');
-    // The chips are on the page, and none of them shows; nor does their label or the line that counts what they show.
-    expect(await page.locator('main button.chip').count()).toBeGreaterThan(1);
-    await expect(page.locator('main button.chip:visible')).toHaveCount(0);
-    await expect(page.getByText('Show lessons for')).toBeHidden();
-    await expect(page.locator('main .showing')).toBeHidden();
-    // Everything the chips would filter is still there: each part, each ready lesson's card, each lesson to come.
+    // Each part, each stop and each ready lesson's link shows, with nothing left to filter or clear.
     expect(NETWORKING_LESSONS.length).toBeGreaterThan(0);
+    await expect(routeStops(page)).toHaveCount(19);
+    for (const stop of await routeStops(page).all()) await expect(stop).toBeVisible();
+    for (const stage of await page.locator('main .route-stage').all()) await expect(stage).toBeVisible();
     for (const lesson of NETWORKING_LESSONS) {
       await expect(lessonCard(page, lesson.slug), lesson.title).toBeVisible();
-      await expect(lessonCard(page, lesson.slug).locator('a.l-link'), lesson.title).toBeVisible();
+      await expect(lessonCard(page, lesson.slug).locator('h3 a'), lesson.title).toHaveAttribute('href', lesson.path);
     }
-    const items = trackItems(page);
-    expect(await items.count()).toBeGreaterThan(NETWORKING_LESSONS.length);
-    for (const item of await items.all()) await expect(item).toBeVisible();
-    for (const part of await page.locator('main section.part').all()) await expect(part).toBeVisible();
+    // The server render is a first visit: the first ready stop and the side card both say Start.
+    const first = readyStops(page).first();
+    await expect(first.locator('.stop__acts .btn')).toHaveText('Start');
+    await expect(first.locator('.stop__acts .btn')).toHaveAttribute('href', NETWORKING_LESSONS[0]!.path);
+    await expect(sideButton(page)).toHaveText('Start');
+    await expect(sideButton(page)).toHaveAttribute('href', NETWORKING_LESSONS[0]!.path);
     // No control is left that cannot work.
     await expect(page.locator('button:visible')).toHaveCount(0);
   });

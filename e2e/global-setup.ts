@@ -3,9 +3,9 @@ import { LESSONS_ENV, nodeEnv, type ReadyLesson } from './support';
 
 /**
  * Finds the ready lessons on the built site, so no spec keeps a list of its own: the Tracks page links to each track
- * with lessons, and each track page's lesson cards link to them. Playwright starts the web server (which builds the
- * site) before this runs, and loads the specs after it, so they read the list from the environment as they are
- * collected.
+ * with lessons, and each track page's route links to them from its ready stops. Playwright starts the web server
+ * (which builds the site) before this runs, and loads the specs after it, so they read the list from the environment
+ * as they are collected.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
   const baseURL = config.projects[0]?.use.baseURL;
@@ -21,10 +21,10 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     const lessons: ReadyLesson[] = [];
     for (const path of trackPaths) {
       await page.goto(path);
-      const found: ReadyLesson[] = await page.locator('main .lesson').evaluateAll((cards) =>
-        cards.map((card) => {
-          const link = card.querySelector<HTMLAnchorElement>('a.l-link');
-          if (link === null) throw new Error('A ready lesson card has no link.');
+      const found: ReadyLesson[] = await page.locator('main .route li.stop:not(.stop--soon)').evaluateAll((stops) =>
+        stops.map((stop) => {
+          const link = stop.querySelector<HTMLAnchorElement>('h3 a');
+          if (link === null) throw new Error('A ready lesson stop has no link.');
           const lessonPath = new URL(link.href).pathname;
           return {
             slug: lessonPath.split('/').filter(Boolean).at(-1) ?? '',
@@ -38,7 +38,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     }
     for (const lesson of lessons) {
       if (lesson.slug === '' || lesson.title === '') {
-        throw new Error(`Could not read a ready lesson's card: ${JSON.stringify(lesson)}`);
+        throw new Error(`Could not read a ready lesson's stop: ${JSON.stringify(lesson)}`);
       }
     }
     nodeEnv[LESSONS_ENV] = JSON.stringify(lessons);

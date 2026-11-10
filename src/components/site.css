@@ -177,7 +177,7 @@
 .segbar i.prog {
   background: var(--here);
 }
-/* The small heading over a list at the side of a page: the track's Parts, About's On this page. */
+/* The small heading over a list at the side of a page: About's On this page. */
 .toc-h {
   margin: 0 0 8px;
   padding-inline-start: 10px;
@@ -185,43 +185,6 @@
   font: 700 12px/1 var(--mono);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-}
-
-/* ---- Filter chips: the one pressed is in the accent ---- */
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.chip {
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--card);
-  color: var(--ink);
-  font: 600 14px/1 var(--sans);
-  cursor: pointer;
-  transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease,
-    transform 120ms var(--ease-out);
-}
-.chip:hover {
-  background: var(--bg-soft);
-  color: var(--ink-strong);
-}
-.chip:active {
-  transform: scale(0.97);
-}
-.chip[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent);
 }
 
 /* Card hover: rises 2px and takes an accent ring. The card's resting shadow is set here too, so a page styling its

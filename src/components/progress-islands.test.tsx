@@ -8,12 +8,12 @@ import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { networkingTrack } from '../content/tracks';
 import { knownFrom } from '../lib/entries';
-import { presentTags, trackParts } from '../lib/track';
+import { trackParts } from '../lib/track';
 import { LEGACY_PROGRESS_KEY, PROGRESS_KEY } from '../progress/store';
 import { seedProgress, seedV1Progress } from '../test/progress';
+import TrackRoute from './hub/TrackRoute';
+import TrackSide from './hub/TrackSide';
 import { ResetProgress } from './ResetProgress';
-import { TrackLessons } from './TrackLessons';
-import { TrackSidebar } from './TrackSidebar';
 
 const lessons: Record<string, Lesson> = {
   dhcp: liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP', certTags: ['network-plus', 'ccna'] })),
@@ -21,7 +21,7 @@ const lessons: Record<string, Lesson> = {
 };
 const entries = buildEntries(networkingTrack, lessons, () => 'networking');
 const available = entries.filter((e): e is AvailableSummary => e.available);
-const { planned } = trackTotals(entries);
+const { planned, available: readyCount } = trackTotals(entries);
 const known = knownFrom(entries);
 const parts = trackParts(networkingTrack, entries, (e) => lessons[e.slug]!);
 const dhcp = available.find((e) => e.slug === 'dhcp')!;
@@ -35,34 +35,24 @@ describe('the track page', () => {
   const page = () => (
     <>
       <ResetProgress />
-      <TrackSidebar lessons={entries.map((e) => ({ key: e.key, title: e.title }))} known={known} />
-      <TrackLessons parts={parts} tags={presentTags(entries)} known={known} />
+      <TrackSide entries={entries} known={known} />
+      <TrackRoute parts={parts} entries={entries} known={known} />
     </>
   );
-  const complete = (container: HTMLElement) => container.querySelector('.pg-title')!.textContent;
-  const dhcpCard = () => screen.getByRole('link', { name: 'DHCP' }).closest('li')!;
+  const strip = (container: HTMLElement) => container.querySelector('.strip__w')!.textContent;
+  const dhcpStop = () => screen.getByRole('link', { name: 'DHCP' }).closest('li')!;
 
-  test('ResetProgress beside the track clears its progress card and lesson cards at once', async () => {
+  test('ResetProgress clears the side card and the route at once', async () => {
     seedProgress({ [dhcp.key]: { status: 'finished', furthestPosition: dhcp.maxPosition } }, dhcp.key);
     const { container } = render(page());
-    expect(complete(container)).toBe(`1 of ${planned} complete`);
-    expect(within(dhcpCard()).getByText('Finished')).toBeInTheDocument();
+    expect(strip(container)).toBe(`1 of ${planned} lessons done · ${readyCount} ready`);
+    expect(within(dhcpStop()).getByText('✓ Done')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
-    expect(complete(container)).toBe('Your progress');
-    expect(screen.queryByText('Finished')).toBeNull();
-    expect(within(dhcpCard()).getByText('Start lesson')).toBeInTheDocument();
-  });
-
-  test('Clear in the sidebar clears the lesson cards beside it at once', async () => {
-    seedProgress({ 'firewalls': { status: 'in-progress', furthestPosition: 2 } }, 'firewalls');
-    render(page());
-    expect(screen.getByText('In progress')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Clear my progress' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Clear' }));
-    expect(window.localStorage.getItem(PROGRESS_KEY)).toBeNull();
-    expect(screen.queryByText('In progress')).toBeNull();
-    expect(screen.getAllByText('Start lesson')).toHaveLength(available.length);
+    expect(strip(container)).toBe(`0 of ${planned} lessons done · ${readyCount} ready`);
+    expect(screen.queryByText('✓ Done')).toBeNull();
+    expect(within(dhcpStop()).getByText('Not started')).toBeInTheDocument();
+    expect(within(container.querySelector('.side-now') as HTMLElement).getByText('Start here')).toBeInTheDocument();
   });
 });
 

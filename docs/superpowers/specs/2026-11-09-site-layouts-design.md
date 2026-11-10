@@ -96,14 +96,14 @@ The lesson console's row of squares, one per lesson in track order, reused on Tr
 
 For a lesson **In progress**, three short bars labelled Watch, Learn, Practice: parts before yours filled accent,
 yours amber and bold, later ones grey. It is worked out from the saved position (`furthestPosition`) against the
-lesson's own layout, the way `resumePlaces` already words it. For a lesson of several units, use the unit the saved
+lesson's own layout (`resumePosition` against `cardPlaces`). For a lesson of several units, use the unit the saved
 position is in. No percentages.
 
 ### 5.6 Start and Continue
 
 - **Start** opens a lesson at its Overview.
-- **Continue** opens it at the saved step, `?step=<position>`, using the existing resume logic (`resumeOf`, its
-  `href`).
+- **Continue** opens it at the saved step, `?step=<position>`, using the existing resume logic (`useUpNext`, its
+  `href`, from `resumePosition`).
 - **Watch again** for a lesson that is Done.
 - Progress is read from this browser as today (`useProgress`); with storage blocked the hubs show Not started and
   Start, as a first visit.
@@ -234,7 +234,7 @@ Five PRs. The first comes first; the other four can follow in any order, one at 
 
 ## 10. Left to the builder
 
-- Component structure, naming, and which existing pieces to reuse (`resumeOf`, `useProgress`, `trackParts`,
+- Component structure, naming, and which existing pieces to reuse (`useUpNext`, `useProgress`, `trackParts`,
   `cardPlaces`, the covers and name tiles).
 - Exact spacing within the values above, the fade, and the wording of the FAQ draft (owner approves in the PR).
 - How the track page's split is built (the mockup used a flex column body with `overflow: hidden` and a grid of the

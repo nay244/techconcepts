@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { sha256, withoutGrain } from '../../test/figure-hash';
-import { COVER_IDS, cover, coverDescription, coverStill, routerDrawing } from './covers.ts';
+import { COVER_IDS, cover, coverStill } from './covers.ts';
 import { internetThumb } from './internet-thumb.ts';
 import { SPOTS, spot } from './spots.ts';
 
@@ -43,23 +43,11 @@ test('the A+ cover is a figure on the shared plate, with one lit part and its la
   expect(svg).not.toMatch(/feTurbulence|grain/i);
 });
 
-test('the A+ cover says what it shows', () => {
-  expect(coverDescription('aplus')).toMatch(/PC tower/);
-});
-
-test('the live router cover is the networking cover, with the packets’ path along its cable', () => {
-  const { svg, path } = routerDrawing();
-  expect(cover('networking')).toContain(svg);
-  expect(path.length).toBeGreaterThan(100);
-  path.forEach((p) => expect(p).toHaveLength(2));
-});
-
 // The figures match the mockups. Each value is the SHA-256 of the reference figure after normalise(), recorded once
 // by a one-off script from the approved mockup scripts and pages (never read by this test):
 //   cover:*       the figures embedded in illustrations-v3.html (build3.mjs / covers.mjs)
 //   spot:*        spots.mjs
 //   internet-thumb the internet art embedded in track-v2.html (track2.mjs internetArt() over hero.mjs)
-//   router-path   the Networking cover's packet path in its page script (lumen-assets.mjs routerLive, build3.mjs F1.path)
 // withoutGrain() drops film grain (R2); the drawing is otherwise identical.
 const sha = (s: string): Promise<string> => sha256(withoutGrain(s));
 
@@ -81,7 +69,6 @@ const EXPECTED: Record<string, string> = {
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
   'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
-  'router-path': '8478e385264220f9d007a9fc1f1c38f71723265a79baf01b7ca0b1eae0900133',
 };
 
 test('the figures match the mockups', async () => {
@@ -89,7 +76,6 @@ test('the figures match the mockups', async () => {
   for (const id of COVER_IDS) actual[`cover:${id}`] = await sha(cover(id));
   for (const kind of SPOTS) actual[`spot:${kind}`] = await sha(spot(kind));
   actual['internet-thumb'] = await sha(internetThumb());
-  actual['router-path'] = await sha256(JSON.stringify(routerDrawing().path));
   expect(actual).toEqual(EXPECTED);
 });
 

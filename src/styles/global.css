@@ -180,3 +180,24 @@ table.data {
     scroll-behavior: auto !important;
   }
 }
+
+/* A split page (BaseLayout `split`): the window is one screen and does not scroll; the page's own route scrolls. The
+   body is already a flex column, so main fills what the header leaves. Smaller screens keep the normal flow. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  /* min-height: 0 undoes body's 100vh, which can be taller than 100dvh and would let the window scroll. */
+  body.split {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.split .site-head {
+    flex: none;
+    position: relative;
+  }
+
+  body.split main {
+    flex: 1;
+    min-height: 0;
+  }
+}

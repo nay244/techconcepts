@@ -34,3 +34,61 @@
 .next__k.go { color: var(--here); }
 .next__t { display: block; margin-top: 8px; font-size: 24px; line-height: 1.15; color: var(--ink-strong); }
 .next__s { display: block; margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+
+/* The track page's side card: the one lesson to take next. Not a link as a whole, so no `.lift`. */
+.side-now { margin-top: 22px; overflow: hidden; border-radius: var(--r-card); background: var(--card); box-shadow: var(--shadow-sm); }
+.side-now__art { height: 128px; display: grid; place-items: center; overflow: hidden; background: var(--fig-bg); border-bottom: 1px solid var(--line); }
+.side-now__art svg { display: block; width: 100%; height: 100%; }
+.side-now__art:has(.name-tile) { background-image: radial-gradient(var(--dot) 1.3px, transparent 1.5px); background-size: 10px 10px; }
+.side-now__body { padding: 16px 20px 18px; }
+.side-now__k { display: block; font: 700 11px/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.side-now__k.go { color: var(--here); }
+.side-now__t { display: block; margin-top: 8px; font-size: 24px; line-height: 1.15; color: var(--ink-strong); }
+.side-now__s { display: block; margin-top: 6px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.side-now__btn { width: 100%; margin-top: 14px; }
+/* Short screens: the card drops its figure, so Start or Continue stays in view. */
+@media (max-height: 820px) { .side-now__art { display: none; } }
+
+/* The track page's route: a dashed line down the left, a stage for each part, a numbered stop for each lesson. */
+.route { position: relative; padding-left: 84px; }
+.route::before { content: ''; position: absolute; left: 21px; top: 10px; bottom: 30px; border-left: 2px dashed var(--line-strong); }
+.route-stage + .route-stage { margin-top: 44px; }
+.route-stage__head { position: relative; margin: 8px 0 18px; }
+.route-stage__mark { position: absolute; left: -71px; top: 8px; width: 18px; height: 18px; border-radius: 4px; background: var(--ink-strong); box-shadow: 0 0 0 6px var(--ground); }
+.route-stage__head h2 { font-size: 32px; color: var(--ink-strong); }
+.route-stage__head p { margin: 6px 0 0; font-size: 15px; color: var(--muted); }
+.route-stops { margin: 0; padding: 0; list-style: none; }
+
+.stop { position: relative; margin-bottom: 14px; }
+.stop__node {
+  position: absolute; left: -84px; top: 30px; width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--ground); box-shadow: inset 0 0 0 1.5px var(--line-strong);
+  font: 700 12px/1 var(--mono); color: var(--muted);
+}
+.stop--done .stop__node { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 6px var(--ground); }
+.stop--now .stop__node { background: var(--here); color: var(--here-ink); box-shadow: 0 0 0 6px var(--ground), 0 0 0 7.5px color-mix(in srgb, var(--here) 40%, transparent); }
+.stop__tile { display: flex; gap: 24px; align-items: center; padding: 20px 24px 20px 20px; border-radius: var(--r-tile); background: var(--card); box-shadow: var(--shadow-sm); }
+.stop--now .stop__tile { box-shadow: 0 0 0 2px var(--here), var(--shadow-sm); }
+.stop__art {
+  flex: 0 0 168px; height: 124px; overflow: hidden; display: grid; place-items: center; border-radius: var(--r-opt);
+  background: var(--fig-bg); box-shadow: inset 0 0 0 1px var(--fig-line, var(--line)); text-decoration: none;
+}
+.stop__art:has(.name-tile) { background-image: radial-gradient(var(--dot) 1.2px, transparent 1.4px); background-size: 9px 9px; }
+.stop__slot { display: block; width: 100%; height: 100%; }
+.stop__slot svg { display: block; width: 100%; height: 100%; }
+.stop__info { min-width: 0; flex: 1; }
+.stop__state { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 14px; }
+.stop__k { font: 700 11px/1.3 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.stop__k.go { color: var(--here); }
+.stop__k.done { color: var(--accent); }
+.stop__info h3 { margin-top: 8px; font-size: 26px; line-height: 1.1; color: var(--ink-strong); }
+.stop__info h3 a { color: inherit; text-decoration: none; }
+.stop__info h3 a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.12em; }
+.stop__sub { margin: 6px 0 0; font-size: 15px; color: var(--muted); }
+.stop__acts { margin-top: 14px; display: flex; align-items: center; gap: 18px; }
+
+.stop--soon .stop__tile { padding-top: 14px; padding-bottom: 14px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); }
+.stop--soon .stop__art { height: 72px; background-color: transparent; background-image: radial-gradient(var(--dot) 1.2px, transparent 1.4px); background-size: 9px 9px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.stop--soon .stop__art span { font: 700 30px/1 var(--mono); color: var(--line-strong); }
+.stop--soon .stop__info h3 { font-size: 22px; color: var(--muted); }
+.stop--soon .stop__node { top: 20px; box-shadow: inset 0 0 0 1.5px var(--line); }

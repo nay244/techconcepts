@@ -1,8 +1,10 @@
 ---
 // The brand rules (.brand) come with SiteHeader, which always renders alongside this.
+// The role is said outright: a split page (the track page) renders this footer at the end of its scrolling route,
+// inside main, where a plain <footer> would stop being the page's contentinfo landmark.
 ---
 
-<footer class="site-foot">
+<footer class="site-foot" role="contentinfo">
   <div class="wrap">
     <div class="foot-grid">
       <div>
