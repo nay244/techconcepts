@@ -1,7 +1,9 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import '../components/site.css';
 import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
 import { positionOf, type Position, type Slot } from '../engine/timeline';
+import { lessonLine, UP_NEXT_KICKER } from '../lib/hub';
 import { wrapAtDots } from '../lib/wrapAtDots';
 import { placeLabel } from './placeLabel';
 import { Practice, questionsTitle, type Picks } from './Practice';
@@ -17,10 +19,12 @@ export interface ExplanationProps {
   /** What the position shows, and its unit (the console's derived state). */
   slot: Slot;
   unit: Unit;
-  /** Shown on the lesson's first Overview: the "Resume at …" button or the "Finished" marker. */
+  /** Shown on the lesson's first Overview: the "Resume at …" button or the "✓ Done" marker. */
   resume?: ReactNode;
   /** The next ready lesson in the track, or null when this is the last one. */
   next: AvailableSummary | null;
+  /** The next lesson's figure markup (`lessonFigure`, drawn at build time), or null when there is no next lesson. */
+  nextFigure: string | null;
   /** This lesson's number in the track, and how many lessons the track plans. */
   number: number;
   total: number;
@@ -145,7 +149,7 @@ function asClause(purpose: string): string {
   return /[.!?]$/.test(clause) ? clause : `${clause}.`;
 }
 
-interface EndRowProps extends Pick<ExplanationProps, 'lesson' | 'next' | 'number' | 'total' | 'trackUrl'> {
+interface EndRowProps extends Pick<ExplanationProps, 'lesson' | 'next' | 'nextFigure' | 'number' | 'total' | 'trackUrl'> {
   unit: number;
   /** Goes to the next unit; the button that did it leaves with the old position. */
   onJump(position: Position): void;
@@ -155,7 +159,7 @@ interface EndRowProps extends Pick<ExplanationProps, 'lesson' | 'next' | 'number
  * The way on from Practice: the next unit in a lesson of many, else the next
  * ready lesson in the track, else back to the track.
  */
-function EndRow({ lesson, unit, next, number, total, trackUrl, onJump }: EndRowProps) {
+function EndRow({ lesson, unit, next, nextFigure, number, total, trackUrl, onJump }: EndRowProps) {
   const following = lesson.units[unit + 1];
   if (following !== undefined) {
     return (
@@ -172,11 +176,15 @@ function EndRow({ lesson, unit, next, number, total, trackUrl, onJump }: EndRowP
   if (next !== null) {
     return (
       <div className="explain__end">
-        <p>
-          That’s the whole lesson. Next ready lesson: <b>{next.title}</b>, lesson {next.number}.
-        </p>
-        <a className="cbtn" href={next.url}>
-          {`Go to ${next.title}`}
+        <p>That’s the whole lesson.</p>
+        <a className="upnext lift" href={next.url}>
+          {/* The art is decoration; the link's name reads "Up next", the title, then the line. */}
+          <span className="upnext__art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: nextFigure ?? '' }} />
+          <span className="upnext__text">
+            <span className="upnext__k">{UP_NEXT_KICKER.next}</span>{' '}
+            <b>{next.title}</b>{' '}
+            <span className="upnext__line">{lessonLine(next)}</span>
+          </span>
         </a>
       </div>
     );
@@ -208,7 +216,7 @@ function EndRow({ lesson, unit, next, number, total, trackUrl, onJump }: EndRowP
  * they left it from one position to the next.
  */
 export function Explanation(props: ExplanationProps) {
-  const { lesson, position, slot, unit, resume, next, number, total, trackUrl, onGo, picked, onPick, panelRef } = props;
+  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, onGo, picked, onPick, panelRef } = props;
   const [deeperOpen, setDeeperOpen] = useState(false);
 
   const ownPanel = useRef<HTMLElement>(null);
@@ -307,7 +315,7 @@ export function Explanation(props: ExplanationProps) {
         <h2 className="explain__title">{questionsTitle(unit.practice.length)}</h2>
         <p className="explain__sub">Just for you. Nothing is scored or saved.</p>
         <Practice questions={unit.practice} picked={picked} onPick={onPick} />
-        <EndRow lesson={lesson} unit={slot.unit} next={next} number={number} total={total} trackUrl={trackUrl} onJump={jump} />
+        <EndRow lesson={lesson} unit={slot.unit} next={next} nextFigure={nextFigure} number={number} total={total} trackUrl={trackUrl} onJump={jump} />
       </>
     );
   }

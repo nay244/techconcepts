@@ -35,6 +35,7 @@ function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
       picked={{}}
       onPick={vi.fn()}
       next={neighbors(entries, lesson.slug).next}
+      nextFigure={neighbors(entries, lesson.slug).next === null ? null : '<svg class="stub-figure" viewBox="0 0 4 3"></svg>'}
       number={entry.number}
       total={entries.length}
       trackUrl={tour ? '/how-the-internet-works' : '/networking'}
@@ -155,8 +156,8 @@ test('a lifted lesson renders the same Learn words as its legacy text', () => {
 
 test('the end row names the next ready lesson, or says the last ready one for now', () => {
   const { unmount } = show(7);
-  expect(screen.getByText(/Next ready lesson/)).toHaveTextContent('That’s the whole lesson. Next ready lesson: Firewalls, lesson 16.');
-  expect(screen.getByRole('link', { name: 'Go to Firewalls' })).toHaveAttribute('href', '/networking/firewalls');
+  expect(screen.getByText('That’s the whole lesson.')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /^Up next Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   unmount();
 
   show(7, FIREWALLS);
@@ -185,8 +186,18 @@ test('in a lesson of many units, a unit’s end row leads to the next unit', asy
   // The last unit's end row is the lesson's.
   show(15, TWO);
   expect(screen.getByText('Beta · Practice')).toBeInTheDocument();
-  expect(screen.getByText(/Next ready lesson/)).toHaveTextContent('Next ready lesson: HTTPS, lesson 2.');
-  expect(screen.getByRole('link', { name: 'Go to HTTPS' })).toHaveAttribute('href', '/how-the-internet-works/what-is-https');
+  expect(screen.getByText('That’s the whole lesson.')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /^Up next HTTPS/ })).toHaveAttribute('href', '/how-the-internet-works/what-is-https');
+});
+
+test('the Up next card shows the next lesson’s number and subtitle, and its art is decorative', () => {
+  const { container } = show(7);
+  const card = screen.getByRole('link', { name: /^Up next Firewalls/ });
+  expect(card).toHaveClass('upnext', 'lift');
+  const next = neighbors(NETWORKING, 'dhcp').next!;
+  expect(card).toHaveTextContent(`Lesson ${String(next.number).padStart(2, '0')} · ${next.subtitle}`);
+  expect(card.querySelector('.upnext__art')).toHaveAttribute('aria-hidden', 'true');
+  expect(container.querySelector('.upnext__art .stub-figure')).not.toBeNull();
 });
 
 test('kickers name the unit in a lesson of many units', () => {

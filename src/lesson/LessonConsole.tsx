@@ -4,6 +4,7 @@ import type { Lesson } from '../content/schema';
 import { usePlayback } from '../engine/playback';
 import { deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
+import { STATUS_WORDS } from '../lib/hub';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import { DRIVERS } from '../scenes/drivers';
@@ -28,6 +29,8 @@ export interface LessonConsoleProps {
   total: number;
   /** The next ready lesson in the track, or null when this is the last one. */
   next: AvailableSummary | null;
+  /** The next lesson's figure markup, drawn at build time, or null when there is no next lesson. */
+  nextFigure: string | null;
   /** Every entry of the track, in order. */
   entries: LessonSummary[];
   /** The scene's figure, drawn at build time (the page's named slot). */
@@ -44,10 +47,7 @@ const NO_PICKS: Picks = {};
 function FinishedMarker() {
   return (
     <p className="explain__finished">
-      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-        <path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      Finished
+      {STATUS_WORDS.done}
     </p>
   );
 }
@@ -66,7 +66,7 @@ function FinishedMarker() {
  * the learner has opened (the outline ticks them) and the Practice picks, per
  * unit, so a visit elsewhere does not clear them.
  */
-export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, entries, figure, figureData }: LessonConsoleProps) {
+export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, figure, figureData }: LessonConsoleProps) {
   // Each event waits as long as the figure's driver takes to play it.
   const [state, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
   const { position, eventIndex } = state;
@@ -171,9 +171,6 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         slot={slot}
         unit={unit}
         reducedMotion={reducedMotion}
-        entries={entries}
-        currentKey={entry.key}
-        progress={progress.data}
       />
       <Outline
         lesson={lesson}
@@ -204,6 +201,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           onPick={pick}
           resume={resume}
           next={next}
+          nextFigure={nextFigure}
           number={entry.number}
           total={total}
           trackUrl={trackUrl}

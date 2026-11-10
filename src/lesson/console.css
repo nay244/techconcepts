@@ -21,24 +21,15 @@
   display: grid;
   grid-template-columns: 268px minmax(0, 1fr);
   grid-template-rows: 68px minmax(0, 1fr);
-  gap: 8px;
+  gap: 12px;
   height: 100vh;
   height: 100dvh;
-  padding: 8px;
+  padding: 12px;
   overflow: hidden;
-  background: var(--bg-soft);
+  /* No background of its own: the body's blueprint dot grid (global.css) shows
+     between the panels, as on every other page. */
   color: var(--ink);
   font: 15px/1.5 var(--sans);
-}
-
-/* The mockups' dark page is the darkest surface, a step below --bg-soft. */
-:root[data-theme='dark'] .console {
-  background: var(--bg);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .console {
-    background: var(--bg);
-  }
 }
 
 :where(.console) button {
@@ -49,15 +40,15 @@
 .console :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 3px;
 }
 
 .console__panel {
   min-width: 0;
   min-height: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-tile);
   background: var(--card);
+  box-shadow: var(--shadow-sm);
 }
 
 .console__ptitle {
@@ -75,7 +66,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(348px, 27vw, 392px);
   grid-template-rows: minmax(0, 1fr) clamp(200px, 26vh, 252px);
-  gap: 8px;
+  gap: 12px;
   min-width: 0;
   min-height: 0;
 }
@@ -91,7 +82,7 @@
   min-width: 34px;
   padding: 0 10px;
   border: 1px solid var(--line-strong);
-  border-radius: 3px;
+  border-radius: var(--r-btn);
   background: var(--tile);
   color: var(--ink-strong);
   font: 500 13.5px/1 var(--sans);
@@ -143,20 +134,13 @@
 }
 .topbar__brand b {
   display: block;
-  font: 700 17px/1 var(--mono);
-}
-.topbar__brand small {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font: 400 12px/1.2 var(--sans);
+  font: 700 18px/1 var(--sans);
+  letter-spacing: -0.01em;
 }
 
-/* It takes the bar's spare room, so the OSI and progress blocks sit beside the
-   theme switch, as in internet-v2, subnet-v1 and firewalls-v1 (lesson-v3, the
-   oldest, left the room after them). It gives way first when the bar is short
-   of room, down to 340px, so the blocks after it (the theme switch last) are
-   never pushed out of sight. */
+/* It takes the bar's spare room, so the OSI chips sit beside the theme button.
+   It gives way first when the bar is short of room, down to 340px, so the
+   blocks after it (the theme button last) are never pushed out of sight. */
 .topbar__now {
   flex: 1 1 auto;
   gap: 6px;
@@ -180,9 +164,10 @@
   color: var(--muted);
   text-decoration: none;
 }
-/* Its spaces are its own; a flex item would drop them. */
+/* The "/" between the crumbs: 9px each side, quieter than the links. */
 .topbar__crumb > span {
-  white-space: pre;
+  margin-inline: 9px;
+  opacity: 0.55;
 }
 .topbar__crumb a:hover {
   text-decoration: underline;
@@ -257,8 +242,7 @@
   white-space: nowrap;
 }
 
-.topbar__osi,
-.topbar__progress {
+.topbar__osi {
   gap: 6px;
 }
 .topbar__chips {
@@ -282,33 +266,6 @@
   color: var(--bg);
 }
 
-.topbar__places {
-  display: flex;
-  gap: 2px;
-}
-.topbar__places i {
-  width: 7px;
-  height: 9px;
-  border: 1px solid var(--line-strong);
-  border-radius: 1px;
-}
-.topbar__places i[data-state='ready'] {
-  border-color: var(--muted);
-}
-.topbar__places i[data-state='done'] {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-.topbar__places i[data-state='current'] {
-  border-color: var(--here);
-  background: var(--here);
-}
-.topbar__count {
-  color: var(--muted);
-  font: 500 12.5px/1 var(--mono);
-  white-space: nowrap;
-}
-
 .topbar__tools {
   flex-direction: row;
   align-items: center;
@@ -317,28 +274,25 @@
   border-inline-end: 0;
 }
 
-/* A segmented switch: the theme's Light and Dark, the outline's filters, and the scene's views. */
-.topbar__seg,
+/* A segmented switch: the outline's filters, and the scene's views. */
 .outline__filters,
 .stage__views {
   display: inline-flex;
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--line-strong);
-  border-radius: 3px;
+  border-radius: 6px;
 }
-.topbar__seg button,
 .outline__filters button,
 .stage__views button {
   padding: 5px 10px;
   border: 0;
-  border-radius: 2px;
+  border-radius: 4px;
   background: transparent;
   color: var(--muted);
   font: 500 13px/1 var(--sans);
   cursor: pointer;
 }
-.topbar__seg button[aria-pressed='true'],
 .outline__filters button[aria-pressed='true'],
 .stage__views button[aria-pressed='true'] {
   background: var(--tile);
@@ -916,6 +870,68 @@ a.outline__lesson:hover {
 .explain__end .cbtn {
   flex: none;
   padding: 0 14px;
+}
+
+/* The Up next card: the next lesson's art, then its kicker, title and line. The whole card is the link. `.lift`
+   (site.css) owns its resting shadow and its hover, so none is set here. */
+.explain__end:has(.upnext) {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.upnext {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-tile);
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+}
+.upnext:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.upnext__art {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 104px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: var(--r-opt);
+  background: var(--fig-bg);
+  box-shadow: inset 0 0 0 1px var(--fig-line, var(--line));
+}
+.upnext__art:has(.name-tile) {
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.4px);
+  background-size: 9px 9px;
+}
+.upnext__art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.upnext__text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.upnext__k {
+  color: var(--here);
+  font: 700 11px/1.3 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.upnext__text b {
+  color: var(--ink-strong);
+  font: 700 17px/1.2 var(--sans);
+}
+.upnext__line {
+  color: var(--muted);
+  font: 400 13.5px/1.4 var(--sans);
 }
 
 /* ---------------------------------------------------------------- practice */
