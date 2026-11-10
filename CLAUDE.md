@@ -28,7 +28,9 @@ A wrong lesson is worse than a missing one. A change to lesson content, a glossa
 
 ## UI work
 
-Load the `frontend-design` skill for every design decision. Design phone (375px) and desktop (1440px) together, and look at both in the browser before calling a screen done. The base look is the navy blueprint, Atkinson type and original isometric art; all art stays original.
+Load the `frontend-design` skill for every design decision. Design phone (375px) and desktop (1440px) together, and look at both in the browser before calling a screen done.
+
+The owner set the redesign's scope on 2026-11-10: the look and the layouts of the whole site are revamped. The Tracks page (one panel per track) and the Lesson page (contents sidebar, network visual, event log, Learn) are the layouts to start from; change them wherever the design is better for it. All art stays original.
 
 ## Done means verified
 
