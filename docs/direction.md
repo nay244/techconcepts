@@ -143,7 +143,7 @@ The equipment room: a faceplate-grey ground, graphite ink, and the colours of th
 | Figure ground | `#eef1f1` | `#0d1012` |
 
 - **Type.** Headings, step titles, buttons and labels: Barlow Semi Condensed, 600 and 700 (new; to be self-hosted like the others). Running text: Atkinson Hyperlegible Next. Addresses, ports and other real data: Atkinson Hyperlegible Mono, and only those.
-- **Labels** are sentence case. The three a learner steers by (This lesson, Event log, the step marker) sit in a small bordered strip, like label-maker tape. Nothing is set in capitals for decoration.
+- **Labels** are sentence case, with one exception: the sidebar's group headings keep the current site's small spaced capitals (§7). The Event log's name and the step marker sit in a small bordered strip, like label-maker tape.
 - **Shape.** Panels have a 1px strong line, 6px corners and no shadow. Controls have 4px corners. Markers are small squares.
 - **The cable.** Progress is drawn as a striped pair: a dashed run under the lesson's top bar, filled in orange as far as the learner has got; striped green segments for the lessons of a track that are ready.
 - **Headlines are one colour.** No word is picked out in the accent.
@@ -161,7 +161,8 @@ Each starts from the layout in 2.8.
 | **The log stays under the scene while watching** (owner's question, 2026-11-10: "why not place the event log below the Watch?"). Claude's first prototype moved it under the explanation; measuring both settled it, below. Each message is a short entry (from, to, time, then one sentence) and no longer a seven-column table. Until the first message the log is one line; from then on it keeps one height (216px at 900 tall) and scrolls to the newest. | The wire and its record share a column, and the words have the other. The log no longer holds a quarter of the screen empty before anything has happened. The same entry works at phone width. |
 | The explanation column runs the full height of the page, at the old width (389px at 1440). | The DHCP Overview no longer scrolls: it has 826px, from 550px. |
 | In Learn and Practice the columns swap: the words take the wide middle column at a 66-character measure, and the scene, its table and the log step to the right. | Reading no longer happens in a 389px column beside a dimmed scene. Sources sit at the foot of the text, numbered to match the claims. |
-| The outline shows a step's second line only for the step you are on. | DHCP's eight places take 411px of the 826px column, so a longer outline such as OSI Model's has room. Not yet tried with OSI Model's own outline. |
+| **The sidebar keeps the current site's design** (owner, 2026-11-10: "more similar to the design of the current page"). Claude's first prototype had flattened it to one list with square markers and a second line only on the current step. Kept from the current site: the three named groups (Watch with its step count, Learn, Practice) in small spaced capitals, a round marker with the step's number, a title with a line under it on every row, the current place in an outlined box, the 268px width, and "All 19 lessons" at the foot. In Patch's colours and type. | The sidebar reads as the lesson's map again: what kind of thing each row is, and what it says, without clicking. Rows are 55px, on a phone too. |
+| The sidebar's list scrolls by itself, to the step you are on; its heading and the all-lessons link stay put. | OSI Model's outline (10 steps) is 908px in a 719px list at 900 tall, so it scrolls, as it does today (960px in 794px). Now the link at the foot is always in reach. |
 | The step controls sit under the scene; the theme button and OSI badge are not in the prototype's top bar. | To settle in the build: where the theme button and the layer badge go. |
 | On a phone the scene is pinned under the top bar (a third of the screen), the rest is three tabs (Explain, Steps, Log), and Back and Next are pinned at the bottom. | The whole lesson fits one 812px screen with nothing above the scene, from a 2,412px stack. Hypothesis 2.9 holds. |
 | The stamp in the top bar reads "Not checked yet, 2 sources" for DHCP. | An unchecked lesson says so, in the same place a checked one will say "Verified" with its date. |
@@ -173,7 +174,9 @@ Each starts from the layout in 2.8.
 | Log under the explanation (first prototype) | 648×308 | 446px wide | 328px inside the log at step 2, 107px at step 5 |
 | Log under the scene (taken) | 705×336 | 389px wide | about 570px under a step's two short paragraphs |
 
-The first prototype's "bigger scene" was a taller box around a smaller drawing; this document said the scene grew, and that was wrong. Under the scene, the drawing is 9% wider. The cost is the empty space under a step's words. That space is the natural home for a look inside the current message (direction option 6, the packet inspector), still to be decided in step 4.
+With the sidebar back at 268px (below), the drawing is 685×326.
+
+The first prototype's "bigger scene" was a taller box around a smaller drawing; this document said the scene grew, and that was wrong. Under the scene, the drawing was 9% wider, and is 6% wider with the wider sidebar. The cost is the empty space under a step's words. That space is the natural home for a look inside the current message (direction option 6, the packet inspector), still to be decided in step 4.
 
 Still to fix in the build: outline rows are 41px tall on a phone and need 44; the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
 
