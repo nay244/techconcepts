@@ -147,7 +147,7 @@ The equipment room: a faceplate-grey ground, graphite ink, and the colours of th
 - **Shape.** Panels have a 1px strong line, 6px corners and no shadow. Controls have 4px corners. Markers are small squares.
 - **The cable.** Progress is drawn as a striped pair: a dashed run under the lesson's top bar, filled in orange as far as the learner has got; striped green segments for the lessons of a track that are ready.
 - **Headlines are one colour.** No word is picked out in the accent.
-- **Figures** follow 2.13. Lit parts are the blue pair.
+- **Figures** follow 2.13 and §8. The lit part is the orange pair.
 - **Not in the prototype:** the scene's motion, the Tracks page, the track page, About and 404.
 
 The prototypes and screenshots are on this machine only, in the git-ignored `.superpowers/revamp/` (`look/` the pages, `look/shots/compare.png` the three side by side, `baseline/` the old site). `.claude/launch.json` serves them as `look-prototypes`.
@@ -179,4 +179,47 @@ With the sidebar back at 268px (the table above), the drawing is 685×326.
 The first prototype's "bigger scene" was a taller box around a smaller drawing; this document said the scene grew, and that was wrong. Under the scene, the drawing was 9% wider, and is 6% wider with the wider sidebar. The cost is the empty space under a step's words. That space is the natural home for a look inside the current message (direction option 6, the packet inspector), still to be decided in step 4.
 
 Still to fix in the build: the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
+
+## 8. Illustrations and logo
+
+The owner asked on 2026-11-10 for a new pass of illustrations for the whole project, from three reference drawings (a desk robot, a dashboard, a 404 scene) and the Anatomy skill, and for new logo ideas.
+
+### The family
+
+- **Same kit, plate and camera.** Every figure is drawn in code with the vendored Anatomy kit (`src/art/kit/`, MIT) on the one 224×148 plate and the one camera in `src/art/common.ts`. A figure is a function that returns SVG; nothing is traced or imported.
+- **The references set the finish, never the subject.** From them: one solid object, many small true parts, a single lit part, an engraved label on the plate's edge. Our subjects are our own: none of the three reference objects is drawn.
+- **Two finishes, one drawing.** Light theme: porcelain-white solids with graphite lines and dark glass. Dark theme: charcoal solids, pulled to neutral grey so they carry no blue cast. The tones are CSS variables, so the 19 drawings that already exist (7 covers, 7 small figures, 5 lesson scenes) take the new finish with no redrawing.
+- **The lit part is the orange pair**, in both themes (light `#ffc48f` to `#d9541c`, dark `#ffd3a8` to `#f0702e`). It is the thing to look at, the same meaning orange has everywhere else in Patch. This replaces blue.
+- **No film grain**, as before. The references carry it; ours do not.
+- **Bigger and denser than the older figures.** The older ones leave most of the plate bare. A new figure's object fills the plate, and every face has something true on it.
+
+The finish is not in the site's CSS yet: it goes in with the Patch tokens (phase 2, step 3). Until then it lives in the review gallery's stylesheet.
+
+### Page figures, first pass (`src/art/figures/pages.ts`)
+
+| Figure | What it shows | For | Lit part |
+|---|---|---|---|
+| `inside` | A home router with its lid lifted on four rods, the board showing: sockets, a switch chip, a processor, memory, traces | Home, and wherever the site says what it is | One message on the trace from a socket to the switch chip |
+| `sources` | A report sheet under a stand loupe, three bound standards stacked beside it, a check stamp on its pad | About, and "Where the facts come from" | The one claim under the loupe |
+| `notFound` | A patch panel, ports 401 to 408, seven linked; port 404 is empty and dark | The 404 page | The loose plug that stops short of port 404 |
+| `notReady` | An assembly stand under a hoist: two layers of a lesson stacked, the third on the hook | "Not ready yet" tracks and lessons | The layer still on the hoist |
+
+Each has a sentence-long description for screen readers and tests beside it. None is on a page yet; they go in as each page is rebuilt (phase 2, steps 4 to 6).
+
+Not done in this pass: motion (the references animate on click; these are still); the 4× close-up review the Anatomy skill asks for, done properly on every junction; redrawing any of the 19 older figures to the denser standard.
+
+### Logo ideas
+
+Six marks, one ink colour and the orange accent, each tried at 96, 32, 20 and 16 pixels and beside the name:
+
+| Mark | Idea | Verdict |
+|---|---|---|
+| Lifted lid | A lid lifted off its tray, one message between | **Recommended.** Says what the site does, grows out of today's two diamonds, matches the `inside` figure, holds at 16px |
+| Port | A network socket with its link light on | Runner-up. The simplest and strongest at small sizes; needs the viewer to know the object |
+| Twisted pair | Two cable strands crossing, one orange | Distinctive, and Patch's own motif; muddy at 16px |
+| Message on the wire | A T-junction with a message on it | Reads as a tool, not a T |
+| Under the loupe | A block seen through a lens | Reads as a search icon |
+| Step marker | The lesson's lit square with a play triangle | Reads as any video button |
+
+No logo is chosen. The SVG files and the sheet are in the ignored `.superpowers/revamp/look/art/logos/`.
 
