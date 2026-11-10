@@ -16,7 +16,6 @@ import {
   resumePosition,
   sanitizeProgress,
   saveProgress,
-  trackCompletion,
 } from './store';
 import type { ProgressData } from './store';
 
@@ -201,7 +200,6 @@ describe('recordVisit', () => {
     d = recordVisit(d, 'dhcp', 'networking', 1, 8, now);
     expect(d.lessons['dhcp'].status).toBe('finished');
     expect(resumePosition(d, 'dhcp')).toBeNull();
-    expect(trackCompletion(d, ['dhcp', 'arp'])).toEqual({ finished: 1, inProgress: 0 });
   });
 
   test('moving past the Overview starts the lesson', () => {
@@ -286,7 +284,7 @@ describe('mergeProgress', () => {
   });
 });
 
-describe('resumePosition and trackCompletion', () => {
+describe('resumePosition', () => {
   test('resume only applies to lessons in progress', () => {
     let d = recordVisit(emptyProgress(), 'dhcp', 'networking', 3, 8, now);
     d = recordVisit(d, 'arp', 'networking', 6, 6, now);
@@ -294,14 +292,6 @@ describe('resumePosition and trackCompletion', () => {
     expect(resumePosition(d, 'arp')).toBeNull();
     expect(resumePosition(d, 'never-opened')).toBeNull();
     expect(resumePosition(d, 'toString')).toBeNull();
-  });
-
-  test('counts finished and in-progress lessons within the given keys', () => {
-    let d = recordVisit(emptyProgress(), 'dhcp', 'networking', 3, 8, now);
-    d = recordVisit(d, 'arp', 'networking', 6, 6, now);
-    d = recordVisit(d, 'tls', 'networking', 2, 5, now);
-    expect(trackCompletion(d, ['dhcp', 'arp', 'dns'])).toEqual({ finished: 1, inProgress: 1 });
-    expect(trackCompletion(d, [])).toEqual({ finished: 0, inProgress: 0 });
   });
 });
 

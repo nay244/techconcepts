@@ -5,7 +5,7 @@ import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import { positionOf, slotsFor } from '../engine/timeline';
-import { cardPlaces, nextUps, presentTags, trackParts, type ReadyLesson } from './track';
+import { cardPlaces, trackParts, type ReadyLesson } from './track';
 
 const entries = getEntries('networking');
 const lessonOf = (e: AvailableSummary): Lesson => getLesson(e.slug)!;
@@ -90,10 +90,6 @@ test('the protocols chip counts the units of whatever lesson has several', () =>
   expect(dhcp.metaLabel).toBe('Protocols and exams');
 });
 
-test('the exam chips are the tags some ready lesson carries, in the usual order', () => {
-  expect(presentTags(entries)).toEqual(['a-plus', 'network-plus', 'security-plus', 'ccna', 'helpdesk', 'soc-analyst']);
-});
-
 test('each position of a one-unit lesson says which part it is in, and how far through Watch', () => {
   const places = cardPlaces(DHCP);
   expect(places[positionOf(DHCP, 0, 'overview')]).toEqual({ parts: ['', '', ''], note: 'Overview' });
@@ -109,18 +105,6 @@ test('in a lesson of several units each place names its unit', () => {
   expect(places[positionOf(lesson, 0, 'step', 2)]).toEqual({ parts: ['now', '', ''], note: 'Alpha: Watch, step 2 of 5' });
   expect(places[positionOf(lesson, 1, 'overview')]).toEqual({ parts: ['', '', ''], note: 'Beta: Overview' });
   expect(places[positionOf(lesson, 1, 'learn')]).toEqual({ parts: ['done', 'now', ''], note: 'Beta: Learn' });
-});
-
-test('what comes next is the step’s own sub-heading at a step, and nothing elsewhere', () => {
-  const next = nextUps(DHCP);
-  expect(next).toHaveLength(slotsFor(DHCP).length);
-  expect(next[positionOf(DHCP, 0, 'step', 3)]).toBe('The laptop says yes, please');
-  expect(next[positionOf(DHCP, 0, 'overview')]).toBeNull();
-  expect(next[positionOf(DHCP, 0, 'learn')]).toBeNull();
-  expect(next[positionOf(DHCP, 0, 'practice')]).toBeNull();
-
-  const two = liftedFixture(makeTwoUnitLesson());
-  expect(nextUps(two)[positionOf(two, 1, 'step', 1)]).toBe(two.units[1]!.steps[0]!.sub);
 });
 
 test('a lesson the registry lists as ready but the page cannot find stops the build by name', () => {

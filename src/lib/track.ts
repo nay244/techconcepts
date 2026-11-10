@@ -1,6 +1,6 @@
-// The track page's words that are worked out from the track and its lessons when the page is built: the
-// parts and their lessons as the cards show them, the exam chips, and what a returning visitor's card and the hero's
-// resume card say at each position of a lesson. Nothing here runs in the browser.
+// The track page's words that are worked out from the track and its lessons when the page is built: the parts and
+// their lessons as the route shows them, and where a returning visitor is at each position of a lesson. Nothing here
+// runs in the browser.
 import { CERT_TAGS, type CertTag } from '../content/certs';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Track } from '../content/schema';
@@ -88,12 +88,6 @@ export function trackParts(track: Track, entries: LessonSummary[], lessonOf: (en
   });
 }
 
-/** The exams some ready lesson helps with, in the usual order: one filter chip each. */
-export function presentTags(entries: LessonSummary[]): CertTag[] {
-  const present = new Set(entries.flatMap((e) => (e.available ? e.certTags : [])));
-  return (Object.keys(CERT_TAGS) as CertTag[]).filter((tag) => present.has(tag));
-}
-
 /**
  * For each position of a lesson, the card's Watch, Learn and Practice marks and where the visitor is, in words. A
  * unit's Overview reaches none of the three yet; a step is part way through Watch; Learn has Watch done; Practice has
@@ -115,9 +109,4 @@ export function cardPlaces(lesson: Lesson): CardPlace[] {
         return { parts: ['done', 'done', 'now'], note: `${unit}Practice` };
     }
   });
-}
-
-/** For each position of a lesson, the sub-heading of the step a visitor resumes at there; null away from a step. */
-export function nextUps(lesson: Lesson): Array<string | null> {
-  return slotsFor(lesson).map((slot) => (slot.kind === 'step' ? lesson.units[slot.unit]!.steps[slot.step - 1]!.sub : null));
 }

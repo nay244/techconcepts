@@ -233,17 +233,6 @@ export function resumePosition(d: ProgressData, key: string): number | null {
   return lesson?.status === 'in-progress' ? lesson.furthestPosition : null;
 }
 
-export function trackCompletion(d: ProgressData, keys: string[]): { finished: number; inProgress: number } {
-  let finished = 0;
-  let inProgress = 0;
-  for (const key of keys) {
-    const status = lessonOf(d, key)?.status;
-    if (status === 'finished') finished += 1;
-    else if (status === 'in-progress') inProgress += 1;
-  }
-  return { finished, inProgress };
-}
-
 /**
  * What is stored under v2, with whatever v1 still holds merged in (an old tab may have written it since), and the
  * old Networking lesson 1 split into the How the Internet Works lessons that replaced it.

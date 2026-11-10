@@ -36,8 +36,9 @@ export function requireLessons(lessons: ReadyLesson[]): void {
   });
 }
 
-/** A ready lesson's card on the track page, found by the slug its link ends in (a lesson in progress links to `?step=N`). */
-export const lessonCard = (page: Page, slug: string): Locator => page.locator('main li.lesson', { has: page.locator(`a.l-link[href$="/${slug}"], a.l-link[href*="/${slug}?"]`) });
+/** A ready lesson's stop on the track page's route, found by the slug its title links to (a lesson in progress links to `?step=N`). */
+export const lessonCard = (page: Page, slug: string): Locator =>
+  page.locator('main .route li.stop:not(.stop--soon)', { has: page.locator(`h3 a[href$="/${slug}"], h3 a[href*="/${slug}?"]`) });
 
 /** Every page outside the lessons, by the address it is served at. */
 export const SITE_PAGES = [

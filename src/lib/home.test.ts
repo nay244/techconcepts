@@ -2,18 +2,15 @@ import { expect, test } from 'vitest';
 import { drawFigure } from '../art/scenes';
 import { getEntries, getLesson } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { liftedFixture, makeTwoUnitLesson } from '../content/test-fixtures';
-import { positionOf, resumeLabel, slotsFor } from '../engine/timeline';
+import { positionOf } from '../engine/timeline';
 import { STATUS_WORDS } from './hub';
-import { homeTrackCards, insideSheet, osiLitAt, resumePlaces } from './home';
+import { homeTrackCards, insideSheet, osiLitAt } from './home';
 
 const lesson = (slug: string): Lesson => {
   const found = getLesson(slug);
   if (found === undefined) throw new Error(`no ${slug}`);
   return found;
 };
-const DHCP = lesson('dhcp');
-const HTTP = lesson('what-is-http');
 const OSI = lesson('osi-model');
 
 test('Home’s track cards: the two tracks with lessons in order, then A+, each linking to its panel on Tracks', () => {
@@ -136,51 +133,4 @@ test('lighting the OSI figure: a layer cue lights its block and its machine’s 
 test('lighting a block the figure does not have is refused by name', () => {
   const svg = drawFigure('osi').svg;
   expect(() => osiLitAt(svg, [{ cue: 'layer', arg: 'router:7' }])).toThrow(/osi-L-router-7/);
-});
-
-test('each place reads after "You’re on" and before "in <lesson>"; a step keeps resumeLabel’s words', () => {
-  const places = resumePlaces(DHCP);
-  expect(places).toEqual([
-    'the Overview',
-    'step 1 of 5',
-    'step 2 of 5',
-    'step 3 of 5',
-    'step 4 of 5',
-    'step 5 of 5',
-    'the Learn part',
-    'the Practice part',
-  ]);
-  slotsFor(DHCP).forEach((slot, p) => {
-    if (slot.kind === 'step') expect(places[p]).toBe(resumeLabel(DHCP, p));
-  });
-});
-
-test('in a lesson of many units the unit’s name says which part', () => {
-  const two = liftedFixture(makeTwoUnitLesson());
-  expect(resumePlaces(two)).toEqual([
-    'the Alpha Overview',
-    'Alpha step 1 of 5',
-    'Alpha step 2 of 5',
-    'Alpha step 3 of 5',
-    'Alpha step 4 of 5',
-    'Alpha step 5 of 5',
-    'the Alpha Learn part',
-    'the Alpha Practice part',
-    'the Beta Overview',
-    'Beta step 1 of 5',
-    'Beta step 2 of 5',
-    'Beta step 3 of 5',
-    'Beta step 4 of 5',
-    'Beta step 5 of 5',
-    'the Beta Learn part',
-    'the Beta Practice part',
-  ]);
-});
-
-test('a How the Internet Works lesson is one unit, so its places read like DHCP’s, with no unit name', () => {
-  const places = resumePlaces(HTTP);
-  expect(places).toHaveLength(slotsFor(HTTP).length);
-  expect(places[0]).toBe('the Overview');
-  expect(places[1]).toBe(`step 1 of ${HTTP.units[0]!.steps.length}`);
-  expect(places.at(-1)).toBe('the Practice part');
 });
