@@ -428,14 +428,8 @@ const DRAW: Record<CoverId, () => string> = {
   aplus: () => frame('pc', 'RAM · 2 × 8 GB', pcTower(), DESCRIBE.aplus),
 };
 
-/** A cover's description in words, the same as its figure's label. */
-export const coverDescription = (id: CoverId): string => DESCRIBE[id];
-
-/** The cover as drawn in the mockup, with its `data-part` hooks, so a page can animate it. */
+/** The cover as drawn in the mockup, with its `data-part` hooks still in it. */
 export const cover = (id: CoverId): string => DRAW[id]();
 
 /** A still copy of a cover: no hooks, and every id tagged so two copies on a page never share one. */
 export const coverStill = (id: CoverId, tag: string): string => scopeIds(cover(id), tag);
-
-/** The router cover's body and the packets' path on screen (in the cover's own frame); the track page sends them along it. */
-export const routerDrawing = (): { svg: string; path: number[][] } => router();

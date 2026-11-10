@@ -63,7 +63,7 @@ const last = track.title.slice(cut + 1);
 ---
 
 <BaseLayout title={track.title} current="tracks" description={track.description} split footer={false}>
-  <aside class="side">
+  <div class="side">
     <nav class="crumbs" aria-label="Breadcrumb">
       <ol>
         <li><a href="/tracks">Tracks</a></li>
@@ -75,7 +75,7 @@ const last = track.title.slice(cut + 1);
     <TrackSide client:load entries={entries} known={known}>
       {figures.map(({ slot, svg }) => <Fragment slot={slot} set:html={svg} />)}
     </TrackSide>
-  </aside>
+  </div>
 
   <div class="routebox">
     <div class="routebox__in">
@@ -179,13 +179,16 @@ const last = track.title.slice(cut + 1);
       overflow-y: auto;
       overscroll-behavior: contain;
       scrollbar-gutter: stable;
-      padding: 28px var(--edge) 80px 64px;
+      padding: 28px var(--edge) 0 64px;
+      /* A focus ring scrolled into view clears the fade. */
+      scroll-padding-top: 28px;
       /* A short fade where the route slides under the header. */
       -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px);
       mask-image: linear-gradient(to bottom, transparent 0, #000 22px);
     }
+    /* The space between the closing line and the footer; nothing below the footer. */
     .routebox__in {
-      padding: 0;
+      padding: 0 0 80px;
     }
   }
 
