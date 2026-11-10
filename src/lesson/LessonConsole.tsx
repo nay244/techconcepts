@@ -171,9 +171,6 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         slot={slot}
         unit={unit}
         reducedMotion={reducedMotion}
-        entries={entries}
-        currentKey={entry.key}
-        progress={progress.data}
       />
       <Outline
         lesson={lesson}

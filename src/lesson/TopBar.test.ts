@@ -5,7 +5,6 @@ import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { initialPlayback } from '../engine/playback';
 import { slotsFor } from '../engine/timeline';
-import { emptyProgress } from '../progress/store';
 import { osiHeading, TopBar } from './TopBar';
 
 test('osiHeading names a single layer, and joins several with "and"', () => {
@@ -36,9 +35,6 @@ function topBarOf(lesson: Lesson): string {
       slot: slotsFor(lesson)[0]!,
       unit: lesson.units[0]!,
       reducedMotion: false,
-      entries: [],
-      currentKey: `networking/${lesson.slug}`,
-      progress: emptyProgress(),
     }),
   );
 }

@@ -413,21 +413,32 @@ test('a jump announces no table change, as it announces no message: only where i
   expect(live).toHaveTextContent(/^Learn$/);
 });
 
-test('the Light/Dark switch shows the theme in effect and saves a choice', async () => {
+test('the theme button switches and saves the theme', async () => {
   renderConsole();
-  const group = within(topBar()).getByRole('group', { name: 'Theme' });
-  expect(within(group).getByRole('button', { name: 'Dark' })).toHaveAttribute('aria-pressed', 'true');
-  expect(within(group).getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'false');
-  await user.click(within(group).getByRole('button', { name: 'Light' }));
+  const button = within(topBar()).getByRole('button', { name: /theme/i });
+  expect(button).toHaveAccessibleName('Switch to light theme');
+  await user.click(button);
   expect(document.documentElement.dataset.theme).toBe('light');
   expect(window.localStorage.getItem(THEME_KEY)).toBe('light');
-  expect(within(group).getByRole('button', { name: 'Light' })).toHaveAttribute('aria-pressed', 'true');
+  expect(button).toHaveAccessibleName('Switch to dark theme');
+  expect(within(topBar()).queryByRole('group', { name: 'Theme' })).toBeNull();
 });
 
-test('the track progress counts finished lessons out of 19', () => {
+test('the top bar has no track progress', () => {
   save({ status: 'finished', furthestPosition: 7 });
   renderConsole();
-  expect(within(topBar()).getByText('1 of 19 complete')).toBeInTheDocument();
+  expect(within(topBar()).queryByText(/lessons done|complete/)).toBeNull();
+  expect(within(topBar()).queryByText('Track progress')).toBeNull();
+});
+
+test('the breadcrumb is Tracks / <track> / <lesson>', () => {
+  renderConsole();
+  const crumb = topBar().querySelector('.topbar__crumb')!;
+  expect(within(topBar()).getByRole('link', { name: 'Tracks' })).toHaveAttribute('href', '/tracks');
+  expect(within(topBar()).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
+  expect(within(crumb as HTMLElement).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
+  expect(crumb.textContent).toMatch(/^Tracks\s*\/\s*Networking Concepts\s*\/\s*DHCP/);
+  expect(within(topBar()).queryByText('See how technology works')).toBeNull();
 });
 
 test('the outline moves the lesson, and All 19 lessons opens the track list in a dialog', async () => {

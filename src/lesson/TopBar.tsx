@@ -1,10 +1,7 @@
-import type { LessonSummary } from '../content/registry';
 import type { Lesson, Unit } from '../content/schema';
 import { holding, type PlaybackState } from '../engine/playback';
 import { positionOf, type Slot } from '../engine/timeline';
-import { createSafeStorage } from '../lib/storage';
-import { THEME_KEY, applyTheme, useTheme, type Theme } from '../lib/theme';
-import type { ProgressData } from '../progress/store';
+import ThemeToggle from '../components/ThemeToggle';
 import { placeLabel } from './placeLabel';
 
 export interface TopBarProps {
@@ -21,11 +18,6 @@ export interface TopBarProps {
   unit: Unit;
   /** With less motion asked for, a hold does not fill the next step's segment. */
   reducedMotion: boolean;
-  /** Every entry of the track, in order. */
-  entries: LessonSummary[];
-  /** The key of the lesson on this page. */
-  currentKey: string;
-  progress: ProgressData;
 }
 
 const OSI_NAMES = ['Physical', 'Data link', 'Network', 'Transport', 'Session', 'Presentation', 'Application'];
@@ -40,31 +32,6 @@ export function osiHeading(layers: number[], { named = true }: { named?: boolean
   if (sorted.length === 0) return null;
   if (sorted.length === 1) return named ? `OSI layer ${sorted[0]}, ${OSI_NAMES[sorted[0]! - 1]}` : `OSI layer ${sorted[0]}`;
   return `OSI layers ${sorted.slice(0, -1).join(', ')} and ${sorted.at(-1)}`;
-}
-
-// ---------------------------------------------------------------- theme switch
-
-// Created at module scope, which is safe: storage is only touched when a button is pressed.
-const themeStorage = createSafeStorage();
-
-/** Light and Dark as one segmented switch. With no saved choice the page follows the system, and the switch shows that. */
-function ThemeSwitch() {
-  // Null on the server, so neither button is pressed until the island hydrates.
-  const theme = useTheme();
-  function choose(next: Theme): void {
-    applyTheme(next);
-    themeStorage.set(THEME_KEY, next);
-  }
-  return (
-    <div className="topbar__seg" role="group" aria-label="Theme">
-      <button type="button" aria-pressed={theme === 'light'} onClick={() => choose('light')}>
-        Light
-      </button>
-      <button type="button" aria-pressed={theme === 'dark'} onClick={() => choose('dark')}>
-        Dark
-      </button>
-    </div>
-  );
 }
 
 // ---------------------------------------------------------------- the bar
@@ -82,13 +49,13 @@ function Logo() {
 }
 
 /**
- * The lesson's top bar: the logo; where the learner is (track › lesson, "Lesson
+ * The lesson's top bar: the logo; where the learner is (Tracks / track / lesson, "Lesson
  * 10 of 20", a segment per step of the current unit plus Learn and Practice,
  * and "Step 2 of 5", never the step's title, which can be too long); the unit's
- * OSI layers; the track's progress; and the Light/Dark switch. The segments and
+ * OSI layers; and the round theme button the site's headers use. The segments and
  * the 20 places are drawn for the eye and said in words beside them.
  */
-export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion, entries, currentKey, progress }: TopBarProps) {
+export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion }: TopBarProps) {
   const start = positionOf(lesson, slot.unit, 'overview');
   const here = state.position - start;
   const hold = reducedMotion ? null : holding(state);
@@ -108,24 +75,20 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
   // A unit that spans layers names none, so it shows no OSI chip.
   const layers = unit.osi === 'spans' ? [] : unit.osi.layers;
   const osi = osiHeading(layers, { named: lesson.units.length === 1 });
-  const finished = new Set(
-    entries.filter((e) => Object.hasOwn(progress.lessons, e.key) && progress.lessons[e.key]!.status === 'finished').map((e) => e.key),
-  );
 
   return (
     <header className="console__panel console__top">
       <a className="topbar__brand" href="/" aria-label="TechConcepts home">
         <Logo />
-        <span>
-          <b>TechConcepts</b>
-          <small>See how technology works</small>
-        </span>
+        <b>TechConcepts</b>
       </a>
 
       <div className="topbar__now">
         <div className="topbar__crumb">
+          <a href="/tracks">Tracks</a>
+          <span aria-hidden="true">/</span>
           <a href={trackUrl}>{trackTitle}</a>
-          <span aria-hidden="true">{' › '}</span>
+          <span aria-hidden="true">/</span>
           {/* A title too long for the bar is cut short with an ellipsis; the whole of it stays in the heading. */}
           <h1 title={lesson.title}>{lesson.title}</h1>
           <em>{`Lesson ${number} of ${total}`}</em>
@@ -153,21 +116,8 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
         </div>
       )}
 
-      <div className="topbar__progress">
-        <p className="console__ptitle">Track progress</p>
-        <span className="topbar__places" aria-hidden="true">
-          {entries.map((e) => (
-            <i
-              key={e.key}
-              data-state={e.key === currentKey ? 'current' : finished.has(e.key) ? 'done' : e.available ? 'ready' : undefined}
-            />
-          ))}
-        </span>
-        <span className="topbar__count">{`${finished.size} of ${total} complete`}</span>
-      </div>
-
       <div className="topbar__tools">
-        <ThemeSwitch />
+        <ThemeToggle />
       </div>
     </header>
   );

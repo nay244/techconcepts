@@ -416,7 +416,7 @@ test.describe('without JavaScript', () => {
       // The Overview's words, the figure and the way back to the track stay.
       await expect(page.locator('.console__explain .explain__title'), where).toBeVisible();
       await expect(page.locator('.console__stage svg[data-figure]'), where).toBeVisible();
-      await expect(page.locator('.topbar__crumb a'), where).toBeVisible();
+      await expect(page.locator('.topbar__crumb a:last-of-type'), where).toBeVisible();
       // The page does not scroll. (Measured at once: with JavaScript off no frame callback runs, so overflowAt cannot wait.)
       const overflow = await page.evaluate(() => {
         const root = document.scrollingElement ?? document.documentElement;

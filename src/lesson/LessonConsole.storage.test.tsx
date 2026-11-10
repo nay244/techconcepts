@@ -74,6 +74,6 @@ test('with storage blocked the lesson still plays end to end', async () => {
   await user.click(screen.getAllByRole('button', { name: /A row for each neighbor/ })[0]!);
   expect(within(explanation()).getByText(/One row per neighbor/)).toBeInTheDocument();
 
-  await user.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Light' }));
+  await user.click(within(screen.getByRole('banner')).getByRole('button', { name: /theme/i }));
   expect(document.documentElement.dataset.theme).toBe('light');
 });

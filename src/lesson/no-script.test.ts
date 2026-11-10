@@ -47,13 +47,13 @@ test.each(['dhcp', 'what-is-http', 'osi-model'])('without JavaScript, %s says it
   const blanked = hiddenWithoutScript(doc, 'visibility: hidden');
   const isHidden = (el: Element): boolean => el.closest(hidden) !== null || el.closest(blanked) !== null;
 
-  // The controls that cannot work: the console's theme switch, the view switch, the playback controls and the
+  // The controls that cannot work: the theme button, the view switch, the playback controls and the
   // outline, whose places are buttons. Every button on the page is under one of them.
-  for (const selector of ['.theme-toggle', '.topbar__seg', '.stage__views', '.console__controls']) expect(hidden).toContain(selector);
+  for (const selector of ['.theme-toggle', '.stage__views', '.console__controls']) expect(hidden).toContain(selector);
   const buttons = [...doc.querySelectorAll('body button')];
   expect(buttons.length).toBeGreaterThan(5);
   for (const button of buttons) expect(isHidden(button), button.outerHTML.slice(0, 120)).toBe(true);
-  expect(isHidden(doc.querySelector('.topbar__seg')!)).toBe(true);
+  expect(isHidden(doc.querySelector('.theme-toggle')!)).toBe(true);
   expect(isHidden(doc.querySelector('.console__controls')!)).toBe(true);
 
   // The whole outline goes, its heading too, so no empty "This lesson" landmark is left. It keeps its grid cell.
