@@ -77,8 +77,8 @@ Each numbered step is its own branch.
 2. **The look.** DONE 2026-11-10. Three directions prototyped on the Lesson page and Home; Patch taken (2.12). Its tokens are in §6 and the Lesson page changes it showed are in §7.
 3. **The shell.** DONE 2026-11-10. The Patch tokens, the heading face, light as the default theme, the figures' two finishes, the header and footer, and the new logo and favicon, in both themes. Every page wears it. What it left for the page steps is at the end of §6.
 4. **The Lesson page.** The owner keeps the current page (§10): its layout stays, and it already wears the new look from the shell. The owner then asked for the phone layout ("Add phone layout", 2026-11-10): DONE that day, as §7 records. Not confirmed with the owner, so not built: the other changes the earlier prototype settled in §7 (the wider reading column in Learn, numbered source links, the Verified stamp). What follows was the plan before that decision. Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
-5. **The Tracks page.** The owner keeps the current page (§10): one panel per track, already in the new look from the shell. Left to do: its page-level small capitals ("Start here"), per §6.
-6. **Home, the track page, About and 404, new layouts.** Home: DONE 2026-11-10, an original page (§9). Still to do: the track page, which puts each lesson's figure in its HTML once (audit plan 005), About and 404.
+5. **The Tracks page.** The owner keeps the current page (§10): one panel per track, already in the new look from the shell. Its labels ("Start here", "Up next") are sentence case since 2026-11-10 (§11).
+6. **Home, the track page, About and 404.** DONE 2026-11-10. Home is an original page (§9). The track page keeps its layout and is lighter; About and 404 have new layouts (§11).
 
 Done when every page wears the one new look in both themes, a reader on a 375px phone can do a whole lesson without the page scrolling past the scene, and every cited claim is one tap from its source.
 
@@ -313,4 +313,25 @@ Against an earlier decision: on 2026-11-09 the owner rejected listing every less
 The page is 1,508px tall at 1440 wide without a footer; the current one is 1,851px with its footer, so the heights are not like for like.
 
 The prototypes and the two side-by-side sheets are in the ignored `.superpowers/revamp/look/take/` (`lesson.html`, `tracks.html`, `tracks-returning.html`, `shots/side-by-side-*.png`), served as `look-prototypes`.
+
+## 11. The track page, About and 404 (built 2026-11-10)
+
+**The track page keeps its layout.** The owner designed it on 2026-11-09 (a fixed side column, a route that scrolls) and has since kept the Tracks and Lesson pages as they are, so this page was not redrawn. What changed is what was measured:
+
+- **Each lesson's figure is in the HTML once** (audit plan 005). The side card is given only the figure a first visit shows and borrows any other from the route on the same page. `/networking` is 65.8 KB gzipped, from about 101 KB; each new lesson now costs about half of what it did.
+- **Labels are sentence case**: "Start here", "Up next", "Not ready yet", on this page and on Tracks.
+- **On a phone a lesson that is not ready is two short lines**, with no placeholder tile. Networking has 15 of them: the page is 4,821px tall at 390 wide, from 6,444px.
+
+**404: the address leads nowhere.** The words on the left, the `notFound` figure on the right: a patch panel with every port linked but 404. Under the buttons the page says what the number means (the server is working, and has nothing at this address) and links to lesson 1, HTTP, where status codes are met. Buttons: Go to Home, See the tracks.
+
+**About: plain, and the same words.** Every sentence and every section of the old page is kept; the layout is new.
+
+- The opening is the line set large, the one-paragraph description, and the three counts as large figures: tracks planned, lessons ready, accounts needed. The eyebrow chip, the accent-coloured half of the headline and the mock "How the web works" plate are gone.
+- Under it, the list of sections stays beside a reading column. On a phone the list is a row to swipe.
+- "How a lesson works" is three rows in order, each with its small figure.
+- "Where the facts come from" has the `sources` figure beside the count of checked lessons.
+- Credits now names the heading face, Barlow Semi Condensed, beside the Atkinson faces, credited as its licence credits it: the Barlow Project Authors.
+- `src/components/page-hero.css`, which only this page still used, is deleted.
+
+The page is 5,179px tall at 390 wide, from 6,377px.
 
