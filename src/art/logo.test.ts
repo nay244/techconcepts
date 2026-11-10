@@ -1,5 +1,8 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { LOGO_BOX, TILE, logoMark, logoTile } from './logo.ts';
+import { tokens } from '../styles/tokens';
+import { LOGO_ACCENT, LOGO_BOX, LOGO_SHAPES, TILE, logoMark, logoTile } from './logo.ts';
 
 /** Every number in a path, in order. */
 const numbers = (d: string): number[] => (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number);
@@ -48,7 +51,10 @@ test('beside the name the mark is hidden from screen readers; alone it carries a
 test('the ink follows the text colour, and the message follows --logo-accent', () => {
   const svg = logoMark();
   expect(svg.match(/fill="currentColor"/g)).toHaveLength(2);
-  expect(svg).toContain('fill="var(--logo-accent, #c8501a)"');
+  expect(svg).toContain(`fill="${LOGO_ACCENT}"`);
+  // With no page around it, the message is the light theme's orange; the tile carries the dark theme's.
+  expect(LOGO_ACCENT).toBe(`var(--logo-accent, ${tokens.light.accent})`);
+  expect(TILE.accent).toBe(tokens.dark.accent);
   expect(logoMark({ mono: true }).match(/fill="currentColor"/g)).toHaveLength(3);
 });
 
@@ -59,4 +65,15 @@ test('the tile is a whole SVG file with fixed colours and no page variables', ()
   expect(svg).toContain(`fill="${TILE.ground}"`);
   expect(svg.match(new RegExp(`fill="${TILE.ink}"`, 'g'))).toHaveLength(2);
   expect(svg).toContain(`fill="${TILE.accent}"`);
+});
+
+test('the mark is drawn from LOGO_SHAPES, in order', () => {
+  expect(paths(logoMark())).toEqual(LOGO_SHAPES.map((s) => s.d));
+  expect(paths(logoTile())).toEqual(LOGO_SHAPES.map((s) => s.d));
+});
+
+test('the favicon file is the tile, byte for byte', () => {
+  // public/favicon.svg is written from logoTile(); a hand edit to either one fails here.
+  const file: string = readFileSync(new URL('../../public/favicon.svg', import.meta.url), 'utf8');
+  expect(file).toBe(`${logoTile()}\n`);
 });

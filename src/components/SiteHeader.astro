@@ -1,4 +1,5 @@
 ---
+import { logoMark } from '../art/logo';
 import './ThemeToggle.css';
 import './site.css';
 
@@ -27,12 +28,7 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
 <header class="site-head" data-over-hero={overHero ? '' : undefined}>
   <div class="wrap">
     <a class="brand" href="/" aria-label="TechConcepts home">
-      <svg width="34" height="30" viewBox="0 0 34 30" aria-hidden="true">
-        <polygon points="17,3 31,11 17,19 3,11" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"></polygon>
-        <polyline points="3,11 3,15 17,23 31,15 31,11" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"></polyline>
-        <line x1="11" y1="11" x2="23" y2="11" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="2 2"></line>
-        <circle cx="11" cy="11" r="2.6" fill="var(--here)"></circle><circle cx="23" cy="11" r="2.6" fill="var(--accent)"></circle>
-      </svg>
+      <Fragment set:html={logoMark()} />
       <b>TechConcepts</b>
     </a>
     <nav class="pillnav site-nav" aria-label="Site">
@@ -98,7 +94,8 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
     position: sticky;
     top: 0;
     z-index: 20;
-    background: color-mix(in srgb, var(--ground) 82%, transparent);
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
@@ -112,38 +109,45 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    /* The lockup (docs/direction.md §8): the mark is 1.3 times the name's size, 0.36 of it away. */
+    gap: 0.36em;
     justify-self: start;
     color: var(--ink-strong);
+    font: 700 22px/1 var(--display);
+    letter-spacing: 0.005em;
     text-decoration: none;
   }
   .brand b {
-    font: 700 18px/1 var(--sans);
-    letter-spacing: -0.01em;
+    font: inherit;
+  }
+  .brand .logo {
+    flex: none;
+    width: 1.3em;
+    height: 1.3em;
   }
   .pillnav {
     display: flex;
     gap: 2px;
-    padding: 4px;
-    border-radius: 999px;
+    padding: 3px;
+    border-radius: var(--r-btn);
     background: color-mix(in srgb, var(--card) 70%, transparent);
-    box-shadow: inset 0 0 0 1px var(--line);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .pillnav a {
-    padding: 8px 16px;
-    border-radius: 999px;
-    color: var(--muted);
-    font: 500 14px/1 var(--sans);
+    padding: 8px 14px;
+    border-radius: 2px;
+    color: var(--ink);
+    font: 600 16px/1 var(--display);
+    letter-spacing: 0.01em;
     text-decoration: none;
   }
   .pillnav a:not([aria-current]):hover {
     color: var(--ink-strong);
   }
   .pillnav a[aria-current] {
-    background: var(--card);
-    box-shadow:
-      inset 0 0 0 1px var(--line-strong),
-      var(--shadow-sm);
+    /* The section you are in: on the page ground, with the orange under it. */
+    background: var(--bg-soft);
+    box-shadow: inset 0 -2px 0 var(--here);
     color: var(--ink-strong);
   }
   .head-end {
@@ -159,6 +163,7 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
   .site-head[data-over-hero] {
     position: fixed;
     inset: 0 0 auto;
+    border-bottom-color: transparent;
     background: transparent;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -166,7 +171,8 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
   }
   .site-head[data-over-hero].solid,
   .site-head[data-over-hero]:has(.menu-panel:not([hidden])) {
-    background: color-mix(in srgb, var(--ground) 82%, transparent);
+    border-bottom-color: var(--line);
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }

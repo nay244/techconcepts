@@ -18,6 +18,7 @@ Node 22.18 or newer is required (`.node-version` pins 24).
 | `npm run e2e:visual` | Take full-page screenshots of every page at four desktop sizes in both themes, into `test-results/visual/` (not committed) |
 | `npm run deploy` | Deploy `dist/` with `wrangler deploy` (build first) |
 | `node scripts/generate-og-image.mjs` | Redraw the social image, `public/og-default.png` |
+| `node scripts/generate-favicon.mjs` | Write `public/favicon.svg` from the logo's one drawing, `src/art/logo.ts` (a test fails when the two differ) |
 
 The budget check prints every page's gzipped size and fails when a page breaks a budget: the HTML of any page must stay at or under 250 KB gzipped, and the JavaScript a lesson page loads at or under 200 KB gzipped in all. It is the last step of `npm run build`, so a breach fails the build, on Cloudflare too.
 
@@ -41,7 +42,8 @@ On GitHub, every pull request and every push to `main` or `revamp` runs `npm tes
 - `src/art/` the figures, drawn at build time into the HTML as inline SVG:
   - `kit/` the Anatomy kit the figures are built with (vendored, MIT licence, see `kit/SOURCE.md`)
   - `lumen.css` and `defs.ts` the lumen finish every figure wears
-  - `figures/` the track covers, the small figures on lesson cards, and the name tiles on How the Internet Works' cards
+  - `logo.ts` the TechConcepts mark, drawn once: the header, the footer, the lesson's top bar (through `src/components/LogoMark.tsx`) and the favicon all take it from here
+  - `figures/` the track covers, the small figures on lesson cards, the name tiles on How the Internet Works' cards, and `pages.ts`, the figures for the site's own pages
   - `scenes/` the five lesson figures, and `parts.ts`, the `FIGURE_PARTS` a lesson may name on each
 - `src/scenes/` what moves a figure in the browser: `driver.ts` (the driver contract), `drivers/` (one driver per figure), `motion.ts` (tweens and waits) and the Sequence view
 - `src/lesson/` the lesson console: the top bar, the outline, the explanation (Overview, each Watch step, Learn, Go deeper), Practice, the playback controls, the scene and its log, `panels/` (a table, a firewall's rules, the bits board, the headers a message carries) and the keyboard shortcuts
@@ -177,9 +179,9 @@ Voice (launch spec §7.2, and the redesign spec, both in `docs/superpowers/specs
 ## Conventions worth knowing
 
 - **Browser storage** is touched only through `createSafeStorage()` in `src/lib/storage.ts`. It never throws: reads give `null`, writes give `false`. It holds only `techconcepts:theme` and `techconcepts:v2`. The older `techconcepts:v1` is read and merged on every load until the first successful save, which then removes it. The site must work fully when storage is blocked or full.
-- **Colour** comes only from the semantic tokens in `src/styles/tokens.ts`, which meet WCAG AA in both themes. Colour is never the only signal: always add a label, icon or text. Marigold (`here`) means only "you are here".
-- **Themes**: the root element's `data-theme` attribute selects light or dark. An inline boot script sets it before first paint; without JavaScript the page follows `prefers-color-scheme`. Figures stay charcoal in both themes.
-- **Type**: Atkinson Hyperlegible Next for prose and Atkinson Hyperlegible Mono for data, self-hosted.
+- **Colour** comes only from the semantic tokens in `src/styles/tokens.ts`, which meet WCAG AA in both themes. Colour is never the only signal: always add a label, icon or text. There is one orange: `accent` (the thing to do) and `here` (the place you are) are the same colour, and it is used for nothing else. Links are `link`; done is green.
+- **Themes**: the root element's `data-theme` attribute selects light or dark. An inline boot script sets it before first paint; without JavaScript the page follows `prefers-color-scheme`. A visitor who states no preference gets light. Figures are porcelain white in the light theme and charcoal in the dark one, from one drawing.
+- **Type**: Barlow Semi Condensed (`--display`) for headings, buttons and labels, Atkinson Hyperlegible Next for prose and Atkinson Hyperlegible Mono for data, all self-hosted.
 
 ## Deploying and analytics
 

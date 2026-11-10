@@ -16,8 +16,8 @@ export default function ThemeToggle() {
   const theme = useTheme();
 
   function flip(): void {
-    // Unknown counts as dark, as it does for the page.
-    const next: Theme = theme === 'light' ? 'dark' : 'light';
+    // Unknown counts as light, as it does for the page.
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
     applyTheme(next);
     storage.set(THEME_KEY, next);
   }

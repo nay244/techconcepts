@@ -39,12 +39,22 @@ describe('shared figure helpers', () => {
     expect(defs.startsWith('<svg class="lm-defs"')).toBe(true);
   });
 
-  test('lumen.css has no lm-grain rule and keeps the figure tokens', () => {
+  test('lumen.css has no lm-grain rule, and the lit part is the orange pair in both themes', () => {
     expect(css).not.toMatch(/grain/i);
-    expect(css).toContain('--lit-a: #a8e8ff');
-    expect(css).toContain('--lit-b: #2f7bff');
-    expect(css).toContain('--pool: #2f7bff');
+    expect(css).toMatch(/:root, \[data-theme="light"\] \{ --lit-a: #ffc48f; --lit-b: #d9541c; --pool: #e8651f;/);
+    expect(css).toMatch(/\n\[data-theme="dark"\] \{ --lit-a: #ffd3a8; --lit-b: #f0702e; --pool: #f0702e;/);
+    // The old blue is gone everywhere.
+    expect(css).not.toMatch(/#2f7bff|#a8e8ff/i);
     expect(css).toMatch(/prefers-reduced-motion: reduce\) \{ \.lm-svg \{ animation: none/);
+  });
+
+  test('figures are porcelain in the light theme and charcoal in the dark one, from one drawing', () => {
+    // The base block is the light set; the dark set is applied by the system with no data-theme, and by an explicit dark.
+    expect(css).toMatch(/\.lm-svg \{\n[^}]*--anatomy-paper: #f6f7f6; --anatomy-face: #ffffff;/);
+    expect(css).toMatch(/@media \(prefers-color-scheme: dark\) \{[^@]*:root:not\(\[data-theme\]\) \.lm-svg \{ --anatomy-paper: #1c1f22;/);
+    expect(css).toMatch(/\n\[data-theme="dark"\] \.lm-svg \{ --anatomy-paper: #1c1f22;/);
+    // An explicit light theme on a dark system keeps the base set: nothing re-applies the dark one to it.
+    expect(css).not.toMatch(/\[data-theme="light"\] \.lm-svg/);
   });
 
   test('a figure draws in to its own opacity, so a dimmed one (a coming-soon track cover) stays dimmed', () => {
@@ -55,14 +65,14 @@ describe('shared figure helpers', () => {
   });
 
   test('theme variables follow the system without a data-theme attribute, and explicit themes win', () => {
-    expect(css).toMatch(/:root, \[data-theme="light"\] \{ --pool-op: \.5; --halo: #3d4a5e;/);
+    expect(css).toMatch(/:root, \[data-theme="light"\] \{[^}]*--pool-op: \.38; --halo: #5b666e;/);
     expect(css).toMatch(
-      /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \{ --pool-op: 1; --halo: #000; --halo-op: \.9; --fig-bg: #070d18;/,
+      /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \{[^}]*--pool-op: \.9; --halo: #000; --halo-op: \.9; --fig-bg: #0d1012;/,
     );
-    expect(css).toMatch(/\n\[data-theme="dark"\] \{ --pool-op: 1; --halo: #000;/);
+    expect(css).toMatch(/\n\[data-theme="dark"\] \{[^}]*--pool-op: \.9; --halo: #000;/);
     // the light-only orbit colour applies with no attribute only when the system is not dark
     expect(css).toMatch(
-      /@media not \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \.lm-orbit \{ stroke: #b4bfce; \}\s*\}/,
+      /@media not \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \.lm-orbit \{ stroke: #b3bcc0; \}\s*\}/,
     );
     expect(css.match(/\[data-theme="light"\] \.lm-orbit/g)).toHaveLength(1);
   });

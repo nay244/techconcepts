@@ -5,13 +5,19 @@
 @import '@fontsource/atkinson-hyperlegible-mono/400.css';
 @import '@fontsource/atkinson-hyperlegible-mono/500.css';
 @import '@fontsource/atkinson-hyperlegible-mono/700.css';
+@import '@fontsource/barlow-semi-condensed/600.css';
+@import '@fontsource/barlow-semi-condensed/700.css';
 
 /* Colour tokens come from tokens.ts (inlined by BaseLayout). Everything else
    that is shared lives here: type, spacing and base elements. */
 :root {
+  /* Headings, step titles, buttons and labels; running text stays in --sans; real data (addresses, ports) in --mono. */
+  --display: 'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
   --sans: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
   --mono: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* The logo's message is the orange, in whichever theme is on (src/art/logo.ts). */
+  --logo-accent: var(--accent);
 
   --text-sm: 0.875rem;
   --text-lg: 1.125rem;
@@ -25,11 +31,12 @@
   --space-5: 1.5rem;
   --space-8: 4.5rem;
 
-  --radius: 6px;
-  --r-card: 12px;
-  --r-tile: 10px;
-  --r-opt: 8px;
-  --r-btn: 6px;
+  /* Patch shapes: panels have 6px corners, what sits inside them 3px, controls 4px. */
+  --radius: 4px;
+  --r-card: 6px;
+  --r-tile: 3px;
+  --r-opt: 4px;
+  --r-btn: 4px;
 }
 
 *,
@@ -49,8 +56,6 @@ body {
   min-height: 100vh;
   margin: 0;
   background-color: var(--ground);
-  background-image: radial-gradient(var(--ground-dot) 1px, transparent 1.2px);
-  background-size: 22px 22px;
   color: var(--ink);
   font-family: var(--sans);
   font-size: 17px;
@@ -68,8 +73,9 @@ h3,
 h4 {
   margin: 0 0 var(--space-3);
   color: var(--ink-strong);
-  font-weight: 600;
-  line-height: 1.25;
+  font-family: var(--display);
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 h1 {

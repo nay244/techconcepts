@@ -2,7 +2,9 @@
    finish's variables, the small-figure parts, and a one-time draw-in.
    Generated once from the approved mockups (KIT/iso.css, lumen-assets finishCss, lumenVars, spotCss).
    There is no film texture of any kind: no filter and no texture rules.
-   Figures stay charcoal in both themes. Import this once per page; LumenDefs.astro prints the gradients. */
+   Figures are porcelain white in the light theme and charcoal in the dark one (the Patch finish, docs/direction.md §8);
+   one drawing serves both, because every tone here is a variable. Import this once per page; LumenDefs.astro prints
+   the gradients. */
 
 /* ---------- The kit's base rules (iso.css) ---------- */
 .iso{
@@ -112,17 +114,18 @@
 @media (max-width:560px){.iso-plate{padding:48px 12px 70px}.iso-plate-corner[data-corner="hint"]{bottom:18px}}
 @media (prefers-reduced-motion:reduce){.iso-line[data-flow],.iso-dots circle[data-pulse]{animation:none}}
 
-/* ---------- The finish: charcoal parts, fine light edges, one coloured part ---------- */
+/* ---------- The finish: solid parts, fine edges, one lit part ---------- */
 .lm-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 .la { stop-color: var(--lit-a); } .lb { stop-color: var(--lit-b); } .lp { stop-color: var(--pool); }
 .la.d1 { stop-color: color-mix(in srgb, var(--lit-a) 80%, #000); } .lb.d1 { stop-color: color-mix(in srgb, var(--lit-b) 80%, #000); }
 .la.d2 { stop-color: color-mix(in srgb, var(--lit-a) 64%, #000); } .lb.d2 { stop-color: color-mix(in srgb, var(--lit-b) 64%, #000); }
 .la.d3 { stop-color: color-mix(in srgb, var(--lit-a) 50%, #000); } .lb.d3 { stop-color: color-mix(in srgb, var(--lit-b) 50%, #000); }
 .lm-svg {
-  --anatomy-paper: #1a1e26; --anatomy-face: #1d222b; --anatomy-top: #282e39;
-  --anatomy-shade-0: #121519; --anatomy-shade-1: #161a20; --anatomy-shade-2: #1b1f27; --anatomy-shade-3: #20252e;
-  --anatomy-hi: #cdd6e3; --anatomy-mid: #707b8c; --anatomy-lo: #414958; --anatomy-faint: #2d333e; --anatomy-lit: #ffffff;
-  --anatomy-halo: var(--halo); --anatomy-halo-opacity: var(--halo-op); --anatomy-dot: #e8eef7; --anatomy-weight: .6px;
+  /* Light theme: porcelain solids, graphite lines. The dark set follows the theme rules at the foot of this file. */
+  --anatomy-paper: #f6f7f6; --anatomy-face: #ffffff; --anatomy-top: #ffffff;
+  --anatomy-shade-0: #cdd2d4; --anatomy-shade-1: #d9dedf; --anatomy-shade-2: #e5e8e9; --anatomy-shade-3: #eef0f0;
+  --anatomy-hi: #232a2f; --anatomy-mid: #7a848a; --anatomy-lo: #a6aeb2; --anatomy-faint: #ccd2d4; --anatomy-lit: #000000;
+  --anatomy-halo: var(--halo); --anatomy-halo-opacity: var(--halo-op); --anatomy-dot: #3a4247; --anatomy-weight: .6px;
   --anatomy-mono: var(--mono);
   display: block; width: 100%; height: auto; overflow: visible;
 }
@@ -187,20 +190,23 @@
 @media (prefers-reduced-motion: reduce) { .lm-led, .lm-px, .lm-warn, .lm-sev, .lm-row, .lm-hl { transition: none; } }
 
 /* ---------- Variables the finish reads ---------- */
-:root { --lit-a: #a8e8ff; --lit-b: #2f7bff; --pool: #2f7bff; }
 /* Theme: light on :root, dark under the system setting when no theme is chosen, and an explicit
    data-theme wins in both directions (the same order as tokensToCss in src/styles/tokens.ts). */
-:root, [data-theme="light"] { --pool-op: .5; --halo: #3d4a5e; --halo-op: .4; --fig-bg: #eef2f7; --fig-line: rgba(11,26,51,.12); }
+/* The lit part is the orange pair in both themes: the thing to look at. */
+:root, [data-theme="light"] { --lit-a: #ffc48f; --lit-b: #d9541c; --pool: #e8651f; --pool-op: .38; --halo: #5b666e; --halo-op: .26; --fig-bg: #eef1f1; --fig-line: rgba(18,23,27,.14); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) { --pool-op: 1; --halo: #000; --halo-op: .9; --fig-bg: #070d18; --fig-line: rgba(127,176,234,.14); }
+  :root:not([data-theme]) { --lit-a: #ffd3a8; --lit-b: #f0702e; --pool: #f0702e; --pool-op: .9; --halo: #000; --halo-op: .9; --fig-bg: #0d1012; --fig-line: rgba(243,245,246,.12); }
+  :root:not([data-theme]) .lm-svg { --anatomy-paper: #1c1f22; --anatomy-face: #1f2327; --anatomy-top: #2a2f34; --anatomy-shade-0: #131517; --anatomy-shade-1: #171a1d; --anatomy-shade-2: #1c2023; --anatomy-shade-3: #212529; --anatomy-hi: #d2d8dc; --anatomy-mid: #747d85; --anatomy-lo: #454c53; --anatomy-faint: #2f353a; --anatomy-lit: #ffffff; --anatomy-dot: #e8ecee; }
 }
-[data-theme="dark"] { --pool-op: 1; --halo: #000; --halo-op: .9; --fig-bg: #070d18; --fig-line: rgba(127,176,234,.14); }
+[data-theme="dark"] { --lit-a: #ffd3a8; --lit-b: #f0702e; --pool: #f0702e; --pool-op: .9; --halo: #000; --halo-op: .9; --fig-bg: #0d1012; --fig-line: rgba(243,245,246,.12); }
+/* Dark theme: charcoal solids, neutral grey with no blue cast. */
+[data-theme="dark"] .lm-svg { --anatomy-paper: #1c1f22; --anatomy-face: #1f2327; --anatomy-top: #2a2f34; --anatomy-shade-0: #131517; --anatomy-shade-1: #171a1d; --anatomy-shade-2: #1c2023; --anatomy-shade-3: #212529; --anatomy-hi: #d2d8dc; --anatomy-mid: #747d85; --anatomy-lo: #454c53; --anatomy-faint: #2f353a; --anatomy-lit: #ffffff; --anatomy-dot: #e8ecee; }
 
 /* Light-only rule: applies with no theme chosen unless the system is dark. */
 @media not (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .lm-orbit { stroke: #b4bfce; }
+  :root:not([data-theme]) .lm-orbit { stroke: #b3bcc0; }
 }
-[data-theme="light"] .lm-orbit { stroke: #b4bfce; }
+[data-theme="light"] .lm-orbit { stroke: #b3bcc0; }
 
 /* ---------- Parts used by the small figures and the home hero ---------- */
 .lm-tick-ok { fill: none; stroke: color-mix(in srgb, var(--lit-b) 35%, #000); stroke-width: 1.3px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }

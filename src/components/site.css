@@ -11,13 +11,13 @@
   border-radius: var(--r-btn);
   background: var(--card);
   color: var(--ink-strong);
-  font: 600 16px/1.2 var(--sans);
+  font: 600 17px/1.2 var(--display);
+  letter-spacing: 0.01em;
   text-decoration: none;
   cursor: pointer;
   transition:
     transform 120ms var(--ease-out),
-    background-color 150ms ease,
-    box-shadow 200ms ease;
+    background-color 150ms ease;
 }
 .btn:hover {
   background: var(--bg-soft);
@@ -29,7 +29,6 @@
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-ink);
-  box-shadow: var(--btn-shadow);
 }
 .btn--primary:hover {
   background: color-mix(in srgb, var(--accent) 90%, var(--ink-strong));
@@ -37,7 +36,7 @@
 .btn--small {
   min-height: 40px;
   padding: 0 16px;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 /* ---- Parts the page mockups share (home-v6, track-v2, about-v1) ---- */
@@ -45,41 +44,43 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px 6px 11px;
-  border: 1px solid var(--accent-line);
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font: 600 13.5px/1.2 var(--sans);
+  padding: 4px 10px 4px 8px;
+  /* A strip of label tape: sentence case, one ink. */
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: var(--bg-soft);
+  color: var(--ink-strong);
+  font: 600 14px/1.2 var(--display);
+  letter-spacing: 0.02em;
 }
 .eyebrow svg {
   width: 14px;
   height: 10px;
 }
+/* A headline is one colour: the words once picked out in the accent now take the heading's own ink. */
 .accent {
-  color: var(--accent);
+  color: inherit;
 }
 
 /* ---- The insideout pages' display heading, small mono label and chip (Home, Tracks, the track panels) ---- */
 /* These are global, on every page that loads site.css: lesson components and other islands must not use the class
    names .disp, .label or .h-chip for anything else. */
-/* A big heading; the words in `em` are set in the accent. Each page sets its size. */
+/* A big heading, in one colour throughout (an `em` in it is not picked out). Each page sets its size. */
 .disp {
   margin: 0;
   font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.04;
+  letter-spacing: -0.005em;
+  line-height: 1;
 }
 .disp em {
-  color: var(--accent);
+  color: inherit;
   font-style: normal;
 }
 .label {
   margin: 0;
   color: var(--muted);
-  font: 700 11.5px/1.2 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 600 14px/1.2 var(--display);
+  letter-spacing: 0.02em;
 }
 .label--here {
   color: var(--here);
@@ -87,14 +88,13 @@
 .h-chip {
   display: inline-flex;
   align-items: center;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: var(--here-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
-  color: var(--accent);
-  font: 700 11px/1.4 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--here);
+  font: 600 13px/1.4 var(--display);
+  letter-spacing: 0.02em;
 }
 .h-chip--plain {
   background: var(--card-2);
@@ -105,9 +105,9 @@
 /* A How the Internet Works lesson's name tile (src/art/figures/name-tile.ts), on every page that shows its card: the
    drawing carries no colours or type of its own. */
 .name-tile .nt-name {
-  font-family: var(--mono);
+  font-family: var(--display);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   fill: var(--ink-strong);
 }
 .name-tile .nt-rule {
@@ -120,21 +120,21 @@
   fill: var(--muted);
 }
 .card {
-  border: 1px solid var(--line);
-  border-radius: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-card);
   background: var(--card);
-  box-shadow: var(--shadow-sm);
 }
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 9px;
+  padding: 5px 8px;
   border: 1px solid var(--accent-line);
-  border-radius: 999px;
+  border-radius: 3px;
   background: var(--accent-soft);
   color: var(--accent);
-  font: 600 12.5px/1 var(--sans);
+  font: 600 14px/1 var(--display);
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 .badge svg {
@@ -152,14 +152,14 @@
   /* Green words take the green text token, which stays AA on this tint in both themes. */
   color: var(--allowed-text);
 }
-/* In progress is where the visitor is: marigold, the current colour. */
+/* In progress is where the visitor is: the orange, the current colour. */
 .badge.prog {
   border-color: color-mix(in srgb, var(--here) 45%, transparent);
   background: var(--here-soft);
   color: var(--here);
 }
-/* A track's progress: one segment per planned lesson, finished in the accent (as everywhere a track's bar is
-   shown), in progress in marigold (current). */
+/* A track's progress: one segment per planned lesson, finished in green (as everywhere a track's bar is shown), in
+   progress in the orange (current). The two were blue and marigold; orange is now the accent, so done is green. */
 .segbar {
   display: flex;
   gap: 2px;
@@ -172,7 +172,7 @@
   background: var(--line);
 }
 .segbar i.done {
-  background: var(--accent);
+  background: var(--allowed);
 }
 .segbar i.prog {
   background: var(--here);
@@ -182,9 +182,8 @@
   margin: 0 0 8px;
   padding-inline-start: 10px;
   color: var(--muted);
-  font: 700 12px/1 var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 600 14px/1 var(--display);
+  letter-spacing: 0.02em;
 }
 
 /* Card hover: rises 2px and takes an accent ring. The card's resting shadow is set here too, so a page styling its

@@ -75,7 +75,7 @@ Each numbered step is its own branch.
 
 1. **Baseline.** DONE 2026-11-10. 96 screenshots (24 pages, 1440×900 and 375×812, both themes) and the lesson's measurements, in §4.
 2. **The look.** DONE 2026-11-10. Three directions prototyped on the Lesson page and Home; Patch taken (2.12). Its tokens are in §6 and the Lesson page changes it showed are in §7.
-3. **The shell.** Rebuild the tokens, header and footer in the new look, in both themes.
+3. **The shell.** DONE 2026-11-10. The Patch tokens, the heading face, light as the default theme, the figures' two finishes, the header and footer, and the new logo and favicon, in both themes. Every page wears it. What it left for the page steps is at the end of §6.
 4. **The Lesson page.** Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
 5. **The Tracks page.** Start from one panel per track (2.8), in the new look, on phone and desktop.
 6. **Home, the track page, About and 404, new layouts.** The track page puts each lesson's figure in its HTML once (audit plan 005). Home still has no Continue link.
@@ -126,21 +126,28 @@ Measured on `revamp` on 2026-11-10, on the built site, at 1440×900 and 375×812
 
 ## 6. The look: Patch
 
-The equipment room: a faceplate-grey ground, graphite ink, and the colours of the cable pairs. One accent, cable orange, means "you are here" and "do this", and nothing else. Values are the prototype's; contrast is checked in `tokens.test.ts` when they go into the build (phase 2, step 3), and a value that fails moves.
+The equipment room: a faceplate-grey ground, graphite ink, and the colours of the cable pairs. One accent, cable orange, means "you are here" and "do this", and nothing else.
+
+The values below are the ones in `src/styles/tokens.ts`, which is the source; its tests check contrast and that the colours can be told apart. Four moved from the prototype when they went in, each for a measured reason.
 
 | Role | Light | Dark |
 |---|---|---|
-| Ground | `#e2e6e7` | `#101315` |
-| Surface (panels) | `#fafbfa` | `#1a1e21` |
+| Ground | `#e4e7e8` | `#101315` |
+| Panel | `#fafbfa` | `#1a1e21` |
 | Ink / strong ink | `#2b3238` / `#12171b` | `#c6cdd1` / `#f3f5f6` |
-| Muted | `#57626a` | `#8e989e` |
-| Line / strong line | `#d0d5d7` / `#a3acb1` | `#2a3035` / `#47515a` |
-| Accent and "here" (orange pair) | `#c8501a`, white ink | `#f0702e`, ink `#1c0c03` |
-| Done (green pair) | `#1e7a45` | `#46c07a` |
-| Link and request (blue pair) | `#1b56b0` | `#86b4ff` |
+| Muted | `#57626a` | `#949ea4` |
+| Accent and "here" (orange pair) | `#b04617`, white ink | `#f0702e`, ink `#1c0c03` |
+| Link and request (blue pair) | `#1b56b0` / `#1f63c0` | `#86b4ff` / `#5aa9ff` |
+| Done (green pair) | `#23824a`, words `#207243` | `#5fd68a`, words `#75db9a` |
 | Response (brown pair) | `#7a4a2b` | `#cfa37c` |
-| Broadcast | `#6a3fb0` | `#b9a0ff` |
+| Blocked | `#bd2140` | `#ff7a7a` |
 | Figure ground | `#eef1f1` | `#0d1012` |
+
+- **The light orange is `#b04617`, not the prototype's `#c8501a`.** Orange is drawn as words, and `#c8501a` reaches only 3.7:1 on the grey ground. `#b04617` is the brightest of that hue that reaches 4.5:1.
+- **Response is brown and light blocked is crimson.** Response was an orange a hair from the new accent. Blocked red sat 0.054 from the orange in OKLab; crimson is 0.081, past the 0.08 the lesson colours keep from each other.
+- **Dark muted is `#949ea4`.** The prototype's `#8e989e` fell to 4.46:1 on a firewall rule's green tint.
+- **Done is green everywhere.** It was the accent while the accent was blue. Orange now means "here", so a finished lesson, step or segment is green.
+- The other five lesson colours (control, broadcast, allowed, encrypted, selected) are unchanged.
 
 - **Type.** Headings, step titles, buttons and labels: Barlow Semi Condensed, 600 and 700 (new; to be self-hosted like the others). Running text: Atkinson Hyperlegible Next. Addresses, ports and other real data: Atkinson Hyperlegible Mono, and only those.
 - **Labels** are sentence case, with one exception: the sidebar's group headings keep the current site's small spaced capitals (§7). The Event log's name and the step marker sit in a small bordered strip, like label-maker tape.
@@ -149,6 +156,13 @@ The equipment room: a faceplate-grey ground, graphite ink, and the colours of th
 - **Headlines are one colour.** No word is picked out in the accent.
 - **Figures** follow 2.13 and §8. The lit part is the orange pair.
 - **Not in the prototype:** the scene's motion, the Tracks page, the track page, About and 404.
+
+**What the shell left for the page steps.** The old layouts now wear the new look, so each of these goes when its page is rebuilt:
+
+- Small capitals in page-level styles (Tracks' "Start here", the track page's stop labels, About's table headings). Shared labels are already sentence case.
+- The Home header that sits clear over the hero until the page scrolls.
+- The `shadow-sm` and `btn-shadow` tokens, which now paint nothing, and the rules that still name them.
+- The share image, `public/og-default.png`, which still shows the old wordmark.
 
 The prototypes and screenshots are on this machine only, in the git-ignored `.superpowers/revamp/` (`look/` the pages, `look/shots/compare.png` the three side by side, `baseline/` the old site). `.claude/launch.json` serves them as `look-prototypes`.
 
@@ -193,7 +207,7 @@ The owner asked on 2026-11-10 for a new pass of illustrations for the whole proj
 - **No film grain**, as before. The references carry it; ours do not.
 - **Bigger and denser than the older figures.** The older ones leave most of the plate bare. A new figure's object fills the plate, and every face has something true on it.
 
-The finish is not in the site's CSS yet: it goes in with the Patch tokens (phase 2, step 3). Until then it lives in the review gallery's stylesheet.
+The finish went into the site with the shell on 2026-11-10 (`src/art/lumen.css`).
 
 ### Page figures, first pass (`src/art/figures/pages.ts`)
 
@@ -219,6 +233,6 @@ The owner chose "Lifted lid" on 2026-11-10 from six ideas. Claude then drew five
 - **Clear space** is half the mark's width on every side. **Smallest size** is 16 pixels.
 - **One ink.** Where only one colour prints, the message takes the ink colour too.
 
-Not wired in yet. Today the old mark is drawn by hand in three places (the header, the footer, the lesson's top bar) and the favicon is a different drawing again. All four change to `logo.ts` with the shell (phase 2, step 3). The share image (`scripts/generate-og-image.mjs`) follows.
+Wired in with the shell on 2026-11-10: the header and footer through `logoMark()`, the lesson's top bar through `src/components/LogoMark.tsx`, and `public/favicon.svg` written by `scripts/generate-favicon.mjs`, with a test that fails when the file and the drawing differ. Still to follow: the share image (`scripts/generate-og-image.mjs`).
 
 The five passed over, so nobody redraws them: Port (a socket with its link light; the runner-up), Twisted pair (muddy at 16 pixels), Message on the wire (read as a tool), Under the loupe (read as a search icon), Step marker (read as a video button). The sheets are in the ignored `.superpowers/revamp/look/art/`.

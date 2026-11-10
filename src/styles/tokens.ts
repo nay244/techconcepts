@@ -4,7 +4,6 @@ export type TokenName =
   | 'bg'
   | 'bg-soft'
   | 'ground'
-  | 'ground-dot'
   | 'card'
   | 'card-2'
   | 'tile'
@@ -20,6 +19,7 @@ export type TokenName =
   | 'here'
   | 'here-soft'
   | 'here-ink'
+  | 'link'
   | 'focus'
   | 'dot'
   | 'shadow-sm'
@@ -36,94 +36,96 @@ export type TokenName =
   | 'selected';
 
 /**
- * The eight semantic hues each keep one meaning in every scene of every track:
- * request, response, control (handshakes), broadcast, allowed, blocked,
- * encrypted and selected. They are checked for contrast and mutual distinctness
- * in tokens.test.ts. Colour is never the only signal: scenes always pair it
- * with a label, icon or text.
+ * The Patch look (docs/direction.md §6): a faceplate-grey ground, graphite ink, and the colours of the cable pairs.
  *
- * Surfaces, ink, accent and the first five hues are the approved mockups'
- * values (home-v6, track-v2, firewalls-v1); `here` is darkened in the light
- * theme so it reaches 4.5:1 on white and on the figures' background (`--fig-bg`
- * in lumen.css, where a current callout's name sits): the mockups' #a66900 at
- * the same hue, darker, is #9b6200 (5.07:1 on white, 4.51:1 on #eef2f7). The
- * mockups do not define control, encrypted or selected, so those three are
- * chosen here.
+ * One orange. `accent` (the thing to do) and `here` (the place you are) are the same colour, and it is used for
+ * nothing else. It is also drawn as words, so in the light theme it is the brightest orange that still reaches
+ * 4.5:1 on the page ground: the prototype's #c8501a, 12% toward black. Links are the blue pair, `link`.
  *
- * `allowed-text` is the green for words (done, seen, right, new), and `allowed`
- * stays for fills, strokes and borders, as the mockups draw them. Light
- * `allowed` reaches 4.5:1 only on white, so the text token is `allowed` moved
- * 15% toward `ink-strong`, written out as a value like every other token:
- * `color-mix(in srgb, allowed 85%, ink-strong)` is #1f7247 light (5.2:1 or
- * more on every ground words sit on) and #75db9c dark.
+ * `bg-soft` is the page ground and `bg` is a panel, so anything laid on either is checked against the right one.
+ * Panels and the ground are close in tone on purpose; `line-strong` draws the edge between them. There are no
+ * resting shadows: `shadow-sm` and `btn-shadow` paint nothing, and `shadow-lg` is kept for what floats over the
+ * page. They are a zero-size transparent shadow, not the keyword `none`, because rules list them beside a hover
+ * ring, and `none` in a list voids the whole declaration.
+ *
+ * The eight semantic hues each keep one meaning in every scene of every track: request, response, control
+ * (handshakes), broadcast, allowed, blocked, encrypted and selected. They are checked for contrast and for being
+ * told apart, from each other and from the orange, in tokens.test.ts. Colour is never the only signal: scenes
+ * always pair it with a label, icon or text. Two moved with the look: `response` is the brown pair, because its
+ * old orange is now the accent's; light `blocked` is crimson, a step further from the orange.
+ *
+ * `allowed-text` is the green for words (done, seen, right, new), and `allowed` stays for fills, strokes and
+ * borders. The text token is `allowed` moved 15% toward `ink-strong`, written out as a value like every other
+ * token: `color-mix(in srgb, allowed 85%, ink-strong)`.
  */
 export const tokens: Record<Theme, Record<TokenName, string>> = {
   light: {
-    bg: '#ffffff',
-    'bg-soft': '#f4f7fb',
-    ground: '#f4f7fb',
-    'ground-dot': 'rgba(31, 99, 192, 0.13)',
-    card: '#ffffff',
-    'card-2': '#f8fafd',
-    tile: '#eef3f9',
-    line: 'rgba(11, 26, 51, 0.10)',
-    'line-strong': 'rgba(11, 26, 51, 0.18)',
-    ink: '#3a4860',
-    'ink-strong': '#0b1a33',
-    muted: '#5a6780',
-    accent: '#1f63c0',
+    bg: '#fafbfa',
+    'bg-soft': '#e4e7e8',
+    ground: '#e4e7e8',
+    card: '#fafbfa',
+    'card-2': '#f2f4f4',
+    tile: '#eaeded',
+    line: 'rgba(18, 23, 27, 0.14)',
+    'line-strong': 'rgba(18, 23, 27, 0.34)',
+    ink: '#2b3238',
+    'ink-strong': '#12171b',
+    muted: '#57626a',
+    accent: '#b04617',
     'accent-ink': '#ffffff',
-    'accent-soft': 'rgba(31, 99, 192, 0.07)',
-    'accent-line': 'rgba(31, 99, 192, 0.22)',
-    here: '#9b6200',
-    'here-soft': 'rgba(214, 146, 20, 0.12)',
+    'accent-soft': 'rgba(176, 70, 23, 0.08)',
+    'accent-line': 'rgba(176, 70, 23, 0.32)',
+    here: '#b04617',
+    'here-soft': 'rgba(176, 70, 23, 0.10)',
     'here-ink': '#ffffff',
-    focus: '#0b1a33',
-    dot: 'rgba(31, 99, 192, 0.16)',
-    'shadow-sm': '0 1px 2px rgba(11, 26, 51, 0.04), 0 8px 24px -12px rgba(11, 26, 51, 0.16)',
-    'shadow-lg': '0 1px 2px rgba(11, 26, 51, 0.05), 0 28px 56px -28px rgba(11, 26, 51, 0.30)',
-    'btn-shadow': '0 10px 24px -12px rgba(31, 99, 192, 0.75)',
+    link: '#1b56b0',
+    focus: '#12171b',
+    dot: 'rgba(18, 23, 27, 0.14)',
+    'shadow-sm': '0 0 0 0 transparent',
+    'shadow-lg': '0 24px 48px -24px rgba(18, 23, 27, 0.35)',
+    'btn-shadow': '0 0 0 0 transparent',
     request: '#1f63c0',
-    response: '#b4540a',
+    response: '#7a4a2b',
     control: '#6d42b8',
     broadcast: '#b23a8e',
     allowed: '#23824a',
-    'allowed-text': '#1f7247',
-    blocked: '#c22f2b',
+    'allowed-text': '#207243',
+    blocked: '#bd2140',
     encrypted: '#0d7a86',
     selected: '#7a7410',
   },
   dark: {
-    bg: '#060c17',
-    'bg-soft': '#0a1322',
-    ground: '#060c17',
-    'ground-dot': 'rgba(127, 176, 234, 0.13)',
-    card: '#0c1728',
-    'card-2': '#0a1424',
-    tile: '#142339',
-    line: 'rgba(127, 176, 234, 0.13)',
-    'line-strong': 'rgba(127, 176, 234, 0.24)',
-    ink: '#c3d1e6',
-    'ink-strong': '#f2f7ff',
-    muted: '#93a8c6',
-    accent: '#5aa9ff',
-    'accent-ink': '#04101f',
-    'accent-soft': 'rgba(90, 169, 255, 0.09)',
-    'accent-line': 'rgba(90, 169, 255, 0.30)',
-    here: '#f5b83d',
-    'here-soft': 'rgba(245, 184, 61, 0.12)',
-    'here-ink': '#1a1205',
+    bg: '#1a1e21',
+    'bg-soft': '#101315',
+    ground: '#101315',
+    card: '#1a1e21',
+    'card-2': '#161a1d',
+    tile: '#22272b',
+    line: 'rgba(243, 245, 246, 0.10)',
+    'line-strong': 'rgba(243, 245, 246, 0.26)',
+    ink: '#c6cdd1',
+    'ink-strong': '#f3f5f6',
+    // A shade lighter than the prototype's #8e989e, which fell to 4.46:1 on a firewall rule's green tint.
+    muted: '#949ea4',
+    accent: '#f0702e',
+    'accent-ink': '#1c0c03',
+    'accent-soft': 'rgba(240, 112, 46, 0.12)',
+    'accent-line': 'rgba(240, 112, 46, 0.38)',
+    here: '#f0702e',
+    'here-soft': 'rgba(240, 112, 46, 0.13)',
+    'here-ink': '#1c0c03',
+    link: '#86b4ff',
     focus: '#ffffff',
-    dot: 'rgba(127, 176, 234, 0.16)',
-    'shadow-sm': '0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.6)',
-    'shadow-lg': '0 1px 2px rgba(0, 0, 0, 0.3), 0 30px 60px -28px rgba(0, 0, 0, 0.75)',
-    'btn-shadow': '0 10px 28px -12px rgba(90, 169, 255, 0.6)',
+    dot: 'rgba(243, 245, 246, 0.14)',
+    'shadow-sm': '0 0 0 0 transparent',
+    'shadow-lg': '0 24px 48px -24px rgba(0, 0, 0, 0.8)',
+    'btn-shadow': '0 0 0 0 transparent',
     request: '#5aa9ff',
-    response: '#ff9f5a',
+    response: '#cfa37c',
     control: '#b697ff',
     broadcast: '#ff7fc4',
     allowed: '#5fd68a',
-    'allowed-text': '#75db9c',
+    'allowed-text': '#75db9a',
     blocked: '#ff7a7a',
     encrypted: '#4fd6e6',
     selected: '#e8d95c',

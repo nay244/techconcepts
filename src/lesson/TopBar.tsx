@@ -1,3 +1,4 @@
+import LogoMark from '../components/LogoMark';
 import type { Lesson, Unit } from '../content/schema';
 import { holding, type PlaybackState } from '../engine/playback';
 import { positionOf, type Slot } from '../engine/timeline';
@@ -36,18 +37,6 @@ export function osiHeading(layers: number[], { named = true }: { named?: boolean
 
 // ---------------------------------------------------------------- the bar
 
-function Logo() {
-  return (
-    <svg width="34" height="30" viewBox="0 0 34 30" aria-hidden="true" focusable="false">
-      <polygon points="17,3 31,11 17,19 3,11" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinejoin="round" />
-      <polyline points="3,11 3,15 17,23 31,15 31,11" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinejoin="round" />
-      <line x1="11" y1="11" x2="23" y2="11" stroke="var(--accent)" strokeWidth="1.2" strokeDasharray="2 2" />
-      <circle cx="11" cy="11" r="2.6" fill="var(--here)" />
-      <circle cx="23" cy="11" r="2.6" fill="var(--accent)" />
-    </svg>
-  );
-}
-
 /**
  * The lesson's top bar: the logo; where the learner is (Tracks / track / lesson, "Lesson
  * 10 of 20", a segment per step of the current unit plus Learn and Practice,
@@ -79,7 +68,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
   return (
     <header className="console__panel console__top">
       <a className="topbar__brand" href="/" aria-label="TechConcepts home">
-        <Logo />
+        <LogoMark />
         <b>TechConcepts</b>
       </a>
 

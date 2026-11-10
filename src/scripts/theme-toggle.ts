@@ -17,8 +17,7 @@ export function themeToggleLabel(theme: Theme): string {
 export function wireThemeToggle(button: HTMLElement, storage: SafeStorage = createSafeStorage()): () => void {
   const relabel = (): void => button.setAttribute('aria-label', themeToggleLabel(themeInEffect()));
   const flip = (): void => {
-    // Unknown counts as dark, as it does for the page.
-    const next: Theme = themeInEffect() === 'light' ? 'dark' : 'light';
+    const next: Theme = themeInEffect() === 'dark' ? 'light' : 'dark';
     applyTheme(next);
     // A blocked or full storage only means the choice is not remembered: the page still switches.
     storage.set(THEME_KEY, next);

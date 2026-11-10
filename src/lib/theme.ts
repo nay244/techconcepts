@@ -17,14 +17,14 @@ export function readAppliedTheme(): Theme | null {
   return isTheme(value) ? value : null;
 }
 
-/** The theme in effect: the one applied to the page, else the system's (dark when unknown). */
+/** The theme in effect: the one applied to the page, else the system's (light when unknown). */
 export function themeInEffect(): Theme {
   const applied = readAppliedTheme();
   if (applied !== null) return applied;
   try {
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 
@@ -32,14 +32,14 @@ export function themeInEffect(): Theme {
  * Inline `<head>` script that applies the theme before first paint, so there is
  * no flash of the wrong theme. It cannot import anything, so it holds the whole rule itself (a
  * saved choice wins, anything else follows the system), and it wraps every access: a blocked
- * `window.localStorage` getter throws, and so can `matchMedia`. Browsers that report no preference
- * (or have no matchMedia) get dark, matching the CSS fallback in tokens.ts.
+ * `window.localStorage` getter throws, and so can `matchMedia`. Browsers that state no preference
+ * (or have no matchMedia) get light, matching the CSS in tokens.ts, where light is the root's own block.
  */
 export const themeBootScript = `(function () {
   var saved = null;
   try { saved = window.localStorage.getItem(${JSON.stringify(THEME_KEY)}); } catch (e) {}
-  var prefersDark = true;
-  try { prefersDark = !window.matchMedia("(prefers-color-scheme: light)").matches; } catch (e) {}
+  var prefersDark = false;
+  try { prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches; } catch (e) {}
   var theme = saved === "light" || saved === "dark" ? saved : prefersDark ? "dark" : "light";
   document.documentElement.dataset.theme = theme;
 })();`;

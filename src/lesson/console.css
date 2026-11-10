@@ -127,15 +127,22 @@
 .topbar__brand {
   flex-direction: row;
   align-items: center;
-  gap: 10px;
+  /* The same lockup as the site header's (docs/direction.md §8). */
+  gap: 0.36em;
   min-width: 252px;
   color: var(--ink-strong);
+  font: 700 22px/1 var(--display);
+  letter-spacing: 0.005em;
   text-decoration: none;
 }
 .topbar__brand b {
   display: block;
-  font: 700 18px/1 var(--sans);
-  letter-spacing: -0.01em;
+  font: inherit;
+}
+.topbar__brand .logo {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
 }
 
 /* It takes the bar's spare room, so the OSI chips sit beside the theme button.

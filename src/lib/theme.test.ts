@@ -70,10 +70,16 @@ test('boot script ignores a bogus saved value', () => {
   expect(document.documentElement.dataset.theme).toBe('light');
 });
 
-test('boot script is dark by default when the browser has no matchMedia', () => {
+test('boot script is light by default when the browser has no matchMedia', () => {
   vi.stubGlobal('matchMedia', undefined);
   runBootScript();
-  expect(document.documentElement.dataset.theme).toBe('dark');
+  expect(document.documentElement.dataset.theme).toBe('light');
+});
+
+test('boot script is light when the browser states no preference at all', () => {
+  vi.stubGlobal('matchMedia', (query: string) => ({ matches: false, media: query }));
+  runBootScript();
+  expect(document.documentElement.dataset.theme).toBe('light');
 });
 
 test('boot script survives window.localStorage throwing on access', () => {
@@ -96,7 +102,7 @@ test('useTheme gives the applied theme and follows every change to it', async ()
   expect(result.current).toBe('light');
 });
 
-test('useTheme follows the OS while nothing is applied, and is dark when it cannot tell', () => {
+test('useTheme follows the OS while nothing is applied, and is light when it cannot tell', () => {
   stubMatchMedia(true);
   expect(renderHook(() => useTheme()).result.current).toBe('light');
   stubMatchMedia(false);
@@ -104,5 +110,5 @@ test('useTheme follows the OS while nothing is applied, and is dark when it cann
   vi.stubGlobal('matchMedia', () => {
     throw new Error('no matchMedia');
   });
-  expect(renderHook(() => useTheme()).result.current).toBe('dark');
+  expect(renderHook(() => useTheme()).result.current).toBe('light');
 });

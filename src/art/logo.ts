@@ -13,11 +13,24 @@ const TRAY = 'M5.5 29.6 24 38.85 42.5 29.6V35.4L24 44.65 5.5 35.4Z';
 /** The ink and accent a tile carries with it, whatever page or browser tab it sits on. */
 export const TILE = { ground: '#12171b', ink: '#f3f5f6', accent: '#f0702e' } as const;
 
+/** What the message is painted with on a page: the theme's orange, or the light theme's when no page sets it. */
+export const LOGO_ACCENT = 'var(--logo-accent, #b04617)';
+
+/**
+ * The three shapes, back to front. Each is filled and stroked in one paint (the stroke rounds its corners): the ink
+ * for the lid and the tray, the accent for the message. The React mark (src/components/LogoMark.tsx) draws these too.
+ */
+export const LOGO_SHAPES = [
+  { d: LID, paint: 'ink', stroke: 1.6 },
+  { d: MESSAGE, paint: 'accent', stroke: 1.2 },
+  { d: TRAY, paint: 'ink', stroke: 1.6 },
+] as const;
+
 const shapes = (ink: string, accent: string): string =>
-  // The strokes round the corners; each matches its fill.
-  `<path d="${LID}" fill="${ink}" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>` +
-  `<path d="${MESSAGE}" fill="${accent}" stroke="${accent}" stroke-width="1.2" stroke-linejoin="round"/>` +
-  `<path d="${TRAY}" fill="${ink}" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  LOGO_SHAPES.map((s) => {
+    const paint = s.paint === 'ink' ? ink : accent;
+    return `<path d="${s.d}" fill="${paint}" stroke="${paint}" stroke-width="${s.stroke}" stroke-linejoin="round"/>`;
+  }).join('');
 
 export interface LogoOptions {
   /** Words for a screen reader when the mark stands alone. Beside the site's name it needs none and is hidden. */
@@ -28,11 +41,11 @@ export interface LogoOptions {
 
 /**
  * The mark as inline SVG. Its ink is the text colour around it; the message is `--logo-accent`, which the page sets
- * for each theme, with the light theme's orange as the fallback.
+ * for each theme (global.css), with the light theme's orange as the fallback.
  */
 export function logoMark({ label, mono = false }: LogoOptions = {}): string {
   const a11y = label === undefined ? 'aria-hidden="true" focusable="false"' : `role="img" aria-label="${label}"`;
-  return `<svg class="logo" viewBox="0 0 ${LOGO_BOX} ${LOGO_BOX}" fill="none" ${a11y}>${shapes('currentColor', mono ? 'currentColor' : 'var(--logo-accent, #c8501a)')}</svg>`;
+  return `<svg class="logo" viewBox="0 0 ${LOGO_BOX} ${LOGO_BOX}" fill="none" ${a11y}>${shapes('currentColor', mono ? 'currentColor' : LOGO_ACCENT)}</svg>`;
 }
 
 /**
