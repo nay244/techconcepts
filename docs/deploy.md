@@ -38,7 +38,7 @@ You do these once. Nothing here needs a password pasted into any tool; you sign 
 
 ## What to check on the preview
 
-- The `https://` address loads Home, `/networking`, all four lessons (How the Internet Works, Subnetting, DHCP, Firewalls), `/about`, and a made-up address such as `/nothing-here` shows the 404 page.
+- The `https://` address loads Home, `/tracks`, both track pages (`/how-the-internet-works` and `/networking`), one lesson from each track, `/about`, and a made-up address such as `/nothing-here` shows the 404 page.
 - Each lesson steps through Overview, Watch, Learn and Practice, and Play runs its Watch steps.
 - On a phone-sized screen every page loads and scrolls. Phone layouts are not designed yet, so they only need to work.
 - The browser console shows no errors.

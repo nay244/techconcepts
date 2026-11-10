@@ -25,13 +25,13 @@ On GitHub, every pull request and every push to `main` or `revamp` runs `npm tes
 
 ## Layout
 
-- `src/pages/` the pages: Home, the track page (`[track]/index.astro`), the lesson page (`[track]/[lesson].astro`), About and 404
-- `src/layouts/`, `src/components/` the site shell (header, footer, theme button) and the parts of Home, the track page and About, some of them React islands
+- `src/pages/` the pages: Home, Tracks (`tracks.astro`), the track page (`[track]/index.astro`), the lesson page (`[track]/[lesson].astro`), About and 404
+- `src/layouts/`, `src/components/` the site shell (header, footer, theme button) and About's reset button; `src/components/hub/` the React islands Tracks and the track page share: the track strip, the up-next card, the side card and the route
 - `src/content/` lessons and tracks:
   - `schema.ts` the shape of a lesson and of a track
   - `sources.ts` the primary-source registry and `cite()`; `cited.ts` and `define.ts` `defineLesson` and `defineTrack`, which check every rule and fail the build on a breach
   - `limits.ts` the per-track limits and the overrides a lesson may carry; `glossary.ts` the cited glossary
-  - `legacy.ts` the closed list of the four lessons still in the older shape, and `defineLegacyLesson`
+  - `legacy.ts` the closed list of the lessons still in the older, uncited shape (`LEGACY_LESSONS`), and `defineLegacyLesson`
   - `registry.ts` finds the lesson files and builds each track's list, with each lesson's number and link
   - `tracks/`, `lessons/<slug>.ts`, `certs.ts` (the exam tags), and `helpers/` (builders that turn a lesson's messages into scene events, with the numbers worked out by the engine)
 - `src/engine/` the logic behind a lesson, with no drawing in it:
@@ -41,13 +41,13 @@ On GitHub, every pull request and every push to `main` or `revamp` runs `npm tes
 - `src/art/` the figures, drawn at build time into the HTML as inline SVG:
   - `kit/` the Anatomy kit the figures are built with (vendored, MIT licence, see `kit/SOURCE.md`)
   - `lumen.css` and `defs.ts` the lumen finish every figure wears
-  - `figures/` the track covers, the small figures and Home's hero
-  - `scenes/` the four lesson figures, and `parts.ts`, the `FIGURE_PARTS` a lesson may name on each
+  - `figures/` the track covers, the small figures on lesson cards, and the name tiles on How the Internet Works' cards
+  - `scenes/` the five lesson figures, and `parts.ts`, the `FIGURE_PARTS` a lesson may name on each
 - `src/scenes/` what moves a figure in the browser: `driver.ts` (the driver contract), `drivers/` (one driver per figure), `motion.ts` (tweens and waits) and the Sequence view
-- `src/lesson/` the lesson console: the top bar, the outline, the explanation (Overview, each Watch step, Learn, Go deeper), Practice, the playback controls, the scene and its log, `panels/` (a table, a firewall's rules, the bits board) and the keyboard shortcuts
-- `src/progress/` saved progress (`techconcepts:v2`, keyed by lesson slug), the hook that reads it, and where a returning visitor picks up
-- `src/lib/` small helpers, mostly plain TypeScript: safe storage, the theme, contrast maths (for the colour tests), analytics, formatting, page addresses, the data Home, the track page and About show, and `wrapAtDots.tsx`, a React helper that lets an address wrap only at its dots
-- `src/scripts/` small page scripts that run without React: Home's hero and header, the track cover's packets, About's "On this page" list
+- `src/lesson/` the lesson console: the top bar, the outline, the explanation (Overview, each Watch step, Learn, Go deeper), Practice, the playback controls, the scene and its log, `panels/` (a table, a firewall's rules, the bits board, the headers a message carries) and the keyboard shortcuts
+- `src/progress/` saved progress (`techconcepts:v2`, keyed by lesson slug), the hook that reads it, and `internet-split.ts`, which turns progress saved in the old one-lesson How the Internet Works into its 14 lessons
+- `src/lib/` small helpers, mostly plain TypeScript: safe storage, the theme, contrast maths (for the colour tests), analytics, formatting, page addresses, the data Home, Tracks, the track page and About show, `hub.ts` (each lesson's status and the lesson to take next), `figures.ts` (the figure on each lesson's card), and `wrapAtDots.tsx`, a React helper that lets an address wrap only at its dots
+- `src/scripts/` small page scripts that run without React: the header that turns solid on scroll (`site-head.ts`) and About's "On this page" list (`about-toc.ts`)
 - `src/styles/` colour tokens (`tokens.ts`) and base CSS (`global.css`)
 - `src/test/` helpers the tests share
 - `e2e/` Playwright tests; `scripts/` tools (the budgets check and the social image); `docs/deploy.md` deploying to Cloudflare; `docs/content-model.md` the authoring reference for sources, citations, lessons, limits and tracks
@@ -56,7 +56,7 @@ Tests sit next to their source as `*.test.ts(x)`, or `*.test.mjs` beside the scr
 
 ## How a lesson is put together
 
-A **lesson** is made of one or more **units**. A lesson in the cited shape has exactly one. How the Internet Works, still on the legacy path (see `docs/content-model.md`), has fourteen, one per protocol. Every unit runs the same way:
+A **lesson** keeps its content in **units**. Every lesson today has exactly one, and the cited shape allows no more; How the Internet Works is a track of fourteen one-unit lessons, one per protocol. A unit runs like this:
 
 1. **Overview**: a short hook and description.
 2. **Watch**: a few steps (each track sets how many; Networking allows 4 to 6). Each step plays a few **events** on the lesson's **figure**, and the log under the figure lists them.
@@ -73,11 +73,11 @@ A lesson counts as finished once the learner reaches its last position, the last
 
 `docs/content-model.md` is the reference for sources, citations, backing, limits and the registry rules. Read it first. In short:
 
-1. **Plan it in the track**, `src/content/tracks/networking.ts`. Until its file exists it shows as "Coming soon". A lesson must be listed by at least one track.
-2. **Create `src/content/lessons/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. The build rejects a lesson made any other way. Every fact cites a source from the registry, `SOURCES` in `src/content/sources.ts`, with `cite()`, and every Watch part traces to a cited Learn statement. `defineLesson` always checks against `SOURCES`, so add the lesson's sources there. `makeCitedLesson` in `src/content/test-fixtures.ts` is a full example of the shape only: its sources are invented, and the build rejects a lesson checked against them. Do not copy `dhcp.ts`, `firewalls.ts`, `subnetting.ts` or `how-the-internet-works.ts`: they use `defineLegacyLesson`, which refuses any slug not on its closed list of those four. Only files directly in `src/content/lessons/` are lessons. A folder there may hold only the parts of the lesson it is named after, as `how-the-internet-works/` does.
-3. **Give it a card figure** on the track page: add its slug to `FIGURES` in `src/pages/[track]/index.astro`, usually with a small figure from `src/art/figures/spots.ts`. The build stops when a ready lesson has none.
+1. **Plan it in the track**, `src/content/tracks/networking.ts`. Until its file exists it shows as "Not ready yet". A lesson must be listed by at least one track.
+2. **Create `src/content/lessons/<slug>.ts`.** The file name must be the lesson's `slug`, its `title` must be the one the track lists, and the default export is `defineLesson({ ... })`. The build rejects a lesson made any other way. Every fact cites a source from the registry, `SOURCES` in `src/content/sources.ts`, with `cite()`, and every Watch part traces to a cited Learn statement. `defineLesson` always checks against `SOURCES`, so add the lesson's sources there. `makeCitedLesson` in `src/content/test-fixtures.ts` is a full example of the shape only: its sources are invented, and the build rejects a lesson checked against them. `osi-model.ts` is the one real lesson in the cited shape so far. Do not copy `dhcp.ts`, `firewalls.ts`, `subnetting.ts` or any `what-is-*.ts`: they use `defineLegacyLesson`, which refuses any slug not on its closed list (`LEGACY_LESSONS` in `src/content/legacy.ts`). Only files directly in `src/content/lessons/` are lessons. A folder there may hold only the parts of the lesson it is named after.
+3. **Give it a card figure** on the track page: add its slug to `FIGURES` in `src/lib/figures.ts`, usually with a small figure from `src/art/figures/spots.ts`. (A How the Internet Works lesson needs no entry: its card shows a name tile made from the lesson's unit.) The build stops when a ready lesson has none.
 4. **Write its test** beside it, `<slug>.test.ts`: see "The lesson's test" below.
-5. **Check it end to end**: `npm run build`, which also checks the page-weight budgets, then `npm run e2e`. There is no list of lessons to edit: the tests find the ready lessons from the links on the built track page (`e2e/global-setup.ts`) and walk, play and fit-check each one at every size. A lesson whose Watch has no Network / Sequence switch, like Subnetting, goes in `NO_SEQUENCE` in `e2e/lesson.spec.ts`; checks that only one lesson needs (DHCP's lease table, Firewalls' rule list) sit under "lesson specifics" there, by slug. `npm run e2e:visual` takes its screenshots too.
+5. **Check it end to end**: `npm run build`, which also checks the page-weight budgets, then `npm run e2e`. There is no list of lessons to edit: the tests find the ready lessons from the built Tracks page and each track page's route (`e2e/global-setup.ts`) and walk, play and fit-check each one at every size. A lesson whose Watch has no Network / Sequence switch, like Subnetting, goes in `NO_SEQUENCE` in `e2e/lesson.spec.ts`; checks that only one lesson needs (DHCP's lease table, Firewalls' rule list) sit under "lesson specifics" there, by slug. `npm run e2e:visual` takes its screenshots too.
 
 Everything else comes from the lesson file: its page, its place and number in each track that lists it, and the totals on Home and the track page. Lessons are untimed. A lesson shared by two tracks has a page in each, with a canonical link to the first; its progress is saved once, by slug.
 
@@ -110,13 +110,17 @@ Write events with the helpers in `src/content/helpers/` when you can. They work 
 
 ### Figures and `FIGURE_PARTS`
 
-A lesson is drawn on one of four figures: `dhcp`, `subnet`, `firewall` or `net-map` (the network map How the Internet Works uses). Each figure lists in `FIGURE_PARTS` (`src/art/scenes/parts.ts`) what a lesson may name on it:
+A lesson is drawn on one of five figures: `dhcp`, `subnet`, `firewall`, `net-map` (the network map How the Internet Works uses) or `osi` (the three stacks of layers OSI Model uses). Each figure lists in `FIGURE_PARTS` (`src/art/scenes/parts.ts`) what a lesson may name on it:
 
 - `places`: where a message may go from and to, and where a party may stand
 - `cues`: each cue's name, and whether it is a `flag` (no argument) or takes `text`
 - `layers`: the swappable layers a unit may show (the network map's server plates)
 - `board`: whether a note may carry a bits board
 - `start`: whether a unit may start with cues already in place
+- `args`: for a text cue listed here, the only values it takes (`osi` only)
+- `routes`: the only ways a message may ride, as `'from>to'` (`osi` only)
+- `words`: the `scene.labels` keys a unit on this figure must give (`osi` only)
+- `labels`: whether the figure's events may carry `labels`, the headers a message has (`osi` only)
 
 `defineLesson` checks every event against these, so a typo such as `from: 'ruoter'` fails the build with a message naming the step and the event.
 
