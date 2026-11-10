@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 4321
+    },
+    {
+      "name": "built-site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--", "--port", "4471"],
+      "port": 4471
+    },
+    {
+      "name": "look-prototypes",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4480", "--directory", ".superpowers/revamp/look"],
+      "port": 4480
+    }
+  ]
+}

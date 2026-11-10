@@ -30,7 +30,7 @@ A wrong lesson is worse than a missing one. A change to lesson content, a glossa
 
 Load the `frontend-design` skill for every design decision. Design phone (375px) and desktop (1440px) together, and look at both in the browser before calling a screen done.
 
-The owner set the redesign's scope on 2026-11-10: the look and the layouts of the whole site are revamped. The Tracks page (one panel per track) and the Lesson page (contents sidebar, network visual, event log, Learn) are the layouts to start from; change them wherever the design is better for it. All art stays original.
+The owner set the redesign's scope on 2026-11-10: the look and the layouts of the whole site are revamped. The Tracks page (one panel per track) and the Lesson page (contents sidebar, network visual, event log, Learn) are the layouts to start from; change them wherever the design is better for it. All art stays original. The look is "Patch": its tokens and rules are in the direction doc §6, and the Lesson page changes already settled are in §7.
 
 ## Done means verified
 

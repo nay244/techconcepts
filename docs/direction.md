@@ -37,6 +37,9 @@ The owner's framing of the revamp: "We will be making improvements to the app fr
 | 2.7 | **How the Internet Works reaches launch quality first.** It is the beginner entry, the Home button opens it, and all 14 of its lessons exist, so it can be the first track that is complete *and* verified. | after Q2, Q3 |
 | 2.8 | **The Lesson page starts from what it has: a lesson contents sidebar, the network visual, the event log and Learn**, on one screen on desktop. **The Tracks page starts from one panel per track.** Both are changed wherever the design is better for it: a region can move, merge, shrink or go. A change to either is recorded here with what it fixed. | after Q4 |
 | 2.11 | **The new look is chosen from prototypes, not from talk.** Two or three directions are built with the `frontend-design` skill on the Lesson page and Home, at phone and desktop sizes, and one is taken. Art stays original whatever the style. | after Q4 |
+| 2.12 | **The look is "Patch": the equipment room** (2026-11-10, from three prototypes; §6 has the tokens). It was taken over "Standard" (a white, serif, document look) and "Signal" (dark graphite with amber). Patch comes from the subject itself, network gear and cable pairs; it looks least like the old site and least like a stock template; and its condensed headings keep the lesson outline short. | after Q4 |
+| 2.13 | **Figures are light in the light theme and charcoal in the dark one.** Until now they were charcoal in both. The drawing kit already carries both sets of tones, so no figure is redrawn. | after Q4 |
+| 2.14 | **Light is the theme a new visitor with no system preference sees.** The old site fell back to dark. | after Q4 |
 | 2.9 | **On a phone the starting hypothesis is tabs over the lesson's regions, with the step controls pinned at the bottom**, from the earlier direction doc §6.3. It is tested with a throwaway prototype before it is built. | after Q5 |
 | 2.10 | **Carried-over decisions this revamp changes:** "desktop first" (see 1.3); the living-blueprint look and its illustration style; and the 2026-11-09 Home and track-page layouts (see 1.2). **Leaned on unchanged:** accuracy outranks speed, lesson count and polish; the beginner-first voice; Watch › Learn › Practice with Practice unscored; no Continue on Home or in the header; original art; no accounts, gamification or site search; translations deferred. | after Q8 |
 
@@ -70,8 +73,8 @@ Each branch is merged into `revamp` here. After all five: 1,334 unit tests pass,
 
 Each numbered step is its own branch.
 
-1. **Baseline.** Screenshot every page at 1440×900 and 375px, and re-measure the lesson page (the §4 figures predate PR #16).
-2. **The look.** Prototype two or three directions (2.11) and take one. Done when its colours, type and art style are written into this document.
+1. **Baseline.** DONE 2026-11-10. 96 screenshots (24 pages, 1440×900 and 375×812, both themes) and the lesson's measurements, in §4.
+2. **The look.** DONE 2026-11-10. Three directions prototyped on the Lesson page and Home; Patch taken (2.12). Its tokens are in §6 and the Lesson page changes it showed are in §7.
 3. **The shell.** Rebuild the tokens, header and footer in the new look, in both themes.
 4. **The Lesson page.** Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
 5. **The Tracks page.** Start from one panel per track (2.8), in the new look, on phone and desktop.
@@ -104,11 +107,13 @@ Finish Networking Concepts (15 lessons to write), CompTIA A+, the glossary and c
 
 ## 4. Evidence the lesson redesign starts from
 
-Measured on the old `main` at 1440×900, before PR #16 changed the console's frame. Re-measure first (phase 2, step 1).
-- Learn and Practice read in a column about 380px wide while a dimmed scene and the log fill the rest.
-- The outline scrolls at 900px tall.
-- On the Overview, the empty log takes the bottom third.
-- On a 375px phone the lesson is a 2,282px stack with the outline before the scene.
+Measured on `revamp` on 2026-11-10, on the built site, at 1440×900 and 375×812.
+
+- Learn and Practice read in a column 389px wide. The scene beside them is 733×398.
+- The explanation scrolls on the DHCP Overview. The outline scrolls on OSI Model.
+- The log is 1136×234, a quarter of the screen's height, and empty until the first message.
+- On a 375px phone the DHCP lesson is a 2,412px stack: the outline first (658px), the scene 913px down and only 168px tall, and the Play button 2,273px down.
+- Other pages on a phone: Home 7,722px, the Networking track page 6,353px, About 6,457px, Tracks 3,211px.
 - Every claim in a cited lesson carries an exact-section link, and the lesson page renders only the text (`src/lesson/Explanation.tsx`); the Sources list is per document.
 - Exam tags are computed (`src/lib/track.ts`) and shown on no page.
 
@@ -118,3 +123,48 @@ Measured on the old `main` at 1440×900, before PR #16 changed the console's fra
 - **Merging to `main`,** which deploys the live site.
 - **The launch bar and the domain.** The bar carries over unchanged: all three tracks complete, every lesson verified, phone layouts done. Under 1.1 no lessons are being added, so that bar cannot be met by the revamp alone. Proposal for the owner: connect `techconcepts.app` when phases 1–4 are done, with How the Internet Works complete and verified and the unfinished tracks marked "Not ready yet".
 - Sign-ins, accounts and credentials.
+
+## 6. The look: Patch
+
+The equipment room: a faceplate-grey ground, graphite ink, and the colours of the cable pairs. One accent, cable orange, means "you are here" and "do this", and nothing else. Values are the prototype's; contrast is checked in `tokens.test.ts` when they go into the build (phase 2, step 3), and a value that fails moves.
+
+| Role | Light | Dark |
+|---|---|---|
+| Ground | `#e2e6e7` | `#101315` |
+| Surface (panels) | `#fafbfa` | `#1a1e21` |
+| Ink / strong ink | `#2b3238` / `#12171b` | `#c6cdd1` / `#f3f5f6` |
+| Muted | `#57626a` | `#8e989e` |
+| Line / strong line | `#d0d5d7` / `#a3acb1` | `#2a3035` / `#47515a` |
+| Accent and "here" (orange pair) | `#c8501a`, white ink | `#f0702e`, ink `#1c0c03` |
+| Done (green pair) | `#1e7a45` | `#46c07a` |
+| Link and request (blue pair) | `#1b56b0` | `#86b4ff` |
+| Response (brown pair) | `#7a4a2b` | `#cfa37c` |
+| Broadcast | `#6a3fb0` | `#b9a0ff` |
+| Figure ground | `#eef1f1` | `#0d1012` |
+
+- **Type.** Headings, step titles, buttons and labels: Barlow Semi Condensed, 600 and 700 (new; to be self-hosted like the others). Running text: Atkinson Hyperlegible Next. Addresses, ports and other real data: Atkinson Hyperlegible Mono, and only those.
+- **Labels** are sentence case. The three a learner steers by (This lesson, Event log, the step marker) sit in a small bordered strip, like label-maker tape. Nothing is set in capitals for decoration.
+- **Shape.** Panels have a 1px strong line, 6px corners and no shadow. Controls have 4px corners. Markers are small squares.
+- **The cable.** Progress is drawn as a striped pair: a dashed run under the lesson's top bar, filled in orange as far as the learner has got; striped green segments for the lessons of a track that are ready.
+- **Headlines are one colour.** No word is picked out in the accent.
+- **Figures** follow 2.13. Lit parts are the blue pair.
+- **Not in the prototype:** the scene's motion, the Tracks page, the track page, About and 404.
+
+The prototypes and screenshots are on this machine only, in the git-ignored `.superpowers/revamp/` (`look/` the pages, `look/shots/compare.png` the three side by side, `baseline/` the old site). `.claude/launch.json` serves them as `look-prototypes`.
+
+## 7. What the prototype changed on the Lesson page, and what each change fixed
+
+Each starts from the layout in 2.8.
+
+| Change | What it fixed |
+|---|---|
+| The log moves from under the scene to under the explanation, in the right-hand column, and each message is a short entry (from, to, time, then one sentence) and no longer a five-column table. | The scene grows from 733×398 to 680×624. The log no longer holds a quarter of the screen empty: until the first message it is one line. The same entry works at phone width. |
+| The right-hand column is wider: 446px at 1440, from 389px. | The DHCP Overview no longer scrolls. |
+| In Learn and Practice the columns swap: the words take the wide middle column at a 66-character measure, and the scene, its table and the log step to the right. | Reading no longer happens in a 389px column beside a dimmed scene. Sources sit at the foot of the text, numbered to match the claims. |
+| The outline shows a step's second line only for the step you are on. | Nine places fit in 437px, so a longer outline such as OSI Model's has room. |
+| The step controls sit under the scene; the theme button and OSI badge are not in the prototype's top bar. | To settle in the build: where the theme button and the layer badge go. |
+| On a phone the scene is pinned under the top bar (a third of the screen), the rest is three tabs (Explain, Steps, Log), and Back and Next are pinned at the bottom. | The whole lesson fits one 812px screen with nothing above the scene, from a 2,412px stack. Hypothesis 2.9 holds. |
+| The stamp in the top bar reads "Not checked yet, 2 sources" for DHCP. | An unchecked lesson says so, in the same place a checked one will say "Verified" with its date. |
+
+Still to fix in the build: outline rows are 41px tall on a phone and need 44; the lease table has no place on a phone yet.
+
