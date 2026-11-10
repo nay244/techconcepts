@@ -2,8 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 /**
  * End-to-end checks run against the built site (`astro preview`), in Chromium, at the desktop sizes the redesign is
- * made for (1280 to 1440 wide, checked up to 1920), with reduced motion, and on a phone, which only has to load and
- * scroll without errors.
+ * made for (1280 to 1440 wide, checked up to 1920), with reduced motion, and on a phone: there every site page has to
+ * load and scroll without errors, and every lesson has to fit one screen with its tabs.
  *
  * The server has a port of its own, and is never reused: 4321 is `astro dev`'s default, and a server already
  * running there could be another checkout's.
