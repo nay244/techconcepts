@@ -5,6 +5,7 @@ import { CERT_TAGS, type CertTag } from '../content/certs';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Track } from '../content/schema';
 import { slotsFor } from '../engine/timeline';
+import type { LessonStamp } from './stamp';
 
 const two = (n: number): string => String(n).padStart(2, '0');
 
@@ -47,6 +48,8 @@ export interface ReadyLesson {
   tags: CertTag[];
   /** For each position, what the card says while the lesson is in progress there (`cardPlaces`). */
   places: CardPlace[];
+  /** Whether it has been fact-checked, and when. */
+  stamp: LessonStamp;
 }
 
 export interface TrackPart {
@@ -60,14 +63,20 @@ export interface TrackPart {
 
 /**
  * The track's parts in order, each with its lessons as the page shows them. `entries` is the registry's
- * `getEntries(track.id)`; `lessonOf` finds a ready entry's lesson.
+ * `getEntries(track.id)`; `lessonOf` finds a ready entry's lesson, and `stampOf` a lesson's stamp (`lessonStamp`).
  */
-export function trackParts(track: Track, entries: LessonSummary[], lessonOf: (entry: AvailableSummary) => Lesson): TrackPart[] {
+export function trackParts(
+  track: Track,
+  entries: LessonSummary[],
+  lessonOf: (entry: AvailableSummary) => Lesson,
+  stampOf: (lesson: Lesson) => LessonStamp,
+): TrackPart[] {
   return track.parts.map((part, i) => {
     const lessons = part.lessons.map((planned): ReadyLesson | SoonLesson => {
       const entry = entries.find((e) => e.slug === planned.slug);
       if (entry === undefined) throw new Error(`The ${track.id} track lists "${planned.slug}", which has no entry.`);
       if (!entry.available) return { ready: false, key: entry.key, n: two(entry.number), title: entry.title };
+      const lesson = lessonOf(entry);
       const protocols = entry.units > 1 ? [`${entry.units} protocols`] : [];
       return {
         ready: true,
@@ -81,7 +90,8 @@ export function trackParts(track: Track, entries: LessonSummary[], lessonOf: (en
         meta: [...protocols, ...entry.certTags.map((t) => CERT_TAGS[t])],
         metaLabel: protocols.length > 0 ? 'Protocols and exams' : 'Exams',
         tags: entry.certTags,
-        places: cardPlaces(lessonOf(entry)),
+        places: cardPlaces(lesson),
+        stamp: stampOf(lesson),
       };
     });
     return { n: i + 1, title: part.title, ready: lessons.filter((l) => l.ready).length, lessons };

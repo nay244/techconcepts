@@ -31,6 +31,7 @@ function topBarOf(lesson: Lesson): string {
       trackUrl: '/networking',
       number: 10,
       total: 20,
+      stamp: { checked: null, sources: 2 },
       state: initialPlayback(),
       slot: slotsFor(lesson)[0]!,
       unit: lesson.units[0]!,
@@ -47,4 +48,9 @@ test('the OSI chip reads the unit’s cited layers, and a unit that spans layers
   const spans = topBarOf({ ...lesson, units: [{ ...lesson.units[0]!, osi: 'spans' }] });
   expect(spans).not.toContain('topbar__osi');
   expect(spans).not.toContain('OSI layer');
+});
+
+test('the bar carries the lesson’s stamp, which links to how lessons are checked', () => {
+  const lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
+  expect(topBarOf(lesson)).toMatch(/<a class="stamp" href="\/about#facts">.*Not checked yet, 2 sources<\/a>/);
 });

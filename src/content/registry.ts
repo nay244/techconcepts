@@ -1,7 +1,8 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
 import { definedWith, defineTrack } from './define';
-import { checkFactChecks } from './factcheck/gate';
+import { checkFactChecks, reportPath } from './factcheck/gate';
+import { parseReport } from './factcheck/report';
 import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
@@ -271,6 +272,16 @@ export function checkFactCheckReports(
 // Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not.
 const reports = import.meta.glob<string>('../../docs/fact-checks/*.md', { query: '?raw', import: 'default', eager: true });
 checkFactCheckReports(Object.values(lessonsBySlug), reports);
+
+/**
+ * The day a lesson passed its fact-check, as its report gives it ('2026-11-08'); null for a lesson not checked yet: a
+ * legacy lesson, or in `astro dev` a cited one whose report is missing or cannot be read.
+ */
+export function checkedOn(slug: string): string | null {
+  if (lessonsBySlug[slug]?.origin !== 'cited') return null;
+  const raw = Object.entries(reports).find(([path]) => path.endsWith(`/${reportPath(slug)}`))?.[1];
+  return raw === undefined ? null : (parseReport(raw).header?.checked ?? null);
+}
 
 /** The tracks that list a lesson, in `tracks` order; empty for a slug no track lists. */
 export function tracksOf(slug: string): Track[] {

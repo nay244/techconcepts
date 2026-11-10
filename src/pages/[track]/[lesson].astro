@@ -7,6 +7,7 @@ import { getEntries, getLesson, neighbors, type AvailableSummary } from '../../c
 import { tracks } from '../../content/tracks';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LessonConsole from '../../lesson/LessonConsole';
+import { lessonStamp } from '../../lib/checked';
 
 /** One page for every lesson that has been written, in every track. */
 export const getStaticPaths = (() =>
@@ -50,6 +51,7 @@ const nextFigure = next === null ? null : lessonFigure(track.id, next);
     next={next}
     nextFigure={nextFigure}
     entries={entries}
+    stamp={lessonStamp(lesson)}
     figureData={data}
   >
     <Fragment slot="figure" set:html={svg} />

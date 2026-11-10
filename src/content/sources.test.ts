@@ -144,8 +144,8 @@ describe('sourceListOf', () => {
     const a = cite('ms-dhcp', 'a', { sources, url: `${vendor.url}#a` });
     const b = cite('rfc2131', '1', { sources });
     expect(sourceListOf([a, b, a], sources)).toEqual([
-      { label: 'Microsoft DHCP: DHCP Server overview', url: vendor.url },
-      { label: 'RFC 2131: Dynamic Host Configuration Protocol', url: rfc.url },
+      { label: 'Microsoft DHCP: DHCP Server overview', url: vendor.url, source: 'ms-dhcp' },
+      { label: 'RFC 2131: Dynamic Host Configuration Protocol', url: rfc.url, source: 'rfc2131' },
     ]);
   });
   test('an unknown source throws, naming it and saying what to do', () => {

@@ -5,6 +5,7 @@ import type { ReadyLesson, SoonLesson, TrackPart } from '../../lib/track';
 import { resumePosition, type ProgressData } from '../../progress/store';
 import '../site.css';
 import './hub.css';
+import { Stamp } from '../Stamp';
 import PartsMarker from './PartsMarker';
 import { useUpNext } from './useUpNext';
 
@@ -32,7 +33,7 @@ function Named({ title }: { title: string }) {
 
 /**
  * The track page's route: each part as a stage with its lessons as numbered stops. A ready lesson is a tile with its
- * figure, status, title, subtitle and one button; a lesson not ready is a short outline tile.
+ * figure, status, title, subtitle, one button and its fact-check stamp; a lesson not ready is a short outline tile.
  *
  * The up-next stop (amber circle and tile ring) shows only once the visitor has started; on a first visit the first
  * ready stop's button is primary instead. Until progress has loaded, and when storage is blocked, it shows that first
@@ -135,6 +136,7 @@ function ReadyStop({ lesson, entry, data, isNow, isNext, art }: ReadyProps) {
             <a className={isNext ? 'btn btn--primary btn--small' : 'btn btn--small'} href={href}>
               {actionLabel(status)}
             </a>
+            <Stamp stamp={lesson.stamp} sources={false} />
           </div>
         </div>
       </div>

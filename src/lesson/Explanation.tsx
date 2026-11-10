@@ -1,13 +1,17 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import '../components/site.css';
+import { Stamp } from '../components/Stamp';
 import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
+import type { Citation } from '../content/sources';
 import { positionOf, type Position, type Slot } from '../engine/timeline';
 import { lessonLine, UP_NEXT_KICKER } from '../lib/hub';
+import type { LessonStamp } from '../lib/stamp';
 import { wrapAtDots } from '../lib/wrapAtDots';
 import { placeLabel } from './placeLabel';
 import { Practice, questionsTitle, type Picks } from './Practice';
 import { Rich } from './Rich';
+import { numberedSources, sourceMarks } from './sourceNumbers';
 
 /** Learn's title and sub line; the outline lists Learn by them too. */
 export const LEARN_TITLE = 'What happened and why';
@@ -29,6 +33,8 @@ export interface ExplanationProps {
   number: number;
   total: number;
   trackUrl: string;
+  /** Whether the lesson has been fact-checked, and when: shown with Learn's sources. */
+  stamp: LessonStamp;
   onGo(position: Position): void;
   /** The current unit's Practice picks, which the console keeps in memory. */
   picked: Picks;
@@ -44,53 +50,88 @@ function kicker(lesson: Lesson, unit: Unit, slot: Slot): string {
   return slot.kind === 'step' ? `Watch · ${where}` : where;
 }
 
-function Facts({ facts }: { facts: Fact[] }) {
+/** A source's number in the lesson's list, by its id (`numberedSources`). */
+type Numbers = ReadonlyMap<string, number>;
+
+/**
+ * The numbers after a claim, one for each source it cites. A number is the source's place in Learn's list, and opens
+ * the exact place the claim cites. Nothing for a claim that cites nothing.
+ */
+function Marks({ cite, numbers }: { cite: Citation[]; numbers: Numbers }) {
+  const marks = sourceMarks(cite, numbers);
+  if (marks.length === 0) return null;
+  return (
+    <sup className="explain__marks">
+      {marks.map((mark) => (
+        <a key={mark.n} href={mark.url} target="_blank" rel="noopener" title={mark.places} aria-label={`Source ${mark.n}: ${mark.places} (opens in a new tab)`}>
+          {mark.n}
+        </a>
+      ))}
+    </sup>
+  );
+}
+
+/** Facts as a list of names and values. Learn's facts cite, and show their sources' numbers; the others do not. */
+function Facts({ facts, numbers }: { facts: Array<Fact & { cite?: Citation[] }>; numbers?: Numbers }) {
   if (facts.length === 0) return null;
   return (
     <dl className="explain__facts">
       {facts.map((fact, i) => (
         <Fragment key={i}>
           <dt>{fact.label}</dt>
-          <dd>{wrapAtDots(fact.value)}</dd>
+          <dd>
+            {wrapAtDots(fact.value)}
+            {numbers === undefined ? null : <Marks cite={fact.cite ?? []} numbers={numbers} />}
+          </dd>
         </Fragment>
       ))}
     </dl>
   );
 }
 
-/** Learn's statements as one paragraph: their texts, joined by a space. */
-function Statements({ items }: { items: Statement[] }) {
+/** Learn's statements as one paragraph: their texts, joined by a space, each with its sources' numbers. */
+function Statements({ items, numbers }: { items: Statement[]; numbers: Numbers }) {
   return (
     <p className="explain__narr">
       {items.map((item, i) => (
         <Fragment key={item.id}>
           {i > 0 ? ' ' : null}
           <Rich text={item.text} />
+          <Marks cite={item.cite} numbers={numbers} />
         </Fragment>
       ))}
     </p>
   );
 }
 
-/** A Go deeper's paragraphs, each its own. */
-function Paragraphs({ items }: { items: Paragraph[] }) {
+/** A Go deeper's paragraphs, each its own, with its sources' numbers. */
+function Paragraphs({ items, numbers }: { items: Paragraph[]; numbers: Numbers }) {
   return (
     <>
       {items.map((item, i) => (
         <p key={i}>
           <Rich text={item.text} />
+          <Marks cite={item.cite} numbers={numbers} />
         </p>
       ))}
     </>
   );
 }
 
-function Sources({ sources }: { sources: Source[] }) {
+/**
+ * Learn's last part: whether the lesson has been checked, then its sources. A cited lesson's list is numbered, to
+ * match the numbers after its claims; a lesson that cites nothing yet lists its sources without numbers.
+ */
+function Sources({ sources, numbered, stamp }: { sources: Source[]; numbered: boolean; stamp: LessonStamp }) {
   if (sources.length === 0) return null;
+  const List = numbered ? 'ol' : 'ul';
   return (
-    <>
-      <p className="explain__label explain__label--sources">Sources</p>
-      <ul className="explain__sources">
+    <div className="explain__foot">
+      <h3 className="explain__label">Sources</h3>
+      <p className="explain__stamp">
+        <Stamp stamp={stamp} sources={false} href="/about#facts" />
+      </p>
+      <List className="explain__sources">
         {sources.map((source) => (
           <li key={source.url}>
             <a href={source.url} target="_blank" rel="noopener">
@@ -99,8 +140,8 @@ function Sources({ sources }: { sources: Source[] }) {
             </a>
           </li>
         ))}
-      </ul>
-    </>
+      </List>
+    </div>
   );
 }
 
@@ -216,7 +257,8 @@ function EndRow({ lesson, unit, next, nextFigure, number, total, trackUrl, onJum
  * they left it from one position to the next.
  */
 export function Explanation(props: ExplanationProps) {
-  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, onGo, picked, onPick, panelRef } = props;
+  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, stamp, onGo, picked, onPick, panelRef } = props;
+  const { list: sources, numberOf: numbers } = numberedSources(unit);
   const [deeperOpen, setDeeperOpen] = useState(false);
 
   const ownPanel = useRef<HTMLElement>(null);
@@ -266,7 +308,7 @@ export function Explanation(props: ExplanationProps) {
           <Rich text={step.narrative} />
         </p>
         <GoDeeper open={deeperOpen} onToggle={setDeeperOpen}>
-          <Paragraphs items={step.deep} />
+          <Paragraphs items={step.deep} numbers={numbers} />
           <Facts facts={step.facts} />
         </GoDeeper>
       </>
@@ -277,12 +319,13 @@ export function Explanation(props: ExplanationProps) {
       <>
         <h2 className="explain__title">{LEARN_TITLE}</h2>
         <p className="explain__sub">{LEARN_SUB}</p>
-        <Statements items={learn.lead} />
+        <Statements items={learn.lead} numbers={numbers} />
         <ol className="explain__terms" aria-label="Terms">
           {learn.terms.map((term, i) => (
             <li key={i}>
               <span className="explain__idea">
                 <Rich text={term.idea} />
+                <Marks cite={term.cite} numbers={numbers} />
               </span>
               <span className="explain__term">{term.name}</span>
             </li>
@@ -299,14 +342,15 @@ export function Explanation(props: ExplanationProps) {
           </p>
           <p className="explain__pattern-note">
             <Rich text={learn.pattern.note} />
+            <Marks cite={learn.pattern.cite} numbers={numbers} />
           </p>
         </div>
-        <Statements items={learn.why} />
+        <Statements items={learn.why} numbers={numbers} />
         <GoDeeper open={deeperOpen} onToggle={setDeeperOpen}>
-          <Paragraphs items={learn.deep} />
-          <Facts facts={learn.facts} />
-          <Sources sources={unit.references} />
+          <Paragraphs items={learn.deep} numbers={numbers} />
+          <Facts facts={learn.facts} numbers={numbers} />
         </GoDeeper>
+        <Sources sources={sources} numbered={numbers.size > 0} stamp={stamp} />
       </>
     );
   } else {

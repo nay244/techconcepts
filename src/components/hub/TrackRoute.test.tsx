@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { getEntries, getLesson, type AvailableSummary } from '../../content/registry';
 import { networkingTrack } from '../../content/tracks';
 import { positionOf } from '../../engine/timeline';
+import { lessonStamp } from '../../lib/checked';
 import { knownFrom } from '../../lib/entries';
 import { trackParts } from '../../lib/track';
 import { seedProgress } from '../../test/progress';
@@ -15,7 +16,7 @@ import TrackRoute from './TrackRoute';
 // The real track, as the page builds the island's props from it.
 const entries = getEntries('networking');
 const known = knownFrom(entries);
-const parts = trackParts(networkingTrack, entries, (e: AvailableSummary) => getLesson(e.slug)!);
+const parts = trackParts(networkingTrack, entries, (e: AvailableSummary) => getLesson(e.slug)!, lessonStamp);
 const ready = entries.filter((e): e is AvailableSummary => e.available);
 const osi = ready.find((e) => e.slug === 'osi-model')!;
 const osiLearn = positionOf(getLesson('osi-model')!, 0, 'learn');
@@ -40,6 +41,13 @@ describe('TrackRoute', () => {
     expect(within(stopOf(second.title)).getByRole('link', { name: 'Start' })).not.toHaveClass('btn--primary');
     expect(document.querySelector('.stop--now')).toBeNull();
     expect(screen.queryByRole('img', { name: /In progress/ })).toBeNull();
+  });
+
+  test('every ready stop says whether its lesson has been fact-checked: OSI Model has, DHCP has not yet', () => {
+    render(route());
+    expect(within(stopOf('OSI Model')).getByText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/)).toBeInTheDocument();
+    expect(within(stopOf('DHCP')).getByText('Not checked yet')).toBeInTheDocument();
+    for (const e of ready) expect(stopOf(e.title).querySelectorAll('.stamp'), e.title).toHaveLength(1);
   });
 
   test('stages: the part name with its last word in em, and how many lessons', () => {

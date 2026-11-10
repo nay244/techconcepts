@@ -2,11 +2,11 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { buildEntries, neighbors } from '../content/registry';
+import { buildEntries, getEntries, getLesson, neighbors } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
-import { slotsFor } from '../engine/timeline';
+import { positionOf, slotsFor } from '../engine/timeline';
 import { Explanation } from './Explanation';
 import { Rich } from './Rich';
 
@@ -39,6 +39,7 @@ function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
       number={entry.number}
       total={entries.length}
       trackUrl={tour ? '/how-the-internet-works' : '/networking'}
+      stamp={{ checked: null, sources: lesson.units[slot.unit]!.references.length }}
       onGo={onGo}
     />,
   );
@@ -82,11 +83,67 @@ test('Go deeper is closed by default on steps and Learn', async () => {
   show(6);
   expect(screen.getByRole('heading', { level: 2, name: 'What happened and why' })).toBeInTheDocument();
   expect(deeper()).not.toHaveAttribute('open');
-  // It ends with the unit's sources, which open in a new tab.
-  const sources = within(deeper()).getAllByRole('link');
+});
+
+test('Learn ends with its sources, in view without opening Go deeper; a lesson that cites nothing yet says it is not checked', () => {
+  show(6);
+  const foot = screen.getByRole('heading', { level: 3, name: 'Sources' }).parentElement!;
+  expect(deeper().contains(foot)).toBe(false);
+  // Not checked yet: said where a checked lesson says when, and the list has no numbers for claims to point at.
+  expect(within(foot).getByRole('link', { name: 'Not checked yet' })).toHaveAttribute('href', '/about#facts');
+  const list = within(foot).getByRole('list');
+  expect(list.tagName).toBe('UL');
+  const sources = within(list).getAllByRole('link');
   expect(sources.at(-1)).toHaveAccessibleName(/^RFC 826: An Ethernet Address Resolution Protocol/);
   expect(sources.at(-1)).toHaveAttribute('href', 'https://www.rfc-editor.org/rfc/rfc826');
-  expect(within(deeper()).getByText('Sources')).toBeInTheDocument();
+  expect(sources.at(-1)).toHaveAttribute('target', '_blank');
+  expect(screen.queryByRole('link', { name: /^Source \d/ })).toBeNull();
+});
+
+test('a cited lesson numbers its sources, and each claim in Learn links the exact places it rests on', () => {
+  const osi = getLesson('osi-model')!;
+  const unit = osi.units[0]!;
+  const entries = getEntries('networking');
+  const entry = entries.find((e) => e.slug === 'osi-model')!;
+  const learn = positionOf(osi, 0, 'learn');
+  render(
+    <Explanation
+      lesson={osi}
+      position={learn}
+      slot={slotsFor(osi)[learn]!}
+      unit={unit}
+      picked={{}}
+      onPick={vi.fn()}
+      next={null}
+      nextFigure={null}
+      number={entry.number}
+      total={entries.length}
+      trackUrl="/networking"
+      stamp={{ checked: '2026-11-08', sources: unit.references.length }}
+      onGo={vi.fn()}
+    />,
+  );
+  const foot = screen.getByRole('heading', { level: 3, name: 'Sources' }).parentElement!;
+  expect(within(foot).getByRole('link', { name: 'Checked 8 Nov 2026' })).toHaveAttribute('href', '/about#facts');
+  const list = within(foot).getByRole('list');
+  expect(list.tagName).toBe('OL');
+  const listed = within(list).getAllByRole('link');
+  expect(listed).toHaveLength(unit.references.length);
+  // Source 1 is the first one Learn cites: the standard that defines the model.
+  expect(listed[0]).toHaveAccessibleName(/^ITU-T X\.200: /);
+
+  // The first statement rests on one place in it, and its number opens exactly that place.
+  const first = unit.learn.lead[0]!.cite[0]!;
+  const marks = screen.getAllByRole('link', { name: /^Source \d/ });
+  expect(marks[0]).toHaveTextContent(/^1$/);
+  expect(marks[0]).toHaveAccessibleName(`Source 1: ${first.label} (opens in a new tab)`);
+  expect(marks[0]).toHaveAttribute('href', first.url);
+  expect(marks[0]).toHaveAttribute('target', '_blank');
+  // No mark points at a number the list does not have.
+  for (const mark of marks) expect(Number(mark.textContent)).toBeLessThanOrEqual(listed.length);
+  // An analogy cites nothing, so nothing follows it; every other part of Learn carries at least one number.
+  const cited = [...unit.learn.lead, ...unit.learn.terms, unit.learn.pattern, ...unit.learn.why, ...unit.learn.deep, ...unit.learn.facts];
+  expect(marks.length).toBeGreaterThanOrEqual(cited.filter((part) => part.cite.length > 0).length);
 });
 
 test('Learn shows the lead, the idea → name pairs and the pattern box', () => {

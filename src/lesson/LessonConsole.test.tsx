@@ -67,6 +67,7 @@ function consoleFor(lesson: Lesson = DHCP, figureData?: unknown) {
       next={neighbors(entries, lesson.slug).next}
       nextFigure={neighbors(entries, lesson.slug).next === null ? null : '<svg class="stub-figure" viewBox="0 0 4 3"></svg>'}
       entries={entries}
+      stamp={{ checked: null, sources: 2 }}
       figureData={figureData}
     />
   );

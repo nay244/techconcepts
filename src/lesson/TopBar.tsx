@@ -1,7 +1,9 @@
 import LogoMark from '../components/LogoMark';
+import { Stamp } from '../components/Stamp';
 import type { Lesson, Unit } from '../content/schema';
 import { holding, type PlaybackState } from '../engine/playback';
 import { positionOf, type Slot } from '../engine/timeline';
+import type { LessonStamp } from '../lib/stamp';
 import ThemeToggle from '../components/ThemeToggle';
 import { placeLabel } from './placeLabel';
 
@@ -13,6 +15,8 @@ export interface TopBarProps {
   number: number;
   /** Every lesson the track plans, written or not: the "20" in "Lesson 10 of 20". */
   total: number;
+  /** Whether the lesson has been fact-checked, and when; and how many sources it lists. */
+  stamp: LessonStamp;
   state: PlaybackState;
   /** What the current position shows, and its unit (the console's derived state). */
   slot: Slot;
@@ -39,12 +43,12 @@ export function osiHeading(layers: number[], { named = true }: { named?: boolean
 
 /**
  * The lesson's top bar: the logo; where the learner is (Tracks / track / lesson, "Lesson
- * 10 of 20", a segment per step of the current unit plus Learn and Practice,
+ * 10 of 20", the lesson's stamp, a segment per step of the current unit plus Learn and Practice,
  * and "Step 2 of 5", never the step's title, which can be too long); the unit's
  * OSI layers; and the round theme button the site's headers use. The segments are
  * drawn for the eye and said in words beside them.
  */
-export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion }: TopBarProps) {
+export function TopBar({ lesson, trackTitle, trackUrl, number, total, stamp, state, slot, unit, reducedMotion }: TopBarProps) {
   const start = positionOf(lesson, slot.unit, 'overview');
   const here = state.position - start;
   const hold = reducedMotion ? null : holding(state);
@@ -81,6 +85,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
           {/* A title too long for the bar is cut short with an ellipsis; the whole of it stays in the heading. */}
           <h1 title={lesson.title}>{lesson.title}</h1>
           <em>{`Lesson ${number} of ${total}`}</em>
+          <Stamp stamp={stamp} href="/about#facts" />
         </div>
         <div className="topbar__steps">
           <span className="topbar__segments" aria-hidden="true">

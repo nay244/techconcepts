@@ -11,6 +11,7 @@ import type { Lesson } from '../../content/schema';
 import { internetTrack, networkingTrack, tracks } from '../../content/tracks';
 import { knownFrom } from '../../lib/entries';
 import { lessonFigure } from '../../lib/figures';
+import { lessonStamp } from '../../lib/checked';
 import { trackParts } from '../../lib/track';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
@@ -49,7 +50,7 @@ function lessonOf(entry: AvailableSummary): Lesson {
   return lesson;
 }
 
-const parts = trackParts(track, entries, lessonOf);
+const parts = trackParts(track, entries, lessonOf, lessonStamp);
 // Each ready lesson's figure is static HTML in a slot named after the lesson's number. The route gets them all and
 // shows each one. The side card gets only the first: the lesson a first visit shows, which must be there without
 // JavaScript. For a returning visitor it borrows the figure from the route (TrackSide.tsx), so the page's HTML holds

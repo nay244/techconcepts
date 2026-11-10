@@ -5,6 +5,7 @@ import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import { positionOf, slotsFor } from '../engine/timeline';
+import { lessonStamp } from './checked';
 import { cardPlaces, trackParts, type ReadyLesson } from './track';
 
 const entries = getEntries('networking');
@@ -13,7 +14,7 @@ const DHCP = getLesson('dhcp')!;
 const SUBNETTING = getLesson('subnetting')!;
 
 test('the six parts in order, each with its number, its title, its lessons and how many are ready', () => {
-  const parts = trackParts(networkingTrack, entries, lessonOf);
+  const parts = trackParts(networkingTrack, entries, lessonOf, lessonStamp);
   expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
     [1, 'The big picture', 1, 2],
     [2, 'Addresses & the local network', 0, 4],
@@ -30,7 +31,7 @@ test('the six parts in order, each with its number, its title, its lessons and h
 });
 
 test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14', () => {
-  const parts = trackParts(internetTrack, getEntries('how-the-internet-works'), lessonOf);
+  const parts = trackParts(internetTrack, getEntries('how-the-internet-works'), lessonOf, lessonStamp);
   expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
     [1, 'Loading a web page', 2, 2],
     [2, 'Getting the data there', 3, 3],
@@ -47,7 +48,7 @@ test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14',
 });
 
 test('a ready lesson carries its card: words, link and exams', () => {
-  const all = trackParts(networkingTrack, entries, lessonOf).flatMap((p) => p.lessons);
+  const all = trackParts(networkingTrack, entries, lessonOf, lessonStamp).flatMap((p) => p.lessons);
   const subnetting = all.find((l) => l.title === 'Subnetting') as ReadyLesson;
   expect(subnetting).toMatchObject({
     ready: true,
@@ -74,7 +75,7 @@ test('a lesson of several units counts its protocols before its exams', () => {
   // No ready lesson has several units since the split, so a two-unit fixture stands in as HTTP.
   const two = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
   const tour = buildEntries(internetTrack, { 'what-is-http': two }, () => 'how-the-internet-works');
-  const http = trackParts(internetTrack, tour, () => two)[0]!.lessons[0] as ReadyLesson;
+  const http = trackParts(internetTrack, tour, () => two, lessonStamp)[0]!.lessons[0] as ReadyLesson;
   expect(http).toMatchObject({ key: 'what-is-http', n: '01', url: '/how-the-internet-works/what-is-http' });
   expect(http.meta).toEqual(['2 protocols', ...two.certTags.map((t) => CERT_TAGS[t])]);
   expect(http.metaLabel).toBe('Protocols and exams');
@@ -84,7 +85,7 @@ test('a lesson of several units counts its protocols before its exams', () => {
 test('the protocols chip counts the units of whatever lesson has several', () => {
   const two = liftedFixture(makeTwoUnitLesson({ slug: 'dhcp', title: 'DHCP' }));
   const fixtureEntries = entries.map((e) => (e.slug === 'dhcp' && e.available ? { ...e, units: 2 } : e));
-  const all = trackParts(networkingTrack, fixtureEntries, (e) => (e.slug === 'dhcp' ? two : lessonOf(e))).flatMap((p) => p.lessons);
+  const all = trackParts(networkingTrack, fixtureEntries, (e) => (e.slug === 'dhcp' ? two : lessonOf(e)), lessonStamp).flatMap((p) => p.lessons);
   const dhcp = all.find((l) => l.title === 'DHCP') as ReadyLesson;
   expect(dhcp.meta.slice(0, 1)).toEqual(['2 protocols']);
   expect(dhcp.metaLabel).toBe('Protocols and exams');
@@ -110,6 +111,14 @@ test('in a lesson of several units each place names its unit', () => {
 test('a lesson the registry lists as ready but the page cannot find stops the build by name', () => {
   const one = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
   expect(() =>
-    trackParts(networkingTrack, entries.slice(1), (e) => (e.slug === 'dhcp' ? one : lessonOf(e))),
+    trackParts(networkingTrack, entries.slice(1), (e) => (e.slug === 'dhcp' ? one : lessonOf(e)), lessonStamp),
   ).toThrow('The networking track lists "osi-model", which has no entry.');
+});
+
+test('a ready lesson’s card carries its stamp: OSI Model is checked, DHCP is not yet', () => {
+  const all = trackParts(networkingTrack, entries, lessonOf, lessonStamp).flatMap((p) => p.lessons);
+  const stampOf = (key: string) => (all.find((l) => l.key === key) as ReadyLesson).stamp;
+  expect(stampOf('osi-model')).toEqual(lessonStamp(getLesson('osi-model')!));
+  expect(stampOf('osi-model').checked).not.toBeNull();
+  expect(stampOf('dhcp')).toEqual({ checked: null, sources: 2 });
 });

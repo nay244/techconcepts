@@ -38,7 +38,8 @@ export const certTagSchema = z.enum(CERT_TAG_IDS);
 /** The scene figures (`FigureId`); `parts.test.ts` keeps this list and `FIGURE_PARTS` the same. */
 export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map', 'osi'] satisfies FigureId[]);
 
-export const sourceSchema = z.strictObject({ label: text, url: httpsUrl });
+/** A source as a lesson lists it. `source` is its id in the registry (`sources.ts`), which a list made from citations carries. */
+export const sourceSchema = z.strictObject({ label: text, url: httpsUrl, source: slugSchema.optional() });
 export const factSchema = z.strictObject({ label: text, value: text });
 
 // ---------------------------------------------------------------- citations and backing
@@ -377,7 +378,7 @@ export const unitSchema = z.strictObject({
   /** Lesson 1's outline filters. */
   group: z.enum(['core', 'app', 'security']).optional(),
   osi: osiSchema,
-  /** The unit's sources, listed under Learn's Go deeper. */
+  /** The unit's sources, listed at the foot of Learn. */
   references: z.array(sourceSchema).default([]),
   scene: unitSceneSchema,
   overview: z.strictObject({

@@ -56,6 +56,7 @@ test('with storage blocked the lesson still plays end to end', async () => {
       next={neighbors(entries, 'dhcp').next}
       nextFigure={null}
       entries={entries}
+      stamp={{ checked: null, sources: 2 }}
     />,
   );
   expect(heading()).toHaveTextContent('Neighbor table');

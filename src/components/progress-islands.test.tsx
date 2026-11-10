@@ -23,7 +23,7 @@ const entries = buildEntries(networkingTrack, lessons, () => 'networking');
 const available = entries.filter((e): e is AvailableSummary => e.available);
 const { planned, available: readyCount } = trackTotals(entries);
 const known = knownFrom(entries);
-const parts = trackParts(networkingTrack, entries, (e) => lessons[e.slug]!);
+const parts = trackParts(networkingTrack, entries, (e) => lessons[e.slug]!, () => ({ checked: null, sources: 2 }));
 const dhcp = available.find((e) => e.slug === 'dhcp')!;
 
 beforeEach(() => window.localStorage.clear());

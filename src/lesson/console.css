@@ -196,6 +196,15 @@
   font-size: 13px;
   font-style: normal;
 }
+/* The lesson's stamp, at the far end of the line. A checked one keeps its stronger ink. */
+.topbar__crumb .stamp {
+  margin-inline-start: auto;
+  padding-inline-start: 18px;
+  font-size: 13.5px;
+}
+.topbar__crumb .stamp[data-checked] {
+  color: var(--ink);
+}
 
 .topbar__steps,
 .topbar__segments,
@@ -779,18 +788,45 @@ a.outline__lesson:hover {
   margin: 0 0 12px;
   font: 400 14.5px/1.6 var(--sans);
 }
-.explain__label--sources {
-  margin: 14px 0 6px;
-  font-size: 11px;
-  letter-spacing: 0.1em;
+/* The numbers after a claim: each is a source in the list at the foot of Learn, and opens the place cited. */
+.explain__marks {
+  margin-inline-start: 1px;
+  font: 600 0.68em/1 var(--mono);
+  vertical-align: super;
+  white-space: nowrap;
+}
+.explain__marks a {
+  padding: 3px 2px;
+  color: var(--link);
+  text-decoration: none;
+}
+.explain__marks a:hover {
+  text-decoration: underline;
+}
+
+/* Learn's foot: whether the lesson has been checked, then its sources. */
+.explain__foot {
+  margin: 0 0 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.explain__stamp {
+  margin: 0 0 10px;
 }
 .explain__sources {
   margin: 0;
-  padding: 0 0 0 18px;
-  font: 400 13.5px/1.5 var(--sans);
+  padding: 0 0 0 22px;
+  font: 400 14px/1.5 var(--sans);
+}
+.explain__sources li + li {
+  margin-top: 6px;
+}
+ol.explain__sources li::marker {
+  color: var(--muted);
+  font: 600 12px/1 var(--mono);
 }
 .explain__sources a {
-  color: var(--accent);
+  color: var(--link);
   text-underline-offset: 2px;
 }
 

@@ -76,7 +76,7 @@ Each numbered step is its own branch.
 1. **Baseline.** DONE 2026-11-10. 96 screenshots (24 pages, 1440×900 and 375×812, both themes) and the lesson's measurements, in §4.
 2. **The look.** DONE 2026-11-10. Three directions prototyped on the Lesson page and Home; Patch taken (2.12). Its tokens are in §6 and the Lesson page changes it showed are in §7.
 3. **The shell.** DONE 2026-11-10. The Patch tokens, the heading face, light as the default theme, the figures' two finishes, the header and footer, and the new logo and favicon, in both themes. Every page wears it. What it left for the page steps is at the end of §6.
-4. **The Lesson page.** The owner keeps the current page (§10): its layout stays, and it already wears the new look from the shell. The owner then asked for the phone layout ("Add phone layout", 2026-11-10): DONE that day, as §7 records. Not confirmed with the owner, so not built: the other changes the earlier prototype settled in §7 (the wider reading column in Learn, numbered source links, the Verified stamp). What follows was the plan before that decision. Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
+4. **The Lesson page.** The owner keeps the current page (§10): its layout stays, and it already wears the new look from the shell. The owner then asked for the phone layout ("Add phone layout", 2026-11-10): DONE that day, as §7 records. The owner then asked for the sources and the stamp ("Add sources and stamp", 2026-11-10): DONE that day, as §7 records. Not confirmed with the owner, so not built: the wider reading column in Learn. What follows was the plan before that decision. Start from today's layout (2.8), fix what §4 measured, and give it the new look. Add the phone layout (2.9) and the proof (option 1): numbered citation links that open the exact section, and a "Verified [date] · N sources" stamp on the lesson and on its cards. An unchecked lesson says so. Decide here: the packet inspector (option 6), and whether exam tags are shown or their fields deleted.
 5. **The Tracks page.** The owner keeps the current page (§10): one panel per track, already in the new look from the shell. Its labels ("Start here", "Up next") are sentence case since 2026-11-10 (§11).
 6. **Home, the track page, About and 404.** DONE 2026-11-10. Home is an original page (§9). The track page keeps its layout and is lighter; About and 404 have new layouts (§11).
 
@@ -95,7 +95,7 @@ Done when the build fails for any cited content without a current all-pass repor
 - Each lesson is moved to the cited shape and passes a fresh fact-checker, one lesson per branch. For scale: OSI Model took 127 checked items and at least six checker runs.
 - Then DHCP, Subnetting and Firewalls.
 
-Done when every live lesson shows a Verified stamp.
+Done when every live lesson's stamp says "Checked" with its date (§7).
 
 ### Phase 5: the Practice page — TODO
 
@@ -204,6 +204,16 @@ The first prototype's "bigger scene" was a taller box around a smaller drawing; 
 - The desktop layout is unchanged. The tabs exist in the page at every width and are hidden above 760px.
 
 Still to fix in the build: the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
+
+**Sources and the stamp, as built (2026-11-10).**
+
+- **The stamp says "Checked", not "Verified".** A checked lesson reads "Checked 8 Nov 2026, 6 sources"; one that has not been through the fact-check reads "Not checked yet, 2 sources". "Checked" is the word Home and About already use for the independent check, it pairs with "Not checked yet", and it claims what happened: a check on a date, which a reader can weigh. The date is the report's (`docs/fact-checks/<slug>.md`); the count is the lesson's listed sources.
+- **Where it shows.** In the lesson's top bar, at the end of the title line, linking to About's "Where the facts come from". At the foot of Learn, above the sources (date only). On every ready lesson's card on the track page (date only). Not on the small up-next cards (Tracks, the track page's side card, the end of a lesson): their job is what to open next.
+- **The mark is a shape, not a colour.** A ringed tick for checked, a dashed ring for not yet; only the tick is green, so it does not read as the card's own "Done".
+- **Sources moved to the foot of Learn**, out of Go deeper, so the numbers in the words have a list in view. A cited lesson's list is numbered in the order Learn first cites each source; a lesson that cites nothing yet keeps a plain list.
+- **A claim carries one number for each source it cites.** The number opens the first place the claim cites in that source (the exact section or page), in a new tab, and its label names every place. OSI Model's lead cites up to seven places in four sources per statement; one number per place would have put seven numbers after a sentence.
+- Numbers show in Learn (lead, terms, pattern, why, Go deeper, facts) and in each Watch step's Go deeper. Not yet in Practice's feedback, which also cites.
+- On a phone the top bar has no room for the stamp; it is at the foot of Learn only. Measured at 1280 wide on DHCP (the OSI chips beside it): the title is whole.
 
 ## 8. Illustrations and logo
 

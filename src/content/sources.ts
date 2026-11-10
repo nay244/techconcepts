@@ -309,7 +309,7 @@ export function sourceListOf(citations: Citation[], sources: SourceRegistry): So
     seen.add(c.source);
     const entry = Object.hasOwn(sources, c.source) ? sources[c.source] : undefined;
     if (!entry) throw new Error(`Unknown source "${c.source}" (section ${c.section}); ${UNKNOWN_SOURCE_FIX}`);
-    list.push({ label: `${entry.short}: ${entry.title}`, url: entry.url });
+    list.push({ label: `${entry.short}: ${entry.title}`, url: entry.url, source: c.source });
   }
   return list;
 }

@@ -89,7 +89,7 @@ The lesson gives its `slug`, `title`, `subtitle`, `level`, `certTags` (at least 
 
 Each unit has:
 
-- `id`, `name`, `fullName` and `purpose` (one line on what it is for), and `osi` (the OSI layers shown in the top bar, with a citation, or `'spans'`). Its sources are listed at the end of Learn's Go deeper, built from its citations, so a cited lesson does not write them.
+- `id`, `name`, `fullName` and `purpose` (one line on what it is for), and `osi` (the OSI layers shown in the top bar, with a citation, or `'spans'`). Its sources are listed at the foot of Learn, built from its citations, so a cited lesson does not write them; each cited claim shows its sources' numbers.
 - `overview`: a `hook`, a `description` and a few `facts`
 - `steps`: each one has a `title`, a Title Case technical term such as "DHCP Discover", and a `sub` line saying the same thing in plain words. Then a `narrative` (the everyday idea first, then the term), `deep` (Go deeper: exam-level detail, closed by default, each paragraph cited), `facts`, and its `events`. A step may also give a `status` (what the scene says it is doing) and an `idle` line (what the log says while it is still empty at that step).
 - `learn`: a `lead`, `terms` (each an everyday `idea` and its `name`), a `pattern` (the steps' names and a note on the pattern), `why`, `deep` and `facts`. Each part cites a source, or a lead, why or term is flagged as an analogy.

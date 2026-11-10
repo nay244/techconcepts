@@ -5,6 +5,7 @@ import { usePlayback } from '../engine/playback';
 import { deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
+import type { LessonStamp } from '../lib/stamp';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import { DRIVERS } from '../scenes/drivers';
@@ -41,6 +42,8 @@ export interface LessonConsoleProps {
   nextFigure: string | null;
   /** Every entry of the track, in order. */
   entries: LessonSummary[];
+  /** Whether the lesson has been fact-checked, and when; and how many sources it lists (`lessonStamp`). */
+  stamp: LessonStamp;
   /** The scene's figure, drawn at build time (the page's named slot). */
   figure?: ReactNode;
   /** What the figure's driver needs at runtime (`DrawnFigure.data`). */
@@ -74,7 +77,7 @@ function FinishedMarker() {
  * the learner has opened (the outline ticks them) and the Practice picks, per
  * unit, so a visit elsewhere does not clear them.
  */
-export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, figure, figureData }: LessonConsoleProps) {
+export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, stamp, figure, figureData }: LessonConsoleProps) {
   // Each event waits as long as the figure's driver takes to play it.
   const [state, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
   const { position, eventIndex } = state;
@@ -191,6 +194,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         trackUrl={trackUrl}
         number={entry.number}
         total={total}
+        stamp={stamp}
         state={state}
         slot={slot}
         unit={unit}
@@ -236,6 +240,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           number={entry.number}
           total={total}
           trackUrl={trackUrl}
+          stamp={stamp}
           onGo={go}
         />
         <LogPanel

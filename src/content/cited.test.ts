@@ -165,8 +165,8 @@ test('the derived references replace an empty written list', () => {
   const l = makeCitedLesson();
   u(l).references = [];
   expect(validateLesson(l, FIXTURE_SOURCES).units[0]!.references).toEqual([
-    { label: 'RFC 9999: Example Protocol', url: 'https://www.rfc-editor.org/rfc/rfc9999.html' },
-    { label: 'Example vendor: Example page', url: 'https://learn.microsoft.com/example' },
+    { label: 'RFC 9999: Example Protocol', url: 'https://www.rfc-editor.org/rfc/rfc9999.html', source: 'rfc-example' },
+    { label: 'Example vendor: Example page', url: 'https://learn.microsoft.com/example', source: 'vendor-example' },
   ]);
 });
 

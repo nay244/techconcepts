@@ -289,6 +289,48 @@ test.describe('desktop', () => {
     await expect(page.locator('.console__log')).toBeVisible();
   });
 
+  test('a checked lesson says so in its top bar, numbers its sources, and each claim opens the place it cites', async ({ page }) => {
+    const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
+    await open(page, osi.path);
+    const stamp = page.locator('.console__top .stamp');
+    await expect(stamp).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, \d+ sources$/);
+    await expect(stamp).toHaveAttribute('href', '/about#facts');
+
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await expect(kicker(page)).toHaveText('Learn');
+    const words = page.locator('.console__explain');
+    // The sources are at the foot of Learn, in view without opening Go deeper, under the same stamp.
+    const foot = words.locator('.explain__foot');
+    await expect(foot.locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+    const listed = foot.locator('ol.explain__sources > li');
+    const count = await listed.count();
+    expect((await stamp.textContent())!).toContain(`, ${count} sources`);
+    await expect(listed.first().getByRole('link')).toHaveAttribute('href', /^https:\/\/www\.itu\.int\//);
+    // The first claim's number is 1, and it opens a page of that document, in a new tab.
+    const marks = words.getByRole('link', { name: /^Source \d+: / });
+    await expect(marks.first()).toHaveText('1');
+    await expect(marks.first()).toHaveAttribute('href', /^https:\/\/www\.itu\.int\/.*#page=\d+$/);
+    await expect(marks.first()).toHaveAttribute('target', '_blank');
+    // Every number in the words is one the list has.
+    const numbers = (await marks.allTextContents()).map(Number);
+    expect(numbers.length).toBeGreaterThan(10);
+    expect(Math.max(...numbers)).toBeLessThanOrEqual(count);
+    expect(new Set(numbers).size).toBeGreaterThan(1);
+  });
+
+  test('a lesson not checked yet says so, in the same places, and its sources carry no numbers', async ({ page }) => {
+    const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
+    await open(page, dhcp.path);
+    await expect(page.locator('.console__top .stamp')).toHaveText('Not checked yet, 2 sources');
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    const foot = page.locator('.console__explain .explain__foot');
+    await expect(foot.locator('.stamp')).toHaveText('Not checked yet');
+    await expect(foot.locator('ul.explain__sources > li')).toHaveCount(2);
+    await expect(page.locator('.console__explain').getByRole('link', { name: /^Source \d+: / })).toHaveCount(0);
+    // The top bar's title is whole beside the stamp.
+    expect(await page.locator('.topbar__crumb h1').evaluate((h) => h.scrollWidth <= h.clientWidth)).toBe(true);
+  });
+
   test('the skip link is the first stop on every page, and reaches the main region', async ({ page }) => {
     for (const { path } of ALL_PAGES) {
       await open(page, path);
@@ -516,6 +558,14 @@ test.describe('desktop', () => {
         'Lessons not ready yet stay on the route, so you can see what is coming. New to IT? How the Internet Works is the gentler start.',
       );
       await expect(page.locator('main .route__end a')).toHaveAttribute('href', INTERNET_TRACK);
+    });
+
+    test('Track page: every ready stop says whether its lesson is checked; OSI Model is, DHCP is not yet', async ({ page }) => {
+      await open(page, '/networking');
+      await expect(lessonCard(page, 'osi-model').locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+      await expect(lessonCard(page, 'dhcp').locator('.stamp')).toHaveText('Not checked yet');
+      await expect(page.locator('main .route li.stop:not(.stop--soon) .stamp')).toHaveCount(NETWORKING_LESSONS.length);
+      await expect(page.locator('main .route li.stop--soon .stamp')).toHaveCount(0);
     });
 
     test('Track page: How the Internet Works has six parts and a name tile on each of 14 stops', async ({ page }) => {
@@ -955,5 +1005,20 @@ test.describe('phone', { tag: '@phone' }, () => {
     expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
     // The controls are still at the foot.
     expect((await boxOf(page, '.console__controls'))!.bottom).toBe(page.viewportSize()!.height);
+  });
+
+  test('a lesson on a phone: the stamp and the numbered sources are at the foot of Learn, with nothing wider than the screen', async ({ page }) => {
+    const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
+    await open(page, osi.path);
+    // The compact top bar has no room for the stamp.
+    await expect(page.locator('.console__top .stamp')).toBeHidden();
+    await tab(page, 'Steps').click();
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    const foot = page.locator('.console__explain .explain__foot');
+    await foot.scrollIntoViewIfNeeded();
+    await expect(foot.locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(foot.locator('ol.explain__sources > li').first()).toBeVisible();
+    expect(await page.locator('.console__explain').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
   });
 });
