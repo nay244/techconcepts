@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
 import type { LessonSummary } from '../../content/registry';
-import { UP_NEXT_KICKER, actionLabel, lessonHref, lessonLine, lessonStatus, stripStates, stripWords, upNext } from '../../lib/hub';
-import { emptyProgress } from '../../progress/store';
-import { useProgress } from '../../progress/useProgress';
+import { UP_NEXT_KICKER, lessonLine, stripStates, stripWords } from '../../lib/hub';
 import '../site.css';
 import TrackStrip from './TrackStrip';
+import { useUpNext } from './useUpNext';
 
 interface Props {
   entries: LessonSummary[];
@@ -27,20 +26,15 @@ interface Props {
  */
 export default function TrackPanelProgress(props: Props) {
   const { entries, known, trackUrl } = props;
-  const { ready, available, data: stored } = useProgress(known);
-  const data = ready && available ? stored : emptyProgress();
-  const next = upNext(entries, data);
-  const current = next !== null && next.kind !== 'start' ? next.entry.key : null;
+  const { data, next, current, label, href } = useUpNext(entries, known);
 
   let cta: ReactNode = null;
   let card: ReactNode = null;
   if (next !== null) {
     const { entry, kind } = next;
-    const href = lessonHref(entry, data);
-    const label = kind === 'start' ? 'Start' : kind === 'done-so-far' ? 'Watch again' : actionLabel(lessonStatus(entry, data));
     cta = (
       <div className="panel__cta">
-        <a className="btn btn--primary" href={href}>
+        <a className="btn btn--primary" href={href!}>
           {label}
         </a>
         <a className="wholetrack" href={trackUrl}>
@@ -49,7 +43,7 @@ export default function TrackPanelProgress(props: Props) {
       </div>
     );
     card = (
-      <a className="next lift" href={href}>
+      <a className="next lift" href={href!}>
         {/* Keyed by lesson: Astro's slot wrapper never re-renders, so a new lesson's figure needs a fresh mount. */}
         <span key={entry.key} className="next__art l-art" aria-hidden="true">
           {props[`art${entry.number}`]}
