@@ -6,8 +6,8 @@ import { coverStill } from '../art/figures/covers';
 import { spot } from '../art/figures/spots';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
 import type { Lesson } from '../content/schema';
-import { comingSoonTracks, tracks } from '../content/tracks';
-import { comingTracksSentence, sourceRows } from '../lib/about';
+import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
+import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
 import { analyticsToken } from '../lib/analytics';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ResetProgress from '../components/ResetProgress';
@@ -25,13 +25,20 @@ function readyLesson(slug: string): Lesson {
 }
 
 // ---------- Hero ----------
-const tracksPlanned = tracks.length + comingSoonTracks.length;
+// The tracks with lessons, the one being written (CompTIA A+), and the ones further out.
+const tracksPlanned = tracks.length + plannedTracks.length + comingSoonTracks.length;
 const lessonsReady = trackTotals(tracks.flatMap((t) => getEntries(t.id))).available;
 
 // ---------- Body ----------
-const coming = comingTracksSentence(comingSoonTracks.map((t) => t.title));
+// The tracks with no lessons yet, the nearest first: CompTIA A+, then the ones further out.
+const coming = comingTracksSentence([...plannedTracks, ...comingSoonTracks].map((t) => t.title));
 const dhcp = readyLesson('dhcp');
 const sources = sourceRows(dhcp.units.flatMap((u) => u.references));
+// Every ready lesson once (two tracks may list one lesson), and how many have passed the fact-checker. A lesson in
+// the cited shape builds only with a passing report (src/content/factcheck/gate.ts), so "cited" means checked.
+const readySlugs = [...new Set(tracks.flatMap((t) => getEntries(t.id)).flatMap((e) => (e.available ? [e.slug] : [])))];
+const checkedLessons = readySlugs.filter((slug) => readyLesson(slug).origin === 'cited').length;
+const factCheck = factCheckSentence(checkedLessons, readySlugs.length);
 ---
 
 <BaseLayout
@@ -149,8 +156,7 @@ const sources = sourceRows(dhcp.units.flatMap((u) => u.references));
       <section class="a-sec" id="facts" aria-labelledby="facts-h">
         <h2 id="facts-h">Where the facts come from</h2>
         <p>
-          Each lesson is checked against the standards that define it, and lists them under Sources at the end of Learn. Every lesson also shows
-          which exams and jobs it helps with, so you can pick the ones you need.
+          Each lesson lists the standards it draws on under Sources at the end of Learn. {factCheck}
         </p>
         <div class="card a-src">
           <h3>Sources in the {dhcp.title} lesson</h3>

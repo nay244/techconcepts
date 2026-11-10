@@ -1,6 +1,7 @@
 /**
- * The cert and role tags a lesson can be "relevant for". The keys are also the
- * `?for=` values on the track page, so changing one changes a public URL.
+ * The cert and role tags a lesson can be "relevant for". The keys were the `?for=` values of the track page's exam
+ * filter until that filter was dropped (site-layouts design §9.1, 2026-11-09). Old links may still carry them, so
+ * keep the keys as they are.
  */
 export const CERT_TAGS = {
   'a-plus': 'CompTIA A+',

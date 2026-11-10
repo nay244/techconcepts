@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { getLesson } from '../content/registry';
 import { comingSoonTracks } from '../content/tracks';
-import { comingTracksSentence, sourceRows } from './about';
+import { comingTracksSentence, factCheckSentence, sourceRows } from './about';
 
 describe('comingTracksSentence', () => {
   test('names the tracks still to come, in order, in one sentence (about-v1)', () => {
@@ -18,6 +18,24 @@ describe('comingTracksSentence', () => {
 
   test('says nothing when no track is still to come', () => {
     expect(comingTracksSentence([])).toBe('');
+  });
+});
+
+describe('factCheckSentence', () => {
+  test('says how many lessons have been checked so far, and that the others wait', () => {
+    expect(factCheckSentence(1, 18)).toBe(
+      'So far 1 of 18 lessons has also been through an independent check of every claim against those sources. The others are waiting for theirs.',
+    );
+    expect(factCheckSentence(5, 18)).toMatch(/^So far 5 of 18 lessons have also been through /);
+    expect(factCheckSentence(0, 18)).toMatch(/^So far 0 of 18 lessons have also been through /);
+  });
+
+  test('says every lesson has been checked once they all have', () => {
+    expect(factCheckSentence(18, 18)).toBe('Every lesson has also been through an independent check of every claim against those sources.');
+  });
+
+  test('says nothing when there is no ready lesson', () => {
+    expect(factCheckSentence(0, 0)).toBe('');
   });
 });
 

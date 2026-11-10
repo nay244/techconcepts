@@ -8,8 +8,9 @@ import { loadRenderers } from 'astro:container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
 import { expect, test, vi } from 'vitest';
-import { getEntries, trackTotals } from '../content/registry';
-import { comingSoonTracks, tracks } from '../content/tracks';
+import { getEntries, getLesson, trackTotals } from '../content/registry';
+import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
+import { comingTracksSentence, factCheckSentence } from '../lib/about';
 import About from '../pages/about.astro';
 
 // The build's analytics token, which each render here sets for itself.
@@ -34,9 +35,27 @@ test('the stats count the tracks planned and the lessons ready from the content'
   const stat = (label: string): string =>
     words([...doc.querySelectorAll('.stats > div')].find((d) => words(d.querySelector('dt')) === label)?.querySelector('dd'));
 
-  expect(stat('tracks planned')).toBe(String(tracks.length + comingSoonTracks.length));
+  expect(stat('tracks planned')).toBe(String(tracks.length + plannedTracks.length + comingSoonTracks.length));
   expect(stat('lessons ready')).toBe(String(trackTotals(tracks.flatMap((t) => getEntries(t.id))).available));
   expect(stat('accounts needed')).toBe('0');
+});
+
+test('the tracks still to come start with CompTIA A+, the one being written', async () => {
+  const doc = await about();
+  const sentence = comingTracksSentence([...plannedTracks, ...comingSoonTracks].map((t) => t.title));
+  expect(sentence).toContain('CompTIA A+');
+  expect(words(doc.querySelector('#what'))).toContain(sentence);
+});
+
+test('the facts section says how many lessons have passed the fact-check, and makes no claim about exam tags', async () => {
+  const doc = await about();
+  const slugs = [...new Set(tracks.flatMap((t) => getEntries(t.id)).flatMap((e) => (e.available ? [e.slug] : [])))];
+  const checked = slugs.filter((slug) => getLesson(slug)!.origin === 'cited').length;
+  const facts = words(doc.querySelector('#facts'));
+  expect(facts).toContain('Each lesson lists the standards it draws on under Sources at the end of Learn.');
+  expect(facts).toContain(factCheckSentence(checked, slugs.length));
+  expect(facts).not.toContain('exams and jobs');
+  expect(facts).not.toContain('is checked against the standards');
 });
 
 test('the pace note says lessons are self-paced and gives no figure', async () => {

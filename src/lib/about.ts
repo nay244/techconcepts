@@ -16,6 +16,20 @@ export function comingTracksSentence(titles: readonly string[]): string {
   return `${count} more ${tracks} on the way: ${AND.format(titles)}.`;
 }
 
+/**
+ * One or two sentences on how many of the ready lessons have passed the independent fact-check, from the counts
+ * given: "So far 1 of 18 lessons has also been through an independent check of every claim against those sources.
+ * The others are waiting for theirs." Once every lesson has, it says so in one sentence. An empty string when
+ * there is no ready lesson.
+ */
+export function factCheckSentence(checked: number, total: number): string {
+  if (total === 0) return '';
+  if (checked >= total) return 'Every lesson has also been through an independent check of every claim against those sources.';
+  const lessons = total === 1 ? 'lesson' : 'lessons';
+  const has = checked === 1 ? 'has' : 'have';
+  return `So far ${checked} of ${total} ${lessons} ${has} also been through an independent check of every claim against those sources. The others are waiting for theirs.`;
+}
+
 export interface SourceRow {
   /** The standard that defines it, such as "RFC 2131". */
   standard: string;
