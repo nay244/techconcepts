@@ -1,10 +1,10 @@
 import { expect, test, vi } from 'vitest';
 import { validateLesson } from '../define';
 import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
-import { evenWhitespace, parseQuotes, quotesDigest, type Quote } from './quotes';
+import { evenWhitespace, keysNeedingQuotes, parseQuotes, quotesDigest, type Quote } from './quotes';
 import { parseReport } from './report';
 import { claimSheet } from './sheet';
-import { reportFor } from './test-helpers';
+import { reportFor, type LooseHeader } from './test-helpers';
 
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
 
@@ -14,8 +14,12 @@ const claim = () => {
   const item = sheet().items.find((i) => i.kind === 'claim' && i.cite.length >= 2)!;
   return { item, key: item.key, first: item.cite[0]!, second: item.cite.find((c) => c.source !== item.cite[0]!.source) ?? item.cite[1]! };
 };
-const body = (...lines: string[]) => ['# Fact check', '', ...lines, ''].join('\n');
+/** A report with a valid header (every item ✅, unless `edit` changes it) and the given lines as its body. */
+const body = (...lines: string[]) => report((h) => h, ...lines);
+const report = (edit: (h: LooseHeader) => unknown, ...lines: string[]) => reportFor(sheet(), (h) => void edit(h)) + ['', ...lines, ''].join('\n');
 const issues = (raw: string) => parseQuotes(raw, sheet()).issues;
+/** An item that cites, and one that cites nothing. */
+const bare = () => sheet().items.find((i) => i.kind === 'traced')!;
 
 test('a well-formed report parses to its quotes in order', () => {
   const { key, first, second } = claim();
@@ -23,7 +27,7 @@ test('a well-formed report parses to its quotes in order', () => {
   const raw = body(
     `### ${key} — ✅`,
     '',
-    `- \`${first.source}\` §${first.section} (defining standard)`,
+    `- \`${first.source}\` §${first.section} `,
     '  > The Reference Model contains seven layers: a) the Application Layer (layer 7);',
     '  > …   g) the Physical Layer (layer 1).',
     `- \`${second.source}\` §${second.section}`,
@@ -130,4 +134,100 @@ test('the digest changes with a word, a section, a source, the order or a key', 
   expect(quotesDigest([q({ source: 'vendor-example' }), q({ key: 'j' })])).not.toBe(base);
   expect(quotesDigest([q({ key: 'j' }), q()])).not.toBe(base);
   expect(quotesDigest([q({ key: 'kk' }), q({ key: 'j' })])).not.toBe(base);
+});
+
+// The amended form (plan.md, after B1's first review).
+
+test('a section is everything after the section sign, so a name ending in parentheses is read whole', () => {
+  const s = sheet();
+  const item = s.items.find((i) => i.cite.length > 0)!;
+  const c = item.cite[0]!;
+  const edited = { ...s, items: s.items.map((i) => (i === item ? { ...i, cite: [{ ...c, section: 'Table 1 (continued)' }] } : i)) };
+  const raw = body(`### ${item.key} — ✅`, `- \`${c.source}\` §Table 1 (continued)`, '  > Words.');
+  expect(parseQuotes(raw, edited).issues).toEqual([]);
+  expect(parseQuotes(raw, edited).quotes).toEqual([{ key: item.key, source: c.source, section: 'Table 1 (continued)', passage: 'Words.' }]);
+  const { key, first } = claim();
+  expect(issues(body(`### ${key} — ✅`, `- \`${first.source}\` §${first.section} (a note)`, '  > Words.'))).toEqual([expect.stringContaining('section')]);
+});
+
+const quoteAt = (extra: string[]) => {
+  const { key, first } = claim();
+  return { key, raw: body(`### ${key} — ✅`, `- \`${first.source}\` §${first.section}`, '  > Words.', ...extra) };
+};
+
+test('a ">" line after a blank line, under a note or under plain text is named', () => {
+  for (const extra of [['', '> stray'], ['- Note: a comment', '  > stray'], ['Text: "x"', '> stray']]) {
+    const { key, raw } = quoteAt(extra);
+    const found = issues(raw);
+    expect(found, extra.join('|')).toEqual([expect.stringContaining('">" line')]);
+    expect(found[0]).toContain(`"${key}"`);
+  }
+  const { key } = claim();
+  expect(issues(body(`### ${key} — ✅`, '> before any quote'))).toEqual([expect.stringContaining('">" line')]);
+});
+
+test('plain text lines under a claim heading are allowed', () => {
+  const { raw } = quoteAt(['', 'Text: "A device asks to renew."', '- Note: fine.']);
+  expect(issues(raw)).toEqual([]);
+});
+
+test('an indented, nested, numbered or "+" bullet is named, and so is a "*" bullet', () => {
+  const { key } = claim();
+  for (const bullet of ['  - Note: nested', '    - `rfc-example` §1', '1. Note: numbered', '1) Note: numbered', '+ Note: plus', '* Note: star']) {
+    const found = issues(body(`### ${key} — ✅`, bullet));
+    expect(found, bullet).toEqual([expect.stringContaining('starts its line with "- "')]);
+    expect(found[0]).toContain(`"${key}"`);
+  }
+});
+
+test('a heading deeper than ### under a claim heading is named', () => {
+  const { key } = claim();
+  expect(issues(body(`### ${key} — ✅`, '#### Currency'))).toEqual([expect.stringContaining(`"${key}"`)]);
+});
+
+test('a ### heading that is not "### <key> — <verdict>" is named', () => {
+  const { key } = claim();
+  expect(issues(body(`### ${key} - ✅`))).toEqual([expect.stringContaining('verdict')]);
+  expect(issues(body(`### ${key} — fine`))).toEqual([expect.stringContaining('verdict')]);
+  expect(issues(body(`### ${key}`))).toEqual([expect.stringContaining('verdict')]);
+});
+
+test('a key that appears twice is named', () => {
+  const { key } = claim();
+  expect(issues(body(`### ${key} — ✅`, '', `### ${key} — ✅`))).toEqual([expect.stringContaining(`"${key}" has two headings`)]);
+});
+
+test("a heading's verdict that differs from the header's is named", () => {
+  const { key } = claim();
+  const raw = body(`### ${key} — ⚠️`);
+  const found = issues(raw);
+  expect(found).toEqual([expect.stringContaining('⚠️')]);
+  expect(found[0]).toContain(`"${key}"`);
+  expect(found[0]).toContain('✅');
+});
+
+test('a header that cannot be read gives its own problems', () => {
+  expect(issues('# Fact check\n\n### title — ✅\n')).toEqual([expect.stringContaining('no header')]);
+});
+
+test('a key that itself contains " — " is read whole', () => {
+  const item = { ...sheet().items[0]!, key: 'units[0].a — b (x)' };
+  const edited = { ...sheet(), items: [item, ...sheet().items.slice(1)] };
+  const raw = reportFor(edited) + `\n### ${item.key} — ✅\n`;
+  expect(parseQuotes(raw, edited)).toEqual({ quotes: [], issues: [] });
+});
+
+test('a quote under an item that cites nothing says to write a note', () => {
+  const item = bare();
+  const found = issues(body(`### ${item.key} — ✅`, '- `rfc-example` §1', '  > Words.'));
+  expect(found).toEqual([expect.stringContaining('cites nothing')]);
+  expect(found[0]).toContain('Note:');
+  expect(found[0]).toContain(`"${item.key}"`);
+});
+
+test('keysNeedingQuotes lists the items that have citations, in sheet order', () => {
+  const s = sheet();
+  expect(keysNeedingQuotes(s)).toEqual(s.items.filter((i) => i.cite.length > 0).map((i) => i.key));
+  expect(keysNeedingQuotes(s)).not.toContain(bare().key);
+  expect(keysNeedingQuotes(s).length).toBeGreaterThan(0);
 });

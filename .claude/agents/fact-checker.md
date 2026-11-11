@@ -28,18 +28,16 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - at the end, the path to write the report to.
 
    If the command fails, stop and report its message. Do not write a report.
-2. **Fetch every source**, from the publisher's own site. Save each one into the temporary directory, never into the repository, as `<source id>.txt` (the id the sheet gives it), in plain text: a PDF goes through `pdftotext` first.
+2. **Fetch every source**, from the publisher's own site. Save each one into the temporary directory, never into the repository, under the id the sheet gives it: `<id>.html` for a web page saved as it is, `<id>.txt` for plain text, for a PDF's text (`pdftotext`) and for a page you read in the browser.
    - Prefer raw text through `curl -sL`. RFCs are at `https://www.rfc-editor.org/rfc/rfcNNNN.txt`, and IANA registries have `.txt` or `.xml` forms.
-   - Save an HTML page as it is, then read the passage from it (strip tags with a short script if that helps).
-   - Read a PDF with the Read tool.
-   - Read a long PDF (ITU-T X.200, a NIST SP) at the page its citation names: download it to the temporary directory, then run `pdftotext -f N -l N <file> -`, or use the Read tool with `pages`. A `#page=N` fragment names PDF page N, counted from the file's first page, not the number printed on the page.
+   - Save an HTML page as it is, as `<id>.html`, then read the passage from it (strip tags with a short script if that helps).
+   - Read a PDF with the Read tool, and save its text with `pdftotext` as `<id>.txt` as well.
+   - Read a long PDF (ITU-T X.200, a NIST SP) at the page its citation names: download it to the temporary directory, then run `pdftotext -f N -l N <file> <id>.txt`, or use the Read tool with `pages`. A `#page=N` fragment names PDF page N, counted from the file's first page, not the number printed on the page.
    - Use WebFetch only when there is no raw form. Never quote a WebFetch summary as a passage: a quote is the source's own words, copied exactly.
-   - If the publisher's site refuses a command-line read (a 403, "Access Denied", or a "Just a moment…" check page), open the page in the built-in browser and read its text there, then close the tab. Don't retry with made-up browser headers. Never solve a CAPTCHA, sign in, or accept anything to reach a page. A page you still can't read is a source that cannot be read.
+   - If the publisher's site refuses a command-line read (a 403, "Access Denied", or a "Just a moment…" check page), open the page in the built-in browser and read its text there, write the text the browser returned into `<id>.txt`, then close the tab. Don't retry with made-up browser headers. Never solve a CAPTCHA, sign in, or accept anything to reach a page. A page you still can't read is a source that cannot be read.
    - Use WebSearch only to find a source's current version or status. A search result is never a source.
 3. **Check every item** by the rules below. Read each cited section in this run. Never answer from memory, even when you are sure.
 4. **Write the report** to the path the sheet gives, in the format below. If a report is already there, it is an earlier run's, kept in git history. Replace it whole, without reading it or using it (remove it with `rm` first if your write tool needs that).
-
-   After writing the report, run the quote check (see docs/content-model.md §8). *(Placeholder: the quote check arrives with the next unit, which completes this step.)*
 5. **Check the report's form.** Run `npm run fact-check -- <slug> --check`. If it lists issues, fix the report's *form* and run the check again, until it prints `Report OK`. The form means the header, the keys and the source list.
 
    A check that lists failing verdicts ("did not pass") or a source that "is not current" is expected whenever you found one. Leave it as it is. Never change a verdict, or a source's `current`, to make the check pass.
@@ -155,24 +153,25 @@ After the header, for people:
 
 1. **Each claim** (kinds `claim` and `osi`):
    - its key, its text and its verdict;
-   - each citation, with the passage you relied on, quoted verbatim (the sentence or two you need, no more) in the quote form below, or "defining standard: <what it defines>";
+   - each citation, with the passage you relied on, quoted verbatim (the sentence or two you need, no more) in the quote form below, and for a defining standard a `Note:` bullet saying what it defines;
    - a currency note;
    - "Community sources only", when no citation behind a ✅ is a standard or official page;
    - for anything not ✅, one line saying exactly what is wrong.
    **The quote form.** Under the claim's heading, `### <key> — <verdict>`, each quote is a bullet and then its passage:
 
    ```
-   ### units[0].osi — ✅
+   ### units[0].steps[0].deep[0] (step "application", Go deeper) — ✅
 
-   - `itu-x200` §6.1.2 (defining standard)
-     > The Reference Model contains seven layers: a) the Application Layer (layer 7); … g) the Physical Layer (layer 1).
-   - Note: ITU-T lists X.200 as in force (checked 2026-11-11).
+   - `rfc-1122` §1.1.3
+     > The Internet suite does not further subdivide the application layer, although some of the Internet application layer protocols do contain some internal sub-layering.
+   - Note: RFC 1122 is an Internet Standard and is not obsoleted.
    ```
 
-   - The bullet is the source's id in backticks, `§` and the section, and an optional note in parentheses. The id and the section are one of the item's own citations on the sheet.
-   - The passage is the lines after the bullet that start with `>`. Use several lines for a long passage. Write `…` for words you leave out.
-   - Copy the passage exactly from the saved `<source id>.txt`.
-   - Any other bullet under a claim's heading begins `Note:`.
+   - The bullet starts its line: `- `, the source's id in backticks, `§` and the section. The sheet prints each citation in this form: copy the id and the section from it.
+   - A passage is always required, a defining standard's included. It is the lines straight after the bullet that start with `>`. Break a long passage between words, one `>` line each. Write `…` for words you leave out.
+   - Copy the passage exactly from the saved source file.
+   - Any other bullet under a claim's heading begins `Note:`. A remark on a defining standard, or on currency, is a `Note:` bullet.
+   - An item that cites nothing gets no quote.
    - Write the key exactly as the sheet gives it.
 2. **The traced, example and analogy parts, and the unbacked items:** the key, the verdict, and, for anything not ✅, what is wrong.
 3. **The sources:** each one, how you found it current (or not), and the date.

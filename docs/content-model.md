@@ -266,15 +266,18 @@ The rest of the report is for people. It gives each claim's quoted passages (or 
 **The quote form.** Under a claim's heading, `### <key> — <verdict>`, each quote is a bullet naming the source and the section, then the passage as one or more quoted lines:
 
 ```
-- `itu-x200` §6.1.2 (defining standard)
+- `itu-x200` §6.1.2
   > The Reference Model contains seven layers: a) the Application Layer (layer 7); … g) the Physical Layer (layer 1).
 ```
 
-- The id in backticks is the source's id in the registry. The section follows `§` and runs to the end of the line or to an optional note in parentheses.
-- The passage is every following line that starts with `>`, joined by single spaces. `…` marks words left out.
-- The source and the section must be one of that item's own citations on the claim sheet.
-- Any other bullet under a claim's heading must begin `Note:`. Anything else is a problem the parser names (`parseQuotes` in `src/content/factcheck/quotes.ts`), so a badly written quote cannot pass as a comment. Headings for items that quote nothing (traced, example, analogy, unbacked) need no quotes, and text outside claim headings is left alone.
-- The fact-checker saves each fetched source as `<source id>.txt` in its temporary folder.
+- The bullet starts its line with `- `. The id in backticks is the source's id in the registry; the section is everything after `§` to the end of the line. The claim sheet prints each citation in this same form, so the checker copies it.
+- The passage is the lines straight after the bullet that start with `>`, joined by single spaces. `…` marks words left out. A line breaks between words. A passage is always required, a defining standard's included.
+- The source and the section must be one of that item's own citations on the claim sheet. An item that cites nothing (an analogy, a traced part, an OSI badge that spans layers) quotes nothing, so a quote under it is a problem.
+- A comment is its own bullet beginning `Note:`. Plain text lines are allowed too.
+- The parser (`parseQuotes` in `src/content/factcheck/quotes.ts`) names everything else under a claim's heading as a problem, so a badly written quote cannot pass as a comment: a `>` line that is not part of a quote's passage (after a blank line, under a note, under plain text), a bullet that is neither a quote nor a note, a bullet that is indented, nested, numbered or not `- `, a heading deeper than `###`.
+- Every `###` heading in a report is a claim's heading, `### <key> — <✅|⚠️|❌>`: its key is on the sheet, it appears once, and its verdict is the header's verdict for that key.
+- Every item that has citations needs at least one quote when its verdict passes (`keysNeedingQuotes`).
+- The fact-checker saves each source it fetched in its temporary folder under the source's id: `<id>.html` for a web page saved as it is, `<id>.txt` for plain text, for a PDF's text and for a page read in the browser.
 
 The header may also carry a `quotes` record, written by the script and never by hand: `{ "checked": "<date>", "count": <number of quotes>, "digest": "<64 hex>", "files": { "<source id>": "<64 hex>" } }`. `digest` is the SHA-256 of the report's quotes in order (each one's key, source, section and passage, the passage with every run of whitespace made one space: `quotesDigest`). `files` is the SHA-256 of each source text the passages were found in. Nothing reads the record yet.
 

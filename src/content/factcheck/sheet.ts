@@ -160,7 +160,9 @@ export function renderSheet(sheet: ClaimSheet): string {
     lines.push('', `### ${item.key}`, '', `Kind: ${item.kind}`, '', '```json', JSON.stringify(item.content, null, 2), '```');
     if (item.cite.length > 0) {
       lines.push('', 'Citations:');
-      for (const c of item.cite) lines.push(`- ${c.label}: ${c.url}${c.defining === true ? ' (defining standard)' : ''}`);
+      for (const c of item.cite) {
+        lines.push(`- \`${c.source}\` §${c.section}`, `  ${c.label}: ${c.url}${c.defining === true ? ' (defining standard)' : ''}`);
+      }
     }
     if (item.traces.length > 0) lines.push('', `Traces: ${item.traces.join(', ')}`);
   }

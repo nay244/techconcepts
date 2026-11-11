@@ -165,3 +165,12 @@ test('the sheet renders every key and the hash', () => {
   expect(text).toContain(sheet.hash);
   for (const item of sheet.items) expect(text).toContain(item.key);
 });
+
+test('the rendered sheet prints each citation as a quote bullet to copy, and the hash is the one before the change', () => {
+  const sheet = sheetOf();
+  const text = renderSheet(sheet);
+  const item = sheet.items.find((i) => i.cite.length > 0)!;
+  const c = item.cite[0]!;
+  expect(text).toContain(`- \`${c.source}\` §${c.section}\n  ${c.label}: ${c.url}`);
+  expect(sheet.hash).toBe('8030bdf5881458e6b0116a075ca2a4b72d3a51429150e316545070458f63df37');
+});
