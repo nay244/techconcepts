@@ -56,9 +56,17 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 
 `digest` is the SHA-256 of the report's quotes in order (key, source, section, passage with its whitespace evened out). `files` is the SHA-256 of each source text the passages were found in.
 
-**The source files.** The checker saves each source in its temporary folder under the source's id: `<id>.html` for a web page saved as it is, `<id>.xml` for a registry's XML form, `<id>.txt` for plain text, for a PDF's text (`pdftotext`), and for a page it had to read in the browser. The script reads either: from an `.html` or `.xml` file it takes the text, with tags, scripts and styles removed and entities decoded.
+**The source files.** The checker saves each source in its temporary folder under the source's id: `<id>.html` for a web page saved as it is, `<id>.xml` for a registry's XML form, `<id>.txt` for plain text, for a PDF's text (`pdftotext`), and for a page it had to read in the browser. The script reads either. From an `.html` or `.xml` file it takes the text a reader would see, by parsing the page (with `jsdom`, which the tests already use), not by stripping tags with a pattern: the body's text, with `script`, `style` and `template` elements and anything marked `hidden` left out, a space wherever a block element or a line break ends, and nothing from an attribute.
 
-**Finding a passage.** Both the passage and the source text are evened out the same way before the search: Unicode compatibility forms (so a ligature is its letters), every run of whitespace one space, soft hyphens removed, curly quotes and apostrophes straightened, every dash a hyphen. A word broken by a hyphen at a line's end is tried joined and unjoined. A passage with `…` is found when its parts are found in order. Letter case must match.
+**Finding a passage.** Both the passage and the source text are evened out the same way before the search: every run of whitespace one space; soft hyphens and zero-width characters removed; a ligature written as its letters; curly quotes and apostrophes straightened; every dash a hyphen. Nothing else is folded: a superscript, a prime or a fraction stays the character it is. Letter case must match.
+
+- **A word broken at a line's end** (by a hyphen or a soft hyphen) is tried joined and unjoined, each break on its own, so one passage can cross a real compound and a split word.
+- **A passage with words left out** is found when its parts are found in order. The marks are `…`, `...`, `[…]` and `[...]`. Each part is at least two words.
+- **A part matches whole words only.** Where a part begins or ends with a letter or a digit, the source must not have a letter or a digit next to it there: "possible to route" is not found in "impossible to route", nor "a maximum of 25" in "a maximum of 255".
+
+(Changed on 2026-11-11 after B2's first review, which found a part matching inside a word, hyphens joined for the whole text at once, attribute text leaking through a tag pattern, and forty entities known out of thousands.)
+
+**What the check does not prove.** That the passage is in the section the quote names: the text has no section marks to test, so the checker's care and the reviewer's eye cover that. That the passage supports the claim: that is the verdict. And the record is not a seal: it shows the quotes have not changed since the script last passed them, not who ran it.
 
 **Which items need a quote.** Every item that has citations and a passing verdict needs at least one. An item with no citations quotes nothing: traced, example, analogy and unbacked items, and an OSI badge that spans layers. (Changed after B1's first review: the rule was by kind, which an OSI badge with no citation could not meet.)
 
