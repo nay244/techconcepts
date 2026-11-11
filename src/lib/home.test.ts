@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
 import { tracks } from '../content/tracks';
-import { homeDemo, homeStops } from './home';
+import { homeDemo, homeStops, leadText } from './home';
 
 const HTTP = () => getLesson('what-is-http')!.units[0]!;
 
@@ -59,6 +59,9 @@ test('the demo’s scene is the lesson’s map with only its own layer, and each
 test('the demo’s Learn part is the lesson’s lead, its ideas with their names, and its sources', () => {
   const { learn } = homeDemo();
   const unit = HTTP();
+  expect(learn.lead).toBe(unit.learn.lead.map((s) => s.text).join(' '));
+  // Today the lead is one statement, so nothing about Home changes.
+  expect(unit.learn.lead).toHaveLength(1);
   expect(learn.lead).toBe(unit.learn.lead[0]!.text);
   expect(learn.terms.length).toBeGreaterThanOrEqual(4);
   expect(learn.terms).toEqual(unit.learn.terms.slice(0, learn.terms.length).map((t) => ({ idea: t.idea, name: t.name })));
@@ -69,7 +72,7 @@ test('the demo’s Learn part is the lesson’s lead, its ideas with their names
 test('Learn ends on the sealed version: HTTPS, the next lesson, in that lesson’s own words', () => {
   const { sealed } = homeDemo();
   const https = getLesson('what-is-https')!;
-  expect(sealed).toEqual({ title: 'HTTPS', lead: https.units[0]!.learn.lead[0]!.text, url: '/how-the-internet-works/what-is-https', number: 2 });
+  expect(sealed).toEqual({ title: 'HTTPS', lead: https.units[0]!.learn.lead.map((s) => s.text).join(' '), url: '/how-the-internet-works/what-is-https', number: 2 });
   expect(sealed.lead).toContain('seal the line');
 });
 
@@ -107,4 +110,14 @@ test('a stop counts its lessons from the content', () => {
     expect(stops[i]!.count).toBe(available === planned ? `${planned} lessons` : `${available} of ${planned} lessons ready`);
     expect(stops[i]!.cover).toBeTruthy();
   });
+});
+
+test('a lead of several statements reads as the lesson’s Learn part shows it: every text, one space between', () => {
+  const lead = [
+    { id: 'a', text: 'First idea.', cite: [] },
+    { id: 'b', text: 'Second idea.', cite: [] },
+    { id: 'c', text: 'Third idea.', cite: [] },
+  ];
+  expect(leadText(lead)).toBe('First idea. Second idea. Third idea.');
+  expect(leadText(lead.slice(0, 1))).toBe('First idea.');
 });

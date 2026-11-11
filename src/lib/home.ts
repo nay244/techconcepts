@@ -54,6 +54,11 @@ function write(svg: string, id: string, words: string): string {
   return svg.replace(slot, (_whole, open: string, close: string) => `${open}${escape(words)}${close}`);
 }
 
+/** A lead's statements as the Learn part shows them (src/lesson/Explanation.tsx): their texts, one space between. */
+export function leadText(lead: { text: string }[]): string {
+  return lead.map((statement) => statement.text).join(' ');
+}
+
 /** How many ideas the Learn part lists: enough to show the pattern, the idea first and then its name. */
 const TERMS = 6;
 
@@ -118,11 +123,11 @@ export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): H
     lesson: { title: lesson.title, fullName: unit.fullName, url: entry.url, number: entry.number, track: track.title },
     steps,
     learn: {
-      lead: unit.learn.lead[0]!.text,
+      lead: leadText(unit.learn.lead),
       terms: unit.learn.terms.slice(0, TERMS).map((t) => ({ idea: t.idea, name: t.name })),
       sources: unit.references.map((r) => ({ label: r.label, url: r.url })),
     },
-    sealed: { title: sealedLesson.title, lead: sealedLesson.units[0]!.learn.lead[0]!.text, url: sealedEntry.url, number: sealedEntry.number },
+    sealed: { title: sealedLesson.title, lead: leadText(sealedLesson.units[0]!.learn.lead), url: sealedEntry.url, number: sealedEntry.number },
     practice: { prompt: question.prompt, options: question.options.map((o, i) => ({ text: o.text, feedback: o.feedback, right: i === question.answer })) },
     scene: drawn.replace(TRAIL, `${TRAIL}${trails.join('')}`),
     parts: { watch: at('step'), learn: at('learn'), practice: at('practice') },
