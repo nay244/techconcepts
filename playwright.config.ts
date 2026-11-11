@@ -14,13 +14,16 @@ import { defineConfig } from '@playwright/test';
  * leaves it out. It sets each size and theme itself, so only the d1440-dark project runs it; the other projects
  * ignore the file.
  *
+ * `og-image.spec.ts` photographs the share image's card in a window of its own, so only the d1440-dark project runs
+ * it (the one CI's e2e job runs); the other projects ignore the file.
+ *
  * Phone and desktop tests go to their projects here, not by skipping: the phone project runs only site.spec.ts's
  * @phone tests, and every desktop project leaves them out. The skips left in the specs are deliberate gates: the
  * playback behaviour checks run in d1440-dark and reduced-motion only, and the reduced-motion timing in its project.
  */
 const PORT = 4471;
 const desktop = { grepInvert: /@phone/ };
-const notVisual = { ...desktop, testIgnore: /(visual|tablet)\.spec\.ts$/ };
+const notVisual = { ...desktop, testIgnore: /(visual|tablet|og-image)\.spec\.ts$/ };
 
 export default defineConfig({
   testDir: 'e2e',
