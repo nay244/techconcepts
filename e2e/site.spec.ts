@@ -74,6 +74,15 @@ async function finishLesson(page: Page, path: string): Promise<void> {
 test.describe('desktop', () => {
   requireLessons(LESSONS);
 
+  test('the share image has its description: og:image:alt once, straight after og:image, on Home and a lesson page', async ({ page }) => {
+    const words = 'TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside.';
+    for (const path of ['/', '/networking/dhcp']) {
+      await open(page, path);
+      await expect(page.locator('meta[property="og:image:alt"]')).toHaveCount(1);
+      await expect(page.locator('meta[property="og:image"] + meta[property="og:image:alt"]')).toHaveAttribute('content', words);
+    }
+  });
+
   test.describe('Home', () => {
     test('Home: one heading, the start button opens the first lesson, and See the tracks opens /tracks', async ({ page }) => {
       await open(page, '/');

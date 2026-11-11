@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { tokens } from '../src/styles/tokens.ts';
 import { LOGO_SHAPES } from '../src/art/logo.ts';
@@ -57,14 +57,4 @@ test("BaseLayout gives og:image:alt right after og:image, only for the default i
   expect(layout).toMatch(/imageAlt\?: string/);
   expect(layout).toMatch(/<meta property="og:image" content=\{imageUrl\} \/>\s*\{altText && <meta property="og:image:alt" content=\{altText\} \/>\}/);
   expect(layout).toMatch(/altText = imageAlt \?\? \(image === DEFAULT_IMAGE \? DEFAULT_IMAGE_ALT : undefined\)/);
-});
-
-const dist = new URL('../dist/', import.meta.url);
-test.skipIf(!existsSync(new URL('index.html', dist)))('built pages (after npm run build) carry the description once', () => {
-  const pages = ['index.html', 'networking/dhcp/index.html'];
-  for (const page of pages) {
-    const html = readFileSync(new URL(page, dist), 'utf8');
-    expect(html.match(/property="og:image:alt"/g)).toHaveLength(1);
-    expect(html).toContain(`<meta property="og:image:alt" content="${ALT}"`);
-  }
 });
