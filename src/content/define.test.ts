@@ -194,7 +194,7 @@ test('each unit needs a reference', () => {
   expect(joined(noRef)).toMatch(/Unit "beta".*at least 1 reference/);
 });
 
-test('a legacy lesson may wait for its audit with no cert tags (a cited lesson may not: cited.test.ts)', () => {
+test('a lesson may carry no cert tags (a cited one needs none either: cited.test.ts)', () => {
   // How the Internet Works' 14 lessons: the old lesson-wide tags would claim exams some protocols are not on.
   expect(joined(makeLesson({ certTags: [] }))).not.toMatch(/cert tag/);
 });

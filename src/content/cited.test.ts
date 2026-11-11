@@ -432,12 +432,17 @@ test('a lesson number is rejected wherever it sits; "lessons" with no number is 
 
 test('the structural rules every lesson keeps still apply', () => {
   const l = makeCitedLesson();
-  l.certTags = [];
   const m1 = u(l).steps[0]!.events[0]!;
   if (m1.type === 'message') m1.from = 'mars';
   const text = joined(l);
-  expect(text).toMatch(/at least 1 cert tag/);
   expect(text).toMatch(/message "m1" is sent from "mars", which the dhcp figure does not have/);
+});
+
+test('a cited lesson needs no cert tag: its concepts are not an exam', () => {
+  const l = makeCitedLesson();
+  l.certTags = [];
+  expect(joined(l)).not.toMatch(/cert tag/);
+  expect(issuesOf(l)).toEqual([]);
 });
 
 // ---------------------------------------------------------------- shape, and the entry point

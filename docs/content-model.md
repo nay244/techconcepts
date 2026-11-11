@@ -4,7 +4,7 @@ How to add a source, a lesson, a track and a glossary entry, how a lesson is fac
 
 **Every source, section number, objective and web address in the examples is invented. Look up each real one in the document itself.**
 
-The real `SOURCES` registry is empty today. A lesson's first sources are added to `src/content/sources.ts` in the same change as the lesson.
+The real `SOURCES` registry has six entries today. A lesson's sources are added to `src/content/sources.ts` in the same change as the lesson.
 
 ## 1. Sources
 
@@ -150,7 +150,7 @@ Example data is only for made-up values: RFC 5737 and RFC 1918 addresses, `00:00
 7. Learn ids are unique, and every trace names a cited Learn part of this lesson
 8. every citation is one `cite()` builds, of a source that may back content
 9. no text says "lesson 3" or the like, because a shared lesson's number differs by track
-10. the structural rules: a cert tag, unique ids, and a scene, events, tables and cues that fit the figure (`FIGURE_PARTS`)
+10. the structural rules: unique ids, and a scene, events, tables and cues that fit the figure (`FIGURE_PARTS`)
 
 **Limits.** Each track sets numeric limits (`limits` in its track file, keys in `src/content/limits.ts`): `steps`, `factsPerStep`, `practiceQuestions`, `optionsPerQuestion`, `learnTerms`, `patternNames`, `narrativeWords`, `hookWords`, `deepWords`. A lesson must fit every track that lists it. The first six are `{ min, max }` ranges. The last three are word ceilings.
 
