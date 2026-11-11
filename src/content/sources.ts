@@ -472,6 +472,15 @@ export const SOURCES: SourceRegistry = defineSources([
     url: 'https://www.rfc-editor.org/rfc/rfc9868.html',
     anchor: 'https://www.rfc-editor.org/rfc/rfc9868.html#section-{n}',
   },
+  {
+    id: 'rfc-4961',
+    kind: 'rfc',
+    short: 'RFC 4961',
+    title: 'Symmetric RTP / RTP Control Protocol (RTCP)',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc4961.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc4961.html#section-{n}',
+  },
 ]);
 
 /**

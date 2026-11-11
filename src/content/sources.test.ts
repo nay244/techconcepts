@@ -225,7 +225,7 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
       'itu-g114', 'itu-g711-appi', 'rfc-8836', 'rfc-8834', 'rfc-9114', 'rfc-7567', 'rfc-5681', 'rfc-6716', 'rfc-3417', 'rfc-9308', 'rfc-9312',
       'cloudflare-network-layers', 'microsoft-azure-lb', 'microsoft-gdk-udp',
-      'rfc-3611', 'rfc-8445', 'rfc-9868',
+      'rfc-3611', 'rfc-8445', 'rfc-9868', 'rfc-4961',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

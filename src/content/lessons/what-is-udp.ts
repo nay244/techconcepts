@@ -340,8 +340,8 @@ export default defineLesson({
             'Sam answers, and Sam’s voice comes back the same way: packets from the voice server to your laptop, every 20 milliseconds, with no handshake and no guarantee. Each side simply sends to the other’s address and port, and listens on its own.',
           deep: [
             {
-              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes, except for some well-known destination ports. During silences, a call app may send small keep-alive packets to keep that way open.',
-              cite: [RFC768_FIELDS, rfc8085('3.5'), cite('rfc-4787', '4.3'), cite('rfc-8445', '11')],
+              text: 'A call app’s server can send from the port you sent to (16384) back to the port you sent from (50900), as symmetric RTP recommends; UDP itself doesn’t require it. Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes, except for some well-known destination ports. During silences, a call app may send small keep-alive packets to keep that way open.',
+              cite: [RFC768_FIELDS, cite('rfc-4961', '3', { defining: true }), cite('rfc-4961', '1'), rfc8085('3.5'), cite('rfc-4787', '4.3'), cite('rfc-8445', '11')],
             },
           ],
           facts: [
