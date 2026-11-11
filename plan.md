@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: phase 2 (build) is part way, stopped on 2026-11-10 when the usage limit was reached.** B1 is reviewed and merged. B2 is built on `build/b2-lesson-phone` and waits for its reviewer. B3 and B4 have not started. Next: review B2, merge a PASS, then B3, then B4, then the final check on `revamp`. The four designs are approved and frozen.
+**Status: built and merged on 2026-11-11; one check left.** All four build units are merged into `revamp`. Unit tests and the build pass there. The final full `npm run e2e` on `revamp` has not had a clean run: the Mac slept with its lid closed through both attempts (`team.md`, last row). Run it once with the lid open. Nothing is pushed. Open for the owner: the errata made to D2 and D3 after approval (each spec's last section), and the questions at the end of this file.
 
 ## Inputs
 
@@ -60,3 +60,13 @@ B1, B2 and B3 all change `src/lesson/console.css`, so they run in that order. B4
 - Phase 3 (one fact-check path), Phase 4 (cite and check the 17 legacy lessons) and Phase 5 (the Practice page): each is a job of its own.
 - A look inside the current message (the packet inspector), and motion in Home's demo.
 - Anything that leaves this machine: push, pull request, merge to `main`, deploy.
+
+## Open for the owner
+
+1. **Errata after approval.** D2: the phone scene clips its overflow; the tab says it has changed with an `aria-label`; a table row's tag sits under its value. D3: Learn and Practice keep the 348px column on a tablet on its side; the tabs' focus ring is drawn inside the button there. Each is in its spec's "Errata" section.
+2. **Reading on a tablet on its side.** Should Learn and Practice there get D1's wider words and folded log?
+3. **The Table tab's mark after turning a tablet.** A reader who watched the table change on its side sees the tab marked "changed" when they turn it upright.
+4. **Subnetting's bits board** still scrolls sideways in its tab on a phone.
+5. **A phone on its side** keeps the stacked page.
+6. **A text description of the share image** (`og:image:alt`) is not set.
+
