@@ -38,10 +38,13 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - Use WebSearch only to find a source's current version or status. A search result is never a source.
 3. **Check every item** by the rules below. Read each cited section in this run. Never answer from memory, even when you are sure.
 4. **Write the report** to the path the sheet gives, in the format below. If a report is already there, it is an earlier run's, kept in git history. Replace it whole, without reading it or using it (remove it with `rm` first if your write tool needs that).
-5. **Check the report's form.** Run `npm run fact-check -- <slug> --check`. If it lists issues, fix the report's *form* and run the check again, until it prints `Report OK`. The form means the header, the keys and the source list.
+5. **Check the quotes.** Run `npm run fact-check -- <slug> --quotes <your temporary folder>`. It looks for every passage you quoted in the saved file of the source it names, and when all are found it writes a record of that into the report's header, which only the script does. It prints each passage it cannot find, with its claim key.
+
+   A passage it cannot find is a quote that is not in the source as written. Open the saved file and copy the passage again, exactly. If the source does not say it, the quote goes, and you judge the item's verdict again without it. Never shorten or reword a passage to make the check pass, unless what remains still supports the claim on its own. Run the command again until it prints `Quotes OK`.
+6. **Check the report's form.** Run `npm run fact-check -- <slug> --check`. If it lists issues, fix the report's *form* and run the check again, until it prints `Report OK`. The form means the header, the keys and the source list.
 
    A check that lists failing verdicts ("did not pass") or a source that "is not current" is expected whenever you found one. Leave it as it is. Never change a verdict, or a source's `current`, to make the check pass.
-6. **Finish** by replying with:
+7. **Finish** by replying with:
    - the report's path;
    - the verdict counts;
    - one line for each item that is not ✅.

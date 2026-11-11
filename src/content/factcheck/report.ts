@@ -41,7 +41,7 @@ export const reportHeaderSchema = z.strictObject({
 });
 export type ReportHeader = z.infer<typeof reportHeaderSchema>;
 
-const HEADER = /^```json fact-check[ \t]*\r?\n([\s\S]*?)\r?\n```/m;
+export const HEADER = /^```json fact-check[ \t]*\r?\n([\s\S]*?)\r?\n```/m;
 
 /** Reads a report's header, or says why it cannot be read. */
 export function parseReport(raw: string): { header: ReportHeader; issues: [] } | { header?: undefined; issues: string[] } {

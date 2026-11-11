@@ -1,11 +1,13 @@
 import type { Lesson } from '../schema';
 import { SOURCES, type SourceRegistry } from '../sources';
 import { checkReport, reportPath } from './gate';
+import { checkQuotes, type SourceFile } from './quotecheck';
 import { claimSheet, renderSheet } from './sheet';
 
 /**
- * `npm run fact-check -- <slug>` prints a lesson's claim sheet for the fact-checker, and `-- <slug> --check` checks the
- * report it wrote (fact-checker design §6, §8). `scripts/fact-check.mjs` runs this module through Vite.
+ * `npm run fact-check -- <slug>` prints a lesson's claim sheet for the fact-checker, `-- <slug> --check` checks the
+ * report it wrote (fact-checker design §6, §8), and `-- <slug> --quotes <folder>` looks for every passage the report
+ * quotes in the source files saved in the folder, and writes the record into the report when all are found. `scripts/fact-check.mjs` runs this module through Vite.
  *
  * The real lessons are read here without the registry: the registry runs the build gate when it loads, and the gate
  * refuses a cited lesson that has no report yet, so the registry cannot hand over the very lesson that needs one. Only
@@ -23,9 +25,20 @@ export interface FactCheckDeps {
   /** A file's text, by its path from the repository root; `undefined` when there is no such file. */
   readFile(path: string): string | undefined;
   loadCanary(): Promise<{ lesson: Lesson; sources: SourceRegistry } | undefined>;
+  /** The files in a folder, with their text; `undefined` when there is no such folder. Only the script can read one. */
+  readFolder?(folder: string): SourceFile[] | undefined;
+  /** Writes a file, by its path from the repository root. Only the script can write one. */
+  writeFile?(path: string, text: string): void;
+  /** Today, as YYYY-MM-DD. */
+  today?(): string;
 }
 
-const USAGE = 'Usage: npm run fact-check -- <slug> [--check]';
+const USAGE = 'Usage: npm run fact-check -- <slug> [--check | --quotes <folder>]';
+
+const localDay = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
 
 /** Glob keys are paths from this file; the rest of the tooling names files by their path from the repository root. */
 const fromRoot = (globbed: Record<string, string>, prefix: string): Record<string, string> =>
@@ -52,7 +65,10 @@ export const DEFAULT_DEPS: FactCheckDeps = {
 
 export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT_DEPS): Promise<{ code: number; out: string }> {
   const check = args.includes('--check');
-  const rest = args.filter((a) => a !== '--check');
+  const at = args.indexOf('--quotes');
+  const folder = at < 0 ? undefined : args[at + 1];
+  if (at >= 0 && (check || folder === undefined || folder.startsWith('-'))) return { code: 1, out: USAGE };
+  const rest = args.filter((a, i) => a !== '--check' && a !== '--quotes' && (at < 0 || i !== at + 1));
   const [slug] = rest;
   if (slug === undefined || rest.length !== 1 || slug.startsWith('-')) return { code: 1, out: USAGE };
 
@@ -74,6 +90,18 @@ export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT
   }
 
   const sheet = claimSheet(lesson, sources);
+  if (folder !== undefined) {
+    const { readFolder, writeFile } = deps;
+    if (readFolder === undefined || writeFile === undefined) return { code: 1, out: 'The quote check needs to read and write files; run it with npm run fact-check.' };
+    const found = readFolder(folder);
+    if (found === undefined) return { code: 1, out: `No folder "${folder}".` };
+    const raw = deps.readFile(path);
+    if (raw === undefined) return { code: 1, out: checkReport(sheet, raw, path).join('\n') };
+    const result = checkQuotes({ raw, sheet, files: found, today: (deps.today ?? localDay)() });
+    if (result.report === undefined) return { code: 1, out: result.issues.join('\n') };
+    writeFile(path, result.report);
+    return { code: 0, out: `Quotes OK: ${result.record.count} quotes in ${Object.keys(result.record.files).length} sources; record written to ${path}` };
+  }
   if (!check) return { code: 0, out: `${renderSheet(sheet)}\nWrite your report to: ${path}` };
   const issues = checkReport(sheet, deps.readFile(path), path);
   return issues.length === 0 ? { code: 0, out: `Report OK: ${path}` } : { code: 1, out: issues.join('\n') };
