@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. The plan before this one (the Lesson page, Phase 2) is done; it is in this file's history at commit f419637.
 
-**Status: the owner said go on 2026-11-11 ("Go with phase 3 plan as written"). The build units are running, in order.**
+**Status: done on 2026-11-11.** B1 to B5 are merged into `revamp`, and the final check passed there (`team.md`). Nothing is pushed. For the owner to see: one part of "done means" is met in substance, not to the letter (the canary, below), and two quotes in OSI Model's report carry an added omission mark (B3).
 
 ## Inputs
 
@@ -107,3 +107,10 @@ B4 comes after B3 so the build never needs a record that OSI Model's report does
 - A fact-check path for glossary entries or objective mappings (decision 1).
 - Citing and checking the 17 legacy lessons: Phase 4.
 - Anything that leaves this machine.
+
+## How it ended
+
+- **Every quote in OSI Model's report is confirmed**: 160 quotes in 6 sources. None was a misquote. Eight were not found at first, all from how the text was extracted: six lost a hyphen at a line's end (the checker now reads a PDF with `pdftotext -raw`), and two crossed a page break. For those two the orchestrator added an omission mark at the break and a note saying so; no quoted word changed.
+- **The canary**: "done means" asked for the verdicts on record, 29, 2 and 3. The changed fact-checker gave 29, 1 and 4. The same 29 items pass and the same 5 planted faults are flagged; one of the five is judged failing where the record had partial. The fact-checker's own design asks that every planted fault is flagged and every correct claim passes, and that holds. A first run had marked the OSI badge partial for citing nothing; one sentence in the instructions settled that.
+- **The formats changed three times in review.** The section above is as built.
+

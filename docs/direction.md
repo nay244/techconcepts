@@ -85,14 +85,14 @@ Each numbered step is its own branch.
 
 Done when every page wears the one new look in both themes, a reader on a 375px phone can do a whole lesson without the page scrolling past the scene, and every cited claim is one tap from its source.
 
-### Phase 3: one fact-check path — IN PROGRESS
+### Phase 3: one fact-check path — DONE 2026-11-11
 
 - A cited lesson's Practice questions are on its claim sheet already. Glossary entries and objective mappings are refused by the build until a fact-check path is built for them (decision 2.16).
 - A script confirms that each passage a fact-check report quotes appears in the fetched source (option 5), and writes a record the build reads (built in B1 to B4).
 
 Done when the build fails for any cited content without a current all-pass report, whatever its kind.
 
-Status: the build now fails for a cited lesson whose report has no quote record, a record that does not match its quotes, or a passing claim with citations and no quote (unit B4), and refuses any glossary entry or objective mapping outright until a path is built for that kind (decision 2.16). Still to come: the canary run (unit B5), which proves the changed fact-checker gives the verdicts on record with confirmed quotes.
+Status: done. The build fails for a cited lesson whose report has no quote record, a record that does not match its quotes, or a passing claim with citations and no quote, and refuses any glossary entry or objective mapping outright until a path is built for that kind (decision 2.16). All 160 quotes in OSI Model's report are confirmed in its six sources; none was a misquote. The canary, checked again by the changed fact-checker, has every planted fault flagged and every correct claim passed (29 passing, 1 partial, 4 failing, where the record had 29, 2 and 3: one planted fault is judged failing, not partial). What the check does not prove, and what to do differently, are in `plan.md` and `team.md`.
 
 ### Phase 4: How the Internet Works, verified — TODO
 
