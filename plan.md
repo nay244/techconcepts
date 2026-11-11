@@ -62,7 +62,7 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 
 - **A word broken at a line's end** (by a hyphen or a soft hyphen) is tried joined and unjoined, each break on its own, so one passage can cross a real compound and a split word.
 - **A passage with words left out** is found when its parts are found in order. The marks are `…`, `...`, `[…]` and `[...]`. Each part is at least two words.
-- **A part matches whole words only.** Where a part begins or ends with a letter or a digit, the source must not have a letter or a digit next to it there: "possible to route" is not found in "impossible to route", nor "a maximum of 25" in "a maximum of 255".
+- **A part matches whole words only.** Where a part begins or ends with a letter or a digit, the source must not have a letter or a digit next to it there: "possible to route" is not found in "impossible to route", nor "a maximum of 25" in "a maximum of 255". A line-end break beside a match counts as a letter, since the script cannot tell a split word from a compound there: "national" is not found in "inter-" then "national" on the next line, and "international" is.
 
 (Changed on 2026-11-11 after B2's first review, which found a part matching inside a word, hyphens joined for the whole text at once, attribute text leaking through a tag pattern, and forty entities known out of thousands.)
 
