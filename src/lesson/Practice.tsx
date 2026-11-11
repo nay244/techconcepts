@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { Question } from '../content/schema';
+import { Marks, type Numbers } from './Marks';
 import { Rich } from './Rich';
 
 const LETTERS = 'ABCDEFGH';
@@ -33,6 +34,8 @@ export interface PracticeProps {
   questions: Question[];
   picked: Picks;
   onPick(questionId: string, option: number): void;
+  /** The unit's source numbers (`numberedSources`), for the marks after a feedback. */
+  numbers: Numbers;
 }
 
 /**
@@ -41,7 +44,7 @@ export interface PracticeProps {
  * in memory, so they are still there after a visit elsewhere in the lesson, and
  * gone on reload: nothing is scored, counted, stored or sent anywhere.
  */
-export function Practice({ questions, picked, onPick }: PracticeProps) {
+export function Practice({ questions, picked, onPick, numbers }: PracticeProps) {
   const id = useId();
 
   return (
@@ -79,15 +82,18 @@ export function Practice({ questions, picked, onPick }: PracticeProps) {
                 </button>
               ))}
             </div>
-            {/* Always in the page, so the feedback added to it is announced. */}
-            <p className="practice__feedback" aria-live="polite" data-result={feedback === null ? undefined : right ? 'right' : 'wrong'}>
-              {feedback === null ? null : (
-                <>
-                  {feedback.lead === null ? null : <b>{feedback.lead}</b>}
-                  {feedback.lead === null ? '' : ' '}
-                  <Rich text={feedback.rest} />
-                </>
-              )}
+            {/* The words are always in the page, so the feedback added to them is announced. The marks stay outside the live region. */}
+            <p className="practice__feedback" data-result={feedback === null ? undefined : right ? 'right' : 'wrong'}>
+              <span className="practice__say" aria-live="polite">
+                {feedback === null ? null : (
+                  <>
+                    {feedback.lead === null ? null : <b>{feedback.lead}</b>}
+                    {feedback.lead === null ? '' : ' '}
+                    <Rich text={feedback.rest} />
+                  </>
+                )}
+              </span>
+              {chosen === undefined ? null : <Marks cite={chosen.cite} numbers={numbers} />}
             </p>
           </li>
         );

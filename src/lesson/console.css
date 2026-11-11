@@ -71,6 +71,19 @@
   min-height: 0;
 }
 
+/* Reading Learn or Practice on a desktop: the words take 560px, never leaving the scene under 484px (the 12px gap
+   makes 496px), and the title may take two lines in the scene's head. Up to 1148px the words keep 348px. */
+@media (min-width: 1100px) {
+  .console[data-reading] .console__main {
+    grid-template-columns: minmax(0, 1fr) max(348px, min(560px, 100% - 496px));
+  }
+  .console[data-reading] .stage__title {
+    white-space: normal;
+    text-align: end;
+    text-wrap: balance;
+  }
+}
+
 /* ---------------------------------------------------------------- buttons */
 
 .cbtn {
@@ -1055,9 +1068,12 @@ ol.explain__sources li::marker {
   color: var(--ink);
   font: 400 14px/1.5 var(--sans);
 }
-/* Empty, it takes no room but stays in the accessibility tree, so the first pick is announced. */
-.practice__feedback:empty {
+/* Before a pick it takes no room; its words (.practice__say) stay in the page, so the first pick is announced. */
+.practice__feedback:not([data-result]) {
   margin: 0;
+}
+.practice__feedback .explain__marks {
+  font-size: 0.8em;
 }
 .practice__feedback b {
   color: var(--allowed-text);
@@ -1081,6 +1097,27 @@ ol.explain__sources li::marker {
   gap: 20px;
   padding: 8px 14px;
   border-bottom: 1px solid var(--line);
+}
+/* The log folds to its head while a desktop reader is in Learn or Practice; the button brings the rows back. */
+.log__fold {
+  display: none;
+  flex: none;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+@media (min-width: 1100px) {
+  .console[data-reading] .log__fold {
+    display: inline-grid;
+  }
+  .console[data-reading]:not([data-log='open']) .console__main {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .console[data-reading]:not([data-log='open']) :is(.log__scroll, .log__legend) {
+    display: none;
+  }
+  .console[data-reading]:not([data-log='open']) .log__head {
+    border-bottom: 0;
+  }
 }
 .log__legend {
   display: flex;

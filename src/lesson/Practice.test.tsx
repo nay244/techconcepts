@@ -5,14 +5,16 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { Question } from '../content/schema';
 import { liftedFixture } from '../content/test-fixtures';
+import { getLesson } from '../content/registry';
 import { Practice, type Picks } from './Practice';
+import { numberedSources } from './sourceNumbers';
 
 const questions = liftedFixture().units[0]!.practice;
 
 /** Practice with its picks held the way the console holds them: in memory. */
-function Harness({ questions: qs }: { questions: Question[] }) {
+function Harness({ questions: qs, numbers = new Map() }: { questions: Question[]; numbers?: ReadonlyMap<string, number> }) {
   const [picked, setPicked] = useState<Picks>({});
-  return <Practice questions={qs} picked={picked} onPick={(id, option) => setPicked((p) => ({ ...p, [id]: option }))} />;
+  return <Practice questions={qs} picked={picked} onPick={(id, option) => setPicked((p) => ({ ...p, [id]: option }))} numbers={numbers} />;
 }
 
 beforeEach(() => {
@@ -74,4 +76,75 @@ test('a wrong pick always reads Not quite, even when its feedback does not start
   expect(screen.getByText(/The phone only uses addresses\./)).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: /The box by the door/ }));
   expect(screen.getByText('That’s it.', { selector: 'b' })).toBeInTheDocument();
+});
+
+// ---------------------------------------------------------------- source numbers in the feedback (D1 §6, checks 7 to 9)
+
+const OSI = getLesson('osi-model')!.units[0]!;
+const DHCP_UNIT = getLesson('dhcp')!.units[0]!;
+
+/** OSI Model's marks by question and option (D1 §6): the numbers, in order. */
+const OSI_MARKS: string[][][] = [
+  [['1', '3', '4'], ['1'], ['1']],
+  [['1', '3'], ['1'], ['1', '3']],
+  [['1'], ['1'], ['1'], ['1']],
+];
+
+test('every OSI Model option shows the source numbers D1 lists, after its feedback, as links to the cited places', async () => {
+  render(<Harness questions={OSI.practice} numbers={numberedSources(OSI).numberOf} />);
+  const items = screen.getAllByRole('listitem').filter((li) => li.classList.contains('practice__question'));
+  expect(items).toHaveLength(OSI_MARKS.length);
+  for (const [qi, perOption] of OSI_MARKS.entries()) {
+    for (const [oi, expected] of perOption.entries()) {
+      await userEvent.click(within(items[qi]!).getAllByRole('button')[oi]!);
+      const feedback = items[qi]!.querySelector('.practice__feedback')!;
+      const marks = feedback.querySelector('sup.explain__marks');
+      const links = [...(marks?.querySelectorAll('a') ?? [])];
+      expect(links.map((a) => a.textContent), `question ${qi + 1}, option ${oi + 1}`).toEqual(expected);
+      for (const a of links) {
+        expect(a).toHaveAttribute('target', '_blank');
+        expect(a.getAttribute('href')).toMatch(/^https:/);
+        expect(a.getAttribute('aria-label')).toMatch(/^Source \d+: .+ \(opens in a new tab\)$/);
+      }
+      // The marks come after the words, and outside them.
+      if (marks !== null) expect(feedback.lastElementChild).toBe(marks);
+    }
+  }
+});
+
+test('OSI Model question 1, option A: mark 1 opens X.200 at page 19, mark 3 names two places, mark 4 opens RFC 1122', async () => {
+  render(<Harness questions={OSI.practice} numbers={numberedSources(OSI).numberOf} />);
+  const q1 = screen.getAllByRole('listitem').find((li) => li.classList.contains('practice__question'))!;
+  await userEvent.click(within(q1).getAllByRole('button')[0]!);
+  const [one, three, four] = [...q1.querySelectorAll('.practice__feedback a')];
+  expect(one!.getAttribute('href')).toMatch(/#page=19$/);
+  expect(one!.getAttribute('aria-label')).toBe('Source 1: ITU-T X.200, 5.6.1.3 (opens in a new tab)');
+  expect(three!.getAttribute('href')).toMatch(/#page=20$/);
+  expect(three!.getAttribute('title')).toContain(';');
+  expect(four!.getAttribute('href')).toMatch(/#page-17$/);
+});
+
+test('DHCP’s Practice shows no link in any feedback', async () => {
+  render(<Harness questions={DHCP_UNIT.practice} numbers={numberedSources(DHCP_UNIT).numberOf} />);
+  for (const [qi, question] of DHCP_UNIT.practice.entries()) {
+    const item = screen.getAllByRole('listitem').filter((li) => li.classList.contains('practice__question'))[qi]!;
+    for (const oi of question.options.keys()) {
+      await userEvent.click(within(item).getAllByRole('button')[oi]!);
+      expect(item.querySelectorAll('.practice__feedback a')).toHaveLength(0);
+    }
+  }
+});
+
+test('the live region is the words alone; the feedback has none, holds no link inside the words, and is empty before a pick', async () => {
+  render(<Harness questions={OSI.practice} numbers={numberedSources(OSI).numberOf} />);
+  const q1 = screen.getAllByRole('listitem').find((li) => li.classList.contains('practice__question'))!;
+  const feedback = q1.querySelector('.practice__feedback')!;
+  const say = feedback.querySelector('.practice__say')!;
+  expect(say).toHaveAttribute('aria-live', 'polite');
+  expect(feedback).not.toHaveAttribute('aria-live');
+  expect(say).toBeEmptyDOMElement();
+  expect(feedback.querySelector('a')).toBeNull();
+  await userEvent.click(within(q1).getAllByRole('button')[0]!);
+  expect(say.textContent).not.toBe('');
+  expect(say.querySelector('a')).toBeNull();
 });

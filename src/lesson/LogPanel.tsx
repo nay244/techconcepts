@@ -98,6 +98,8 @@ export interface LogPanelProps {
   fresh?: string | null;
   /** The playback controls, which sit in the header. */
   controls?: ReactNode;
+  /** Whether the log is open, and the button that folds it. The button shows only on a desktop reading Learn or Practice (console.css). */
+  fold?: { open: boolean; onToggle(): void } | null;
 }
 
 /** What the empty log says instead of its idle words when JavaScript is off (BaseLayout's no-script style hides them). */
@@ -120,8 +122,9 @@ export const NO_SCRIPT_NOTE = 'This lesson needs JavaScript to play.';
  * React never draws a `<noscript>`'s children in the browser, so with
  * JavaScript on the note is never there.
  */
-export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelProps) {
+export function LogPanel({ log, rows, idle, fresh = null, controls, fold = null }: LogPanelProps) {
   const titleId = useId();
+  const scrollId = useId();
   const noteKind = log.legend.find((entry) => entry.kind === 'note' || entry.kind === 'change')?.kind ?? 'note';
   // The outcome's word goes in the plain-words column, or else the first column of words, where it can wrap;
   // the last column when there is neither.
@@ -131,7 +134,7 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
   useEffect(() => {
     const box = scroller.current;
     if (box !== null) box.scrollTop = box.scrollHeight;
-  }, [rows.length]);
+  }, [rows.length, fold?.open]);
 
   return (
     <div className="console__panel console__log">
@@ -139,6 +142,11 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
         <h2 id={titleId} className="console__ptitle">
           {log.title}
         </h2>
+        {fold === null ? null : (
+          <button type="button" className="cbtn log__fold" aria-expanded={fold.open} aria-controls={scrollId} onClick={fold.onToggle}>
+            {fold.open ? 'Hide log' : 'Show log'}
+          </button>
+        )}
         {log.legend.length > 0 ? (
           <ul className="log__legend" aria-label="Legend">
             {log.legend.map((entry) => (
@@ -151,7 +159,7 @@ export function LogPanel({ log, rows, idle, fresh = null, controls }: LogPanelPr
         ) : null}
         {controls}
       </div>
-      <div ref={scroller} className="log__scroll" role="region" aria-labelledby={titleId} tabIndex={0}>
+      <div ref={scroller} id={scrollId} className="log__scroll" role="region" aria-labelledby={titleId} tabIndex={0}>
         <table className="log__table" role="table" aria-labelledby={titleId}>
           <colgroup>
             <col style={{ width: NUMBER_WIDTH }} />

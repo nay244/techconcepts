@@ -608,3 +608,52 @@ test('the console says when the learner is reading, so the phone can give the wo
   await user.click(within(outline).getAllByRole('button')[1]!);
   expect(consoleEl).not.toHaveAttribute('data-reading');
 });
+
+// ---------------------------------------------------------------- the log folds while reading (D1 §5, checks 13 to 15)
+
+const root = () => document.querySelector('.console')!;
+const foldButton = () => screen.getByRole('button', { name: /^(Show|Hide) log$/ });
+
+test('Learn and Practice start with the log folded; the button opens and folds it, and keeps focus', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=6');
+  renderConsole();
+  expect(root()).toHaveAttribute('data-reading');
+  expect(root()).not.toHaveAttribute('data-log');
+  expect(foldButton()).toHaveTextContent('Show log');
+  expect(foldButton()).toHaveAttribute('aria-expanded', 'false');
+  const scroller = document.querySelector('.log__scroll')!;
+  expect(foldButton()).toHaveAttribute('aria-controls', scroller.id);
+
+  await user.click(foldButton());
+  expect(foldButton()).toHaveTextContent('Hide log');
+  expect(foldButton()).toHaveAttribute('aria-expanded', 'true');
+  expect(root()).toHaveAttribute('data-log', 'open');
+  expect(foldButton()).toHaveFocus();
+
+  await user.click(foldButton());
+  expect(foldButton()).toHaveTextContent('Show log');
+  expect(root()).not.toHaveAttribute('data-log');
+});
+
+test('the log stays as the reader left it across Learn, Practice and Watch', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=6');
+  renderConsole();
+  await user.click(foldButton());
+  const go = (name: string) => user.click(screen.getByRole('button', { name }));
+  await go('Next step');
+  expect(heading()).toHaveTextContent(/question/i);
+  expect(root()).toHaveAttribute('data-log', 'open');
+  await go('Previous step');
+  await go('Previous step');
+  expect(root()).not.toHaveAttribute('data-reading');
+  expect(root()).not.toHaveAttribute('data-log');
+  await go('Next step');
+  expect(heading()).toHaveTextContent('What happened and why');
+  expect(root()).toHaveAttribute('data-log', 'open');
+});
+
+test('at the Overview the log is not marked folded or open', () => {
+  renderConsole();
+  expect(root()).not.toHaveAttribute('data-reading');
+  expect(root()).not.toHaveAttribute('data-log');
+});

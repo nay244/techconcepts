@@ -11,7 +11,8 @@ import { wrapAtDots } from '../lib/wrapAtDots';
 import { placeLabel } from './placeLabel';
 import { Practice, questionsTitle, type Picks } from './Practice';
 import { Rich } from './Rich';
-import { numberedSources, sourceMarks } from './sourceNumbers';
+import { Marks, type Numbers } from './Marks';
+import { numberedSources } from './sourceNumbers';
 
 /** Learn's title and sub line; the outline lists Learn by them too. */
 export const LEARN_TITLE = 'What happened and why';
@@ -48,27 +49,6 @@ function kicker(lesson: Lesson, unit: Unit, slot: Slot): string {
   const where = placeLabel(unit, slot);
   if (lesson.units.length > 1) return `${unit.name} · ${where}`;
   return slot.kind === 'step' ? `Watch · ${where}` : where;
-}
-
-/** A source's number in the lesson's list, by its id (`numberedSources`). */
-type Numbers = ReadonlyMap<string, number>;
-
-/**
- * The numbers after a claim, one for each source it cites. A number is the source's place in Learn's list, and opens
- * the exact place the claim cites. Nothing for a claim that cites nothing.
- */
-function Marks({ cite, numbers }: { cite: Citation[]; numbers: Numbers }) {
-  const marks = sourceMarks(cite, numbers);
-  if (marks.length === 0) return null;
-  return (
-    <sup className="explain__marks">
-      {marks.map((mark) => (
-        <a key={mark.n} href={mark.url} target="_blank" rel="noopener" title={mark.places} aria-label={`Source ${mark.n}: ${mark.places} (opens in a new tab)`}>
-          {mark.n}
-        </a>
-      ))}
-    </sup>
-  );
 }
 
 /** Facts as a list of names and values. Learn's facts cite, and show their sources' numbers; the others do not. */
@@ -358,7 +338,7 @@ export function Explanation(props: ExplanationProps) {
       <>
         <h2 className="explain__title">{questionsTitle(unit.practice.length)}</h2>
         <p className="explain__sub">Just for you. Nothing is scored or saved.</p>
-        <Practice questions={unit.practice} picked={picked} onPick={onPick} />
+        <Practice questions={unit.practice} picked={picked} onPick={onPick} numbers={numbers} />
         <EndRow lesson={lesson} unit={slot.unit} next={next} nextFigure={nextFigure} number={number} total={total} trackUrl={trackUrl} onJump={jump} />
       </>
     );

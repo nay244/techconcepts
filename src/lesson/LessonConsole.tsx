@@ -117,6 +117,10 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
 
   // ---------------------------------------------------------------- in memory only
 
+  /** Whether the log is open while reading Learn or Practice on a desktop; folded to its head until the reader opens it. */
+  const [logOpen, setLogOpen] = useState(false);
+  const toggleLog = useCallback(() => setLogOpen((open) => !open), []);
+
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([0]));
   useEffect(() => {
     setSeen((before) => (before.has(derived.unit) ? before : new Set(before).add(derived.unit)));
@@ -187,7 +191,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 
   return (
-    <div className="console" data-tab={tab} data-reading={reading ? '' : undefined}>
+    <div className="console" data-tab={tab} data-reading={reading ? '' : undefined} data-log={reading && logOpen ? 'open' : undefined}>
       <TopBar
         lesson={lesson}
         trackTitle={trackTitle}
@@ -248,6 +252,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           rows={derived.log}
           idle={idle}
           fresh={fresh?.eventId ?? null}
+          fold={{ open: logOpen, onToggle: toggleLog }}
           controls={<PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} last={last} />}
         />
       </main>

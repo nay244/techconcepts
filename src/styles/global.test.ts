@@ -13,7 +13,9 @@ test('text is smoothed the browser’s way, as in the approved mockups, so it ke
 test('headings and the lesson’s titles wrap where the mockups’ do, not balanced', () => {
   // A page whose mockup balances a title sets that itself, in its own styles.
   expect(globalCss).not.toMatch(/text-wrap:\s*balance/);
-  expect(consoleCss).not.toMatch(/text-wrap:\s*balance/);
+  // One exception: the scene's title, which wraps to two lines while a desktop reader has Learn or Practice (D1).
+  const balanced = consoleCss.match(/[^{}]*\{[^{}]*text-wrap:\s*balance[^{}]*\}/g) ?? [];
+  expect(balanced.map((rule) => rule.split('{')[0]!.trim())).toEqual(['.console[data-reading] .stage__title']);
 });
 
 test('the lesson’s top bar gives its spare room to the crumb, as the three newest lesson mockups do', () => {
