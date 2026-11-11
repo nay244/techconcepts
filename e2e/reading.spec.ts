@@ -250,7 +250,8 @@ for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024,
       const tabs = await box(page, '.console__tabs');
       expect([tabs.x, tabs.y, tabs.width, tabs.height], `${label}: tabs`).toEqual([size.width - 12 - words, 92, words, 48]);
       expect(await page.locator('.log__scroll').first().evaluate((el) => getComputedStyle(el).display), `${label}: rows folded`).toBe('none');
-      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(52);
+      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(62);
+      expect(await page.locator('.log__head').first().evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).paddingBottom]), `${label}: head padding`).toEqual(['8px', '8px']);
       expect(await pageOverflow(page), label).toEqual({ down: 0, sideways: 0 });
       // No lesson table scrolls sideways.
       const scrolling = await page.evaluate(() =>
@@ -275,7 +276,7 @@ for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024,
     expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
     await button.click();
     await expect(button).toHaveText('Show log');
-    expect((await box(page, '.console__log')).height).toBe(52);
+    expect((await box(page, '.console__log')).height).toBe(62);
   });
 }
 

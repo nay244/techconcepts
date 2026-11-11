@@ -1863,13 +1863,10 @@ ol.explain__sources li::marker {
   :root.js .console[data-reading] {
     --mid-words: max(348px, min(560px, 100vw - 24px - 496px));
   }
-  /* Folded, the log is its head: the outline above it follows. */
+  /* Folded, the log is its head and nothing more: 8px, the 44px buttons, 8px and the panel's 1px borders. The outline
+     above it follows. */
   :root.js .console[data-reading]:not([data-log='open']) {
-    --mid-log: 52px;
-  }
-  /* The head holds 44px buttons here, so folded to D1's 52px it keeps 3px above and below them. */
-  :root.js .console[data-reading]:not([data-log='open']) .log__head {
-    padding-block: 3px;
+    --mid-log: 62px;
   }
   :root.js .console__main {
     grid-column: 1;
