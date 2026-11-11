@@ -100,7 +100,7 @@ Regions on DHCP, step 2 (x, y, width, height in px):
 | Log | 12, 556, 1000×200 | 12, 488, 876×200 | 12, 580, 1075×208 |
 | Controls, in the log's head | 242×44 | 242×44 | 242×44 |
 
-Learn and Practice keep this layout, as the desktop does today: the words are in the 348px column (37 characters a line). Unit D1 is designing the desktop's reading layout. Its main area at 1168px to 1367px wide is as wide as this layout's at 900px to 1099px (876px to 1075px), so D1's layout applies here as it is, with the tabs on whichever column holds the words.
+Learn and Practice keep this layout, as the desktop does today: the words are in the 348px column (37 characters a line). Unit D1 is designing the desktop's reading layout. Its main area at 1168px to 1367px wide is as wide as this layout's at 900px to 1099px (876px to 1075px), so D1's layout could apply here as it is. It does not yet: see the errata at the end.
 
 ### The rules
 
@@ -369,3 +369,11 @@ The rules were also tried on the running site's own pages by injecting them: OSI
 3. **Learn and Practice in Layout 2** read in the 348px column until D1's reading layout is built. If D1's layout is not approved, should Learn and Practice on a tablet on its side use Layout 1?
 4. **The stamp in Layout 1's top bar** assumes D2 has not given the stamp another place on the phone that also shows above 760px. If it has, one of the two goes.
 5. **At 1100px the lesson's name is squeezed out of today's desktop top bar** (the `h1` is 0px wide on DHCP at 1100×800). Layout 2's bar drops three things to keep the name whole; the desktop's bar may want the same: DHCP's name is whole from about 1180px, and a longer name later. Not part of this unit.
+
+## Errata, 2026-11-11
+
+Found when the build was reviewed. Variant A is otherwise as approved. Both are the orchestrator's rulings, shown to the owner.
+
+1. **Learn and Practice keep the 348px column in the desktop-with-tab layout.** This spec said D1's reading layout "applies here as it is", while its own check 16, its prototype and D1's spec (761px to 1099px "unchanged", the "Show log" button hidden at 1024) all keep the 348px column. The owner approved the prototype and three of the four statements, so those stand. Whether a tablet on its side should get D1's wider words and folded log is an open question for the owner (it was this spec's open question 3).
+2. **The tabs' focus ring is drawn inside the button** in the desktop-with-tab layout: `outline-offset: -3px` on `.console__tabs button:focus-visible`. The tab row has `overflow: hidden` (to round its corners into the panel), which cut the lesson's usual ring, 2px outside the button, down to one 2px line between the two tabs: a keyboard user could not tell which tab had focus.
+
