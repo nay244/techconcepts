@@ -154,6 +154,15 @@ test('each line-end break is joined or kept on its own', () => {
   expect(finds(['a well-known and international travel'], 'a well- known and inter- national travel').issues).toHaveLength(1);
 });
 
+test('a part does not start or end inside a word broken at a line end', () => {
+  expect(finds(['national travel here'], 'inter-\nnational travel here').issues).toHaveLength(1);
+  expect(finds(['national travel here'], 'inter\u00AD\nnational travel here').issues).toHaveLength(1);
+  expect(finds(['see the inter'], 'see the inter-\nnational').issues).toHaveLength(1);
+  expect(finds(['see the international'], 'see the inter-\nnational').issues).toEqual([]);
+  expect(finds(['see the inter-national'], 'see the inter-\nnational').issues).toEqual([]);
+  expect(finds(['mode service is established'], 'The connection-mode service is established').issues).toEqual([]);
+});
+
 test('a soft hyphen inside a line is dropped, and zero-width characters too', () => {
   expect(finds(['international travel here'], 'inter­national tra​vel﻿ here').issues).toEqual([]);
 });

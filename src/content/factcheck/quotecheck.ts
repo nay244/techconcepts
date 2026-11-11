@@ -61,14 +61,14 @@ const escape = (char: string): string => char.replace(/[.*+?^${}()|[\]\\]/g, '\\
 /**
  * A regular expression that finds a part in an evened-out source. Between two characters of a word the source may have
  * a line-end break: a hyphen the passage left out (the word was joined) or kept, each break on its own. A part that
- * begins or ends with a letter or a digit matches whole words only.
+ * begins or ends with a letter or a digit matches whole words only, and a line-end break beside the match counts as a letter: the script cannot tell a split word from a compound there.
  */
 function partPattern(part: string): RegExp {
   const chars = [...part];
   const body = chars.map((c, i) => (i > 0 && c !== ' ' && chars[i - 1] !== ' ' ? `(?:-?${BREAK})?` : '') + escape(c)).join('');
   const word = /[\p{L}\p{N}]/u;
-  const before = word.test(chars[0]!) ? '(?<![\\p{L}\\p{N}])' : '';
-  const after = word.test(chars[chars.length - 1]!) ? '(?![\\p{L}\\p{N}])' : '';
+  const before = word.test(chars[0]!) ? `(?<![\\p{L}\\p{N}${BREAK}])` : '';
+  const after = word.test(chars[chars.length - 1]!) ? `(?![\\p{L}\\p{N}]|-?${BREAK})` : '';
   return new RegExp(before + body + after, 'gu');
 }
 
