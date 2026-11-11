@@ -3,7 +3,8 @@ import { LESSONS_ENV, nodeEnv, type ReadyLesson } from './support';
 
 /**
  * Finds the ready lessons on the built site, so no spec keeps a list of its own: the Tracks page links to each track
- * with lessons, and each track page's route links to them from its ready stops. Playwright starts the web server
+ * with lessons, and each track page's route links to them from its ready stops, each with the stamp it shows (checked
+ * or not). Playwright starts the web server
  * (which builds the site) before this runs, and loads the specs after it, so they read the list from the environment
  * as they are collected.
  */
@@ -30,6 +31,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
             slug: lessonPath.split('/').filter(Boolean).at(-1) ?? '',
             title: link.textContent?.trim() ?? '',
             path: lessonPath,
+            checked: /^Checked\b/.test(stop.querySelector('.stamp')?.textContent?.trim() ?? ''),
           };
         }),
       );

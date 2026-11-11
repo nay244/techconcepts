@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { getLesson } from '../content/registry';
-import { comingSoonTracks } from '../content/tracks';
+import { getEntries, getLesson } from '../content/registry';
+import { comingSoonTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from './about';
 
 describe('comingTracksSentence', () => {
@@ -22,16 +22,19 @@ describe('comingTracksSentence', () => {
 });
 
 describe('factCheckSentence', () => {
+  // The count of ready lessons, as the registry has it: the sentence's total is never a typed number.
+  const TOTAL = new Set(tracks.flatMap((t) => getEntries(t.id)).flatMap((e) => (e.available ? [e.slug] : []))).size;
+
   test('says how many lessons have been checked so far, and that the others wait', () => {
-    expect(factCheckSentence(1, 18)).toBe(
-      'So far 1 of 18 lessons has also been through an independent check of every claim against those sources. The others are waiting for theirs.',
+    expect(factCheckSentence(1, TOTAL)).toBe(
+      `So far 1 of ${TOTAL} lessons has also been through an independent check of every claim against those sources. The others are waiting for theirs.`,
     );
-    expect(factCheckSentence(5, 18)).toMatch(/^So far 5 of 18 lessons have also been through /);
-    expect(factCheckSentence(0, 18)).toMatch(/^So far 0 of 18 lessons have also been through /);
+    expect(factCheckSentence(5, TOTAL)).toMatch(new RegExp(`^So far 5 of ${TOTAL} lessons have also been through `));
+    expect(factCheckSentence(0, TOTAL)).toMatch(new RegExp(`^So far 0 of ${TOTAL} lessons have also been through `));
   });
 
   test('says every lesson has been checked once they all have', () => {
-    expect(factCheckSentence(18, 18)).toBe('Every lesson has also been through an independent check of every claim against those sources.');
+    expect(factCheckSentence(TOTAL, TOTAL)).toBe('Every lesson has also been through an independent check of every claim against those sources.');
   });
 
   test('says nothing when there is no ready lesson', () => {

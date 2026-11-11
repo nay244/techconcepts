@@ -43,11 +43,15 @@ describe('TrackRoute', () => {
     expect(screen.queryByRole('img', { name: /In progress/ })).toBeNull();
   });
 
-  test('every ready stop says whether its lesson has been fact-checked: OSI Model has, DHCP has not yet', () => {
+  test('every ready stop says whether its lesson has been fact-checked: a cited lesson shows its date, any other says not yet', () => {
     render(route());
     expect(within(stopOf('OSI Model')).getByText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/)).toBeInTheDocument();
-    expect(within(stopOf('DHCP')).getByText('Not checked yet')).toBeInTheDocument();
-    for (const e of ready) expect(stopOf(e.title).querySelectorAll('.stamp'), e.title).toHaveLength(1);
+    for (const e of ready) {
+      const stamp = within(stopOf(e.title)).getByText(/^(Checked|Not checked yet)/);
+      if (getLesson(e.slug)!.origin === 'cited') expect(stamp.textContent, e.title).toMatch(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+      else expect(stamp.textContent, e.title).toBe('Not checked yet');
+      expect(stopOf(e.title).querySelectorAll('.stamp'), e.title).toHaveLength(1);
+    }
   });
 
   test('stages: the part name with its last word in em, and how many lessons', () => {

@@ -230,14 +230,18 @@ test('every lesson file that exists is available in the registry under its slug'
 
 // ------------------------------------------------------------ the closed legacy list
 
-test('the 18 ready lessons are the 17 legacy ones and the cited OSI Model, and every legacy lesson is listed', () => {
+test('the ready lessons are the legacy ones on the closed list and the cited ones, and every legacy lesson is listed', () => {
   const legacy = LEGACY_LESSONS.map((s) => getLesson(s));
   expect(legacy.map((l) => l?.origin)).toEqual(LEGACY_LESSONS.map(() => 'legacy'));
   const ready = tracks.flatMap((t) => getEntries(t.id)).filter((e) => e.available).map((e) => getLesson(e.slug)!);
-  expect(ready).toHaveLength(18);
-  expect(ready.filter((l) => l.origin === 'legacy')).toHaveLength(17);
-  expect(ready.filter((l) => l.origin !== 'legacy').map((l) => [l.slug, l.origin])).toEqual([['osi-model', 'cited']]);
-  for (const lesson of ready.filter((l) => l.origin === 'legacy')) expect(LEGACY_LESSONS, lesson.slug).toContain(lesson.slug);
+  // One lesson may sit in two tracks, so a slug is counted once.
+  const slugs = [...new Set(ready.map((l) => l.slug))];
+  const readyLegacy = slugs.filter((slug) => getLesson(slug)!.origin === 'legacy');
+  const readyCited = slugs.filter((slug) => getLesson(slug)!.origin !== 'legacy');
+  expect(readyLegacy.length + readyCited.length).toBe(slugs.length);
+  expect([...readyLegacy].sort()).toEqual([...LEGACY_LESSONS].sort());
+  expect(readyCited).toContain('osi-model');
+  for (const slug of readyCited) expect(getLesson(slug)!.origin, slug).toBe('cited');
 });
 
 test('the build stops on a legacy lesson off the list, and on a listed slug whose lesson is not legacy', () => {
@@ -248,10 +252,11 @@ test('the build stops on a legacy lesson off the list, and on a listed slug whos
     /"osi-model" is a legacy lesson, but it is not on the legacy list/,
   );
   // A lesson that has moved to the cited shape leaves the list: the list only shrinks.
-  const migrated = ready.map((l) => (l.slug === 'dhcp' ? { ...l, origin: 'cited' as const } : l));
-  expect(() => checkLegacyList(migrated)).toThrow(/"dhcp" is on the legacy list, but its lesson is cited/);
+  const moved = LEGACY_LESSONS[0]!;
+  const migrated = ready.map((l) => (l.slug === moved ? { ...l, origin: 'cited' as const } : l));
+  expect(() => checkLegacyList(migrated)).toThrow(new RegExp(`"${moved}" is on the legacy list, but its lesson is cited`));
   // So does a slug no lesson has any more.
-  expect(() => checkLegacyList(ready.filter((l) => l.slug !== 'dhcp'))).toThrow(/"dhcp" is on the legacy list, but no lesson has that slug/);
+  expect(() => checkLegacyList(ready.filter((l) => l.slug !== moved))).toThrow(new RegExp(`"${moved}" is on the legacy list, but no lesson has that slug`));
 });
 
 test('lessonsFromModules keys lessons by file name (slug)', () => {

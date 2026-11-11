@@ -115,10 +115,12 @@ test('a lesson the registry lists as ready but the page cannot find stops the bu
   ).toThrow('The networking track lists "osi-model", which has no entry.');
 });
 
-test('a ready lesson’s card carries its stamp: OSI Model is checked, DHCP is not yet', () => {
+test('a ready lesson’s card carries its stamp: OSI Model is checked, a lesson not cited is not yet', () => {
   const all = trackParts(networkingTrack, entries, lessonOf, lessonStamp).flatMap((p) => p.lessons);
   const stampOf = (key: string) => (all.find((l) => l.key === key) as ReadyLesson).stamp;
   expect(stampOf('osi-model')).toEqual(lessonStamp(getLesson('osi-model')!));
   expect(stampOf('osi-model').checked).not.toBeNull();
-  expect(stampOf('dhcp')).toEqual({ checked: null, sources: 2 });
+  for (const e of entries.filter((x) => x.available)) {
+    expect(stampOf(e.slug).checked === null, e.slug).toBe(getLesson(e.slug)!.origin !== 'cited');
+  }
 });

@@ -9,6 +9,8 @@ export interface ReadyLesson {
   title: string;
   /** Its page, such as `/networking/dhcp` or `/how-the-internet-works/what-is-http`. */
   path: string;
+  /** Whether its stop on the track page says "Checked <date>", rather than "Not checked yet". */
+  checked: boolean;
 }
 
 /** Where `global-setup.ts` leaves the lessons it found for the specs. */

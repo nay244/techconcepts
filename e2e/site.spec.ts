@@ -333,13 +333,17 @@ test.describe('desktop', () => {
   });
 
   test('a lesson not checked yet says so, in the same places, and its sources carry no numbers', async ({ page }) => {
-    const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
-    await open(page, dhcp.path);
-    await expect(page.locator('.console__top .stamp')).toHaveText('Not checked yet, 2 sources');
+    const unchecked = LESSONS.find((l) => !l.checked);
+    test.skip(unchecked === undefined, 'Every ready lesson is checked: no real page is left to show the not-checked stamp on.');
+    await open(page, unchecked!.path);
+    const top = page.locator('.console__top .stamp');
+    await expect(top).toHaveText(/^Not checked yet, \d+ sources?$/);
+    const listed = Number((await top.textContent())!.match(/(\d+) source/)![1]);
+    expect(listed).toBeGreaterThan(0);
     await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
     const foot = page.locator('.console__explain .explain__foot');
     await expect(foot.locator('.stamp')).toHaveText('Not checked yet');
-    await expect(foot.locator('ul.explain__sources > li')).toHaveCount(2);
+    await expect(foot.locator('ul.explain__sources > li')).toHaveCount(listed);
     await expect(page.locator('.console__explain').getByRole('link', { name: /^Source \d+: / })).toHaveCount(0);
     // The top bar's title is whole beside the stamp.
     expect(await page.locator('.topbar__crumb h1').evaluate((h) => h.scrollWidth <= h.clientWidth)).toBe(true);
@@ -574,10 +578,14 @@ test.describe('desktop', () => {
       await expect(page.locator('main .route__end a')).toHaveAttribute('href', INTERNET_TRACK);
     });
 
-    test('Track page: every ready stop says whether its lesson is checked; OSI Model is, DHCP is not yet', async ({ page }) => {
+    test('Track page: every ready stop says whether its lesson is checked; OSI Model is, a lesson not moved yet is not', async ({ page }) => {
       await open(page, '/networking');
       await expect(lessonCard(page, 'osi-model').locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
-      await expect(lessonCard(page, 'dhcp').locator('.stamp')).toHaveText('Not checked yet');
+      for (const lesson of NETWORKING_LESSONS) {
+        await expect(lessonCard(page, lesson.slug).locator('.stamp'), lesson.slug).toHaveText(
+          lesson.checked ? /^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/ : 'Not checked yet',
+        );
+      }
       await expect(page.locator('main .route li.stop:not(.stop--soon) .stamp')).toHaveCount(NETWORKING_LESSONS.length);
       await expect(page.locator('main .route li.stop--soon .stamp')).toHaveCount(0);
     });
