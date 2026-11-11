@@ -27,7 +27,7 @@ Run, and keep the last lines of each:
 
 - `npm test`
 - `npm run build`
-- `npm run e2e` when a reader can see the change (port 4471 must be free)
+- `npm run e2e` when a reader can see the change (port 4471 must be free). It takes about 17 minutes: run it once, in the background, writing to a log, and wait by reading the log for its "passed" line. A loop that waits for the Playwright process by name matches itself and never ends. Leave no background process running when you report.
 - the unit's own check from `plan.md`
 
 Then look at the screen at 375px and 1440px, in both themes, beside the prototype.

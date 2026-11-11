@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: phase 2 (build) is running.** The owner approved all four designs on 2026-11-10, each with its recommended variant. They are frozen: a builder implements them, and a change goes back to the designer.
+**Status: phase 2 (build) is part way, stopped on 2026-11-10 when the usage limit was reached.** B1 is reviewed and merged. B2 is built on `build/b2-lesson-phone` and waits for its reviewer. B3 and B4 have not started. Next: review B2, merge a PASS, then B3, then B4, then the final check on `revamp`. The four designs are approved and frozen.
 
 ## Inputs
 
