@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: the first job is done (2026-11-11); two follow-up units from the owner's answers are being built** (last section).
+**Status: done on 2026-11-11, the two follow-up units included.** B5 and B6 are reviewed and merged into `revamp`, and the final check passed there again (`team.md`). Nothing is pushed. Still to confirm with the owner: the reading of "Mark changed" (answer 3 below), and one line changed in the tablet spec after approval (the folded log is 62px on a tablet on its side, where the line first said 52px).
 
 ## Inputs
 
