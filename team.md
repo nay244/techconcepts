@@ -127,9 +127,16 @@ The estimate in the plan was about 1,500,000.
 
 # Job 3: Phase 4, the pilot
 
-Waiting for the owner's go on `plan.md`.
+The owner said go on 2026-11-11. Stopped on 2026-11-11 after What is UDP's fifth fact-check, for the owner to decide how checks run from here. What is HTTP has not started.
 
 | Unit | Agent | Model | Tries | Tokens | Result |
 |---|---|---|---|---|---|
-| S3 | scout | Haiku | 1 | 187,981 | Done 2026-11-11. What moving a lesson takes, what OSI Model took, and the size and sources of each of the 17, every fact with a `path:line`. Findings are summarised in `plan.md`. |
+| S3 | scout | Haiku | 1 | 187,981 | Done. What moving a lesson takes, what OSI Model took, and the size and sources of each of the 17. |
+| G1, G2, G3 | builder | Sonnet | 2 | 182,657 | Done and merged. A cited lesson needs no exam tag; Home's demo reads a lesson's whole lead and lists its sources in the lesson's numbered order; tests take an unchecked or a checked lesson from the registry and the closed list. `npm test` 1,494 passed; `npm run e2e` 969 passed. |
+| G1, G2, G3 | reviewer | Opus, high | 2 | 167,550 | G1 PASS. G2 and G3 FAIL, then PASS. First: nothing proved the change through Home's own code; the end-to-end tests learned "checked" from the page under test. |
+| L1 | author | Sonnet | 7 passes | 378,778 | What is UDP on `build/p4-l1-udp`, not merged. Pass 1 kept only what it found stated and cut much of the lesson's teaching; pass 2 restored it from the analyst's sources (the owner's decision); passes 3 to 7 fixed what each check found. |
+| L1 | analyst | Opus | 1 | 153,198 | Found sources for most of the cut ideas, and showed five of the original's claims were wrong or unsupported (the 1% and 5% loss figures, the jitter buffer's size, "about a minute", the bitrate, "late is as bad as lost" for lookups). |
+| L1 | rehearsal | Sonnet | 1 | 231,357 | The fact-checker's instructions run once on Sonnet, report thrown away: 14 items partial, all fixed. The first real run then found 13 others, so it did not save a run. |
+| L1 | fact-checker | Opus | 5 runs | about 1,130,000 | Not passing 13, 9, 1, 1 and 1 of 101 items; never the same list twice until runs 4 and 5, which stop on one paragraph. Every quote in every run was confirmed by the script. Run 5's item needs one more citation. |
 
+**What is UDP has cost about 1.9 million tokens and has not passed. The pilot stands at about 2.4 million.**
