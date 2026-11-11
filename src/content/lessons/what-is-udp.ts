@@ -140,7 +140,7 @@ export default defineLesson({
           'UDP is like a walkie-talkie. You just speak, and if a word crackles you carry on rather than go back. TCP is more like a phone call where you ask “got that?” and repeat anything the other side missed.',
         backing: { analogy: true },
         facts: [
-          { label: 'Used for', value: 'calls, video, online games, DNS, DHCP', backing: { traces: ['why-1', 'why-2', 'deep-2', 'fact-3', 'fact-8'] } },
+          { label: 'Used for', value: 'calls, online games, DNS, DHCP', backing: { traces: ['why-1', 'why-2', 'deep-2', 'fact-3', 'fact-8'] } },
           { label: 'Starts with', value: 'nothing: no handshake', backing: { traces: ['lead-1', 'term-connectionless'] } },
           { label: 'Promises', value: 'none: no order, no resending', backing: { traces: ['lead-1', 'lead-2', 'deep-1'] } },
           { label: 'Header', value: '8 bytes: ports, length, checksum', backing: { traces: ['fact-1', 'deep-1'] } },
@@ -545,7 +545,7 @@ export default defineLesson({
         why: [
           {
             id: 'why-1',
-            text: 'In a call or a live video, each bit of sound or picture has its moment to be played. A packet that arrives after its moment is thrown away, just as if it had been lost, so a resend only helps if it arrives in time. Late is as bad as lost.',
+            text: 'In a call, each bit of sound has its moment to be played. A packet that arrives after its moment is thrown away, just as if it had been lost, so a resend only helps if it arrives in time. Late is as bad as lost.',
             cite: LATE,
           },
           {
