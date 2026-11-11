@@ -87,7 +87,7 @@ export default defineLesson({
   summary:
     'Web pages arrive the same basic way: your browser asks for one, and a web server sends it back. HTTP is the set of rules for that asking and answering, and in HTTP/1.1 it’s plain text, so you could read it yourself.',
   figure: 'net-map',
-  backing: { traces: ['lead-1', 'lead-2', 'why-2'] },
+  backing: { traces: ['lead-1', 'lead-2', 'why-2', 'fact-used'] },
   units: [
     {
       id: 'http',
@@ -112,19 +112,19 @@ export default defineLesson({
           { place: 'resolver', label: 'DNS resolver', addr: '192.0.2.53' },
           { place: 'web', label: 'Web server', addr: '203.0.113.80' },
         ],
-        backing: { traces: ['lead-2', 'term-client', 'term-path', 'term-status', 'fact-type', 'fact-dns'] },
+        backing: { traces: ['lead-2', 'term-client', 'term-path', 'term-status', 'fact-type', 'fact-dns', 'term-ip'] },
       },
       overview: {
         hook: 'Web pages arrive the same basic way: your browser asks for one, and a web server sends it back. HTTP is the set of rules for that asking and answering, and in HTTP/1.1 it’s plain text, so you could read it yourself.',
-        hookBacking: { traces: ['lead-1', 'lead-2', 'why-2'] },
+        hookBacking: { traces: ['lead-1', 'lead-2', 'why-2', 'fact-used'] },
         description:
           'It works like ordering at a counter. You ask for one thing by name, you get it back with a short note saying how it went, then you ask for the next thing. A page with pictures and styles is a longer order, with several items.',
         backing: { analogy: true },
         facts: [
           { label: 'Used for', value: 'web pages, and apps that talk to servers', backing: { traces: ['fact-used'] } },
-          { label: 'Port', value: 'TCP 80 (HTTPS uses 443)', backing: { traces: ['fact-port'] } },
+          { label: 'Port', value: 'TCP 80 (HTTPS uses 443)', backing: { traces: ['fact-port', 'fact-rides'] } },
           { label: 'Rides on', value: 'TCP, which rides on IP (HTTP/3: QUIC, on UDP)', backing: { traces: ['fact-rides'] } },
-          { label: 'Shape', value: 'a request, then a response', backing: { traces: ['lead-2'] } },
+          { label: 'Shape', value: 'a request, then a response', backing: { traces: ['lead-2', 'fact-request', 'fact-response'] } },
           { label: 'OSI layer', value: '7, application', backing: { traces: ['fact-osi'] } },
           { label: 'This example', value: 'example.net at 203.0.113.80', backing: { example: true } },
         ],
@@ -135,7 +135,7 @@ export default defineLesson({
           title: 'Client Request',
           sub: 'You type http://example.net and press Enter',
           narrative:
-            'You type http://example.net and press Enter. Your browser is the **client**, the side that asks. It reads the **URL** you typed to work out three things: which protocol to use (http, so plain HTTP), which site (example.net) and which page (/, since you named none). It has nothing saved for this site, and it doesn’t know the server’s number yet, so nothing has been sent.',
+            'You type http://example.net and press Enter. Your browser is the **client**, the side that asks. It reads the **URL** you typed to work out three things: which protocol to use (http), which site (example.net) and which page (/, sent when the URL has no path). It has nothing saved for this site, and it doesn’t know the server’s number yet, so nothing has been sent.',
           deep: [
             {
               text: 'A URL has parts: the scheme (http), the host (example.net), an optional port (80 is assumed for http, 443 for https), the path (/), and sometimes a query (?q=…) and a fragment (#top). Before going to the network, the browser can look in its cache first; a fresh saved copy can mean no request at all.',
@@ -152,14 +152,14 @@ export default defineLesson({
           ],
           facts: [
             { label: 'URL', value: 'http://example.net/', backing: { example: true } },
-            { label: 'Scheme', value: 'http, so TCP port 80', backing: { traces: ['fact-port', 'fact-url'] } },
+            { label: 'Scheme', value: 'http, so TCP port 80', backing: { traces: ['fact-port', 'fact-url', 'fact-rides'] } },
             { label: 'Host', value: 'example.net', backing: { example: true } },
-            { label: 'Path', value: '/, since the URL names no page', backing: { traces: ['term-path', 'fact-request'] } },
+            { label: 'Path', value: '/, sent when the URL has no path', backing: { traces: ['term-path', 'fact-request'] } },
           ],
           status: 'Preparing a request',
           idle: 'Nothing on the network yet. The browser is still getting ready.',
           events: [],
-          backing: { traces: ['term-client', 'term-url', 'term-path', 'fact-url', 'fact-port', 'fact-request', 'pattern'] },
+          backing: { traces: ['term-client', 'term-url', 'term-path', 'fact-url', 'fact-port', 'fact-request', 'term-ip', 'pattern'] },
         },
         {
           id: 'dns-resolution',
@@ -169,7 +169,7 @@ export default defineLesson({
             'To send anything, the browser needs the server’s number, its **IP address**. So the laptop asks its **DNS resolver**: “What’s the number for example.net?” Turning a name into a number this way is **DNS resolution**. The DNS lesson shows how the resolver finds it. Here the answer comes straight back.',
           deep: [
             {
-              text: 'This is a DNS query for the A record of example.net, sent over UDP to port 53. If the laptop looked the name up recently, its resolver can answer from its cache, with no message sent.',
+              text: 'This is a DNS query for the A record of example.net, sent over UDP to port 53. If the laptop looked the name up recently, its own cache can answer, with no message sent.',
               cite: [
                 rfc('rfc-1034', '5.2.1', true),
                 rfc('rfc-1035', '3.2.2', true),
@@ -254,6 +254,7 @@ export default defineLesson({
             ...msgOf(
               'fact-tcp',
               'term-tcp',
+              'fact-port',
             )({
               tag: 'SYN',
               from: 'laptop',
@@ -271,6 +272,7 @@ export default defineLesson({
             ...msgOf(
               'fact-tcp',
               'term-tcp',
+              'fact-port',
             )({
               tag: 'SYN-ACK',
               from: 'web',
@@ -288,6 +290,7 @@ export default defineLesson({
             ...msgOf(
               'fact-tcp',
               'term-tcp',
+              'fact-port',
             )({
               tag: 'ACK',
               from: 'laptop',
@@ -336,7 +339,7 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Request line', value: 'GET / HTTP/1.1', backing: { traces: ['fact-request'] } },
+            { label: 'Request line', value: 'GET / HTTP/1.1', backing: { traces: ['fact-request', 'term-method'] } },
             { label: 'Host', value: 'example.net', backing: { traces: ['fact-request', 'fact-url'] } },
             { label: 'Status', value: '200 OK', backing: { traces: ['fact-status'] } },
             { label: 'Content-Type', value: 'text/html', backing: { traces: ['fact-type'] } },
@@ -347,6 +350,8 @@ export default defineLesson({
               'term-method',
               'term-path',
               'lead-1',
+              'fact-rides',
+              'fact-port',
             )({
               tag: 'GET /',
               from: 'laptop',
@@ -370,6 +375,8 @@ export default defineLesson({
               'term-html',
               'fact-type',
               'lead-1',
+              'fact-rides',
+              'fact-port',
             )({
               tag: '200 OK',
               from: 'web',
@@ -423,6 +430,9 @@ export default defineLesson({
               'fact-files',
               'fact-request',
               'term-method',
+              'fact-rides',
+              'fact-port',
+              'term-path',
             )({
               tag: 'GET /style.css',
               from: 'laptop',
@@ -443,6 +453,11 @@ export default defineLesson({
               'fact-type',
               'term-rendering',
               'deep-4',
+              'fact-rides',
+              'fact-port',
+              'fact-status',
+              'fact-response',
+              'lead-1',
             )({
               tag: '200 OK',
               from: 'web',
@@ -464,6 +479,9 @@ export default defineLesson({
               'fact-files',
               'fact-request',
               'term-method',
+              'fact-rides',
+              'fact-port',
+              'term-path',
             )({
               tag: 'GET /logo.png',
               from: 'laptop',
@@ -483,6 +501,11 @@ export default defineLesson({
               'term-status',
               'fact-type',
               'term-rendering',
+              'fact-rides',
+              'fact-port',
+              'fact-status',
+              'fact-response',
+              'lead-1',
             )({
               tag: '200 OK',
               from: 'web',
@@ -514,8 +537,8 @@ export default defineLesson({
           },
           {
             id: 'lead-2',
-            text: 'In HTTP, the browser asks for one thing, the server answers with a status and the file, and the browser asks for the next thing.',
-            cite: [rfc('rfc-9110', '3.4', true), CONNECTION_REUSE],
+            text: 'In HTTP, the browser asks for a page or file, and the server answers with a status and, if it’s 200 OK, the file.',
+            cite: [rfc('rfc-9110', '3.4', true), rfc('rfc-9110', '15.3.1', true)],
           },
         ],
         terms: [
@@ -668,7 +691,7 @@ export default defineLesson({
           {
             id: 'fact-request',
             label: 'A request',
-            value: 'a request line (method, target, version), then headers; sent straight to the server, the target is the path, such as /; HTTP/1.1 requires a Host header, which names the site',
+            value: 'a request line (method, target, version), then headers; for a GET sent straight to the server, the target is the path and any query, and / when the URL has no path; HTTP/1.1 requires a Host header, which names the site',
             cite: [rfc('rfc-9112', '3', true), rfc('rfc-9112', '3.2.1', true), rfc('rfc-9112', '3.2', true), rfc('rfc-9112', '2.1', true), rfc('rfc-9110', '7.2', true)],
           },
           {
