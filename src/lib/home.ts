@@ -6,6 +6,7 @@ import { drawNetMap, type NetMapData } from '../art/scenes/net-map';
 import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../content/registry';
 import { tracks } from '../content/tracks';
 import { positionOf } from '../engine/timeline';
+import { numberedSources } from '../lesson/sourceNumbers';
 import { firstSentence } from './text';
 import { TRACK_COVERS } from './tracks-page';
 
@@ -125,7 +126,7 @@ export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): H
     learn: {
       lead: leadText(unit.learn.lead),
       terms: unit.learn.terms.slice(0, TERMS).map((t) => ({ idea: t.idea, name: t.name })),
-      sources: unit.references.map((r) => ({ label: r.label, url: r.url })),
+      sources: numberedSources(unit).list.map((r) => ({ label: r.label, url: r.url })),
     },
     sealed: { title: sealedLesson.title, lead: leadText(sealedLesson.units[0]!.learn.lead), url: sealedEntry.url, number: sealedEntry.number },
     practice: { prompt: question.prompt, options: question.options.map((o, i) => ({ text: o.text, feedback: o.feedback, right: i === question.answer })) },

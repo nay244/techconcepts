@@ -1,7 +1,17 @@
-import { expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
 import { tracks } from '../content/tracks';
+import type { Lesson } from '../content/schema';
+import { numberedSources } from '../lesson/sourceNumbers';
 import { homeDemo, homeStops, leadText } from './home';
+
+// Lessons the registry hands out in place of the real ones, by slug; empty unless a test sets one.
+const swapped = vi.hoisted(() => new Map<string, unknown>());
+vi.mock('../content/registry', async (original) => {
+  const real = await original<typeof import('../content/registry')>();
+  return { ...real, getLesson: (slug: string) => swapped.get(slug) ?? real.getLesson(slug) };
+});
+afterEach(() => swapped.clear());
 
 const HTTP = () => getLesson('what-is-http')!.units[0]!;
 
@@ -60,12 +70,9 @@ test('the demo’s Learn part is the lesson’s lead, its ideas with their names
   const { learn } = homeDemo();
   const unit = HTTP();
   expect(learn.lead).toBe(unit.learn.lead.map((s) => s.text).join(' '));
-  // Today the lead is one statement, so nothing about Home changes.
-  expect(unit.learn.lead).toHaveLength(1);
-  expect(learn.lead).toBe(unit.learn.lead[0]!.text);
   expect(learn.terms.length).toBeGreaterThanOrEqual(4);
   expect(learn.terms).toEqual(unit.learn.terms.slice(0, learn.terms.length).map((t) => ({ idea: t.idea, name: t.name })));
-  expect(learn.sources).toEqual(unit.references.map((r) => ({ label: r.label, url: r.url })));
+  expect(learn.sources).toEqual(numberedSources(unit).list.map((r) => ({ label: r.label, url: r.url })));
   expect(learn.sources.every((s) => s.url.startsWith('https://'))).toBe(true);
 });
 
@@ -120,4 +127,33 @@ test('a lead of several statements reads as the lesson’s Learn part shows it: 
   ];
   expect(leadText(lead)).toBe('First idea. Second idea. Third idea.');
   expect(leadText(lead.slice(0, 1))).toBe('First idea.');
+});
+
+/** A copy of a real lesson with its first unit changed by `change`, standing in for it in the registry. */
+function swapIn(slug: string, change: (unit: Lesson['units'][number]) => void): void {
+  const lesson = structuredClone(getLesson(slug)!);
+  change(lesson.units[0]!);
+  swapped.set(slug, lesson);
+}
+
+const threeStatements = (name: string) => [1, 2, 3].map((n) => ({ id: `lead-${n}`, text: `${name} statement ${n}.`, cite: [] }));
+
+test('a lesson with a lead of three statements shows all three on Home, for the demo and for the sealed lesson', () => {
+  swapIn('what-is-http', (u) => { u.learn.lead = threeStatements('HTTP'); });
+  swapIn('what-is-https', (u) => { u.learn.lead = threeStatements('HTTPS'); });
+  const demo = homeDemo();
+  expect(demo.learn.lead).toBe('HTTP statement 1. HTTP statement 2. HTTP statement 3.');
+  expect(demo.sealed.lead).toBe('HTTPS statement 1. HTTPS statement 2. HTTPS statement 3.');
+});
+
+test('the demo lists the sources in the order the Lesson page numbers them: the one Learn cites first leads', () => {
+  swapIn('what-is-http', (u) => {
+    const [a, b] = u.references;
+    u.references = [{ ...a!, source: 'src-a' }, { ...b!, source: 'src-b' }];
+    for (const part of [...u.learn.lead, ...u.learn.terms, ...u.learn.why, ...u.learn.deep, ...u.learn.facts, u.learn.pattern]) part.cite = [];
+    u.learn.lead[0]!.cite = [{ source: 'src-b', label: 'Section 1', url: b!.url } as never];
+  });
+  const unit = getLesson('what-is-http')!.units[0]!;
+  const raw = unit.references.map((r) => r.label);
+  expect(homeDemo().learn.sources.map((s) => s.label)).toEqual([raw[1], raw[0]]);
 });
