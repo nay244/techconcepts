@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545.
 
-**Status: waiting for the owner's go.** Only the scout has run.
+**Status: the owner said go on 2026-11-11. The groundwork units are running; the two lessons follow.**
 
 ## Inputs
 

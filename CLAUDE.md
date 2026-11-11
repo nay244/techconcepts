@@ -26,10 +26,12 @@ Since 2026-11-10 (the owner's rule) the main session is the **orchestrator**: it
 | `designer` | the orchestrator's (Fable) | anything that needs taste: layout, flows, naming, UX copy, interaction, a first prototype. One self-contained HTML file per screen in `prototypes/`, with its spec. |
 | `builder` | Sonnet | code: one unit, built and tested against its approved spec |
 | `reviewer` | Opus, high effort | the diff, the unit and the approved prototype, nothing else: blockers and drift from the design |
+| `author` | Sonnet | one lesson moved to the cited shape, its words kept wherever the sources allow, every changed sentence reported |
+| `analyst` | Opus | on call: one hard concept or one contested claim, from the primary sources; changes no file |
 
 `fact-checker` (Opus) is unchanged; the accuracy rule below still ends with it.
 
-**Lesson content** (the owner's rule, 2026-11-11): Sonnet writes the lessons and any step-by-step breakdown of a subject or an analogy. Opus is called for deep analysis or a more comprehensive breakdown of a concept.
+**Lesson content** (the owner's rule, 2026-11-11): Sonnet writes the lessons and any step-by-step breakdown of a subject or an analogy. Opus is called for deep analysis or a more comprehensive breakdown of a concept. So `author` writes, `analyst` is called when a claim will not pass or a concept needs it, and a fresh `fact-checker` signs each lesson off. Before the real fact-check, a Sonnet agent rehearses it once and its report is thrown away.
 
 - **Plan.** `plan.md` holds the job, what done means, the budget, the design references, and every unit with its phase, owner and check. Design units come first, then build units; each build unit names the design unit it implements. Learn the repo from scout reports. Show the owner a new plan and wait for the go.
 - **Design gate.** When the design phase is done, show the owner the prototypes and specs, and stop. A build unit starts once the owner has approved its design. Approval freezes the design: a builder implements it, and a design change goes back to `designer`.
