@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: done on 2026-11-11, the two follow-up units included.** B5 and B6 are reviewed and merged into `revamp`, and the final check passed there again (`team.md`). Nothing is pushed. Still to confirm with the owner: the reading of "Mark changed" (answer 3 below), and one line changed in the tablet spec after approval (the folded log is 62px on a tablet on its side, where the line first said 52px).
+**Status: done on 2026-11-11, the two follow-up units included.** B5 and B6 are reviewed and merged into `revamp`, and the final check passed there again (`team.md`). Nothing is pushed. Shown to the owner and not objected to: one line changed in the tablet spec after approval (the folded log is 62px on a tablet on its side, where the line first said 52px).
 
 ## Inputs
 
@@ -74,7 +74,7 @@ B1, B2 and B3 all change `src/lesson/console.css`, so they run in that order. B4
 
 1. Errata approved.
 2. Yes: a tablet on its side gets the wider words and folded log. Unit B5 below.
-3. "Mark changed": read by the orchestrator as "leave it marked", so nothing changes. To confirm with the owner.
+3. "Mark changed": leave the Table tab marked after a tablet is turned, as it works today. Confirmed by the owner ("Yes, leave it").
 4. Good as it is.
 5. Good as it is.
 6. Set a description. Unit B6 below.
