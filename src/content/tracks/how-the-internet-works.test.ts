@@ -767,11 +767,12 @@ test('each protocol’s sources are the RFCs its facts name', () => {
       Array.from({ length: Number(to) - Number(from) + 1 }, (_, i) => `RFC ${Number(from) + i}`),
     );
   expect(rfcsIn('RFC 4251 to 4254, RFC 9110')).toEqual(['RFC 4251', 'RFC 4252', 'RFC 4253', 'RFC 4254', 'RFC 9110']);
-  for (const u of internet.units) {
+  for (const [i, u] of internet.units.entries()) {
     const named = rfcsIn(u.learn.facts.find((f) => f.label === 'Defined in')!.value);
     expect(named.length, u.id).toBeGreaterThan(0);
     const missing = named.filter((rfc) => !u.references.some((r) => r.label.startsWith(`${rfc}:`)));
-    expect(missing, u.id).toEqual(uncited[u.id] ?? []);
+    // The exceptions are for lessons still uncited; a cited lesson's facts must cite what they name.
+    expect(missing, u.id).toEqual(isLegacy(TOUR[i]!) ? (uncited[u.id] ?? []) : []);
   }
 });
 
