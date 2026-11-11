@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545.
 
-**Status: the owner said go on 2026-11-11. The groundwork units are running; the two lessons follow.**
+**Status: the pilot stopped after What is UDP's fifth fact-check (100 of 101 items passing), and the owner chose targeted re-checks on 2026-11-11 ("Yes, targeted"). Unit G4 builds them; then What is UDP is finished with one. What is HTTP waits for the owner after that.**
 
 ## Inputs
 
@@ -75,3 +75,42 @@ If the pilot's cost per lesson holds, the other 15 would come to something like 
 - The other 15 lessons: the next plan, after the pilot's numbers.
 - A fact-check path for glossary entries or objective mappings.
 - Anything that leaves this machine.
+
+## Targeted re-checks (added 2026-11-11, the owner's decision)
+
+**Why.** The content rules ask for a brand-new check of the whole lesson after every fix. What is UDP's five real runs found 13, 9, 1, 1 and 1 items, never the same list until the last two, at over 200,000 tokens a run: one changed sentence cost a full run. From a near-pass on, the next check now judges only what changed.
+
+**The rule.**
+- A lesson's first check, and any check after a run that was not a near-pass, is a **full check**: every item, as today.
+- A **near-pass** is a full check in which at most 3 items do not pass and none is wrong (❌).
+- After a near-pass, the next check may be a **targeted re-check**: a fresh fact-checker judges only the items that changed since the full check, and every item that traces to one of them. At most 12 items; more than that needs a full check.
+- Every other item keeps the verdict the full check gave it. An item that did not pass the full check and has not changed since still does not pass.
+- A re-check that does not pass is committed as written, the lesson is fixed, and a new fresh checker re-checks: always against the same full check, so what it judges is everything changed since then.
+
+**The files.** The full check's report stays at `docs/fact-checks/<slug>.md`, untouched. The re-check writes `docs/fact-checks/<slug>.recheck.md`, in the same form: a header (`slug`, `base`: the full report's hash, `hash`: the claim sheet's hash now, `checked`, `checker`, `verdicts` for the re-checked keys only, `sources` for the sources it read, its own `quotes` record) and a section with quotes for each item it judged.
+
+**What the script records.** When the quote check passes on a full report whose hash is the claim sheet's hash, it also writes into the header an `items` record: each item's key and the SHA-256 of that item (its kind, words, citations and traces; not its key). `npm run fact-check -- <slug> --stamp` writes the same record, alone, for a full report that predates this (it refuses unless the report's hash is the sheet's hash now).
+
+**Which items a re-check judges.** An item is unchanged when the full report's `items` record has the same hash under the same key, or, where an inserted or removed part has shifted the numbers in keys, the same hash under the same key with its index numbers taken out. Everything else on the sheet is changed. A traced item is also judged when any part it traces to is changed. `npm run fact-check -- <slug> --recheck` prints the re-check sheet: those items in full, and for each traced item the words of the parts it traces to. It refuses, saying why, when the full check was not a near-pass, when more than 12 items would be judged, or when the lesson's limit overrides changed.
+
+**The commands.** `--recheck` prints the re-check sheet; `--recheck --quotes <folder>` runs the quote check on the re-check report (only its own quotes, each under a key it judged); `--recheck --check` runs the gate's rules on the pair.
+
+**What the build requires**, for a cited lesson whose full report's hash is not the claim sheet's hash:
+1. A re-check report exists, with `base` equal to the full report's hash and `hash` equal to the sheet's hash. Otherwise: the lesson changed since it was checked.
+2. The full report has an `items` record, and was a near-pass.
+3. The re-check's verdict keys are exactly the items to judge (changed, and tracing to a changed part): none missing, none extra, and at most 12.
+4. Every re-check verdict passes, and the full report's verdict passes for every item not re-checked.
+5. The lesson's limit overrides are what the full report lists.
+6. Every source on the sheet is listed as current, in the re-check's sources if a re-checked item cites it, else in the full report's.
+7. The re-check's quotes can be read, each sits under a key it judged, its quote record is right (count, digest, files, date not before its own `checked`), and every re-checked item that has citations and passes has a quote.
+8. The full report's own quote record still matches its quotes, as today.
+A re-check report whose `base` is not the full report's hash, or that sits beside a full report whose hash is the sheet's, is refused: remove it.
+The lesson's stamp shows the later of the two dates.
+
+**What this gives up, said plainly.** A fresh full read sometimes finds something in an item nobody touched: What is UDP's fourth run did. A targeted re-check will not. The first full check, the near-pass limit and the cap of 12 are what keep that small.
+
+| Unit | Owner | What | Check |
+|---|---|---|---|
+| G4 | builder, reviewer | **Targeted re-checks**, as above: the `items` record and `--stamp`, the re-check sheet and its refusals, the quote check and gate for the pair, the fact-checker's instructions and `docs/content-model.md` §8. | Unit tests, one per rule above and per refusal, each seen failing first; the real OSI Model and canary reports still pass; `npm test`, `npm run build`. |
+| L1, finished | author, fact-checker (a targeted re-check), orchestrator | What is UDP's last item fixed and re-checked. | The pair passes the gate; then the lesson's own end-to-end tests, and `npm test`, `npm run build`, `npm run e2e` on `revamp`. |
+
