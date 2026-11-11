@@ -163,7 +163,7 @@ The values below are the ones in `src/styles/tokens.ts`, which is the source; it
 - Small capitals in page-level styles (Tracks' "Start here", the track page's stop labels, About's table headings). Shared labels are already sentence case.
 - The Home header that sits clear over the hero until the page scrolls.
 - The `shadow-sm` and `btn-shadow` tokens, which now paint nothing, and the rules that still name them.
-- The share image, `public/og-default.png`, which still shows the old wordmark.
+- ~~The share image~~ Built (B4, 2026-11-10): `public/og-default.png` is the 1200×630 card of D4 variant A (the Lifted lid mark and name, "See how technology really works.", and the `inside` figure, on the light theme's ground). `scripts/generate-og-image.mjs` draws it from the logo, the figure, `lumen.css` and the tokens. The dark ground (variant B) and an `og:image:alt` are not built.
 
 The prototypes and screenshots are on this machine only, in the git-ignored `.superpowers/revamp/` (`look/` the pages, `look/shots/compare.png` the three side by side, `baseline/` the old site). `.claude/launch.json` serves them as `look-prototypes`.
 
