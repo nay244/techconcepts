@@ -1393,7 +1393,7 @@ ol.explain__sources li::marker {
     flex: 1 1 0;
     height: auto;
     min-height: 0;
-    /* The figure's shadows run past its box: the stage would scroll to them, and they would show over the strip below. */
+    /* The figure's 6px draw-in makes the stage scrollable for a moment after load; at rest its pool would lie over the band above and the strip. */
     overflow: hidden;
   }
 

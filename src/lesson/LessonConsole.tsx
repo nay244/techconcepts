@@ -35,7 +35,7 @@ const PANEL_TAB: Partial<Record<Panel['type'], string>> = { table: 'Table', rule
 /**
  * The id of the latest applied event of the current step that changed the unit's panel, or null when none has: a row
  * of the table added, changed or matched; for the rule list, a visit checked against it, a connection remembered or a
- * reply matched to one; for the bits board, a note that sets the board.
+ * reply matched to one. The bits board never changes it: its tab is not marked.
  */
 function panelChange(panel: Panel | null, derived: ReturnType<typeof deriveState>): string | null {
   if (panel === null) return null;
@@ -45,14 +45,13 @@ function panelChange(panel: Panel | null, derived: ReturnType<typeof deriveState
       if (e.type === 'table') return e.table === panel.rules.id || e.table === panel.conns.id;
       return e.type === 'message' && (e.check?.table === panel.rules.id || e.known?.table === panel.conns.id);
     }
-    if (panel.type === 'bits') return e.type === 'note' && e.board !== undefined;
     return false;
   });
   return changed?.id ?? null;
 }
 
-/** The row an event has marked in the lesson's own panel, to bring into view when the tab opens. */
-const MARKED_ROW = '.tpanel [data-highlight], .rpanel [data-state], .rpanel [data-new], .rpanel [data-known]';
+/** The row that decided, to bring into view when the tab opens: the table's marked row, or the rule that allowed or denied. */
+const MARKED_ROW = '.tpanel [data-highlight], .rpanel [data-state="allow"], .rpanel [data-state="deny"]';
 
 export interface LessonConsoleProps {
   trackId: string;

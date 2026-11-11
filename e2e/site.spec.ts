@@ -11,6 +11,7 @@ import {
   open,
   pageOverflow,
   playButton,
+  position,
   readyLessons,
   requireLessons,
   settledFrame,
@@ -1061,14 +1062,34 @@ test.describe('phone', { tag: '@phone' }, () => {
       test.describe(`D2 at ${screen.width}x${screen.height}, ${colorScheme}`, () => {
         test.use({ viewport: screen, colorScheme });
 
-        test('1 and 2: the page and the scene scroll nowhere, on every slot of four lessons', async ({ page }) => {
+        test('1 and 2: the page and the scene scroll nowhere, from the first frame, on every slot of four lessons', async ({ page }) => {
+          test.setTimeout(300_000);
+          // Samples the stage's overflow on every frame of the first 700 ms of each load (the figure draws in then).
+          await page.addInitScript(() => {
+            const worst = { value: 0 };
+            (window as unknown as { __stageWorst: typeof worst }).__stageWorst = worst;
+            const start = performance.now();
+            const tick = () => {
+              const el = document.querySelector('.console__stage');
+              if (el) worst.value = Math.max(worst.value, Math.abs(el.scrollHeight - el.clientHeight));
+              if (performance.now() - start < 700) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+          });
           for (const slug of ['dhcp', 'osi-model', 'firewalls', 'subnetting']) {
-            for (const where of [0, 3, 'learn', 'practice'] as const) {
-              await goTo(page, bySlug(slug).path, where);
-              const overflow = await pageOverflow(page);
-              expect(overflow, `${slug} ${where}: the page`).toEqual({ down: 0, sideways: 0 });
+            // How many slots the lesson has: walk Next from the start to the end.
+            await open(page, bySlug(slug).path);
+            let slots = 1;
+            for (let at = await position(page); !at.atEnd; slots += 1) at = await moveBy(page, () => nextButton(page).click());
+            expect(slots, slug).toBeGreaterThan(5);
+            for (let n = 0; n < slots; n += 1) {
+              await open(page, `${bySlug(slug).path}?step=${n}`);
+              await page.waitForFunction(() => performance.now() > 800);
+              const early = await page.evaluate(() => (window as unknown as { __stageWorst: { value: number } }).__stageWorst.value);
+              expect(early, `${slug} slot ${n}: the stage while the page loads`).toBe(0);
+              expect(await pageOverflow(page), `${slug} slot ${n}: the page`).toEqual({ down: 0, sideways: 0 });
               const stage = await page.locator('.console__stage').evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
-              expect(stage.scroll, `${slug} ${where}: the stage`).toBe(stage.client);
+              expect(stage.scroll, `${slug} slot ${n}: the stage at rest`).toBe(stage.client);
             }
           }
         });
@@ -1144,14 +1165,19 @@ test.describe('phone', { tag: '@phone' }, () => {
           await goTo(page, bySlug('dhcp').path, 4);
           const table = page.getByRole('button', { name: /^Table/ });
           await expect(table).toHaveAccessibleName('Table');
+          await expect(table).not.toHaveAttribute('aria-label');
           await playButton(page).click();
           await expect(table).toHaveAccessibleName('Table, changed', { timeout: 15_000 });
+          await expect(table).toHaveAttribute('aria-label', 'Table, changed');
+          await expect(table).toHaveText('Table');
           await expect(page.locator('.tab__mark')).toHaveCount(1);
           await table.click();
           await expect(page.locator('.tab__mark')).toHaveCount(0);
+          await expect(table).not.toHaveAttribute('aria-label');
           await tab(page, 'Explain').click();
           await expect(page.locator('.tab__mark')).toHaveCount(0);
           await expect(table).toHaveAccessibleName('Table');
+          await expect(table).not.toHaveAttribute('aria-label');
           // Back and Next keep the chosen tab.
           await table.click();
           await moveBy(page, () => page.getByRole('button', { name: 'Previous step', exact: true }).click());
@@ -1163,6 +1189,38 @@ test.describe('phone', { tag: '@phone' }, () => {
           await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
           await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
           await expect(page.locator('.tab__mark')).toHaveCount(0);
+        });
+
+        test('8: the Bits tab never shows the mark, however the board changes', async ({ page }) => {
+          for (const where of [1, 2, 3, 4]) {
+            await goTo(page, bySlug('subnetting').path, where);
+            await playButton(page).click();
+            // The board is set by notes as the step plays (and playback goes on to the next step): the tab is never marked.
+            for (let i = 0; i < 8; i += 1) {
+              await page.waitForTimeout(500);
+              await expect(page.getByRole('button', { name: /^Bits/ })).toHaveAccessibleName('Bits');
+              await expect(page.locator('.tab__mark')).toHaveCount(0);
+            }
+          }
+        });
+
+        test('8: opening the Rules tab brings the rule that decided into view (rule 3 on step 2), not the first rule', async ({ page }) => {
+          await page.addInitScript(() => {
+            const seen: string[] = [];
+            (window as unknown as { __scrolled: string[] }).__scrolled = seen;
+            Element.prototype.scrollIntoView = function (this: Element) {
+              seen.push(this.textContent ?? '');
+            };
+          });
+          await goTo(page, bySlug('firewalls').path, 2);
+          await played(page, '.rpanel tr[data-state="deny"]');
+          await playButton(page).click();
+          await expect(playButton(page)).toContainText(/Play|Resume|Continue/);
+          await expect(page.getByRole('button', { name: 'Rules, changed' })).toBeVisible();
+          await page.getByRole('button', { name: 'Rules, changed' }).click();
+          const seen = await page.evaluate(() => (window as unknown as { __scrolled: string[] }).__scrolled);
+          expect(seen.length).toBeGreaterThan(0);
+          expect(seen.at(-1)).toContain('Fits → deny');
         });
 
         test('10 and 11: the log’s values start at one x on every row, and the short ones share the last line', async ({ page }) => {
@@ -1183,9 +1241,13 @@ test.describe('phone', { tag: '@phone' }, () => {
             await expect(short).toHaveText([/^\d[\d.]* ?s$/, /^DHCP/, /\d+ ?B$/]);
             const tops = await short.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
             expect(new Set(tops).size).toBe(1);
+            // They are the row's last line: each sits below the Info words, and the row ends with them.
+            const info = (await row.locator('td.log__prose').last().boundingBox())!;
             const rowBox = (await row.boundingBox())!;
-            const last = (await row.locator('td').last().boundingBox())!;
-            expect(last.y + last.height).toBeLessThanOrEqual(rowBox.y + rowBox.height);
+            for (const box of await short.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()))) {
+              expect(Math.round(box.top)).toBeGreaterThanOrEqual(Math.round(info.y + info.height));
+              expect(Math.round(box.bottom)).toBeLessThanOrEqual(Math.round(rowBox.y + rowBox.height));
+            }
           }
           expect(await page.locator('.log__scroll').evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
 
