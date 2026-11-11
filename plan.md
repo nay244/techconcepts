@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545.
 
-**Status: the pilot stopped after What is UDP's fifth fact-check (100 of 101 items passing), and the owner chose targeted re-checks on 2026-11-11 ("Yes, targeted"). Unit G4 builds them; then What is UDP is finished with one. What is HTTP waits for the owner after that.**
+**Status: the pilot ended on 2026-11-11 with one lesson, not two.** What is UDP is cited, checked (five full runs and one targeted re-check) and merged into `revamp`; targeted re-checks are built and merged. What is HTTP has not started: the pilot's numbers go to the owner first (`team.md`, job 3). Nothing is pushed.
 
 ## Inputs
 
@@ -119,4 +119,10 @@ The lesson's stamp shows the later of the two dates.
 |---|---|---|---|
 | G4 | builder, reviewer | **Targeted re-checks**, as above: the `items` record and `--stamp`, the re-check sheet and its refusals, the quote check and gate for the pair, the fact-checker's instructions and `docs/content-model.md` §8. | Unit tests, one per rule above and per refusal, each seen failing first; the real OSI Model and canary reports still pass; `npm test`, `npm run build`. |
 | L1, finished | author, fact-checker (a targeted re-check), orchestrator | What is UDP's last item fixed and re-checked. | The pair passes the gate; then the lesson's own end-to-end tests, and `npm test`, `npm run build`, `npm run e2e` on `revamp`. |
+
+## How the pilot ended
+
+- **Done:** the groundwork (G1 to G3); targeted re-checks (G4); What is UDP (L1), with every changed sentence listed in `docs/lesson-changes/what-is-udp.md`.
+- **Not done:** What is HTTP (L2). "Done means" asked for both lessons; the pilot spent its estimate on one, and stopped for the owner rather than start the second.
+- **For the owner to decide:** whether the other 16 lessons run at about 1.3 to 1.5 million tokens each (`team.md` has the working), and the speed-ups offered on 2026-11-11: lessons side by side in their own copies of the repo, a fresh session per job, the analyst before the author, no rehearsal, the full end-to-end suite once per job, and the mid-lesson decisions settled in advance.
 

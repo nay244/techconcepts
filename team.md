@@ -127,16 +127,66 @@ The estimate in the plan was about 1,500,000.
 
 # Job 3: Phase 4, the pilot
 
-The owner said go on 2026-11-11. Stopped on 2026-11-11 after What is UDP's fifth fact-check, for the owner to decide how checks run from here. What is HTTP has not started.
+The owner said go on 2026-11-11. It ends with one lesson, What is UDP, cited, checked and merged, and with targeted re-checks built. What is HTTP has not started: the pilot stopped for the owner twice (the scale of rewording; then the cost of full re-checks), and its numbers are below.
 
 | Unit | Agent | Model | Tries | Tokens | Result |
 |---|---|---|---|---|---|
 | S3 | scout | Haiku | 1 | 187,981 | Done. What moving a lesson takes, what OSI Model took, and the size and sources of each of the 17. |
-| G1, G2, G3 | builder | Sonnet | 2 | 182,657 | Done and merged. A cited lesson needs no exam tag; Home's demo reads a lesson's whole lead and lists its sources in the lesson's numbered order; tests take an unchecked or a checked lesson from the registry and the closed list. `npm test` 1,494 passed; `npm run e2e` 969 passed. |
+| G1, G2, G3 | builder | Sonnet | 2 | 182,657 | Done and merged. A cited lesson needs no exam tag; Home's demo reads a lesson's whole lead and lists its sources in the lesson's numbered order; tests take an unchecked or a checked lesson from the registry and the closed list. |
 | G1, G2, G3 | reviewer | Opus, high | 2 | 167,550 | G1 PASS. G2 and G3 FAIL, then PASS. First: nothing proved the change through Home's own code; the end-to-end tests learned "checked" from the page under test. |
-| L1 | author | Sonnet | 7 passes | 378,778 | What is UDP on `build/p4-l1-udp`, not merged. Pass 1 kept only what it found stated and cut much of the lesson's teaching; pass 2 restored it from the analyst's sources (the owner's decision); passes 3 to 7 fixed what each check found. |
-| L1 | analyst | Opus | 1 | 153,198 | Found sources for most of the cut ideas, and showed five of the original's claims were wrong or unsupported (the 1% and 5% loss figures, the jitter buffer's size, "about a minute", the bitrate, "late is as bad as lost" for lookups). |
-| L1 | rehearsal | Sonnet | 1 | 231,357 | The fact-checker's instructions run once on Sonnet, report thrown away: 14 items partial, all fixed. The first real run then found 13 others, so it did not save a run. |
-| L1 | fact-checker | Opus | 5 runs | about 1,130,000 | Not passing 13, 9, 1, 1 and 1 of 101 items; never the same list twice until runs 4 and 5, which stop on one paragraph. Every quote in every run was confirmed by the script. Run 5's item needs one more citation. |
+| G4 | builder | Sonnet | 2 | 347,467 | Targeted re-checks (the owner's decision): the items record and `--stamp`, the re-check sheet, the second report file, the gate for the pair. About 190 tests, written before the code. |
+| G4 | reviewer | Opus, high | 2 | 192,479 | FAIL, then FAIL. First: three changed lessons passed with nothing re-judged (a question's prompt apart from its options; steps swapped and an event moved; a source's registry entry changed), two of them through the spec's own rule. Second: a moved item was judged with nothing beside it to show where it sat; a Learn part taken out left old verdicts standing. |
+| G4 | orchestrator | Fable | 1 | not counted | After two failed reviews: a judged list item is shown in its place, and a Learn part taken out re-opens what rests on the whole lesson. `npm test` 1,685 passed. Merged. |
+| L1 | author | Sonnet | 8 passes | 416,824 | What is UDP. Pass 1 kept only what it found stated and cut much of the lesson's teaching; pass 2 restored it from the analyst's sources (the owner's decision); passes 3 to 8 fixed what each check found, the last a single citation. Then the list of every changed sentence, `docs/lesson-changes/what-is-udp.md`. |
+| L1 | analyst | Opus | 1 | 153,198 | Sources for most of the cut ideas, and five claims of the original shown to be wrong or unsupported. |
+| L1 | rehearsal | Sonnet | 1 | 231,357 | The fact-checker's instructions run once on Sonnet, report thrown away: 14 items partial, all fixed. The first real run then found 13 others: it did not save a run. Dropped from here on. |
+| L1 | fact-checker | Opus | 5 full runs, 1 re-check | 1,219,351 | Full runs: 13, 9, 1, 1 and 1 of 101 items not passing (1,130,728 tokens, about 226,000 a run). The targeted re-check judged the one changed item and passed it (88,623). Every quote in every run was confirmed by the script. |
+| L1 | orchestrator | Fable | 1 | not counted | Looked at the built lesson: "Checked 11 Nov 2026, 31 sources", OSI layer 4, numbered sources, the track card and Home's count. Merged. |
+| Final | orchestrator | Fable | 1 | not counted | On `revamp`: `npm test` 1,685 passed; `npm run build` within budget (25 pages); `npm run e2e` 969 passed, 256 skipped, none failed (17.7 minutes, lid open, on `dbfac6c`). |
 
-**What is UDP has cost about 1.9 million tokens and has not passed. The pilot stands at about 2.4 million.**
+## Spend by role
+
+| Role | Model | Tokens |
+|---|---|---|
+| scout | Haiku | 187,981 |
+| builder, author, rehearsal | Sonnet | 1,178,305 |
+| reviewer, analyst, fact-checker | Opus | 1,732,578 |
+| designer | Fable | 0 |
+| **All subagents** | | **3,098,864** |
+
+The plan's estimate was 2 to 3 million for two lessons. This is one lesson and the re-check tooling.
+
+## What one lesson cost, and what the next should
+
+What is UDP: 2,020,730 tokens. Author 416,824 (with the list of changed sentences); analyst 153,198; rehearsal 231,357; fact-checks 1,219,351.
+
+| | As it ran | With what the pilot taught |
+|---|---|---|
+| Analyst | after the author had cut half the lesson | first, so the author writes once (saves a pass, about 70,000) |
+| Rehearsal on Sonnet | 231,357 | dropped |
+| Full checks on Opus | 5 (1,130,728) | 3: the third was the near-pass (about 690,000) |
+| Targeted re-checks | 1 (88,623) | 2 or 3 (about 180,000 to 270,000) |
+| **A lesson** | **about 2.0 million** | **about 1.3 to 1.5 million** |
+
+Sixteen lessons are left. At 1.3 to 1.5 million each that is roughly 21 to 24 million tokens. The cost is mostly three full reads on Opus, and the pilot showed why they are needed: runs 2, 3 and 4 each found a real fault in an item the fixes had not touched.
+
+## What the pilot found
+
+- **Moving a lesson is rewriting it.** What is UDP differs from the original in 34 corrections, 15 removals, 20 additions and 9 rewordings (`docs/lesson-changes/what-is-udp.md`). It went from 1 source to 31.
+- **The original was wrong in places.** A jitter buffer's size, the loss a call tolerates, how long a router remembers a port pair, "late is as bad as lost" for lookups and games, a recorded delivery that resends.
+- **An author on Sonnet keeps only what it finds stated.** Without the analyst the lesson lost its central idea. With the analyst's sources, most of the teaching came back.
+- **A fresh checker finds a different handful every time.** Nothing it found in the last three runs was a false fact about UDP: a citation one section off, a word too strong, a newer standard.
+- **A targeted re-check costs about 40% of a full run and takes a minute and a half.**
+
+## Could go one model lower next time
+
+- **The author's last passes** (a single citation, a scope change): Haiku could make a one-line edit from an exact instruction.
+- **The list of changed sentences**: a script and Haiku.
+- Nothing else. The analyst and the checker are what Opus is for, by the owner's rule.
+
+## What to do differently next time
+
+- **Analyst before author**, with the lesson's ideas listed and a source for each before a word is rewritten.
+- **No rehearsal.** The author sweeps for the five kinds of fault the checkers found (a statement outside the cited section; a defining marker on a document that does not define the thing; an absolute a newer standard breaks; a part that says more or less than what it rests on; a name no traced part gives).
+- **Decide in advance** what the owner was asked mid-lesson: ideas come back wherever a source states them; a badge may rest on two vendors' pages.
+- **A spec for a gate gets its attack cases first.** G4's spec was right about its rules and wrong about what they let through; both reviews found holes by trying to get a changed lesson past it. The reviewer's probe list should exist before the builder starts.
