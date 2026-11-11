@@ -100,6 +100,9 @@ function missingPart(text: string, parts: readonly string[]): number {
 
 const words = (text: string): string => (text.length > 60 ? `${text.slice(0, 57)}...` : text);
 
+/** The day after a `YYYY-MM-DD` day. */
+const dayAfter = (day: string): string => new Date(Date.parse(`${day}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+
 /**
  * Every item that has citations and a passing verdict needs at least one quote: the keys that do not have one, in the
  * sheet's order. The quote check reports them, and the build's gate reuses the rule.
@@ -223,8 +226,9 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
   if (issues.length > 0) return { issues };
 
   const record: QuoteRecord = {
-    // The checker may date the header a day ahead of the local day (UTC), and a record older than its header is refused.
-    checked: today < reportChecked ? reportChecked : today,
+    // The checker may date the header one day ahead of the local day (UTC), and a record older than its header is
+    // refused. Further ahead than that is a mistake in the header: the record says today, so the gate names it.
+    checked: reportChecked === dayAfter(today) ? reportChecked : today,
     count: quotes.length,
     digest: quotesDigest(quotes),
     files: Object.fromEntries([...found].map(([source, file]) => [source, sha256(file.read)])),

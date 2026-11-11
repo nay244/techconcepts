@@ -347,3 +347,15 @@ test('a record is dated the later of today and the header\'s day, so a header a 
   expect(checkReport(sheet(), behind.report, 'docs/fact-checks/cited-lesson.md')).toEqual([]);
   expect(run(raw, files('x')).record!.checked).toBe(TODAY);
 });
+
+test('a header dated two days or more ahead is not followed: the record says today, and the gate refuses it by name', () => {
+  // The header says 2026-11-08; today is three days before. One day ahead is a timezone; three is a mistake.
+  const early = checkQuotes({ raw: reportQuoting(), sheet: sheet(), files: files('x'), today: '2026-11-05', pageText });
+  expect(early.issues).toEqual([]);
+  expect(early.record!.checked).toBe('2026-11-05');
+  expect(checkReport(sheet(), early.report, 'docs/fact-checks/cited-lesson.md')).toEqual([expect.stringContaining('before the report was checked on 2026-11-08')]);
+  // Across a month's end, one day ahead is still one day.
+  const monthEnd = reportQuoting({}, (h) => void (h.checked = '2026-12-01'));
+  expect(checkQuotes({ raw: monthEnd, sheet: sheet(), files: files('x'), today: '2026-11-30', pageText }).record!.checked).toBe('2026-12-01');
+  expect(checkQuotes({ raw: monthEnd, sheet: sheet(), files: files('x'), today: '2026-11-29', pageText }).record!.checked).toBe('2026-11-29');
+});
