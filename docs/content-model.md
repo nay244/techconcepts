@@ -276,6 +276,7 @@ The rest of the report is for people. It gives each claim's quoted passages (or 
 - A comment is its own bullet beginning `Note:`. Plain text lines are allowed too.
 - The parser (`parseQuotes` in `src/content/factcheck/quotes.ts`) names everything else under a claim's heading as a problem, so a badly written quote cannot pass as a comment: a `>` line that is not part of a quote's passage (after a blank line, under a note, under plain text), a bullet that is neither a quote nor a note, a bullet that is indented, nested, numbered or not `- `, a heading deeper than `###`.
 - Every `###` heading in a report is a claim's heading, `### <key> — <✅|⚠️|❌>`: its key is on the sheet, it appears once, and its verdict is the header's verdict for that key.
+- Outside a claim's heading nothing is quoted: a `>` line or a quote's bullet there is a problem, and so is a plain line straight after a passage's `>` line, which a reader would see as more of the quote. A source's words appear only on a quote's `>` lines.
 - Every item that has citations needs at least one quote when its verdict passes (`keysNeedingQuotes`).
 - The fact-checker saves each source it fetched in its temporary folder under the source's id: `<id>.html` for a web page saved as it is, `<id>.txt` for plain text, for a PDF's text and for a page read in the browser.
 

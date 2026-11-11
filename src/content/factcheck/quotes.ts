@@ -12,7 +12,7 @@ import type { ClaimSheet } from './sheet';
  * The id is the source's id in the registry; the section is everything after `§`. The passage is the `>` lines
  * straight after the bullet, joined by single spaces. A comment is its own bullet beginning `Note:`; plain text lines
  * are allowed. Everything else under a claim's heading is a problem, so a badly written quote cannot pass as a comment.
- * Every `###` heading is a claim's heading. See docs/content-model.md §8.
+ * Every `###` heading is a claim's heading, and outside one nothing is quoted. See docs/content-model.md §8.
  */
 
 export interface Quote {
@@ -51,11 +51,14 @@ export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; 
 
   /** The claim whose heading the lines belong to; undefined outside one, or under a heading that could not be read. */
   let key: string | undefined;
+  /** Under a `###` heading that could not be read: its own problem is named, so its lines are not named again. */
+  let unread = false;
   let item: ClaimSheet['items'][number] | undefined;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     if (/^###[ \t]/.test(line)) {
       key = item = undefined;
+      unread = true;
       const heading = CLAIM_HEADING.exec(line);
       if (heading === null) {
         issues.push(`The heading "${clip(line)}" is not a claim heading; write it as "### <key> — <verdict>" with the verdict ✅, ⚠️ or ❌ after an em dash`);
@@ -72,16 +75,26 @@ export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; 
         }
         key = name;
         item = items.get(name);
+        unread = false;
       }
       seen.add(name);
       continue;
     }
     if (ANY_HEADING.test(line)) {
       if (key !== undefined && line.startsWith('####')) issues.push(`"${key}" has a deeper heading (${clip(line)}); a claim's section has no sub-headings, so make it text or a "Note:" bullet`);
-      else if (!line.startsWith('####')) key = item = undefined;
+      else if (!line.startsWith('####')) {
+        key = item = undefined;
+        unread = false;
+      }
       continue;
     }
-    if (key === undefined || item === undefined) continue;
+    if (key === undefined || item === undefined) {
+      // Outside every claim's heading nothing is quoted: a passage there would never be checked.
+      if (!unread && (PASSAGE_LINE.test(line) || QUOTE_BULLET.test(line))) {
+        issues.push(`A quote outside a claim's heading (${clip(line)}); a source's words are quoted only under the heading of the claim they support, so move it there or say it in your own words`);
+      }
+      continue;
+    }
     if (PASSAGE_LINE.test(line)) {
       issues.push(`"${key}" has a ">" line that is not part of a quote (${clip(line)}); put it straight after its quote's bullet with no blank line between, or take the ">" off`);
       continue;
@@ -102,6 +115,11 @@ export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; 
     const section = quote[2]!.trim();
     const passage: string[] = [];
     while (i + 1 < lines.length && PASSAGE_LINE.test(lines[i + 1]!)) passage.push(PASSAGE_LINE.exec(lines[++i]!)![1]!);
+    // A reader sees a plain line straight after a ">" line as more of the quote (Markdown runs it on), so it must be one.
+    const after = lines[i + 1] ?? '';
+    if (passage.length > 0 && after.trim() !== '' && !ANY_HEADING.test(after) && !BULLET_LIKE.test(after)) {
+      issues.push(`"${key}", quote from ${quote[1]} §${quote[2]!.trim()}, is followed by a line that does not start with ">" (${clip(after)}); start it with ">" if it is part of the passage, or put a blank line before it`);
+    }
     const words = evenWhitespace(passage.join(' '));
     const where = `"${key}", quote from ${source} §${section}`;
     if (item.cite.length === 0) {

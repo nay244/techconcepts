@@ -156,7 +156,7 @@ const quoteAt = (extra: string[]) => {
 };
 
 test('a ">" line after a blank line, under a note or under plain text is named', () => {
-  for (const extra of [['', '> stray'], ['- Note: a comment', '  > stray'], ['Text: "x"', '> stray']]) {
+  for (const extra of [['', '> stray'], ['- Note: a comment', '  > stray'], ['', 'Text: "x"', '> stray']]) {
     const { key, raw } = quoteAt(extra);
     const found = issues(raw);
     expect(found, extra.join('|')).toEqual([expect.stringContaining('">" line')]);
@@ -230,4 +230,20 @@ test('keysNeedingQuotes lists the items that have citations, in sheet order', ()
   expect(keysNeedingQuotes(s)).toEqual(s.items.filter((i) => i.cite.length > 0).map((i) => i.key));
   expect(keysNeedingQuotes(s)).not.toContain(bare().key);
   expect(keysNeedingQuotes(s).length).toBeGreaterThan(0);
+});
+
+test('a passage line written without its ">" is named, not dropped', () => {
+  const { key, raw } = quoteAt(['  and words the script would never check.']);
+  const found = issues(raw);
+  expect(found).toEqual([expect.stringContaining('does not start with ">"')]);
+  expect(found[0]).toContain(`"${key}"`);
+  // A blank line ends the passage, and plain text after it is a comment as before.
+  expect(issues(quoteAt(['', 'Text: "A device asks to renew."']).raw)).toEqual([]);
+});
+
+test('a ">" line or a quote outside every claim heading is named: a source’s words are quoted only under a claim', () => {
+  const { first } = claim();
+  expect(issues(body('## 3. Sources', '', '> In force.'))).toEqual([expect.stringContaining('outside a claim')]);
+  expect(issues(body('## 3. Sources', '', `- \`${first.source}\` §${first.section}`))).toEqual([expect.stringContaining('outside a claim')]);
+  expect(issues(body('> before any heading'))).toEqual([expect.stringContaining('outside a claim')]);
 });
