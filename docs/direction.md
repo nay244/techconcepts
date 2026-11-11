@@ -70,7 +70,7 @@ The canonical links still name `techconcepts.app`. That is right once the domain
 
 Each branch is merged into `revamp` here. After all five: 1,334 unit tests pass, all 25 pages build within budget, and the full end-to-end run across the seven projects ends with 778 passed and none failed (141 skipped by design: playback checks run in two projects only).
 
-### Phase 2: a new look and new layouts, on phone and desktop together — BUILT 2026-11-11 (the final full end-to-end run on `revamp` is still to repeat: `plan.md`)
+### Phase 2: a new look and new layouts, on phone and desktop together — DONE 2026-11-11
 
 Each numbered step is its own branch.
 

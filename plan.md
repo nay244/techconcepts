@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: built and merged on 2026-11-11; one check left.** All four build units are merged into `revamp`. Unit tests and the build pass there. The final full `npm run e2e` on `revamp` has not had a clean run: the Mac slept with its lid closed through both attempts (`team.md`, last row). Run it once with the lid open. Nothing is pushed. Open for the owner: the errata made to D2 and D3 after approval (each spec's last section), and the questions at the end of this file.
+**Status: done on 2026-11-11.** All four build units are merged into `revamp`, and the final check passed there: `npm test`, `npm run build` and the full `npm run e2e` (`team.md` has the output). Nothing is pushed. Open for the owner: the errata made to D2 and D3 after approval (each spec's last section), and the questions at the end of this file.
 
 ## Inputs
 
