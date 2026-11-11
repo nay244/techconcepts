@@ -945,10 +945,14 @@ astro-island, astro-slot, astro-static-slot { display: contents; }
   :root.js .console__stage {
     overflow: hidden;
   }
+  /* The scene is a window on the drawing: the figure is cut at its edges. As the page loads the figure slides
+     up 6px, and its box would otherwise make the stage scrollable for a moment; at rest its shadow would lie
+     over the band above and the strip below. (Errata, 2026-11-11.) */
   :root.js .console__scene {
     flex: 1 1 0;
     height: auto;
     min-height: 0;
+    overflow: hidden;
   }
 
   /* --- 3. A lesson with one view has no switch, so it has no band ----------------------------------- */
@@ -1746,9 +1750,14 @@ astro-island, astro-slot, astro-static-slot { display: contents; }
     for (const b of app.querySelectorAll('.console__tabs button')) {
       b.setAttribute('aria-pressed', String(b.dataset.t === state.t));
       if (b.dataset.t !== 'table') continue;
-      // D2 markup: the mark on the tab, until the reader opens it.
-      b.querySelectorAll('.tab__mark, .sr-only').forEach((x) => x.remove());
-      if (key !== '' && key !== state.seen) b.insertAdjacentHTML('beforeend', '<span class="tab__mark" aria-hidden="true"></span><span class="sr-only">, changed</span>');
+      // D2 markup: the mark on the tab, until the reader opens it. While it shows, the button's aria-label is its
+      // own label and ", changed"; without the mark the button has no aria-label. (Errata, 2026-11-11.)
+      b.querySelector('.tab__mark')?.remove();
+      b.removeAttribute('aria-label');
+      if (key !== '' && key !== state.seen) {
+        b.setAttribute('aria-label', `${b.textContent}, changed`);
+        b.insertAdjacentHTML('beforeend', '<span class="tab__mark" aria-hidden="true"></span>');
+      }
     }
     if (state.t === 'table') app.querySelector(':is(.tpanel, .rpanel) :is([data-highlight], [data-state="allow"], [data-state="deny"])')?.scrollIntoView({ block: 'nearest' });
   }

@@ -29,7 +29,7 @@ Applies to the panel a lesson draws under its scene (`src/lesson/panels/UnitPane
 
 ### Both variants
 
-- **The scene's area no longer scrolls.** `.console__stage` is `overflow: hidden`; `.console__scene` is `flex: 1 1 0; height: auto`. The panel leaves the stage's flow.
+- **The scene's area no longer scrolls.** `.console__stage` is `overflow: hidden`; `.console__scene` is `flex: 1 1 0; height: auto; min-height: 0; overflow: hidden`, so the figure is cut at the scene's edges. The panel leaves the stage's flow.
 - **A table with three columns or fewer stays a table**, fitted to the width: cells `padding: 6px 8px`, headings may wrap, words wrap (`overflow-wrap: break-word`). Checked on the running site for SSH, TLS, UDP, FTP and TCP at 375px: no sideways scroll.
 - **A table with four columns or more becomes entries**, one per row (`.tpanel__table:has(thead th:nth-child(4))`): each value on its own line with its column's name before it. The names share one 84px column, so every value starts at the same place. The headings stay in the page for a screen reader, visually hidden.
   - Name: `600 12.5px/1.4` display face, `letter-spacing: 0.02em`, muted; ink on a marked row.
@@ -53,7 +53,7 @@ Applies to the panel a lesson draws under its scene (`src/lesson/panels/UnitPane
   - It shows when an event of the current step has changed the panel and the reader has not opened the tab since: a table row added, changed or matched; for the rule list, a visit checked against it, or a connection remembered or matched.
   - It goes when the reader opens the tab, and does not come back for that event. It also goes on moving to a step that has not changed the panel.
   - It never shows on the chosen tab.
-  - A screen reader hears `Table, changed` (a visually hidden `, changed` in the button).
+  - A screen reader hears `Table, changed`: while the mark shows, the button's `aria-label` is its label and `, changed`; with no mark the button has no `aria-label`. The mark is `aria-hidden`. The words on the tab do not change.
   - State: one key in `LessonConsole.tsx`, the id of the last change the reader has seen. Not stored.
   - Contrast on the tab row's ground: 3.9:1 light, 12.9:1 dark.
 - Opening the tab brings the marked row into view (`scrollIntoView({ block: 'nearest' })`), and the row pulses once as it shows.
@@ -139,7 +139,7 @@ Row heights at 375px: DHCP 100px (104px today), 118px when the sentence wraps; F
 | Fourth tab, a table | `Table` |
 | Fourth tab, the rule list | `Rules` |
 | Fourth tab, the bits board | `Bits` |
-| The tab's mark, for a screen reader | `, changed` |
+| The tab's name while its mark shows, for a screen reader (`aria-label`) | the tab's label and `, changed`: `Table, changed`, `Rules, changed`, `Bits, changed` |
 
 Nothing else is new. The stamp's words are the `Stamp` component's.
 
@@ -195,13 +195,13 @@ At 1440px the prototype shows the phone screen in a frame of 390×844 (or 375×8
 For the phone project (`e2e/site.spec.ts`, the `@phone` block), at 375×812 and 390×844, in both themes unless said.
 
 1. DHCP, OSI Model, Firewalls and Subnetting: the page does not scroll (`scrollHeight` equals the screen's height, `scrollWidth` its width), on the Overview, a step, Learn and Practice.
-2. `.console__stage` does not scroll: its `scrollHeight` equals its `clientHeight` on every slot of the four lessons.
+2. `.console__stage` does not scroll: its `scrollHeight` equals its `clientHeight` on every slot of the four lessons, from the moment the page loads (while the figure draws in, too).
 3. DHCP has four tabs, the last labelled `Table`; Firewalls has four, the last `Rules`; Subnetting four, the last `Bits`; OSI Model has three.
 4. Each tab, when pressed, shows its part and only its part, and `aria-pressed` follows. The scene's box does not move when a tab changes.
 5. DHCP, step 4, Table tab: the lease table is inside the part under the tabs, its bottom above the controls; the part does not scroll down or sideways. The four names (IP address, MAC address, Device, Expires) are visible, and the four values start at the same x.
 6. Firewalls, step 2, Rules tab: three rules and "Connections it remembers" are in view without scrolling; no sideways scroll; rule 3 reads "Fits → deny".
 7. A three-column table (What is TCP?) is still a table in its tab (`display: table`), with no sideways scroll at 375px.
-8. The mark: on DHCP, go to step 4 and stay on Explain; once the step has played the Table tab holds `.tab__mark` and its name reads "Table, changed". Open Table: the mark is gone. Return to Explain: it stays gone. Go to step 2: no mark.
+8. The mark: on DHCP, go to step 4 and stay on Explain; once the step has played the Table tab holds `.tab__mark`, its accessible name is exactly "Table, changed" (its `aria-label`) and the words on it are still "Table". Open Table: the mark and the `aria-label` are gone. Return to Explain: it stays gone. Go to step 2: no mark.
 9. Back and Next keep the Table tab chosen. Choosing a step in Steps returns to Explain.
 10. The log, DHCP at step 5: on every row, the Source value and the Destination value start at the same x, and that x is the same on every row. The same for Source, Destination, Service and Decision on Firewalls.
 11. The log, DHCP: Time, Protocol and Size share one line, the row's last; their cells have the class `log__short`. The log's part does not scroll sideways.
@@ -212,7 +212,7 @@ For the phone project (`e2e/site.spec.ts`, the `@phone` block), at 375×812 and 
 16. With JavaScript off at 375px, and at 1024px and 1440px with it on, the page is as before: no fourth tab shown, the table under the scene.
 17. The existing phone tests still pass; the one that counts the tabs (`e2e/site.spec.ts`, "the tabs show the steps and the log…") changes to expect the fourth on a lesson with a table.
 
-All but 7, 16 and 17 can be tried on the prototype, and were, at both sizes in both themes: all pass. Subnetting's part of 1 and 12, and check 7, were tried on the running site with the D2 CSS laid over it.
+All but 7, 16 and 17 can be tried on the prototype, and were, at both sizes in both themes: all pass. The prototype's figure does not draw in, so check 2's first moments can be tried only on the built page. Subnetting's part of 1 and 12, and check 7, were tried on the running site with the D2 CSS laid over it.
 
 ## Noticed, not changed
 
@@ -234,3 +234,10 @@ All but 7, 16 and 17 can be tried on the prototype, and were, at both sizes in b
 ## How the prototype is made
 
 The lesson's markup, its CSS and each scene were copied from the running site (DHCP, OSI Model and Firewalls, every slot, once the step had played), and the fonts are the Latin files in `node_modules/@fontsource`. The page's own CSS is unchanged; the design is the one `<style id="d2">` block. The scripts that capture and assemble it are in the git-ignored `.superpowers/revamp/design/d2/` (`capture.mjs`, `build.mjs`), with the checks (`verify.mjs`, `logcheck.mjs`, `others.mjs`) and their screenshots.
+
+## Errata, 2026-11-11
+
+Two places where the approved spec contradicted itself, found when the build was reviewed. Variant A is otherwise as approved.
+
+1. **The scene is cut at its edges**: `overflow: hidden` on `.console__scene`, in the phone block. Without it check 2 fails: as a page loads the figure slides up 6px (`lm-draw-in`), and for a quarter of a second its box reaches up to 6px past the scene's, so the stage can scroll on DHCP, Firewalls and Subnetting. The prototype's figure does not draw in, so it never showed this. At rest the clip keeps the figure's pool (its soft shadow, a glow in dark) off the band above the scene in Learn and Practice (about 5px of it on DHCP, up to 12px on Firewalls) and off OSI Model's strip (all 40px), where it lay over the switch and the headers at no more than 7 levels of 255 in light and 14 in dark. Nothing inside the scene's box changes. Changed: the scene's rule under "Both variants", check 2 and the note after the checks; the prototype's scene rule.
+2. **The tab says it has changed with an `aria-label`**, not a hidden span. Chromium puts a space before the text of an absolutely positioned span, so the name came out as "Table , changed" and check 8 could not pass with the markup the spec gave. An `aria-label` gives one name in every browser, starts with the words on the tab, and leaves those words as they are. Changed: the mark's screen reader line, the last row of "New copy" and check 8; the prototype's tab script.
