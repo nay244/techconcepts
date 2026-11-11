@@ -30,45 +30,58 @@ const BREAK = '';
 
 const LIGATURES: Record<string, string> = { 'ﬀ': 'ff', 'ﬁ': 'fi', 'ﬂ': 'fl', 'ﬃ': 'ffi', 'ﬄ': 'ffl', 'ﬅ': 'st', 'ﬆ': 'st' };
 
+/** Every dash that is not the plain hyphen: the Unicode hyphens and dashes, the minus sign, and the small and wide forms. */
+const DASHES = /[\u2010-\u2015\u2212\u2E3A\u2E3B\uFE58\uFE63\uFF0D]/g;
+
 /**
- * Both sides of a search are evened out the same way: every run of whitespace one space; soft hyphens (except one that
- * ends a line) and zero-width characters removed; ligatures written as their letters; curly quotes and apostrophes
- * straightened; every dash a hyphen. Nothing else is folded: a superscript, a prime or a fraction stays as it is.
- * A hyphen or a soft hyphen that ends a line, inside a word, becomes a break mark (see `BREAK`), after the hyphen if
- * it is a hyphen.
+ * Both sides of a search are evened out the same way: accents composed (NFC); every run of whitespace one space; soft
+ * hyphens (except one that ends a line) and zero-width characters removed; ligatures written as their letters; curly
+ * quotes and apostrophes straightened; every dash a hyphen. Nothing else is folded: a superscript, a prime or a
+ * fraction stays as it is. A hyphen or a soft hyphen that ends a line, inside a word, becomes a break mark (see
+ * `BREAK`), after the hyphen if it is a hyphen. A dash that ends a line is a dash, not a break, so the dashes are
+ * folded only after the breaks are marked.
  */
 function even(text: string): string {
   return evenWhitespace(
     text
+      .normalize('NFC')
       .replaceAll(BREAK, '')
-      .replace(/[ﬀ-ﬆ]/g, (c) => LIGATURES[c]!)
-      .replace(/[​‌‍⁠﻿]/g, '')
-      .replace(/[‘-‛]/g, "'")
-      .replace(/[“-‟]/g, '"')
-      .replace(/[‐-―]/g, '-')
-      .replace(/(\p{L})(-|­)[ \t]*(?:\r\n|\n|\r)[ \t]*(?=\p{L})/gu, (_, letter: string, dash: string) => letter + (dash === '-' ? '-' : '') + BREAK)
-      .replace(/­/g, ''),
+      .replace(/[\uFB00-\uFB06]/g, (c) => LIGATURES[c]!)
+      .replace(/[\u200B\u200C\u200D\u2060\uFEFF]/g, '')
+      .replace(/[\u2018-\u201B]/g, "'")
+      .replace(/[\u201C-\u201F]/g, '"')
+      .replace(/([\p{L}\p{M}])([-\u2010\u00AD])[ \t]*(?:\r\n|\n|\r)[ \t]*(?=\p{L})/gu, (_, letter: string, dash: string) => letter + (dash === '\u00AD' ? '' : '-') + BREAK)
+      .replace(/\u00AD/g, '')
+      .replace(DASHES, '-'),
   );
 }
 
 /** The words a passage leaves out are marked `…`, `...`, `[…]` or `[...]`. */
 const OMISSION = /\[…\]|\[\.\.\.\]|…|\.\.\./;
 const partsOf = (passage: string): string[] => passage.split(OMISSION).map((part) => even(part)).filter((part) => part !== '');
-const wordCount = (part: string): number => part.split(' ').length;
+/** How many words a part has: a mark on its own (a dash, a bullet) is not one. */
+const wordCount = (part: string): number => part.split(' ').filter((token) => /[\p{L}\p{N}]/u.test(token)).length;
+/** A quote is a sentence or two. Past this length a part is not searched for: the pattern for it would be too large to run. */
+const LONGEST_PART = 600;
 
 const escape = (char: string): string => char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * A regular expression that finds a part in an evened-out source. Between two characters of a word the source may have
  * a line-end break: a hyphen the passage left out (the word was joined) or kept, each break on its own. A part that
- * begins or ends with a letter or a digit matches whole words only, and a line-end break beside the match counts as a letter: the script cannot tell a split word from a compound there.
+ * begins or ends with a letter or a digit matches whole words and whole numbers only, and a line-end break beside the
+ * match counts as a letter: the script cannot tell a split word from a compound there.
  */
 function partPattern(part: string): RegExp {
   const chars = [...part];
   const body = chars.map((c, i) => (i > 0 && c !== ' ' && chars[i - 1] !== ' ' ? `(?:-?${BREAK})?` : '') + escape(c)).join('');
-  const word = /[\p{L}\p{N}]/u;
-  const before = word.test(chars[0]!) ? `(?<![\\p{L}\\p{N}${BREAK}])` : '';
-  const after = word.test(chars[chars.length - 1]!) ? `(?![\\p{L}\\p{N}]|-?${BREAK})` : '';
+  const first = chars[0]!;
+  const last = chars[chars.length - 1]!;
+  const letter = /[\p{L}\p{M}]/u;
+  const digit = /\p{N}/u;
+  // A digit at the edge is part of a longer number when a point or a comma and another digit sit beside it: 1,500 or 2.5.
+  const before = digit.test(first) ? `(?<![\\p{L}\\p{N}\\p{M}${BREAK}]|\\p{N}[.,])` : letter.test(first) ? `(?<![\\p{L}\\p{N}\\p{M}${BREAK}])` : '';
+  const after = digit.test(last) ? `(?![\\p{L}\\p{N}\\p{M}]|-?${BREAK}|[.,]\\p{N})` : letter.test(last) ? `(?![\\p{L}\\p{N}\\p{M}]|-?${BREAK})` : '';
   return new RegExp(before + body + after, 'gu');
 }
 
@@ -184,10 +197,21 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
     }
     const short = parts.find((part) => wordCount(part) < 2);
     if (short !== undefined) {
-      issues.push(`${where}, has a part of one word ("${words(short)}"); a part is at least two words, so quote more of it, or leave that part out`);
+      issues.push(`${where}, has a part of one word ("${words(short)}"); a passage, and each part of one, is at least two words, so quote more of it, or leave that part out`);
       continue;
     }
-    const part = missingPart(file.text, parts);
+    const long = parts.find((part) => part.length > LONGEST_PART);
+    if (long !== undefined) {
+      issues.push(`${where}, has a part longer than a quote should be (${long.length} characters, "${words(long)}"; at most ${LONGEST_PART}); quote the sentence or two the claim rests on`);
+      continue;
+    }
+    let part: number;
+    try {
+      part = missingPart(file.text, parts);
+    } catch {
+      issues.push(`${where}, could not be searched for ("${words(parts[0]!)}"); shorten the passage to the sentence or two the claim rests on`);
+      continue;
+    }
     if (part === 0) continue;
     const which = parts.length > 1 ? ` (part ${part} of ${parts.length}, "${words(parts[part - 1]!)}", is not found${part > 1 ? ' after the part before it' : ''})` : '';
     issues.push(`${where}, is not found in ${file.name}: "${words(parts[0]!)}"${which}; copy the passage again exactly from the saved file`);

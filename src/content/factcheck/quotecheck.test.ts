@@ -290,3 +290,62 @@ test('nothing is written when one quote fails', () => {
   expect(result.issues).toHaveLength(1);
   expect('report' in result && result.report !== undefined).toBe(false);
 });
+
+// ---------------------------------------------------------------- after the second review
+
+const found = (passage: string[], text: string, name?: string) => finds(passage, text, name).issues.length === 0;
+
+test('a number is not cut short at a decimal point or a thousands separator', () => {
+  expect(found(['an MTU of 1'], 'It has an MTU of 1,500 bytes.')).toBe(false);
+  expect(found(['a maximum of 2'], 'It waits a maximum of 2.5 seconds.')).toBe(false);
+  expect(found(['500 bytes long'], 'An MTU of 1,500 bytes long.')).toBe(false);
+  // A number that ends a sentence, or a list, is whole.
+  expect(found(['a maximum of 2'], 'It waits a maximum of 2. Then it stops.')).toBe(true);
+  expect(found(['layers 1, 2'], 'It names layers 1, 2 and 3.')).toBe(true);
+});
+
+test('a superscript or subscript on a page does not run into the digits beside it', () => {
+  const page = '<p>There are 2<sup>32</sup> addresses and H<sub>2</sub>O here.</p>';
+  expect(pageText('a.html', page)).toContain('2^32 addresses');
+  expect(pageText('a.html', page)).toContain('H_2O');
+  expect(found(['There are 232 addresses'], page, 'rfc-example.html')).toBe(false);
+  expect(found(['There are 2^32 addresses'], page, 'rfc-example.html')).toBe(true);
+});
+
+test('only a hyphen or a soft hyphen breaks a word at a line end: a dash there is a dash', () => {
+  expect(found(['all of the layer'], 'It covers all of the layer—\nthat is, every one.')).toBe(true);
+  expect(found(['all of the layer'], 'It covers all of the layer–\nthat is, every one.')).toBe(true);
+  // Every dash is still a hyphen when the passage and the source write it differently.
+  expect(found(['the layer - that is'], 'It covers the layer — that is, every one.')).toBe(true);
+  expect(found(['minus −5 and ﹣5'], 'It is minus -5 and -5 today.')).toBe(true);
+});
+
+test('a passage too long to be a quote is refused with a plain message, not a crash', () => {
+  const long = Array.from({ length: 500 }, (_, i) => `word${i}`).join(' ');
+  const result = finds([long], `Start. ${long} End.`);
+  expect(result.issues).toEqual([expect.stringContaining('longer than')]);
+  expect(result.issues[0]!.length).toBeLessThan(400);
+});
+
+test('a passage, like each of its parts, is at least two words, and a mark is not a word', () => {
+  expect(finds(['Router'], 'Router chooses.').issues).toEqual([expect.stringContaining('one word')]);
+  expect(finds(['- x'], 'It is - x here.').issues).toEqual([expect.stringContaining('one word')]);
+});
+
+test('an accent written as a combining mark is the same letter, and is still a letter at a word’s edge', () => {
+  expect(found(['the café opens'], 'Today the café opens early.')).toBe(true);
+  expect(found(['a cafe'], 'It is a café here.')).toBe(false);
+});
+
+test('on a page a line break in the source is a space, so a hyphen before it is not a word break; in <pre> it is', () => {
+  expect(found(['an international body'], '<p>It is an inter-\nnational body.</p>', 'rfc-example.html')).toBe(false);
+  expect(found(['an international body'], '<pre>It is an inter-\nnational body.</pre>', 'rfc-example.html')).toBe(true);
+});
+
+test('what a reader does not see on a page is not its text: display:none, noscript, an svg’s title', () => {
+  const page = '<p>Seen words here.</p><p style="display: none">Unseen style words.</p><noscript>Unseen noscript words.</noscript><svg><title>Unseen title words.</title><desc>Unseen desc words.</desc></svg><p aria-hidden="true">Seen decorative words.</p>';
+  const text = pageText('a.html', page);
+  expect(text).toContain('Seen words here.');
+  expect(text).toContain('Seen decorative words.');
+  expect(text).not.toMatch(/Unseen/);
+});

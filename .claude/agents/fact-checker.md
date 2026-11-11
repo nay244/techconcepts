@@ -172,7 +172,7 @@ After the header, for people:
 
    - The bullet starts its line: `- `, the source's id in backticks, `§` and the section. The sheet prints each citation in this form: copy the id and the section from it.
    - A passage is always required, a defining standard's included. It is the lines straight after the bullet that start with `>`. Break a long passage between words, one `>` line each. Write `…` for words you leave out.
-   - Copy the passage exactly from the saved source file. For a web page, copy the words as the page reads, without its tags or entity codes.
+   - Copy the passage exactly from the saved source file. For a web page, copy the words as the page reads, without its tags or entity codes. Write a superscript after `^` and a subscript after `_` (2^32), as the quote check reads a page.
    - A sentence that crosses a PDF's page break has the page's footer and header between its lines in the saved text, so quote each side and write `…` between them; each part is at least two words.
    - Any other bullet under a claim's heading begins `Note:`. A remark on a defining standard, or on currency, is a `Note:` bullet.
    - An item that cites nothing gets no quote.

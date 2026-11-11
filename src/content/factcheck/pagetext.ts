@@ -13,21 +13,34 @@ const BLOCK = new Set(
     'h1 h2 h3 h4 h5 h6 header hgroup hr legend li main menu nav ol optgroup option p pre search section summary table tbody td tfoot th thead title tr ul').split(' '),
 );
 /** Elements whose contents a reader does not see. */
-const UNSEEN = new Set(['script', 'style', 'template']);
+const UNSEEN = new Set(['script', 'style', 'template', 'noscript']);
+const SVG = 'http://www.w3.org/2000/svg';
+/** Marked as not shown: the `hidden` attribute, or a style of its own that hides it. `aria-hidden` text is still seen. */
+const hidden = (el: Element): boolean => el.hasAttribute('hidden') || /(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test(el.getAttribute('style') ?? '');
+/** An SVG's own name and description are for a screen reader or a tooltip, not on the page. */
+const svgLabel = (el: Element, name: string): boolean => el.namespaceURI === SVG && (name === 'title' || name === 'desc');
 
-/** The text of `node` and everything inside it that a reader sees; `html` says whether HTML's rules (block elements, unseen ones) apply. */
-function collect(node: Node, html: boolean, out: string[]): void {
+/**
+ * The text of `node` and everything inside it that a reader sees; `html` says whether HTML's rules (block elements,
+ * unseen ones) apply, and `pre` whether line breaks are kept. Outside `<pre>` a line break in a page's source is only
+ * a space, so a hyphen before it does not break a word. A superscript is written after `^` and a subscript after `_`,
+ * so 2<sup>32</sup> reads 2^32 and never 232.
+ */
+function collect(node: Node, html: boolean, pre: boolean, out: string[]): void {
   for (const child of Array.from(node.childNodes)) {
     // Text and CDATA; comments, processing instructions and the rest give nothing.
     if (child.nodeType === 3 || child.nodeType === 4) {
-      out.push(child.nodeValue ?? '');
+      const text = child.nodeValue ?? '';
+      out.push(html && !pre ? text.replace(/[\r\n]+/g, ' ') : text);
     } else if (child.nodeType === 1) {
       const el = child as Element;
       const name = el.localName.toLowerCase();
-      if (html && (UNSEEN.has(name) || el.hasAttribute('hidden'))) continue;
+      if (html && (UNSEEN.has(name) || hidden(el) || svgLabel(el, name))) continue;
       const spaced = !html || BLOCK.has(name);
       if (spaced) out.push(' ');
-      collect(el, html, out);
+      if (html && name === 'sup') out.push('^');
+      if (html && name === 'sub') out.push('_');
+      collect(el, html, pre || name === 'pre' || name === 'textarea', out);
       if (spaced) out.push(' ');
     }
   }
@@ -39,7 +52,7 @@ export function pageText(name: string, raw: string): string {
   const dom = new JSDOM(raw, xml ? { contentType: 'text/xml' } : {});
   const root = xml ? dom.window.document.documentElement : dom.window.document.body;
   const out: string[] = [];
-  if (root !== null) collect(xml ? dom.window.document : root, !xml, out);
+  if (root !== null) collect(xml ? dom.window.document : root, !xml, false, out);
   dom.window.close();
   return out.join('');
 }
