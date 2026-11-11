@@ -175,7 +175,7 @@ After the header, for people:
    - Copy the passage exactly from the saved source file. For a web page, copy the words as the page reads, without its tags or entity codes. Write a superscript after `^` and a subscript after `_` (2^32), as the quote check reads a page.
    - A sentence that crosses a PDF's page break has the page's footer and header between its lines in the saved text, so quote each side and write `…` between them; each part is at least two words.
    - Any other bullet under a claim's heading begins `Note:`. A remark on a defining standard, or on currency, is a `Note:` bullet.
-   - An item that cites nothing gets no quote.
+   - An item that cites nothing gets no quote, and is not marked down for citing nothing: its verdict comes from its own rule. An OSI badge that spans layers is judged by the OSI badge rule above, and a `Note:` says what you checked.
    - A source's words appear only on a quote's `>` lines: in a `Note:`, in plain text and everywhere else in the report, say it in your own words. A `>` line appears nowhere else.
    - Every `###` heading in the report is a claim's heading: once for each key, with the verdict the header gives it. A claim's section has no deeper heading.
    - Write the key exactly as the sheet gives it.
