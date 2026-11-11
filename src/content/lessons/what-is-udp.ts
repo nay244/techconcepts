@@ -39,6 +39,18 @@ const rfc3551 = (section: string) => cite('rfc-3551', section);
 const rfc9293 = (section: string) => cite('rfc-9293', section);
 const rfc9000 = (section: string) => cite('rfc-9000', section, { defining: true });
 
+const G114 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-G.114-200305-I!!PDF-E&type=items';
+/** G.114's Annex A.3, "Delay due to IP delay variation buffer", is on PDF page 13. */
+const G114_A3 = cite('itu-g114', 'Annex A.3', { url: `${G114}#page=13` });
+const G711I = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-G.711-199909-I!AppI!PDF-E&type=items';
+/** G.711 Appendix I: its introduction, I.1, is on PDF page 7 and its section I.2.7 on page 9. */
+const G711I_1 = cite('itu-g711-appi', 'I.1', { url: `${G711I}#page=7` });
+const G711I_2_7 = cite('itu-g711-appi', 'I.2.7', { url: `${G711I}#page=9` });
+const MS_LB = 'https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-overview';
+const CLOUDFLARE = 'https://developers.cloudflare.com/fundamentals/reference/network-layers/';
+/** Late data is useless in a live call: G.114 (discarded as lost), RFC 8836 (commonly useless), RFC 8834 (a resend must arrive in time). */
+const LATE = [G114_A3, cite('rfc-8836', '1'), cite('rfc-8834', '6.1')];
+
 // ---------------------------------------------------------------- events
 
 const LAPTOP = '192.168.1.100:50900';
@@ -65,7 +77,8 @@ const mockup = messagesFor(voice);
 const msgOf =
   (...traces: string[]) =>
   (m: MockupMessage): SceneEvent[] => {
-    const backing: Backing = { traces };
+    // A 172 B packet is worked out in deep-5, so the events that show that size trace to it.
+    const backing: Backing = { traces: m.size === '172 B' ? [...traces, 'deep-5'] : traces };
     return mockup(m).map((e) => ({ ...e, backing }));
   };
 
@@ -78,9 +91,10 @@ export default defineLesson({
   level: 'beginner',
   certTags: [],
   summary:
-    'UDP sends a message and forgets it: no hello, no numbering, no resending. That sounds careless, but a call or a quick lookup doesn’t need all the service TCP gives, and UDP adds almost nothing on top of IP.',
+    'UDP sends a message and forgets it: no hello, no numbering, no resending. That sounds careless, but in a live call, late is as bad as lost, so speed wins. Even a quick lookup gains, with no setup to wait for.',
   figure: 'net-map',
-  backing: { traces: ['lead-1', 'lead-2', 'why-1'] },
+  overrides: [{ limit: 'deepWords', max: 123, reason: 'Learn’s Go deeper holds the port list, the G.711 packet size and the QUIC note that Watch’s facts and events trace to.' }],
+  backing: { traces: ['lead-1', 'lead-2', 'why-1', 'why-2'] },
   units: [
     {
       id: 'udp',
@@ -88,9 +102,17 @@ export default defineLesson({
       fullName: 'User Datagram Protocol',
       purpose: 'Quick, no guarantees',
       group: 'core',
-      // No source this lesson may cite puts UDP at an OSI layer: X.200 defines layer 4, the Transport Layer, but never
-      // names UDP, and the sources about UDP use the internet's own four layers (the Layer fact).
-      osi: 'spans',
+      // No standard puts UDP at an OSI layer (X.200 never names UDP; RFC 768 and RFC 1122 use the internet's own
+      // layers), so the badge rests on two vendors' own mappings.
+      osi: {
+        layers: [4],
+        cite: [
+          cite('cloudflare-network-layers', 'Network Layers', { url: `${CLOUDFLARE}#:~:text=4%20Transport%20layer` }),
+          cite('microsoft-azure-lb', 'How Azure Load Balancer distributes Layer 4 traffic', {
+            url: `${MS_LB}#:~:text=Azure%20Load%20Balancer%20operates%20at%20layer%204`,
+          }),
+        ],
+      },
       backing: { traces: ['fact-5', 'why-1'] },
       scene: {
         title: 'Your voice goes out in small packets, no promises',
@@ -107,17 +129,17 @@ export default defineLesson({
         backing: { traces: ['lead-1', 'lead-3'] },
       },
       overview: {
-        hook: 'UDP sends a message and forgets it: no hello, no numbering, no resending. That sounds careless, but a call or a quick lookup doesn’t need all the service TCP gives, and UDP adds almost nothing on top of IP.',
-        hookBacking: { traces: ['lead-1', 'lead-2', 'why-1', 'deep-1'] },
+        hook: 'UDP sends a message and forgets it: no hello, no numbering, no resending. That sounds careless, but in a live call, late is as bad as lost, so speed wins. Even a quick lookup gains, with no setup to wait for.',
+        hookBacking: { traces: ['lead-1', 'lead-2', 'why-1', 'why-2', 'deep-1'] },
         description:
-          'TCP is like recorded delivery: signed for, and sent again if it goes missing. UDP is like a walkie-talkie. You just speak, and if a word crackles you carry on rather than go back. Here your laptop is in a voice call through a voice server, sending a small packet of sound every 20 milliseconds.',
-        backing: { traces: ['lead-1', 'lead-2', 'lead-3'] },
+          'UDP is like a walkie-talkie. You just speak, and if a word crackles you carry on rather than go back. TCP is more like a phone call where you ask “got that?” and repeat anything the other side missed.',
+        backing: { analogy: true },
         facts: [
-          { label: 'Used for', value: 'calls, video, DNS, DHCP', backing: { traces: ['why-1', 'deep-2', 'deep-3'] } },
+          { label: 'Used for', value: 'calls, video, online games, DNS, DHCP', backing: { traces: ['why-1', 'why-2', 'deep-2', 'deep-3', 'fact-8'] } },
           { label: 'Starts with', value: 'nothing: no handshake', backing: { traces: ['lead-1', 'term-connectionless'] } },
           { label: 'Promises', value: 'none: no order, no resending', backing: { traces: ['lead-1', 'lead-2', 'deep-1'] } },
           { label: 'Header', value: '8 bytes: ports, length, checksum', backing: { traces: ['fact-1', 'deep-1'] } },
-          { label: 'Layer', value: 'transport, in the internet model', backing: { traces: ['fact-6'] } },
+          { label: 'OSI layer', value: '4, transport', backing: { traces: ['fact-7'] } },
           { label: 'This example', value: 'a voice call through 203.0.113.90', backing: { example: true } },
         ],
       },
@@ -138,7 +160,7 @@ export default defineLesson({
             { label: 'From', value: '192.168.1.100, port 50900', backing: { example: true } },
             { label: 'To', value: '203.0.113.90, port 16384', backing: { example: true } },
             { label: 'Handshake', value: 'none', backing: { traces: ['lead-1', 'term-connectionless'] } },
-            { label: 'Each packet', value: '20 ms of sound', backing: { traces: ['lead-3'] } },
+            { label: 'Each packet', value: '20 ms of sound, about 170 bytes', backing: { traces: ['lead-3', 'deep-5'] } },
           ],
           events: [
             ...msgOf(
@@ -171,14 +193,15 @@ export default defineLesson({
             'While you talk, a new packet leaves every 20 milliseconds, fifty a second. Each one travels on its own. UDP sends no “got it” for any of them, and the laptop never waits to hear. A steady flow of datagrams like this is just what a call sends, and because nothing waits, the packets keep coming.',
           deep: [
             {
-              text: 'Fifty packets a second is what a packet every 20 ms comes to. The packet interval sets the lowest delay a call can have: longer packets mean less header overhead, but more delay, and a loss is more noticeable. Packets also arrive after uneven delays, so the receiver uses the timestamps to rebuild the original timing.',
-              cite: [rfc3551('4.2'), rfc3550('2.1')],
+              text: 'Fifty packets a second is what a packet every 20 ms comes to. Real-time apps care most about latency, and about jitter, how much the delay varies. The receiver keeps a small jitter buffer to smooth out uneven arrivals: one built for 50 ms of variation adds about 25 ms of delay, on average.',
+              cite: [G114_A3, rfc3550('6.4.1', true), rfc3551('4.2')],
             },
           ],
           facts: [
             { label: 'Rate', value: 'one packet every 20 ms', backing: { traces: ['lead-3'] } },
             { label: 'Replies', value: 'no “got it” for each packet', backing: { traces: ['deep-1', 'lead-2'] } },
-            { label: 'Timing', value: 'rebuilt by the receiver from timestamps', backing: { traces: ['lead-3'] } },
+            { label: 'Matters most', value: 'low delay, steady timing', backing: { traces: ['why-1', 'term-jitter'] } },
+            { label: 'Smoothing', value: 'a jitter buffer at the receiver', backing: { traces: ['why-3', 'term-jitter'] } },
           ],
           events: [
             ...msgOf(
@@ -239,14 +262,14 @@ export default defineLesson({
               rows: [{ key: 'y4', cells: ['4', 'You → server', 'Arrived'] }],
             }),
           ],
-          backing: { traces: ['lead-3', 'term-datagram', 'deep-1', 'lead-2'] },
+          backing: { traces: ['lead-3', 'term-datagram', 'term-jitter', 'why-3', 'deep-1', 'lead-2'] },
         },
         {
           id: 'packet-loss-no-retransmission',
           title: 'Packet Loss, No Retransmission',
           sub: 'One gets lost, nobody resends',
           narrative:
-            'Packet 5 is dropped on the way. With TCP, it would be sent again. With UDP, nobody resends it: there’s no ACK to miss, and resending is left to the app. Packet 6 follows 20 milliseconds later as if nothing had happened.',
+            'Packet 5 is dropped on the way, perhaps by a busy router. With TCP, the data behind it would wait until it was sent again. With UDP, nobody resends it: there’s no ACK to miss, and resending is left to the app. Packet 6 follows 20 milliseconds later as if nothing had happened. Resending would rarely help anyway. By the time a copy arrived, that moment of the call would be long gone.',
           deep: [
             {
               text: 'UDP has no retransmission at all; a loss only shows up as a gap in the app’s own sequence numbers. UDP also has no congestion control, so an app that doesn’t use a congestion-controlled transport has to control its own sending rate.',
@@ -302,7 +325,7 @@ export default defineLesson({
               rows: [{ key: 'y6', cells: ['6', 'You → server', 'Arrived'] }],
             }),
           ],
-          backing: { traces: ['lead-2', 'lead-3', 'term-no-resend', 'deep-1'] },
+          backing: { traces: ['lead-2', 'lead-3', 'term-no-resend', 'why-1', 'why-4', 'deep-1'] },
         },
         {
           id: 'two-way-datagrams',
@@ -312,7 +335,7 @@ export default defineLesson({
             'Sam answers, and Sam’s voice comes back the same way: packets from the voice server to your laptop, every 20 milliseconds, with no handshake and no guarantee. Each side simply sends to the other’s address and port, and listens on its own.',
           deep: [
             {
-              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router, if it does NAT, remembers that pair for a while, so replies can get back in; a NAT must not forget a UDP pair in less than two minutes, except for some well-known ports. During silences, some apps send small keep-alive messages to keep that state open.',
+              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes, but many real devices forget sooner. During silences, apps send small keep-alive packets to keep that way open.',
               cite: [RFC768_FIELDS, rfc8085('3.5'), cite('rfc-4787', '4.3')],
             },
           ],
@@ -320,7 +343,7 @@ export default defineLesson({
             { label: 'From', value: '203.0.113.90, port 16384', backing: { example: true } },
             { label: 'To', value: '192.168.1.100, port 50900', backing: { example: true } },
             { label: 'Same rules', value: 'no handshake, no ACK', backing: { traces: ['lead-1', 'deep-1'] } },
-            { label: 'Replies go to', value: 'the port the packets came from', backing: { traces: ['term-port'] } },
+            { label: 'Your router remembers', value: 'the port pair, for a while', backing: { traces: ['fact-9'] } },
           ],
           events: [
             ...msgOf(
@@ -333,7 +356,7 @@ export default defineLesson({
               proto: 'UDP',
               via: 'IP',
               kind: 'response',
-              time: '0.104s',
+              time: '0.120s',
               src: CALL,
               dst: LAPTOP,
               size: '172 B',
@@ -354,7 +377,7 @@ export default defineLesson({
               via: 'IP',
               kind: 'response',
               fast: true,
-              time: '0.124s',
+              time: '0.140s',
               src: CALL,
               dst: LAPTOP,
               size: '172 B',
@@ -373,7 +396,7 @@ export default defineLesson({
               via: 'IP',
               kind: 'response',
               fast: true,
-              time: '0.144s',
+              time: '0.160s',
               src: CALL,
               dst: LAPTOP,
               size: '172 B',
@@ -382,22 +405,22 @@ export default defineLesson({
               rows: [{ key: 's3', cells: ['3', 'Server → you', 'Arrived'] }],
             }),
           ],
-          backing: { traces: ['lead-1', 'lead-3', 'term-port', 'deep-1'] },
+          backing: { traces: ['lead-1', 'lead-3', 'term-port', 'fact-9', 'deep-1'] },
         },
         {
           id: 'application-level-recovery',
           title: 'Application-Level Recovery',
           sub: 'The app decides what to do',
           narrative:
-            'UDP never fixes anything, so the call app does. On Sam’s side, the app can tell from the sequence numbers that packet 5 is missing. Then the server sends your app a short **report**: “1 of your last 6 packets was lost.” Your app decides what to do about it, here switching to a setting that copes better with loss. Choosing how to cope is the app’s job.',
+            'UDP never fixes anything, so the call app does. On Sam’s side, the app filled the 20-millisecond gap left by packet 5 with sound made from what it had just heard, blended into the next packet. A short gap like that may not be heard at all. Then the server sends your app a short **report**: “1 of your last 6 packets was lost.” Your app decides what to do about it, here switching to a setting that copes better with loss. Choosing how to cope is the app’s job.',
           deep: [
             {
-              text: 'RTCP receiver reports carry the fraction of packets lost and the jitter, and the sender can work out the round-trip time from them. The sender may change its transmissions based on them, for example its encoding. Some apps want full reliability over UDP and build it themselves: QUIC has its own acknowledgments and resending.',
-              cite: [rfc3550('6.4.1', true), rfc3550('6', true), rfc9000('13')],
+              text: 'Filling a gap is packet loss concealment. RTCP receiver reports carry the fraction of packets lost and the jitter, and the sender can work out the round-trip time from them. The sender may change its transmissions based on them, for example its encoding. Some apps want full reliability over UDP and build it themselves: QUIC has its own acknowledgments and resending.',
+              cite: [G711I_1, G711I_2_7, cite('rfc-6716', '4.4'), rfc3550('6.4.1', true), rfc3550('6', true), rfc9000('13')],
             },
           ],
           facts: [
-            { label: 'Gap noticed from', value: 'the sequence numbers', backing: { traces: ['lead-3'] } },
+            { label: 'Gap filled by', value: 'packet loss concealment', backing: { traces: ['term-plc'] } },
             { label: 'Report', value: 'RTCP: how well the packets arrived', backing: { traces: ['term-report'] } },
             { label: 'The app’s fix', value: 'adapts, for example its encoding', backing: { traces: ['term-report', 'lead-2'] } },
             { label: 'Reliable over UDP', value: 'QUIC builds its own', backing: { traces: ['deep-4'] } },
@@ -413,13 +436,13 @@ export default defineLesson({
               proto: 'UDP',
               via: 'IP',
               kind: 'response',
-              time: '0.160s',
+              time: '0.180s',
               src: CALL,
               dst: LAPTOP,
-              size: '84 B',
+              size: '—',
               sum: 'Report: 1 of your last 6 packets was lost.',
-              info: 'RTCP receiver report: 1 of 6 lost, jitter 4 ms',
-              rows: [{ key: 'y5', cells: ['5', 'You → server', 'Lost, noticed by Sam’s app'], miss: true }],
+              info: 'RTCP receiver report: 1 of 6 lost',
+              rows: [{ key: 'y5', cells: ['5', 'You → server', 'Lost, gap filled by Sam’s app'], miss: true }],
             }),
             ...msgOf(
               'term-report',
@@ -431,7 +454,7 @@ export default defineLesson({
               proto: 'UDP',
               via: 'IP',
               kind: 'request',
-              time: '0.180s',
+              time: '0.200s',
               src: LAPTOP,
               dst: CALL,
               size: '172 B',
@@ -442,7 +465,7 @@ export default defineLesson({
               rows: [{ key: 'y7', cells: ['7', 'You → server', 'Arrived'] }],
             }),
           ],
-          backing: { traces: ['lead-2', 'lead-3', 'term-report', 'deep-4'] },
+          backing: { traces: ['lead-2', 'lead-3', 'term-report', 'term-plc', 'deep-4'] },
         },
       ],
       learn: {
@@ -454,8 +477,8 @@ export default defineLesson({
           },
           {
             id: 'lead-2',
-            text: 'When a packet was lost, UDP did not send it again, as TCP would have. The app, not UDP, decided what to do.',
-            cite: [rfc8085('3.3'), RFC1122_UDP, rfc9293('3.8.1')],
+            text: 'When a packet was lost, perhaps dropped by a busy router, UDP did not send it again, as TCP would have. The app, not UDP, decided what to do.',
+            cite: [rfc8085('3.3'), RFC1122_UDP, rfc9293('3.8.1'), cite('rfc-7567', '2'), cite('rfc-5681', '3')],
           },
           {
             id: 'lead-3',
@@ -489,6 +512,18 @@ export default defineLesson({
             cite: [rfc8085('3.3'), RFC1122_UDP],
           },
           {
+            id: 'term-jitter',
+            idea: 'Delay that keeps changing',
+            name: 'Jitter',
+            cite: [rfc3550('6.4.1', true), G114_A3],
+          },
+          {
+            id: 'term-plc',
+            idea: 'Covering a gap so you don’t hear it',
+            name: 'Loss concealment',
+            cite: [G711I_1, G711I_2_7, cite('rfc-6716', '4.4')],
+          },
+          {
             id: 'term-report',
             idea: 'The app’s own note about how it went',
             name: 'Report (RTCP)',
@@ -504,8 +539,23 @@ export default defineLesson({
         why: [
           {
             id: 'why-1',
-            text: 'A call, a live video or a quick lookup doesn’t need all the service TCP gives. UDP adds almost nothing on top of IP, so it can be very efficient, and each app decides how much checking it needs.',
-            cite: [RFC1122_UDP, rfc8085('1'), rfc3550('1'), cite('rfc-1035', '4.2.1')],
+            text: 'In a call or a live video, each bit of sound or picture has its moment to be played. A packet that arrives after its moment is thrown away, just as if it had been lost, so resending it rarely helps. Late is as bad as lost.',
+            cite: LATE,
+          },
+          {
+            id: 'why-2',
+            text: 'A quick lookup gains in another way: UDP has no setup to wait for. It adds almost nothing on top of IP, so it can be very efficient, and each app decides how much checking it needs.',
+            cite: [RFC1122_UDP, rfc8085('1'), cite('rfc-1035', '4.2.1')],
+          },
+          {
+            id: 'why-3',
+            text: 'A call app also keeps a small jitter buffer, which smooths out uneven arrivals. A packet that still misses its place in the buffer is thrown away.',
+            cite: [G114_A3, rfc3550('6.4.1', true)],
+          },
+          {
+            id: 'why-4',
+            text: 'TCP delivers bytes in order, so when one packet is lost, the data behind it waits until it is sent again. UDP holds nothing back: packet 6 reaches the app as it arrives.',
+            cite: [rfc9293('2.2'), cite('rfc-9114', '1.1'), rfc8085('3.3'), RFC768_INTRO],
           },
         ],
         deep: [
@@ -521,22 +571,60 @@ export default defineLesson({
           },
           {
             id: 'deep-3',
-            text: 'Well-known UDP ports: 53 DNS, 67 and 68 DHCP, 123 NTP.',
-            cite: [IANA_PORTS, cite('rfc-1035', '4.2.1'), cite('rfc-2131', '4.1')],
+            text: 'Well-known UDP ports: 53 DNS, 67 and 68 DHCP, 123 NTP, 161 SNMP, 443 HTTP/3 (over QUIC).',
+            cite: [IANA_PORTS, cite('rfc-1035', '4.2.1'), cite('rfc-2131', '4.1'), cite('rfc-3417', '3.2'), cite('rfc-9308', '8'), cite('rfc-9312', '3.1')],
           },
           {
             id: 'deep-4',
             text: 'Some apps want full reliability over UDP and build it themselves. QUIC has its own acknowledgments and resending.',
             cite: [rfc9000('13'), rfc8085('3.3')],
           },
+          {
+            id: 'deep-5',
+            text: 'In a G.711 call, 20 ms of sound is 160 bytes, and the 12-byte RTP header makes 172 bytes in each UDP packet, before the UDP header.',
+            cite: [cite('rfc-3551', '4.5.14'), cite('rfc-3551', '4.5'), cite('rfc-3551', '6'), rfc3550('5.1')],
+          },
         ],
         facts: [
           { id: 'fact-1', label: 'Header', value: '8 bytes', cite: [RFC768_LENGTH] },
           { id: 'fact-2', label: 'Gives', value: 'ports and a checksum, nothing more', cite: [RFC1122_UDP, RFC768_FIELDS] },
-          { id: 'fact-3', label: 'Ports', value: '53 DNS, 67/68 DHCP, 123 NTP', cite: [IANA_PORTS, cite('rfc-1035', '4.2.1'), cite('rfc-2131', '4.1')] },
+          {
+            id: 'fact-3',
+            label: 'Ports',
+            value: '53 DNS, 67/68 DHCP, 123 NTP, 161 SNMP, 443 HTTP/3 (over QUIC)',
+            cite: [IANA_PORTS, cite('rfc-1035', '4.2.1'), cite('rfc-2131', '4.1'), cite('rfc-3417', '3.2'), cite('rfc-9308', '8'), cite('rfc-9312', '3.1')],
+          },
           { id: 'fact-4', label: 'Versus TCP', value: 'less setup, but no guarantee', cite: [rfc8085('1'), RFC768_INTRO, RFC1122_UDP] },
           { id: 'fact-5', label: 'Defined in', value: 'RFC 768, User Datagram Protocol', cite: [RFC768_DEFINED] },
           { id: 'fact-6', label: 'Layer', value: 'transport, in the internet model', cite: [NIST_2_1, RFC1122_UDP] },
+          {
+            id: 'fact-7',
+            label: 'OSI layer',
+            value: '4, transport',
+            cite: [
+              cite('cloudflare-network-layers', 'Network Layers', { url: `${CLOUDFLARE}#:~:text=4%20Transport%20layer` }),
+              cite('microsoft-azure-lb', 'How Azure Load Balancer distributes Layer 4 traffic', {
+                url: `${MS_LB}#:~:text=Azure%20Load%20Balancer%20operates%20at%20layer%204`,
+              }),
+            ],
+          },
+          {
+            id: 'fact-8',
+            label: 'Online games',
+            value: 'Xbox games use UDP 3074',
+            cite: [
+              cite('microsoft-gdk-udp', 'Preferred local UDP multiplayer port networking APIs', {
+                url: 'https://learn.microsoft.com/en-us/gaming/gdk/docs/features/console/networking/game-mesh/preferred-local-udp-multiplayer-port-networking#:~:text=All%20iterations%20of%20Xbox%20consoles%20have%20allowed%20you%20to%20use%20UDP%203074',
+              }),
+              IANA_PORTS,
+            ],
+          },
+          {
+            id: 'fact-9',
+            label: 'A router’s memory',
+            value: 'a UDP port pair, at least two minutes by the standard, often less',
+            cite: [cite('rfc-4787', '4.3'), rfc8085('3.5')],
+          },
         ],
       },
       practice: [
@@ -544,11 +632,15 @@ export default defineLesson({
           id: 'lost-packet',
           prompt: 'Packet 5 of a voice call is lost. What does UDP do?',
           options: [
-            { text: 'Sends it again.', feedback: 'Not quite. UDP never resends a lost packet.', cite: [rfc8085('3.3'), RFC1122_UDP] },
+            {
+              text: 'Sends it again.',
+              feedback: 'Not quite. UDP never resends. A late copy would be no use in a live call anyway.',
+              cite: [rfc8085('3.3'), RFC1122_UDP, ...LATE],
+            },
             {
               text: 'Pauses the call until it arrives.',
-              feedback: 'Not quite. UDP has no way to pause for a lost packet. Packet 6 is sent as usual.',
-              cite: [rfc8085('3.3'), RFC1122_UDP],
+              feedback: 'Not quite. Nothing waits in UDP. Packet 6 carries straight on.',
+              cite: [rfc8085('3.3'), RFC768_INTRO],
             },
             {
               text: 'Nothing. The app copes with the gap.',
@@ -563,9 +655,9 @@ export default defineLesson({
           prompt: 'Why do calls use UDP instead of TCP?',
           options: [
             {
-              text: 'A call doesn’t need all the service TCP gives, and UDP adds almost nothing on top of IP.',
-              feedback: 'Yes. With no handshake and no resending, UDP stays light, and the app decides how much checking it needs.',
-              cite: [RFC1122_UDP, rfc8085('1')],
+              text: 'Late is as bad as lost, and UDP never waits.',
+              feedback: 'Yes. A late packet is useless, and UDP has no handshake and no resending to wait for.',
+              cite: [...LATE, rfc8085('1'), rfc8085('3.3')],
             },
             {
               text: 'UDP is encrypted.',

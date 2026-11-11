@@ -359,7 +359,7 @@ test('UDP’s lost packet is dropped and never sent again; its row stays a miss 
   // The report changes its row in place, and the mark stays: the packet is still lost.
   const atLearn = tableAfter('udp', 'voice');
   expect([packet(atLearn, 'y5'), atLearn.missed]).toEqual([
-    { id: 'y5', packet: '5', way: 'You → server', status: 'Lost, noticed by Sam’s app' },
+    { id: 'y5', packet: '5', way: 'You → server', status: 'Lost, gap filled by Sam’s app' },
     ['y5'],
   ]);
 });
@@ -391,7 +391,7 @@ test('each protocol’s table ends with the mockup’s rows', () => {
     ['2', 'You → server', 'Arrived'],
     ['3', 'You → server', 'Arrived'],
     ['4', 'You → server', 'Arrived'],
-    ['5', 'You → server', 'Lost, noticed by Sam’s app'],
+    ['5', 'You → server', 'Lost, gap filled by Sam’s app'],
     ['6', 'You → server', 'Arrived'],
     ['1', 'Server → you', 'Arrived'],
     ['2', 'Server → you', 'Arrived'],
