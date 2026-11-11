@@ -34,14 +34,18 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 **A quote in a report.** Under a claim's heading (`### <key> — <verdict>`), each quote is a bullet naming the source and the section, then the passage as one or more quoted lines:
 
 ```
-- `itu-x200` §6.1.2 (defining standard)
+- `itu-x200` §6.1.2
   > The Reference Model contains seven layers: a) the Application Layer (layer 7); … g) the Physical Layer (layer 1).
 ```
 
-- The id in backticks is the source's id in the registry. The section follows `§` and runs to the end of the line or to an optional note in parentheses.
-- The passage is every following line that starts with `>`, joined by spaces. `…` marks words left out.
-- The source and section must be one of that item's own citations on the claim sheet.
-- Any other bullet under a claim's heading must begin `Note:`. Anything else is a problem the parser names, so a badly written quote cannot pass as a comment.
+- The bullet starts its line. The id in backticks is the source's id in the registry; the section is everything after `§` to the end of the line. The claim sheet prints each citation in this same form, so the checker copies it.
+- The passage is the lines straight after the bullet that start with `>`, joined by spaces. `…` marks words left out. A line breaks between words.
+- The source and section must be one of that item's own citations on the claim sheet. An item that cites nothing (an analogy, a traced part, an OSI badge that spans layers) quotes nothing.
+- A comment is its own bullet beginning `Note:`.
+- The parser names everything else under a claim's heading as a problem, so a badly written quote cannot pass as a comment: a `>` line that is not part of a quote's passage (after a blank line, under a note, under plain text), a bullet that is neither a quote nor a note, a bullet that is indented, numbered or nested, a deeper heading.
+- Every `###` heading in a report is a claim's heading: its key is on the sheet, it appears once, and its verdict is the header's verdict for that key.
+
+(Changed on 2026-11-11 after B1's first review: the note in parentheses on a quote's bullet is gone, since a section's own name can end in parentheses; and the rules for what else may sit under a heading are spelled out.)
 
 **The record in the header**, written by the script and never by hand:
 
@@ -51,9 +55,11 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 
 `digest` is the SHA-256 of the report's quotes in order (key, source, section, passage with its whitespace evened out). `files` is the SHA-256 of each source text the passages were found in.
 
+**The source files.** The checker saves each source in its temporary folder under the source's id: `<id>.html` for a web page saved as it is, `<id>.txt` for plain text, for a PDF's text (`pdftotext`), and for a page it had to read in the browser. The script reads either: from an `.html` file it takes the text, with tags, scripts and styles removed and entities decoded.
+
 **Finding a passage.** Both the passage and the source text are evened out the same way before the search: Unicode compatibility forms (so a ligature is its letters), every run of whitespace one space, soft hyphens removed, curly quotes and apostrophes straightened, every dash a hyphen. A word broken by a hyphen at a line's end is tried joined and unjoined. A passage with `…` is found when its parts are found in order. Letter case must match.
 
-**Which items need a quote.** Every item of kind `claim` or `osi` whose verdict is passing needs at least one. Traced, example, analogy and unbacked items quote nothing.
+**Which items need a quote.** Every item that has citations and a passing verdict needs at least one. An item with no citations quotes nothing: traced, example, analogy and unbacked items, and an OSI badge that spans layers. (Changed after B1's first review: the rule was by kind, which an OSI badge with no citation could not meet.)
 
 ## Units
 
