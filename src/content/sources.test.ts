@@ -157,9 +157,15 @@ describe('sourceListOf', () => {
 });
 
 describe('the four source groups added by the owner on 2026-11-08', () => {
+  // WHATWG's three hosts joined with What is HTTP, the first lesson to cite a standards body; W3C's has not.
+  test('a standards-body source is allowed on a listed host and refused on any other', () => {
+    const entry: SourceEntry = { id: 'example', kind: 'standards-body', short: 'W3C', title: 'Example page', publisher: 'W3C', url: 'https://www.w3.org/TR/WCAG22/' };
+    expect(() => defineSources([entry])).toThrow(/www\.w3\.org is not an allowed host for standards-body/);
+    expect(() => defineSources([{ ...entry, short: 'WHATWG', publisher: 'WHATWG', url: 'https://html.spec.whatwg.org/index.html' }])).not.toThrow();
+    for (const id of ['whatwg-html', 'whatwg-url', 'whatwg-fetch']) expect(SOURCES[id]!.kind).toBe('standards-body');
+  });
   // One real page per group; each publisher's host joins SOURCE_HOSTS with the first lesson that cites it.
   test.each([
-    ['standards-body', 'W3C', 'https://www.w3.org/TR/WCAG22/'],
     ['government', 'CISA', 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog'],
     ['security-reference', 'FIRST', 'https://www.first.org/cvss/v4.0/specification-document'],
     ['internet-registry', 'ARIN', 'https://www.arin.net/resources/guide/ipv6/'],
@@ -219,13 +225,15 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s', () => {
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, then the HTTP lesson’s', () => {
     expect(Object.keys(SOURCES)).toEqual([
       'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
       'itu-g114', 'itu-g711-appi', 'rfc-8836', 'rfc-8834', 'rfc-9114', 'rfc-7567', 'rfc-5681', 'rfc-6716', 'rfc-3417', 'rfc-9308', 'rfc-9312',
       'cloudflare-network-layers', 'microsoft-azure-lb', 'microsoft-gdk-udp',
       'rfc-3611', 'rfc-8445', 'rfc-9868', 'rfc-4961',
+      'rfc-9110', 'rfc-9111', 'rfc-9112', 'rfc-9113', 'rfc-1034', 'rfc-9499', 'rfc-3986', 'rfc-6265', 'rfc-6335',
+      'whatwg-html', 'whatwg-url', 'whatwg-fetch', 'iana-media-types', 'microsoft-app-gateway',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
