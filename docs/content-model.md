@@ -263,6 +263,21 @@ Every cited lesson is checked by the **fact-checker**, an independent agent defi
 
 The rest of the report is for people. It gives each claim's quoted passages (or what its defining standard defines), and how each source was found current.
 
+**The quote form.** Under a claim's heading, `### <key> — <verdict>`, each quote is a bullet naming the source and the section, then the passage as one or more quoted lines:
+
+```
+- `itu-x200` §6.1.2 (defining standard)
+  > The Reference Model contains seven layers: a) the Application Layer (layer 7); … g) the Physical Layer (layer 1).
+```
+
+- The id in backticks is the source's id in the registry. The section follows `§` and runs to the end of the line or to an optional note in parentheses.
+- The passage is every following line that starts with `>`, joined by single spaces. `…` marks words left out.
+- The source and the section must be one of that item's own citations on the claim sheet.
+- Any other bullet under a claim's heading must begin `Note:`. Anything else is a problem the parser names (`parseQuotes` in `src/content/factcheck/quotes.ts`), so a badly written quote cannot pass as a comment. Headings for items that quote nothing (traced, example, analogy, unbacked) need no quotes, and text outside claim headings is left alone.
+- The fact-checker saves each fetched source as `<source id>.txt` in its temporary folder.
+
+The header may also carry a `quotes` record, written by the script and never by hand: `{ "checked": "<date>", "count": <number of quotes>, "digest": "<64 hex>", "files": { "<source id>": "<64 hex>" } }`. `digest` is the SHA-256 of the report's quotes in order (each one's key, source, section and passage, the passage with every run of whitespace made one space: `quotesDigest`). `files` is the SHA-256 of each source text the passages were found in. Nothing reads the record yet.
+
 **The gate.** The registry reads every report directly in `docs/fact-checks/`. It fails the build, and the tests, when:
 - a cited lesson has no report;
 - the report cannot be read: it has no header, the header is not valid JSON of the right shape, or it lists a key or a source twice;

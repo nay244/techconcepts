@@ -28,7 +28,7 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - at the end, the path to write the report to.
 
    If the command fails, stop and report its message. Do not write a report.
-2. **Fetch every source**, from the publisher's own site. Save each one into the temporary directory, never into the repository.
+2. **Fetch every source**, from the publisher's own site. Save each one into the temporary directory, never into the repository, as `<source id>.txt` (the id the sheet gives it), in plain text: a PDF goes through `pdftotext` first.
    - Prefer raw text through `curl -sL`. RFCs are at `https://www.rfc-editor.org/rfc/rfcNNNN.txt`, and IANA registries have `.txt` or `.xml` forms.
    - Save an HTML page as it is, then read the passage from it (strip tags with a short script if that helps).
    - Read a PDF with the Read tool.
@@ -38,6 +38,8 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - Use WebSearch only to find a source's current version or status. A search result is never a source.
 3. **Check every item** by the rules below. Read each cited section in this run. Never answer from memory, even when you are sure.
 4. **Write the report** to the path the sheet gives, in the format below. If a report is already there, it is an earlier run's, kept in git history. Replace it whole, without reading it or using it (remove it with `rm` first if your write tool needs that).
+
+   After writing the report, run the quote check (see docs/content-model.md §8). *(Placeholder: the quote check arrives with the next unit, which completes this step.)*
 5. **Check the report's form.** Run `npm run fact-check -- <slug> --check`. If it lists issues, fix the report's *form* and run the check again, until it prints `Report OK`. The form means the header, the keys and the source list.
 
    A check that lists failing verdicts ("did not pass") or a source that "is not current" is expected whenever you found one. Leave it as it is. Never change a verdict, or a source's `current`, to make the check pass.
@@ -153,10 +155,25 @@ After the header, for people:
 
 1. **Each claim** (kinds `claim` and `osi`):
    - its key, its text and its verdict;
-   - each citation, with the passage you relied on, quoted verbatim (the sentence or two you need, no more), or "defining standard: <what it defines>";
+   - each citation, with the passage you relied on, quoted verbatim (the sentence or two you need, no more) in the quote form below, or "defining standard: <what it defines>";
    - a currency note;
    - "Community sources only", when no citation behind a ✅ is a standard or official page;
    - for anything not ✅, one line saying exactly what is wrong.
+   **The quote form.** Under the claim's heading, `### <key> — <verdict>`, each quote is a bullet and then its passage:
+
+   ```
+   ### units[0].osi — ✅
+
+   - `itu-x200` §6.1.2 (defining standard)
+     > The Reference Model contains seven layers: a) the Application Layer (layer 7); … g) the Physical Layer (layer 1).
+   - Note: ITU-T lists X.200 as in force (checked 2026-11-11).
+   ```
+
+   - The bullet is the source's id in backticks, `§` and the section, and an optional note in parentheses. The id and the section are one of the item's own citations on the sheet.
+   - The passage is the lines after the bullet that start with `>`. Use several lines for a long passage. Write `…` for words you leave out.
+   - Copy the passage exactly from the saved `<source id>.txt`.
+   - Any other bullet under a claim's heading begins `Note:`.
+   - Write the key exactly as the sheet gives it.
 2. **The traced, example and analogy parts, and the unbacked items:** the key, the verdict, and, for anything not ✅, what is wrong.
 3. **The sources:** each one, how you found it current (or not), and the date.
 4. **The limit overrides:** each one with its reason, or "None".

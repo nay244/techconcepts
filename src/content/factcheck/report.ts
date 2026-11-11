@@ -27,6 +27,17 @@ export const reportHeaderSchema = z.strictObject({
   sources: z.array(z.strictObject({ id: z.string().min(1), current: z.boolean(), checked: day, note: z.string().optional() })),
   /** The lesson's limit overrides, as the report lists them. */
   overrides: z.array(z.strictObject({ limit: z.string().min(1), reason: z.string().min(1) })),
+  /** What the quote check found, written by the script and never by hand: see `quotes.ts`. */
+  quotes: z
+    .strictObject({
+      checked: day,
+      count: z.number().int().nonnegative(),
+      /** SHA-256 of the report's quotes in order (`quotesDigest`). */
+      digest: z.string().regex(/^[0-9a-f]{64}$/, 'must be 64 lowercase hex digits'),
+      /** SHA-256 of each source text the passages were found in, by source id. */
+      files: z.record(z.string(), z.string().regex(/^[0-9a-f]{64}$/, 'must be 64 lowercase hex digits')),
+    })
+    .optional(),
 });
 export type ReportHeader = z.infer<typeof reportHeaderSchema>;
 
