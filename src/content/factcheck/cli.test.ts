@@ -111,7 +111,7 @@ describe('--quotes <folder>', () => {
     const { deps: d, written } = quoteDeps(quoting());
     const run = await runFactCheck([SLUG, '--quotes', 'tmp'], d);
     const count = keysNeedingQuotes(sheet()).length;
-    expect(run).toEqual({ code: 0, out: `Quotes OK: ${count} quotes in 2 sources; record written to ${path}, with the items record (${sheet().items.length} items)` });
+    expect(run).toEqual({ code: 0, out: `Quotes OK: ${count} quotes in 2 sources; record written to ${path}, with the items record (${sheet().items.length} items) and the limits hash` });
     expect(Object.keys(written)).toEqual([path]);
     expect(parseReport(written[path]!).header!.quotes).toMatchObject({ checked: '2026-11-11', count });
   });

@@ -121,18 +121,26 @@ function canonical(value: unknown): string {
 
 /**
  * One item's own hash, for the targeted re-check (docs/content-model.md §8): SHA-256 of the canonical form of its kind,
- * its words (`content`), its citations (source, section, url, label and defining marker) and its traces, and not its
- * key. The same rules as the sheet's own hash hold: key order, empty lists and empty records change nothing, and the
- * display-only settings are already out of `content`. A key is left out so an item that only moved (an inserted part
- * shifted its index) keeps its hash.
+ * its words (`content`), its citations (source, section, url, label and defining marker), its traces and the registry
+ * entry of every source it cites (`sources`, the sheet's own list), and not its key. The same rules as the sheet's own
+ * hash hold: key order, empty lists and empty records change nothing, and the display-only settings are already out
+ * of `content`. A key is left out so an item that only moved keeps its hash (the matching in `recheck.ts` says where it
+ * is allowed to move). A source's entry is in, so a source whose title, version or url changed marks every item that
+ * cites it as changed.
  */
-export function itemHash(item: SheetItem): string {
-  return sha256(canonical({ kind: item.kind, content: item.content, cite: item.cite, traces: item.traces }));
+export function itemHash(item: SheetItem, sources: readonly SourceEntry[] = []): string {
+  const cited = item.cite.flatMap((c) => sources.find((s) => s.id === c.source) ?? []);
+  return sha256(canonical({ kind: item.kind, content: item.content, cite: item.cite, traces: item.traces, sources: cited }));
 }
 
 /** Every item's hash by its key, in the sheet's order: the `items` record of a full report's header. */
 export function itemHashes(sheet: ClaimSheet): Record<string, string> {
-  return Object.fromEntries(sheet.items.map((item) => [item.key, itemHash(item)]));
+  return Object.fromEntries(sheet.items.map((item) => [item.key, itemHash(item, sheet.sources)]));
+}
+
+/** SHA-256 of a lesson's limit overrides, every field of each (limit, min, max, reason): the `limits` record of a full report's header. */
+export function limitsHash(overrides: ClaimSheet['overrides']): string {
+  return sha256(canonical(overrides));
 }
 
 export function claimSheet(lesson: Lesson, sources: SourceRegistry): ClaimSheet {

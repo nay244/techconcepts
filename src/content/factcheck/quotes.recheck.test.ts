@@ -6,8 +6,8 @@ import { pageText } from './pagetext';
 import { checkQuotes, stampItems, type SourceFile } from './quotecheck';
 import { parseQuotes } from './quotes';
 import { parseRecheck, parseReport } from './report';
-import { claimSheet, itemHashes } from './sheet';
-import { recheckReportFor, recordedReportFor, stampedReportFor } from './test-helpers';
+import { claimSheet, itemHashes, limitsHash } from './sheet';
+import { recheckReportFor, recordedReportFor, stampedReportFor, withoutRecords } from './test-helpers';
 
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
 
@@ -138,6 +138,7 @@ describe('the items record the quote check writes on a full report', () => {
     expect(result.issues).toEqual([]);
     expect(result.items).toEqual(itemHashes(sheet()));
     expect(parseReport(result.report!).header!.items).toEqual(itemHashes(sheet()));
+    expect(parseReport(result.report!).header!.limits).toBe(limitsHash(sheet().overrides));
   });
 
   test('items 2: when the report\'s hash is not the sheet\'s, the quotes record is written and no items record', () => {
@@ -146,14 +147,14 @@ describe('the items record the quote check writes on a full report', () => {
     expect(result.issues).toEqual([]);
     expect(result.items).toBeUndefined();
     expect(parseReport(result.report!).header!.items).toBeUndefined();
+    expect(parseReport(result.report!).header!.limits).toBeUndefined();
     expect(parseReport(result.report!).header!.quotes).toBeDefined();
   });
 
   test('items 3: every other byte of the report is as it was', () => {
     const raw = plain();
     const out = run(raw).report!;
-    const stripped = out.replace(/,\n {2}"quotes": \{[\s\S]*?\n {2}\},\n {2}"items": \{[\s\S]*?\n {2}\}(?=\n\})/, '');
-    expect(stripped).toBe(raw);
+    expect(withoutRecords(out).replace(/,\n {2}"quotes": \{[\s\S]*?\n {2}\}(?=\n\})/, '')).toBe(raw);
   });
 
   test('items 4: running it again gives the same text, and an earlier items record is replaced in place', () => {
@@ -161,6 +162,7 @@ describe('the items record the quote check writes on a full report', () => {
     expect(run(once).report).toBe(once);
     const wrong = recordedReportFor(sheet(), (h) => { h.items = { title: '0'.repeat(64) }; h.quotes = { checked: '2026-11-08', count: 0, digest: '0'.repeat(64), files: {} }; });
     expect(parseReport(run(wrong).report!).header!.items).toEqual(itemHashes(sheet()));
+    expect(parseReport(run(wrong).report!).header!.limits).toBe(limitsHash(sheet().overrides));
   });
 
   test('items 5: a CRLF report keeps its line ends', () => {
@@ -179,13 +181,14 @@ describe('the items record the quote check writes on a full report', () => {
 describe('stamping a report', () => {
   test('stamp 1: stampItems writes the items record and no other byte changes', () => {
     const raw = recordedReportFor(sheet());
-    const out = stampItems(raw, itemHashes(sheet()));
+    const out = stampItems(raw, itemHashes(sheet()), limitsHash(sheet().overrides));
     expect(parseReport(out).header!.items).toEqual(itemHashes(sheet()));
-    expect(out.replace(/,\n {2}"items": \{[\s\S]*?\n {2}\}(?=\n\})/, '')).toBe(raw);
+    expect(parseReport(out).header!.limits).toBe(limitsHash(sheet().overrides));
+    expect(withoutRecords(out)).toBe(raw);
   });
 
   test('stamp 2: stamping a stamped report changes nothing', () => {
     const stamped = stampedReportFor(sheet());
-    expect(stampItems(stamped, itemHashes(sheet()))).toBe(stamped);
+    expect(stampItems(stamped, itemHashes(sheet()), limitsHash(sheet().overrides))).toBe(stamped);
   });
 });

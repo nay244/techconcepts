@@ -72,7 +72,8 @@ test('pair 3: the fix of a near-pass\'s failing item passes once the re-check ju
 
 test('pair 4: an inserted Learn statement, which shifts later keys, passes with a re-check of the one new item', () => {
   const s = scenario({ edit: (l) => { unit(l).learn.lead.unshift({ id: 'lead-0', text: 'Addresses are lent, not owned.', cite: structuredClone(unit(l).learn.lead[0]!.cite) }); } });
-  expect(s.judged).toEqual(['units[0].learn.lead[0] ("lead-0")']);
+  // The new statement, and the items that rest on the whole lesson because a Learn part changed.
+  expect(s.judged).toEqual(['title', 'units[0].name', 'units[0].learn.lead[0] ("lead-0")', 'units[0].practice[0].prompt (question "q1")', 'units[0].practice[1].prompt (question "q2")']);
   expect(gate(s)).toEqual([]);
 });
 
@@ -84,17 +85,17 @@ describe('rule 1: the re-check belongs to this lesson and this full report', () 
 
   test('rule 1b: a second fix after the re-check stales it, and a re-check of everything changed since the full check is needed', () => {
     const first = scenario();
-    const second = scenario({ edit: (l) => { reword(l); unit(l).learn.lead[0]!.text = 'A lease is an address lent for a while.'; } });
+    const second = scenario({ edit: (l) => { reword(l); unit(l).learn.terms[1]!.idea += '!'; } });
     const stale = checkFactChecks([second.lessonB], { [FULL_GLOB]: first.full }, FIXTURE_SOURCES, { [RE_GLOB]: first.recheck });
     expect(stale).toEqual([expect.stringContaining('the lesson changed since it was re-checked')]);
     expect(gate(second)).toEqual([]);
   });
 
   test('rule 1c: a second re-check that judges only the second fix misses what the first fix changed', () => {
-    const second = scenario({ edit: (l) => { reword(l); unit(l).learn.lead[0]!.text = 'A lease is an address lent for a while.'; } });
-    const partial = second.judged.filter((k) => k !== 'units[0].learn.lead[0] ("lead-1")');
+    const second = scenario({ edit: (l) => { reword(l); unit(l).learn.terms[1]!.idea += '!'; } });
+    const partial = second.judged.filter((k) => k !== 'units[0].learn.terms[1] ("term-2")');
     const issues = gate(second, { recheck: recheckReportFor(second.sheetB, second.fullHash, partial) });
-    expect(issues).toEqual([expect.stringContaining('no verdict for units[0].learn.lead[0] ("lead-1")')]);
+    expect(issues).toEqual([expect.stringContaining('no verdict for units[0].learn.terms[1] ("term-2")')]);
   });
 
   test('rule 1d: a re-check whose base is not the full report\'s hash does not belong, and is refused', () => {
@@ -175,8 +176,8 @@ describe('rule 3: the re-check judges exactly the items to judge, at most 12', (
   });
 
   test('rule 3b: an extra verdict key, one that is on the sheet but not to be judged', () => {
-    const s = scenario({ judged: (all) => [...all, 'title'] });
-    expect(gate(s)).toEqual([expect.stringContaining(`${RE}: a verdict for title, which is not an item to judge`)]);
+    const s = scenario({ judged: (all) => [...all, 'units[0].learn.lead[0] ("lead-1")'] });
+    expect(gate(s)).toEqual([expect.stringContaining(`${RE}: a verdict for units[0].learn.lead[0] ("lead-1"), which is not an item to judge`)]);
   });
 
   test('rule 3c: an extra verdict key that is not on the sheet at all', () => {
@@ -195,15 +196,13 @@ describe('rule 3: the re-check judges exactly the items to judge, at most 12', (
   });
 
   test('rule 3e: exactly 12 items to judge is allowed', () => {
-    // Twelve changed parts that nothing traces to: a term, the pattern, a Go deeper, four step paragraphs, five options.
+    // Twelve: four step paragraphs, five options and the two prompts of their questions (a question is one unit), and one traced fact; no Learn part changed.
     const s = scenario({
       edit: (l) => {
         const u = unit(l);
-        u.learn.terms[1]!.idea += '!';
-        u.learn.pattern.note += '!';
-        u.learn.deep[0]!.text += '!';
         for (const step of u.steps) step.deep[0]!.text += '!';
         for (const q of u.practice) for (const o of q.options) o.text += '!';
+        u.steps[0]!.facts[1]!.value = 'Nobody';
       },
     });
     expect(s.should).toHaveLength(12);
@@ -229,8 +228,8 @@ describe('rule 4: every re-check verdict passes, and every other item passed the
   });
 
   test('rule 4c: an item the full report has no verdict for, and the re-check did not judge, is named', () => {
-    const s = scenario({ fullEdit: (h) => { delete h.verdicts['units[0].name']; } });
-    expect(gate(s)).toEqual([expect.stringContaining(`${FULL}: no verdict for units[0].name`)]);
+    const s = scenario({ fullEdit: (h) => { delete h.verdicts['units[0].learn.terms[1] ("term-2")']; } });
+    expect(gate(s)).toEqual([expect.stringContaining(`${FULL}: no verdict for units[0].learn.terms[1] ("term-2")`)]);
   });
 });
 
@@ -255,6 +254,25 @@ describe('rule 5: the lesson\'s limit overrides are what the full report lists',
     const judged = itemsToJudge(JSON.parse(/```json fact-check\n([\s\S]*?)\n```/.exec(full)![1]!).items, sheetB).judge;
     expect(checkPair(sheetB, full, recheckReportFor(sheetB, sheetA.hash, judged), FULL, RE)).toEqual([]);
     expect(s.sheetB.overrides).toEqual(ov);
+  });
+
+  test('rule 5d: a changed maximum fails, though the limit and the reason are the same (D1)', () => {
+    const ov = (max: number) => [{ limit: 'narrativeWords' as const, max, reason: 'Names all four messages in one step.' }];
+    const sheetA = claimSheet({ ...lessonA(), overrides: ov(40) }, FIXTURE_SOURCES);
+    const full = stampedReportFor(sheetA);
+    const bLesson = (max: number) => { const l = lessonA(); reword(l); l.overrides = ov(max); return l; };
+    const check = (max: number) => {
+      const sheetB = claimSheet(bLesson(max), FIXTURE_SOURCES);
+      const judged = itemsToJudge(itemHashes(sheetA), sheetB).judge;
+      return checkPair(sheetB, full, recheckReportFor(sheetB, sheetA.hash, judged), FULL, RE);
+    };
+    expect(check(40)).toEqual([]);
+    expect(check(400)).toEqual([expect.stringContaining(`${RE}: the lesson's limit overrides are not those of the full report`)]);
+  });
+
+  test('rule 2d: a full report with items and no limits hash has no record, and says to stamp it again (D1)', () => {
+    const s = scenario({ fullEdit: (h) => { delete h.limits; } });
+    expect(gate(s)).toEqual([expect.stringContaining(`${FULL}: has no items record`)]);
   });
 
   test('rule 5c: a re-check that carries overrides cannot be read', () => {
@@ -387,5 +405,31 @@ describe('the gate\'s other duties with re-checks', () => {
   test('gate 4: a re-check beside a current full report does not move the date', () => {
     const s = scenario();
     expect(checkedDate(s.sheetA, s.full, s.recheck)).toBe('2026-11-08');
+  });
+});
+
+describe('the amended rule: what a re-check without a verdict for it cannot pass (B1, B2)', () => {
+  /** A fix after which `missing` must be judged: a re-check that leaves it out fails the gate on that key. */
+  const refused = (name: string, edit: (l: Lesson) => void, missing: string) => {
+    test(name, () => {
+      const s = scenario({ edit, judged: (all) => all.filter((k) => k !== missing) });
+      expect(gate(s)).toContainEqual(expect.stringContaining(`${RE}: no verdict for ${missing}, an item to judge`));
+    });
+  };
+  const Q1 = 'units[0].practice[0].prompt (question "q1")';
+  refused('B1: a prompt reworded: the answer option is judged too', (l) => { unit(l).practice[0]!.prompt = 'What is a lease not?'; }, 'units[0].practice[0].options[0] (question "q1")');
+  refused('B1: a Learn part changed: the title is judged too', (l) => { unit(l).learn.lead[0]!.text = 'A lease is an address lent for a while.'; }, 'title');
+  refused('B1: a Learn part changed: a prompt is judged too', (l) => { unit(l).learn.lead[0]!.text = 'A lease is an address lent for a while.'; }, Q1);
+  refused('B2: an event moved to another step', (l) => { const [e] = unit(l).steps[1]!.events.splice(1, 1); unit(l).steps[0]!.events.push(e!); }, 'units[0].steps[0].events[1] (event "t-add")');
+  refused('B2: an event moved to the front of another step', (l) => { const [e] = unit(l).steps[1]!.events.splice(1, 1); unit(l).steps[0]!.events.unshift(e!); }, 'units[0].steps[0].events[0] (event "t-add")');
+  refused('B2: two options reordered', (l) => { const o = unit(l).practice[0]!.options; [o[0], o[1]] = [o[1]!, o[0]!]; }, 'units[0].practice[0].options[2] (question "q1")');
+  test('B2: two steps swapped, and two Learn statements reordered, are not passed with nothing judged', () => {
+    for (const edit of [
+      (l: Lesson) => { const s = unit(l).steps; [s[0], s[1]] = [s[1]!, s[0]!]; },
+      (l: Lesson) => { const s = unit(l).learn.lead; [s[0], s[1]] = [s[1]!, s[0]!]; },
+    ]) {
+      const s = scenario({ edit, judged: () => [] });
+      expect(gate(s).join('\n')).toContain('no verdict for');
+    }
   });
 });

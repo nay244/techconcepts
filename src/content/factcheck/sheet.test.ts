@@ -5,7 +5,7 @@ import type { Lesson } from '../schema';
 import { cite, defineSources } from '../sources';
 import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
 import { sha256 } from './sha256';
-import { claimSheet, itemHash, itemHashes, renderSheet, type SheetItem } from './sheet';
+import { claimSheet, itemHash, itemHashes, limitsHash, renderSheet, type SheetItem } from './sheet';
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has the fixture's places and cues.
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
@@ -237,11 +237,30 @@ test('item hash 4: a display-only setting leaves it as it was, and an empty list
   expect(itemHash({ ...item, traces: [] })).toBe(itemHash(item));
 });
 
+test('item hash 6: the registry entry of each source an item cites is part of its hash, and one it does not cite is not', () => {
+  const sheet = sheetOf();
+  const item = sheet.items.find((i) => i.cite.some((c) => c.source === 'rfc-example'))!;
+  const entry = sheet.sources.find((s) => s.id === 'rfc-example')!;
+  const other = sheet.sources.find((s) => s.id !== 'rfc-example')!;
+  expect(itemHash(item, [{ ...entry, title: 'Revised' }])).not.toBe(itemHash(item, [entry]));
+  expect(itemHash(item, [entry, { ...other, title: 'Revised' }])).toBe(itemHash(item, [entry, other]));
+  expect(itemHash(item, [])).toBe(itemHash(item));
+});
+
+test('limits hash 1: limitsHash covers every field of every override, and an empty list is a hash too', () => {
+  const ov = { limit: 'narrativeWords' as const, max: 40, reason: 'Names all four messages.' };
+  const hash = limitsHash([ov]);
+  expect(hash).toMatch(/^[0-9a-f]{64}$/);
+  for (const change of [{ max: 400 }, { reason: 'Another.' }, { limit: 'hookWords' as const }, { min: 2 }]) expect(limitsHash([{ ...ov, ...change }]), JSON.stringify(change)).not.toBe(hash);
+  expect(limitsHash([])).toMatch(/^[0-9a-f]{64}$/);
+  expect(limitsHash([])).not.toBe(hash);
+});
+
 test('item hash 5: itemHashes has one hash for every key of the sheet', () => {
   const sheet = sheetOf();
   const hashes = itemHashes(sheet);
   expect(Object.keys(hashes)).toEqual(sheet.items.map((i) => i.key));
-  for (const item of sheet.items) expect(hashes[item.key]).toBe(itemHash(item));
+  for (const item of sheet.items) expect(hashes[item.key]).toBe(itemHash(item, sheet.sources));
 });
 
 test('the sheet\'s own hash and its rendering are as they were before item hashes: not a character changed', () => {

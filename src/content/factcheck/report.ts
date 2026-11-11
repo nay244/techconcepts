@@ -47,6 +47,8 @@ export const reportHeaderSchema = z.strictObject({
    * items changed. See `recheck.ts`.
    */
   items: z.record(z.string(), hex64).optional(),
+  /** SHA-256 of the lesson's limit overrides, every field of each, written beside `items` (`limitsHash`). */
+  limits: hex64.optional(),
 });
 export type ReportHeader = z.infer<typeof reportHeaderSchema>;
 

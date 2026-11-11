@@ -4,8 +4,8 @@ import { checkPair, checkReport, reportPath } from './gate';
 import { pageText } from './pagetext';
 import { checkQuotes, stampItems, type SourceFile } from './quotecheck';
 import { parseReport } from './report';
-import { itemsToJudge, nearPass, overridesText, recheckMessages, recheckPath, renderRecheck, RECHECK_MAX_ITEMS, sameOverrides } from './recheck';
-import { claimSheet, itemHashes, renderSheet, type ClaimSheet } from './sheet';
+import { itemsToJudge, nearPass, recheckMessages, recheckPath, renderRecheck, RECHECK_MAX_ITEMS } from './recheck';
+import { claimSheet, itemHashes, limitsHash, renderSheet, type ClaimSheet } from './sheet';
 
 /**
  * `npm run fact-check -- <slug>` prints a lesson's claim sheet for the fact-checker, `-- <slug> --check` checks the
@@ -130,7 +130,7 @@ export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT
     if (recheck) return { code: 0, out: done };
     return {
       code: 0,
-      out: result.items === undefined ? `${done}, but no items record: the report's hash is not the lesson's, so run --stamp at the commit it was checked on if a re-check may follow` : `${done}, with the items record (${Object.keys(result.items).length} items)`,
+      out: result.items === undefined ? `${done}, but no items record: the report's hash is not the lesson's, so run --stamp at the commit it was checked on if a re-check may follow` : `${done}, with the items record (${Object.keys(result.items).length} items) and the limits hash`,
     };
   }
   if (!check) return { code: 0, out: `${renderSheet(sheet)}\nWrite your report to: ${path}` };
@@ -153,8 +153,8 @@ function stampReport(deps: FactCheckDeps, sheet: ClaimSheet, path: string): { co
     };
   }
   const items = itemHashes(sheet);
-  deps.writeFile(path, stampItems(raw, items));
-  return { code: 0, out: `Stamped: the items record (${Object.keys(items).length} items) is written to ${path}` };
+  deps.writeFile(path, stampItems(raw, items, limitsHash(sheet.overrides)));
+  return { code: 0, out: `Stamped: the items record (${Object.keys(items).length} items) and the limits hash are written to ${path}` };
 }
 
 /** `--recheck`: the re-check sheet, or why there can be none. */
@@ -165,13 +165,13 @@ function printRecheck(deps: FactCheckDeps, sheet: ClaimSheet, path: string, rePa
   const { header, issues } = parseReport(raw);
   if (header === undefined) return refuse(issues.map((i) => `${path}: cannot be read: ${i}`).join('\n'));
   if (header.slug !== sheet.slug) return refuse(`${path}: is the report for "${header.slug}", not "${sheet.slug}"; fix its slug or its file name.`);
-  if (header.items === undefined) return refuse(recheckMessages.noItems(path, sheet.slug));
+  if (header.items === undefined || header.limits === undefined) return refuse(recheckMessages.noItems(path, sheet.slug));
   const near = nearPass(header.verdicts);
   if (!near.ok) return refuse(recheckMessages.notNearPass(path, near));
   if (header.hash === sheet.hash) {
     return refuse(`Nothing changed since the full check (${path} has the lesson's hash); there is nothing to re-check. Check the report with npm run fact-check -- ${sheet.slug} --check.`);
   }
-  if (!sameOverrides(sheet.overrides, header.overrides)) return refuse(recheckMessages.overrides(path, overridesText(sheet.overrides), overridesText(header.overrides)));
+  if (header.limits !== limitsHash(sheet.overrides)) return refuse(recheckMessages.overrides(path, limitsHash(sheet.overrides), header.limits));
   const judging = itemsToJudge(header.items, sheet);
   if (judging.judge.length > RECHECK_MAX_ITEMS) return refuse(recheckMessages.tooMany(path, judging.judge.length));
   return { code: 0, out: renderRecheck(sheet, header.hash, judging, rePath) };

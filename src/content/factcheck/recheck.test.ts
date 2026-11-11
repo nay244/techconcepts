@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { validateLesson } from '../define';
 import type { Lesson } from '../schema';
 import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
-import { RECHECK_MAX_ITEMS, NEAR_PASS_MAX_FAILING, itemsToJudge, nearPass, recheckPath, renderRecheck, withoutIndexes } from './recheck';
+import { RECHECK_MAX_ITEMS, NEAR_PASS_MAX_FAILING, itemsToJudge, nearPass, recheckPath, renderRecheck } from './recheck';
 import { claimSheet, itemHashes, type ClaimSheet, type SheetItem } from './sheet';
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has the fixture's places and cues.
@@ -24,6 +24,7 @@ const base = () => itemHashes(sheetOf());
 const judging = (edit: (l: Lesson) => void) => itemsToJudge(base(), sheetOf(changed(edit)));
 
 const FACT3 = 'units[0].learn.facts[2] ("fact-3")';
+const PROMPTS = ['units[0].practice[0].prompt (question "q1")', 'units[0].practice[1].prompt (question "q2")'];
 const FACT3_TRACED = [
   'units[0].scene.packets.p1 (packet "p1")',
   'units[0].steps[0] (step "request")',
@@ -49,9 +50,9 @@ describe('which items are judged', () => {
   test('judge 4: a changed Learn part pulls in every Watch part that traces to it, and only those', () => {
     const j = judging((l) => { unit(l).learn.facts[2]!.value = 'A single device on the local network'; });
     expect(j.changed).toEqual([FACT3]);
-    expect(j.pulled).toEqual(FACT3_TRACED);
-    // The sheet's order: the Watch parts come before Learn.
-    expect(j.judge).toEqual([...FACT3_TRACED, FACT3]);
+    // A Learn part changed, so the items that rest on the whole lesson are judged too (B1 in recheck.amended.test.ts).
+    expect(j.pulled).toEqual(['title', 'units[0].name', ...FACT3_TRACED, ...PROMPTS]);
+    expect(j.judge).toEqual(['title', 'units[0].name', ...FACT3_TRACED, FACT3, ...PROMPTS]);
   });
 
   test('judge 5: a pulled item is not changed, and a changed traced item pulls nothing', () => {
@@ -71,7 +72,8 @@ describe('which items are judged', () => {
       const first = unit(l).learn.lead[0]!;
       unit(l).learn.lead.unshift({ id: 'lead-0', text: 'Addresses are lent, not owned.', cite: structuredClone(first.cite) });
     });
-    expect(j).toEqual({ changed: ['units[0].learn.lead[0] ("lead-0")'], pulled: [], judge: ['units[0].learn.lead[0] ("lead-0")'] });
+    expect(j.changed).toEqual(['units[0].learn.lead[0] ("lead-0")']);
+    expect(j.pulled).toEqual(['title', 'units[0].name', ...PROMPTS]);
   });
 
   test('judge 8: an inserted statement and an edit to a later one: the new one, the edited one, and what traces to the edited one', () => {
@@ -104,27 +106,19 @@ describe('which items are judged', () => {
     expect(itemsToJudge(itemHashes(make([keyed('A')])), make([keyed('B')])).changed).toEqual(['title']);
   });
 
-  describe('two base items with the same index-free key and hash', () => {
-    const keyed = (n: number): SheetItem => ({ key: `units[0].steps[${n}].facts[0] (step "x", fact "Same")`, kind: 'unbacked', content: { label: 'Same' }, cite: [], traces: [] });
+  describe('two base items with the same id and hash in one list', () => {
+    const keyed = (n: number): SheetItem => ({ key: `units[0].learn.lead[${n}] ("same")`, kind: 'claim', content: { text: 'Same.' }, cite: [], traces: [] });
     const make = (...ns: number[]) => ({ slug: 's', items: ns.map(keyed), sources: [], overrides: [], hash: '0'.repeat(64) }) as ClaimSheet;
 
     test('judge 12: each base item matches at most one current item, so a third copy is new', () => {
-      const j = itemsToJudge(itemHashes(make(0, 1)), make(0, 1, 2));
-      expect(j.changed).toEqual([keyed(2).key]);
+      expect(itemsToJudge(itemHashes(make(0, 1)), make(0, 1, 2)).changed).toEqual([keyed(2).key]);
     });
 
-    test('judge 13: exact keys match first, so a shifted copy takes the base item left over', () => {
-      // One copy was taken out of the front: the two left sit at [0] and [1] now, and were at [1] and [2].
+    test('judge 13: the earlier copies of each side pair first, so taking one out changes nothing, and a copy put in is the last one', () => {
       expect(itemsToJudge(itemHashes(make(0, 1, 2)), make(0, 1)).changed).toEqual([]);
       expect(itemsToJudge(itemHashes(make(1, 2)), make(0, 1)).changed).toEqual([]);
-      // A copy put in front: the two that were there keep their keys, so the new one is the one at [0].
-      expect(itemsToJudge(itemHashes(make(1, 2)), make(0, 1, 2)).changed).toEqual([keyed(0).key]);
+      expect(itemsToJudge(itemHashes(make(1, 2)), make(0, 1, 2)).changed).toEqual([keyed(2).key]);
     });
-  });
-
-  test('judge 14: an index number is taken out of a key, and an id that has digits in it is not', () => {
-    expect(withoutIndexes('units[0].learn.lead[12] ("lead-2")')).toBe('units[].learn.lead[] ("lead-2")');
-    expect(withoutIndexes('title')).toBe('title');
   });
 
   test('judge 15: a second fix is judged against the same full check: everything changed since then', () => {
@@ -216,7 +210,8 @@ describe('the re-check sheet', () => {
   test('sheet 6: context is not a heading and an item with no traces has none', () => {
     const t = text();
     expect(t).not.toMatch(/^#+ Context/m);
-    const own = t.slice(t.indexOf(`### ${'units[0].learn.facts[2] ("fact-3")'}`));
+    const from = t.indexOf(`### ${'units[0].learn.facts[2] ("fact-3")'}`);
+    const own = t.slice(from, t.indexOf('\n#', from + 5));
     expect(own).not.toContain('Context (no verdict)');
   });
 

@@ -1,7 +1,7 @@
 import { evenWhitespace, keysNeedingQuotes, parseQuotes, quotesDigest, type Quote } from './quotes';
 import { HEADER, parseRecheck, parseReport, type ReportHeader } from './report';
 import { sha256 } from './sha256';
-import { itemHashes, type ClaimSheet } from './sheet';
+import { itemHashes, limitsHash, type ClaimSheet } from './sheet';
 
 /**
  * The quote check: every passage a report quotes is looked for in the saved text of the source it names, and when all
@@ -166,16 +166,16 @@ function withHeaderValue(raw: string, key: string, value: unknown): string {
   return raw.slice(0, start) + withValue(match[1]!, key, value) + raw.slice(start + match[1]!.length);
 }
 
-/** A full report with the items record in its header, and every other byte as it was (`--stamp`). */
-export function stampItems(raw: string, items: Readonly<Record<string, string>>): string {
-  return withHeaderValue(raw, 'items', items);
+/** A full report with the items record and the limits hash in its header, and every other byte as it was (`--stamp`). */
+export function stampItems(raw: string, items: Readonly<Record<string, string>>, limits: string): string {
+  return withHeaderValue(withHeaderValue(raw, 'items', items), 'limits', limits);
 }
 
 /**
  * Checks a report's quotes against the folder's files. Returns every problem, or, when there is none, the record and
  * the report's new text: the header with the record and every other byte as it was. `recheck` says the report is a
  * re-check, read by its own rules (`parseQuotes`). On a full report whose hash is the sheet's hash the header also gets
- * the `items` record (`itemHashes`), which a later targeted re-check reads.
+ * the `items` record (`itemHashes`) and the `limits` hash (`limitsHash`), which a later targeted re-check reads.
  */
 export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: readonly SourceFile[]; today: string; pageText: PageText; recheck?: boolean }): QuoteCheck {
   const { raw, sheet, files, today, pageText, recheck = false } = input;
@@ -251,5 +251,5 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
   };
   const items = !recheck && header.hash === sheet.hash ? itemHashes(sheet) : undefined;
   const written = withHeaderValue(raw, 'quotes', record);
-  return { issues: [], record, report: items === undefined ? written : withHeaderValue(written, 'items', items), ...(items === undefined ? {} : { items }) };
+  return { issues: [], record, report: items === undefined ? written : stampItems(written, items, limitsHash(sheet.overrides)), ...(items === undefined ? {} : { items }) };
 }

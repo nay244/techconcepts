@@ -16,9 +16,6 @@ export function recheckPath(slug: string): string {
   return `docs/fact-checks/${slug}.recheck.md`;
 }
 
-/** A key with its index numbers taken out: `units[0].learn.lead[2] ("lead-3")` becomes `units[].learn.lead[] ("lead-3")`. */
-export const withoutIndexes = (key: string): string => key.replace(/\[\d+\]/g, '[]');
-
 /** Whether a full report's verdicts are a near-pass, and how many items did not pass, and how many are wrong. */
 export function nearPass(verdicts: Readonly<Record<string, string>>): { ok: boolean; notPassing: number; wrong: number } {
   const failing = Object.values(verdicts).filter((v) => v !== '✅');
@@ -29,56 +26,146 @@ export function nearPass(verdicts: Readonly<Record<string, string>>): { ok: bool
 export interface Judging {
   /** The items that changed since the full check, in the sheet's order. */
   changed: string[];
-  /** The items that did not change but trace to a part that did, in the sheet's order. */
+  /** The items that did not change but are judged anyway (they trace to a changed part, or belong to a changed question, or rest on the whole lesson), in the sheet's order. */
   pulled: string[];
   /** Every item to judge, changed or pulled, in the sheet's order. */
   judge: string[];
 }
 
-/**
- * Which item of the full report's `items` record each unchanged item of the sheet is, by key: an item is unchanged when
- * the record has its hash under its key, or, where an inserted or removed part has shifted the index numbers in keys,
- * under the same key with the index numbers taken out. The value is the key the full report knew it by, which is the
- * key of its verdict there. An item that has no entry is changed.
- *
- * Two entries of the record can have the same index-free key and the same hash (two facts of one step with the same
- * label and value, say). Each entry of the record matches at most one item of the sheet: items whose own key has that
- * hash match first, then the others take what is left, in the sheet's order and the record's. So a third copy of
- * something that was there twice is new, and taking one copy out changes nothing.
- */
-export function matchBase(items: Readonly<Record<string, string>>, sheet: ClaimSheet): Map<string, string> {
-  const now = itemHashes(sheet);
-  const matched = new Map<string, string>();
-  for (const item of sheet.items) {
-    if (Object.hasOwn(items, item.key) && items[item.key] === now[item.key]) matched.set(item.key, item.key);
+/** An item's place in the lesson, read from its key: the list it is in and where, and the stable parent of that list. */
+interface Slot {
+  /** Which list the item is in, under which parent: a step is named by its id, a question by its id. `''` for an item that is in no list. */
+  group: string;
+  /** Where in the list. */
+  index: number;
+  /** What follows the path in the key: the item's id or label. */
+  tail: string;
+}
+
+/** A step's or question's id by its place (`units[0].steps[1]`), read from keys: the stable name of a parent whose index can shift. */
+function parentIds(keys: readonly string[]): Map<string, string> {
+  const ids = new Map<string, string>();
+  for (const key of keys) {
+    const step = /^(units\[\d+\]\.steps\[\d+\]) \(step "([^"]+)"\)$/.exec(key);
+    if (step !== null) ids.set(step[1]!, `${step[1]!.replace(/\.steps\[\d+\]$/, '')} step "${step[2]}"`);
+    const question = /^(units\[\d+\]\.practice\[\d+\])\.(?:prompt|options\[\d+\]) \(question "([^"]+)"\)$/.exec(key);
+    if (question !== null) ids.set(question[1]!, `${question[1]!.replace(/\.practice\[\d+\]$/, '')} question "${question[2]}"`);
   }
-  const taken = new Set(matched.values());
-  const left = new Map<string, string[]>();
-  for (const [key, hash] of Object.entries(items)) {
-    if (taken.has(key)) continue;
-    const slot = `${withoutIndexes(key)}\n${hash}`;
-    left.set(slot, [...(left.get(slot) ?? []), key]);
-  }
-  for (const item of sheet.items) {
-    if (matched.has(item.key)) continue;
-    const from = left.get(`${withoutIndexes(item.key)}\n${now[item.key]}`)?.shift();
-    if (from !== undefined) matched.set(item.key, from);
-  }
-  return matched;
+  return ids;
 }
 
 /**
- * Which items the sheet has now that a re-check judges, given the full report's `items` record (key to hash): those
- * `matchBase` finds no entry for (changed), and every traced item that traces to a part that is changed.
+ * Where a key puts an item. An item in a list (`...events[1] (event "m2")`) is in the list named by its path without the
+ * last index, under its parent: a step or a question is named by its id, so the same list is the same list however the
+ * numbers shifted, and an event under another step is in another list. An item in no list (`title`, `...prompt (question
+ * "q1")`) has no group and only ever matches its own key.
+ */
+function slotOf(key: string, ids: ReadonlyMap<string, string>): Slot {
+  const space = key.indexOf(' ');
+  const path = space < 0 ? key : key.slice(0, space);
+  const tail = space < 0 ? '' : key.slice(space);
+  const dot = path.lastIndexOf('.');
+  const last = /^(.*)\[(\d+)\]$/.exec(path.slice(dot + 1));
+  if (dot < 0 || last === null) return { group: '', index: -1, tail };
+  const parent = path.slice(0, dot).replace(/units\[\d+\]\.(?:steps|practice)\[\d+\]/g, (place) => ids.get(place) ?? place);
+  return { group: `${parent}.${last[1]}`, index: Number(last[2]), tail };
+}
+
+/** Which question an item belongs to, with its unit: the prompt and every option of one are one unit. */
+const QUESTION = /^(units\[\d+\])\.practice\[\d+\]\.(?:prompt|options\[\d+\]) \(question "([^"]+)"\)$/;
+const questionOf = (key: string): string | undefined => {
+  const m = QUESTION.exec(key);
+  return m === null ? undefined : `${m[1]} ${m[2]}`;
+};
+
+/** The pairs (i, j) of a longest common subsequence of two lists of labels, earliest first. */
+function commonSubsequence(a: readonly string[], b: readonly string[]): [number, number][] {
+  const n = a.length;
+  const m = b.length;
+  const len = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) len[i]![j] = a[i] === b[j] ? len[i + 1]![j + 1]! + 1 : Math.max(len[i + 1]![j]!, len[i]![j + 1]!);
+  }
+  const pairs: [number, number][] = [];
+  for (let i = 0, j = 0; i < n && j < m; ) {
+    if (a[i] === b[j]) pairs.push([i++, j++]);
+    else if (len[i + 1]![j]! >= len[i]![j + 1]!) i++;
+    else j++;
+  }
+  return pairs;
+}
+
+/**
+ * Which item of the full report's `items` record each unchanged item of the sheet is, by key (the value is the key the
+ * full report knew it by, which is the key of its verdict there), and which entries of the record no item matched.
+ *
+ * An item in no list is unchanged when the record has its hash under its own key. An item in a list is unchanged when
+ * it is in the same list of the same parent (a step or a question by its id; so an event under another step is in
+ * another list), has the same hash and the same id, and is in the longest common subsequence of the list as it was and
+ * as it is: the unchanged items of a list keep the order they had, so a moved item, or one of two reordered, is not
+ * matched, and nothing can pair an item with a copy of itself elsewhere. Items whose index only shifted (a part
+ * inserted or taken out before them) are matched, since the order holds. Two entries with the same id and hash in one list
+ * are interchangeable: the earlier ones of each side pair first.
+ */
+function matchItems(items: Readonly<Record<string, string>>, sheet: ClaimSheet): { matched: Map<string, string>; removed: string[] } {
+  const now = itemHashes(sheet);
+  const baseIds = parentIds(Object.keys(items));
+  const nowIds = parentIds(sheet.items.map((item) => item.key));
+  const matched = new Map<string, string>();
+  const taken = new Set<string>();
+  const lists = (keys: readonly string[], ids: ReadonlyMap<string, string>) => {
+    const groups = new Map<string, { key: string; slot: Slot }[]>();
+    for (const key of keys) {
+      const slot = slotOf(key, ids);
+      if (slot.group === '') continue;
+      groups.set(slot.group, [...(groups.get(slot.group) ?? []), { key, slot }].sort((x, y) => x.slot.index - y.slot.index));
+    }
+    return groups;
+  };
+  for (const item of sheet.items) {
+    if (slotOf(item.key, nowIds).group === '' && Object.hasOwn(items, item.key) && items[item.key] === now[item.key]) {
+      matched.set(item.key, item.key);
+      taken.add(item.key);
+    }
+  }
+  const before = lists(Object.keys(items), baseIds);
+  for (const [group, current] of lists(sheet.items.map((item) => item.key), nowIds)) {
+    const was = before.get(group) ?? [];
+    const label = (side: { key: string; slot: Slot }, hash: string | undefined) => `${side.slot.tail}\n${hash}`;
+    const pairs = commonSubsequence(
+      was.map((w) => label(w, items[w.key])),
+      current.map((c) => label(c, now[c.key])),
+    );
+    for (const [i, j] of pairs) {
+      matched.set(current[j]!.key, was[i]!.key);
+      taken.add(was[i]!.key);
+    }
+  }
+  return { matched, removed: Object.keys(items).filter((key) => !taken.has(key)) };
+}
+
+/** Which item of the full report each unchanged item of the sheet is, by key; an item with no entry is changed (`matchItems`). */
+export const matchBase = (items: Readonly<Record<string, string>>, sheet: ClaimSheet): Map<string, string> => matchItems(items, sheet).matched;
+
+/**
+ * Which items the sheet has now that a re-check judges, given the full report's `items` record (key to hash):
+ * - the changed items, those `matchItems` finds no entry for;
+ * - every traced item that traces to a part that is changed;
+ * - a question is one unit: when its prompt or any option changed, or an option was taken out, its prompt and every option;
+ * - when any Learn part is changed, the items that cite nothing and rest on the whole lesson (the title, the unit's
+ *   name, each question's prompt). A prompt judged for that reason alone does not bring its options.
  */
 export function itemsToJudge(items: Readonly<Record<string, string>>, sheet: ClaimSheet): Judging {
-  const unchanged = matchBase(items, sheet);
-  const changed = sheet.items.filter((item) => !unchanged.has(item.key)).map((item) => item.key);
+  const { matched, removed } = matchItems(items, sheet);
+  const changed = sheet.items.filter((item) => !matched.has(item.key)).map((item) => item.key);
   const changedSet = new Set(changed);
+  const extra = new Set<string>();
   const targets = traceTargets(sheet);
-  const pulled = sheet.items
-    .filter((item) => !changedSet.has(item.key) && item.traces.some((id) => changedSet.has(targets.get(id)?.key ?? '')))
-    .map((item) => item.key);
+  for (const item of sheet.items) if (item.traces.some((id) => changedSet.has(targets.get(id)?.key ?? ''))) extra.add(item.key);
+  const questions = new Set([...changed, ...removed].flatMap((key) => questionOf(key) ?? []));
+  for (const item of sheet.items) if (questions.has(questionOf(item.key) ?? '')) extra.add(item.key);
+  if (changed.some((key) => LEARN_ID.test(key))) for (const item of sheet.items) if (item.kind === 'unbacked') extra.add(item.key);
+  const pulled = sheet.items.filter((item) => !changedSet.has(item.key) && extra.has(item.key)).map((item) => item.key);
   const pulledSet = new Set(pulled);
   return { changed, pulled, judge: sheet.items.filter((item) => changedSet.has(item.key) || pulledSet.has(item.key)).map((item) => item.key) };
 }
@@ -107,26 +194,16 @@ const clip = (hash: string): string => `${hash.slice(0, 12)}…`;
 /** Each message the re-check commands and the gate share, for the path of the file they speak of. */
 export const recheckMessages = {
   noItems: (path: string, slug: string): string =>
-    `${path}: has no items record, so a re-check cannot tell what changed; run npm run fact-check -- ${slug} --stamp at the commit it was checked on, or run a full check (docs/content-model.md §8).`,
+    `${path}: has no items record with a limits hash, so a re-check cannot tell what changed; run npm run fact-check -- ${slug} --stamp at the commit it was checked on, or run a full check (docs/content-model.md §8).`,
   notNearPass: (path: string, near: { notPassing: number; wrong: number }): string =>
     `${path}: the full check was not a near-pass (${near.notPassing} ${near.notPassing === 1 ? 'item' : 'items'} did not pass, ${near.wrong} wrong (❌); a re-check needs at most ${NEAR_PASS_MAX_FAILING} not passing and none wrong); fix the lesson, then run a full check (docs/content-model.md §8).`,
   tooMany: (path: string, count: number): string =>
     `${path}: ${count} items to judge, more than ${RECHECK_MAX_ITEMS}; a re-check is for a few changed items, so run a full check (docs/content-model.md §8).`,
   overrides: (path: string, lesson: string, report: string): string =>
-    `${path}: the lesson's limit overrides are not those of the full report (the lesson has ${lesson}; the report lists ${report}); a re-check does not judge a limit, so run a full check (docs/content-model.md §8).`,
+    `${path}: the lesson's limit overrides are not those of the full report (hash ${clip(lesson)}, the report's ${clip(report)}: a limit, a bound or a reason changed); a re-check does not judge a limit, so run a full check (docs/content-model.md §8).`,
   changedSince: (path: string, then: string, now: string): string =>
     `${path}: the lesson changed since it was re-checked (re-check ${clip(then)}, lesson ${clip(now)}); run the re-check again, against the same full check (docs/content-model.md §8).`,
 };
-
-/** The limit overrides as a short list for a message. */
-export const overridesText = (overrides: readonly { limit: string; reason: string }[]): string =>
-  overrides.length === 0 ? 'none' : overrides.map((o) => `${o.limit} (${o.reason})`).join('; ');
-
-/** Whether two lists of overrides are the same: a report lists each one's limit and reason. */
-export function sameOverrides(a: readonly { limit: string; reason: string }[], b: readonly { limit: string; reason: string }[]): boolean {
-  const form = (list: readonly { limit: string; reason: string }[]) => list.map((o) => JSON.stringify([o.limit, o.reason])).sort();
-  return JSON.stringify(form(a)) === JSON.stringify(form(b));
-}
 
 /**
  * The re-check sheet, for the fact-checker to read: the sources the items to judge cite, then each of those items in
@@ -149,12 +226,19 @@ export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging,
   if (sources.length === 0) lines.push('- None.');
   lines.push('', `## Items to judge (${items.length})`);
   if (items.length === 0) {
-    lines.push('', 'No item changed, and none traces to a part that did, so there is nothing to judge: the sheet changed only by what was taken out. Write the report with an empty `verdicts` and an empty `sources`.');
+    lines.push('', 'No item on the sheet changed since the full check, so there is nothing to judge. Write the report with an empty `verdicts` and an empty `sources`.');
   }
   for (const item of items) {
     lines.push(...itemLines(item));
     for (const part of contextOf(sheet, item)) {
       lines.push('', `Context (no verdict): ${part.key} (${changed.has(part.key) ? 'changed' : 'not changed'} since the full check)`, '', '```json', JSON.stringify(part.content, null, 2), '```');
+    }
+  }
+  // An item that rests on the whole lesson is judged against every cited Learn part, which the checker reads and does not judge.
+  if (items.some((item) => item.kind === 'unbacked')) {
+    lines.push('', '## Learn parts, as context (no verdict)');
+    for (const part of sheet.items.filter((item) => LEARN_ID.test(item.key) && item.cite.length > 0)) {
+      lines.push('', `Context (no verdict): ${part.key}`, '', '```json', JSON.stringify(part.content, null, 2), '```');
     }
   }
   lines.push('', `Write your report to: ${path}`);

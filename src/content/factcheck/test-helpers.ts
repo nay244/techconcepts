@@ -1,6 +1,6 @@
 import { keysNeedingQuotes, quotesDigest, type Quote } from './quotes';
 import { sha256 } from './sha256';
-import { itemHashes, type ClaimSheet } from './sheet';
+import { itemHashes, limitsHash, type ClaimSheet } from './sheet';
 
 /** A report header as tests write it: the same shape `reportHeaderSchema` reads, loosely typed so a test can break it. */
 export type LooseHeader = Record<string, unknown> & { verdicts: Record<string, string>; sources: Record<string, unknown>[] };
@@ -71,12 +71,13 @@ export function recordedReportFor(sheet: ClaimSheet, edit: (header: LooseHeader)
 }
 
 /**
- * A full report that is a near-pass or better, carrying the items record of `sheet`, as the quote check writes it
+ * A full report that is a near-pass or better, carrying the items record and the limits hash of `sheet`, as the quote check writes it
  * (`recordedReportFor` with `items`). `edit` runs last, so a test can break the record or the verdicts.
  */
 export function stampedReportFor(sheet: ClaimSheet, edit: (header: LooseHeader) => unknown = () => {}): string {
   return recordedReportFor(sheet, (h) => {
     h.items = itemHashes(sheet);
+    h.limits = limitsHash(sheet.overrides);
     edit(h);
   });
 }
@@ -111,3 +112,6 @@ export function recheckReportFor(sheet: ClaimSheet, base: string, judged: readon
     .flatMap((item) => ['', `### ${item.key} — ${header.verdicts[item.key]}`, '', `- \`${item.cite[0]!.source}\` §${item.cite[0]!.section}`, '  > Filler words.']);
   return ['# Re-check: ' + sheet.slug, '', '```json fact-check', JSON.stringify(header, null, 2), '```', '', ...body, ''].join('\n');
 }
+
+/** The text of a full report with its `items` and `limits` records taken out, as it was before they were written. */
+export const withoutRecords = (raw: string): string => raw.replace(/,\n {2}"items": \{[\s\S]*?\n {2}\}(?:,\n {2}"limits": "[0-9a-f]{64}")?(?=\n\})/, '');

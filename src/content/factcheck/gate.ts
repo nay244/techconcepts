@@ -4,8 +4,8 @@ import type { SourceRegistry } from '../sources';
 import { keysMissingQuotes } from './quotecheck';
 import { parseQuotes, quotesDigest, type QuoteMode } from './quotes';
 import { parseRecheck, parseReport, type RecheckHeader, type ReportHeader } from './report';
-import { itemsToJudge, matchBase, nearPass, overridesText, recheckMessages, recheckPath, sameOverrides, RECHECK_MAX_ITEMS } from './recheck';
-import { claimSheet, type ClaimSheet } from './sheet';
+import { itemsToJudge, matchBase, nearPass, recheckMessages, recheckPath, RECHECK_MAX_ITEMS } from './recheck';
+import { claimSheet, limitsHash, type ClaimSheet } from './sheet';
 
 /**
  * The build gate (fact-checker design §7): a lesson in the cited shape builds only with a current report in which
@@ -100,10 +100,10 @@ function quoteProblems(sheet: ClaimSheet, raw: string, header: Pick<ReportHeader
  * What is wrong with a full report and the re-check beside it, given the claim sheet as it is now. The lesson has
  * changed since the full check, and the build accepts it only when (docs/content-model.md §8):
  * 1. the re-check belongs to this full report (`base`) and this sheet (`hash`);
- * 2. the full report has an `items` record and was a near-pass;
+ * 2. the full report has an `items` record with a `limits` hash, and was a near-pass;
  * 3. the re-check's verdict keys are exactly the items to judge (`itemsToJudge`), at most 12;
  * 4. every re-check verdict passes, and the full report's verdict passes for every item not re-checked;
- * 5. the lesson's limit overrides are what the full report lists;
+ * 5. the lesson's limit overrides hash to the full report's `limits`;
  * 6. every source on the sheet is current: in the re-check's list when a re-checked item cites it, else in the full report's;
  * 7. the re-check's quotes can be read, sit under items it judged, and its quote record is right;
  * 8. the full report's own quote record still matches its quotes.
@@ -136,7 +136,7 @@ export function checkPair(sheet: ClaimSheet, fullRaw: string | undefined, rechec
   const rechecked = new Set(Object.keys(rh.verdicts));
 
   // 2
-  if (fh.items === undefined) problems.push(recheckMessages.noItems(path, sheet.slug));
+  if (fh.items === undefined || fh.limits === undefined) problems.push(recheckMessages.noItems(path, sheet.slug));
   const near = nearPass(fh.verdicts);
   if (!near.ok) problems.push(recheckMessages.notNearPass(path, near));
   // 3
@@ -167,7 +167,7 @@ export function checkPair(sheet: ClaimSheet, fullRaw: string | undefined, rechec
     }
   }
   // 5
-  if (!sameOverrides(sheet.overrides, fh.overrides)) problems.push(recheckMessages.overrides(rePath, overridesText(sheet.overrides), overridesText(fh.overrides)));
+  if (fh.limits !== undefined && fh.limits !== limitsHash(sheet.overrides)) problems.push(recheckMessages.overrides(rePath, limitsHash(sheet.overrides), fh.limits));
   // 6
   const reChecked = new Map(rh.sources.map((s) => [s.id, s]));
   const fullChecked = new Map(fh.sources.map((s) => [s.id, s]));

@@ -5,8 +5,8 @@ import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
 import { CANARY_SLUG, type FactCheckDeps, canaryReportPath, canaryRecheckPath, runFactCheck } from './cli';
 import { itemsToJudge } from './recheck';
 import { parseRecheck, parseReport } from './report';
-import { claimSheet, itemHashes } from './sheet';
-import { recheckReportFor, recordedReportFor, stampedReportFor, type LooseHeader } from './test-helpers';
+import { claimSheet, itemHashes, limitsHash } from './sheet';
+import { recheckReportFor, recordedReportFor, stampedReportFor, withoutRecords, type LooseHeader } from './test-helpers';
 
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
 
@@ -51,10 +51,11 @@ describe('--stamp', () => {
   test('stamp 1: it writes the items record into a report whose hash is the sheet\'s hash, and nothing else changes', async () => {
     const { deps, written } = setup({ [FULL]: plain() });
     const run = await runFactCheck([SLUG, '--stamp'], deps);
-    expect(run).toEqual({ code: 0, out: `Stamped: the items record (${sheetB().items.length} items) is written to ${FULL}` });
+    expect(run).toEqual({ code: 0, out: `Stamped: the items record (${sheetB().items.length} items) and the limits hash are written to ${FULL}` });
     expect(Object.keys(written)).toEqual([FULL]);
     expect(parseReport(written[FULL]!).header!.items).toEqual(itemHashes(sheetB()));
-    expect(written[FULL]!.replace(/,\n {2}"items": \{[\s\S]*?\n {2}\}(?=\n\})/, '')).toBe(plain());
+    expect(parseReport(written[FULL]!).header!.limits).toBe(limitsHash(sheetB().overrides));
+    expect(withoutRecords(written[FULL]!)).toBe(plain());
   });
 
   test('stamp 2: it refuses unless the report\'s hash is the sheet\'s hash now, and says what to do', async () => {
@@ -158,6 +159,25 @@ describe('--recheck prints the re-check sheet', () => {
     expect(run.out).toContain('run a full check');
   });
 
+  test('recheck 7b: a changed maximum in an override is refused, though its limit and reason are the same (D1)', async () => {
+    const ov = (max: number) => [{ limit: 'narrativeWords' as const, max, reason: 'Names all four messages in one step.' }];
+    const a = claimSheet({ ...lessonA(), overrides: ov(40) }, FIXTURE_SOURCES);
+    const fullRaw = stampedReportFor(a);
+    const run = await runFactCheck([SLUG, '--recheck'], setup({ [FULL]: fullRaw }, lessonB((l) => { reword(l); l.overrides = ov(400); })).deps);
+    expect(run.code).toBe(1);
+    expect(run.out).toContain('limit overrides');
+    expect(run.out).toContain('run a full check');
+    const same = await runFactCheck([SLUG, '--recheck'], setup({ [FULL]: fullRaw }, lessonB((l) => { reword(l); l.overrides = ov(40); })).deps);
+    expect(same.code).toBe(0);
+  });
+
+  test('recheck 7c: a full report with an items record and no limits hash has no record, and is stamped again (D1)', async () => {
+    const run = await runFactCheck([SLUG, '--recheck'], setup({ [FULL]: full((h) => { delete h.limits; }) }).deps);
+    expect(run.code).toBe(1);
+    expect(run.out).toContain('has no items record');
+    expect(run.out).toContain('--stamp');
+  });
+
   test('recheck 8: it refuses when nothing changed: the full report\'s hash is the sheet\'s hash', async () => {
     const run = await runFactCheck([SLUG, '--recheck'], setup({ [FULL]: stampedReportFor(sheetB()) }).deps);
     expect(run.code).toBe(1);
@@ -174,7 +194,7 @@ describe('--recheck prints the re-check sheet', () => {
     const cut = (l: Lesson) => { unit(l).learn.terms.splice(1, 1); };
     const run = await runFactCheck([SLUG, '--recheck'], setup({ [FULL]: full() }, lessonB(cut)).deps);
     expect(run.code).toBe(0);
-    expect(run.out).toContain('No item changed');
+    expect(run.out).toContain('No item on the sheet changed since the full check');
     expect(run.out).toContain(`Write your report to: ${RE}`);
   });
 });
@@ -286,8 +306,9 @@ describe('the quote check on a full report says what it did about the items reco
     const { deps, written } = setup({ [FULL]: quoting() });
     const run = await runFactCheck([SLUG, '--quotes', 'tmp'], deps);
     const count = sheetB().items.filter((i) => i.cite.length > 0).length;
-    expect(run).toEqual({ code: 0, out: `Quotes OK: ${count} quotes in 2 sources; record written to ${FULL}, with the items record (${sheetB().items.length} items)` });
+    expect(run).toEqual({ code: 0, out: `Quotes OK: ${count} quotes in 2 sources; record written to ${FULL}, with the items record (${sheetB().items.length} items) and the limits hash` });
     expect(parseReport(written[FULL]!).header!.items).toEqual(itemHashes(sheetB()));
+    expect(parseReport(written[FULL]!).header!.limits).toBe(limitsHash(sheetB().overrides));
   });
 
   test('quote line 2: when it is not, the line says there is no items record, and why', async () => {

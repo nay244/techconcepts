@@ -8,7 +8,7 @@ import { checkReport } from './gate';
 import { parseReport } from './report';
 import { sha256 } from './sha256';
 import { claimSheet } from './sheet';
-import { reportFor, reportQuoting as reportQuotingFor, type LooseHeader } from './test-helpers';
+import { reportFor, reportQuoting as reportQuotingFor, withoutRecords, type LooseHeader } from './test-helpers';
 
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
 
@@ -248,7 +248,8 @@ test('the record has the right count, digest and file hashes, and the rest of th
     files: { 'rfc-example': sha256(folder[0]!.text), 'vendor-example': sha256('Filler words.') },
   });
   expect(parseReport(result.report!).header!.quotes).toEqual(result.record);
-  expect(result.report!.replace(/,\n {2}"quotes": \{[\s\S]*?\n {2}\}(?=\n\})/, '')).toBe(raw);
+  // The report's hash is the sheet's, so the items record and the limits hash are written too (G4).
+  expect(withoutRecords(result.report!).replace(/,\n {2}"quotes": \{[\s\S]*?\n {2}\}(?=\n\})/, '')).toBe(raw);
 });
 
 test('an earlier record is replaced', () => {
