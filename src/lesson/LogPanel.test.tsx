@@ -209,3 +209,21 @@ test('every cell names its column, and the table states its roles so a restyled 
   expect(cells.slice(1).map((c) => c.getAttribute('data-label'))).toEqual(LOG.columns.map((c) => c.label));
   expect(cells[0]).not.toHaveAttribute('data-label');
 });
+
+test('a column the lesson gives 100px or less is a short value, which a phone sets on the entry’s last line', () => {
+  const log: LogDef = {
+    ...LOG,
+    columns: [
+      { key: 'source', label: 'Source' },
+      { key: 'size', label: 'Size', width: 70 },
+      { key: 'decision', label: 'Decision', width: 160 },
+      { key: 'plain', label: 'In plain words', width: 80 },
+    ],
+  };
+  render(<LogPanel log={log} rows={ROWS.slice(0, 1)} idle="Nothing yet." />);
+  const cells = within(bodyRows()[0]!).getAllByRole('cell');
+  expect(cells.map((td) => td.classList.contains('log__short'))).toEqual([false, false, true, false, false]);
+  // Words are never short, whatever their width.
+  expect(cells[4]).toHaveClass('log__prose');
+  expect(cells[4]).not.toHaveClass('log__short');
+});

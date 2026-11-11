@@ -10,9 +10,11 @@ import {
   nextButton,
   open,
   pageOverflow,
+  playButton,
   readyLessons,
   requireLessons,
   settledFrame,
+  viewSwitch,
 } from './support';
 
 /** The ready lessons, as the built track pages link to them. */
@@ -927,7 +929,7 @@ test.describe('phone', { tag: '@phone' }, () => {
       const b = el.getBoundingClientRect();
       return { top: Math.round(b.top), bottom: Math.round(b.bottom), height: Math.round(b.height) };
     });
-  const tab = (page: Page, name: 'Explain' | 'Steps' | 'Log') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
+  const tab = (page: Page, name: 'Explain' | 'Steps' | 'Log' | 'Table' | 'Rules' | 'Bits') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
 
   for (const lesson of LESSONS) {
     test(`${lesson.path} fits one phone screen: the scene on top, the controls at the bottom, and no page scroll`, async ({ page }) => {
@@ -965,6 +967,8 @@ test.describe('phone', { tag: '@phone' }, () => {
     await open(page, dhcp.path);
     const sceneAt = async () => (await boxOf(page, '.console__scene'))!.top;
     const top = await sceneAt();
+    // Three parts for every lesson, and a fourth for the lesson's own table (D2).
+    await expect(page.getByRole('group', { name: 'Show', exact: true }).getByRole('button')).toHaveText(['Explain', 'Steps', 'Log', 'Table']);
 
     await tab(page, 'Steps').click();
     expect(await boxOf(page, '.console__outline')).not.toBeNull();
@@ -1020,5 +1024,266 @@ test.describe('phone', { tag: '@phone' }, () => {
     await expect(foot.locator('ol.explain__sources > li').first()).toBeVisible();
     expect(await page.locator('.console__explain').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
+  });
+
+  // ---------------------------------------------------------------- D2: the leftovers (prototypes/d2-lesson-phone.md)
+
+  const bySlug = (slug: string) => LESSONS.find((l) => l.slug === slug)!;
+  /** The drawing's height while watching, and while reading Learn or Practice on OSI Model (D2's measurements), by screen height. */
+  const SCENE = { 812: { watching: 235, reading: 145 }, 844: { watching: 246, reading: 151 } } as const;
+  const names = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button');
+  /** Goes to a place in the lesson: a position's number, or 'learn' or 'practice'. */
+  async function goTo(page: Page, path: string, where: number | 'learn' | 'practice'): Promise<void> {
+    if (where === 0) return open(page, path);
+    await open(page, `${path}?step=${where === 'learn' || where === 'practice' ? 99 : where}`);
+    await expect(kicker(page)).toHaveText(where === 'learn' ? /Practice/ : where === 'practice' ? /Practice/ : /Step \d+ of \d+/);
+    if (where === 'learn') await moveBy(page, () => page.getByRole('button', { name: 'Previous step', exact: true }).click());
+    if (where === 'learn') await expect(kicker(page)).toHaveText(/Learn/);
+  }
+  /** Plays the current step until the lesson's table has a row the step marked, or the rules show a check. */
+  async function played(page: Page, marked: string): Promise<void> {
+    await playButton(page).click();
+    await expect(page.locator(marked).first()).toBeAttached({ timeout: 15_000 });
+  }
+  /** Where a log cell's value starts: after its name, in the 84px column (the cell is a grid). */
+  const valueX = (cell: Locator) =>
+    cell.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const columns = getComputedStyle(el).gridTemplateColumns.split(' ');
+      return Math.round(box.left + parseFloat(columns[0]!));
+    });
+
+  for (const screen of [
+    { width: 375, height: 812 },
+    { width: 390, height: 844 },
+  ]) {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      test.describe(`D2 at ${screen.width}x${screen.height}, ${colorScheme}`, () => {
+        test.use({ viewport: screen, colorScheme });
+
+        test('1 and 2: the page and the scene scroll nowhere, on every slot of four lessons', async ({ page }) => {
+          for (const slug of ['dhcp', 'osi-model', 'firewalls', 'subnetting']) {
+            for (const where of [0, 3, 'learn', 'practice'] as const) {
+              await goTo(page, bySlug(slug).path, where);
+              const overflow = await pageOverflow(page);
+              expect(overflow, `${slug} ${where}: the page`).toEqual({ down: 0, sideways: 0 });
+              const stage = await page.locator('.console__stage').evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+              expect(stage.scroll, `${slug} ${where}: the stage`).toBe(stage.client);
+            }
+          }
+        });
+
+        test('3: the fourth tab is named for the lesson’s own panel; OSI Model has three', async ({ page }) => {
+          for (const [slug, last] of [['dhcp', 'Table'], ['firewalls', 'Rules'], ['subnetting', 'Bits']] as const) {
+            await open(page, bySlug(slug).path);
+            await expect(names(page)).toHaveText(['Explain', 'Steps', 'Log', last]);
+          }
+          await open(page, bySlug('osi-model').path);
+          await expect(names(page)).toHaveText(['Explain', 'Steps', 'Log']);
+        });
+
+        test('4: each tab shows its part and only its part, and the scene does not move', async ({ page }) => {
+          await open(page, bySlug('dhcp').path);
+          const parts = { Explain: '.console__explain', Steps: '.console__outline', Log: '.console__log', Table: '.tpanel' } as const;
+          const sceneBox = async () => (await boxOf(page, '.console__scene'))!;
+          const before = await sceneBox();
+          for (const [name, shown] of Object.entries(parts)) {
+            await tab(page, name as keyof typeof parts).click();
+            for (const [other, selector] of Object.entries(parts)) {
+              const visible = (await boxOf(page, selector)) !== null;
+              expect(visible, `${name} is chosen: ${other}`).toBe(other === name);
+              await expect(tab(page, other as keyof typeof parts)).toHaveAttribute('aria-pressed', other === name ? 'true' : 'false');
+            }
+            expect(shown).toBeTruthy();
+            expect(await sceneBox()).toEqual(before);
+          }
+        });
+
+        test('5: DHCP’s lease table is whole in its tab, its names beside values that start at one x', async ({ page }) => {
+          await goTo(page, bySlug('dhcp').path, 4);
+          await played(page, '.tpanel tr[data-highlight]');
+          await tab(page, 'Table').click();
+          const table = page.locator('.tpanel');
+          const box = (await boxOf(page, '.tpanel'))!;
+          const tabsBottom = (await boxOf(page, '.console__tabs'))!.bottom;
+          const controlsTop = (await boxOf(page, '.console__controls'))!.top;
+          expect(box.top).toBeGreaterThanOrEqual(tabsBottom - 1);
+          expect(box.bottom).toBeLessThanOrEqual(controlsTop + 1);
+          expect(await table.evaluate((el) => ({ down: el.scrollHeight - el.clientHeight, sideways: el.scrollWidth - el.clientWidth }))).toEqual({ down: 0, sideways: 0 });
+          // The step may still be playing its last events: wait for the lease to be in the table.
+          const cells = table.locator('tbody tr').first().locator('td[data-label]');
+          await expect(cells).toHaveCount(4);
+          const labels = await cells.evaluateAll((els) => els.map((el) => getComputedStyle(el, '::before').content));
+          expect(labels).toEqual(['"IP address"', '"MAC address"', '"Device"', '"Expires"']);
+          const x = await Promise.all((await cells.all()).map(valueX));
+          expect(new Set(x).size).toBe(1);
+        });
+
+        test('6: Firewalls’ rules, step 2: three rules and the connections it remembers are in view, and rule 3 fits → deny', async ({ page }) => {
+          await goTo(page, bySlug('firewalls').path, 2);
+          await played(page, '.rpanel tr[data-state="deny"]');
+          await tab(page, 'Rules').click();
+          const panel = page.locator('.rpanel');
+          expect(await panel.evaluate((el) => ({ down: el.scrollHeight - el.clientHeight, sideways: el.scrollWidth - el.clientWidth }))).toEqual({ down: 0, sideways: 0 });
+          await expect(panel.locator('tbody tr')).toHaveCount(3);
+          await expect(panel.locator('tbody tr').nth(2)).toContainText('Fits → deny');
+          const bottom = (await boxOf(page, '.rpanel__conns'))!.bottom;
+          expect(bottom).toBeLessThanOrEqual((await boxOf(page, '.console__controls'))!.top);
+        });
+
+        test('7: a table of three columns is still a table in its tab, with no sideways scroll', async ({ page }) => {
+          await goTo(page, bySlug('what-is-tcp').path, 3);
+          await playButton(page).click();
+          await expect(page.locator('.tpanel tbody tr[data-highlight]').first()).toBeAttached({ timeout: 15_000 });
+          await tab(page, 'Table').click();
+          expect(await page.locator('.tpanel__table').evaluate((el) => getComputedStyle(el).display)).toBe('table');
+          expect(await page.locator('.tpanel').evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+        });
+
+        test('8 and 9: the mark says the table changed until the reader looks; Back and Next keep the tab', async ({ page }) => {
+          await goTo(page, bySlug('dhcp').path, 4);
+          const table = page.getByRole('button', { name: /^Table/ });
+          await expect(table).toHaveAccessibleName('Table');
+          await playButton(page).click();
+          await expect(table).toHaveAccessibleName('Table, changed', { timeout: 15_000 });
+          await expect(page.locator('.tab__mark')).toHaveCount(1);
+          await table.click();
+          await expect(page.locator('.tab__mark')).toHaveCount(0);
+          await tab(page, 'Explain').click();
+          await expect(page.locator('.tab__mark')).toHaveCount(0);
+          await expect(table).toHaveAccessibleName('Table');
+          // Back and Next keep the chosen tab.
+          await table.click();
+          await moveBy(page, () => page.getByRole('button', { name: 'Previous step', exact: true }).click());
+          await expect(table).toHaveAttribute('aria-pressed', 'true');
+          await moveBy(page, () => nextButton(page).click());
+          await expect(table).toHaveAttribute('aria-pressed', 'true');
+          // A step that has not changed the table has no mark; choosing a step in Steps returns to the words.
+          await tab(page, 'Steps').click();
+          await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
+          await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+          await expect(page.locator('.tab__mark')).toHaveCount(0);
+        });
+
+        test('10 and 11: the log’s values start at one x on every row, and the short ones share the last line', async ({ page }) => {
+          await goTo(page, bySlug('dhcp').path, 5);
+          await playButton(page).click();
+          await expect(page.locator('.console__controls .cbtn--play')).toContainText(/Replay|Watch again|Play/, { timeout: 30_000 });
+          await tab(page, 'Log').click();
+          const rows = await logRows(page).all();
+          expect(rows.length).toBeGreaterThan(2);
+          const xs: number[] = [];
+          for (const row of rows) {
+            for (const label of ['Source', 'Destination']) xs.push(await valueX(row.locator(`td[data-label="${label}"]`)));
+          }
+          expect(new Set(xs).size, `DHCP: ${xs.join(', ')}`).toBe(1);
+          for (const row of rows) {
+            const short = row.locator('td.log__short');
+            await expect(short).toHaveCount(3);
+            await expect(short).toHaveText([/^\d[\d.]* ?s$/, /^DHCP/, /\d+ ?B$/]);
+            const tops = await short.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+            expect(new Set(tops).size).toBe(1);
+            const rowBox = (await row.boundingBox())!;
+            const last = (await row.locator('td').last().boundingBox())!;
+            expect(last.y + last.height).toBeLessThanOrEqual(rowBox.y + rowBox.height);
+          }
+          expect(await page.locator('.log__scroll').evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
+
+          await goTo(page, bySlug('firewalls').path, 6);
+          await playButton(page).click();
+          await expect(page.locator('.console__controls .cbtn--play')).toContainText(/Replay|Watch again|Play/, { timeout: 30_000 });
+          await tab(page, 'Log').click();
+          const fx: Record<string, number[]> = { Source: [], Destination: [], Service: [], Decision: [] };
+          for (const row of await logRows(page).all()) {
+            for (const label of Object.keys(fx)) fx[label]!.push(await valueX(row.locator(`td[data-label="${label}"]`)));
+          }
+          const all = Object.values(fx).flat();
+          expect(all.length).toBeGreaterThan(4);
+          expect(new Set(all).size, `Firewalls: ${JSON.stringify(fx)}`).toBe(1);
+        });
+
+        test('12: only a lesson with the Network and Sequence switch has a band above its scene', async ({ page }) => {
+          for (const slug of ['osi-model', 'subnetting']) {
+            await open(page, bySlug(slug).path);
+            expect(await boxOf(page, '.stage__head'), slug).toBeNull();
+          }
+          for (const slug of ['dhcp', 'firewalls']) {
+            await open(page, bySlug(slug).path);
+            expect((await boxOf(page, '.stage__head'))!.height, slug).toBe(40);
+            await expect(viewSwitch(page)).toBeVisible();
+          }
+        });
+
+        test('13 and 14: OSI Model’s message strip is pinned under the scene while watching, and gone while reading', async ({ page }) => {
+          const expected = SCENE[screen.height as 812 | 844];
+          await goTo(page, bySlug('osi-model').path, 6);
+          await playButton(page).click();
+          await expect.poll(async () => page.locator('.labels-chip:not(.is-data)').count(), { timeout: 30_000 }).toBeGreaterThanOrEqual(6);
+          const strip = (await boxOf(page, '.console__stage .labels'))!;
+          expect(strip.height).toBe(40);
+          expect(strip.bottom).toBeLessThanOrEqual((await boxOf(page, '.console__stage'))!.bottom);
+          // One line: the chips share a top. (The note at the right is cut, not wrapped into view, when they leave it no room.)
+          expect((await boxOf(page, '.labels-row'))!.height).toBe(30);
+          const inRow = await page.locator('.labels-title, .labels-chip').evaluateAll((els) => {
+            const row = document.querySelector('.labels-row')!.getBoundingClientRect();
+            return els.every((el) => el.getBoundingClientRect().top >= row.top - 1 && el.getBoundingClientRect().bottom <= row.bottom + 1);
+          });
+          expect(inRow, 'the title and every chip are inside the one line').toBe(true);
+          expect((await boxOf(page, '.console__scene'))!.height).toBe(expected.watching);
+
+          for (const where of ['learn', 'practice'] as const) {
+            await goTo(page, bySlug('osi-model').path, where);
+            expect(await boxOf(page, '.console__stage .labels'), where).toBeNull();
+            expect((await boxOf(page, '.console__scene'))!.height, where).toBe(expected.reading);
+          }
+        });
+
+        test('15: the stamp ends the Overview’s first line, and is not on a step', async ({ page }) => {
+          for (const slug of ['osi-model', 'dhcp', 'firewalls', 'subnetting']) {
+            await open(page, bySlug(slug).path);
+            const lead = page.locator('.console__explain .explain__lead');
+            const stamp = lead.locator('a.stamp');
+            await expect(stamp).toBeVisible();
+            const k = (await kicker(page).boundingBox())!;
+            const s = (await stamp.boundingBox())!;
+            expect(Math.abs(s.y + s.height / 2 - (k.y + k.height / 2)), `${slug}: one line`).toBeLessThan(8);
+            expect(s.x).toBeGreaterThan(k.x + k.width);
+            expect(s.x + s.width).toBeLessThanOrEqual(screen.width);
+            expect(s.height).toBeGreaterThanOrEqual(24);
+            expect(await stamp.textContent()).toMatch(/^(Checked \d{1,2} [A-Z][a-z]{2} \d{4}|Not checked yet), \d+ sources?$/);
+            await expect(stamp).toHaveAttribute('href', '/about#facts');
+          }
+          await goTo(page, bySlug('dhcp').path, 2);
+          await expect(page.locator('.console__explain .stamp')).toHaveCount(0);
+        });
+      });
+    }
+  }
+
+  test.describe('D2 on a wider screen, and with scripts off', () => {
+    test.describe('JavaScript off at 375px: the page is as before', () => {
+      test.use({ viewport: { width: 375, height: 812 }, javaScriptEnabled: false });
+      test('no tabs, the table under the scene, no stamp in the Overview', async ({ page }) => {
+        await page.goto(bySlug('dhcp').path);
+        expect(await boxOf(page, '.console__tabs')).toBeNull();
+        await expect(page.locator('.console__stage .tpanel')).toBeVisible();
+        const stage = (await boxOf(page, '.console__stage'))!;
+        const table = (await boxOf(page, '.tpanel'))!;
+        expect(table.top).toBeGreaterThan(stage.top);
+        expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+      });
+    });
+    for (const width of [1024, 1440]) {
+      test.describe(`${width}px with scripts on: the page is as before`, () => {
+        test.use({ viewport: { width, height: 900 }, isMobile: false, hasTouch: false });
+        test('no tabs shown, the table under the scene, the Overview’s stamp only in the top bar', async ({ page }) => {
+          await open(page, bySlug('dhcp').path);
+          expect(await boxOf(page, '.console__tabs')).toBeNull();
+          expect(await boxOf(page, '.console__stage .tpanel')).not.toBeNull();
+          expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+          if (width === 1440) expect(await boxOf(page, '.console__top .stamp')).not.toBeNull();
+        });
+      });
+    }
   });
 });

@@ -85,9 +85,17 @@ const NUMBER_WIDTH = 56;
 /** A column of words: one marked `prose`, or the `plain` column unless it says otherwise. */
 const isProse = (column: LogDef['columns'][number]): boolean => column.prose ?? column.key === 'plain';
 
-/** A cell's classes: words or figures, and set strong when its column holds the row's main words. */
+/** The widest a column may be and still be a short value (Time, Protocol, Size, Prefix): on a phone these share a line. */
+const SHORT_WIDTH = 100;
+
+/** A cell's classes: words or figures, short when its column is narrow, and strong when it holds the row's main words. */
 const cellClass = (column: LogDef['columns'][number]): string | undefined =>
-  [isProse(column) ? 'log__prose' : '', column.strong ? 'log__strong' : ''].filter(Boolean).join(' ') || undefined;
+  [
+    isProse(column) ? 'log__prose' : column.width !== undefined && column.width <= SHORT_WIDTH ? 'log__short' : '',
+    column.strong ? 'log__strong' : '',
+  ]
+    .filter(Boolean)
+    .join(' ') || undefined;
 
 export interface LogPanelProps {
   log: LogDef;

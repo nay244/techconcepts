@@ -254,3 +254,9 @@ test.each(['dark', 'light'] as const)('the miss tag keeps its words at 4.5:1 in 
   const t = tokens[theme];
   expect(contrastRatio(t.muted, t.card)).toBeGreaterThanOrEqual(4.5);
 });
+
+test('each cell carries its column’s name, for a phone to show beside the value', () => {
+  const { container } = render(<TablePanel def={def} state={stateOf()} />);
+  const first = container.querySelector('tbody tr')!;
+  expect([...first.querySelectorAll('td')].map((td) => td.getAttribute('data-label'))).toEqual(def.columns.map((c) => c.label));
+});

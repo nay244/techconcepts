@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
-import type { Lesson } from '../content/schema';
+import type { Lesson, Panel } from '../content/schema';
 import { usePlayback } from '../engine/playback';
-import { deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
+import { appliedEvents, deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
 import type { LessonStamp } from '../lib/stamp';
@@ -21,13 +21,38 @@ import { useLessonShortcuts } from './useLessonShortcuts';
 import { useReducedMotion } from './useReducedMotion';
 import './console.css';
 
-/** What a phone shows under the scene: the words, the lesson's outline, or the event log. */
-type Tab = 'explain' | 'steps' | 'log';
+/** What a phone shows under the scene: the words, the lesson's outline, the event log, or the lesson's own table. */
+type Tab = 'explain' | 'steps' | 'log' | 'table';
 const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'explain', label: 'Explain' },
   { id: 'steps', label: 'Steps' },
   { id: 'log', label: 'Log' },
 ];
+
+/** The fourth tab's name, by what the unit's panel is. The message strip (OSI Model) has none: it stays under the scene. */
+const PANEL_TAB: Partial<Record<Panel['type'], string>> = { table: 'Table', rules: 'Rules', bits: 'Bits' };
+
+/**
+ * The id of the latest applied event of the current step that changed the unit's panel, or null when none has: a row
+ * of the table added, changed or matched; for the rule list, a visit checked against it, a connection remembered or a
+ * reply matched to one; for the bits board, a note that sets the board.
+ */
+function panelChange(panel: Panel | null, derived: ReturnType<typeof deriveState>): string | null {
+  if (panel === null) return null;
+  const changed = appliedEvents(derived).findLast((e) => {
+    if (panel.type === 'table') return e.type === 'table' && e.table === panel.table.id;
+    if (panel.type === 'rules') {
+      if (e.type === 'table') return e.table === panel.rules.id || e.table === panel.conns.id;
+      return e.type === 'message' && (e.check?.table === panel.rules.id || e.known?.table === panel.conns.id);
+    }
+    if (panel.type === 'bits') return e.type === 'note' && e.board !== undefined;
+    return false;
+  });
+  return changed?.id ?? null;
+}
+
+/** The row an event has marked in the lesson's own panel, to bring into view when the tab opens. */
+const MARKED_ROW = '.tpanel [data-highlight], .rpanel [data-state], .rpanel [data-new], .rpanel [data-known]';
 
 export interface LessonConsoleProps {
   trackId: string;
@@ -103,7 +128,22 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
 
   // On a phone the scene stays put and one of three parts shows under it (console.css). On a wider screen all three
   // are on show at once, the buttons are hidden, and this state changes nothing.
+  const consoleEl = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>('explain');
+  const panelTab = unit.scene.panel === null ? undefined : PANEL_TAB[unit.scene.panel.type];
+  // A unit without a table of its own (the next unit of a lesson) cannot keep its tab.
+  useEffect(() => {
+    if (tab === 'table' && panelTab === undefined) setTab('explain');
+  }, [tab, panelTab]);
+  // The last change the reader has seen in the panel: the tab says when there is one they have not. Not stored.
+  const change = panelTab === undefined ? null : panelChange(unit.scene.panel, derived);
+  const [changeSeen, setChangeSeen] = useState<string | null>(null);
+  useEffect(() => {
+    if (tab !== 'table' || change === null) return;
+    setChangeSeen(change);
+    consoleEl.current?.querySelector(MARKED_ROW)?.scrollIntoView?.({ block: 'nearest' });
+  }, [tab, change]);
+  const tabs = panelTab === undefined ? TABS : [...TABS, { id: 'table' as const, label: panelTab }];
   /** Going to a place from the Steps tab shows the words for it. */
   const goFromOutline = useCallback(
     (target: Position) => {
@@ -191,7 +231,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 
   return (
-    <div className="console" data-tab={tab} data-reading={reading ? '' : undefined} data-log={reading && logOpen ? 'open' : undefined}>
+    <div ref={consoleEl} className="console" data-tab={tab} data-reading={reading ? '' : undefined} data-log={reading && logOpen ? 'open' : undefined}>
       <TopBar
         lesson={lesson}
         trackTitle={trackTitle}
@@ -215,11 +255,15 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         progress={progress.data}
       />
       <div className="console__tabs" role="group" aria-label="Show">
-        {TABS.map(({ id, label }) => (
-          <button key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)}>
-            {label}
-          </button>
-        ))}
+        {tabs.map(({ id, label }) => {
+          const marked = id === 'table' && tab !== 'table' && change !== null && change !== changeSeen;
+          return (
+            <button key={id} type="button" aria-pressed={tab === id} aria-label={marked ? `${label}, changed` : undefined} onClick={() => setTab(id)}>
+              {label}
+              {marked ? <span className="tab__mark" aria-hidden="true" /> : null}
+            </button>
+          );
+        })}
       </div>
       <main id="main" className="console__main">
         <ScenePanel

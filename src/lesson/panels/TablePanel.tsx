@@ -64,7 +64,7 @@ export function TablePanel({ def, state }: TablePanelProps) {
               return (
                 <tr key={key ?? i} data-highlight={mark ?? undefined} data-miss={miss ? '' : undefined}>
                   {def.columns.map((column, c) => (
-                    <td key={column.key} className={column.prose === true ? 'tpanel__prose' : undefined}>
+                    <td key={column.key} className={column.prose === true ? 'tpanel__prose' : undefined} data-label={column.label}>
                       {row[column.key] ?? ''}
                       {miss && c === 0 ? (
                         <>

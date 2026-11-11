@@ -664,6 +664,9 @@ a.outline__lesson:hover {
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+.explain__lead .stamp {
+  display: none;
+}
 .explain__title {
   margin: 0 0 6px;
   color: var(--ink-strong);
@@ -1308,8 +1311,8 @@ ol.explain__sources li::marker {
 
 /* ---------------------------------------------------------------- phones
    One screen, like the desktop, and no page scroll (docs/direction.md §7). The scene is pinned under the top bar, so
-   it is in view for every step. Under it, one of three parts shows at a time, chosen by the tabs: the words, the
-   lesson's outline, or the log. Back, Play and Next are pinned at the bottom, under the thumb.
+   it is in view for every step. Under it, one of four parts shows at a time, chosen by the tabs: the words, the
+   lesson's outline, the log, or the lesson's own table (rules, bits). Back, Play and Next are pinned at the bottom, under the thumb.
 
    It needs the tabs, and so JavaScript: without it (`:root.js` is set by the boot script) the page keeps the stacked
    layout above, where everything can still be reached by scrolling. */
@@ -1366,13 +1369,13 @@ ol.explain__sources li::marker {
     min-width: 0;
   }
 
-  /* The scene. Its table, when the lesson has one, is under it: the stage scrolls to it. */
+  /* The scene. It scrolls nowhere: the lesson's table, when it has one, has a tab of its own (below). */
   :root.js .console__stage {
     position: fixed;
     inset: var(--ph-top) 0 auto;
     height: var(--ph-stage);
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
     border-bottom: 1px solid var(--line-strong);
   }
   :root.js .stage__head {
@@ -1382,15 +1385,23 @@ ol.explain__sources li::marker {
   :root.js .stage__title {
     display: none;
   }
+  /* A lesson with one view has no switch, so it has no band above the scene. */
+  :root.js .stage__head:not(:has(.stage__views)) {
+    display: none;
+  }
   :root.js .console__scene {
-    flex: none;
-    height: calc(var(--ph-stage) - 41px);
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+    /* The figure's shadows run past its box: the stage would scroll to them, and they would show over the strip below. */
+    overflow: hidden;
   }
 
   /* The tabs. */
   :root.js .console__tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     position: fixed;
     inset: calc(var(--ph-top) + var(--ph-stage)) 0 auto;
     height: var(--ph-tabs);
@@ -1413,6 +1424,15 @@ ol.explain__sources li::marker {
     border-bottom-color: var(--here);
     background: var(--card);
     color: var(--ink-strong);
+  }
+  /* The lesson's table has changed and the reader has not looked yet: a small square in the row mark's colour. */
+  :root.js .console__tabs .tab__mark {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-inline-start: 7px;
+    background: var(--selected);
+    vertical-align: 0.12em;
   }
 
   /* The three parts share the space between the tabs and the controls; each scrolls inside itself. */
@@ -1452,12 +1472,17 @@ ol.explain__sources li::marker {
     overflow: hidden;
     clip-path: inset(50%);
   }
+  /* Every entry has the same three columns: the number (40px), the column's name (84px), the value. So Source and
+     Destination start at the same place on their two lines, and from entry to entry. The words (a prose column) take
+     a line of their own, with no name. The short values (a column the lesson gives 100px or less: Time, Protocol,
+     Size, Prefix) share the last line, name before value. */
   :root.js .log__table tr {
     display: flex;
+    position: relative;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 3px 14px;
-    padding: 10px 14px;
+    gap: 2px 14px;
+    padding: 9px 14px 9px 54px;
     border-bottom: 1px solid var(--line);
   }
   :root.js .log__table td {
@@ -1465,20 +1490,53 @@ ol.explain__sources li::marker {
     padding: 0;
     border-bottom: 0;
   }
+  :root.js .log__table td:first-child:not(.log__idle) {
+    position: absolute;
+    top: 9px;
+    left: 14px;
+  }
+  :root.js .log__table tr:has(> .log__idle) {
+    padding-inline-start: 14px;
+  }
+  :root.js .log__table td[data-label] {
+    display: grid;
+    flex: 0 0 100%;
+    grid-template-columns: 84px minmax(0, 1fr);
+    align-items: baseline;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
   :root.js .log__table td[data-label]::before {
-    content: attr(data-label) ' ';
+    content: attr(data-label);
     color: var(--muted);
-    font: 600 12.5px/1 var(--display);
+    font: 600 12.5px/1.4 var(--display);
     letter-spacing: 0.02em;
   }
   :root.js .log__table td.log__prose {
-    flex-basis: 100%;
+    display: block;
   }
   :root.js .log__table td.log__prose::before {
     content: none;
   }
+  :root.js .log__table td.log__short {
+    display: block;
+    flex: 0 0 auto;
+    order: 1;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  :root.js .log__table td.log__short::before {
+    content: attr(data-label) '\a0';
+  }
   :root.js .log__table td.log__idle {
     flex: 1;
+  }
+  /* The row that has just played pulses as one entry, not cell by cell. */
+  :root.js .log__table tr[data-fresh] {
+    animation: log-pulse 900ms var(--ease-out);
+  }
+  :root.js .log__table tr[data-fresh] td {
+    animation: none;
   }
 
   /* The top bar says where you are in words; the row of segments does not fit beside them. */
@@ -1504,5 +1562,217 @@ ol.explain__sources li::marker {
   }
   :root.js .console__controls .cbtn--play {
     flex: 1;
+  }
+
+  /* The message strip (OSI Model) is one line, pinned under the scene: 40px with its top line, which is
+     the band's height, so the drawing keeps the height it has today. Reading, the strip has nothing to
+     say (the message is delivered), and the drawing takes its room. */
+  :root.js .labels {
+    padding: 4px 12px 5px;
+  }
+  :root.js .labels-row {
+    gap: 0 4px;
+    height: 30px;
+    min-height: 0;
+    overflow: hidden;
+  }
+  :root.js .labels-row > * {
+    flex: none;
+  }
+  :root.js .labels-title {
+    margin-right: 4px;
+    line-height: 30px;
+  }
+  :root.js .labels-chip {
+    padding: 3px 5px;
+    font-size: 12.5px;
+  }
+  :root.js .labels-chip.is-read {
+    padding: 2px 4px;
+  }
+  /* The note shows whole or not at all: when the chips leave it no room it wraps to a second line, which is cut. */
+  :root.js .labels-note {
+    line-height: 30px;
+  }
+  :root.js .console[data-reading] .labels {
+    display: none;
+  }
+
+  /* --- The lesson's table (a tab of its own) fills the part under the tabs, like the other three ----------- */
+  :root.js .tpanel,
+  :root.js .rpanel,
+  :root.js .bits {
+    position: fixed;
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-tabs)) 0 var(--ph-ctl);
+    max-height: none;
+    overflow: auto;
+    padding: 14px 14px 20px;
+    border-top: 0;
+    background: var(--card);
+  }
+  :root.js .console:not([data-tab='table']) :is(.tpanel, .rpanel, .bits) {
+    display: none;
+  }
+
+  /* --- A table at phone width --------------------------------------------------------------------
+     Three columns or fewer: still a table, fitted to the width. Words wrap; nothing scrolls sideways. */
+  :root.js .tpanel caption {
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  :root.js .tpanel th,
+  :root.js .tpanel td {
+    padding: 6px 8px;
+  }
+  :root.js .tpanel th {
+    white-space: normal;
+  }
+  :root.js .tpanel td {
+    overflow-wrap: break-word;
+  }
+
+  /* Four columns or more: each row is an entry, the column's name beside each value. The names share one
+     84px column, so every value starts at the same place, in every entry. The headings are still read out. */
+  :root.js .tpanel__table:has(thead th:nth-child(4)),
+  :root.js .tpanel__table:has(thead th:nth-child(4)) tbody,
+  :root.js .tpanel__table:has(thead th:nth-child(4)) tr {
+    display: block;
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) caption {
+    display: block;
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) tbody {
+    border-top: 1px solid var(--line);
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) tr {
+    border-bottom: 1px solid var(--line);
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) td[data-label] {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    align-items: baseline;
+    padding: 2px 8px 2px 11px;
+    border-bottom: 0;
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) td[data-label]:first-child {
+    padding-top: 9px;
+    color: var(--ink-strong);
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) td[data-label]:last-child {
+    padding-bottom: 9px;
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font: 600 12.5px/1.4 var(--display);
+    letter-spacing: 0.02em;
+  }
+  /* On a marked row the names take the ink the values have: muted words are not checked against the tint. */
+  :root.js .tpanel__table:has(thead th:nth-child(4)) tr[data-highlight] > td[data-label]::before {
+    color: var(--ink);
+  }
+  /* The row's bar runs down the whole entry, not only its first line. */
+  :root.js .tpanel__table:has(thead th:nth-child(4)) tr[data-highlight] > td {
+    background-image: linear-gradient(var(--selected), var(--selected));
+    background-repeat: no-repeat;
+    background-size: 3px 100%;
+  }
+  :root.js .tpanel__table:has(thead th:nth-child(4)) td.tpanel__empty {
+    display: block;
+    padding: 14px 8px;
+    text-align: start;
+  }
+
+  /* The rule list (Firewalls): a rule is two lines. Number, action, port and source across the first;
+     what the rule is for, and what the check found, on the second. */
+  :root.js .rpanel caption {
+    display: block;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    white-space: normal;
+  }
+  :root.js .rpanel__table,
+  :root.js .rpanel__table thead,
+  :root.js .rpanel__table tbody {
+    display: block;
+  }
+  :root.js .rpanel__table colgroup {
+    display: none;
+  }
+  :root.js .rpanel__table tr {
+    display: grid;
+    grid-template-columns: 26px 72px 74px minmax(0, 1fr);
+    align-items: baseline;
+    border-bottom: 1px solid var(--line);
+  }
+  :root.js .rpanel th,
+  :root.js .rpanel td {
+    padding: 6px 6px 3px;
+    border-bottom: 0;
+  }
+  :root.js .rpanel td:first-child,
+  :root.js .rpanel th:first-child {
+    padding-inline-start: 10px;
+  }
+  :root.js .rpanel thead th:nth-child(n + 5) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  :root.js .rpanel td.rpanel__prose {
+    grid-row: 2;
+    grid-column: 2 / 4;
+    padding-block: 0 7px;
+    overflow: visible;
+    white-space: normal;
+  }
+  :root.js .rpanel td:last-child:not(.rpanel__empty) {
+    grid-row: 2;
+    grid-column: 4;
+    justify-self: end;
+    padding-block: 0 7px;
+    padding-inline-end: 10px;
+  }
+  :root.js .rpanel td.rpanel__empty {
+    grid-column: 1 / -1;
+    text-align: start;
+  }
+  :root.js .rpanel__conns {
+    margin-top: 14px;
+  }
+  :root.js .rpanel__chip {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    white-space: normal;
+  }
+
+  /* --- The stamp, at the end of the Overview's first line ------------------------------------------ */
+  :root.js .explain__lead {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin: 0 0 10px;
+  }
+  :root.js .explain__lead .explain__kicker {
+    margin: 0;
+  }
+  /* 13.5px, as in the top bar. The padding makes the link 31px tall to the finger without moving the line. */
+  :root.js .explain__lead .stamp {
+    display: inline-flex;
+    flex: none;
+    margin-block: -7px;
+    padding-block: 7px;
+    font-size: 13.5px;
   }
 }

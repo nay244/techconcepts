@@ -196,15 +196,17 @@ The first prototype's "bigger scene" was a taller box around a smaller drawing; 
 **The phone layout, as built (2026-11-10).** Below 761px wide, with JavaScript on:
 
 - The lesson is one screen with no page scroll. Measured at 390×844 on DHCP: the top bar is 52px, the scene runs from 92px to 338px, and Back, Play and Next fill the last 64px. Before, the page was a 2,412px stack with the scene 913px down.
-- Under the scene, three tabs choose what shows: **Explain** (the words, first), **Steps** (the lesson's outline) and **Log**. Choosing a step returns to Explain. Each part scrolls inside itself.
+- Under the scene, tabs choose what shows: **Explain** (the words, first), **Steps** (the lesson's outline), **Log**, and, when the lesson has a panel of its own, a fourth named for it: **Table** (16 lessons), **Rules** (Firewalls) or **Bits** (Subnetting). OSI Model's message strip is not a tab, so it keeps three. Choosing a step returns to Explain; Back and Next keep the tab. Each part scrolls inside itself.
 - In Learn and Practice the scene shrinks to 18% of the screen's height, from 34%, and the words take the room.
-- The log's rows are stacked entries: each value has its column's name before it, and the words take a line of their own. The table states its roles, so it is still read as a table.
+- The log's rows are stacked entries in three columns (the number, the column's name in 84px, the value), so every Source and Destination starts at the same x from row to row. The words take a line of their own, and the short values (a column of 100px or less: Time, Protocol, Size) share the entry's last line. The table states its roles, so it is still read as a table.
 - The top bar keeps the mark, the lesson's name, "Step 2 of 5" and the theme button. The track's name, the row of step segments and the OSI layer chips are not shown at this width.
-- The lesson's own table (leases, files, rules) is under the scene: the scene's area scrolls to it.
+- The lesson's own table (D2, variant A, owner-approved) has the fourth tab, always there, on every slot. The scene's area no longer scrolls. A table of three columns or fewer stays a table, fitted to the width; four or more become entries with the column's name beside each value; Firewalls' rules are two lines a rule. A small square on the tab says the table changed since the reader last opened it (the name then reads "Table, changed"); opening the tab brings the marked row into view. Subnetting's bits board is 470px wide and still scrolls sideways in its tab: fitting it is not built.
+- A lesson with one view (OSI Model, Subnetting) has no empty band above its scene. OSI Model's message strip is pinned under the scene on one line, and hidden in Learn and Practice, where the drawing takes its room.
+- The stamp is at the end of the Overview's first line, opposite the word "Overview", and at the foot of Learn.
 - Between 761px and 1099px, and on a phone with JavaScript off, the page keeps the older stacked layout.
 - The desktop layout is unchanged. The tabs exist in the page at every width and are hidden above 760px.
 
-Still to fix in the build: the lease table has no place on a phone yet; the log's from-and-to column should line up from row to row; the scene moves up once, by 85px, when the first message opens the log.
+Still to fix in the build: Subnetting's bits board does not fit a phone's width (a design of its own); the scene moves up once, by 85px, when the first message opens the log.
 
 **Sources and the stamp, as built (2026-11-10).**
 
@@ -214,7 +216,7 @@ Still to fix in the build: the lease table has no place on a phone yet; the log'
 - **Sources moved to the foot of Learn**, out of Go deeper, so the numbers in the words have a list in view. A cited lesson's list is numbered in the order Learn first cites each source; a lesson that cites nothing yet keeps a plain list.
 - **A claim carries one number for each source it cites.** The number opens the first place the claim cites in that source (the exact section or page), in a new tab, and its label names every place. OSI Model's lead cites up to seven places in four sources per statement; one number per place would have put seven numbers after a sentence.
 - Numbers show in Learn (lead, terms, pattern, why, Go deeper, facts), in each Watch step's Go deeper and, since D1, after Practice's feedback.
-- On a phone the top bar has no room for the stamp; it is at the foot of Learn only. Measured at 1280 wide on DHCP (the OSI chips beside it): the title is whole.
+- On a phone the top bar has no room for the stamp; it is at the end of the Overview's first line and at the foot of Learn. Measured at 1280 wide on DHCP (the OSI chips beside it): the title is whole.
 
 **Reading on a desktop, as built (2026-11-10, D1 variant B; spec `prototypes/d1-lesson-reading.md`).** At 1100px wide and up, in Learn and Practice only:
 

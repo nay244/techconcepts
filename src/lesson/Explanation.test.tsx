@@ -264,3 +264,14 @@ test('kickers name the unit in a lesson of many units', () => {
   show(8, TWO);
   expect(screen.getByText('Beta · Overview')).toBeInTheDocument();
 });
+
+test('the Overview’s first line holds the kicker and the stamp, which links to where the facts come from; a step has no stamp there', () => {
+  const { container, unmount } = show(0);
+  const lead = container.querySelector('.explain__lead')!;
+  expect(within(lead as HTMLElement).getByText('Overview')).toHaveClass('explain__kicker');
+  expect(within(lead as HTMLElement).getByRole('link', { name: /^Not checked yet/ })).toHaveAttribute('href', '/about#facts');
+  unmount();
+  const step = show(1).container;
+  expect(step.querySelector('.explain__lead')).toBeNull();
+  expect(step.querySelector('.stamp')).toBeNull();
+});

@@ -346,7 +346,15 @@ export function Explanation(props: ExplanationProps) {
 
   return (
     <section ref={panel} className="console__panel console__explain" aria-label="Explanation" tabIndex={0}>
-      <p className="explain__kicker">{kicker(lesson, unit, slot)}</p>
+      {slot.kind === 'overview' ? (
+        // The stamp is the first thing a phone shows of the lesson; the top bar has no room for it there (console.css).
+        <div className="explain__lead">
+          <p className="explain__kicker">{kicker(lesson, unit, slot)}</p>
+          <Stamp stamp={stamp} href="/about#facts" />
+        </div>
+      ) : (
+        <p className="explain__kicker">{kicker(lesson, unit, slot)}</p>
+      )}
       {body}
     </section>
   );

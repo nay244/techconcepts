@@ -568,14 +568,56 @@ test('Practice picks are still there after a visit elsewhere, are gone on reload
 
 // ---------------------------------------------------------------- the phone's tabs
 
-test('the console offers Explain, Steps and Log as a group of buttons, with Explain showing first', () => {
+test('the console offers Explain, Steps and Log as a group of buttons, with Explain showing first, and the lesson\'s table as a fourth', () => {
   const { container } = renderConsole();
   const show = screen.getByRole('group', { name: 'Show' });
   const buttons = within(show).getAllByRole('button');
-  expect(buttons.map((b) => b.textContent)).toEqual(['Explain', 'Steps', 'Log']);
-  expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+  expect(buttons.map((b) => b.textContent)).toEqual(['Explain', 'Steps', 'Log', 'Table']);
+  expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false']);
   // The console says which is showing, for the phone layout's CSS to act on.
   expect(container.querySelector('.console')).toHaveAttribute('data-tab', 'explain');
+});
+
+test('the fourth tab is named for the unit\'s panel, and a unit with the message strip has three tabs', () => {
+  const withPanel = (panel: unknown): Lesson => {
+    const lesson = structuredClone(DHCP);
+    (lesson.units[0]!.scene as { panel: unknown }).panel = panel;
+    return lesson;
+  };
+  const names = () => within(screen.getByRole('group', { name: 'Show' })).getAllByRole('button').map((b) => b.textContent);
+  const { unmount } = render(consoleFor(withPanel({ type: 'labels' })));
+  expect(names()).toEqual(['Explain', 'Steps', 'Log']);
+  unmount();
+  render(consoleFor(withPanel(null)));
+  expect(names()).toEqual(['Explain', 'Steps', 'Log']);
+});
+
+test('the Table tab is marked when the step has changed the table and the reader has not looked, and the mark goes when they do', async () => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=2');
+  const { container } = renderConsole();
+  const consoleEl = container.querySelector('.console')!;
+  const tab = () => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: /^Table/ });
+  await wait(0);
+  expect(tab()).toHaveAccessibleName('Table');
+  expect(container.querySelector('.tab__mark')).toBeNull();
+
+  // Step 2 plays the router's answer, then adds a row.
+  await user.click(playButton());
+  await wait(EVENT_MS);
+  await wait(EVENT_MS);
+  expect(tab()).toHaveAccessibleName('Table, changed');
+  expect(container.querySelector('.tab__mark')).not.toBeNull();
+
+  await user.click(tab());
+  expect(consoleEl).toHaveAttribute('data-tab', 'table');
+  expect(container.querySelector('.tab__mark')).toBeNull();
+  await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Explain' }));
+  expect(tab()).toHaveAccessibleName('Table');
+
+  // Back and Next keep the tab the reader chose.
+  await user.click(tab());
+  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  expect(consoleEl).toHaveAttribute('data-tab', 'table');
 });
 
 test('choosing a tab marks it and the console; choosing a place in Steps goes there and returns to Explain', async () => {
