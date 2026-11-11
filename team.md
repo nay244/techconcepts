@@ -1,6 +1,6 @@
 # Team ledger
 
-The job in `plan.md` now is Phase 3, one fact-check path: its rows are under "Job 2" at the end. Everything before that is job 1, the Lesson page (Phase 2), which is done.
+The job in `plan.md` now is the start of Phase 4, a pilot of two lessons: its rows are under "Job 3" at the end. Job 1 was the Lesson page (Phase 2) and job 2 was Phase 3, one fact-check path; both are done.
 
 One row per unit of `plan.md`, added when the unit ends. Tokens are the subagent's total for the unit, all tries together.
 
@@ -124,3 +124,12 @@ The estimate in the plan was about 1,500,000.
 - **The orchestrator's own additions were the source of two blockers** (the folded log's height in job 1, the date rule in this one). A change the orchestrator adds to a brief gets the same test-first treatment as anyone's.
 - **An agent type holds the instructions it was loaded with.** After editing a file in `.claude/agents/`, either restart the session or have a general agent read the file from disk, as B5 did.
 - **The fact-checker's partial and failing verdicts are not stable between runs** on one canary item (a traced part that adds a value of its own): partial on record and in run 1, failing in run 2. Both block a lesson. If the difference ever matters, the rule that separates them needs sharpening, and that is a change to a judgment rule, so it needs the owner.
+
+# Job 3: Phase 4, the pilot
+
+Waiting for the owner's go on `plan.md`.
+
+| Unit | Agent | Model | Tries | Tokens | Result |
+|---|---|---|---|---|---|
+| S3 | scout | Haiku | 1 | 187,981 | Done 2026-11-11. What moving a lesson takes, what OSI Model took, and the size and sources of each of the 17, every fact with a `path:line`. Findings are summarised in `plan.md`. |
+
