@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. The plan before this one (the Lesson page, Phase 2) is done; it is in this file's history at commit f419637.
 
-**Status: waiting for the owner's go.** Only the scout has run.
+**Status: the owner said go on 2026-11-11 ("Go with phase 3 plan as written"). The build units are running, in order.**
 
 ## Inputs
 
@@ -28,6 +28,32 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 5. **The gate checks a record, offline.** When every quote is found, the script writes a record into the report's header: the date, how many quotes, and a digest of them. The build needs that record, needs it to match the report's quotes, and needs every passing claim to have at least one quote. A quote edited afterwards breaks the digest.
 6. **OSI Model's report is converted, not judged again.** Its quotes are rewritten into the new form with their words untouched, its six sources are fetched again, and the script checks them. A passage the script cannot find is reported to the orchestrator, not fixed. Only those claims would go back to a fact-checker.
 7. **The canary proves the changed checker.** The fact-checker's instructions change (how to name its files, how to write quotes, to run the script). The canary lesson exists to test the checker: it is run again and must give the verdicts on record, 29 passing, 2 partial, 3 failing, now with confirmed quotes.
+
+## The formats (the spec the build units share)
+
+**A quote in a report.** Under a claim's heading (`### <key> — <verdict>`), each quote is a bullet naming the source and the section, then the passage as one or more quoted lines:
+
+```
+- `itu-x200` §6.1.2 (defining standard)
+  > The Reference Model contains seven layers: a) the Application Layer (layer 7); … g) the Physical Layer (layer 1).
+```
+
+- The id in backticks is the source's id in the registry. The section follows `§` and runs to the end of the line or to an optional note in parentheses.
+- The passage is every following line that starts with `>`, joined by spaces. `…` marks words left out.
+- The source and section must be one of that item's own citations on the claim sheet.
+- Any other bullet under a claim's heading must begin `Note:`. Anything else is a problem the parser names, so a badly written quote cannot pass as a comment.
+
+**The record in the header**, written by the script and never by hand:
+
+```
+"quotes": { "checked": "2026-11-11", "count": 214, "digest": "<64 hex>", "files": { "itu-x200": "<64 hex>", "rfc-1122": "<64 hex>" } }
+```
+
+`digest` is the SHA-256 of the report's quotes in order (key, source, section, passage with its whitespace evened out). `files` is the SHA-256 of each source text the passages were found in.
+
+**Finding a passage.** Both the passage and the source text are evened out the same way before the search: Unicode compatibility forms (so a ligature is its letters), every run of whitespace one space, soft hyphens removed, curly quotes and apostrophes straightened, every dash a hyphen. A word broken by a hyphen at a line's end is tried joined and unjoined. A passage with `…` is found when its parts are found in order. Letter case must match.
+
+**Which items need a quote.** Every item of kind `claim` or `osi` whose verdict is passing needs at least one. Traced, example, analogy and unbacked items quote nothing.
 
 ## Units
 

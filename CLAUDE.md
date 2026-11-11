@@ -29,6 +29,8 @@ Since 2026-11-10 (the owner's rule) the main session is the **orchestrator**: it
 
 `fact-checker` (Opus) is unchanged; the accuracy rule below still ends with it.
 
+**Lesson content** (the owner's rule, 2026-11-11): Sonnet writes the lessons and any step-by-step breakdown of a subject or an analogy. Opus is called for deep analysis or a more comprehensive breakdown of a concept.
+
 - **Plan.** `plan.md` holds the job, what done means, the budget, the design references, and every unit with its phase, owner and check. Design units come first, then build units; each build unit names the design unit it implements. Learn the repo from scout reports. Show the owner a new plan and wait for the go.
 - **Design gate.** When the design phase is done, show the owner the prototypes and specs, and stop. A build unit starts once the owner has approved its design. Approval freezes the design: a builder implements it, and a design change goes back to `designer`.
 - **Variants.** Two per screen at most, unless the owner asks for more.
