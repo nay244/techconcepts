@@ -152,8 +152,8 @@ export const matchBase = (items: Readonly<Record<string, string>>, sheet: ClaimS
  * - the changed items, those `matchItems` finds no entry for;
  * - every traced item that traces to a part that is changed;
  * - a question is one unit: when its prompt or any option changed, or an option was taken out, its prompt and every option;
- * - when any Learn part is changed, the items that cite nothing and rest on the whole lesson (the title, the unit's
- *   name, each question's prompt). A prompt judged for that reason alone does not bring its options.
+ * - when any Learn part is changed or was taken out, the items that cite nothing and rest on the whole lesson (the
+ *   title, the unit's name, each question's prompt). A prompt judged for that reason alone does not bring its options.
  */
 export function itemsToJudge(items: Readonly<Record<string, string>>, sheet: ClaimSheet): Judging {
   const { matched, removed } = matchItems(items, sheet);
@@ -164,7 +164,8 @@ export function itemsToJudge(items: Readonly<Record<string, string>>, sheet: Cla
   for (const item of sheet.items) if (item.traces.some((id) => changedSet.has(targets.get(id)?.key ?? ''))) extra.add(item.key);
   const questions = new Set([...changed, ...removed].flatMap((key) => questionOf(key) ?? []));
   for (const item of sheet.items) if (questions.has(questionOf(item.key) ?? '')) extra.add(item.key);
-  if (changed.some((key) => LEARN_ID.test(key))) for (const item of sheet.items) if (item.kind === 'unbacked') extra.add(item.key);
+  // A Learn part taken out counts too: what rested on the whole lesson rested on it.
+  if ([...changed, ...removed].some((key) => LEARN_ID.test(key))) for (const item of sheet.items) if (item.kind === 'unbacked') extra.add(item.key);
   const pulled = sheet.items.filter((item) => !changedSet.has(item.key) && extra.has(item.key)).map((item) => item.key);
   const pulledSet = new Set(pulled);
   return { changed, pulled, judge: sheet.items.filter((item) => changedSet.has(item.key) || pulledSet.has(item.key)).map((item) => item.key) };
@@ -208,6 +209,8 @@ export const recheckMessages = {
 /**
  * The re-check sheet, for the fact-checker to read: the sources the items to judge cite, then each of those items in
  * the sheet's usual form. Under a traced item the words of the parts it traces to come as context: they give no verdict.
+ * So do every cited Learn part, when an item that rests on the whole lesson is judged, and the list each judged item
+ * sits in, with its parent's words, in the order it has now.
  */
 export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging, path: string): string {
   const judge = new Set(judging.judge);
@@ -216,7 +219,7 @@ export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging,
   const cited = new Set(items.flatMap((item) => item.cite.map((c) => c.source)));
   const lines = [`# Re-check sheet: ${sheet.slug}`, '', `Hash: \`${sheet.hash}\``, `Base: \`${base}\``, ''];
   lines.push(
-    'A re-check judges only the items below: those that changed since the full check, and those that trace to a part that did. Judge each by every rule in your instructions. A part shown as context is for reading only: it gets no verdict, no heading and no quote in your report. Write `base` into your header as the Base above, and no `overrides` (the limit overrides are the full check\'s).',
+    'A re-check judges only the items below: those that changed since the full check (an item that moved counts as changed, and is judged in its place), those that trace to a part that did, a whole question when any of it changed, and the items that rest on the whole lesson when a Learn part changed or was taken out. Judge each by every rule in your instructions. A part shown as context is for reading only: it gets no verdict, no heading and no quote in your report. Write `base` into your header as the Base above, and no `overrides` (the limit overrides are the full check\'s).',
     '',
     '## Sources',
     '',
@@ -241,6 +244,38 @@ export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging,
       lines.push('', `Context (no verdict): ${part.key}`, '', '```json', JSON.stringify(part.content, null, 2), '```');
     }
   }
+  // An item in a list is judged in its place: its parent's words and the list in the order it has now, since a key's
+  // numbers do not say which step an event is under or what comes before it.
+  const ids = parentIds(sheet.items.map((item) => item.key));
+  const lists = new Map<string, SheetItem[]>();
+  for (const item of sheet.items) {
+    const { group } = slotOf(item.key, ids);
+    if (group !== '') lists.set(group, [...(lists.get(group) ?? []), item]);
+  }
+  const places = [...lists.values()].filter((list) => list.some((item) => judge.has(item.key)));
+  if (places.length > 0) {
+    lines.push('', '## Where the items to judge sit, as context (no verdict)', '', 'An item in a list is judged in its place. Each list below is in the order it has now; an item marked "to judge" is printed in full above.');
+    for (const list of places) {
+      const parent = parentOf(sheet, list[0]!.key);
+      // Not a heading: on this sheet a heading is an item to judge.
+      lines.push('', parent === undefined ? `**The list of ${list[0]!.key.replace(/\[\d+\][^[]*$/, '')}**` : `**Under ${parent.key}**`);
+      if (parent !== undefined) lines.push('', '```json', JSON.stringify(parent.content, null, 2), '```');
+      lines.push('');
+      for (const item of list) {
+        if (judge.has(item.key)) lines.push(`- ${item.key} (to judge)`);
+        else lines.push(`- ${item.key}`, '', '  ```json', ...JSON.stringify(item.content, null, 2).split('\n').map((line) => `  ${line}`), '  ```');
+      }
+    }
+  }
   lines.push('', `Write your report to: ${path}`);
   return `${lines.join('\n')}\n`;
+}
+
+/** The step a step's part sits under, or the prompt of an option's question; undefined for a list with no parent on the sheet. */
+function parentOf(sheet: ClaimSheet, key: string): SheetItem | undefined {
+  const step = /^(units\[\d+\]\.steps\[\d+\])\./.exec(key);
+  if (step !== null) return sheet.items.find((item) => item.key.startsWith(`${step[1]} (step "`));
+  const question = /^(units\[\d+\]\.practice\[\d+\])\.options\[/.exec(key);
+  if (question !== null) return sheet.items.find((item) => item.key.startsWith(`${question[1]}.prompt (question "`));
+  return undefined;
 }

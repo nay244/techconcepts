@@ -191,7 +191,7 @@ describe('--recheck prints the re-check sheet', () => {
   });
 
   test('recheck 10: a lesson that changed only by an item taken out has nothing to judge, and the sheet says so', async () => {
-    const cut = (l: Lesson) => { unit(l).learn.terms.splice(1, 1); };
+    const cut = (l: Lesson) => { unit(l).steps[1]!.events.splice(1, 1); };
     const run = await runFactCheck([SLUG, '--recheck'], setup({ [FULL]: full() }, lessonB(cut)).deps);
     expect(run.code).toBe(0);
     expect(run.out).toContain('No item on the sheet changed since the full check');

@@ -87,9 +87,18 @@ describe('which items are judged', () => {
     expect(j.pulled).not.toContain('units[0].steps[2] (step "lookup")');
   });
 
-  test('judge 9: a removed part that shifts later keys makes none of them changed, and a part nothing traces to leaves nothing to judge', () => {
+  test('judge 9: a removed part that shifts later keys makes none of them changed; a Learn part taken out re-opens only what rests on the whole lesson', () => {
     // term-2 is traced by nothing; term-3 moves from terms[2] to terms[1] and is as it was.
-    expect(judging((l) => { unit(l).learn.terms.splice(1, 1); })).toEqual({ changed: [], pulled: [], judge: [] });
+    const j = judging((l) => { unit(l).learn.terms.splice(1, 1); });
+    expect(j.changed).toEqual([]);
+    expect(j.judge.length).toBeGreaterThan(0);
+    // The title, the unit's name and the prompts: nothing with words of its own that changed, and no option.
+    expect(j.judge.every((key) => key === 'title' || /^units\[0\]\.name$/.test(key) || /\.prompt \(question "/.test(key))).toBe(true);
+    expect(j.pulled).toEqual(j.judge);
+  });
+
+  test('judge 9b: an event taken out, which nothing rests on, leaves nothing to judge', () => {
+    expect(judging((l) => { unit(l).steps[1]!.events.splice(1, 1); })).toEqual({ changed: [], pulled: [], judge: [] });
   });
 
   test('judge 10: the same hash under a key that differs in more than its numbers is changed', () => {

@@ -189,10 +189,70 @@ describe('B3: a cited source\'s registry entry is part of an item\'s hash', () =
 describe('D2: nothing to judge', () => {
   test('D2: the sheet says no item changed, and does not say that parts were taken out', () => {
     const l = lesson();
-    unit(l).learn.terms.splice(1, 1);
+    unit(l).steps[1]!.events.splice(1, 1);
     const sheet = sheetOf(l);
     const text = renderRecheck(sheet, 'b'.repeat(64), itemsToJudge(base(), sheet), 'docs/fact-checks/cited-lesson.recheck.md');
     expect(text).toContain('No item on the sheet changed since the full check');
-    expect(text).not.toMatch(/taken out/);
+    // The opening line names a Learn part taken out as a reason to judge; the message here must not claim what changed.
+    expect(text.slice(text.indexOf('## Items to judge'))).not.toMatch(/taken out/);
+  });
+});
+
+// After the second review: a moved item is judged in its place, and a Learn part taken out re-opens what rested on it.
+describe('after the second review', () => {
+  const sheetFor = (edit: (l: Lesson) => void) => {
+    const l = lesson();
+    edit(l);
+    const sheet = sheetOf(l);
+    return { sheet, text: renderRecheck(sheet, 'b'.repeat(64), itemsToJudge(base(), sheet), 'docs/fact-checks/x.recheck.md') };
+  };
+
+  test('an event moved to another step is shown in its place: the step it is now in, with its words, and that step’s events in their order', () => {
+    const { sheet, text } = sheetFor((l) => {
+      const steps = unit(l).steps;
+      steps[0]!.events.unshift(steps[1]!.events.pop()!);
+    });
+    const step = sheet.items.find((i) => /^units\[0\]\.steps\[0\] \(step "/.test(i.key))!;
+    const events = sheet.items.filter((i) => i.key.startsWith('units[0].steps[0].events['));
+    expect(text).toContain('## Where the items to judge sit, as context (no verdict)');
+    const place = text.slice(text.indexOf('## Where the items to judge sit'));
+    // The parent step, with its words, then every event of that step in the order it now has.
+    expect(place).toContain(step.key);
+    expect(place).toContain(JSON.stringify(step.content, null, 2));
+    const at = events.map((e) => place.indexOf(e.key));
+    expect(at.every((n) => n > 0)).toBe(true);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+    expect(place).toContain(`${events[0]!.key} (to judge)`);
+  });
+
+  test('two steps swapped: the steps are listed in the order they now have', () => {
+    const { sheet, text } = sheetFor((l) => {
+      const steps = unit(l).steps;
+      [steps[0], steps[1]] = [steps[1]!, steps[0]!];
+    });
+    const place = text.slice(text.indexOf('## Where the items to judge sit'));
+    const steps = sheet.items.filter((i) => /^units\[0\]\.steps\[\d+\] \(step "/.test(i.key));
+    const at = steps.map((s) => place.indexOf(s.key));
+    expect(at.every((n) => n > 0)).toBe(true);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+  });
+
+  test('no list to show when what is judged is in no list: a reworded title alone', () => {
+    const { text } = sheetFor((l) => { l.title += '!'; });
+    expect(text).not.toContain('## Where the items to judge sit');
+  });
+
+  test('a Learn part taken out judges the title, the unit’s name and every prompt: what they rested on is gone', () => {
+    const j = judging((l) => { unit(l).learn.terms.pop(); });
+    for (const key of [TITLE, NAME, Q1, Q2]) expect(j.judge, key).toContain(key);
+    // And no option comes with a prompt judged for that reason alone.
+    expect(j.judge.filter((k) => /options\[/.test(k))).toEqual([]);
+  });
+
+  test('the sheet says what it lists: changed items, what traces to them, whole questions, and what rests on the whole lesson', () => {
+    const { text } = sheetFor((l) => { unit(l).practice[1]!.prompt += '?'; });
+    expect(text).toMatch(/whole question/);
+    expect(text).toMatch(/rest on the whole lesson/);
+    expect(text).toMatch(/in its place/);
   });
 });
