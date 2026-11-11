@@ -170,7 +170,20 @@
       "limit": "steps",
       "reason": "One Watch step for each layer on the way down, so a beginner sees each layer’s own job; then the router, the way up and the twins."
     }
-  ]
+  ],
+  "quotes": {
+    "checked": "2026-11-11",
+    "count": 160,
+    "digest": "22ede2e7eb6faafff64c297ce8dc24a29db36025bf5f3e11626f1ccb43853308",
+    "files": {
+      "itu-x200": "12f95d7e80f10fcc51355316e172d2f3fe93e6c606c00493ceafc227cfcde759",
+      "rfc-1122": "9f526e6bebc868324fedb90aebbcf6e5b15c53fd373ca5d5ce1c2cdcd264e04f",
+      "nist-sp800-77r1": "2343fd37c8cf23a8bfb594b481a867298f4177adf3146228bd365d2b9affe30e",
+      "microsoft-osi": "d0bf680f028e01849b2071b408254ed66710edc5532375e2e9a91deb635d7d6f",
+      "cisco-ipip-decap": "fd2329fda1756d27c13a6a52972a7a91a641d71e8c903929ef09f111ebefe4b9",
+      "rfc-2003": "f7d1e7c3bd69741088f21596adf4b77330342deb4e47f5f0bf1840d829e199c5"
+    }
+  }
 }
 ```
 
@@ -254,7 +267,8 @@ Text: "In X.200, Transport Layer functions can include end-to-end sequence contr
 - `itu-x200` §7.4.4.1.1
   > In connection-mode, the Transport Layer functions may include:
 - `itu-x200` §7.4.4.1.1
-  > d) end-to-end sequence control on individual connections; e) end-to-end error detection and any necessary monitoring of the quality of service; f) end-to-end error recovery; g) end-to-end segmenting, blocking, and concatenation; h) end-to-end flow control on individual connections;
+  > d) end-to-end sequence control on individual connections; … e) end-to-end error detection and any necessary monitoring of the quality of service; f) end-to-end error recovery; g) end-to-end segmenting, blocking, and concatenation; h) end-to-end flow control on individual connections;
+- Note: The "…" marks a page break in the source's text, where its running header and footer sit between the lines. It was added on 2026-11-11, when the quotes were checked by script; no word of the passage changed.
 - Note: Defining standard: the Transport Layer's functions.
 - `itu-x200` §7.4.2.5
   > The transport functions invoked in the Transport Layer to provide a requested service quality depend on the quality of the network-service.
@@ -622,7 +636,8 @@ Text: Encapsulation: "Each layer’s data wrapped in a bigger bundle by the laye
 - `rfc-1122` §1.3.3
   > A segment is transmitted by encapsulation inside an IP datagram.
 - `rfc-1122` §1.3.3
-  > To be transmitted end-to-end through the Internet, a message must be encapsulated inside a datagram.
+  > To be transmitted end-to- … end through the Internet, a message must be encapsulated inside a datagram.
+- Note: The "…" marks a page break in the source's text, where its running header and footer sit between the lines. It was added on 2026-11-11, when the quotes were checked by script; no word of the passage changed.
 - Note: Currency: both current.
 
 ### units[0].learn.terms[3] ("term-decap") — ✅

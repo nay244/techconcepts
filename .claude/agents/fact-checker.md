@@ -28,11 +28,11 @@ You are given a slug and nothing else. In the repository, read only the claim sh
    - at the end, the path to write the report to.
 
    If the command fails, stop and report its message. Do not write a report.
-2. **Fetch every source**, from the publisher's own site. Save each one into the temporary directory, never into the repository, under the id the sheet gives it: `<id>.html` for a web page saved as it is, `<id>.xml` for a registry's XML form, `<id>.txt` for plain text, for a PDF's text (`pdftotext`) and for a page you read in the browser.
+2. **Fetch every source**, from the publisher's own site. Save each one into the temporary directory, never into the repository, under the id the sheet gives it: `<id>.html` for a web page saved as it is, `<id>.xml` for a registry's XML form, `<id>.txt` for plain text, for a PDF's text (`pdftotext -raw`) and for a page you read in the browser.
    - Prefer raw text through `curl -sL`. RFCs are at `https://www.rfc-editor.org/rfc/rfcNNNN.txt`, and IANA registries have `.txt` or `.xml` forms.
    - Save an HTML page as it is, as `<id>.html`, then read the passage from it (strip tags with a short script if that helps).
-   - Read a PDF with the Read tool, and save its text with `pdftotext` as `<id>.txt` as well.
-   - Read a long PDF (ITU-T X.200, a NIST SP) at the page its citation names: download it to the temporary directory, then run `pdftotext -f N -l N <file> -`, or use the Read tool with `pages`. Its whole text is the `<id>.txt` you saved with `pdftotext <file> <id>.txt`. A `#page=N` fragment names PDF page N, counted from the file's first page, not the number printed on the page.
+   - Read a PDF with the Read tool, and save its text with `pdftotext -raw <file> <id>.txt` as well. `-raw` keeps each line as the page has it; without it a word hyphenated at a line's end loses its hyphen, and the quote check cannot find it.
+   - Read a long PDF (ITU-T X.200, a NIST SP) at the page its citation names: download it to the temporary directory, then run `pdftotext -f N -l N <file> -`, or use the Read tool with `pages`. Its whole text is the `<id>.txt` you saved with `pdftotext -raw <file> <id>.txt`. A `#page=N` fragment names PDF page N, counted from the file's first page, not the number printed on the page.
    - Use WebFetch only when there is no raw form. Never quote a WebFetch summary as a passage: a quote is the source's own words, copied exactly.
    - If the publisher's site refuses a command-line read (a 403, "Access Denied", or a "Just a moment…" check page), open the page in the built-in browser and read its text there, write the text the browser returned into `<id>.txt`, then close the tab. Don't retry with made-up browser headers. Never solve a CAPTCHA, sign in, or accept anything to reach a page. A page you still can't read is a source that cannot be read.
    - Use WebSearch only to find a source's current version or status. A search result is never a source.
