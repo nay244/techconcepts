@@ -1,15 +1,51 @@
-import { eventLog, messagesFor } from '../helpers/internet-events';
-import { tourLesson } from '../helpers/tour';
-import { defineLegacyLesson, type LegacyUnitInput } from '../legacy';
-import type { TableDef } from '../schema';
+import { defineLesson } from '../define';
+import { eventLog, messagesFor, type MockupMessage } from '../helpers/internet-events';
+import type { Backing, SceneEvent, TableDef } from '../schema';
+import { cite } from '../sources';
 
 /**
- * HTTP, lesson 1 of How the Internet Works’ 14. You type example.net and press Enter: the browser looks
- * the name up, opens a TCP connection to the web server, asks for the front page with GET / and draws it, then
- * fetches its stylesheet and logo over the same connection.
+ * HTTP, lesson 1 of How the Internet Works’ 14. You type http://example.net and press Enter: the browser looks the
+ * name up, opens a TCP connection to the web server, asks for the front page with GET / and reads it, then fetches
+ * its stylesheet and logo over the same connection, and draws the page once the stylesheet has arrived.
  *
- * The words are the approved mockup's (internet-v2.html, from FIGS/protocols.mjs), ported as written.
+ * The words are the approved mockup's (internet-v2.html, from FIGS/protocols.mjs), changed only where a source does
+ * not state them. The addresses, the ports 50310 and 51034, the timings and the sizes are example data (RFC 5737 and
+ * RFC 1918 addresses, ephemeral ports, made-up numbers): no source states them, and the scene's events carry them
+ * beside the claims they trace to. The analogies (the counter, the line you check) cite nothing.
  */
+
+// ---------------------------------------------------------------- citations
+
+/** A citation of one numbered section of an RFC, optionally marked as the defining standard. */
+const rfc = (source: string, section: string, defining = false) => cite(source, section, defining ? { defining: true } : {});
+
+const HTML = 'https://html.spec.whatwg.org/index.html';
+/** The HTML standard is one page; a section is cited by the fragment of its heading. */
+const html = (section: string, fragment: string, defining = false) =>
+  cite('whatwg-html', section, defining ? { url: `${HTML}#${fragment}`, defining: true } : { url: `${HTML}#${fragment}` });
+const HTML_LINK_STYLESHEET = html('4.6.8.23', 'link-type-stylesheet');
+const HTML_LINK = html('4.2.4', 'the-link-element');
+const HTML_IMG = html('4.8.3', 'the-img-element');
+const HTML_RENDERING = html('15.1', 'introduction-17', true);
+
+const URL_STANDARD = 'https://url.spec.whatwg.org/index.html';
+const FETCH_STANDARD = 'https://fetch.spec.whatwg.org/index.html';
+const FETCH_REQUESTS = cite('whatwg-fetch', '2.2.5', { url: `${FETCH_STANDARD}#requests` });
+
+const IANA_MEDIA = 'https://www.iana.org/assignments/media-types/media-types.xhtml';
+const CLOUDFLARE = 'https://developers.cloudflare.com/fundamentals/reference/network-layers/';
+const MS_APP_GATEWAY = 'https://learn.microsoft.com/en-us/azure/application-gateway/overview';
+/** No standard puts HTTP at an OSI layer (X.200 never names it; RFC 9110 says "application-level"), so the badge rests on two vendors. */
+const CLOUDFLARE_L7 = cite('cloudflare-network-layers', 'Network Layers', { url: `${CLOUDFLARE}#:~:text=7%20Application%20layer` });
+const MS_L7 = cite('microsoft-app-gateway', 'What is Azure Application Gateway?', {
+  url: `${MS_APP_GATEWAY}#:~:text=Application%20Gateway%20operates%20at%20the%20application%20layer`,
+});
+
+/** HTTP/1.1 is plain text: RFC 9114 and RFC 9110 each say so, so the claim rests on two documents. */
+const PLAIN_TEXT = [rfc('rfc-9114', '1.1'), rfc('rfc-9110', '1.2')];
+const CONNECTION_REUSE = rfc('rfc-9112', '9.3', true);
+
+// ---------------------------------------------------------------- events
 
 const LAPTOP = '192.168.1.100:50310';
 const WEB = '203.0.113.80:80';
@@ -29,360 +65,717 @@ const files: TableDef = {
   empty: 'None yet. The browser hasn’t asked for anything.',
 };
 
-const msg = messagesFor(files);
+const mockup = messagesFor(files);
 
-const http: LegacyUnitInput = {
-  id: 'http',
-  name: 'HTTP',
-  fullName: 'HyperText Transfer Protocol',
-  purpose: 'Asking for web pages',
-  group: 'app',
-  osiLayers: [7],
-  references: [
-    { label: 'RFC 9110: HTTP Semantics', url: 'https://www.rfc-editor.org/rfc/rfc9110' },
-    { label: 'RFC 9112: HTTP/1.1', url: 'https://www.rfc-editor.org/rfc/rfc9112' },
-  ],
-  scene: {
-    title: 'Your browser asks a web server for a page',
-    views: ['network', 'sequence'],
-    layers: ['http:web'],
-    labels: { laptop: 'Wants example.net', url: 'example.net' },
-    start: [],
-    panel: { type: 'table', table: files },
-    log: eventLog(),
-    parties: [
-      { place: 'laptop', label: 'Laptop', addr: '192.168.1.100' },
-      { place: 'resolver', label: 'DNS resolver', addr: '192.0.2.53' },
-      { place: 'web', label: 'Web server', addr: '203.0.113.80' },
-    ],
-  },
-  overview: {
-    hook: 'Every web page you’ve ever opened arrived the same way. Your browser asked for it, and a web server sent it back. HTTP is the set of rules for that asking and answering, and it’s plain text, so you could read it yourself.',
-    description:
-      'It works like ordering at a counter. You ask for one thing by name, you get it back with a short note saying how it went, then you ask for the next thing. A page with pictures and styles takes several of these.',
-    facts: [
-      { label: 'Used for', value: 'web pages, images, and most apps that talk to servers' },
-      { label: 'Port', value: 'TCP 80 (HTTPS uses 443)' },
-      { label: 'Rides on', value: 'TCP, which rides on IP' },
-      { label: 'Shape', value: 'a request, then a response' },
-      { label: 'OSI layer', value: '7, application' },
-      { label: 'This example', value: 'example.net at 203.0.113.80' },
-    ],
-  },
-  steps: [
-    {
-      id: 'client-request',
-      title: 'Client Request',
-      sub: 'You type example.net and press Enter',
-      narrative:
-        'You type example.net and press Enter. Your browser is the **client**, the side that asks. It reads what you typed, the **URL**, to work out three things: which protocol to use (http, so plain HTTP), which site (example.net) and which page (/, the front page). It has nothing saved for this site, and it doesn’t know the server’s number yet, so nothing has been sent.',
-      deep: 'A URL has parts: the scheme (http), the host (example.net), an optional port (80 is assumed for http, 443 for https), the path (/), and sometimes a query (?q=…) and a fragment (#top). Before going to the network, the browser checks its cache; a fresh saved copy of the page would mean no request at all.',
-      facts: [
-        { label: 'URL', value: 'http://example.net/' },
-        { label: 'Scheme', value: 'http, so TCP port 80' },
-        { label: 'Host', value: 'example.net' },
-        { label: 'Path', value: '/, the front page' },
-      ],
-      status: 'Preparing a request',
-      idle: 'Nothing on the network yet. The browser is still getting ready.',
-      events: [],
-    },
-    {
-      id: 'dns-resolution',
-      title: 'DNS Resolution',
-      sub: 'Where is example.net?',
-      narrative:
-        'To send anything, the browser needs the server’s number, its **IP address**. So it asks the **DNS resolver**: “What’s the number for example.net?” Turning a name into a number this way is **DNS resolution**. The DNS lesson shows how the resolver finds it. Here the answer comes straight back.',
-      deep: 'This is a DNS query for the A record of example.net, sent over UDP to port 53. If the browser or the laptop looked the name up recently, it skips this step and uses the remembered answer.',
-      facts: [
-        { label: 'Asks', value: 'the DNS resolver, 192.0.2.53' },
-        { label: 'Question', value: 'the A record for example.net' },
-        { label: 'Answer', value: '203.0.113.80' },
-        { label: 'Takes', value: 'about 20 ms' },
-      ],
-      events: [
-        ...msg({
-          tag: 'LOOKUP',
-          from: 'laptop',
-          to: 'resolver',
-          proto: 'DNS',
-          via: 'UDP',
-          kind: 'request',
-          time: '0.000s',
-          src: '192.168.1.100:51034',
-          dst: '192.0.2.53:53',
-          size: '70 B',
-          sum: 'What’s the number for example.net?',
-          info: 'DNS query: A record for example.net',
-          st: 'Looking up example.net',
-        }),
-        ...msg({
-          tag: 'ANSWER',
-          from: 'resolver',
-          to: 'laptop',
-          proto: 'DNS',
-          via: 'UDP',
-          kind: 'response',
-          time: '0.019s',
-          src: '192.0.2.53:53',
-          dst: '192.168.1.100:51034',
-          size: '86 B',
-          sum: 'example.net is 203.0.113.80.',
-          info: 'DNS response: example.net is 203.0.113.80',
-          st: 'Found 203.0.113.80',
-          known: true,
-        }),
-      ],
-    },
-    {
-      id: 'tcp-connection',
-      title: 'TCP Connection',
-      sub: 'Check the line works both ways',
-      narrative:
-        'Next the laptop opens a line to the server, the way you check someone can hear you before you start talking. Three short messages: hello, hello back, and OK. That’s the **TCP handshake**, and the open line is a **connection**. HTTP sends everything over it. The TCP lesson looks at it closely.',
-      deep: 'The laptop picks a free port of its own (here 50310) and connects to port 80, the standard port for plain HTTP. The three messages are SYN, SYN-ACK and ACK. Once it’s open, many requests can share the connection; HTTP/1.1 keeps it open by default.',
-      facts: [
-        { label: 'From', value: '192.168.1.100, port 50310' },
-        { label: 'To', value: '203.0.113.80, port 80' },
-        { label: 'Messages', value: 'SYN, SYN-ACK, ACK' },
-        { label: 'Then', value: 'the connection stays open for more requests' },
-      ],
-      events: [
-        ...msg({
-          tag: 'SYN',
-          from: 'laptop',
-          to: 'web',
-          proto: 'TCP',
-          via: 'TCP',
-          kind: 'request',
-          time: '0.020s',
-          src: LAPTOP,
-          dst: WEB,
-          size: '74 B',
-          sum: 'Hello, can we talk?',
-          info: 'SYN: open a connection',
-        }),
-        ...msg({
-          tag: 'SYN-ACK',
-          from: 'web',
-          to: 'laptop',
-          proto: 'TCP',
-          via: 'TCP',
-          kind: 'response',
-          time: '0.052s',
-          src: WEB,
-          dst: LAPTOP,
-          size: '74 B',
-          sum: 'Hello. Yes, I hear you.',
-          info: 'SYN-ACK: accepted',
-        }),
-        ...msg({
-          tag: 'ACK',
-          from: 'laptop',
-          to: 'web',
-          proto: 'TCP',
-          via: 'TCP',
-          kind: 'request',
-          time: '0.052s',
-          src: LAPTOP,
-          dst: WEB,
-          size: '66 B',
-          sum: 'Good, the line is open.',
-          info: 'ACK: connection open',
-          st: 'Connected to example.net',
-          known: true,
-          conn: ['open', 'laptop>web'],
-        }),
-      ],
-    },
-    {
-      id: 'http-exchange',
-      title: 'HTTP Exchange',
-      sub: 'GET /, then 200 OK',
-      narrative:
-        'Now the browser asks for the page, in a few lines of plain text. The first line, **GET /**, means “send me the front page”: GET is the **method**, the kind of asking, and / is the **path**. The lines under it are **headers**, short notes such as which site this is for. The server answers with a **status code** on top, **200 OK**, meaning it went fine, then the page itself, written in **HTML**. One request and its response make an HTTP exchange.',
-      deep: 'The request line is GET / HTTP/1.1, and the Host header (Host: example.net) is required, because one server often holds many sites. Other methods: POST sends data, PUT and DELETE change things on the server, HEAD asks for headers only. Status codes come in five families: 1xx still working, 2xx success, 3xx look elsewhere (301, 304), 4xx a problem with the request (403, 404), 5xx a problem on the server (500, 503).',
-      facts: [
-        { label: 'Request line', value: 'GET / HTTP/1.1' },
-        { label: 'Host', value: 'example.net' },
-        { label: 'Status', value: '200 OK' },
-        { label: 'Content-Type', value: 'text/html, 18 KB' },
-      ],
-      events: [
-        ...msg({
-          tag: 'GET /',
-          from: 'laptop',
-          to: 'web',
-          proto: 'HTTP',
-          via: 'TCP',
-          kind: 'request',
-          time: '0.053s',
-          src: LAPTOP,
-          dst: WEB,
-          size: '412 B',
-          sum: 'Please send the page at /, the front page.',
-          info: 'GET / HTTP/1.1, Host: example.net',
-          st: 'Waiting for the page',
-          known: true,
-        }),
-        ...msg({
-          tag: '200 OK',
-          from: 'web',
-          to: 'laptop',
-          proto: 'HTTP',
-          via: 'TCP',
-          kind: 'response',
-          time: '0.091s',
-          src: WEB,
-          dst: LAPTOP,
-          size: '18 KB',
-          sum: '200 OK. Here’s the page, as HTML.',
-          info: 'HTTP/1.1 200 OK, text/html',
-          st: 'Drawing the page',
-          known: true,
-          page: 'text',
-          rows: [{ key: '/', cells: ['/', 'text/html', '200 OK', '18 KB'] }],
-        }),
-      ],
-    },
-    {
-      id: 'render-page',
-      title: 'Render Page',
-      sub: 'Draw it, and fetch the rest',
-      narrative:
-        'The browser reads the HTML and starts drawing the words straight away. Turning HTML into what you see is **rendering**. On the way it finds two more files it needs: a **stylesheet** for the colours and layout, and an **image** for the logo. It fetches each with its own GET over the same connection, and the page fills in as they arrive.',
-      deep: 'Browsers fetch several files at once. HTTP/2 and HTTP/3 let many requests share one connection without waiting in line. A file the browser already has can be checked instead of fetched: if it hasn’t changed, the server answers 304 Not Modified with no body.',
-      facts: [
-        { label: 'Requests', value: 'GET /style.css, GET /logo.png' },
-        { label: 'Types', value: 'text/css, image/png' },
-        { label: 'Same connection', value: 'yes, it stays open' },
-        { label: 'Unchanged files', value: '304 Not Modified' },
-      ],
-      events: [
-        ...msg({
-          tag: 'GET /style.css',
-          from: 'laptop',
-          to: 'web',
-          proto: 'HTTP',
-          via: 'TCP',
-          kind: 'request',
-          time: '0.104s',
-          src: LAPTOP,
-          dst: WEB,
-          size: '398 B',
-          sum: 'Please send /style.css.',
-          info: 'GET /style.css HTTP/1.1',
-        }),
-        ...msg({
-          tag: '200 OK',
-          from: 'web',
-          to: 'laptop',
-          proto: 'HTTP',
-          via: 'TCP',
-          kind: 'response',
-          time: '0.139s',
-          src: WEB,
-          dst: LAPTOP,
-          size: '6 KB',
-          sum: '200 OK. Here’s the stylesheet.',
-          info: 'HTTP/1.1 200 OK, text/css',
-          rows: [{ key: '/style.css', cells: ['/style.css', 'text/css', '200 OK', '6 KB'] }],
-        }),
-        ...msg({
-          tag: 'GET /logo.png',
-          from: 'laptop',
-          to: 'web',
-          proto: 'HTTP',
-          via: 'TCP',
-          kind: 'request',
-          time: '0.140s',
-          src: LAPTOP,
-          dst: WEB,
-          size: '402 B',
-          sum: 'Please send /logo.png.',
-          info: 'GET /logo.png HTTP/1.1',
-        }),
-        ...msg({
-          tag: '200 OK',
-          from: 'web',
-          to: 'laptop',
-          proto: 'HTTP',
-          via: 'TCP',
-          kind: 'response',
-          time: '0.181s',
-          src: WEB,
-          dst: LAPTOP,
-          size: '9 KB',
-          sum: '200 OK. Here’s the logo.',
-          info: 'HTTP/1.1 200 OK, image/png',
-          st: 'Page loaded',
-          done: true,
-          page: 'full',
-          rows: [{ key: '/logo.png', cells: ['/logo.png', 'image/png', '200 OK', '9 KB'] }],
-        }),
-      ],
-    },
-  ],
-  learn: {
-    lead: 'A web page is a conversation in plain text. The browser asks for one thing, the server answers with a status and the file, and the browser asks for the next thing.',
-    terms: [
-      { idea: 'The side that asks: your browser', name: 'Client' },
-      { idea: 'The address you type', name: 'URL' },
-      { idea: 'Where to send it: the server’s number', name: 'IP address' },
-      { idea: 'The open line both sides agreed on', name: 'TCP connection' },
-      { idea: 'The kind of asking, like “send me this”', name: 'Method (GET)' },
-      { idea: 'Which page or file', name: 'Path' },
-      { idea: 'Short notes on a request or a reply', name: 'Headers' },
-      { idea: 'The number that says how it went', name: 'Status code' },
-      { idea: 'The text that describes the page', name: 'HTML' },
-      { idea: 'Drawing the page from its HTML', name: 'Rendering' },
-    ],
-    pattern: {
-      names: ['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render'],
-      note: 'Every page you open goes through these five. The HTTP exchange repeats once for every file the page needs.',
-    },
-    why: 'HTTP is the same for every browser and every website, so any browser can open any site. Because it’s plain text it’s easy to read, and that’s the catch: anyone on the way can read it too. HTTPS, next, fixes that.',
-    deep: 'HTTP doesn’t remember anything between requests; each one stands alone. Sites remember you with cookies, small values the server asks the browser to send back with every request. HTTP/1.1 is plain text, HTTP/2 sends the same meaning as binary frames, and HTTP/3 runs over QUIC, on UDP.',
-    facts: [
-      { label: 'Port', value: '80 (HTTPS: 443)' },
-      { label: 'Methods', value: 'GET, POST, PUT, DELETE, HEAD' },
-      { label: 'Status families', value: '2xx OK, 3xx moved, 4xx request problem, 5xx server problem' },
-      { label: 'Versions', value: 'HTTP/1.1, HTTP/2, HTTP/3' },
-      { label: 'Defined in', value: 'RFC 9110' },
-    ],
-  },
-  practice: [
-    {
-      id: 'status-404',
-      prompt: 'The server replies 404. What does that mean?',
-      options: [
-        {
-          text: 'There’s nothing at that path.',
-          feedback: 'Right. 404 means the server is working, but it has no page or file at the path you asked for.',
-        },
-        {
-          text: 'The server is too busy to answer.',
-          feedback: 'Not quite. A busy server answers with a 5xx code, like 503. 404 means there’s nothing at that path.',
-        },
-        { text: 'The page arrived safely.', feedback: 'Not quite. That’s 200 OK. 404 means there’s nothing at that path.' },
-      ],
-      answer: 0,
-    },
-    {
-      id: 'more-files',
-      prompt: 'The page needs a stylesheet and a logo. How does the browser get them?',
-      options: [
-        { text: 'They arrive inside the HTML.', feedback: 'Not quite. The HTML only names them. The browser has to ask for each one.' },
-        { text: 'It sends a separate request for each file.', feedback: 'Yes. One GET per file, usually over the same open connection.' },
-        {
-          text: 'It asks the DNS resolver for them.',
-          feedback: 'Not quite. DNS only gives numbers for names. The files come from the web server, one request each.',
-        },
-      ],
-      answer: 1,
-    },
-  ],
-};
+/** The mockup's messages for one step, each message and each table row it brings tracing to the same Learn parts. */
+const msgOf =
+  (...traces: string[]) =>
+  (m: MockupMessage): SceneEvent[] => {
+    const backing: Backing = { traces };
+    return mockup(m).map((e) => ({ ...e, backing }));
+  };
 
-/** Lesson 1 of How the Internet Works: the section above, as a lesson of its own. */
-export default defineLegacyLesson(tourLesson(http));
+// ---------------------------------------------------------------- lesson
+
+export default defineLesson({
+  slug: 'what-is-http',
+  title: 'HTTP',
+  subtitle: 'Asking for web pages',
+  level: 'beginner',
+  certTags: [],
+  summary:
+    'Web pages arrive the same basic way: your browser asks for one, and a web server sends it back. HTTP is the set of rules for that asking and answering, and in HTTP/1.1 it’s plain text, so you could read it yourself.',
+  figure: 'net-map',
+  backing: { traces: ['lead-1', 'lead-2'] },
+  units: [
+    {
+      id: 'http',
+      name: 'HTTP',
+      fullName: 'Hypertext Transfer Protocol',
+      purpose: 'Asking for web pages',
+      group: 'app',
+      // No standard puts HTTP at an OSI layer (X.200 never names HTTP; RFC 9110 calls it "application-level"), so the
+      // badge rests on two vendors' own mappings.
+      osi: { layers: [7], cite: [CLOUDFLARE_L7, MS_L7] },
+      backing: { traces: ['fact-defined', 'lead-2'] },
+      scene: {
+        title: 'Your browser asks a web server for a page',
+        views: ['network', 'sequence'],
+        layers: ['http:web'],
+        labels: { laptop: 'Wants example.net', url: 'example.net' },
+        start: [],
+        panel: { type: 'table', table: files },
+        log: eventLog(),
+        parties: [
+          { place: 'laptop', label: 'Laptop', addr: '192.168.1.100' },
+          { place: 'resolver', label: 'DNS resolver', addr: '192.0.2.53' },
+          { place: 'web', label: 'Web server', addr: '203.0.113.80' },
+        ],
+        backing: { traces: ['lead-2', 'term-client', 'term-path', 'term-status', 'fact-type'] },
+      },
+      overview: {
+        hook: 'Web pages arrive the same basic way: your browser asks for one, and a web server sends it back. HTTP is the set of rules for that asking and answering, and in HTTP/1.1 it’s plain text, so you could read it yourself.',
+        hookBacking: { traces: ['lead-1', 'lead-2'] },
+        description:
+          'It works like ordering at a counter. You ask for one thing by name, you get it back with a short note saying how it went, then you ask for the next thing. A page with pictures and styles is a longer order, with several items.',
+        backing: { analogy: true },
+        facts: [
+          { label: 'Used for', value: 'web pages, and apps that talk to servers', backing: { traces: ['fact-used'] } },
+          { label: 'Port', value: 'TCP 80 (HTTPS uses 443)', backing: { traces: ['fact-port'] } },
+          { label: 'Rides on', value: 'TCP, which rides on IP (HTTP/3: QUIC, on UDP)', backing: { traces: ['fact-rides'] } },
+          { label: 'Shape', value: 'a request, then a response', backing: { traces: ['lead-2'] } },
+          { label: 'OSI layer', value: '7, application', backing: { traces: ['fact-osi'] } },
+          { label: 'This example', value: 'example.net at 203.0.113.80', backing: { example: true } },
+        ],
+      },
+      steps: [
+        {
+          id: 'client-request',
+          title: 'Client Request',
+          sub: 'You type http://example.net and press Enter',
+          narrative:
+            'You type http://example.net and press Enter. Your browser is the **client**, the side that asks. It reads the **URL** you typed to work out three things: which protocol to use (http, so plain HTTP), which site (example.net) and which page (/, the front page). It has nothing saved for this site, and it doesn’t know the server’s number yet, so nothing has been sent.',
+          deep: [
+            {
+              text: 'A URL has parts: the scheme (http), the host (example.net), an optional port (80 is assumed for http, 443 for https), the path (/), and sometimes a query (?q=…) and a fragment (#top). Before going to the network, the browser can look in its cache first; a fresh saved copy can mean no request at all.',
+              cite: [
+                rfc('rfc-3986', '3', true),
+                cite('whatwg-url', '4.1', { url: `${URL_STANDARD}#url-representation` }),
+                rfc('rfc-9110', '4.2.1', true),
+                rfc('rfc-9110', '4.2.2', true),
+                cite('whatwg-url', '4.2', { url: `${URL_STANDARD}#url-miscellaneous` }),
+                rfc('rfc-9110', '7.3.1'),
+                rfc('rfc-9111', '4.2', true),
+              ],
+            },
+          ],
+          facts: [
+            { label: 'URL', value: 'http://example.net/', backing: { example: true } },
+            { label: 'Scheme', value: 'http, so TCP port 80', backing: { traces: ['fact-port', 'fact-url'] } },
+            { label: 'Host', value: 'example.net', backing: { example: true } },
+            { label: 'Path', value: '/, the front page', backing: { traces: ['term-path', 'fact-url'] } },
+          ],
+          status: 'Preparing a request',
+          idle: 'Nothing on the network yet. The browser is still getting ready.',
+          events: [],
+          backing: { traces: ['term-client', 'term-url', 'term-path', 'fact-url', 'fact-port', 'pattern'] },
+        },
+        {
+          id: 'dns-resolution',
+          title: 'DNS Resolution',
+          sub: 'Where is example.net?',
+          narrative:
+            'To send anything, the browser needs the server’s number, its **IP address**. So the laptop asks its **DNS resolver**: “What’s the number for example.net?” Turning a name into a number this way is **DNS resolution**. The DNS lesson shows how the resolver finds it. Here the answer comes straight back.',
+          deep: [
+            {
+              text: 'This is a DNS query for the A record of example.net, sent over UDP to port 53. If the laptop looked the name up recently, its resolver can answer from its cache, with no message sent.',
+              cite: [
+                rfc('rfc-1034', '5.2.1', true),
+                rfc('rfc-1035', '3.2.2', true),
+                rfc('rfc-1035', '4.2.1', true),
+                rfc('rfc-1034', '5.1', true),
+              ],
+            },
+          ],
+          facts: [
+            { label: 'Asks', value: 'the DNS resolver, 192.0.2.53', backing: { example: true } },
+            { label: 'Question', value: 'the A record for example.net', backing: { traces: ['fact-dns'] } },
+            { label: 'Answer', value: '203.0.113.80', backing: { example: true } },
+            { label: 'Takes', value: 'about 20 ms', backing: { example: true } },
+          ],
+          events: [
+            ...msgOf(
+              'fact-dns',
+              'term-ip',
+            )({
+              tag: 'LOOKUP',
+              from: 'laptop',
+              to: 'resolver',
+              proto: 'DNS',
+              via: 'UDP',
+              kind: 'request',
+              time: '0.000s',
+              src: '192.168.1.100:51034',
+              dst: '192.0.2.53:53',
+              size: '70 B',
+              sum: 'What’s the number for example.net?',
+              info: 'DNS query: A record for example.net',
+              st: 'Looking up example.net',
+            }),
+            ...msgOf(
+              'fact-dns',
+              'term-ip',
+            )({
+              tag: 'ANSWER',
+              from: 'resolver',
+              to: 'laptop',
+              proto: 'DNS',
+              via: 'UDP',
+              kind: 'response',
+              time: '0.019s',
+              src: '192.0.2.53:53',
+              dst: '192.168.1.100:51034',
+              size: '86 B',
+              sum: 'example.net is 203.0.113.80.',
+              info: 'DNS response: example.net is 203.0.113.80',
+              st: 'Found 203.0.113.80',
+              known: true,
+            }),
+          ],
+          backing: { traces: ['term-ip', 'fact-dns', 'pattern'] },
+        },
+        {
+          id: 'tcp-connection',
+          title: 'TCP Connection',
+          sub: 'Check the line works both ways',
+          narrative:
+            'Next the laptop opens a line to the server, the way you check someone can hear you before you start talking. Three short messages: hello, hello back, and OK. That’s the **TCP handshake**, and the open line is a **connection**. HTTP sends this page’s messages over it. The TCP lesson looks at it closely.',
+          deep: [
+            {
+              text: 'The laptop uses a temporary port of its own (here 50310) and connects to port 80, the standard port for plain HTTP. The three messages are SYN, SYN-ACK and ACK. Once it’s open, many requests can share the connection; HTTP/1.1 keeps it open by default.',
+              cite: [
+                rfc('rfc-6335', '6', true),
+                rfc('rfc-9110', '4.2.1', true),
+                rfc('rfc-9293', '3.5', true),
+                rfc('rfc-9293', '3.5.1', true),
+                CONNECTION_REUSE,
+              ],
+            },
+          ],
+          facts: [
+            { label: 'From', value: '192.168.1.100, port 50310', backing: { example: true } },
+            { label: 'To', value: '203.0.113.80, port 80', backing: { example: true } },
+            { label: 'Messages', value: 'SYN, SYN-ACK, ACK', backing: { traces: ['fact-tcp'] } },
+            { label: 'Then', value: 'the connection stays open for more requests', backing: { traces: ['fact-tcp'] } },
+          ],
+          events: [
+            ...msgOf(
+              'fact-tcp',
+              'term-tcp',
+            )({
+              tag: 'SYN',
+              from: 'laptop',
+              to: 'web',
+              proto: 'TCP',
+              via: 'TCP',
+              kind: 'request',
+              time: '0.020s',
+              src: LAPTOP,
+              dst: WEB,
+              size: '74 B',
+              sum: 'Hello, can we talk?',
+              info: 'SYN: open a connection',
+            }),
+            ...msgOf(
+              'fact-tcp',
+              'term-tcp',
+            )({
+              tag: 'SYN-ACK',
+              from: 'web',
+              to: 'laptop',
+              proto: 'TCP',
+              via: 'TCP',
+              kind: 'response',
+              time: '0.052s',
+              src: WEB,
+              dst: LAPTOP,
+              size: '74 B',
+              sum: 'Hello. Yes, I hear you.',
+              info: 'SYN-ACK: accepted',
+            }),
+            ...msgOf(
+              'fact-tcp',
+              'term-tcp',
+            )({
+              tag: 'ACK',
+              from: 'laptop',
+              to: 'web',
+              proto: 'TCP',
+              via: 'TCP',
+              kind: 'request',
+              time: '0.052s',
+              src: LAPTOP,
+              dst: WEB,
+              size: '66 B',
+              sum: 'Good, the line is open.',
+              info: 'ACK: connection open',
+              st: 'Connected to example.net',
+              known: true,
+              conn: ['open', 'laptop>web'],
+            }),
+          ],
+          backing: { traces: ['term-tcp', 'fact-tcp', 'pattern'] },
+        },
+        {
+          id: 'http-exchange',
+          title: 'HTTP Exchange',
+          sub: 'GET /, then 200 OK',
+          narrative:
+            'Now the browser asks for the page. In HTTP/1.1 that is a few lines of plain text. The first line starts with **GET /**, which means “send me the front page”: GET is the **method**, the kind of asking, and / is the **path**. The lines under it are **headers**, notes such as which site this is for. The server answers with a **status code** on top, **200 OK**, meaning it went fine, then the page itself, written in **HTML**. One request and its response make an HTTP exchange.',
+          deep: [
+            {
+              text: 'The request line is GET / HTTP/1.1, and in HTTP/1.1 the Host header (Host: example.net) is required, because one server can hold many sites. Other methods: POST sends data for the server to process, PUT and DELETE change things on the server, HEAD asks for headers only. Status codes come in five families: 1xx received, still going, 2xx success, 3xx more to do (301 look elsewhere, 304 use your saved copy), 4xx a problem with the request (403, 404), 5xx a problem on the server (500, 503).',
+              cite: [
+                rfc('rfc-9112', '3', true),
+                rfc('rfc-9112', '3.2', true),
+                rfc('rfc-9110', '7.2'),
+                rfc('rfc-9110', '9.3.2', true),
+                rfc('rfc-9110', '9.3.3', true),
+                rfc('rfc-9110', '9.3.4', true),
+                rfc('rfc-9110', '9.3.5', true),
+                rfc('rfc-9110', '15', true),
+                rfc('rfc-9110', '15.4.2', true),
+                rfc('rfc-9110', '15.4.5', true),
+                rfc('rfc-9110', '15.5.4', true),
+                rfc('rfc-9110', '15.5.5', true),
+                rfc('rfc-9110', '15.6.1', true),
+                rfc('rfc-9110', '15.6.4', true),
+              ],
+            },
+          ],
+          facts: [
+            { label: 'Request line', value: 'GET / HTTP/1.1', backing: { traces: ['fact-request'] } },
+            { label: 'Host', value: 'example.net', backing: { traces: ['fact-request', 'fact-url'] } },
+            { label: 'Status', value: '200 OK', backing: { traces: ['fact-status'] } },
+            { label: 'Content-Type', value: 'text/html', backing: { traces: ['fact-type'] } },
+          ],
+          events: [
+            ...msgOf(
+              'fact-request',
+              'term-method',
+              'term-path',
+              'lead-1',
+            )({
+              tag: 'GET /',
+              from: 'laptop',
+              to: 'web',
+              proto: 'HTTP',
+              via: 'TCP',
+              kind: 'request',
+              time: '0.053s',
+              src: LAPTOP,
+              dst: WEB,
+              size: '412 B',
+              sum: 'Please send the page at /, the front page.',
+              info: 'GET / HTTP/1.1, Host: example.net',
+              st: 'Waiting for the page',
+              known: true,
+            }),
+            ...msgOf(
+              'fact-response',
+              'term-status',
+              'fact-status',
+              'term-html',
+              'fact-type',
+              'lead-1',
+            )({
+              tag: '200 OK',
+              from: 'web',
+              to: 'laptop',
+              proto: 'HTTP',
+              via: 'TCP',
+              kind: 'response',
+              time: '0.091s',
+              src: WEB,
+              dst: LAPTOP,
+              size: '18 KB',
+              sum: '200 OK. Here’s the page, as HTML.',
+              info: 'HTTP/1.1 200 OK, text/html',
+              st: 'Reading the page',
+              known: true,
+              rows: [{ key: '/', cells: ['/', 'text/html', '200 OK', '18 KB'] }],
+            }),
+          ],
+          backing: {
+            traces: ['lead-1', 'lead-2', 'term-method', 'term-path', 'term-headers', 'term-status', 'term-html', 'fact-request', 'fact-response', 'fact-status', 'pattern'],
+          },
+        },
+        {
+          id: 'render-page',
+          title: 'Render Page',
+          sub: 'Fetch the rest, and draw it',
+          narrative:
+            'The browser reads the HTML. Turning HTML and its styles into what you see is **rendering**. On the way it finds two more files it needs: a **stylesheet** that says how the page looks, and an **image** for the logo. It fetches each with its own GET, here over the same connection. The page is drawn once the stylesheet arrives, and it is complete when the logo lands.',
+          deep: [
+            {
+              text: 'Browsers often fetch several files at once, over more than one connection. HTTP/2 and HTTP/3 let many requests share one connection at the same time. A file the browser already has can be checked instead of fetched: if it hasn’t changed, the server answers 304 Not Modified with no body.',
+              cite: [
+                rfc('rfc-9112', '9', true),
+                rfc('rfc-9114', '1.1'),
+                rfc('rfc-9114', '6.1'),
+                rfc('rfc-9113', '1', true),
+                rfc('rfc-9111', '4.3', true),
+                rfc('rfc-9110', '13.1.3'),
+                rfc('rfc-9110', '15.4.5', true),
+              ],
+            },
+          ],
+          facts: [
+            { label: 'Requests', value: 'GET /style.css, GET /logo.png', backing: { example: true } },
+            { label: 'Types', value: 'text/css, image/png', backing: { traces: ['fact-type'] } },
+            { label: 'Same connection', value: 'yes, it stays open', backing: { traces: ['fact-tcp'] } },
+            { label: 'Unchanged files', value: '304 Not Modified', backing: { traces: ['fact-status'] } },
+          ],
+          events: [
+            ...msgOf(
+              'fact-files',
+              'fact-request',
+              'term-method',
+            )({
+              tag: 'GET /style.css',
+              from: 'laptop',
+              to: 'web',
+              proto: 'HTTP',
+              via: 'TCP',
+              kind: 'request',
+              time: '0.104s',
+              src: LAPTOP,
+              dst: WEB,
+              size: '398 B',
+              sum: 'Please send /style.css.',
+              info: 'GET /style.css HTTP/1.1',
+            }),
+            ...msgOf(
+              'fact-files',
+              'term-status',
+              'fact-type',
+              'term-rendering',
+              'deep-4',
+            )({
+              tag: '200 OK',
+              from: 'web',
+              to: 'laptop',
+              proto: 'HTTP',
+              via: 'TCP',
+              kind: 'response',
+              time: '0.139s',
+              src: WEB,
+              dst: LAPTOP,
+              size: '6 KB',
+              sum: '200 OK. Here’s the stylesheet.',
+              info: 'HTTP/1.1 200 OK, text/css',
+              st: 'Drawing the page',
+              page: 'text',
+              rows: [{ key: '/style.css', cells: ['/style.css', 'text/css', '200 OK', '6 KB'] }],
+            }),
+            ...msgOf(
+              'fact-files',
+              'fact-request',
+              'term-method',
+            )({
+              tag: 'GET /logo.png',
+              from: 'laptop',
+              to: 'web',
+              proto: 'HTTP',
+              via: 'TCP',
+              kind: 'request',
+              time: '0.140s',
+              src: LAPTOP,
+              dst: WEB,
+              size: '402 B',
+              sum: 'Please send /logo.png.',
+              info: 'GET /logo.png HTTP/1.1',
+            }),
+            ...msgOf(
+              'fact-files',
+              'term-status',
+              'fact-type',
+              'term-rendering',
+            )({
+              tag: '200 OK',
+              from: 'web',
+              to: 'laptop',
+              proto: 'HTTP',
+              via: 'TCP',
+              kind: 'response',
+              time: '0.181s',
+              src: WEB,
+              dst: LAPTOP,
+              size: '9 KB',
+              sum: '200 OK. Here’s the logo.',
+              info: 'HTTP/1.1 200 OK, image/png',
+              st: 'Page loaded',
+              done: true,
+              page: 'full',
+              rows: [{ key: '/logo.png', cells: ['/logo.png', 'image/png', '200 OK', '9 KB'] }],
+            }),
+          ],
+          backing: { traces: ['term-html', 'term-rendering', 'fact-files', 'fact-tcp', 'deep-4', 'pattern'] },
+        },
+      ],
+      learn: {
+        lead: [
+          {
+            id: 'lead-1',
+            text: 'In HTTP/1.1, getting a web page is a conversation in plain text.',
+            cite: PLAIN_TEXT,
+          },
+          {
+            id: 'lead-2',
+            text: 'The browser asks for one thing, the server answers with a status and the file, and the browser asks for the next thing.',
+            cite: [rfc('rfc-9110', '3.4', true), CONNECTION_REUSE],
+          },
+        ],
+        terms: [
+          {
+            id: 'term-client',
+            idea: 'The side that asks: your browser',
+            name: 'Client',
+            cite: [rfc('rfc-9110', '3.3', true), rfc('rfc-9110', '3.5', true)],
+          },
+          {
+            id: 'term-url',
+            idea: 'The web address of a page or file',
+            name: 'URL',
+            cite: [rfc('rfc-3986', '1.1.3', true)],
+          },
+          {
+            id: 'term-ip',
+            idea: 'Where to send it: the server’s number',
+            name: 'IP address',
+            cite: [rfc('rfc-791', '2.3', true), rfc('rfc-9110', '4.3.2')],
+          },
+          {
+            id: 'term-tcp',
+            idea: 'The open line both sides agreed on',
+            name: 'TCP connection',
+            cite: [rfc('rfc-9293', '3.5', true), rfc('rfc-9293', '4', true)],
+          },
+          {
+            id: 'term-method',
+            idea: 'The kind of asking, like “send me this”',
+            name: 'Method (GET)',
+            cite: [rfc('rfc-9110', '9.1', true), rfc('rfc-9110', '9.3.1', true)],
+          },
+          {
+            id: 'term-path',
+            idea: 'Which page or file on the site',
+            name: 'Path',
+            cite: [rfc('rfc-3986', '3.3', true), rfc('rfc-9110', '4.2.1')],
+          },
+          {
+            id: 'term-headers',
+            idea: 'Notes on a request or a reply',
+            name: 'Headers',
+            cite: [rfc('rfc-9110', '6.3', true)],
+          },
+          {
+            id: 'term-status',
+            idea: 'The number that says how it went',
+            name: 'Status code',
+            cite: [rfc('rfc-9110', '15', true)],
+          },
+          {
+            id: 'term-html',
+            idea: 'The text that describes the page',
+            name: 'HTML',
+            cite: [html('1.3', 'background', true), html('1.10', 'a-quick-introduction-to-html', true)],
+          },
+          {
+            id: 'term-rendering',
+            idea: 'Drawing the page from its HTML and styles',
+            name: 'Rendering',
+            cite: [HTML_RENDERING, HTML_LINK_STYLESHEET],
+          },
+        ],
+        pattern: {
+          id: 'pattern',
+          names: ['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render'],
+          note: 'A page you open for the first time goes through these five. The HTTP exchange repeats for every file the page needs from the server.',
+          cite: [
+            rfc('rfc-9110', '4.3.2', true),
+            rfc('rfc-9110', '7.3.1'),
+            rfc('rfc-9111', '4.2', true),
+            rfc('rfc-1034', '5.1', true),
+            CONNECTION_REUSE,
+            HTML_RENDERING,
+            HTML_LINK,
+            HTML_IMG,
+          ],
+        },
+        why: [
+          {
+            id: 'why-1',
+            text: 'Every browser and every website speak the same HTTP, so a browser can open sites it has never seen.',
+            cite: [rfc('rfc-9110', '1.1', true), rfc('rfc-9110', '1.2', true)],
+          },
+          {
+            id: 'why-2',
+            text: 'Because HTTP/1.1 is plain text it’s easy to read,',
+            cite: PLAIN_TEXT,
+          },
+          {
+            id: 'why-3',
+            text: 'and that’s the catch: plain HTTP isn’t encrypted, so anyone on the way can read it too.',
+            cite: [rfc('rfc-9110', '4.3.2'), rfc('rfc-9112', '11.4'), rfc('rfc-9110', '4.2.2')],
+          },
+          {
+            id: 'why-4',
+            text: 'HTTPS fixes that.',
+            cite: [rfc('rfc-9110', '4.2.2', true)],
+          },
+        ],
+        deep: [
+          {
+            id: 'deep-1',
+            text: 'HTTP doesn’t remember anything between requests; each one stands alone.',
+            cite: [rfc('rfc-9110', '3.3', true)],
+          },
+          {
+            id: 'deep-2',
+            text: 'Sites remember you with cookies: names and values the server asks the browser to send back with later requests.',
+            cite: [rfc('rfc-6265', '1', true)],
+          },
+          {
+            id: 'deep-3',
+            text: 'HTTP/1.1 is plain text, HTTP/2 sends the same meaning as binary frames, and HTTP/3 runs over QUIC, on UDP.',
+            cite: [...PLAIN_TEXT, rfc('rfc-9113', '1', true), rfc('rfc-9114', '1', true), rfc('rfc-9000', '1')],
+          },
+          {
+            id: 'deep-4',
+            text: 'Drawing waits for a stylesheet linked in the page’s head, until it has loaded or a timeout passes.',
+            cite: [
+              html('4.6.8.23', 'link-type-stylesheet', true),
+              html('3.1.6', 'render-blocking-mechanism', true),
+              html('8.1.7.3', 'event-loop-processing-model', true),
+            ],
+          },
+        ],
+        facts: [
+          { id: 'fact-port', label: 'Port', value: '80 (HTTPS: 443)', cite: [rfc('rfc-9110', '4.2.1', true), rfc('rfc-9110', '4.2.2', true)] },
+          {
+            id: 'fact-rides',
+            label: 'Rides on',
+            value: 'TCP, which rides on IP (HTTP/3: QUIC, on UDP)',
+            cite: [rfc('rfc-9112', '9', true), rfc('rfc-9293', '2.2'), rfc('rfc-9114', '1', true), rfc('rfc-9000', '1')],
+          },
+          {
+            id: 'fact-used',
+            label: 'Used for',
+            value: 'web pages, and apps that talk to servers',
+            cite: [rfc('rfc-9110', '3.5', true), rfc('rfc-9110', '1.1', true)],
+          },
+          {
+            id: 'fact-url',
+            label: 'URL parts',
+            value: 'scheme, host, port, path, query, fragment',
+            cite: [rfc('rfc-3986', '3', true), cite('whatwg-url', '4.1', { url: `${URL_STANDARD}#url-representation`, defining: true })],
+          },
+          {
+            id: 'fact-request',
+            label: 'A request',
+            value: 'a request line (method, path, version), then headers; HTTP/1.1 requires a Host header',
+            cite: [rfc('rfc-9112', '3', true), rfc('rfc-9112', '3.2', true), rfc('rfc-9112', '2.1', true)],
+          },
+          {
+            id: 'fact-response',
+            label: 'A response',
+            value: 'a status line (version, status code, reason), then headers, then the content',
+            cite: [rfc('rfc-9112', '4', true), rfc('rfc-9112', '2.1', true), rfc('rfc-9110', '6.4', true)],
+          },
+          {
+            id: 'fact-type',
+            label: 'Content-Type',
+            value: 'names a file’s media type, such as text/html, text/css or image/png',
+            cite: [
+              rfc('rfc-9110', '8.3', true),
+              cite('iana-media-types', 'Media Types, text', { url: `${IANA_MEDIA}#table-text`, defining: true }),
+              cite('iana-media-types', 'Media Types, image', { url: `${IANA_MEDIA}#table-image`, defining: true }),
+            ],
+          },
+          { id: 'fact-methods', label: 'Some methods', value: 'GET, POST, PUT, DELETE, HEAD', cite: [rfc('rfc-9110', '9.1', true)] },
+          {
+            id: 'fact-status',
+            label: 'Status families',
+            value: '1xx received, still going; 2xx success (200 OK); 3xx more to do (304 Not Modified: use your saved copy); 4xx request problem; 5xx server problem',
+            cite: [rfc('rfc-9110', '15', true), rfc('rfc-9110', '15.3.1', true), rfc('rfc-9110', '15.4.5', true)],
+          },
+          { id: 'fact-versions', label: 'Versions', value: 'HTTP/1.1, HTTP/2, HTTP/3', cite: [rfc('rfc-9110', '1.2', true)] },
+          {
+            id: 'fact-defined',
+            label: 'Defined in',
+            value: 'RFC 9110 (the Hypertext Transfer Protocol’s shared meaning); RFC 9112, RFC 9113 and RFC 9114 (the versions)',
+            cite: [
+              cite('rfc-9110', 'Abstract', { url: 'https://www.rfc-editor.org/rfc/rfc9110.html#abstract', defining: true }),
+              rfc('rfc-9110', '1.2', true),
+              rfc('rfc-9112', '1', true),
+              cite('rfc-9113', 'Abstract', { url: 'https://www.rfc-editor.org/rfc/rfc9113.html#abstract', defining: true }),
+              rfc('rfc-9114', '1.2', true),
+            ],
+          },
+          {
+            id: 'fact-dns',
+            label: 'DNS lookup',
+            value: 'a resolver turns a name into an IP address; a query for an A record goes over UDP to port 53',
+            cite: [
+              rfc('rfc-1034', '5.2.1', true),
+              rfc('rfc-1035', '3.2.2', true),
+              rfc('rfc-1035', '4.2.1', true),
+              rfc('rfc-9499', '6'),
+              rfc('rfc-9110', '4.3.2'),
+            ],
+          },
+          {
+            id: 'fact-tcp',
+            label: 'TCP connection',
+            value: 'opened by a handshake of three messages (SYN, SYN-ACK, ACK); HTTP/1.1 keeps it open for more requests by default',
+            cite: [rfc('rfc-9293', '3.5', true), rfc('rfc-9293', '3.5.1', true), CONNECTION_REUSE],
+          },
+          {
+            id: 'fact-files',
+            label: 'Other files',
+            value: 'a page names more files, such as a stylesheet (how it looks) and images; each is fetched with its own GET',
+            cite: [HTML_LINK_STYLESHEET, HTML_IMG, FETCH_REQUESTS, rfc('rfc-9110', '9.3.1', true)],
+          },
+          { id: 'fact-osi', label: 'OSI layer', value: '7, application', cite: [CLOUDFLARE_L7, MS_L7] },
+        ],
+      },
+      practice: [
+        {
+          id: 'status-404',
+          prompt: 'The server replies 404. What does that mean?',
+          options: [
+            {
+              text: 'The server found nothing at that path.',
+              feedback: 'Right. 404 means the server answered, but found nothing at that path, or won’t say whether anything is there.',
+              cite: [rfc('rfc-9110', '15.5.5', true)],
+            },
+            {
+              text: 'The server is too busy to answer.',
+              feedback: 'Not quite. A busy server may answer 503, a 5xx code. 404 means nothing was found at that path.',
+              cite: [rfc('rfc-9110', '15.6.4', true), rfc('rfc-9110', '15.5.5', true)],
+            },
+            {
+              text: 'The page came back fine.',
+              feedback: 'Not quite. That’s 200 OK. 404 means nothing was found at that path.',
+              cite: [rfc('rfc-9110', '15.3.1', true), rfc('rfc-9110', '15.5.5', true)],
+            },
+          ],
+          answer: 0,
+        },
+        {
+          id: 'more-files',
+          prompt: 'The page needs a stylesheet and a logo. How does the browser get them?',
+          options: [
+            {
+              text: 'They arrive inside the HTML.',
+              feedback: 'Not quite. Here the HTML only names them, so the browser asks for each one.',
+              cite: [HTML_LINK, HTML_IMG, FETCH_REQUESTS],
+            },
+            {
+              text: 'It sends a separate request for each file.',
+              feedback: 'Yes. One GET per file; here they share the open connection.',
+              cite: [FETCH_REQUESTS, HTML_LINK_STYLESHEET, rfc('rfc-9110', '9.3.1', true), CONNECTION_REUSE],
+            },
+            {
+              text: 'It asks the DNS resolver for them.',
+              feedback: 'Not quite. DNS turns the name into an address; it doesn’t hold the files. They come from the web server, one request each.',
+              cite: [rfc('rfc-1034', '5.2.1', true), rfc('rfc-9110', '4.3.2')],
+            },
+          ],
+          answer: 1,
+        },
+      ],
+    },
+  ],
+});
