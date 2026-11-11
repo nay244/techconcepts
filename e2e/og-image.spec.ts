@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { tokens } from '../src/styles/tokens';
-import { cardPage } from '../scripts/generate-og-image.mjs';
+import { openCard } from '../scripts/generate-og-image.mjs';
 
 /**
  * The share image's card (prototypes/d4-share-image.md, acceptance checks 2 to 6, 8 and 9): the card the script
@@ -19,13 +19,9 @@ test.describe.configure({ mode: 'serial' });
 
 let page: Page;
 test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
-  await page.setContent(await cardPage());
-  await page.evaluate(() => document.fonts.ready);
-  // A font that fails to load falls back without a word, so check each took.
-  const status = await page.evaluate(() => [...document.fonts].map((face) => `${face.family} ${face.weight} ${face.status}`));
-  expect(status.length).toBeGreaterThan(0);
-  expect(status.filter((s) => !s.endsWith(' loaded'))).toEqual([]);
+  // The script's own opener, so what is measured here is the page the script photographs: its fade-in switched off,
+  // its fonts checked as loaded.
+  page = await openCard(browser);
 });
 test.afterAll(async () => {
   await page.close();
@@ -75,6 +71,9 @@ test('the ground and the mark are the light theme tokens in the photograph', asy
   }, png.toString('base64'));
   expect(px.ground).toEqual(rgb(light['bg-soft']));
   expect(px.message).toEqual(rgb(light.accent));
+  // The name and the line are the theme's strongest ink.
+  const ink = `rgb(${rgb(light['ink-strong']).join(', ')})`;
+  for (const words of ['.brand b', '.line']) expect(await page.locator(words).evaluate((el) => getComputedStyle(el).color), words).toBe(ink);
 });
 
 // 8. Nothing solid within 40px of an edge.

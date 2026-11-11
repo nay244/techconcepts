@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { tokens } from '../src/styles/tokens.ts';
 import { LOGO_SHAPES } from '../src/art/logo.ts';
