@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { nodeEnv } from './e2e/support';
 
 /**
  * End-to-end checks run against the built site (`astro preview`), in Chromium, at the desktop sizes the redesign is
@@ -6,7 +7,8 @@ import { defineConfig } from '@playwright/test';
  * load and scroll without errors, and every lesson has to fit one screen with its tabs.
  *
  * The server has a port of its own, and is never reused: 4321 is `astro dev`'s default, and a server already
- * running there could be another checkout's.
+ * running there could be another checkout's. A unit in its own worktree sets `E2E_PORT` to the port its brief gives
+ * it, so two units can run their specs at the same time.
  *
  * `tablet.spec.ts` sets its window sizes itself, so it has a project of its own, and the others ignore it.
  *
@@ -21,7 +23,7 @@ import { defineConfig } from '@playwright/test';
  * @phone tests, and every desktop project leaves them out. The skips left in the specs are deliberate gates: the
  * playback behaviour checks run in d1440-dark and reduced-motion only, and the reduced-motion timing in its project.
  */
-const PORT = 4471;
+const PORT = Number(nodeEnv.E2E_PORT) || 4471;
 const desktop = { grepInvert: /@phone/ };
 const notVisual = { ...desktop, testIgnore: /(visual|tablet|og-image)\.spec\.ts$/ };
 

@@ -27,7 +27,7 @@ Run, and keep the last lines of each:
 
 - `npm test`
 - `npm run build`
-- when a reader can see the change, the end-to-end specs it touches, in the projects that run them: `npx playwright test <files> --project=<project> --reporter=line`, in the foreground (port 4471 must be free; in a worktree, say so in your report instead of running it, since the port is shared). The full suite is the orchestrator's, once per job. Leave no background process running when you report.
+- when a reader can see the change, the end-to-end specs it touches, in the projects that run them: `npx playwright test <files> --project=<project> --reporter=line`, in the foreground. The server's port must be free: 4471 in the main folder; in a worktree, put `E2E_PORT=<the port your brief gives>` in front of the command. The full suite is the orchestrator's, once per job. Leave no background process running when you report.
 - the unit's own check from `plan.md`
 
 Then look at the screen at 375px and 1440px, in both themes, beside the prototype.
