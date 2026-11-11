@@ -445,6 +445,24 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Microsoft',
     url: 'https://learn.microsoft.com/en-us/gaming/gdk/docs/features/console/networking/game-mesh/preferred-local-udp-multiplayer-port-networking',
   },
+  {
+    id: 'rfc-3611',
+    kind: 'rfc',
+    short: 'RFC 3611',
+    title: 'RTP Control Protocol Extended Reports (RTCP XR)',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc3611.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc3611.html#section-{n}',
+  },
+  {
+    id: 'rfc-8445',
+    kind: 'rfc',
+    short: 'RFC 8445',
+    title: 'Interactive Connectivity Establishment (ICE): A Protocol for Network Address Translator (NAT) Traversal',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc8445.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc8445.html#section-{n}',
+  },
 ]);
 
 /**
