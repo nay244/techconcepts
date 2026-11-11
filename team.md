@@ -1,5 +1,7 @@
 # Team ledger
 
+The job in `plan.md` now is Phase 3, one fact-check path: its rows are under "Job 2" at the end. Everything before that is job 1, the Lesson page (Phase 2), which is done.
+
 One row per unit of `plan.md`, added when the unit ends. Tokens are the subagent's total for the unit, all tries together.
 
 ## Units
@@ -74,3 +76,12 @@ What should stay where it is: the first review of a visual unit on Opus. B2's se
 - **A follow-up to the same agent is far cheaper than a fresh one.** B5's second review continued the first reviewer and cost about 10,000 tokens, where a fresh second review cost 45,000 to 110,000. A builder's fix after a ruling was the same. The reviewer still sees only the diff and its own earlier report. Use a fresh agent for a first review and a continued one for checking named fixes.
 - **The orchestrator's own spec lines need the same care as a designer's.** In B5's spec it gave the folded log the desktop's 52px without checking the tablet's taller controls; the builder caught it.
 - **Two failed reviews happened on B2 and B4 over tests, not over the build.** Every blocker in those four reviews but one was a test that could not fail or a check without a test. The builder's brief should ask for each new test to be shown failing first.
+
+# Job 2: Phase 3, one fact-check path
+
+Waiting for the owner's go on `plan.md`.
+
+| Unit | Agent | Model | Tries | Tokens | Result |
+|---|---|---|---|---|---|
+| S2 | scout | Haiku | 1 | 119,488 | Done 2026-11-11. How fact-checking covers each kind of content, every fact with a `path:line`. Findings are summarised in `plan.md`. |
+
