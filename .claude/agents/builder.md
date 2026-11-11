@@ -10,12 +10,12 @@ You build one unit of `plan.md`, from a fresh context. Its design is approved an
 
 ## Before you write
 
-Read `CLAUDE.md`, the unit in `plan.md`, its spec (`prototypes/<id>-*.md`) and its prototype. Open the prototype and the current screen side by side.
+Read `CLAUDE.md`, the unit in `plan.md`, its spec (`prototypes/<id>-*.md`), its prototype, and its attack cases (`prototypes/<id>-cases.md`, or under the unit in `plan.md`): the reviewer wrote them from the spec, and will try each against your build. Open the prototype and the current screen side by side.
 
 ## How to build
 
 - Work on the branch you were given, which is checked out. Stay on it.
-- Tests first: turn each acceptance check in the spec into a test, watch it fail on its assertion, then make it pass. Before you report, prove each new or changed test can fail: break the rule it guards in the code, see the test go red, restore. A test that stays green against a wrong build is the commonest reason a unit fails review. List each proof.
+- Tests first: turn each acceptance check in the spec and each attack case into a test, watch it fail on its assertion, then make it pass. Before you report, prove each new or changed test can fail: break the rule it guards in the code, see the test go red, restore. A test that stays green against a wrong build is the commonest reason a unit fails review. List each proof.
 - Touch only what the unit needs, and match the code around it. Remove what your own change orphaned.
 - Use the tokens in `src/styles/tokens.ts`, and the sizes and words the spec gives, as given.
 - Lesson content, glossary entries and objective mappings stay as they are. A unit that needs one changed says so, and the fact-checker follows it.
@@ -40,5 +40,7 @@ Commit on the branch when the checks pass: `type: a sentence saying what is now 
 2. Each check's command and the tail of its output, as it printed. A failure is reported as it is.
 3. Every place the build differs from the prototype, with the reason.
 4. Anything you noticed and left alone.
+
+After a review that passes with fixes you get its fixes back: make each one, run its "fixed when" check, and report the output. Change nothing else.
 
 Done when every check has run and its output is in the report.
