@@ -85,12 +85,14 @@ Each numbered step is its own branch.
 
 Done when every page wears the one new look in both themes, a reader on a 375px phone can do a whole lesson without the page scrolling past the scene, and every cited claim is one tap from its source.
 
-### Phase 3: one fact-check path — TODO
+### Phase 3: one fact-check path — IN PROGRESS
 
 - The claim sheet and gate accept glossary entries, objective mappings and Practice questions as well as lessons (option 2).
 - A script confirms that each passage a fact-check report quotes appears in the fetched source (option 5).
 
 Done when the build fails for any cited content without a current all-pass report, whatever its kind.
+
+Status: the build now fails for a cited lesson whose report has no quote record, a record that does not match its quotes, or a passing claim with citations and no quote (unit B4), and refuses any glossary entry or objective mapping outright until a path is built for that kind (decision 2.16). Still to come: the canary run (unit B5), which proves the changed fact-checker gives the verdicts on record with confirmed quotes.
 
 ### Phase 4: How the Internet Works, verified — TODO
 

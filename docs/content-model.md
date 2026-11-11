@@ -282,8 +282,6 @@ The rest of the report is for people. It gives each claim's quoted passages (or 
 
 The header may also carry a `quotes` record, written by the script and never by hand: `{ "checked": "<date>", "count": <number of quotes>, "digest": "<64 hex>", "files": { "<source id>": "<64 hex>" } }`. `digest` is the SHA-256 of the report's quotes in order (each one's key, source, section and passage, the passage with every run of whitespace made one space: `quotesDigest`). `files` is the SHA-256 of each source file as read (the raw file, not the text taken from it). `npm run fact-check -- <slug> --quotes <folder>` writes it, only when every passage is found in the file for its source (an `.html` or `.xml` file is parsed with `jsdom` and read as a reader would see it: nothing a reader does not see: no `script`, `style`, `template` or `noscript` element, nothing with the `hidden` attribute or a style of its own that hides it, no SVG title or description, no attribute text; a space where a block element or `<br>` ends; a superscript after `^` and a subscript after `_`; and outside `<pre>` a line break in the source is only a space) and every passing item with citations has a quote (`keysMissingQuotes`); a record from an earlier run is replaced and nothing else in the report changes. **How a passage is found** (`checkQuotes` in `src/content/factcheck/quotecheck.ts`). Both sides are evened out the same way: accents composed; every run of whitespace one space; soft hyphens and zero-width characters removed; ligatures written as their letters; curly quotes and apostrophes straightened; every dash a hyphen. Nothing else is folded: a superscript, a prime or a fraction stays the character it is. Letter case must match. A word broken at a line's end by a hyphen or a soft hyphen (a dash there is a dash) is tried joined and unjoined, each break on its own. A passage with words left out (`…`, `...`, `[…]` or `[...]`) is found when its parts are found in order. A passage, and each part of one, is at least two words and at most 600 characters. A part matches whole words and whole numbers only: where it begins or ends with a letter or a digit, the source has no letter or digit next to it there, and where it begins or ends with a digit the source does not go on with a point or a comma and another digit ("an MTU of 1" is not found in "an MTU of 1,500"). A line-end break beside the match counts as a letter, since the script cannot tell a split word from a compound there: "national" is not found in "inter-\nnational", while "international" and "inter-national" are. The check does not prove that the passage is in the section the quote names, or that it supports the claim (that is the verdict), and the record is not a seal: it shows the quotes have not changed since the script last passed them, not who ran it.
 
-Nothing reads the record yet.
-
 **The gate.** The registry reads every report directly in `docs/fact-checks/`. It fails the build, and the tests, when:
 - a cited lesson has no report;
 - the report cannot be read: it has no header, the header is not valid JSON of the right shape, or it lists a key or a source twice;
@@ -292,7 +290,15 @@ Nothing reads the record yet.
 - an item has no verdict, or a verdict names a key the lesson does not have;
 - any verdict is not ✅;
 - a cited source is not listed, or is not current;
-- a report has no cited lesson, so stale reports don't pile up.
+- a report has no cited lesson, so stale reports don't pile up;
+- the report's quotes cannot be read (`parseQuotes`: its problems are listed under the report's path);
+- the header has no `quotes` record: the quotes have not been confirmed against the sources, so run `npm run fact-check -- <slug> --quotes <folder of the sources>`;
+- the record does not match the report: its `count` or `digest` differs from the report's quotes (a quote changed after the quote check last passed), its `files` keys are not exactly the source ids the quotes name, or its `checked` date is before the header's `checked` date; run the quote check again;
+- an item that has citations and a passing verdict has no quote (`keysMissingQuotes`).
+
+So the fact-checker's last steps are the quote check, which writes the record, and then `npm run fact-check -- <slug> --check`, which runs the gate's own function and prints these same problems. The gate reads no source: it needs only the record, offline.
+
+The gate also refuses, outright, the kinds of cited content that have no fact-check path yet (`checkUnpathedKinds`): every glossary entry and every objective mapping of a certification track. None exists today. The first job that needs one builds its path and removes the refusal for it (`docs/direction.md`, decision 2.16).
 
 While a new lesson has no passing report, the build and the tests fail. That is expected until the fact-checker passes it. `npm run dev` only warns, so you can preview the lesson while you write it. `npm run fact-check` reads lessons without the registry, so it prints the sheet either way.
 

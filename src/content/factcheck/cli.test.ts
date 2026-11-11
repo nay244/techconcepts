@@ -6,7 +6,7 @@ import { CANARY_SLUG, type FactCheckDeps, canaryReportPath, runFactCheck } from 
 import { keysNeedingQuotes } from './quotes';
 import { parseReport } from './report';
 import { claimSheet } from './sheet';
-import { reportFor } from './test-helpers';
+import { recordedReportFor, reportFor } from './test-helpers';
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has the fixture's places and cues. Real lessons
 // would fail against it, so the tests that read them are in cli.defaults.test.ts.
@@ -49,7 +49,7 @@ test('printing a cited lesson gives its sheet and report path', async () => {
 
 test('--check with a matching report passes, and with none fails', async () => {
   const path = `docs/fact-checks/${SLUG}.md`;
-  const passing = reportFor(claimSheet(cited(), FIXTURE_SOURCES));
+  const passing = recordedReportFor(claimSheet(cited(), FIXTURE_SOURCES));
   expect(await runFactCheck([SLUG, '--check'], deps({ [path]: passing }))).toEqual({ code: 0, out: `Report OK: ${path}` });
   const missing = await runFactCheck([SLUG, '--check'], deps());
   expect(missing.code).toBe(1);
@@ -58,7 +58,7 @@ test('--check with a matching report passes, and with none fails', async () => {
 
 test('--check lists every issue, one per line', async () => {
   const path = `docs/fact-checks/${SLUG}.md`;
-  const failing = reportFor(claimSheet(cited(), FIXTURE_SOURCES), (h) => {
+  const failing = recordedReportFor(claimSheet(cited(), FIXTURE_SOURCES), (h) => {
     h.verdicts[Object.keys(h.verdicts)[0]!] = '❌';
     h.sources[0]!.current = false;
   });

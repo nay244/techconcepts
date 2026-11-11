@@ -1,8 +1,9 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
 import { definedWith, defineTrack } from './define';
-import { checkFactChecks, reportPath } from './factcheck/gate';
+import { checkFactChecks, checkUnpathedKinds, reportPath } from './factcheck/gate';
 import { parseReport } from './factcheck/report';
+import { GLOSSARY, type GlossaryEntry } from './glossary';
 import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
@@ -262,7 +263,22 @@ export function checkFactCheckReports(
   sources: SourceRegistry = SOURCES,
   mode: string = import.meta.env.MODE,
 ): void {
-  const issues = checkFactChecks(lessons, reports, sources);
+  refuseOrWarn(checkFactChecks(lessons, reports, sources), mode);
+}
+
+/**
+ * Refuses the kinds of cited content that have no fact-check path yet: every glossary entry and every objective mapping
+ * (`factcheck/gate.ts`). The same dev, build and test behaviour as `checkFactCheckReports`.
+ */
+export function checkUnpathedContent(
+  glossary: readonly GlossaryEntry[],
+  trackList: readonly Track[],
+  mode: string = import.meta.env.MODE,
+): void {
+  refuseOrWarn(checkUnpathedKinds(glossary, trackList), mode);
+}
+
+function refuseOrWarn(issues: string[], mode: string): void {
   if (issues.length === 0) return;
   const message = `Fact checks:\n- ${issues.join('\n- ')}`;
   if (mode !== 'development') throw new Error(message);
@@ -272,6 +288,7 @@ export function checkFactCheckReports(
 // Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not.
 const reports = import.meta.glob<string>('../../docs/fact-checks/*.md', { query: '?raw', import: 'default', eager: true });
 checkFactCheckReports(Object.values(lessonsBySlug), reports);
+checkUnpathedContent(GLOSSARY, tracks);
 
 /**
  * The day a lesson passed its fact-check, as its report gives it ('2026-11-08'); null for a lesson not checked yet: a

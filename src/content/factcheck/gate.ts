@@ -1,6 +1,9 @@
-import type { Lesson } from '../schema';
+import type { GlossaryEntry } from '../glossary';
+import type { Lesson, Track } from '../schema';
 import type { SourceRegistry } from '../sources';
-import { parseReport } from './report';
+import { keysMissingQuotes } from './quotecheck';
+import { parseQuotes, quotesDigest } from './quotes';
+import { parseReport, type ReportHeader } from './report';
 import { claimSheet, type ClaimSheet } from './sheet';
 
 /**
@@ -41,6 +44,46 @@ export function checkReport(sheet: ClaimSheet, raw: string | undefined, path: st
     if (found === undefined) problems.push(`${path}: does not say whether source "${s.id}" is current; ${AGAIN}.`);
     else if (!found.current) problems.push(`${path}: source "${s.id}" is not current${found.note ? ` (${found.note})` : ''}; cite its current version, then ${AGAIN}.`);
   }
+  return [...problems, ...quoteProblems(sheet, raw, header, path)];
+}
+
+/**
+ * What is wrong with a report's quotes: they read, the header's record says the quote check passed them, the record
+ * still matches them, and every passing item with citations has one. The gate never reads a source, so it never
+ * imports the quote check's page reader.
+ */
+function quoteProblems(sheet: ClaimSheet, raw: string, header: ReportHeader, path: string): string[] {
+  const parsed = parseQuotes(raw, sheet);
+  if (parsed.quotes === undefined) return parsed.issues.map((i) => `${path}: its quotes cannot be read: ${i}.`);
+  const quotes = parsed.quotes;
+  const run = `run npm run fact-check -- ${sheet.slug} --quotes <folder of the sources> (docs/content-model.md §8)`;
+  const record = header.quotes;
+  if (record === undefined) return [`${path}: the quotes have not been confirmed against the sources (the header has no quotes record); ${run}.`];
+  const problems: string[] = [];
+  const digest = quotesDigest(quotes);
+  if (record.count !== quotes.length || record.digest !== digest) {
+    problems.push(
+      `${path}: a quote changed after the quote check last passed (the record has ${record.count} quote${record.count === 1 ? '' : 's'}, digest ${record.digest.slice(0, 12)}…; the report has ${quotes.length}, digest ${digest.slice(0, 12)}…); ${run} again.`,
+    );
+  }
+  const named = new Set(quotes.map((q) => q.source));
+  const hashed = new Set(Object.keys(record.files));
+  const missing = [...named].filter((id) => !hashed.has(id));
+  const extra = [...hashed].filter((id) => !named.has(id));
+  if (missing.length > 0 || extra.length > 0) {
+    const parts = [
+      ...(missing.length > 0 ? [`no file hash for ${missing.join(', ')}, which a quote names`] : []),
+      ...(extra.length > 0 ? [`a file hash for ${extra.join(', ')}, which no quote names`] : []),
+    ];
+    problems.push(`${path}: the quote record's files do not match the sources the quotes name (${parts.join('; ')}); ${run} again.`);
+  }
+  if (record.checked < header.checked) {
+    problems.push(`${path}: the quote check was last run on ${record.checked}, before the report was checked on ${header.checked}; ${run} again.`);
+  }
+  const unquoted = keysMissingQuotes(sheet, header.verdicts, quotes);
+  if (unquoted.length > 0) {
+    problems.push(`${path}: ${unquoted.length} item(s) that pass have no quote: ${unquoted.join('; ')}. Each item with citations needs at least one; write them, then ${run}.`);
+  }
   return problems;
 }
 
@@ -58,6 +101,27 @@ export function checkFactChecks(lessons: readonly Lesson[], reports: Record<stri
   const owned = new Set(cited.map((l) => l.slug));
   for (const slug of bySlug.keys()) {
     if (!owned.has(slug)) issues.push(`${reportPath(slug)}: a fact-check report with no cited lesson "${slug}"; delete it, or fix its file name.`);
+  }
+  return issues;
+}
+
+const NO_PATH = 'has no fact-check path yet: the build refuses';
+const DECISION = 'until one is built (docs/direction.md, decision 2.16)';
+
+/**
+ * Content of a kind no fact-check covers yet is refused outright: every glossary entry and every objective mapping of a
+ * certification track. Both carry citations, but there is no claim sheet for them; the path is built by the job that
+ * first needs one. `glossary` and `tracks` are arguments so a test can pass some.
+ */
+export function checkUnpathedKinds(glossary: readonly GlossaryEntry[], tracks: readonly Track[]): string[] {
+  const issues = glossary.map((e) => `glossary entry "${e.id}" ${NO_PATH} glossary entries ${DECISION}`);
+  for (const t of tracks) {
+    if (t.type !== 'certification') continue;
+    for (const part of t.parts) {
+      for (const l of part.lessons) {
+        for (const o of l.objectives) issues.push(`track "${t.id}", lesson "${l.slug}", objective ${o.exam} ${o.objective} ${NO_PATH} objective mappings ${DECISION}`);
+      }
+    }
   }
   return issues;
 }

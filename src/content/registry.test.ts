@@ -7,6 +7,7 @@ import {
   buildEntries,
   checkLegacyList,
   checkFactCheckReports,
+  checkUnpathedContent,
   checkTracks,
   getEntries,
   getLesson,
@@ -462,4 +463,26 @@ test('astro dev warns of a fact-check issue instead, so a draft lesson can be pr
   } finally {
     warn.mockRestore();
   }
+});
+
+test('a glossary entry or an objective mapping stops the build and the tests, and astro dev warns', () => {
+  const entry = { id: 'router', term: 'Router', definition: [] };
+  for (const mode of ['production', 'test']) {
+    expect(() => checkUnpathedContent([entry], [], mode), mode).toThrow(/^Fact checks:\n- glossary entry "router" has no fact-check path yet/);
+    expect(() => checkUnpathedContent([], [makeCertTrack()], mode), mode).toThrow(/^Fact checks:\n- track "example-cert", lesson "lesson-a"/);
+  }
+  expect(() => checkUnpathedContent([], [], 'production')).not.toThrow();
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  try {
+    expect(() => checkUnpathedContent([entry], [makeCertTrack()], 'development')).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/^Fact checks:\n- glossary entry "router"[\s\S]*example-cert[\s\S]*npm run build/));
+  } finally {
+    warn.mockRestore();
+  }
+});
+
+test('the real registry loads: OSI Model\'s report passes the gate and no glossary entry or objective mapping exists', async () => {
+  const real = await import('./registry');
+  expect(real.getLesson('osi-model')?.origin).toBe('cited');
+  expect(real.checkedOn('osi-model')).not.toBeNull();
 });

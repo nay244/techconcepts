@@ -7,25 +7,13 @@ import { keysNeedingQuotes, parseQuotes, quotesDigest } from './quotes';
 import { parseReport } from './report';
 import { sha256 } from './sha256';
 import { claimSheet } from './sheet';
-import { reportFor, type LooseHeader } from './test-helpers';
+import { reportFor, reportQuoting as reportQuotingFor, type LooseHeader } from './test-helpers';
 
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
 
 const sheet = () => claimSheet(validateLesson(makeCitedLesson(), FIXTURE_SOURCES), FIXTURE_SOURCES);
 const TODAY = '2026-11-11';
-/**
- * A report in which every passing item with citations quotes its first citation: `passages` gives the passage for
- * a key (as lines), and every other item quotes `Filler words.`.
- */
-function reportQuoting(passages: Record<string, string[]> = {}, edit: (h: LooseHeader) => unknown = () => {}): string {
-  const s = sheet();
-  const lines: string[] = [];
-  for (const key of keysNeedingQuotes(s)) {
-    const c = s.items.find((i) => i.key === key)!.cite[0]!;
-    lines.push('', `### ${key} — ✅`, '', `- \`${c.source}\` §${c.section}`, ...(passages[key] ?? ['Filler words.']).map((l) => `  > ${l}`));
-  }
-  return reportFor(s, (h) => void edit(h)) + lines.join('\n') + '\n';
-}
+const reportQuoting = (passages: Record<string, string[]> = {}, edit: (h: LooseHeader) => unknown = () => {}) => reportQuotingFor(sheet(), passages, edit);
 /** The folder's files: the one source `rfc-example` holds `text`, the other holds the filler. */
 const files = (text: string, name = 'rfc-example.txt'): SourceFile[] => [
   { name, text: `${text} Filler words.` },
