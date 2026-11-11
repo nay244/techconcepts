@@ -154,7 +154,7 @@ export default defineLesson({
           deep: [
             {
               text: 'The UDP header is four fields of 2 bytes each: source port, destination port, length and checksum. There’s no sequence number, no ACK and no window. The call app can add a small header of its own inside, such as RTP, with a sequence number and a timestamp, so the receiver can put packets in order and play them on time.',
-              cite: [RFC768_LENGTH, rfc3550('5.1'), rfc3550('2.1'), rfc3551('4.1')],
+              cite: [RFC768_LENGTH, rfc3550('5.1', true), rfc3550('2.1', true), rfc3551('4.1')],
             },
           ],
           facts: [
@@ -194,14 +194,14 @@ export default defineLesson({
             'While you talk, a new packet leaves every 20 milliseconds, fifty a second. Each one travels on its own. UDP sends no “got it” for any of them, and the laptop never waits to hear. A steady flow of datagrams like this is just what a call sends, and because nothing waits, the packets keep coming.',
           deep: [
             {
-              text: 'Fifty packets a second is what a packet every 20 ms comes to. Real-time apps care most about latency, and about jitter, how much the delay varies. The receiver keeps a jitter buffer for uneven arrivals, and discards a packet that arrives too late for it.',
+              text: 'Fifty packets a second is what a packet every 20 ms comes to. Real-time apps care about latency, and about jitter, how much the delay varies. The receiver keeps a jitter buffer for uneven arrivals, and discards a packet that arrives too late for it.',
               cite: [G114_A3, cite('rfc-3611', '4.7'), rfc3550('6.4.1', true)],
             },
           ],
           facts: [
             { label: 'Rate', value: 'one packet every 20 ms', backing: { traces: ['lead-3'] } },
             { label: 'Replies', value: 'no “got it” for each packet', backing: { traces: ['deep-1', 'lead-2'] } },
-            { label: 'Matters most', value: 'low delay, steady timing', backing: { traces: ['why-1', 'term-jitter'] } },
+            { label: 'Matters', value: 'low delay, steady timing', backing: { traces: ['why-1', 'term-jitter'] } },
             { label: 'Smoothing', value: 'a jitter buffer at the receiver', backing: { traces: ['why-3', 'term-jitter'] } },
           ],
           events: [
@@ -270,7 +270,7 @@ export default defineLesson({
           title: 'Packet Loss, No Retransmission',
           sub: 'One gets lost, nobody resends',
           narrative:
-            'Packet 5 is dropped on the way, perhaps by a busy router. With TCP, the data behind it would wait until it was sent again. With UDP, nobody resends it: there’s no ACK to miss, and resending is left to the app. Packet 6 follows 20 milliseconds later as if nothing had happened. Resending would rarely help anyway. By the time a copy arrived, that moment of the call would be long gone.',
+            'Packet 5 is dropped on the way, perhaps by a busy router. With TCP, the data behind it would wait until it was sent again. With UDP, nobody resends it: there’s no ACK to miss, and resending is left to the app. Packet 6 follows 20 milliseconds later as if nothing had happened. A resend would only help if it arrived in time.',
           deep: [
             {
               text: 'UDP has no retransmission at all. A call app can see a loss as a gap in its sequence numbers, and in RTCP reports. UDP also has no congestion control, so an app that doesn’t use a congestion-controlled transport has to control its own sending rate.',
@@ -336,7 +336,7 @@ export default defineLesson({
             'Sam answers, and Sam’s voice comes back the same way: packets from the voice server to your laptop, every 20 milliseconds, with no handshake and no guarantee. Each side simply sends to the other’s address and port, and listens on its own.',
           deep: [
             {
-              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes, but many real devices forget sooner. During silences, a call app may send small keep-alive packets to keep that way open.',
+              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes. During silences, a call app may send small keep-alive packets to keep that way open.',
               cite: [RFC768_FIELDS, rfc8085('3.5'), cite('rfc-4787', '4.3'), cite('rfc-8445', '11')],
             },
           ],
@@ -413,7 +413,7 @@ export default defineLesson({
           title: 'Application-Level Recovery',
           sub: 'The app decides what to do',
           narrative:
-            'UDP never fixes anything, so the call app does. On Sam’s side, the app filled the 20-millisecond gap left by packet 5 with sound made from what it had just heard, blended into the next packet. It may not be heard at all. Then the server sends your app a short **report**: “1 of your last 6 packets was lost.” Your app decides what to do about it, here adapting its encoding. Choosing how to cope is the app’s job.',
+            'UDP never fixes anything, so the call app does. On Sam’s side, the app filled the 20-millisecond gap left by packet 5 with sound made from what it had just heard, blended into the next packet. Then the server sends your app a short **report**: “1 of your last 6 packets was lost.” Your app decides what to do about it, here adapting its encoding. Choosing how to cope is the app’s job.',
           deep: [
             {
               text: 'Filling a gap is packet loss concealment. RTCP receiver reports carry the fraction of packets lost and the jitter, and the sender can work out the round-trip time from them. The sender may change its transmissions based on them, for example its encoding. Some apps want full reliability over UDP and build it themselves: QUIC has its own acknowledgments and resending.',
@@ -485,7 +485,7 @@ export default defineLesson({
           {
             id: 'lead-3',
             text: 'A call app sends its sound in small chunks, say 20 milliseconds each, one chunk to a packet. It can add a small header of its own, such as RTP, with a sequence number and a timestamp, so the receiver can spot gaps, put packets in order and play them on time.',
-            cite: [rfc3550('2.1'), rfc3550('1'), rfc3551('4.2'), rfc3551('4.1')],
+            cite: [rfc3550('2.1', true), rfc3550('1', true), rfc3551('4.2'), rfc3551('4.1')],
           },
         ],
         terms: [
@@ -521,7 +521,7 @@ export default defineLesson({
           },
           {
             id: 'term-plc',
-            idea: 'Covering a gap with sound made from what came before, blended into the next packet, so it may not be heard',
+            idea: 'Covering a gap with sound made from what came before, blended into the next packet',
             name: 'Loss concealment',
             cite: [G711I_1, G711I_2_7, cite('rfc-6716', '4.4')],
           },
@@ -541,7 +541,7 @@ export default defineLesson({
         why: [
           {
             id: 'why-1',
-            text: 'In a call or a live video, each bit of sound or picture has its moment to be played. A packet that arrives after its moment is thrown away, just as if it had been lost, so resending it rarely helps. Late is as bad as lost.',
+            text: 'In a call or a live video, each bit of sound or picture has its moment to be played. A packet that arrives after its moment is thrown away, just as if it had been lost, so a resend only helps if it arrives in time. Late is as bad as lost.',
             cite: LATE,
           },
           {
@@ -564,12 +564,12 @@ export default defineLesson({
           {
             id: 'deep-1',
             text: 'The UDP header is four 2-byte fields: source port, destination port, length and checksum. TCP’s header also has sequence and acknowledgment numbers and a window; UDP has none.',
-            cite: [RFC768_LENGTH, rfc9293('3.1')],
+            cite: [RFC768_LENGTH, cite('rfc-9293', '3.1', { defining: true })],
           },
           {
             id: 'deep-2',
             text: 'UDP can send one message to many machines (broadcast and multicast), which TCP can’t; DHCP’s first message is a broadcast.',
-            cite: [RFC1122_UDP, rfc8085('4'), cite('rfc-2131', '3.1', { defining: true }), cite('rfc-2131', '4.1')],
+            cite: [RFC1122_UDP, rfc8085('4'), rfc9293('3.9.1.1'), cite('rfc-2131', '3.1', { defining: true }), cite('rfc-2131', '4.1')],
           },
           {
             id: 'deep-4',
@@ -608,7 +608,7 @@ export default defineLesson({
           {
             id: 'fact-8',
             label: 'Online games',
-            value: 'Xbox multiplayer has used UDP 3074, though the port can be changed',
+            value: 'Xbox multiplayer has used UDP 3074',
             cite: [
               cite('microsoft-gdk-udp', 'Preferred local UDP multiplayer port networking APIs', {
                 url: 'https://learn.microsoft.com/en-us/gaming/gdk/docs/features/console/networking/game-mesh/preferred-local-udp-multiplayer-port-networking#:~:text=All%20iterations%20of%20Xbox%20consoles%20have%20allowed%20you%20to%20use%20UDP%203074',
@@ -619,7 +619,7 @@ export default defineLesson({
           {
             id: 'fact-9',
             label: 'A router’s memory',
-            value: 'a UDP port pair, at least two minutes by the standard, often less',
+            value: 'a UDP port pair, at least two minutes by the standard',
             cite: [cite('rfc-4787', '4.3'), rfc8085('3.5')],
           },
         ],
@@ -654,7 +654,7 @@ export default defineLesson({
             {
               text: 'Late is as bad as lost, and UDP never waits.',
               feedback: 'Yes. A late packet is useless, and UDP has no handshake and no resending to wait for.',
-              cite: [...LATE, rfc8085('1'), rfc8085('3.3')],
+              cite: [...LATE, rfc8085('1'), rfc8085('3.3'), RFC1122_UDP, RFC768_INTRO],
             },
             {
               text: 'UDP is encrypted.',
