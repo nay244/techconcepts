@@ -1314,9 +1314,10 @@ ol.explain__sources li::marker {
    it is in view for every step. Under it, one of four parts shows at a time, chosen by the tabs: the words, the
    lesson's outline, the log, or the lesson's own table (rules, bits). Back, Play and Next are pinned at the bottom, under the thumb.
 
-   It needs the tabs, and so JavaScript: without it (`:root.js` is set by the boot script) the page keeps the stacked
+   It is the layout of a phone (up to 760px), and of a tablet that is upright or under 900px wide and 600px tall or
+   more; the grown block after it tunes it above 760px. It needs the tabs, and so JavaScript: without it (`:root.js` is set by the boot script) the page keeps the stacked
    layout above, where everything can still be reached by scrolling. */
-@media (max-width: 760px) {
+@media (max-width: 760px), (max-width: 899px) and (min-height: 600px), (max-width: 1099px) and (orientation: portrait) {
   :root.js .console {
     --ph-top: 52px;
     --ph-stage: 34dvh;
@@ -1407,23 +1408,6 @@ ol.explain__sources li::marker {
     height: var(--ph-tabs);
     border-bottom: 1px solid var(--line-strong);
     background: var(--bg-soft);
-  }
-  :root.js .console__tabs button {
-    border: 0;
-    border-bottom: 3px solid transparent;
-    background: none;
-    color: var(--ink);
-    font: 600 17px/1 var(--display);
-    letter-spacing: 0.01em;
-    cursor: pointer;
-  }
-  :root.js .console__tabs button + button {
-    border-left: 1px solid var(--line);
-  }
-  :root.js .console__tabs button[aria-pressed='true'] {
-    border-bottom-color: var(--here);
-    background: var(--card);
-    color: var(--ink-strong);
   }
   /* The lesson's table has changed and the reader has not looked yet: a small square in the row mark's colour. */
   :root.js .console__tabs .tab__mark {
@@ -1780,5 +1764,164 @@ ol.explain__sources li::marker {
     margin-block: -7px;
     padding-block: 7px;
     font-size: 13.5px;
+  }
+}
+
+/* ---------------------------------------------------------------- tablets (docs/direction.md §7; prototypes/d3-lesson-tablet.md)
+   761 to 1099px wide. An upright window, or one under 900px wide, gets the phone layout above, grown; a window on its
+   side from 900px gets the desktop layout with the outline folded into a tab. Under 600px tall, or without JavaScript,
+   the range keeps the stacked page. Both layouts need the tabs, whose look they share. */
+@media (max-width: 760px), (max-width: 899px) and (min-height: 600px), (max-width: 1099px) and (orientation: portrait),
+  (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
+  :root.js .console__tabs button {
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--ink);
+    font: 600 17px/1 var(--display);
+    letter-spacing: 0.01em;
+    cursor: pointer;
+  }
+  :root.js .console__tabs button + button {
+    border-left: 1px solid var(--line);
+  }
+  :root.js .console__tabs button[aria-pressed='true'] {
+    border-bottom-color: var(--here);
+    background: var(--card);
+    color: var(--ink-strong);
+  }
+}
+
+/* The phone layout, grown. */
+@media (min-width: 761px) and (max-width: 899px) and (min-height: 600px),
+  (min-width: 761px) and (max-width: 1099px) and (orientation: portrait) {
+  /* The scene takes more of a taller screen. The words, the outline, the log and the controls share one centred
+     column, narrow enough to read. */
+  :root.js .console {
+    --ph-stage: 40dvh;
+    --ph-col: 520px;
+    --ph-side: max(22px, calc((100vw - var(--ph-col)) / 2));
+  }
+  :root.js .console__explain {
+    padding-inline: var(--ph-side);
+  }
+  :root.js .console__outline {
+    padding-inline: calc(var(--ph-side) - 8px);
+  }
+  :root.js .console__log {
+    padding-inline: calc(var(--ph-side) - 14px);
+  }
+  :root.js .console__controls {
+    padding-inline: var(--ph-side);
+  }
+  /* Play is wide here: its mark and its word stay together in the middle. */
+  :root.js .console__controls .cbtn--play {
+    justify-content: center;
+  }
+  /* The top bar has room again for the two things the phone drops for want of it. */
+  :root.js .topbar__segments {
+    display: flex;
+  }
+  :root.js .topbar__crumb > a.stamp {
+    display: inline-flex;
+  }
+}
+
+/* 900 to 1099px wide, on its side, at least 600px tall: the desktop layout with the outline folded into a tab. */
+@media (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
+  :root.js .console {
+    --mid-words: 348px;
+    --mid-tabs: 48px;
+    --mid-log: clamp(200px, 26vh, 252px);
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 68px minmax(0, 1fr);
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  :root.js .console__top {
+    flex-wrap: nowrap;
+  }
+  :root.js .console__top > * {
+    padding-block: 0;
+  }
+  :root.js .topbar__brand {
+    min-width: 0;
+  }
+  /* The bar is 268px narrower than the narrowest desktop's. The lesson's name stays whole: the brand's word, the
+     "Tracks" crumb and the lesson's number give way. */
+  :root.js .topbar__brand b,
+  :root.js .topbar__crumb > a:first-child,
+  :root.js .topbar__crumb > a:first-child + span,
+  :root.js .topbar__crumb > em {
+    display: none;
+  }
+  :root.js .console__main {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr) var(--mid-words);
+    grid-template-rows: minmax(0, 1fr) var(--mid-log);
+  }
+  :root.js .console__stage {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 0;
+  }
+  :root.js .console__explain {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: var(--mid-tabs);
+    border-top-width: 0;
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+  }
+  :root.js .console__log {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    max-height: none;
+  }
+  :root.js .log__head {
+    flex-wrap: nowrap;
+  }
+  /* A tablet on its side is the usual screen here: Back, Play and Next are sized for a finger. */
+  :root.js .console__controls .cbtn {
+    height: 44px;
+    min-width: 44px;
+  }
+
+  /* The tabs sit on top of the words' column: Explain and Steps. The log and the lesson's table are on show under
+     both, so they need no tab. */
+  :root.js .console__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    position: absolute;
+    top: 92px;
+    right: 12px;
+    width: var(--mid-words);
+    height: var(--mid-tabs);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-bottom-color: var(--line-strong);
+    border-radius: var(--r-tile) var(--r-tile) 0 0;
+    background: var(--bg-soft);
+  }
+  :root.js .console__tabs button:nth-child(n + 3) {
+    display: none;
+  }
+  :root.js .console__outline {
+    position: absolute;
+    top: calc(92px + var(--mid-tabs));
+    right: 12px;
+    bottom: calc(24px + var(--mid-log));
+    width: var(--mid-words);
+    border-top-width: 0;
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+  }
+  :root.js .console:not([data-tab='steps']) .console__outline,
+  :root.js .console[data-tab='steps'] .console__explain {
+    display: none;
   }
 }

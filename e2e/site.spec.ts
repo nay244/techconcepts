@@ -1349,7 +1349,8 @@ test.describe('phone', { tag: '@phone' }, () => {
         expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
       });
     });
-    for (const width of [1024, 1440]) {
+    // 1024px has its own layout since B3 (tablet.spec.ts); the desktop starts at 1100px.
+    for (const width of [1100, 1440]) {
       test.describe(`${width}px with scripts on: the page is as before`, () => {
         test.use({ viewport: { width, height: 900 }, isMobile: false, hasTouch: false });
         test('no tabs shown, the table under the scene, the Overview’s stamp only in the top bar', async ({ page }) => {

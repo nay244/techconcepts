@@ -29,6 +29,9 @@ const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'log', label: 'Log' },
 ];
 
+/** The windows where the tabs are Explain and Steps only (console.css, "tablets"). */
+const TABLET_SIDEWAYS = '(min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px)';
+
 /** The fourth tab's name, by what the unit's panel is. The message strip (OSI Model) has none: it stays under the scene. */
 const PANEL_TAB: Partial<Record<Panel['type'], string>> = { table: 'Table', rules: 'Rules', bits: 'Bits' };
 
@@ -142,6 +145,18 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     setChangeSeen(change);
     consoleEl.current?.querySelector(MARKED_ROW)?.scrollIntoView?.({ block: 'nearest' });
   }, [tab, change]);
+  // On a tablet on its side (900 to 1099px wide) the log and the lesson's table are on screen with the scene, so its
+  // tabs are Explain and Steps only: a reader who arrives with another one chosen (by turning the screen) lands on Explain.
+  useEffect(() => {
+    const sideways = window.matchMedia?.(TABLET_SIDEWAYS);
+    if (!sideways) return;
+    const settle = () => {
+      if (sideways.matches) setTab((t) => (t === 'log' || t === 'table' ? 'explain' : t));
+    };
+    settle();
+    sideways.addEventListener('change', settle);
+    return () => sideways.removeEventListener('change', settle);
+  }, []);
   const tabs = panelTab === undefined ? TABS : [...TABS, { id: 'table' as const, label: panelTab }];
   /** Going to a place from the Steps tab shows the words for it. */
   const goFromOutline = useCallback(
