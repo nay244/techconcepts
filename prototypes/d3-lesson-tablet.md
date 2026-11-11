@@ -377,3 +377,11 @@ Found when the build was reviewed. Variant A is otherwise as approved. Both are 
 1. **Learn and Practice keep the 348px column in the desktop-with-tab layout.** This spec said D1's reading layout "applies here as it is", while its own check 16, its prototype and D1's spec (761px to 1099px "unchanged", the "Show log" button hidden at 1024) all keep the 348px column. The owner approved the prototype and three of the four statements, so those stand. Whether a tablet on its side should get D1's wider words and folded log is an open question for the owner (it was this spec's open question 3).
 2. **The tabs' focus ring is drawn inside the button** in the desktop-with-tab layout: `outline-offset: -3px` on `.console__tabs button:focus-visible`. The tab row has `overflow: hidden` (to round its corners into the panel), which cut the lesson's usual ring, 2px outside the button, down to one 2px line between the two tabs: a keyboard user could not tell which tab had focus.
 
+**Approved by the owner on 2026-11-11**, with one change: erratum 1 is reversed. Asked whether a tablet on its side should get D1's wider words and folded log in Learn and Practice, the owner said yes. So in the desktop-with-tab layout (900px to 1099px wide, on its side, 600px tall or more) D1's reading layout applies as it is, as this spec first said:
+
+- In Learn and Practice the words column is D1's: `max(348px, min(560px, 100% - 496px))` of the main area, which is the window less 24px. That is 380px at 900 wide, 504px at 1024 and 560px at 1099; the scene keeps the rest, never under 484px.
+- The tabs (Explain, Steps) stay on the words column: as wide as it, at the same right edge, 48px tall.
+- The log folds to its head, with D1's "Show log" / "Hide log" button, folded at first and kept for the visit, as on a desktop. Back, Play and Next stay in the log's head.
+- At the Overview and on Watch steps nothing changes: the 348px column and the open log.
+- Check 16 changes with it: in Learn and Practice at 1024x768 the tabs' box is 508, 92, 504x48 and `.console__explain` is 504px wide; the log is 52px tall until "Show log" is pressed.
+

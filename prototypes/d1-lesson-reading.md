@@ -316,3 +316,8 @@ Each can be tried on the prototype (hide its bar with B first) and turned into a
 - **The address keeps the state:** `#l=osi|dhcp&p=watch|learn|practice&v=today|a|b&t=light|dark`, with `&log=open`, `&bar=off` and `&pick=0.0,1.2` (question.option) as wanted.
 - **The design's rules** are the block headed "D1, reading on a desktop: THE DESIGN" in the file's last `<style>`, each keyed on the layout switch. §4 to §6 give them as they go into the site.
 - **Not real in the prototype:** the "Watch" place is DHCP's and OSI Model's last step as a link to it lands, before it plays.
+
+## Errata, 2026-11-11
+
+**The reading layout also applies on a tablet on its side** (owner, 2026-11-11). This spec left 761px to 1099px to unit D3 and said "below 1100px: unchanged". D3's desktop layout with the outline in a tab (900px to 1099px wide, on its side, 600px tall or more) now takes variant B as it is: the same words-column rule, the same fold and button. `prototypes/d3-lesson-tablet.md`, last section, has the numbers. Check 15 changes with it: at 1024x768 the button is displayed in Learn and Practice, and not at the Overview or on a Watch step. At 375x812, and in the phone layout grown (upright, or under 900px wide), nothing changes.
+

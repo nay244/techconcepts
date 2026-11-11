@@ -37,7 +37,7 @@ The designer runs on the orchestrator's model, the dearest on the team, so its s
 | D3 | 2 | 259,496 | 2026-11-10 |
 | D4 | 2 | 193,973 | 2026-11-10 |
 
-| D2 errata | 0 | 156,489 | shown to the owner 2026-11-11 |
+| D2 errata | 0 | 156,489 | 2026-11-11, with all the errata to D2 and D3 |
 
 **Total:** 1,295,063 tokens: 1,138,574 for the four screens and 156,489 for one round of errata.
 

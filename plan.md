@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`.
 
-**Status: done on 2026-11-11.** All four build units are merged into `revamp`, and the final check passed there: `npm test`, `npm run build` and the full `npm run e2e` (`team.md` has the output). Nothing is pushed. Open for the owner: the errata made to D2 and D3 after approval (each spec's last section), and the questions at the end of this file.
+**Status: the first job is done (2026-11-11); two follow-up units from the owner's answers are being built** (last section).
 
 ## Inputs
 
@@ -69,4 +69,22 @@ B1, B2 and B3 all change `src/lesson/console.css`, so they run in that order. B4
 4. **Subnetting's bits board** still scrolls sideways in its tab on a phone.
 5. **A phone on its side** keeps the stacked page.
 6. **A text description of the share image** (`og:image:alt`) is not set.
+
+**The owner's answers, 2026-11-11:**
+
+1. Errata approved.
+2. Yes: a tablet on its side gets the wider words and folded log. Unit B5 below.
+3. "Mark changed": read by the orchestrator as "leave it marked", so nothing changes. To confirm with the owner.
+4. Good as it is.
+5. Good as it is.
+6. Set a description. Unit B6 below.
+
+## Follow-up units, 2026-11-11
+
+Both implement designs the owner has already approved, so there is no new design unit.
+
+| Unit | Implements | Owner | Check, beside `npm test`, `npm run build` and `npm run e2e` |
+|---|---|---|---|
+| B5 | D1 variant B, in D3's desktop layout with the outline in a tab (both specs' last sections) | builder, reviewer | In Learn and Practice at 1024x768, 900x700 and 1099x800: the words column and the tabs as the spec's numbers give them, the scene 484px or more, the log folded with its button. The Overview, Watch, 1100px and wider, and the phone layouts unchanged. |
+| B6 | D4: the share image described for a reader who cannot see it | builder, reviewer | Every page has `og:image:alt` with the designer's words: "TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside." |
 
