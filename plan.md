@@ -1,128 +1,75 @@
 # Plan
 
-How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545.
+How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519.
 
-**Status: the pilot ended on 2026-11-11 with one lesson, not two.** What is UDP is cited, checked (five full runs and one targeted re-check) and merged into `revamp`; targeted re-checks are built and merged. What is HTTP has not started: the pilot's numbers go to the owner first (`team.md`, job 3). Nothing is pushed.
+**Status: written on 2026-11-11, waiting for the owner's go.** Nothing in it has started except the scout. Nothing is pushed.
 
 ## Inputs
 
 | | |
 |---|---|
-| **The job** | The start of Phase 4 of the revamp (`docs/direction.md` §3): move the 17 unchecked lessons to the cited shape and get each through a fresh fact-check. This plan covers the groundwork and a **pilot of two lessons**, What is HTTP and What is UDP. It stops there, with the measured cost of a lesson, for the owner to decide how the other 15 run. |
-| **Done means** | The three groundwork units are reviewed and merged. Both pilot lessons are cited, have a passing fact-check report with a confirmed quote record, and show "Checked" with a date; the build's gate passes with them. Home's demo still shows the HTTP lesson's words. `npm test`, `npm run build` and `npm run e2e` pass on `revamp`, with their output in `team.md`. `team.md` has what each lesson cost and a proposal for the other 15. Nothing is pushed. |
-| **Budget** | Not set by the owner. The orchestrator's estimate for this plan is 2 to 3 million subagent tokens (table below). A lesson's real cost is what the pilot is for. |
-| **Design refs** | No screen changes: a cited lesson already shows its numbered sources and its stamp. The references are `docs/content-model.md` (§8 is the workflow), `src/content/lessons/osi-model.ts` (the one cited lesson), and `.claude/agents/fact-checker.md`. |
+| **The job** | Phase 4, lesson 2 of 17: **What is HTTP** moved to the cited shape and through a fresh fact-check, alone (the owner, 2026-11-11: "HTTP first"). It is the first lesson under the order the pilot taught (analyst, author, fact-checker, targeted re-checks) and the first job with a spec review and a three-level build review. It stops there, with the lesson's measured cost, for the owner to decide how the other 15 run. |
+| **Done means** | What is HTTP is cited, has a passing fact-check (a full report, or a full report and a re-check) with a confirmed quote record, and shows "Checked" with a date. Home's demo shows the lesson's checked words and matches its approved design (D5). Every changed sentence is in `docs/lesson-changes/what-is-http.md`. `npm test`, `npm run build` and `npm run e2e` pass on `revamp`, with their output in `team.md`. `team.md` has what the lesson cost against the estimate below, what the two new review rules saved or cost, and a proposal for the other 15. Nothing is pushed. |
+| **Budget** | Not set by the owner. The estimate is 1.3 to 1.5 million subagent tokens for the lesson and about 0.6 million for Home, which only this lesson needs (table below). **Stop for the owner** if the lesson passes 2.0 million without an all-pass, which is what What is UDP cost. |
+| **Design refs** | For the lesson: `docs/content-model.md` (§8 is the workflow), `src/content/lessons/what-is-udp.ts` (the worked example), `docs/lesson-changes/what-is-udp.md`. For Home: the Home page as built (`src/pages/index.astro`, the demo's Learn panel), `docs/direction.md` §6 (the look, "Patch") and the stamp and numbered sources of the Lesson page (`prototypes/d1-lesson-reading.*`). |
 
-## What the scout found (S3)
+## What the scout found (S4)
 
-- **What a move is.** The lesson's file is rewritten with `defineLesson` and its slug leaves the closed legacy list, in one change. Every Learn statement, term, fact, Go deeper paragraph and Practice option then needs a citation, or an honest analogy flag; every Watch step, fact and event needs a trace to the Learn statement that carries its source. A claim rests on the standard that defines the thing, or on two documents from different publishers.
-- **The size of one.** OSI Model has 127 checked items, 136 citations and 6 sources, and took six fact-checker runs: 29 items failed the first, 1 the second, then it passed, changed, failed once more and passed. The 17 are a little smaller: 5 or 6 Watch steps, 29 to 36 facts, 7 to 10 terms, 2 or 3 questions.
-- **Sources.** The 17 lessons list 21 documents between them, 20 RFCs and one NIST guide, all on hosts already allowed. None is registered yet.
-- **Three things in the way**, each a groundwork unit below: a cited lesson must carry an exam tag and the 14 How the Internet Works lessons have none; Home's demo shows only the first statement of the HTTP and HTTPS lessons' lead, and a cited lead is several statements; and a dozen tests name DHCP as "the unchecked lesson" or count 17 legacy lessons.
-- **The build cannot be green in the middle.** The tests and the build refuse a cited lesson until its report passes, so a lesson's branch only builds at its end. `docs/content-model.md` §8 already says so.
+- **The lesson's size.** 5 Watch steps, 31 facts, 14 events, 10 terms, 6 Go deeper paragraphs, 2 questions of 3 options. It names two documents, RFC 9110 and RFC 9112; neither is registered. RFC 9114 (HTTP/3) is.
+- **Home shows this lesson.** Home's demo plays all 5 steps and shows the lead, the first 6 terms, every source and the first question. It reads them from the lesson, so the lesson's new words reach Home with no code change.
+- **Home lists every source in one line.** The lesson has 2 today. What is UDP went from 1 to 31 when it was cited. A line of twenty links is a change to a screen, so it is designed and approved first (D5).
+- **Tests quote the lesson.** `src/lib/home.test.ts` and `e2e/site.spec.ts` assert Home's words: the lead's first sentence, three terms, the two source labels, the first question and its feedback, the step titles. `src/content/tracks/how-the-internet-works.test.ts` restates the lesson's titles, scene, table and references. `src/content/legacy.test.ts` and `src/content/sources.test.ts` hold exact lists.
+- **Progress counts on its shape.** `src/progress/internet-split.ts` gives the lesson 8 positions, and tests and one end-to-end check ("3 of 14", position 30) rest on that.
 
 ## Decisions in this plan (the orchestrator's; the go approves them)
 
-1. **A pilot before the 17.** Two lessons first: What is HTTP (lesson 1, the one Home shows, on the two largest standards) and What is UDP (the smallest standard, three pages). Their cost brackets the rest.
-2. **Who does what, by the owner's rule of 2026-11-11** (Sonnet writes lessons and step-by-step breakdowns; Opus is called for deep analysis):
-   - `author`, **Sonnet**, a new agent: moves one lesson, keeps its words wherever the sources allow, and reports every sentence it changed.
-   - `analyst`, **Opus**, a new agent, called only when needed: one hard concept or one contested claim, from the primary sources, with ways a beginner's lesson can say it truthfully.
-   - `fact-checker`, **Opus**, unchanged: the sign-off. A fresh one for every run.
-3. **The author's check comes before the fact-checker's.** After the author finishes, a Sonnet agent runs the fact-checker's own instructions on the lesson once, as a rehearsal: its report is never committed and is thrown away. The author fixes what it finds. OSI Model's first real run failed 29 items; a rehearsal on Sonnet is meant to catch most of those before an Opus run is spent. The pilot measures whether it does.
-4. **A cited lesson needs no exam tag.** The rule that it must carry one is removed: the 14 How the Internet Works lessons teach concepts, not an exam. The tags lessons have stay as they are.
-5. **The lesson's words are kept.** A sentence changes only where a source contradicts it or does not state it. Every changed sentence is listed in `team.md`, before and after, for the owner to read. There is no gate on it: the fact-checker's all-pass is the sign-off, as `CLAUDE.md` says.
-6. **When a claim will not pass.** After two failed fact-checks on the same claim it goes to the analyst. After a third, the orchestrator stops and asks the owner.
-7. **One lesson at a time, one branch each**, merged into `revamp` when its report passes. Lessons share the source registry and the legacy list, so they do not run side by side in the pilot.
+1. **The order is `CLAUDE.md`'s:** analyst, author, a full check, targeted re-checks after a near-pass, the list of changed sentences. No rehearsal.
+2. **The Watch tab keeps its shape:** five steps, their order and the scene. A step's words change where a source contradicts them or does not state them. If a source would add, remove or reorder a step, the author stops and the orchestrator decides, since progress positions and Home's demo rest on the shape.
+3. **Home's source list is designed before the lesson merges** (D5), with What is UDP's 31 sources as the worst case. The lesson's work does not wait for it: D5 changes only `prototypes/`, in its own worktree, while the lesson runs. Only the Home build unit (H1) waits at the design gate.
+4. **Who changes which test.** The author changes what restates the lesson: its file, the legacy list and the source registry with their two tests, and the track's test. A builder changes Home's tests (H1), once the fact-check has passed and the words are final.
+5. **The lesson and Home merge together.** H1 is built on the lesson's branch after its pass, and `revamp` moves once, so Home is never live with an undesigned source list.
+6. **The lesson's known documents are registered before the author starts:** RFC 9110, RFC 9112 and every document the analyst's report names, in one commit.
+7. **When a claim will not pass:** after two failed checks on the same claim it goes to the analyst; after a third it comes to the owner.
 
 ## Units
 
-No design phase: nothing about a screen changes. Groundwork first, then the two lessons, in this order.
-
 | Unit | Owner | What | Check |
 |---|---|---|---|
-| S3 | scout | What a move takes, and the size of each of the 17. Done. | Every fact has a `path:line`. |
-| G1 | builder, reviewer | **A cited lesson needs no exam tag** (decision 4). | Unit tests: a cited lesson with no tag is accepted; nothing else about tags changes. `npm test`, `npm run build`. |
-| G2 | builder, reviewer | **Home's demo shows a lesson's whole lead**, however many statements it has, and its sources from the derived list. | Unit tests with a one-statement and a three-statement lead; Home's page and its end-to-end tests unchanged for today's lessons. `npm test`, `npm run build`, `npm run e2e`. |
-| G3 | builder, reviewer | **Tests follow the registry.** A test that needs "an unchecked lesson" or "a checked one" takes it from the registry while one exists, and from a fixture when none does; counts come from the legacy list. The list's own test stays exact: each move edits it. | No assertion is weakened: each changed test is shown failing against a deliberately wrong build. `npm test`, `npm run e2e`. |
-| L1 | author, then the rehearsal, then fact-checker; analyst if needed; orchestrator merges | **What is UDP**, cited and checked. | Its report: every item passing, the quote record written, `--check` OK. The build's gate passes. The lesson's own end-to-end tests pass. Every changed sentence is in `team.md`. |
-| L2 | the same | **What is HTTP**, cited and checked. | As L1, and Home's demo shows its words and its numbered sources' documents. |
-| Final | orchestrator | On `revamp` after the last merge. | `npm test`, `npm run build`, `npm run e2e`. Then the measured cost per lesson, and a proposal for the other 15: order, how many at once, what the rehearsal saved, a budget. |
+| S4 | scout | What else in the repo rests on this lesson's words and shape. Done: 127,655 tokens. | Every fact has a `path:line`. |
+| D5 | designer | **Home's demo with a long source list.** How the demo's Learn panel shows a lesson's sources when there are 2, about 12 and 31, at 375px and 1440px in both themes, with JavaScript off. It says nothing untrue about the list (a shortened list says it is shortened and leads to the whole one). Two variants at most. | A prototype and spec in `prototypes/d5-home-sources.*` with acceptance checks; screenshots at both sizes in both themes. **Then the design gate: the owner approves before H1.** |
+| L2-a | analyst | **Every idea What is HTTP teaches**, with the source and section that states it or "no source", and what is wrong in the original. It also answers: what the lesson may say about plain text now that HTTP/2 and HTTP/3 are binary. | Every idea in the lesson's Learn, Watch and Practice has a row. |
+| L2-b | orchestrator, then author | Register the documents (decision 6), then **the lesson in the cited shape** on `lesson/what-is-http`, within decision 2, with the five-fault sweep. | The claim sheet prints (`npm run fact-check -- what-is-http`); the author's report lists every changed sentence. |
+| L2-c | fact-checker, a fresh one each run; author for fixes | **The fact-check.** A full check; after a near-pass, targeted re-checks. A failing report is committed as written before its fix. | `npm run fact-check -- what-is-http --check` (or `--recheck --check`) says OK, with the quote record confirmed. |
+| L2-d | author | `docs/lesson-changes/what-is-http.md`: every reader-visible change against the original. | Its counts match the diff of the lesson's words. |
+| H1 | reviewer (spec review), builder, reviewer (build review) | **Home follows the cited lesson.** D5 as approved, in `src/pages/index.astro` and `src/lib/home.ts`; Home's unit and end-to-end tests assert the lesson's checked words. Starts after D5 is approved and L2-c has passed. | The spec review's attack cases each have a test seen failing; `npm test`, `npm run build`, `e2e/site.spec.ts` in the projects that run it; Home at 375px and 1440px in both themes beside the prototype. |
+| Final | orchestrator | Merge into `revamp`, then `npm test`, `npm run build` and the full `npm run e2e` once, lid open. Then the ledger: the lesson's cost against the estimate, the review rules' effect, and a proposal for the other 15. | The three outputs are in `team.md`. |
 
-What is UDP goes first: it is the smaller, so a fault in the method costs less to find.
+D5 and L2-a start together. L2-b follows L2-a. H1 follows D5's approval and L2-c's pass, whichever is later.
 
 ## Estimate
 
 | Role | Model | Units | Tokens, roughly |
 |---|---|---|---|
-| scout | Haiku | S3 | 188,000 (spent) |
-| builder | Sonnet | G1, G2, G3 | 350,000 |
-| reviewer | Opus | G1, G2, G3 | 300,000 |
-| author and rehearsal | Sonnet | L1, L2 | 700,000 to 1,000,000 |
-| fact-checker | Opus | L1, L2 | 500,000 to 900,000 |
-| analyst | Opus | only if called | up to 200,000 |
+| scout | Haiku | S4 | 127,655 (spent) |
+| analyst | Opus | L2-a | 150,000 to 200,000 |
+| author | Sonnet | L2-b, fixes, L2-d | 350,000 to 450,000 |
+| fact-checker | Opus | L2-c: three full checks and two re-checks | 800,000 to 850,000 |
+| designer | Fable | D5 | 200,000 to 300,000 |
+| reviewer | Opus | H1: spec review and build review | 200,000 |
+| builder | Sonnet | H1 | 150,000 to 200,000 |
 
-If the pilot's cost per lesson holds, the other 15 would come to something like 10 to 15 million tokens. That figure is a guess until the pilot ends, which is why the plan stops there.
+The lesson's own rows come to 1.3 to 1.5 million, the figure the pilot predicted. Home's rows, about 0.6 million, are this lesson's alone: no other lesson is shown on Home in full.
 
 ## What could go wrong
 
-- **A lesson teaches something its sources do not say.** Then its words change, by the smallest amount that makes them true, and the change is listed. If a whole step rests on it, the orchestrator stops and shows the owner before the lesson is restructured.
-- **A claim needs a second source no allowed host has.** The author rewords it to what the defining standard states, or cuts it. A new publisher's host is added only when it is the publisher's own, with the reason in the commit.
-- **The fact-checker's partial and failing verdicts wander** between runs (seen on the canary in Phase 3). Both block a lesson, so a wandering verdict costs a run, not accuracy.
-- **Home changes when HTTP is cited.** G2 lands first, and L2's check looks at Home.
+- **A sentence Home leads with does not survive.** "A web page is a conversation in plain text" is the lesson's first line and Home's. If no source states it, it changes or is marked as an analogy, and Home changes with it. The changed-sentences list shows the owner both.
+- **The source list is short after all.** Then D5 still settles what Home does for the later lessons' leads, at a designer's cost that the lesson did not strictly need. Accepted: Home changes for a reader the moment the list grows, and the gate is the owner's.
+- **The fact-checker's verdicts wander between runs**, as on What is UDP. The stop at 2.0 million tokens is for that.
+- **D5 is approved late.** The lesson waits on its branch, passed and unmerged. Nothing else is blocked.
 
 ## Not in this plan
 
-- The other 15 lessons: the next plan, after the pilot's numbers.
-- A fact-check path for glossary entries or objective mappings.
+- The other 15 lessons: the next plan, after this lesson's numbers.
+- What is HTTPS, whose lead Home also shows. Its line on Home changes when it is cited.
+- Home beyond the demo's source list.
 - Anything that leaves this machine.
-
-## Targeted re-checks (added 2026-11-11, the owner's decision)
-
-**Why.** The content rules ask for a brand-new check of the whole lesson after every fix. What is UDP's five real runs found 13, 9, 1, 1 and 1 items, never the same list until the last two, at over 200,000 tokens a run: one changed sentence cost a full run. From a near-pass on, the next check now judges only what changed.
-
-**The rule.**
-- A lesson's first check, and any check after a run that was not a near-pass, is a **full check**: every item, as today.
-- A **near-pass** is a full check in which at most 3 items do not pass and none is wrong (❌).
-- After a near-pass, the next check may be a **targeted re-check**: a fresh fact-checker judges only the items that changed since the full check, and every item that traces to one of them. At most 12 items; more than that needs a full check.
-- Every other item keeps the verdict the full check gave it. An item that did not pass the full check and has not changed since still does not pass.
-- A re-check that does not pass is committed as written, the lesson is fixed, and a new fresh checker re-checks: always against the same full check, so what it judges is everything changed since then.
-
-**The files.** The full check's report stays at `docs/fact-checks/<slug>.md`, untouched. The re-check writes `docs/fact-checks/<slug>.recheck.md`, in the same form: a header (`slug`, `base`: the full report's hash, `hash`: the claim sheet's hash now, `checked`, `checker`, `verdicts` for the re-checked keys only, `sources` for the sources it read, its own `quotes` record) and a section with quotes for each item it judged.
-
-**What the script records.** When the quote check passes on a full report whose hash is the claim sheet's hash, it also writes into the header an `items` record: each item's key and the SHA-256 of that item (its kind, words, citations and traces, and the registry entry of every source it cites; not its key), and beside it `limits`, the SHA-256 of the lesson's limit overrides. `npm run fact-check -- <slug> --stamp` writes the same record, alone, for a full report that predates this (it refuses unless the report's hash is the sheet's hash now).
-
-**Which items a re-check judges.** An item is unchanged when the full report's `items` record has the same hash under the same key. Where a part was inserted or removed and the numbers in later keys shifted, an item is also unchanged when it has the same hash under the same key with its index numbers taken out, **and it has not moved**: it is still under the same parent (the same step, by the step's id; the same question), and the unchanged items of its list are in the order they were in. An item that moved, or whose list was reordered around it, is changed. Everything else on the sheet is changed. Then, beyond the changed items:
-- **What traces to a changed part** is judged.
-- **A question is one unit.** If its prompt or any of its options changed, the prompt and every option are judged.
-- **The items that cite nothing and rest on the whole lesson** (the title, the unit's name, each question's prompt) are judged when any Learn part changed or was taken out. A prompt judged only for that reason does not bring its options with it.
-- The re-check sheet prints, as context with no verdict: under a traced item, the parts it traces to; when any of the items that rest on the whole lesson is judged, every cited Learn part; and for every judged item that is in a list, its parent's words and the list in the order it has now, since a moved item is judged in its place. (The last, and a Learn part taken out, were added after G4's second review.) `npm run fact-check -- <slug> --recheck` prints the re-check sheet: those items in full, and for each traced item the words of the parts it traces to. It refuses, saying why, when the full check was not a near-pass, when more than 12 items would be judged, or when the lesson's limit overrides changed in any way (their limit, reason, minimum or maximum: the `limits` hash).
-
-**The commands.** `--recheck` prints the re-check sheet; `--recheck --quotes <folder>` runs the quote check on the re-check report (only its own quotes, each under a key it judged); `--recheck --check` runs the gate's rules on the pair.
-
-**What the build requires**, for a cited lesson whose full report's hash is not the claim sheet's hash:
-1. A re-check report exists, with `base` equal to the full report's hash and `hash` equal to the sheet's hash. Otherwise: the lesson changed since it was checked.
-2. The full report has an `items` record, and was a near-pass.
-3. The re-check's verdict keys are exactly the items to judge (changed, and tracing to a changed part): none missing, none extra, and at most 12.
-4. Every re-check verdict passes, and the full report's verdict passes for every item not re-checked.
-5. The lesson's limit overrides hash to the full report's `limits`.
-6. Every source on the sheet is listed as current, in the re-check's sources if a re-checked item cites it, else in the full report's.
-7. The re-check's quotes can be read, each sits under a key it judged, its quote record is right (count, digest, files, date not before its own `checked`), and every re-checked item that has citations and passes has a quote.
-8. The full report's own quote record still matches its quotes, as today.
-A re-check report whose `base` is not the full report's hash, or that sits beside a full report whose hash is the sheet's, is refused: remove it.
-The lesson's stamp shows the later of the two dates.
-
-(Changed on 2026-11-11 after G4's first review, which got three changed lessons past the gate with nothing re-judged: a question's prompt changed while its options still marked the old answer right; steps swapped and an event moved to another step; and a cited source's registry entry changed. A changed override's maximum was also invisible.)
-
-**What this gives up, said plainly.** A fresh full read sometimes finds something in an item nobody touched: What is UDP's fourth run did. A targeted re-check will not. The first full check, the near-pass limit and the cap of 12 are what keep that small.
-
-| Unit | Owner | What | Check |
-|---|---|---|---|
-| G4 | builder, reviewer | **Targeted re-checks**, as above: the `items` record and `--stamp`, the re-check sheet and its refusals, the quote check and gate for the pair, the fact-checker's instructions and `docs/content-model.md` §8. | Unit tests, one per rule above and per refusal, each seen failing first; the real OSI Model and canary reports still pass; `npm test`, `npm run build`. |
-| L1, finished | author, fact-checker (a targeted re-check), orchestrator | What is UDP's last item fixed and re-checked. | The pair passes the gate; then the lesson's own end-to-end tests, and `npm test`, `npm run build`, `npm run e2e` on `revamp`. |
-
-## How the pilot ended
-
-- **Done:** the groundwork (G1 to G3); targeted re-checks (G4); What is UDP (L1), with every changed sentence listed in `docs/lesson-changes/what-is-udp.md`.
-- **Not done:** What is HTTP (L2). "Done means" asked for both lessons; the pilot spent its estimate on one, and stopped for the owner rather than start the second.
-- **For the owner to decide:** whether the other 16 lessons run at about 1.3 to 1.5 million tokens each (`team.md` has the working), and the speed-ups offered on 2026-11-11: lessons side by side in their own copies of the repo, a fresh session per job, the analyst before the author, no rehearsal, the full end-to-end suite once per job, and the mid-lesson decisions settled in advance.
-
