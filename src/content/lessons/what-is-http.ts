@@ -31,6 +31,7 @@ const HTML_RENDERING = html('15.1', 'introduction-17', true);
 const URL_STANDARD = 'https://url.spec.whatwg.org/index.html';
 const FETCH_STANDARD = 'https://fetch.spec.whatwg.org/index.html';
 const FETCH_REQUESTS = cite('whatwg-fetch', '2.2.5', { url: `${FETCH_STANDARD}#requests` });
+const FETCH_REQUESTS_D = cite('whatwg-fetch', '2.2.5', { url: `${FETCH_STANDARD}#requests`, defining: true });
 
 const IANA_MEDIA = 'https://www.iana.org/assignments/media-types/media-types.xhtml';
 const CLOUDFLARE = 'https://developers.cloudflare.com/fundamentals/reference/network-layers/';
@@ -86,7 +87,7 @@ export default defineLesson({
   summary:
     'Web pages arrive the same basic way: your browser asks for one, and a web server sends it back. HTTP is the set of rules for that asking and answering, and in HTTP/1.1 it’s plain text, so you could read it yourself.',
   figure: 'net-map',
-  backing: { traces: ['lead-1', 'lead-2'] },
+  backing: { traces: ['lead-1', 'lead-2', 'why-2'] },
   units: [
     {
       id: 'http',
@@ -97,7 +98,7 @@ export default defineLesson({
       // No standard puts HTTP at an OSI layer (X.200 never names HTTP; RFC 9110 calls it "application-level"), so the
       // badge rests on two vendors' own mappings.
       osi: { layers: [7], cite: [CLOUDFLARE_L7, MS_L7] },
-      backing: { traces: ['fact-defined', 'lead-2'] },
+      backing: { traces: ['fact-defined', 'lead-2', 'fact-used'] },
       scene: {
         title: 'Your browser asks a web server for a page',
         views: ['network', 'sequence'],
@@ -111,11 +112,11 @@ export default defineLesson({
           { place: 'resolver', label: 'DNS resolver', addr: '192.0.2.53' },
           { place: 'web', label: 'Web server', addr: '203.0.113.80' },
         ],
-        backing: { traces: ['lead-2', 'term-client', 'term-path', 'term-status', 'fact-type'] },
+        backing: { traces: ['lead-2', 'term-client', 'term-path', 'term-status', 'fact-type', 'fact-dns'] },
       },
       overview: {
         hook: 'Web pages arrive the same basic way: your browser asks for one, and a web server sends it back. HTTP is the set of rules for that asking and answering, and in HTTP/1.1 it’s plain text, so you could read it yourself.',
-        hookBacking: { traces: ['lead-1', 'lead-2'] },
+        hookBacking: { traces: ['lead-1', 'lead-2', 'why-2'] },
         description:
           'It works like ordering at a counter. You ask for one thing by name, you get it back with a short note saying how it went, then you ask for the next thing. A page with pictures and styles is a longer order, with several items.',
         backing: { analogy: true },
@@ -134,7 +135,7 @@ export default defineLesson({
           title: 'Client Request',
           sub: 'You type http://example.net and press Enter',
           narrative:
-            'You type http://example.net and press Enter. Your browser is the **client**, the side that asks. It reads the **URL** you typed to work out three things: which protocol to use (http, so plain HTTP), which site (example.net) and which page (/, the front page). It has nothing saved for this site, and it doesn’t know the server’s number yet, so nothing has been sent.',
+            'You type http://example.net and press Enter. Your browser is the **client**, the side that asks. It reads the **URL** you typed to work out three things: which protocol to use (http, so plain HTTP), which site (example.net) and which page (/, since you named none). It has nothing saved for this site, and it doesn’t know the server’s number yet, so nothing has been sent.',
           deep: [
             {
               text: 'A URL has parts: the scheme (http), the host (example.net), an optional port (80 is assumed for http, 443 for https), the path (/), and sometimes a query (?q=…) and a fragment (#top). Before going to the network, the browser can look in its cache first; a fresh saved copy can mean no request at all.',
@@ -153,12 +154,12 @@ export default defineLesson({
             { label: 'URL', value: 'http://example.net/', backing: { example: true } },
             { label: 'Scheme', value: 'http, so TCP port 80', backing: { traces: ['fact-port', 'fact-url'] } },
             { label: 'Host', value: 'example.net', backing: { example: true } },
-            { label: 'Path', value: '/, the front page', backing: { traces: ['term-path', 'fact-url'] } },
+            { label: 'Path', value: '/, since the URL names no page', backing: { traces: ['term-path', 'fact-request'] } },
           ],
           status: 'Preparing a request',
           idle: 'Nothing on the network yet. The browser is still getting ready.',
           events: [],
-          backing: { traces: ['term-client', 'term-url', 'term-path', 'fact-url', 'fact-port', 'pattern'] },
+          backing: { traces: ['term-client', 'term-url', 'term-path', 'fact-url', 'fact-port', 'fact-request', 'pattern'] },
         },
         {
           id: 'dns-resolution',
@@ -181,7 +182,7 @@ export default defineLesson({
             { label: 'Asks', value: 'the DNS resolver, 192.0.2.53', backing: { example: true } },
             { label: 'Question', value: 'the A record for example.net', backing: { traces: ['fact-dns'] } },
             { label: 'Answer', value: '203.0.113.80', backing: { example: true } },
-            { label: 'Takes', value: 'about 20 ms', backing: { example: true } },
+            { label: 'Takes', value: 'about 20 ms here', backing: { traces: ['fact-dns'] } },
           ],
           events: [
             ...msgOf(
@@ -197,7 +198,7 @@ export default defineLesson({
               time: '0.000s',
               src: '192.168.1.100:51034',
               dst: '192.0.2.53:53',
-              size: '70 B',
+              size: '—',
               sum: 'What’s the number for example.net?',
               info: 'DNS query: A record for example.net',
               st: 'Looking up example.net',
@@ -215,7 +216,7 @@ export default defineLesson({
               time: '0.019s',
               src: '192.0.2.53:53',
               dst: '192.168.1.100:51034',
-              size: '86 B',
+              size: '—',
               sum: 'example.net is 203.0.113.80.',
               info: 'DNS response: example.net is 203.0.113.80',
               st: 'Found 203.0.113.80',
@@ -235,6 +236,7 @@ export default defineLesson({
               text: 'The laptop uses a temporary port of its own (here 50310) and connects to port 80, the standard port for plain HTTP. The three messages are SYN, SYN-ACK and ACK. Once it’s open, many requests can share the connection; HTTP/1.1 keeps it open by default.',
               cite: [
                 rfc('rfc-6335', '6', true),
+                rfc('rfc-6335', '8.1.2', true),
                 rfc('rfc-9110', '4.2.1', true),
                 rfc('rfc-9293', '3.5', true),
                 rfc('rfc-9293', '3.5.1', true),
@@ -244,7 +246,7 @@ export default defineLesson({
           ],
           facts: [
             { label: 'From', value: '192.168.1.100, port 50310', backing: { example: true } },
-            { label: 'To', value: '203.0.113.80, port 80', backing: { example: true } },
+            { label: 'To', value: '203.0.113.80, port 80', backing: { traces: ['fact-port'] } },
             { label: 'Messages', value: 'SYN, SYN-ACK, ACK', backing: { traces: ['fact-tcp'] } },
             { label: 'Then', value: 'the connection stays open for more requests', backing: { traces: ['fact-tcp'] } },
           ],
@@ -262,7 +264,7 @@ export default defineLesson({
               time: '0.020s',
               src: LAPTOP,
               dst: WEB,
-              size: '74 B',
+              size: '—',
               sum: 'Hello, can we talk?',
               info: 'SYN: open a connection',
             }),
@@ -279,7 +281,7 @@ export default defineLesson({
               time: '0.052s',
               src: WEB,
               dst: LAPTOP,
-              size: '74 B',
+              size: '—',
               sum: 'Hello. Yes, I hear you.',
               info: 'SYN-ACK: accepted',
             }),
@@ -296,7 +298,7 @@ export default defineLesson({
               time: '0.052s',
               src: LAPTOP,
               dst: WEB,
-              size: '66 B',
+              size: '—',
               sum: 'Good, the line is open.',
               info: 'ACK: connection open',
               st: 'Connected to example.net',
@@ -304,14 +306,14 @@ export default defineLesson({
               conn: ['open', 'laptop>web'],
             }),
           ],
-          backing: { traces: ['term-tcp', 'fact-tcp', 'pattern'] },
+          backing: { traces: ['term-tcp', 'fact-tcp', 'fact-rides', 'pattern'] },
         },
         {
           id: 'http-exchange',
           title: 'HTTP Exchange',
           sub: 'GET /, then 200 OK',
           narrative:
-            'Now the browser asks for the page. In HTTP/1.1 that is a few lines of plain text. The first line starts with **GET /**, which means “send me the front page”: GET is the **method**, the kind of asking, and / is the **path**. The lines under it are **headers**, notes such as which site this is for. The server answers with a **status code** on top, **200 OK**, meaning it went fine, then the page itself, written in **HTML**. One request and its response make an HTTP exchange.',
+            'Now the browser asks for the page. In HTTP/1.1 that is a few lines of plain text. The first line starts with **GET /**, which means “send me the page at /”: GET is the **method**, the kind of asking, and / is the **path**. The lines under it are **headers**, notes such as which site this is for. The server answers with a **status code** on top, **200 OK**, meaning it went fine, then the page itself, written in **HTML**. One request and its response make an HTTP exchange.',
           deep: [
             {
               text: 'The request line is GET / HTTP/1.1, and in HTTP/1.1 the Host header (Host: example.net) is required, because one server can hold many sites. Other methods: POST sends data for the server to process, PUT and DELETE change things on the server, HEAD asks for headers only. Status codes come in five families: 1xx received, still going, 2xx success, 3xx more to do (301 look elsewhere, 304 use your saved copy), 4xx a problem with the request (403, 404), 5xx a problem on the server (500, 503).',
@@ -355,8 +357,8 @@ export default defineLesson({
               time: '0.053s',
               src: LAPTOP,
               dst: WEB,
-              size: '412 B',
-              sum: 'Please send the page at /, the front page.',
+              size: '—',
+              sum: 'Please send the page at /.',
               info: 'GET / HTTP/1.1, Host: example.net',
               st: 'Waiting for the page',
               known: true,
@@ -395,7 +397,7 @@ export default defineLesson({
           title: 'Render Page',
           sub: 'Fetch the rest, and draw it',
           narrative:
-            'The browser reads the HTML. Turning HTML and its styles into what you see is **rendering**. On the way it finds two more files it needs: a **stylesheet** that says how the page looks, and an **image** for the logo. It fetches each with its own GET, here over the same connection. The page is drawn once the stylesheet arrives, and it is complete when the logo lands.',
+            'The browser reads the HTML. Turning HTML and its styles into what you see is **rendering**. On the way it finds two more files it needs: a **stylesheet** that says how the page looks, and an **image** for the logo. It fetches each with its own GET, here over the same connection. The page is drawn once the stylesheet arrives.',
           deep: [
             {
               text: 'Browsers often fetch several files at once, over more than one connection. HTTP/2 and HTTP/3 let many requests share one connection at the same time. A file the browser already has can be checked instead of fetched: if it hasn’t changed, the server answers 304 Not Modified with no body.',
@@ -411,7 +413,7 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Requests', value: 'GET /style.css, GET /logo.png', backing: { example: true } },
+            { label: 'Requests', value: 'GET /style.css, GET /logo.png', backing: { traces: ['fact-files', 'term-path'] } },
             { label: 'Types', value: 'text/css, image/png', backing: { traces: ['fact-type'] } },
             { label: 'Same connection', value: 'yes, it stays open', backing: { traces: ['fact-tcp'] } },
             { label: 'Unchanged files', value: '304 Not Modified', backing: { traces: ['fact-status'] } },
@@ -431,7 +433,7 @@ export default defineLesson({
               time: '0.104s',
               src: LAPTOP,
               dst: WEB,
-              size: '398 B',
+              size: '—',
               sum: 'Please send /style.css.',
               info: 'GET /style.css HTTP/1.1',
             }),
@@ -472,7 +474,7 @@ export default defineLesson({
               time: '0.140s',
               src: LAPTOP,
               dst: WEB,
-              size: '402 B',
+              size: '—',
               sum: 'Please send /logo.png.',
               info: 'GET /logo.png HTTP/1.1',
             }),
@@ -512,7 +514,7 @@ export default defineLesson({
           },
           {
             id: 'lead-2',
-            text: 'The browser asks for one thing, the server answers with a status and the file, and the browser asks for the next thing.',
+            text: 'In HTTP, the browser asks for one thing, the server answers with a status and the file, and the browser asks for the next thing.',
             cite: [rfc('rfc-9110', '3.4', true), CONNECTION_REUSE],
           },
         ],
@@ -581,7 +583,7 @@ export default defineLesson({
         pattern: {
           id: 'pattern',
           names: ['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render'],
-          note: 'A page you open for the first time goes through these five. The HTTP exchange repeats for every file the page needs from the server.',
+          note: 'Opening a page over plain HTTP goes through these five, though a saved copy, a remembered name or an open connection can skip a step. The HTTP exchange repeats for every file the page needs from the server.',
           cite: [
             rfc('rfc-9110', '4.3.2', true),
             rfc('rfc-9110', '7.3.1'),
@@ -591,13 +593,15 @@ export default defineLesson({
             HTML_RENDERING,
             HTML_LINK,
             HTML_IMG,
+            rfc('rfc-9499', '6'),
+            rfc('rfc-9110', '3.9'),
           ],
         },
         why: [
           {
             id: 'why-1',
-            text: 'Every browser and every website speak the same HTTP, so a browser can open sites it has never seen.',
-            cite: [rfc('rfc-9110', '1.1', true), rfc('rfc-9110', '1.2', true)],
+            text: 'HTTP gives every web server the same kind of interface, so a browser can open sites it has never seen.',
+            cite: [rfc('rfc-9110', '1.1', true)],
           },
           {
             id: 'why-2',
@@ -624,7 +628,7 @@ export default defineLesson({
           {
             id: 'deep-2',
             text: 'Sites remember you with cookies: names and values the server asks the browser to send back with later requests.',
-            cite: [rfc('rfc-6265', '1', true)],
+            cite: [rfc('rfc-6265', '1', true), rfc('rfc-6265', '3', true)],
           },
           {
             id: 'deep-3',
@@ -633,7 +637,7 @@ export default defineLesson({
           },
           {
             id: 'deep-4',
-            text: 'Drawing waits for a stylesheet linked in the page’s head, until it has loaded or a timeout passes.',
+            text: 'Drawing waits for a stylesheet the page links to before its body begins, if it applies to this screen, until it has loaded or failed, or a timeout passes.',
             cite: [
               html('4.6.8.23', 'link-type-stylesheet', true),
               html('3.1.6', 'render-blocking-mechanism', true),
@@ -653,24 +657,24 @@ export default defineLesson({
             id: 'fact-used',
             label: 'Used for',
             value: 'web pages, and apps that talk to servers',
-            cite: [rfc('rfc-9110', '3.5', true), rfc('rfc-9110', '1.1', true)],
+            cite: [rfc('rfc-9110', '1.2'), rfc('rfc-9110', '3.5'), rfc('rfc-9114', '1')],
           },
           {
             id: 'fact-url',
             label: 'URL parts',
             value: 'scheme, host, port, path, query, fragment',
-            cite: [rfc('rfc-3986', '3', true), cite('whatwg-url', '4.1', { url: `${URL_STANDARD}#url-representation`, defining: true })],
+            cite: [rfc('rfc-3986', '3', true), rfc('rfc-3986', '3.2', true), cite('whatwg-url', '4.1', { url: `${URL_STANDARD}#url-representation`, defining: true })],
           },
           {
             id: 'fact-request',
             label: 'A request',
-            value: 'a request line (method, path, version), then headers; HTTP/1.1 requires a Host header',
-            cite: [rfc('rfc-9112', '3', true), rfc('rfc-9112', '3.2', true), rfc('rfc-9112', '2.1', true)],
+            value: 'a request line (method, target, version), then headers; sent straight to the server, the target is the path, such as /; HTTP/1.1 requires a Host header, which names the site',
+            cite: [rfc('rfc-9112', '3', true), rfc('rfc-9112', '3.2.1', true), rfc('rfc-9112', '3.2', true), rfc('rfc-9112', '2.1', true), rfc('rfc-9110', '7.2', true)],
           },
           {
             id: 'fact-response',
             label: 'A response',
-            value: 'a status line (version, status code, reason), then headers, then the content',
+            value: 'a status line (version, status code and, optionally, a reason such as OK), then headers, then any content',
             cite: [rfc('rfc-9112', '4', true), rfc('rfc-9112', '2.1', true), rfc('rfc-9110', '6.4', true)],
           },
           {
@@ -690,7 +694,7 @@ export default defineLesson({
             value: '1xx received, still going; 2xx success (200 OK); 3xx more to do (304 Not Modified: use your saved copy); 4xx request problem; 5xx server problem',
             cite: [rfc('rfc-9110', '15', true), rfc('rfc-9110', '15.3.1', true), rfc('rfc-9110', '15.4.5', true)],
           },
-          { id: 'fact-versions', label: 'Versions', value: 'HTTP/1.1, HTTP/2, HTTP/3', cite: [rfc('rfc-9110', '1.2', true)] },
+          { id: 'fact-versions', label: 'Major versions', value: 'HTTP/1.1, HTTP/2, HTTP/3', cite: [rfc('rfc-9110', '1.2', true)] },
           {
             id: 'fact-defined',
             label: 'Defined in',
@@ -705,14 +709,15 @@ export default defineLesson({
           },
           {
             id: 'fact-dns',
-            label: 'DNS lookup',
-            value: 'a resolver turns a name into an IP address; a query for an A record goes over UDP to port 53',
+            label: 'DNS resolution',
+            value: 'a resolver turns a name into an IP address, which can take from milliseconds to seconds; UDP to port 53 is the recommended way to send a query, such as one for an A record',
             cite: [
               rfc('rfc-1034', '5.2.1', true),
               rfc('rfc-1035', '3.2.2', true),
               rfc('rfc-1035', '4.2.1', true),
               rfc('rfc-9499', '6'),
               rfc('rfc-9110', '4.3.2'),
+              rfc('rfc-1034', '5.1', true),
             ],
           },
           {
@@ -724,8 +729,8 @@ export default defineLesson({
           {
             id: 'fact-files',
             label: 'Other files',
-            value: 'a page names more files, such as a stylesheet (how it looks) and images; each is fetched with its own GET',
-            cite: [HTML_LINK_STYLESHEET, HTML_IMG, FETCH_REQUESTS, rfc('rfc-9110', '9.3.1', true)],
+            value: 'a page names more files, such as a stylesheet (how it looks) and images; each one the browser hasn’t saved is fetched with its own GET',
+            cite: [HTML_LINK_STYLESHEET, HTML_IMG, FETCH_REQUESTS_D, rfc('rfc-9110', '9.3.1', true), rfc('rfc-9111', '4.2', true)],
           },
           { id: 'fact-osi', label: 'OSI layer', value: '7, application', cite: [CLOUDFLARE_L7, MS_L7] },
         ],
