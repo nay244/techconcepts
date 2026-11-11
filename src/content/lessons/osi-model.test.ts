@@ -18,6 +18,11 @@ afterEach(() => {
 });
 
 const unit = osiModel.units[0]!;
+// The one lesson whose source count is a checked fact.
+test('OSI Model has six sources', () => {
+  expect(unit.references).toHaveLength(6);
+});
+
 const events = unit.steps.flatMap((s) => s.events);
 const messages = events.filter((e): e is MessageEvent => e.type === 'message');
 

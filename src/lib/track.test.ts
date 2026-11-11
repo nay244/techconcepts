@@ -121,6 +121,7 @@ test('a ready lesson’s card carries its stamp: OSI Model is checked, a lesson 
   expect(stampOf('osi-model')).toEqual(lessonStamp(getLesson('osi-model')!));
   expect(stampOf('osi-model').checked).not.toBeNull();
   for (const e of entries.filter((x) => x.available)) {
+    expect(stampOf(e.slug), e.slug).toEqual(lessonStamp(getLesson(e.slug)!));
     expect(stampOf(e.slug).checked === null, e.slug).toBe(getLesson(e.slug)!.origin !== 'cited');
   }
 });

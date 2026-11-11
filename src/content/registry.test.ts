@@ -238,7 +238,7 @@ test('the ready lessons are the legacy ones on the closed list and the cited one
   const slugs = [...new Set(ready.map((l) => l.slug))];
   const readyLegacy = slugs.filter((slug) => getLesson(slug)!.origin === 'legacy');
   const readyCited = slugs.filter((slug) => getLesson(slug)!.origin !== 'legacy');
-  expect(readyLegacy.length + readyCited.length).toBe(slugs.length);
+  // The ready legacy lessons are exactly the listed ones: none missing, none unlisted, none twice.
   expect([...readyLegacy].sort()).toEqual([...LEGACY_LESSONS].sort());
   expect(readyCited).toContain('osi-model');
   for (const slug of readyCited) expect(getLesson(slug)!.origin, slug).toBe('cited');
@@ -252,7 +252,10 @@ test('the build stops on a legacy lesson off the list, and on a listed slug whos
     /"osi-model" is a legacy lesson, but it is not on the legacy list/,
   );
   // A lesson that has moved to the cited shape leaves the list: the list only shrinks.
-  const moved = LEGACY_LESSONS[0]!;
+  // The lesson to move is the first on the list, with its legacy fixture. `checkLegacyList` reads the list itself, so
+  // with the list empty there is no listed slug to move or lose, and the two checks below have nothing to say.
+  const moved = (LEGACY_LESSONS as readonly string[])[0];
+  if (moved === undefined) return;
   const migrated = ready.map((l) => (l.slug === moved ? { ...l, origin: 'cited' as const } : l));
   expect(() => checkLegacyList(migrated)).toThrow(new RegExp(`"${moved}" is on the legacy list, but its lesson is cited`));
   // So does a slug no lesson has any more.

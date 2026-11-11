@@ -307,7 +307,7 @@ test.describe('desktop', () => {
     const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
     await open(page, osi.path);
     const stamp = page.locator('.console__top .stamp');
-    await expect(stamp).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, \d+ sources$/);
+    await expect(stamp).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, 6 sources$/);
     await expect(stamp).toHaveAttribute('href', '/about#facts');
 
     await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
@@ -334,7 +334,7 @@ test.describe('desktop', () => {
 
   test('a lesson not checked yet says so, in the same places, and its sources carry no numbers', async ({ page }) => {
     const unchecked = LESSONS.find((l) => !l.checked);
-    test.skip(unchecked === undefined, 'Every ready lesson is checked: no real page is left to show the not-checked stamp on.');
+    test.skip(unchecked === undefined, 'No ready lesson is on the legacy list: no real page is left to show the not-checked stamp on.');
     await open(page, unchecked!.path);
     const top = page.locator('.console__top .stamp');
     await expect(top).toHaveText(/^Not checked yet, \d+ sources?$/);

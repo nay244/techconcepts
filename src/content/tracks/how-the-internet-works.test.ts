@@ -9,6 +9,7 @@ import { netMapDriver } from '../../scenes/drivers/net-map';
 import { lessonNumbers, lessonTitles, textsOf } from '../../test/lesson-references';
 import { showSweep } from '../../test/show-sweep';
 import { checkStructure } from '../define';
+import { LEGACY_LESSONS } from '../legacy';
 import { getEntries, getLesson } from '../registry';
 import type { Lesson, MessageEvent, Unit } from '../schema';
 import { internetTrack, networkingTrack, tracks } from './index';
@@ -17,6 +18,8 @@ import { internetTrack, networkingTrack, tracks } from './index';
 const TOUR: Lesson[] = getEntries('how-the-internet-works').map((e) => getLesson(e.slug)!);
 /** Their protocol sections stitched into one lesson, in track order, so the map's checks below walk all 14 as before. */
 const internet: Lesson = { ...TOUR[0]!, slug: 'tour', title: 'How the Internet Works', units: TOUR.flatMap((l) => l.units) };
+/** Whether a lesson is still in the legacy shape: only those keep the uncited details pinned below. */
+const isLegacy = (lesson: Lesson): boolean => (LEGACY_LESSONS as readonly string[]).includes(lesson.slug);
 const PROTOCOLS = ['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls'];
 
 afterEach(() => {
@@ -105,7 +108,7 @@ test('each lesson is one protocol, its fields taken from the section', () => {
 });
 
 test('each protocol keeps its name, full name, purpose, group and OSI layers', () => {
-  expect(internet.units.map((u) => [u.name, u.fullName, u.purpose, u.group, u.osi])).toEqual([
+  const rows = [
     ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
     ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', { layers: [7], cite: [] }],
     ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core', { layers: [4], cite: [] }],
@@ -120,7 +123,18 @@ test('each protocol keeps its name, full name, purpose, group and OSI layers', (
     ['FTP', 'File Transfer Protocol', 'Moving files', 'app', { layers: [7], cite: [] }],
     ['SSH', 'Secure Shell', 'Remote control, sealed', 'security', { layers: [7], cite: [] }],
     ['TLS/SSL', 'Transport Layer Security (SSL is its old name)', 'The seal itself', 'security', { layers: [6], cite: [] }],
-  ]);
+  ];
+  expect(TOUR).toHaveLength(rows.length);
+  TOUR.forEach((lesson, i) => {
+    const u = lesson.units[0]!;
+    if (isLegacy(lesson)) {
+      expect([u.name, u.fullName, u.purpose, u.group, u.osi], lesson.slug).toEqual(rows[i]);
+    } else {
+      // A cited lesson may cite its layers or span them; what stays true is its name and group, and that a badge with layers cites them.
+      expect([u.name, u.fullName, u.purpose, u.group], lesson.slug).toEqual(rows[i]!.slice(0, 4));
+      if (u.osi !== 'spans') expect(u.osi!.layers.length > 0 && u.osi!.cite.length > 0, lesson.slug).toBe(true);
+    }
+  });
 });
 
 test('the old lesson is gone, and no folder of parts is left', () => {
@@ -702,7 +716,7 @@ test('every log cell in a column of figures fits its width at 1280 px, as the mo
 });
 
 test('each protocol’s sources are the RFCs its facts name', () => {
-  expect(internet.units.map((u) => u.references)).toEqual([
+  const expectedReferences = [
     [
       { label: 'RFC 9110: HTTP Semantics', url: 'https://www.rfc-editor.org/rfc/rfc9110' },
       { label: 'RFC 9112: HTTP/1.1', url: 'https://www.rfc-editor.org/rfc/rfc9112' },
@@ -729,7 +743,20 @@ test('each protocol’s sources are the RFCs its facts name', () => {
       { label: 'RFC 4253: The Secure Shell (SSH) Transport Layer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc4253' },
     ],
     [{ label: 'RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3', url: 'https://www.rfc-editor.org/rfc/rfc8446' }],
-  ]);
+  ];
+  TOUR.forEach((lesson, i) => {
+    const refs = lesson.units[0]!.references;
+    if (isLegacy(lesson)) {
+      expect(refs, lesson.slug).toEqual(expectedReferences[i]);
+    } else {
+      // A cited lesson's references also carry their registry id and may be more or fewer; each still names a page.
+      expect(refs.length, lesson.slug).toBeGreaterThan(0);
+      for (const r of refs) {
+        expect(r.label.length, lesson.slug).toBeGreaterThan(0);
+        expect(r.url, lesson.slug).toMatch(/^https:\/\//);
+      }
+    }
+  });
   // Some RFCs the facts name are not among the sources the plan drafted: HTTPS's RFC 8446 (TLS 1.3, the TLS part's
   // own source), IP's RFC 8200 (IPv6), and the two of SSH's "RFC 4251 to 4254" it does not cite, 4252 (logging in)
   // and 4254 (channels). The owner reviews the sources with the built lesson.
