@@ -4,6 +4,7 @@ import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
 import { checkQuotes, keysMissingQuotes, type SourceFile } from './quotecheck';
 import { pageText } from './pagetext';
 import { keysNeedingQuotes, parseQuotes, quotesDigest } from './quotes';
+import { checkReport } from './gate';
 import { parseReport } from './report';
 import { sha256 } from './sha256';
 import { claimSheet } from './sheet';
@@ -336,4 +337,13 @@ test('what a reader does not see on a page is not its text: display:none, noscri
   expect(text).toContain('Seen words here.');
   expect(text).toContain('Seen decorative words.');
   expect(text).not.toMatch(/Unseen/);
+});
+
+test('a record is dated the later of today and the header\'s day, so a header a day ahead still passes the gate', () => {
+  const raw = reportQuoting();
+  const behind = checkQuotes({ raw, sheet: sheet(), files: files('x'), today: '2026-11-07', pageText });
+  expect(behind.issues).toEqual([]);
+  expect(behind.record!.checked).toBe('2026-11-08');
+  expect(checkReport(sheet(), behind.report, 'docs/fact-checks/cited-lesson.md')).toEqual([]);
+  expect(run(raw, files('x')).record!.checked).toBe(TODAY);
 });

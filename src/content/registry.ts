@@ -263,7 +263,7 @@ export function checkFactCheckReports(
   sources: SourceRegistry = SOURCES,
   mode: string = import.meta.env.MODE,
 ): void {
-  refuseOrWarn(checkFactChecks(lessons, reports, sources), mode);
+  refuseOrWarn(checkFactChecks(lessons, reports, sources), mode, 'astro dev shows these lessons anyway; npm run build and the tests refuse them until the fact-checker passes them.');
 }
 
 /**
@@ -275,14 +275,18 @@ export function checkUnpathedContent(
   trackList: readonly Track[],
   mode: string = import.meta.env.MODE,
 ): void {
-  refuseOrWarn(checkUnpathedKinds(glossary, trackList), mode);
+  refuseOrWarn(
+    checkUnpathedKinds(glossary, trackList),
+    mode,
+    'astro dev goes on; npm run build and the tests refuse these entries until a fact-check path is built for their kind (docs/direction.md, decision 2.16).',
+  );
 }
 
-function refuseOrWarn(issues: string[], mode: string): void {
+function refuseOrWarn(issues: string[], mode: string, devNote: string): void {
   if (issues.length === 0) return;
   const message = `Fact checks:\n- ${issues.join('\n- ')}`;
   if (mode !== 'development') throw new Error(message);
-  console.warn(`${message}\nastro dev shows these lessons anyway; npm run build and the tests refuse them until the fact-checker passes them.`);
+  console.warn(`${message}\n${devNote}`);
 }
 
 // Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not.

@@ -61,10 +61,12 @@ function quoteProblems(sheet: ClaimSheet, raw: string, header: ReportHeader, pat
   if (record === undefined) return [`${path}: the quotes have not been confirmed against the sources (the header has no quotes record); ${run}.`];
   const problems: string[] = [];
   const digest = quotesDigest(quotes);
-  if (record.count !== quotes.length || record.digest !== digest) {
+  if (record.digest !== digest) {
     problems.push(
       `${path}: a quote changed after the quote check last passed (the record has ${record.count} quote${record.count === 1 ? '' : 's'}, digest ${record.digest.slice(0, 12)}…; the report has ${quotes.length}, digest ${digest.slice(0, 12)}…); ${run} again.`,
     );
+  } else if (record.count !== quotes.length) {
+    problems.push(`${path}: the record's count (${record.count}) is not the number of quotes in the report (${quotes.length}); ${run} again.`);
   }
   const named = new Set(quotes.map((q) => q.source));
   const hashed = new Set(Object.keys(record.files));

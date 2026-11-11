@@ -87,8 +87,8 @@ Done when every page wears the one new look in both themes, a reader on a 375px 
 
 ### Phase 3: one fact-check path — IN PROGRESS
 
-- The claim sheet and gate accept glossary entries, objective mappings and Practice questions as well as lessons (option 2).
-- A script confirms that each passage a fact-check report quotes appears in the fetched source (option 5).
+- A cited lesson's Practice questions are on its claim sheet already. Glossary entries and objective mappings are refused by the build until a fact-check path is built for them (decision 2.16).
+- A script confirms that each passage a fact-check report quotes appears in the fetched source (option 5), and writes a record the build reads (built in B1 to B4).
 
 Done when the build fails for any cited content without a current all-pass report, whatever its kind.
 

@@ -164,7 +164,7 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
   const parsed = parseQuotes(raw, sheet);
   if (parsed.quotes === undefined) return { issues: parsed.issues };
   const quotes = parsed.quotes;
-  const verdicts = parseReport(raw).header!.verdicts;
+  const { verdicts, checked: reportChecked } = parseReport(raw).header!;
   const issues: string[] = [];
 
   /** Each quoted source's file, its text as read (for the hash), and the text a reader sees of it, evened out. */
@@ -223,7 +223,8 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
   if (issues.length > 0) return { issues };
 
   const record: QuoteRecord = {
-    checked: today,
+    // The checker may date the header a day ahead of the local day (UTC), and a record older than its header is refused.
+    checked: today < reportChecked ? reportChecked : today,
     count: quotes.length,
     digest: quotesDigest(quotes),
     files: Object.fromEntries([...found].map(([source, file]) => [source, sha256(file.read)])),

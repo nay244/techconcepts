@@ -121,6 +121,12 @@ test('a quote whose word changed after the record fails the digest', () => {
   expect(issues[0]).toContain(RUN);
 });
 
+test('a record whose count alone is wrong fails with its own message', () => {
+  const issues = gate(reportFor(sheet(), (h) => { (h.quotes as { count: number }).count += 1; }));
+  expect(issues).toEqual([expect.stringMatching(/the record's count \(\d+\) is not the number of quotes in the report \(\d+\); run npm run fact-check/)]);
+  expect(issues[0]).not.toContain('a quote changed');
+});
+
 test('a quote added after the record fails the count', () => {
   const s = sheet();
   const last = s.items.filter((i) => i.cite.length > 0).at(-1)!.cite[0]!;
