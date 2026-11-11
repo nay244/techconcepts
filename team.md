@@ -1,6 +1,6 @@
 # Team ledger
 
-The job in `plan.md` now is the start of Phase 4, a pilot of two lessons: its rows are under "Job 3" at the end. Job 1 was the Lesson page (Phase 2) and job 2 was Phase 3, one fact-check path; both are done.
+The job in `plan.md` now is What is HTTP, the second lesson of Phase 4, alone: its rows are under "Job 4" at the end. Job 1 was the Lesson page (Phase 2), job 2 was Phase 3, one fact-check path, and job 3 was the Phase 4 pilot; all three are done.
 
 One row per unit of `plan.md`, added when the unit ends. Tokens are the subagent's total for the unit, all tries together.
 
@@ -191,3 +191,11 @@ Sixteen lessons are left. At 1.3 to 1.5 million each that is roughly 21 to 24 mi
 - **Decide in advance** what the owner was asked mid-lesson: ideas come back wherever a source states them; a badge may rest on two vendors' pages.
 - **A spec for a gate gets its attack cases first.** G4's spec was right about its rules and wrong about what they let through; both reviews found holes by trying to get a changed lesson past it. The reviewer's probe list should exist before the builder starts.
 - **Side by side is proven, and needed one setting** (2026-11-11, after the pilot). A worktree under `.superpowers/wt/` with `node_modules` linked passes the fact-check gate, `npm test` (1,685) and `npm run build`. Two folders could not run end-to-end specs at once, since the server's port was fixed, so `E2E_PORT` now sets it: the main folder on 4471 and the worktree on 4481 ran `og-image` and `reading` at the same time, 29 passed in each; with 4471 held by another server the worktree's run passed on 4481 and refused without it. The orchestrator made this change itself, three lines found while proving the setup, with no builder or review.
+
+# Job 4: What is HTTP, alone
+
+The owner said go on 2026-11-11 (plan at `46afa6b`). One lesson under the order the pilot taught, with a spec review before the one build and a three-level build review.
+
+| Unit | Agent | Model | Tries | Tokens | Result |
+|---|---|---|---|---|---|
+| S4 | scout | Haiku | 1 | 127,655 | Done before the go. What else in the repo rests on the lesson's words and shape, every fact with a `path:line`; it is `plan.md`'s "What the scout found". |
