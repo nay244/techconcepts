@@ -383,5 +383,5 @@ Found when the build was reviewed. Variant A is otherwise as approved. Both are 
 - The tabs (Explain, Steps) stay on the words column: as wide as it, at the same right edge, 48px tall.
 - The log folds to its head, with D1's "Show log" / "Hide log" button, folded at first and kept for the visit, as on a desktop. Back, Play and Next stay in the log's head.
 - At the Overview and on Watch steps nothing changes: the 348px column and the open log.
-- Check 16 changes with it: in Learn and Practice at 1024x768 the tabs' box is 508, 92, 504x48 and `.console__explain` is 504px wide; the log is 52px tall until "Show log" is pressed.
+- Check 16 changes with it: in Learn and Practice at 1024x768 the tabs' box is 508, 92, 504x48 and `.console__explain` is 504px wide; the log is 62px tall until "Show log" is pressed. (Folded, the log is its head and nothing more. On a desktop that is 52px, around 34px controls; here the controls are 44px, so the head is 62px with its usual 8px padding. This line first said 52px, which could only hold by squeezing the head's padding to 3px.)
 
