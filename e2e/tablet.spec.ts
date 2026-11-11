@@ -85,13 +85,31 @@ for (const theme of THEMES) {
 
     test('4 and 5 at 768x1024: the words are a 520px column that holds 80 characters a line or fewer; the controls share it', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [768, 1024], theme);
-      expectBox(await boxOf(page, '.explain__narr'), [124, (await boxOf(page, '.explain__narr'))!.y, 520, (await boxOf(page, '.explain__narr'))!.h], 'the words');
-      const perLine = await page.locator('.explain__narr').first().evaluate((el) => {
-        const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
-        const lines = Math.round(el.getBoundingClientRect().height / lineHeight);
-        return (el.textContent ?? '').length / lines;
+      expect(Math.round((await boxOf(page, '.explain__narr'))!.w), 'the words are 520px wide').toBe(520);
+      expect(Math.round((await boxOf(page, '.explain__narr'))!.x), 'and start at 124px').toBe(124);
+      // The longest rendered line, counted character by character as reading.spec.ts does.
+      const longest = await page.locator('.explain__narr').first().evaluate((root) => {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const range = document.createRange();
+        const lines: number[] = [];
+        let top = Number.NaN;
+        for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+          const text = node.textContent ?? '';
+          for (let i = 0; i < text.length; i++) {
+            range.setStart(node, i);
+            range.setEnd(node, i + 1);
+            const rect = range.getBoundingClientRect();
+            if (rect.width === 0) continue;
+            if (Number.isNaN(top) || Math.abs(rect.top - top) > 8) {
+              lines.push(0);
+              top = rect.top;
+            }
+            lines[lines.length - 1]!++;
+          }
+        }
+        return Math.max(...lines);
       });
-      expect(perLine).toBeLessThanOrEqual(80);
+      expect(longest, 'the longest line of the words').toBeLessThanOrEqual(80);
       const buttons = await page.locator('.console__controls button').evaluateAll((all) =>
         all.map((b) => {
           const r = b.getBoundingClientRect();
@@ -222,6 +240,8 @@ for (const theme of THEMES) {
         expect(await inView(page, '.console__scene')).toBe(true);
         expect(await inView(page, '.console__controls')).toBe(true);
         expect(await visibleTabs(page)).toEqual(['Explain', 'Steps']);
+        expectBox(await boxOf(page, '.console__tabs'), [664, 92, 348, 48], 'the tabs');
+        await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
         expect(await shown(page, '.console__outline')).toBe(false);
       });
     }
@@ -236,6 +256,9 @@ for (const theme of THEMES) {
         expect(await inView(page, '.console__scene')).toBe(true);
         expect(await inView(page, '.console__controls')).toBe(true);
         expect(await visibleTabs(page)).toEqual(['Explain', 'Steps']);
+        // The words column is 348px wide, against the window's right edge less 12px.
+        expectBox(await boxOf(page, '.console__tabs'), [size[0] - 12 - 348, 92, 348, 48], 'the tabs');
+        await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
         expect(await shown(page, '.console__outline')).toBe(false);
       });
     }
@@ -251,6 +274,63 @@ for (const theme of THEMES) {
         // And the table is on screen, under the scene, as on a desktop.
         expect(await inView(page, '.tpanel')).toBe(true);
       }
+    });
+
+    test('focus at 1024x768: the ring of Explain and of Steps is drawn, and inside the tab row', async ({ page }) => {
+      await openAt(page, `${DHCP}?step=2`, [1024, 768], theme);
+      for (const name of ['Explain', 'Steps']) {
+        await tabButton(page, name).focus();
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+        await expect(tabButton(page, name)).toBeFocused();
+        await expect.poll(() => tabButton(page, name).evaluate((el) => getComputedStyle(el).outlineOffset)).toBe('-3px');
+        const r = await tabButton(page, name).evaluate((el) => {
+          const s = getComputedStyle(el);
+          const b = el.getBoundingClientRect();
+          const row = el.parentElement!.getBoundingClientRect();
+          const offset = parseFloat(s.outlineOffset);
+          const width = parseFloat(s.outlineWidth);
+          return {
+            focused: document.activeElement === el,
+            style: s.outlineStyle,
+            width,
+            // The ring's outer edge, from the button's box and the computed offset.
+            left: b.left - offset - width,
+            right: b.right + offset + width,
+            top: b.top - offset - width,
+            bottom: b.bottom + offset + width,
+            row: { left: row.left, right: row.right, top: row.top, bottom: row.bottom },
+          };
+        });
+        expect(r.focused, `${name} has focus`).toBe(true);
+        expect(r.style, `${name}'s outline`).not.toBe('none');
+        expect(r.width).toBeGreaterThan(0);
+        expect(r.left, `${name}: ring inside the row, left`).toBeGreaterThanOrEqual(r.row.left - 1);
+        expect(r.right, `${name}: ring inside the row, right`).toBeLessThanOrEqual(r.row.right + 1);
+        expect(r.top, `${name}: ring inside the row, top`).toBeGreaterThanOrEqual(r.row.top - 1);
+        expect(r.bottom, `${name}: ring inside the row, bottom`).toBeLessThanOrEqual(r.row.bottom + 1);
+      }
+    });
+
+    test('Overview at 768x1024: the stamp is on the kicker\'s line and in the top bar, with the same words', async ({ page }) => {
+      await openAt(page, DHCP, [768, 1024], theme);
+      const lead = await boxOf(page, '.explain__lead .stamp');
+      const kicker = await boxOf(page, '.explain__lead .explain__kicker');
+      expect(lead, 'the stamp in the Overview is shown').not.toBeNull();
+      expect(kicker).not.toBeNull();
+      const mid = lead!.y + lead!.h / 2;
+      expect(mid).toBeGreaterThanOrEqual(kicker!.y - 1);
+      expect(mid).toBeLessThanOrEqual(kicker!.y + kicker!.h + 1);
+      expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
+      const words = async (sel: string) => ((await page.locator(sel).first().textContent()) ?? '').replace(/\s+/g, ' ').trim();
+      expect(await words('.explain__lead .stamp')).toBe(await words('.topbar__crumb .stamp'));
+      expect(await words('.topbar__crumb .stamp')).not.toBe('');
+    });
+
+    test('Overview at 1024x768: the stamp is in the top bar and not on the first line', async ({ page }) => {
+      await openAt(page, DHCP, [1024, 768], theme);
+      expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
+      expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
     });
 
     // ---------------------------------------------------------------- the edges
@@ -281,6 +361,16 @@ for (const theme of THEMES) {
       });
     }
 
+    test('20 at 1024x599: the stacked page, the table under the scene, no stamp on the Overview\'s first line', async ({ page }) => {
+      await openAt(page, DHCP, [1024, 599], theme);
+      expect(await shown(page, '.console__tabs')).toBe(false);
+      const scene = (await boxOf(page, '.console__scene'))!;
+      const table = (await boxOf(page, '.console__stage .tpanel'))!;
+      expect(table, 'the lesson\'s table is shown').not.toBeNull();
+      expect(table.y).toBeGreaterThanOrEqual(scene.y + scene.h - 1);
+      expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+    });
+
     for (const size of [
       [768, 1024],
       [1024, 768],
@@ -297,13 +387,14 @@ for (const theme of THEMES) {
   });
 }
 
-test.describe('with JavaScript off', () => {
+for (const theme of THEMES) test.describe(`with JavaScript off, ${theme} theme`, () => {
   test.use({ javaScriptEnabled: false });
   for (const size of [
     [768, 1024],
     [1024, 768],
   ] as const) {
     test(`21 at ${size.join('x')}: the stacked page`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: theme });
       await page.setViewportSize({ width: size[0], height: size[1] });
       await page.goto(`${DHCP}?step=2`);
       await page.waitForLoadState('load');

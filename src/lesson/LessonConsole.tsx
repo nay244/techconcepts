@@ -128,8 +128,10 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
 
   // ---------------------------------------------------------------- the phone's tabs
 
-  // On a phone the scene stays put and one of three parts shows under it (console.css). On a wider screen all three
-  // are on show at once, the buttons are hidden, and this state changes nothing.
+  // On a phone, and on a tablet upright or under 900px wide, the scene stays put and one part shows under it
+  // (console.css). On a tablet on its side only Explain and Steps are tabs; the log and the table are always on show,
+  // so a chosen Log or Table shows the explanation there. From 1100px the buttons are hidden and this state changes
+  // nothing.
   const consoleEl = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>('explain');
   const panelTab = unit.scene.panel === null ? undefined : PANEL_TAB[unit.scene.panel.type];

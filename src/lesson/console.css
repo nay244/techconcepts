@@ -1262,8 +1262,9 @@ ol.explain__sources li::marker {
 }
 
 /* ---------------------------------------------------------------- narrow screens
-   Below 1100 px the panels stack and the page scrolls, so everything still loads and can be reached. A tablet gets
-   this; so does a phone with JavaScript off. A phone with it on gets the layout at the foot of this file. */
+   Below 1100 px the panels stack and the page scrolls, so everything still loads and can be reached. This is the page
+   with JavaScript off, and the one a window under 600px tall keeps. With it on, a phone and a tablet get the layouts
+   at the foot of this file. */
 @media (max-width: 1099px) {
   .console {
     grid-template-columns: minmax(0, 1fr);
@@ -1304,7 +1305,7 @@ ol.explain__sources li::marker {
   }
 }
 
-/* The phone's tabs (LessonConsole.tsx). Only the phone layout below shows them. */
+/* The tabs (LessonConsole.tsx). The phone layout, the grown phone layout and the tablet-on-its-side layout show them. */
 .console__tabs {
   display: none;
 }
@@ -1909,6 +1910,10 @@ ol.explain__sources li::marker {
   }
   :root.js .console__tabs button:nth-child(n + 3) {
     display: none;
+  }
+  /* The row clips its corners, so the usual ring (2px outside) would be cut to a line: draw it inside. */
+  :root.js .console__tabs button:focus-visible {
+    outline-offset: -3px;
   }
   :root.js .console__outline {
     position: absolute;
