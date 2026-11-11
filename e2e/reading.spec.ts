@@ -212,7 +212,7 @@ for (const [size, logHeight] of [[S1440, 234], [S1280, 200]] as const) {
 }
 
 /** Check 15. */
-test('the fold button is not shown at the Overview, on a Watch step, at 1024 wide or on a phone', async ({ page }) => {
+test('the fold button is not shown at the Overview, on a Watch step or on a phone, and is shown in Learn and Practice at 1024 wide', async ({ page }) => {
   await page.setViewportSize(S1440);
   await open(page, pathOf('dhcp'));
   await expect(page.locator('.log__fold')).toBeHidden();
@@ -220,12 +220,64 @@ test('the fold button is not shown at the Overview, on a Watch step, at 1024 wid
   await expect(kicker(page)).toContainText('Step 1');
   await expect(page.locator('.log__fold')).toBeHidden();
   expect((await box(page, '.console__log')).height).toBeGreaterThan(150);
-  for (const size of [{ width: 1024, height: 768 }, { width: 375, height: 812 }]) {
-    await page.setViewportSize(size);
-    await openAt(page, 'dhcp', 'learn');
-    await expect(page.locator('.log__fold')).toBeHidden();
+  // A tablet on its side: the button is there in Learn and Practice, and not at the Overview or on a Watch step.
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await open(page, pathOf('dhcp'));
+  await expect(page.locator('.log__fold')).toBeHidden();
+  expect((await box(page, '.console__explain')).width).toBe(348);
+  await nextButton(page).click();
+  await expect(kicker(page)).toContainText('Step 1');
+  await expect(page.locator('.log__fold')).toBeHidden();
+  expect((await box(page, '.console__log')).height).toBe(200);
+  for (const place of ['learn', 'practice'] as const) {
+    await openAt(page, 'dhcp', place);
+    await expect(page.locator('.log__fold')).toBeVisible();
   }
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openAt(page, 'dhcp', 'learn');
+  await expect(page.locator('.log__fold')).toBeHidden();
 });
+
+/** B5: Learn and Practice on a tablet on its side get the desktop's reading layout. */
+for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024, height: 768 }, 504], [{ width: 1099, height: 800 }, 560]] as const) {
+  test(`at ${size.width}×${size.height} Learn and Practice have a ${words}px words column, the tabs on it and the log folded`, async ({ page }) => {
+    await page.setViewportSize(size);
+    for (const place of ['learn', 'practice'] as const) {
+      await openAt(page, 'dhcp', place);
+      const label = `${place} at ${size.width}`;
+      expect((await box(page, '.console__explain')).width, `${label}: words`).toBe(words);
+      expect((await box(page, '.console__stage')).width, `${label}: scene`).toBeGreaterThanOrEqual(484);
+      const tabs = await box(page, '.console__tabs');
+      expect([tabs.x, tabs.y, tabs.width, tabs.height], `${label}: tabs`).toEqual([size.width - 12 - words, 92, words, 48]);
+      expect(await page.locator('.log__scroll').first().evaluate((el) => getComputedStyle(el).display), `${label}: rows folded`).toBe('none');
+      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(52);
+      expect(await pageOverflow(page), label).toEqual({ down: 0, sideways: 0 });
+      // No lesson table scrolls sideways.
+      const scrolling = await page.evaluate(() =>
+        [...document.querySelectorAll('.console table, .console__panel, .console__scene')].filter((el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).display !== 'none').length,
+      );
+      expect(scrolling, `${label}: sideways scroll`).toBe(0);
+    }
+    // Steps fills the words column, down to the folded log.
+    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true }).click();
+    const outline = await box(page, '.console__outline');
+    expect([outline.x, outline.width]).toEqual([size.width - 12 - words, words]);
+    const log = await box(page, '.console__log');
+    expect(log.y - (outline.y + outline.height)).toBe(12);
+    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Explain', exact: true }).click();
+
+    const button = page.getByRole('button', { name: /^(Show|Hide) log$/ });
+    await expect(button).toHaveText('Show log');
+    await button.click();
+    await expect(button).toHaveText('Hide log');
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect((await box(page, '.console__log')).height).toBe(Math.round(Math.max(200, size.height * 0.26)));
+    expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
+    await button.click();
+    await expect(button).toHaveText('Show log');
+    expect((await box(page, '.console__log')).height).toBe(52);
+  });
+}
 
 /** Check 16. */
 test('the step controls keep their place between a Watch step and Learn', async ({ page }) => {

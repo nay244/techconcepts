@@ -71,9 +71,9 @@
   min-height: 0;
 }
 
-/* Reading Learn or Practice on a desktop: the words take 560px, never leaving the scene under 484px (the 12px gap
+/* Reading Learn or Practice on a desktop, or a tablet on its side with the outline in a tab: the words take 560px, never leaving the scene under 484px (the 12px gap
    makes 496px), and the title may take two lines in the scene's head. Up to 1148px the words keep 348px. */
-@media (min-width: 1100px) {
+@media (min-width: 1100px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
   .console[data-reading] .console__main {
     grid-template-columns: minmax(0, 1fr) max(348px, min(560px, 100% - 496px));
   }
@@ -1108,7 +1108,7 @@ ol.explain__sources li::marker {
   padding: 0 12px;
   white-space: nowrap;
 }
-@media (min-width: 1100px) {
+@media (min-width: 1100px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
   .console[data-reading] .log__fold {
     display: inline-grid;
   }
@@ -1832,6 +1832,7 @@ ol.explain__sources li::marker {
 @media (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
   :root.js .console {
     --mid-words: 348px;
+    /* Learn and Practice take D1's words column: 380px at 900 wide, 504px at 1024, 560px from 1083. */
     --mid-tabs: 48px;
     --mid-log: clamp(200px, 26vh, 252px);
     position: relative;
@@ -1858,6 +1859,17 @@ ol.explain__sources li::marker {
   :root.js .topbar__crumb > a:first-child + span,
   :root.js .topbar__crumb > em {
     display: none;
+  }
+  :root.js .console[data-reading] {
+    --mid-words: max(348px, min(560px, 100vw - 24px - 496px));
+  }
+  /* Folded, the log is its head: the outline above it follows. */
+  :root.js .console[data-reading]:not([data-log='open']) {
+    --mid-log: 52px;
+  }
+  /* The head holds 44px buttons here, so folded to D1's 52px it keeps 3px above and below them. */
+  :root.js .console[data-reading]:not([data-log='open']) .log__head {
+    padding-block: 3px;
   }
   :root.js .console__main {
     grid-column: 1;

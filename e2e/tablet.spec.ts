@@ -234,13 +234,15 @@ for (const theme of THEMES) {
     }
 
     for (const step of [6, 7]) {
-      test(`16 at 1024x768, ?step=${step}: one screen, two tabs`, async ({ page }) => {
+      // Learn and Practice have D1's words column here: 504px, the tabs on it at the same right edge.
+      test(`16 at 1024x768, ?step=${step}: one screen, two tabs, the words 504px wide`, async ({ page }) => {
         await openAt(page, `${DHCP}?step=${step}`, [1024, 768], theme);
         await noPageScroll(page);
         expect(await inView(page, '.console__scene')).toBe(true);
         expect(await inView(page, '.console__controls')).toBe(true);
         expect(await visibleTabs(page)).toEqual(['Explain', 'Steps']);
-        expectBox(await boxOf(page, '.console__tabs'), [664, 92, 348, 48], 'the tabs');
+        expectBox(await boxOf(page, '.console__tabs'), [508, 92, 504, 48], 'the tabs');
+        expect(Math.round((await boxOf(page, '.console__explain'))!.w)).toBe(504);
         await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
         expect(await shown(page, '.console__outline')).toBe(false);
       });
