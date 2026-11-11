@@ -49,6 +49,11 @@ const G711I = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-G.711-199
 const G711I_1 = cite('itu-g711-appi', 'I.1', { url: `${G711I}#page=7` });
 const G711I_2_7 = cite('itu-g711-appi', 'I.2.7', { url: `${G711I}#page=9` });
 const MS_LB = 'https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-overview';
+/** Azure's page says each half in its own place: "Layer 4 TCP or UDP traffic" in the introduction, "layer 4 of the OSI model" in the section. */
+const AZURE_UDP = cite('microsoft-azure-lb', 'Introduction', { url: `${MS_LB}#:~:text=distribute%20Layer%204%20TCP%20or%20UDP%20traffic` });
+const AZURE_L4 = cite('microsoft-azure-lb', 'How Azure Load Balancer distributes Layer 4 traffic', {
+  url: `${MS_LB}#:~:text=Azure%20Load%20Balancer%20operates%20at%20layer%204`,
+});
 const CLOUDFLARE = 'https://developers.cloudflare.com/fundamentals/reference/network-layers/';
 /** Late data is useless in a live call: G.114 (discarded as lost), RFC 8836 (commonly useless), RFC 8834 (a resend must arrive in time). */
 const LATE = [G114_A3, cite('rfc-8836', '1'), cite('rfc-8834', '6.1')];
@@ -109,9 +114,8 @@ export default defineLesson({
         layers: [4],
         cite: [
           cite('cloudflare-network-layers', 'Network Layers', { url: `${CLOUDFLARE}#:~:text=4%20Transport%20layer` }),
-          cite('microsoft-azure-lb', 'How Azure Load Balancer distributes Layer 4 traffic', {
-            url: `${MS_LB}#:~:text=Azure%20Load%20Balancer%20operates%20at%20layer%204`,
-          }),
+          AZURE_UDP,
+          AZURE_L4,
         ],
       },
       backing: { traces: ['fact-5', 'why-1', 'lead-1'] },
@@ -336,7 +340,7 @@ export default defineLesson({
             'Sam answers, and Sam’s voice comes back the same way: packets from the voice server to your laptop, every 20 milliseconds, with no handshake and no guarantee. Each side simply sends to the other’s address and port, and listens on its own.',
           deep: [
             {
-              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes. During silences, a call app may send small keep-alive packets to keep that way open.',
+              text: 'The server sends from the port you sent to (16384) back to the port you sent from (50900). Your home router remembers that pair for a while, which is how replies get back in through NAT. The standard says at least two minutes, except for some well-known destination ports. During silences, a call app may send small keep-alive packets to keep that way open.',
               cite: [RFC768_FIELDS, rfc8085('3.5'), cite('rfc-4787', '4.3'), cite('rfc-8445', '11')],
             },
           ],
@@ -443,7 +447,7 @@ export default defineLesson({
               dst: LAPTOP,
               size: '—',
               sum: 'Report: 1 of your last 6 packets was lost.',
-              info: 'RTCP receiver report: 1 of 6 lost',
+              info: 'RTCP report: 1 of 6 lost',
               rows: [{ key: 'y5', cells: ['5', 'You → server', 'Lost, gap filled by Sam’s app'], miss: true }],
             }),
             ...msgOf(
@@ -546,13 +550,13 @@ export default defineLesson({
           },
           {
             id: 'why-2',
-            text: 'A quick lookup gains in another way: UDP has no setup to wait for. It adds almost nothing on top of IP, so it can be very efficient, and each app decides how much checking it needs.',
+            text: 'A quick lookup gains in another way: UDP has no setup to wait for. It adds almost nothing on top of IP, and each app decides how much checking it needs.',
             cite: [RFC1122_UDP, rfc8085('1'), cite('rfc-1035', '4.2.1')],
           },
           {
             id: 'why-3',
             text: 'A call app also keeps a jitter buffer at the receiver. A packet that arrives too late for its place in the buffer is discarded.',
-            cite: [G114_A3, cite('rfc-3611', '4.7'), rfc3550('6.4.1', true)],
+            cite: [G114_A3, cite('rfc-3611', '4.7'), rfc3550('6.4.1')],
           },
           {
             id: 'why-4',
@@ -563,7 +567,7 @@ export default defineLesson({
         deep: [
           {
             id: 'deep-1',
-            text: 'The UDP header is four 2-byte fields: source port, destination port, length and checksum. TCP’s header also has sequence and acknowledgment numbers and a window; UDP has none.',
+            text: 'The UDP header is four 2-byte fields: source port, destination port, length and checksum. TCP’s header also has sequence and acknowledgment numbers and a window; UDP’s has none.',
             cite: [RFC768_LENGTH, cite('rfc-9293', '3.1', { defining: true })],
           },
           {
@@ -584,14 +588,19 @@ export default defineLesson({
         ],
         facts: [
           { id: 'fact-1', label: 'Header', value: '8 bytes', cite: [RFC768_LENGTH] },
-          { id: 'fact-2', label: 'Gives', value: 'ports and a checksum, nothing more', cite: [RFC1122_UDP, RFC768_FIELDS] },
+          {
+            id: 'fact-2',
+            label: 'Gives',
+            value: 'ports and a checksum, with optional extras',
+            cite: [RFC1122_UDP, RFC768_FIELDS, cite('rfc-9868', 'Abstract', { url: 'https://www.rfc-editor.org/rfc/rfc9868.html#abstract', defining: true })],
+          },
           {
             id: 'fact-3',
             label: 'Ports',
             value: '53 DNS, 67/68 DHCP, 123 NTP, 161 SNMP, 443 HTTP/3 (over QUIC)',
             cite: [IANA_PORTS, cite('rfc-1035', '4.2.1'), cite('rfc-2131', '4.1'), cite('rfc-3417', '3.2'), cite('rfc-9308', '8'), cite('rfc-9312', '3.1')],
           },
-          { id: 'fact-4', label: 'Versus TCP', value: 'less setup, but no guarantee', cite: [rfc8085('1'), RFC768_INTRO, RFC1122_UDP] },
+          { id: 'fact-4', label: 'Versus TCP', value: 'no setup, but no guarantee', cite: [rfc8085('1'), RFC768_INTRO, RFC1122_UDP] },
           { id: 'fact-5', label: 'Defined in', value: 'RFC 768, User Datagram Protocol', cite: [RFC768_DEFINED] },
           { id: 'fact-6', label: 'Layer', value: 'transport, in the internet model', cite: [NIST_2_1, RFC1122_UDP] },
           {
@@ -600,9 +609,8 @@ export default defineLesson({
             value: '4, transport',
             cite: [
               cite('cloudflare-network-layers', 'Network Layers', { url: `${CLOUDFLARE}#:~:text=4%20Transport%20layer` }),
-              cite('microsoft-azure-lb', 'How Azure Load Balancer distributes Layer 4 traffic', {
-                url: `${MS_LB}#:~:text=Azure%20Load%20Balancer%20operates%20at%20layer%204`,
-              }),
+              AZURE_UDP,
+              AZURE_L4,
             ],
           },
           {
@@ -619,7 +627,7 @@ export default defineLesson({
           {
             id: 'fact-9',
             label: 'A router’s memory',
-            value: 'a UDP port pair, at least two minutes by the standard',
+            value: 'a UDP port pair, at least two minutes by the standard, except for some well-known ports',
             cite: [cite('rfc-4787', '4.3'), rfc8085('3.5')],
           },
         ],
@@ -631,7 +639,7 @@ export default defineLesson({
           options: [
             {
               text: 'Sends it again.',
-              feedback: 'Not quite. UDP never resends. A late copy would be no use in a live call anyway.',
+              feedback: 'Not quite. UDP never resends, and in a live call a resend only helps if it arrives in time.',
               cite: [rfc8085('3.3'), RFC1122_UDP, ...LATE],
             },
             {

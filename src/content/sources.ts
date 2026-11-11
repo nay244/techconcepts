@@ -463,6 +463,15 @@ export const SOURCES: SourceRegistry = defineSources([
     url: 'https://www.rfc-editor.org/rfc/rfc8445.html',
     anchor: 'https://www.rfc-editor.org/rfc/rfc8445.html#section-{n}',
   },
+  {
+    id: 'rfc-9868',
+    kind: 'rfc',
+    short: 'RFC 9868',
+    title: 'Transport Options for UDP',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc9868.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc9868.html#section-{n}',
+  },
 ]);
 
 /**
