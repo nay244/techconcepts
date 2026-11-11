@@ -219,8 +219,11 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources', () => {
-    expect(Object.keys(SOURCES)).toEqual(['itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003']);
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s', () => {
+    expect(Object.keys(SOURCES)).toEqual([
+      'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
+      'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
+    ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
 

@@ -30,7 +30,6 @@ export const LEGACY_LESSONS = [
   'what-is-http',
   'what-is-https',
   'what-is-tcp',
-  'what-is-udp',
   'what-is-ip',
   'what-is-dns',
   'what-is-dhcp',

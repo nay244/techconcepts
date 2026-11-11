@@ -112,7 +112,7 @@ test('each protocol keeps its name, full name, purpose, group and OSI layers', (
     ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
     ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', { layers: [7], cite: [] }],
     ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core', { layers: [4], cite: [] }],
-    ['UDP', 'User Datagram Protocol', 'Quick, no checking', 'core', { layers: [4], cite: [] }],
+    ['UDP', 'User Datagram Protocol', 'Quick, no guarantees', 'core', { layers: [4], cite: [] }],
     ['IP', 'Internet Protocol', 'Addresses and routes', 'core', { layers: [3], cite: [] }],
     ['DNS', 'Domain Name System', 'Names into numbers', 'app', { layers: [7], cite: [] }],
     ['DHCP', 'Dynamic Host Configuration Protocol', 'Getting an address', 'app', { layers: [7], cite: [] }],
@@ -359,7 +359,7 @@ test('UDP’s lost packet is dropped and never sent again; its row stays a miss 
   // The report changes its row in place, and the mark stays: the packet is still lost.
   const atLearn = tableAfter('udp', 'voice');
   expect([packet(atLearn, 'y5'), atLearn.missed]).toEqual([
-    { id: 'y5', packet: '5', way: 'You → server', status: 'Lost, gap filled by Sam’s app' },
+    { id: 'y5', packet: '5', way: 'You → server', status: 'Lost, noticed by Sam’s app' },
     ['y5'],
   ]);
 });
@@ -391,7 +391,7 @@ test('each protocol’s table ends with the mockup’s rows', () => {
     ['2', 'You → server', 'Arrived'],
     ['3', 'You → server', 'Arrived'],
     ['4', 'You → server', 'Arrived'],
-    ['5', 'You → server', 'Lost, gap filled by Sam’s app'],
+    ['5', 'You → server', 'Lost, noticed by Sam’s app'],
     ['6', 'You → server', 'Arrived'],
     ['1', 'Server → you', 'Arrived'],
     ['2', 'Server → you', 'Arrived'],
@@ -645,7 +645,7 @@ test('the log is the packet log of internet-v2.html, with its widths, and the pa
     ['Your browser asks a web server for a page', { laptop: 'Wants example.net', url: 'example.net' }],
     ['The same asking and answering, sealed on the way', { laptop: 'Wants techconcepts.app', url: 'techconcepts.app' }],
     ['A page arrives whole, though a piece got lost', { laptop: 'Wants a page', url: 'example.net' }],
-    ['Your voice goes out in small packets, unchecked', { laptop: 'In a call with Sam', url: 'Call' }],
+    ['Your voice goes out in small packets, no promises', { laptop: 'In a call with Sam', url: 'Call' }],
     [
       'One packet, passed from router to router',
       { laptop: 'Sending a packet', url: 'example.net', router: '192.168.1.1 inside\n198.51.100.23 outside' },
