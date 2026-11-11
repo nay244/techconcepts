@@ -1832,7 +1832,6 @@ ol.explain__sources li::marker {
 @media (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
   :root.js .console {
     --mid-words: 348px;
-    /* Learn and Practice take D1's words column: 380px at 900 wide, 504px at 1024, 560px from 1083. */
     --mid-tabs: 48px;
     --mid-log: clamp(200px, 26vh, 252px);
     position: relative;
@@ -1860,6 +1859,7 @@ ol.explain__sources li::marker {
   :root.js .topbar__crumb > em {
     display: none;
   }
+  /* Learn and Practice take D1's words column: 380px at 900 wide, 504px at 1024, 560px from 1080. */
   :root.js .console[data-reading] {
     --mid-words: max(348px, min(560px, 100vw - 24px - 496px));
   }

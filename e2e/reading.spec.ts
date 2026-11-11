@@ -253,11 +253,18 @@ for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024,
       expect((await box(page, '.console__log')).height, `${label}: log`).toBe(62);
       expect(await page.locator('.log__head').first().evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).paddingBottom]), `${label}: head padding`).toEqual(['8px', '8px']);
       expect(await pageOverflow(page), label).toEqual({ down: 0, sideways: 0 });
-      // No lesson table scrolls sideways.
-      const scrolling = await page.evaluate(() =>
-        [...document.querySelectorAll('.console table, .console__panel, .console__scene')].filter((el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).display !== 'none').length,
-      );
-      expect(scrolling, `${label}: sideways scroll`).toBe(0);
+    }
+    // No lesson table or rule list scrolls sideways: DHCP has a table (.tpanel), Firewalls a rule list (.rpanel).
+    for (const [slug, selector] of [['dhcp', '.tpanel'], ['firewalls', '.rpanel']] as const) {
+      for (const place of ['learn', 'practice'] as const) {
+        await openAt(page, slug, place);
+        const found = await page.evaluate(() => {
+          const panels = [...document.querySelectorAll('.tpanel, .rpanel')].filter((el) => getComputedStyle(el).display !== 'none');
+          return { panels: panels.length, scrolling: panels.filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.className) };
+        });
+        expect(await page.locator(selector).count(), `${slug} has ${selector}`).toBeGreaterThan(0);
+        expect(found.scrolling, `${slug} ${place} at ${size.width}: sideways scroll`).toEqual([]);
+      }
     }
     // Steps fills the words column, down to the folded log.
     await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true }).click();
@@ -277,6 +284,21 @@ for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024,
     await button.click();
     await expect(button).toHaveText('Show log');
     expect((await box(page, '.console__log')).height).toBe(62);
+  });
+}
+
+/** Check 15, the phone layout grown (upright, or under 900px wide): no fold button, and the words are not widened. */
+for (const size of [{ width: 768, height: 1024 }, { width: 899, height: 1200 }]) {
+  test(`at ${size.width}×${size.height} Learn has no "Show log" button and the words keep the phone layout's width`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await openAt(page, 'dhcp', 'learn');
+    const words = await box(page, '.console__explain');
+    expect(words.width, 'the words span the window, as the grown phone layout has them').toBe(size.width);
+    expect(await page.locator('.console__explain').evaluate((el) => getComputedStyle(el).paddingInlineStart)).toBe(`${Math.max(22, (size.width - 520) / 2)}px`);
+    // The log is a tab here: with it shown, there is no fold button and its rows are not folded away.
+    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Log', exact: true }).click();
+    await expect(page.locator('.log__scroll')).toBeVisible();
+    await expect(page.locator('.log__fold')).toBeHidden();
   });
 }
 

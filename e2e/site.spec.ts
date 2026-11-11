@@ -74,12 +74,14 @@ async function finishLesson(page: Page, path: string): Promise<void> {
 test.describe('desktop', () => {
   requireLessons(LESSONS);
 
-  test('the share image has its description: og:image:alt once, straight after og:image, on Home and a lesson page', async ({ page }) => {
+  test('the share image has its description: og:image:alt once, straight after og:image, on a page of every template', async ({ page }) => {
     const words = 'TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside.';
-    for (const path of ['/', '/networking/dhcp']) {
-      await open(page, path);
-      await expect(page.locator('meta[property="og:image:alt"]')).toHaveCount(1);
-      await expect(page.locator('meta[property="og:image"] + meta[property="og:image:alt"]')).toHaveAttribute('content', words);
+    // Home, the tracks page, a track, About, a lesson, and the 404 page.
+    for (const path of ['/', '/tracks', '/networking', '/about', '/networking/dhcp', '/this-page-does-not-exist']) {
+      await page.goto(path);
+      await hydrated(page);
+      await expect(page.locator('meta[property="og:image:alt"]'), path).toHaveCount(1);
+      await expect(page.locator('meta[property="og:image"] + meta[property="og:image:alt"]'), path).toHaveAttribute('content', words);
     }
   });
 
