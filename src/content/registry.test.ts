@@ -463,6 +463,14 @@ test('a fact-check issue stops the build and the tests', () => {
   expect(() => checkFactCheckReports([], {}, FIXTURE_SOURCES, 'production')).not.toThrow();
 });
 
+test('a re-check report with no cited lesson stops the build and the tests, and a registry with none behaves as before', () => {
+  const stray = { '../../docs/fact-checks/no-such-lesson.recheck.md': 'No header.' };
+  for (const mode of ['production', 'test']) {
+    expect(() => checkFactCheckReports([], {}, FIXTURE_SOURCES, mode, stray), mode).toThrow(/^Fact checks:\n- .*no-such-lesson\.recheck\.md: a re-check report with no cited lesson "no-such-lesson"/);
+  }
+  expect(() => checkFactCheckReports([], {}, FIXTURE_SOURCES, 'production', {})).not.toThrow();
+});
+
 test('astro dev warns of a fact-check issue instead, so a draft lesson can be previewed', () => {
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   try {

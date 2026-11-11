@@ -1,8 +1,10 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
 import { definedWith, defineTrack } from './define';
-import { checkFactChecks, checkUnpathedKinds, reportPath } from './factcheck/gate';
+import { checkedDate, checkFactChecks, checkUnpathedKinds, reportPath } from './factcheck/gate';
 import { parseReport } from './factcheck/report';
+import { recheckPath } from './factcheck/recheck';
+import { claimSheet } from './factcheck/sheet';
 import { GLOSSARY, type GlossaryEntry } from './glossary';
 import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
@@ -252,7 +254,8 @@ checkListings(lessonsBySlug, tracks);
 
 /**
  * Throws when any lesson in the cited shape lacks a current fact-check report in which every item passes, or when a
- * report has no cited lesson (`factcheck/gate.ts`). `reports` is keyed by path, as `import.meta.glob` gives them.
+ * report has no cited lesson (`factcheck/gate.ts`). `reports` is keyed by path, as `import.meta.glob` gives them; so is
+ * `rechecks`, the targeted re-checks beside them (`docs/fact-checks/<slug>.recheck.md`).
  *
  * `astro dev` (mode `development`) only warns, so the author can preview a lesson before it is checked. The build
  * (`production`) and the tests (`test`) still refuse it, so nothing unchecked ships.
@@ -262,8 +265,9 @@ export function checkFactCheckReports(
   reports: Record<string, string>,
   sources: SourceRegistry = SOURCES,
   mode: string = import.meta.env.MODE,
+  rechecks: Record<string, string> = {},
 ): void {
-  refuseOrWarn(checkFactChecks(lessons, reports, sources), mode, 'astro dev shows these lessons anyway; npm run build and the tests refuse them until the fact-checker passes them.');
+  refuseOrWarn(checkFactChecks(lessons, reports, sources, rechecks), mode, 'astro dev shows these lessons anyway; npm run build and the tests refuse them until the fact-checker passes them.');
 }
 
 /**
@@ -289,19 +293,26 @@ function refuseOrWarn(issues: string[], mode: string, devNote: string): void {
   console.warn(`${message}\n${devNote}`);
 }
 
-// Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not.
-const reports = import.meta.glob<string>('../../docs/fact-checks/*.md', { query: '?raw', import: 'default', eager: true });
-checkFactCheckReports(Object.values(lessonsBySlug), reports);
+// Only reports directly in docs/fact-checks/ are lessons' reports: the canary's, in a folder of its own, is not. A
+// re-check is `<slug>.recheck.md` beside the full report, read by its own glob.
+const reports = import.meta.glob<string>(['../../docs/fact-checks/*.md', '!../../docs/fact-checks/*.recheck.md'], { query: '?raw', import: 'default', eager: true });
+const rechecks = import.meta.glob<string>('../../docs/fact-checks/*.recheck.md', { query: '?raw', import: 'default', eager: true });
+checkFactCheckReports(Object.values(lessonsBySlug), reports, undefined, undefined, rechecks);
 checkUnpathedContent(GLOSSARY, tracks);
 
 /**
- * The day a lesson passed its fact-check, as its report gives it ('2026-11-08'); null for a lesson not checked yet: a
- * legacy lesson, or in `astro dev` a cited one whose report is missing or cannot be read.
+ * The day a lesson passed its fact-check, as its report gives it ('2026-11-08'), or the later of that and its re-check's
+ * when the pair passes the gate; null for a lesson not checked yet: a legacy lesson, or in `astro dev` a cited one whose
+ * report is missing or cannot be read.
  */
 export function checkedOn(slug: string): string | null {
-  if (lessonsBySlug[slug]?.origin !== 'cited') return null;
-  const raw = Object.entries(reports).find(([path]) => path.endsWith(`/${reportPath(slug)}`))?.[1];
-  return raw === undefined ? null : (parseReport(raw).header?.checked ?? null);
+  const lesson = lessonsBySlug[slug];
+  if (lesson?.origin !== 'cited') return null;
+  const full = Object.entries(reports).find(([path]) => path.endsWith(`/${reportPath(slug)}`))?.[1];
+  const recheck = Object.entries(rechecks).find(([path]) => path.endsWith(`/${recheckPath(slug)}`))?.[1];
+  // The sheet is only needed to judge a pair; a lesson with no re-check is read as it always was.
+  if (full === undefined || recheck === undefined) return full === undefined ? null : (parseReport(full).header?.checked ?? null);
+  return checkedDate(claimSheet(lesson, SOURCES), full, recheck);
 }
 
 /** The tracks that list a lesson, in `tracks` order; empty for a slug no track lists. */

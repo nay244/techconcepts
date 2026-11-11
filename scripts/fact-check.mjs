@@ -3,6 +3,11 @@
 //   npm run fact-check -- <slug> --check   "Report OK: <path>", or every issue with the report, one per line
 //   npm run fact-check -- <slug> --quotes <folder>   looks for every quoted passage in the folder's source files;
 //                                          "Quotes OK: ...", with the record written into the report, or every problem
+//   npm run fact-check -- <slug> --stamp   writes the items record into a full report that predates it (only when its
+//                                          hash is the lesson's hash now), and changes nothing else
+//   npm run fact-check -- <slug> --recheck            the targeted re-check's sheet, or why there can be none
+//   npm run fact-check -- <slug> --recheck --quotes <folder>   the quote check on the re-check report
+//   npm run fact-check -- <slug> --recheck --check    the gate's rules on the full report and its re-check
 // The work is in src/content/factcheck/cli.ts. Lessons are TypeScript that Node cannot load on its own, so this script
 // starts Vite with no config file and no server, loads that module through it, prints its output, and exits with its
 // code (0 when all is well, 1 otherwise).

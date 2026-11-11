@@ -107,11 +107,11 @@ describe('--quotes <folder>', () => {
     };
   }
 
-  test('success writes the record into the report and says so on one line', async () => {
+  test('success writes the record (and the items record, as the report\'s hash is the sheet\'s) into the report and says so on one line', async () => {
     const { deps: d, written } = quoteDeps(quoting());
     const run = await runFactCheck([SLUG, '--quotes', 'tmp'], d);
     const count = keysNeedingQuotes(sheet()).length;
-    expect(run).toEqual({ code: 0, out: `Quotes OK: ${count} quotes in 2 sources; record written to ${path}` });
+    expect(run).toEqual({ code: 0, out: `Quotes OK: ${count} quotes in 2 sources; record written to ${path}, with the items record (${sheet().items.length} items)` });
     expect(Object.keys(written)).toEqual([path]);
     expect(parseReport(written[path]!).header!.quotes).toMatchObject({ checked: '2026-11-11', count });
   });

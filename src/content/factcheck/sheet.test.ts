@@ -4,7 +4,8 @@ import { validateLesson } from '../define';
 import type { Lesson } from '../schema';
 import { cite, defineSources } from '../sources';
 import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
-import { claimSheet, renderSheet } from './sheet';
+import { sha256 } from './sha256';
+import { claimSheet, itemHash, itemHashes, renderSheet, type SheetItem } from './sheet';
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has the fixture's places and cues.
 vi.mock('../../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('../test-fixtures')).FIXTURE_PARTS }));
@@ -173,4 +174,78 @@ test('the rendered sheet prints each citation as a quote bullet to copy, and the
   const c = item.cite[0]!;
   expect(text).toContain(`- \`${c.source}\` §${c.section}\n  ${c.label}: ${c.url}`);
   expect(sheet.hash).toBe('8030bdf5881458e6b0116a075ca2a4b72d3a51429150e316545070458f63df37');
+});
+
+// G4: an item's own hash, for the targeted re-check (plan.md, "Targeted re-checks").
+
+const anItem = (): SheetItem => sheetOf().items.find((i) => i.kind === 'claim' && i.cite.length > 1)!;
+const withCite = (item: SheetItem, edit: (c: SheetItem['cite'][number]) => void): SheetItem => {
+  const copy = structuredClone(item);
+  edit(copy.cite[0]!);
+  return copy;
+};
+
+test('item hash 1: an item\'s hash is 64 lowercase hex, and the same item under another key has the same hash', () => {
+  const item = anItem();
+  expect(itemHash(item)).toMatch(/^[0-9a-f]{64}$/);
+  expect(itemHash({ ...item, key: 'units[7].elsewhere' })).toBe(itemHash(item));
+});
+
+test('item hash 2: it is the SHA-256 of the canonical form of the kind, words, citations and traces, without the key', () => {
+  const item = anItem();
+  expect(itemHash(item)).toBe(sha256(JSON.stringify(sortedDeep({ kind: item.kind, content: item.content, cite: item.cite, traces: item.traces }))));
+});
+
+/** The reference form: every object's keys sorted, and empty lists, empty records and undefined left out. */
+function sortedDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortedDeep);
+  if (typeof value === 'object' && value !== null) {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((k) => [k, sortedDeep((value as Record<string, unknown>)[k])] as const)
+        .filter(([, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0) && !(typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length === 0)),
+    );
+  }
+  return value;
+}
+
+test('item hash 3: the kind, the words, each part of a citation and the traces each change it', () => {
+  const item = anItem();
+  const before = itemHash(item);
+  const traced = sheetOf().items.find((i) => i.kind === 'traced' && i.traces.length > 1)!;
+  const edits: [string, SheetItem][] = [
+    ['the kind', { ...item, kind: 'analogy' }],
+    ['the words', { ...item, content: { text: 'Other words.' } }],
+    ['a citation source', withCite(item, (c) => { c.source = 'another-source'; })],
+    ['a citation section', withCite(item, (c) => { c.section = '9.9'; })],
+    ['a citation url', withCite(item, (c) => { c.url = 'https://example.org/x'; })],
+    ['a citation label', withCite(item, (c) => { c.label = 'Another label'; })],
+    ['a citation defining marker', withCite(item, (c) => { c.defining = c.defining === true ? undefined : true; })],
+    ['a citation removed', { ...item, cite: item.cite.slice(1) }],
+  ];
+  for (const [what, changedItem] of edits) expect(itemHash(changedItem), what).not.toBe(before);
+  expect(itemHash({ ...traced, traces: [...traced.traces].reverse() }), 'the traces').not.toBe(itemHash(traced));
+  expect(itemHash({ ...traced, traces: traced.traces.slice(1) }), 'a trace removed').not.toBe(itemHash(traced));
+});
+
+test('item hash 4: a display-only setting leaves it as it was, and an empty list or record is left out', () => {
+  const before = itemHashes(sheetOf());
+  const edit = (l: Lesson) => { unit(l).scene.log.columns[0]!.width = 120; unit(l).scene.views = ['network']; };
+  expect(itemHashes(sheetOf(changed(edit)))).toEqual(before);
+  const item = anItem();
+  expect(itemHash({ ...item, traces: [] })).toBe(itemHash(item));
+});
+
+test('item hash 5: itemHashes has one hash for every key of the sheet', () => {
+  const sheet = sheetOf();
+  const hashes = itemHashes(sheet);
+  expect(Object.keys(hashes)).toEqual(sheet.items.map((i) => i.key));
+  for (const item of sheet.items) expect(hashes[item.key]).toBe(itemHash(item));
+});
+
+test('the sheet\'s own hash and its rendering are as they were before item hashes: not a character changed', () => {
+  const sheet = sheetOf();
+  expect(sheet.hash).toBe('8030bdf5881458e6b0116a075ca2a4b72d3a51429150e316545070458f63df37');
+  expect(sha256(renderSheet(sheet))).toBe('32e3de812eeb45839d9bd889b05180d5b0b7920d9800a9cc8429b10843489f56');
 });

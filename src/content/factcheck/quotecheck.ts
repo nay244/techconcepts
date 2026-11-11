@@ -1,7 +1,7 @@
 import { evenWhitespace, keysNeedingQuotes, parseQuotes, quotesDigest, type Quote } from './quotes';
-import { HEADER, parseReport, type ReportHeader } from './report';
+import { HEADER, parseRecheck, parseReport, type ReportHeader } from './report';
 import { sha256 } from './sha256';
-import type { ClaimSheet } from './sheet';
+import { itemHashes, type ClaimSheet } from './sheet';
 
 /**
  * The quote check: every passage a report quotes is looked for in the saved text of the source it names, and when all
@@ -20,7 +20,8 @@ export type PageText = (name: string, raw: string) => string;
 
 export type QuoteRecord = NonNullable<ReportHeader['quotes']>;
 
-export type QuoteCheck = { issues: string[]; record?: undefined; report?: undefined } | { issues: []; record: QuoteRecord; report: string };
+/** On success: the record, the report's new text, and the items record too when the quote check wrote one (a full report whose hash is the sheet's). */
+export type QuoteCheck = { issues: string[]; record?: undefined; report?: undefined; items?: undefined } | { issues: []; record: QuoteRecord; report: string; items?: Record<string, string> };
 
 /** The extensions a source file may have: a web page or registry XML as saved, or plain text. */
 const EXTENSIONS = ['txt', 'html', 'xml'] as const;
@@ -146,28 +147,43 @@ function topLevelValue(json: string, key: string): { start: number; end: number 
   return undefined;
 }
 
-/** The header's JSON with `record` as its `quotes` value, replacing an earlier one; everything else as it was. */
-function withRecord(json: string, record: QuoteRecord): string {
+/** The header's JSON with `value` as the top-level `key`, replacing an earlier one; everything else as it was. */
+function withValue(json: string, key: string, value: unknown): string {
   const eol = json.includes('\r\n') ? '\r\n' : '\n';
-  const value = JSON.stringify(record, null, 2).replace(/\n/g, `${eol}  `);
-  const old = topLevelValue(json, 'quotes');
-  if (old !== undefined) return json.slice(0, old.start) + value + json.slice(old.end);
+  const text = JSON.stringify(value, null, 2).replace(/\n/g, `${eol}  `);
+  const old = topLevelValue(json, key);
+  if (old !== undefined) return json.slice(0, old.start) + text + json.slice(old.end);
   const close = json.lastIndexOf('}');
   const head = json.slice(0, close);
   const kept = head.trimEnd();
-  return `${kept},${eol}  "quotes": ${value}${head.slice(kept.length)}${json.slice(close)}`;
+  return `${kept},${eol}  ${JSON.stringify(key)}: ${text}${head.slice(kept.length)}${json.slice(close)}`;
+}
+
+/** The report with `value` as the header's top-level `key` and every other byte as it was. */
+function withHeaderValue(raw: string, key: string, value: unknown): string {
+  const match = HEADER.exec(raw)!;
+  const start = match.index + match[0].indexOf('\n') + 1;
+  return raw.slice(0, start) + withValue(match[1]!, key, value) + raw.slice(start + match[1]!.length);
+}
+
+/** A full report with the items record in its header, and every other byte as it was (`--stamp`). */
+export function stampItems(raw: string, items: Readonly<Record<string, string>>): string {
+  return withHeaderValue(raw, 'items', items);
 }
 
 /**
  * Checks a report's quotes against the folder's files. Returns every problem, or, when there is none, the record and
- * the report's new text: the header with the record and every other byte as it was.
+ * the report's new text: the header with the record and every other byte as it was. `recheck` says the report is a
+ * re-check, read by its own rules (`parseQuotes`). On a full report whose hash is the sheet's hash the header also gets
+ * the `items` record (`itemHashes`), which a later targeted re-check reads.
  */
-export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: readonly SourceFile[]; today: string; pageText: PageText }): QuoteCheck {
-  const { raw, sheet, files, today, pageText } = input;
-  const parsed = parseQuotes(raw, sheet);
+export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: readonly SourceFile[]; today: string; pageText: PageText; recheck?: boolean }): QuoteCheck {
+  const { raw, sheet, files, today, pageText, recheck = false } = input;
+  const parsed = parseQuotes(raw, sheet, recheck ? 'recheck' : 'full');
   if (parsed.quotes === undefined) return { issues: parsed.issues };
   const quotes = parsed.quotes;
-  const { verdicts, checked: reportChecked } = parseReport(raw).header!;
+  const header = recheck ? parseRecheck(raw).header! : parseReport(raw).header!;
+  const { verdicts, checked: reportChecked } = header;
   const issues: string[] = [];
 
   /** Each quoted source's file, its text as read (for the hash), and the text a reader sees of it, evened out. */
@@ -233,8 +249,7 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
     digest: quotesDigest(quotes),
     files: Object.fromEntries([...found].map(([source, file]) => [source, sha256(file.read)])),
   };
-  const match = HEADER.exec(raw)!;
-  const start = match.index + match[0].indexOf('\n') + 1;
-  const report = raw.slice(0, start) + withRecord(match[1]!, record) + raw.slice(start + match[1]!.length);
-  return { issues: [], record, report };
+  const items = !recheck && header.hash === sheet.hash ? itemHashes(sheet) : undefined;
+  const written = withHeaderValue(raw, 'quotes', record);
+  return { issues: [], record, report: items === undefined ? written : withHeaderValue(written, 'items', items), ...(items === undefined ? {} : { items }) };
 }

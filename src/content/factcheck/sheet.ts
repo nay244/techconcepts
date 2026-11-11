@@ -119,6 +119,22 @@ function canonical(value: unknown): string {
   return JSON.stringify(sorted(value));
 }
 
+/**
+ * One item's own hash, for the targeted re-check (docs/content-model.md §8): SHA-256 of the canonical form of its kind,
+ * its words (`content`), its citations (source, section, url, label and defining marker) and its traces, and not its
+ * key. The same rules as the sheet's own hash hold: key order, empty lists and empty records change nothing, and the
+ * display-only settings are already out of `content`. A key is left out so an item that only moved (an inserted part
+ * shifted its index) keeps its hash.
+ */
+export function itemHash(item: SheetItem): string {
+  return sha256(canonical({ kind: item.kind, content: item.content, cite: item.cite, traces: item.traces }));
+}
+
+/** Every item's hash by its key, in the sheet's order: the `items` record of a full report's header. */
+export function itemHashes(sheet: ClaimSheet): Record<string, string> {
+  return Object.fromEntries(sheet.items.map((item) => [item.key, itemHash(item)]));
+}
+
 export function claimSheet(lesson: Lesson, sources: SourceRegistry): ClaimSheet {
   const items: SheetItem[] = [{ key: 'title', kind: 'unbacked', content: { title: lesson.title }, cite: [], traces: [] }];
   lesson.units.forEach((u, i) => {
@@ -148,24 +164,31 @@ export function claimSheet(lesson: Lesson, sources: SourceRegistry): ClaimSheet 
   return { ...body, hash: sha256(canonical(body)) };
 }
 
+/** A source's line on a printed sheet. */
+export function sourceLine(s: SourceEntry): string {
+  return `- \`${s.id}\` (${s.kind}${s.version ? `, version ${s.version}` : ''}): ${s.short}, ${s.title}. ${s.publisher}. ${s.url}`;
+}
+
+/** An item as the fact-checker reads it on a printed sheet: its heading, kind, content, citations and traces. */
+export function itemLines(item: SheetItem): string[] {
+  const lines = ['', `### ${item.key}`, '', `Kind: ${item.kind}`, '', '```json', JSON.stringify(item.content, null, 2), '```'];
+  if (item.cite.length > 0) {
+    lines.push('', 'Citations:');
+    for (const c of item.cite) {
+      lines.push(`- \`${c.source}\` §${c.section}`, `  ${c.label}: ${c.url}${c.defining === true ? ' (defining standard)' : ''}`);
+    }
+  }
+  if (item.traces.length > 0) lines.push('', `Traces: ${item.traces.join(', ')}`);
+  return lines;
+}
+
 /** The sheet as Markdown, for the fact-checker to read: the sources, then every item, then the overrides. */
 export function renderSheet(sheet: ClaimSheet): string {
   const lines = [`# Claim sheet: ${sheet.slug}`, '', `Hash: \`${sheet.hash}\``, '', '## Sources', ''];
-  for (const s of sheet.sources) {
-    lines.push(`- \`${s.id}\` (${s.kind}${s.version ? `, version ${s.version}` : ''}): ${s.short}, ${s.title}. ${s.publisher}. ${s.url}`);
-  }
+  for (const s of sheet.sources) lines.push(sourceLine(s));
   if (sheet.sources.length === 0) lines.push('- None.');
   lines.push('', `## Items (${sheet.items.length})`);
-  for (const item of sheet.items) {
-    lines.push('', `### ${item.key}`, '', `Kind: ${item.kind}`, '', '```json', JSON.stringify(item.content, null, 2), '```');
-    if (item.cite.length > 0) {
-      lines.push('', 'Citations:');
-      for (const c of item.cite) {
-        lines.push(`- \`${c.source}\` §${c.section}`, `  ${c.label}: ${c.url}${c.defining === true ? ' (defining standard)' : ''}`);
-      }
-    }
-    if (item.traces.length > 0) lines.push('', `Traces: ${item.traces.join(', ')}`);
-  }
+  for (const item of sheet.items) lines.push(...itemLines(item));
   lines.push('', '## Limit overrides', '');
   for (const o of sheet.overrides) lines.push(`- ${o.limit}: ${o.reason}`);
   if (sheet.overrides.length === 0) lines.push('- None.');

@@ -1,6 +1,6 @@
-import { parseReport, VERDICTS } from './report';
+import { parseRecheck, parseReport, VERDICTS } from './report';
 import { sha256 } from './sha256';
-import type { ClaimSheet } from './sheet';
+import type { ClaimSheet, SheetItem } from './sheet';
 
 /**
  * The quotes in a fact-check report. Under a claim's heading, `### <key> — <verdict>`, each quote is a bullet naming the
@@ -38,12 +38,21 @@ export const evenWhitespace = (text: string): string => text.replace(/\s+/g, ' '
 /** The sheet keys that need a quote when their verdict passes: every item that has citations. */
 export const keysNeedingQuotes = (sheet: ClaimSheet): string[] => sheet.items.filter((item) => item.cite.length > 0).map((item) => item.key);
 
+/**
+ * What a report is read as: a `full` report, whose quotes sit under items of the sheet; a `recheck` report (its header
+ * has `base`), whose quotes sit under items it gave a verdict for, which are on the sheet too; or a `recorded` full
+ * report that has a re-check beside it, whose quotes are read as they were written: under the keys of its own
+ * verdicts, which the lesson may no longer have, and with no comparison to the lesson's citations.
+ */
+export type QuoteMode = 'full' | 'recheck' | 'recorded';
+
 /** Reads a report's quotes in order, or names every problem that stops them being read. */
-export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; issues: [] } | { quotes?: undefined; issues: string[] } {
-  const parsed = parseReport(raw);
+export function parseQuotes(raw: string, sheet: ClaimSheet, mode: QuoteMode = 'full'): { quotes: Quote[]; issues: [] } | { quotes?: undefined; issues: string[] } {
+  const parsed = mode === 'recheck' ? parseRecheck(raw) : parseReport(raw);
   if (parsed.header === undefined) return { issues: parsed.issues };
   const verdicts = parsed.header.verdicts;
-  const items = new Map(sheet.items.map((item) => [item.key, item]));
+  /** The items a quote may sit under; `null` where the lesson's citations are not compared (`recorded`). */
+  const items = new Map<string, SheetItem | null>(mode === 'recorded' ? Object.keys(verdicts).map((key) => [key, null]) : sheet.items.map((item) => [item.key, item]));
   const seen = new Set<string>();
   const quotes: Quote[] = [];
   const issues: string[] = [];
@@ -53,7 +62,7 @@ export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; 
   let key: string | undefined;
   /** Under a `###` heading that could not be read: its own problem is named, so its lines are not named again. */
   let unread = false;
-  let item: ClaimSheet['items'][number] | undefined;
+  let item: SheetItem | null | undefined;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     if (/^###[ \t]/.test(line)) {
@@ -66,7 +75,13 @@ export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; 
       }
       const [, name, verdict] = heading as unknown as [string, string, string];
       if (!items.has(name)) {
-        issues.push(`"${name}" is not an item on the claim sheet; fix the heading to a key the sheet lists, or remove the section`);
+        issues.push(
+          mode === 'recorded'
+            ? `"${name}" is not an item this report gave a verdict for; fix the heading to one of its keys, or remove the section`
+            : `"${name}" is not an item on the claim sheet; fix the heading to a key the sheet lists, or remove the section`,
+        );
+      } else if (mode === 'recheck' && !Object.hasOwn(verdicts, name)) {
+        issues.push(`"${name}" is not an item this re-check judged; a re-check quotes only the items it gave a verdict for, so remove the section, or judge the item`);
       } else if (seen.has(name)) {
         issues.push(`"${name}" has two headings; merge them into one`);
       } else {
@@ -122,6 +137,13 @@ export function parseQuotes(raw: string, sheet: ClaimSheet): { quotes: Quote[]; 
     }
     const words = evenWhitespace(passage.join(' '));
     const where = `"${key}", quote from ${source} §${section}`;
+    if (item === null) {
+      // `recorded`: the lesson's citations are not compared, so only the words are looked at.
+      if (passage.length === 0) issues.push(`${where}, has no passage; put the source's words on the lines after the bullet, each starting with ">"`);
+      else if (words === '') issues.push(`${where}, has an empty passage; put the source's words after the ">"`);
+      if (words !== '') quotes.push({ key, source, section, passage: words });
+      continue;
+    }
     if (item.cite.length === 0) {
       issues.push(`${where}: this item cites nothing, so it quotes nothing; write the line as a "Note:" bullet, or take it out`);
       continue;

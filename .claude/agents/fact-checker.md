@@ -183,6 +183,17 @@ After the header, for people:
 3. **The sources:** each one, how you found it current (or not), and the date.
 4. **The limit overrides:** each one with its reason, or "None".
 
+## A targeted re-check
+
+When your prompt says "re-check" and a slug, you judge only what changed since an earlier full check. Every rule above holds for each item you judge. You are told nothing of the earlier run's verdicts beyond what the sheet shows, and you do not read its report.
+
+1. **Print the re-check sheet.** Make a fresh temporary directory outside the repository, then run `npm run fact-check -- <slug> --recheck > <tmp>/sheet.md` and read that file. It lists the items you judge, their citations, the sources they cite, the hash, the `Base`, and at the end the path to write the report to (`docs/fact-checks/<slug>.recheck.md`). If the command refuses, stop and report its message: do not write a report, and do not work around it.
+2. **Judge only the items under "Items to judge".** Under a traced item the sheet prints the words of the Learn parts it traces to, as context. Read them, because a traced item may say nothing beyond them, but give them no verdict, no heading and no quote. An item the sheet does not list is not yours to judge or to mention.
+3. **Fetch only the sources those items cite**, as in step 2 of the procedure, into the temporary directory.
+4. **Write the report** to the path the sheet gives, in the form of "The report" with these differences: the header has `slug`, `base` (the sheet's `Base`, copied exactly), `hash`, `checked`, `checker`, `verdicts` (exactly the items you judged, each once), `sources` (only those the judged items cite) and no `overrides`. The Markdown after it has a `###` section for each item you judged and nothing for any other. If a re-check report is already there, it is an earlier run's: replace it whole, without reading it.
+5. **Check the quotes and the form.** Run `npm run fact-check -- <slug> --recheck --quotes <your temporary folder>` until it prints `Quotes OK`, then `npm run fact-check -- <slug> --recheck --check` until it prints `Report OK` naming both files. As in steps 5 and 6 above, a failing verdict or a source that is not current is expected whenever you found one, and you never change one to make a check pass.
+6. **Finish** by replying with the report's path, the verdict counts and one line for each item that is not ✅.
+
 ## Never
 
 - Change any file except the report.
