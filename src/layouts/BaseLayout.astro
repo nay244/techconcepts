@@ -13,6 +13,8 @@ interface Props {
   title: string;
   description: string;
   image?: string;
+  /** What the share image shows, for a reader who cannot see it. Left out with a page's own `image`, no description is given. */
+  imageAlt?: string;
   /**
    * The site header and footer around the page. The lesson page turns them off:
    * its console has its own top bar and owns the whole screen, and marks its own
@@ -42,12 +44,15 @@ interface Props {
 }
 
 const SITE_NAME = 'TechConcepts';
-const { title, description, image = '/og-default.png', chrome = true, current, overHero = false, canonical, footer = true, split = false } = Astro.props;
+const DEFAULT_IMAGE = '/og-default.png';
+const DEFAULT_IMAGE_ALT = 'TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside.';
+const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, current, overHero = false, canonical, footer = true, split = false } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
 // Social crawlers need an absolute image URL.
 const beacon = analyticsBeacon(analyticsToken);
+const altText = imageAlt ?? (image === DEFAULT_IMAGE ? DEFAULT_IMAGE_ALT : undefined);
 const imageUrl = new URL(image, Astro.site ?? Astro.url).href;
 // The page's canonical absolute address on the live site (its own path unless it names another), in the slash-less
 // form it is served at. The canonical link and og:url say the same address.
@@ -81,6 +86,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={imageUrl} />
+    {altText && <meta property="og:image:alt" content={altText} />}
     {canonical !== null && <link rel="canonical" href={pageUrl} />}
     <meta property="og:url" content={pageUrl} />
     <meta property="og:type" content="website" />

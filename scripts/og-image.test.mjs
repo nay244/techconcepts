@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { tokens } from '../src/styles/tokens.ts';
 import { LOGO_SHAPES } from '../src/art/logo.ts';
@@ -44,6 +44,27 @@ test("the card's HTML holds the logo's three paths and the figure Home draws", a
 // 11. Every page names the image.
 test('every page\'s og:image still names /og-default.png', () => {
   const layout = read('../src/layouts/BaseLayout.astro');
-  expect(layout).toMatch(/image = '\/og-default\.png'/);
+  expect(layout).toMatch(/DEFAULT_IMAGE = '\/og-default\.png'/);
   expect(layout).toMatch(/<meta property="og:image" content=\{imageUrl\} \/>/);
+});
+
+// 12. The image has a description for a reader who cannot see it.
+const ALT = 'TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside.';
+
+test("BaseLayout gives og:image:alt right after og:image, only for the default image or a page's own imageAlt", () => {
+  const layout = read('../src/layouts/BaseLayout.astro');
+  expect(layout).toContain(`'${ALT}'`);
+  expect(layout).toMatch(/imageAlt\?: string/);
+  expect(layout).toMatch(/<meta property="og:image" content=\{imageUrl\} \/>\s*\{altText && <meta property="og:image:alt" content=\{altText\} \/>\}/);
+  expect(layout).toMatch(/altText = imageAlt \?\? \(image === DEFAULT_IMAGE \? DEFAULT_IMAGE_ALT : undefined\)/);
+});
+
+const dist = new URL('../dist/', import.meta.url);
+test.skipIf(!existsSync(new URL('index.html', dist)))('built pages (after npm run build) carry the description once', () => {
+  const pages = ['index.html', 'networking/dhcp/index.html'];
+  for (const page of pages) {
+    const html = readFileSync(new URL(page, dist), 'utf8');
+    expect(html.match(/property="og:image:alt"/g)).toHaveLength(1);
+    expect(html).toContain(`<meta property="og:image:alt" content="${ALT}"`);
+  }
 });
