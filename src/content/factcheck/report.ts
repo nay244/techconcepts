@@ -60,6 +60,7 @@ export function parseReport(raw: string): { header: ReportHeader; issues: [] } |
   const twice = [
     ...repeatedKeys(match[1]!, Object.keys(parsed.data.verdicts)).map((k) => `its header's verdicts list "${k}" more than once`),
     ...repeated(parsed.data.sources.map((s) => s.id)).map((id) => `its header's sources list "${id}" more than once`),
+    ...repeated(topLevelKeys(match[1]!)).map((k) => `its header has "${k}" more than once`),
   ];
   if (twice.length > 0) return { issues: twice };
   return { header: parsed.data, issues: [] };
@@ -82,4 +83,21 @@ function repeatedKeys(json: string, keys: readonly string[]): string[] {
   const wanted = new Set(keys);
   const written = [...json.matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g)].map((m) => JSON.parse(`"${m[1]}"`) as string);
   return repeated(written.filter((k) => wanted.has(k)));
+}
+
+/** The keys the header's JSON text writes directly in its own object, in order, decoded; `JSON.parse` keeps only the last of two equal ones. */
+function topLevelKeys(json: string): string[] {
+  const keys: string[] = [];
+  let depth = 0;
+  for (let i = 0; i < json.length; i++) {
+    const ch = json[i]!;
+    if (ch === '"') {
+      let j = i + 1;
+      while (json[j] !== '"') j += json[j] === '\\' ? 2 : 1;
+      if (depth === 1 && /^\s*:/.test(json.slice(j + 1))) keys.push(JSON.parse(json.slice(i, j + 1)) as string);
+      i = j;
+    } else if (ch === '{' || ch === '[') depth++;
+    else if (ch === '}' || ch === ']') depth--;
+  }
+  return keys;
 }

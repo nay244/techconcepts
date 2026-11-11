@@ -15,6 +15,9 @@ export interface SourceFile {
   text: string;
 }
 
+/** Takes the text from a saved `.html` or `.xml` file (see pagetext.ts, which needs jsdom, so the command passes it in). */
+export type PageText = (name: string, raw: string) => string;
+
 export type QuoteRecord = NonNullable<ReportHeader['quotes']>;
 
 export type QuoteCheck = { issues: string[]; record?: undefined; report?: undefined } | { issues: []; record: QuoteRecord; report: string };
@@ -22,61 +25,62 @@ export type QuoteCheck = { issues: string[]; record?: undefined; report?: undefi
 /** The extensions a source file may have: a web page or registry XML as saved, or plain text. */
 const EXTENSIONS = ['txt', 'html', 'xml'] as const;
 
-/** Tags that end a line of text, so the words either side of one are not run together. */
-const BLOCK_TAG = /<\/?(?:p|div|br|hr|li|ul|ol|tr|td|th|table|thead|tbody|h[1-6]|section|article|header|footer|nav|aside|main|pre|blockquote|dl|dt|dd|figure|figcaption|form|title)\b[^>]*>/gi;
+/** A line-end break is kept in the evened-out source as this mark, so each break can be joined or kept on its own. */
+const BREAK = '';
 
-const NAMED_ENTITIES: Record<string, string> = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', shy: '­', ndash: '–', mdash: '—', hellip: '…',
-  lsquo: '‘', rsquo: '’', ldquo: '“', rdquo: '”', laquo: '«', raquo: '»', bull: '•', middot: '·', copy: '©', reg: '®',
-  trade: '™', sect: '§', para: '¶', times: '×', divide: '÷', deg: '°', plusmn: '±', minus: '−', hyphen: '‐', larr: '←',
-  rarr: '→', harr: '↔', le: '≤', ge: '≥', ne: '≠', micro: 'µ', euro: '€', pound: '£', cent: '¢', yen: '¥',
-};
-
-const decodeEntities = (text: string): string =>
-  text.replace(/&(?:#(\d+)|#[xX]([0-9a-fA-F]+)|([A-Za-z][A-Za-z0-9]*));/g, (whole, dec?: string, hex?: string, name?: string) => {
-    if (name !== undefined) return NAMED_ENTITIES[name] ?? whole;
-    const code = dec !== undefined ? Number(dec) : parseInt(hex!, 16);
-    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
-  });
-
-/** The text of a source file: as it is for `.txt`; for `.html` and `.xml`, without tags, scripts and styles, entities decoded. */
-export function sourceText(name: string, text: string): string {
-  if (name.endsWith('.txt')) return text;
-  const bare = text
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, (_, inner: string) => inner.replace(/&/g, '&amp;').replace(/</g, '&lt;'))
-    .replace(BLOCK_TAG, ' ')
-    .replace(/<[^>]*>/g, '');
-  return decodeEntities(bare);
-}
+const LIGATURES: Record<string, string> = { 'ﬀ': 'ff', 'ﬁ': 'fi', 'ﬂ': 'fl', 'ﬃ': 'ffi', 'ﬄ': 'ffl', 'ﬅ': 'st', 'ﬆ': 'st' };
 
 /**
- * Both sides of a search are evened out the same way: compatibility forms (a ligature is its letters), soft hyphens
- * gone, curly quotes straight, every dash a hyphen, every run of whitespace one space. `hyphen` says what a hyphen at
- * a line's end becomes: `''` joins the word, `'-'` keeps the hyphen, and without it the hyphen stays beside a space.
+ * Both sides of a search are evened out the same way: every run of whitespace one space; soft hyphens (except one that
+ * ends a line) and zero-width characters removed; ligatures written as their letters; curly quotes and apostrophes
+ * straightened; every dash a hyphen. Nothing else is folded: a superscript, a prime or a fraction stays as it is.
+ * A hyphen or a soft hyphen that ends a line, inside a word, becomes a break mark (see `BREAK`), after the hyphen if
+ * it is a hyphen.
  */
-function even(text: string, hyphen?: '' | '-'): string {
-  const plain = text
-    .normalize('NFKC')
-    .replace(/­/g, '')
-    .replace(/[‘’‚‛′]/g, "'")
-    .replace(/[“”„‟″]/g, '"')
-    .replace(/[‐-―−﹘﹣－]/g, '-');
-  return evenWhitespace(hyphen === undefined ? plain : plain.replace(/(\p{L})-[ \t]*\r?\n[ \t]*(?=\p{L})/gu, `$1${hyphen}`));
+function even(text: string): string {
+  return evenWhitespace(
+    text
+      .replaceAll(BREAK, '')
+      .replace(/[ﬀ-ﬆ]/g, (c) => LIGATURES[c]!)
+      .replace(/[​‌‍⁠﻿]/g, '')
+      .replace(/[‘-‛]/g, "'")
+      .replace(/[“-‟]/g, '"')
+      .replace(/[‐-―]/g, '-')
+      .replace(/(\p{L})(-|­)[ \t]*(?:\r\n|\n|\r)[ \t]*(?=\p{L})/gu, (_, letter: string, dash: string) => letter + (dash === '-' ? '-' : '') + BREAK)
+      .replace(/­/g, ''),
+  );
 }
 
-/** The words a passage leaves out are marked `…`, `...` or `[…]`. Split before evening: NFKC turns `…` into `...`. */
+/** The words a passage leaves out are marked `…`, `...`, `[…]` or `[...]`. */
 const OMISSION = /\[…\]|\[\.\.\.\]|…|\.\.\./;
 const partsOf = (passage: string): string[] => passage.split(OMISSION).map((part) => even(part)).filter((part) => part !== '');
+const wordCount = (part: string): number => part.split(' ').length;
+
+const escape = (char: string): string => char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * A regular expression that finds a part in an evened-out source. Between two characters of a word the source may have
+ * a line-end break: a hyphen the passage left out (the word was joined) or kept, each break on its own. A part that
+ * begins or ends with a letter or a digit matches whole words only.
+ */
+function partPattern(part: string): RegExp {
+  const chars = [...part];
+  const body = chars.map((c, i) => (i > 0 && c !== ' ' && chars[i - 1] !== ' ' ? `(?:-?${BREAK})?` : '') + escape(c)).join('');
+  const word = /[\p{L}\p{N}]/u;
+  const before = word.test(chars[0]!) ? '(?<![\\p{L}\\p{N}])' : '';
+  const after = word.test(chars[chars.length - 1]!) ? '(?![\\p{L}\\p{N}])' : '';
+  return new RegExp(before + body + after, 'gu');
+}
 
 /** Which part, counted from 1, of a passage is not in the text, looking for the parts in order; 0 when all are. */
 function missingPart(text: string, parts: readonly string[]): number {
   let from = 0;
   for (const [i, part] of parts.entries()) {
-    const at = text.indexOf(part, from);
-    if (at < 0) return i + 1;
-    from = at + part.length;
+    const pattern = partPattern(part);
+    pattern.lastIndex = from;
+    const found = pattern.exec(text);
+    if (found === null) return i + 1;
+    from = found.index + found[0].length;
   }
   return 0;
 }
@@ -128,29 +132,30 @@ function topLevelValue(json: string, key: string): { start: number; end: number 
 
 /** The header's JSON with `record` as its `quotes` value, replacing an earlier one; everything else as it was. */
 function withRecord(json: string, record: QuoteRecord): string {
-  const value = JSON.stringify(record, null, 2).replace(/\n/g, '\n  ');
+  const eol = json.includes('\r\n') ? '\r\n' : '\n';
+  const value = JSON.stringify(record, null, 2).replace(/\n/g, `${eol}  `);
   const old = topLevelValue(json, 'quotes');
   if (old !== undefined) return json.slice(0, old.start) + value + json.slice(old.end);
   const close = json.lastIndexOf('}');
   const head = json.slice(0, close);
   const kept = head.trimEnd();
-  return `${kept},\n  "quotes": ${value}${head.slice(kept.length)}${json.slice(close)}`;
+  return `${kept},${eol}  "quotes": ${value}${head.slice(kept.length)}${json.slice(close)}`;
 }
 
 /**
  * Checks a report's quotes against the folder's files. Returns every problem, or, when there is none, the record and
  * the report's new text: the header with the record and every other byte as it was.
  */
-export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: readonly SourceFile[]; today: string }): QuoteCheck {
-  const { raw, sheet, files, today } = input;
+export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: readonly SourceFile[]; today: string; pageText: PageText }): QuoteCheck {
+  const { raw, sheet, files, today, pageText } = input;
   const parsed = parseQuotes(raw, sheet);
   if (parsed.quotes === undefined) return { issues: parsed.issues };
   const quotes = parsed.quotes;
   const verdicts = parseReport(raw).header!.verdicts;
   const issues: string[] = [];
 
-  /** Each quoted source's file, its text as read (for the hash), and its text evened out the three ways. */
-  const found = new Map<string, { name: string; read: string; variants: string[] }>();
+  /** Each quoted source's file, its text as read (for the hash), and the text a reader sees of it, evened out. */
+  const found = new Map<string, { name: string; read: string; text: string }>();
   for (const source of new Set(quotes.map((q) => q.source))) {
     const names = EXTENSIONS.map((ext) => `${source}.${ext}`);
     const here = files.filter((f) => names.includes(f.name));
@@ -160,8 +165,11 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
       issues.push(`The folder has more than one file for the source "${source}" (${here.map((f) => f.name).join(', ')}); keep one`);
     } else {
       const file = here[0]!;
-      const text = sourceText(file.name, file.text);
-      found.set(source, { name: file.name, read: file.text, variants: [even(text), even(text, ''), even(text, '-')] });
+      try {
+        found.set(source, { name: file.name, read: file.text, text: even(file.name.endsWith('.txt') ? file.text : pageText(file.name, file.text)) });
+      } catch (e) {
+        issues.push(`The file ${file.name} could not be read as a page (${(e as Error).message.split('\n')[0]}); save the source as it is, or as text in ${source}.txt`);
+      }
     }
   }
 
@@ -174,9 +182,13 @@ export function checkQuotes(input: { raw: string; sheet: ClaimSheet; files: read
       issues.push(`${where}, has no words besides its omission marks; quote the words themselves`);
       continue;
     }
-    const misses = file.variants.map((text) => missingPart(text, parts));
-    if (misses.includes(0)) continue;
-    const part = Math.max(...misses);
+    const short = parts.find((part) => wordCount(part) < 2);
+    if (short !== undefined) {
+      issues.push(`${where}, has a part of one word ("${words(short)}"); a part is at least two words, so quote more of it, or leave that part out`);
+      continue;
+    }
+    const part = missingPart(file.text, parts);
+    if (part === 0) continue;
     const which = parts.length > 1 ? ` (part ${part} of ${parts.length}, "${words(parts[part - 1]!)}", is not found${part > 1 ? ' after the part before it' : ''})` : '';
     issues.push(`${where}, is not found in ${file.name}: "${words(parts[0]!)}"${which}; copy the passage again exactly from the saved file`);
   }

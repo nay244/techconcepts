@@ -44,6 +44,13 @@ test('a verdict key written twice is unreadable, so a later âœ… cannot hide a â
   expect(parseReport(raw).issues).toEqual([expect.stringContaining('"title" more than once')]);
 });
 
+test('a header field written twice is unreadable, so a later one cannot replace an earlier', () => {
+  const raw = report(header).replace('"checker":', '"checked": "2026-01-01",\n  "checker":');
+  expect(parseReport(raw).issues).toEqual([expect.stringContaining('"checked" more than once')]);
+  const nested = report({ ...header, sources: [{ ...header.sources[0]! }, { ...header.sources[0]!, id: 'other' }] });
+  expect(parseReport(nested).issues).toEqual([]);
+});
+
 test('a source listed twice is unreadable, so a later "current" cannot hide a stale one', () => {
   const twice = { ...header, sources: [{ ...header.sources[0]!, current: false }, header.sources[0]!] };
   expect(parseReport(report(twice)).issues).toEqual([expect.stringContaining('"rfc-example" more than once')]);

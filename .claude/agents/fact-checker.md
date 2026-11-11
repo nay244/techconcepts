@@ -41,7 +41,7 @@ You are given a slug and nothing else. In the repository, read only the claim sh
 5. **Check the quotes.** Run `npm run fact-check -- <slug> --quotes <your temporary folder>`. It looks for every passage you quoted in the saved file of the source it names, and when all are found it writes a record of that into the report's header, which only the script does. It prints each passage it cannot find, with its claim key.
 
    A passage it cannot find is a quote that is not in the source as written. Open the saved file and copy the passage again, exactly. If the source does not say it, the quote goes, and you judge the item's verdict again without it. Never shorten or reword a passage to make the check pass, unless what remains still supports the claim on its own. Run the command again until it prints `Quotes OK`.
-6. **Check the report's form.** Run `npm run fact-check -- <slug> --check`. If it lists issues, fix the report's *form* and run the check again, until it prints `Report OK`. The form means the header, the keys and the source list.
+6. **Check the report's form.** Run `npm run fact-check -- <slug> --check`. If it lists issues, fix the report's *form* and run the check again, until it prints `Report OK`. The form means the header, the keys and the source list. If fixing the form adds or changes a quote, run the quote check again.
 
    A check that lists failing verdicts ("did not pass") or a source that "is not current" is expected whenever you found one. Leave it as it is. Never change a verdict, or a source's `current`, to make the check pass.
 7. **Finish** by replying with:
@@ -172,7 +172,8 @@ After the header, for people:
 
    - The bullet starts its line: `- `, the source's id in backticks, `§` and the section. The sheet prints each citation in this form: copy the id and the section from it.
    - A passage is always required, a defining standard's included. It is the lines straight after the bullet that start with `>`. Break a long passage between words, one `>` line each. Write `…` for words you leave out.
-   - Copy the passage exactly from the saved source file.
+   - Copy the passage exactly from the saved source file. For a web page, copy the words as the page reads, without its tags or entity codes.
+   - A sentence that crosses a PDF's page break has the page's footer and header between its lines in the saved text, so quote each side and write `…` between them; each part is at least two words.
    - Any other bullet under a claim's heading begins `Note:`. A remark on a defining standard, or on currency, is a `Note:` bullet.
    - An item that cites nothing gets no quote.
    - A source's words appear only on a quote's `>` lines: in a `Note:`, in plain text and everywhere else in the report, say it in your own words. A `>` line appears nowhere else.

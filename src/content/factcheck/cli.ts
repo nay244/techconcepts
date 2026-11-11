@@ -1,6 +1,7 @@
 import type { Lesson } from '../schema';
 import { SOURCES, type SourceRegistry } from '../sources';
 import { checkReport, reportPath } from './gate';
+import { pageText } from './pagetext';
 import { checkQuotes, type SourceFile } from './quotecheck';
 import { claimSheet, renderSheet } from './sheet';
 
@@ -97,7 +98,7 @@ export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT
     if (found === undefined) return { code: 1, out: `No folder "${folder}".` };
     const raw = deps.readFile(path);
     if (raw === undefined) return { code: 1, out: checkReport(sheet, raw, path).join('\n') };
-    const result = checkQuotes({ raw, sheet, files: found, today: (deps.today ?? localDay)() });
+    const result = checkQuotes({ raw, sheet, files: found, today: (deps.today ?? localDay)(), pageText });
     if (result.report === undefined) return { code: 1, out: result.issues.join('\n') };
     writeFile(path, result.report);
     return { code: 0, out: `Quotes OK: ${result.record.count} quotes in ${Object.keys(result.record.files).length} sources; record written to ${path}` };
