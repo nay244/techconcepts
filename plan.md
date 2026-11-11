@@ -89,9 +89,13 @@ If the pilot's cost per lesson holds, the other 15 would come to something like 
 
 **The files.** The full check's report stays at `docs/fact-checks/<slug>.md`, untouched. The re-check writes `docs/fact-checks/<slug>.recheck.md`, in the same form: a header (`slug`, `base`: the full report's hash, `hash`: the claim sheet's hash now, `checked`, `checker`, `verdicts` for the re-checked keys only, `sources` for the sources it read, its own `quotes` record) and a section with quotes for each item it judged.
 
-**What the script records.** When the quote check passes on a full report whose hash is the claim sheet's hash, it also writes into the header an `items` record: each item's key and the SHA-256 of that item (its kind, words, citations and traces; not its key). `npm run fact-check -- <slug> --stamp` writes the same record, alone, for a full report that predates this (it refuses unless the report's hash is the sheet's hash now).
+**What the script records.** When the quote check passes on a full report whose hash is the claim sheet's hash, it also writes into the header an `items` record: each item's key and the SHA-256 of that item (its kind, words, citations and traces, and the registry entry of every source it cites; not its key), and beside it `limits`, the SHA-256 of the lesson's limit overrides. `npm run fact-check -- <slug> --stamp` writes the same record, alone, for a full report that predates this (it refuses unless the report's hash is the sheet's hash now).
 
-**Which items a re-check judges.** An item is unchanged when the full report's `items` record has the same hash under the same key, or, where an inserted or removed part has shifted the numbers in keys, the same hash under the same key with its index numbers taken out. Everything else on the sheet is changed. A traced item is also judged when any part it traces to is changed. `npm run fact-check -- <slug> --recheck` prints the re-check sheet: those items in full, and for each traced item the words of the parts it traces to. It refuses, saying why, when the full check was not a near-pass, when more than 12 items would be judged, or when the lesson's limit overrides changed.
+**Which items a re-check judges.** An item is unchanged when the full report's `items` record has the same hash under the same key. Where a part was inserted or removed and the numbers in later keys shifted, an item is also unchanged when it has the same hash under the same key with its index numbers taken out, **and it has not moved**: it is still under the same parent (the same step, by the step's id; the same question), and the unchanged items of its list are in the order they were in. An item that moved, or whose list was reordered around it, is changed. Everything else on the sheet is changed. Then, beyond the changed items:
+- **What traces to a changed part** is judged.
+- **A question is one unit.** If its prompt or any of its options changed, the prompt and every option are judged.
+- **The items that cite nothing and rest on the whole lesson** (the title, the unit's name, each question's prompt) are judged when any Learn part changed. A prompt judged only for that reason does not bring its options with it.
+- The re-check sheet prints, as context with no verdict: under a traced item, the parts it traces to; and, when any of the items that rest on the whole lesson is judged, every cited Learn part. `npm run fact-check -- <slug> --recheck` prints the re-check sheet: those items in full, and for each traced item the words of the parts it traces to. It refuses, saying why, when the full check was not a near-pass, when more than 12 items would be judged, or when the lesson's limit overrides changed in any way (their limit, reason, minimum or maximum: the `limits` hash).
 
 **The commands.** `--recheck` prints the re-check sheet; `--recheck --quotes <folder>` runs the quote check on the re-check report (only its own quotes, each under a key it judged); `--recheck --check` runs the gate's rules on the pair.
 
@@ -100,12 +104,14 @@ If the pilot's cost per lesson holds, the other 15 would come to something like 
 2. The full report has an `items` record, and was a near-pass.
 3. The re-check's verdict keys are exactly the items to judge (changed, and tracing to a changed part): none missing, none extra, and at most 12.
 4. Every re-check verdict passes, and the full report's verdict passes for every item not re-checked.
-5. The lesson's limit overrides are what the full report lists.
+5. The lesson's limit overrides hash to the full report's `limits`.
 6. Every source on the sheet is listed as current, in the re-check's sources if a re-checked item cites it, else in the full report's.
 7. The re-check's quotes can be read, each sits under a key it judged, its quote record is right (count, digest, files, date not before its own `checked`), and every re-checked item that has citations and passes has a quote.
 8. The full report's own quote record still matches its quotes, as today.
 A re-check report whose `base` is not the full report's hash, or that sits beside a full report whose hash is the sheet's, is refused: remove it.
 The lesson's stamp shows the later of the two dates.
+
+(Changed on 2026-11-11 after G4's first review, which got three changed lessons past the gate with nothing re-judged: a question's prompt changed while its options still marked the old answer right; steps swapped and an event moved to another step; and a cited source's registry entry changed. A changed override's maximum was also invisible.)
 
 **What this gives up, said plainly.** A fresh full read sometimes finds something in an item nobody touched: What is UDP's fourth run did. A targeted re-check will not. The first full check, the near-pass limit and the cap of 12 are what keep that small.
 
