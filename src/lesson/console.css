@@ -1674,6 +1674,12 @@ ol.explain__sources li::marker {
     font: 600 12.5px/1.4 var(--display);
     letter-spacing: 0.02em;
   }
+  /* A row's tag ("miss") is a grid item of its own: it goes under its value, not under the name (errata, 2026-11-11). */
+  :root.js .tpanel__table:has(thead th:nth-child(4)) .tpanel__miss {
+    grid-column: 2;
+    justify-self: start;
+    margin: 3px 0 0;
+  }
   /* On a marked row the names take the ink the values have: muted words are not checked against the tint. */
   :root.js .tpanel__table:has(thead th:nth-child(4)) tr[data-highlight] > td[data-label]::before {
     color: var(--ink);

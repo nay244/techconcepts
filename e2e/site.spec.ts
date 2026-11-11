@@ -1051,7 +1051,10 @@ test.describe('phone', { tag: '@phone' }, () => {
     cell.evaluate((el) => {
       const box = el.getBoundingClientRect();
       const columns = getComputedStyle(el).gridTemplateColumns.split(' ');
-      return Math.round(box.left + parseFloat(columns[0]!));
+      const x = Math.round(box.left + parseFloat(columns[0]!));
+      // A cell that is no longer a grid has no name column: NaN would make every cell "line up".
+      if (!Number.isFinite(x)) throw new Error(`"${el.getAttribute('data-label')}" has no name column: ${getComputedStyle(el).gridTemplateColumns}`);
+      return x;
     });
 
   for (const screen of [
@@ -1138,6 +1141,15 @@ test.describe('phone', { tag: '@phone' }, () => {
           expect(labels).toEqual(['"IP address"', '"MAC address"', '"Device"', '"Expires"']);
           const x = await Promise.all((await cells.all()).map(valueX));
           expect(new Set(x).size).toBe(1);
+        });
+
+        test('5: a row’s tag is under its value, not under the name (ICMP’s probe that got no answer)', async ({ page }) => {
+          await goTo(page, bySlug('what-is-icmp').path, 'learn');
+          await tab(page, 'Table').click();
+          const cell = page.locator('.tpanel tr[data-miss] td[data-label]').first();
+          const tag = cell.locator('.tpanel__miss');
+          await expect(tag).toBeVisible();
+          expect((await tag.boundingBox())!.x).toBeGreaterThanOrEqual(await valueX(cell));
         });
 
         test('6: Firewalls’ rules, step 2: three rules and the connections it remembers are in view, and rule 3 fits → deny', async ({ page }) => {
@@ -1313,6 +1325,8 @@ test.describe('phone', { tag: '@phone' }, () => {
             expect(s.x + s.width).toBeLessThanOrEqual(screen.width);
             expect(s.height).toBeGreaterThanOrEqual(24);
             expect(await stamp.textContent()).toMatch(/^(Checked \d{1,2} [A-Z][a-z]{2} \d{4}|Not checked yet), \d+ sources?$/);
+            // Its words are the top bar's, which is in the page and hidden at this width.
+            expect(await stamp.textContent(), slug).toBe(await page.locator('.console__top .stamp').textContent());
             await expect(stamp).toHaveAttribute('href', '/about#facts');
           }
           await goTo(page, bySlug('dhcp').path, 2);
@@ -1329,9 +1343,9 @@ test.describe('phone', { tag: '@phone' }, () => {
         await page.goto(bySlug('dhcp').path);
         expect(await boxOf(page, '.console__tabs')).toBeNull();
         await expect(page.locator('.console__stage .tpanel')).toBeVisible();
-        const stage = (await boxOf(page, '.console__stage'))!;
+        const scene = (await boxOf(page, '.console__scene'))!;
         const table = (await boxOf(page, '.tpanel'))!;
-        expect(table.top).toBeGreaterThan(stage.top);
+        expect(table.top).toBeGreaterThanOrEqual(scene.bottom);
         expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
       });
     });
@@ -1341,7 +1355,8 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('no tabs shown, the table under the scene, the Overview’s stamp only in the top bar', async ({ page }) => {
           await open(page, bySlug('dhcp').path);
           expect(await boxOf(page, '.console__tabs')).toBeNull();
-          expect(await boxOf(page, '.console__stage .tpanel')).not.toBeNull();
+          const scene = (await boxOf(page, '.console__scene'))!;
+          expect((await boxOf(page, '.console__stage .tpanel'))!.top).toBeGreaterThanOrEqual(scene.bottom);
           expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
           if (width === 1440) expect(await boxOf(page, '.console__top .stamp')).not.toBeNull();
         });
