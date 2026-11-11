@@ -15,7 +15,7 @@ Read `CLAUDE.md`, the unit in `plan.md`, its spec (`prototypes/<id>-*.md`) and i
 ## How to build
 
 - Work on the branch you were given, which is checked out. Stay on it.
-- Tests first: turn each acceptance check in the spec into a test, watch it fail, then make it pass.
+- Tests first: turn each acceptance check in the spec into a test, watch it fail on its assertion, then make it pass. Before you report, prove each new or changed test can fail: break the rule it guards in the code, see the test go red, restore. A test that stays green against a wrong build is the commonest reason a unit fails review. List each proof.
 - Touch only what the unit needs, and match the code around it. Remove what your own change orphaned.
 - Use the tokens in `src/styles/tokens.ts`, and the sizes and words the spec gives, as given.
 - Lesson content, glossary entries and objective mappings stay as they are. A unit that needs one changed says so, and the fact-checker follows it.
@@ -27,7 +27,7 @@ Run, and keep the last lines of each:
 
 - `npm test`
 - `npm run build`
-- `npm run e2e` when a reader can see the change (port 4471 must be free). It takes about 17 minutes: run it once, in the background, writing to a log, and wait by reading the log for its "passed" line. A loop that waits for the Playwright process by name matches itself and never ends. Leave no background process running when you report.
+- when a reader can see the change, the end-to-end specs it touches, in the projects that run them: `npx playwright test <files> --project=<project> --reporter=line`, in the foreground (port 4471 must be free; in a worktree, say so in your report instead of running it, since the port is shared). The full suite is the orchestrator's, once per job. Leave no background process running when you report.
 - the unit's own check from `plan.md`
 
 Then look at the screen at 375px and 1440px, in both themes, beside the prototype.

@@ -10,7 +10,9 @@ You move one lesson from the legacy shape to the cited shape, from a fresh conte
 
 ## Before you write
 
-Read `CLAUDE.md`, `docs/content-model.md` (all of it; §8 is the workflow), the lesson's file, and `src/content/lessons/osi-model.ts`, the worked example: its citation helpers at the top, and how each part cites or traces.
+Read `CLAUDE.md`, `docs/content-model.md` (all of it; §8 is the workflow), the lesson's file, and a worked example: `src/content/lessons/what-is-udp.ts` for a How the Internet Works lesson, `src/content/lessons/osi-model.ts` for a Networking one, with its citation helpers at the top and how each part cites or traces. Read `docs/lesson-changes/what-is-udp.md` to see what a move changes.
+
+Your brief comes with an analyst's report: every idea the lesson teaches, with the source and section that states it, or "no source", and what the original gets wrong. Write from it. Read each passage yourself before you cite it.
 
 ## The sources
 
@@ -18,6 +20,7 @@ Read `CLAUDE.md`, `docs/content-model.md` (all of it; §8 is the workflow), the 
 - Cite the section that states the claim. A claim rests on the standard that defines the thing, marked `defining`, or on two documents from different publishers.
 - Start from the lesson's own references. Add a source when a claim needs one: a standard, a registry, or the vendor's own page, on its publisher's own host.
 - A claim no source states is reworded to what the sources do state, or cut. Cite from the page in front of you, never from memory.
+- Settled by the owner: an idea comes back wherever a source states it; an OSI badge may rest on two vendors' pages when no standard places the protocol; a limit is met by trimming, never by an override.
 
 ## The lesson's words
 
@@ -25,6 +28,16 @@ Read `CLAUDE.md`, `docs/content-model.md` (all of it; §8 is the workflow), the 
 - Change a sentence only when a source contradicts it or does not state it. Make the smallest change that makes it true, at the same reading level.
 - An analogy is flagged as an analogy and cites nothing. Example data is flagged as example data.
 - Every Watch step, fact and event traces to the Learn statement that carries its source.
+
+## The five faults to sweep for
+
+Every fact-check of the first lesson found a different handful of these, and each one costs a run. Before you hand over, go through the claim sheet item by item for all five:
+
+1. **Outside the section.** The statement is on the page or in the document, but not in the section the citation names.
+2. **A defining marker that does not belong.** It marks a document that defines the protocol, field, value or procedure the claim is about, and nothing else. A claim on one unmarked document needs a second.
+3. **An absolute a condition breaks.** "nothing more", "only", "never", "always", "at least", "most", "rarely", "many", "often": does a newer standard that updates the cited one, or a condition in the same section, make it false as stated? Check each cited RFC's "Updated by" line.
+4. **Stronger or weaker than what it rests on.** A fact, an option's feedback, an event or a step that says more, or less, or in other words than the Learn statement it traces to.
+5. **A name nothing gives.** A message type or a term in a Watch part that no traced part names.
 
 ## The change
 
