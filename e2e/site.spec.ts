@@ -151,7 +151,7 @@ test.describe('desktop', () => {
 
       // Step 1: typing the address sends nothing, so no way is lit and no message is listed.
       await expect(d.locator('.demo__say:visible')).toHaveCount(1);
-      await expect(d.locator('.demo__say:visible')).toContainText('You type example.net and press Enter');
+      await expect(d.locator('.demo__say:visible')).toContainText('You type http://example.net and press Enter');
       await expect(d.locator('.demo__msgs:visible')).toHaveCount(0);
       for (const step of [2, 3, 4, 5]) expect(await opacity(`.home-trail[data-step="${step}"]`)).toBe('0');
       expect(await opacity('#nm-page [data-part="text"]')).toBe('0');
@@ -169,16 +169,22 @@ test.describe('desktop', () => {
       await expect.poll(() => opacity('.home-trail[data-step="2"]')).toBe('0');
       await expect.poll(() => opacity('#nm-http-busy-web')).toBe('1');
 
-      // Step 4: the request and its answer; the page's words reach the laptop.
+      // Step 4: the request and its answer. The lesson draws the page's words in step 5, so the laptop's page is still empty.
       await d.locator('.demo__next:visible').click();
       await expect(d.locator('.demo__msgs:visible b')).toHaveText(['GET /', '200 OK']);
-      await expect.poll(() => opacity('#nm-page [data-part="text"]')).toBe('1');
-      expect(await opacity('#nm-page [data-part="pic"]')).toBe('0');
 
-      // Step 5: the browser fetches the rest, and the page is whole.
+      // Step 5: the page arrives, words and pictures together (the lesson's own cues: direction 2.23).
       await d.locator('.demo__next:visible').click();
       await expect(page.locator('#demo-s5')).toBeChecked();
+      await expect.poll(() => opacity('#nm-page [data-part="text"]')).toBe('1');
       await expect.poll(() => opacity('#nm-page [data-part="pic"]')).toBe('1');
+      // Back to step 4, the figure's parts fade out over 200ms: both the words and the pictures go.
+      await d.locator('.demo__row[for="demo-s4"]').click();
+      await expect(page.locator('#demo-s4')).toBeChecked();
+      await expect.poll(() => opacity('#nm-page [data-part="text"]')).toBe('0');
+      await expect.poll(() => opacity('#nm-page [data-part="pic"]')).toBe('0');
+      await d.locator('.demo__row[for="demo-s5"]').click();
+      await expect(page.locator('#demo-s5')).toBeChecked();
       await expect(d.locator('.demo__say:visible')).toHaveCount(1);
       await expect(d.locator('.demo__next:visible')).toHaveText('Go to Learn');
     });
@@ -189,7 +195,7 @@ test.describe('desktop', () => {
       await d.locator('.demo__parts label', { hasText: 'Learn' }).click();
       await expect(page.locator('#demo-learn')).toBeChecked();
       await expect(d.locator('.demo__pane--watch')).toBeHidden();
-      await expect(d.locator('.demo__pane--learn .demo__lead')).toContainText('A web page is a conversation in plain text.');
+      await expect(d.locator('.demo__pane--learn .demo__lead')).toContainText('In HTTP/1.1, getting a web page is a conversation in plain text.');
       await expect(d.locator('.demo__terms dd')).toContainText(['Client', 'URL', 'IP address']);
       // The same exchange with the line sealed is the next lesson.
       const sealed = d.locator('.demo__sealed');
@@ -197,9 +203,11 @@ test.describe('desktop', () => {
       await expect(sealed).toContainText('HTTPS is HTTP with one extra job before the asking: seal the line.');
       await expect(sealed.getByRole('link')).toHaveText('Lesson 2: HTTPS');
       await expect(sealed.getByRole('link')).toHaveAttribute('href', '/how-the-internet-works/what-is-https');
-      const sources = d.locator('.demo__src a');
-      await expect(sources).toHaveText(['RFC 9110: HTTP Semantics', 'RFC 9112: HTTP/1.1']);
-      await expect(sources.first()).toHaveAttribute('href', 'https://www.rfc-editor.org/rfc/rfc9110');
+      // The sources are the block D5 designed (the cases below, in "H1"); here, that the first is the lesson's first.
+      await expect(d.locator('.demo__src .stamp')).toHaveText('Checked 11 Nov 2026, 20 sources');
+      const sources = d.locator('.demo__src a:visible');
+      await expect(sources).toHaveText(['RFC 9114', 'RFC 9110', 'RFC 3986']);
+      await expect(sources.first()).toHaveAttribute('href', 'https://www.rfc-editor.org/rfc/rfc9114.html');
 
       await d.locator('.demo__pane--learn .demo__next').click();
       await expect(page.locator('#demo-practice')).toBeChecked();
@@ -902,7 +910,7 @@ test.describe('without JavaScript', () => {
   test('Home’s demo needs no script: it steps, shows Learn and answers a question', async ({ page }) => {
     await page.goto('/');
     const d = demo(page);
-    await expect(d.locator('.demo__say:visible')).toContainText('You type example.net and press Enter');
+    await expect(d.locator('.demo__say:visible')).toContainText('You type http://example.net and press Enter');
     await d.locator('.demo__next:visible').click();
     await expect(d.locator('.demo__msgs:visible li')).toHaveCount(2);
     await expect.poll(() => d.locator('.home-trail[data-step="2"]').evaluate((el) => getComputedStyle(el).opacity)).not.toBe('0');
@@ -1382,5 +1390,264 @@ test.describe('phone', { tag: '@phone' }, () => {
         });
       });
     }
+  });
+});
+
+// ---------------------------------------------------------------- H1: Home follows the cited lesson (prototypes/d5-home-sources.md, variant A)
+
+test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and the page on the laptop', () => {
+  const HTTP_PATH = '/how-the-internet-works/what-is-http';
+  const STAMP = 'Checked 11 Nov 2026, 20 sources';
+  const sizes = [
+    { width: 375, height: 812 },
+    { width: 1440, height: 900 },
+  ];
+  const src = (page: Page) => page.locator('main .demo .demo__src');
+  const summary = (page: Page) => page.locator('main .demo .demo__src summary');
+  const squash = (text: string) => text.replace(/\s+/g, ' ').trim();
+
+  /** Home with its Learn part showing: the part buttons are labels of radio buttons, so no script is needed. */
+  async function learn(page: Page): Promise<void> {
+    await page.goto('/');
+    await demo(page).locator('.demo__parts label', { hasText: 'Learn' }).click();
+    await expect(page.locator('#demo-learn')).toBeChecked();
+    await expect(src(page)).toBeVisible();
+  }
+  const heightOf = async (locator: Locator): Promise<number> => (await locator.boundingBox())!.height;
+
+  /** The links at the foot of the lesson's own Learn part, read in a window of its own with scripts on. */
+  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; stamp: string; top: string }> {
+    const context = await page.context().browser()!.newContext({ viewport: { width: 1440, height: 900 } });
+    const lesson = await context.newPage();
+    try {
+      await open(lesson, `${new URL(page.url()).origin}${HTTP_PATH}`);
+      const top = squash(await lesson.locator('.console__top .stamp').innerText());
+      await lesson.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+      await expect(kicker(lesson)).toHaveText('Learn');
+      const items = lesson.locator('.console__explain .explain__foot ol.explain__sources > li');
+      const hrefs = await items.locator('a').evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
+      return { hrefs, stamp: squash(await lesson.locator('.console__explain .explain__foot .stamp').innerText()), top };
+    } finally {
+      await context.close();
+    }
+  }
+
+  /** Case 15: closed, three links; open, twenty; closed again, the block is as tall as it was. */
+  async function openAndClose(page: Page): Promise<void> {
+    const links = src(page).locator('a:visible');
+    await expect(links).toHaveCount(3);
+    await expect(summary(page)).toHaveText('Show the other 17', { useInnerText: true });
+    const first = await heightOf(src(page));
+    await summary(page).click();
+    await expect(links).toHaveCount(20);
+    await expect(summary(page)).toHaveText('Hide the other 17', { useInnerText: true });
+    await summary(page).click();
+    await expect(links).toHaveCount(3);
+    await expect(summary(page)).toHaveText('Show the other 17', { useInnerText: true });
+    expect(await heightOf(src(page))).toBe(first);
+  }
+
+  /** Case 18: Tab from the HTTPS link through sources 1 to 3 to the control; Enter opens, Space closes. */
+  async function keyboard(page: Page): Promise<void> {
+    const where = () => page.evaluate(() => {
+      const el = document.activeElement as HTMLElement;
+      return { text: el.textContent?.replace(/\s+/g, ' ').trim() ?? '', tag: el.tagName, folded: el.closest('.demo__more > ol, .demo__more > ul') !== null };
+    });
+    await page.locator('.demo__sealed a').focus();
+    for (const name of ['RFC 9114', 'RFC 9110', 'RFC 3986']) {
+      await page.keyboard.press('Tab');
+      expect((await where()).text).toBe(name);
+    }
+    await page.keyboard.press('Tab');
+    expect(await where()).toMatchObject({ tag: 'SUMMARY', folded: false });
+    await page.keyboard.press('Enter');
+    await expect(summary(page)).toHaveText('Hide the other 17', { useInnerText: true });
+    await page.keyboard.press('Tab');
+    expect(await where()).toMatchObject({ tag: 'A', text: expect.stringContaining('RFC') as unknown as string, folded: true });
+    expect((await page.evaluate(() => document.activeElement!.getAttribute('title')))!.length).toBeGreaterThan(5);
+    await page.keyboard.press('Shift+Tab');
+    expect((await where()).tag).toBe('SUMMARY');
+    await page.keyboard.press('Space');
+    await expect(summary(page)).toHaveText('Show the other 17', { useInnerText: true });
+    await page.keyboard.press('Tab');
+    expect((await where()).folded).toBe(false);
+  }
+
+  /** Case 22: the page is not wider than the window, closed and open. */
+  async function noSideways(page: Page): Promise<void> {
+    const wide = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    // The demo clips what overflows it, so the document never widens for the block: nothing in the block may reach past the demo's edge either.
+    const clipped = () => page.evaluate(() => {
+      const edge = document.querySelector('main .demo')!.getBoundingClientRect().right;
+      return [...document.querySelectorAll('.demo__src a, .demo__src .stamp, .demo__src summary')].filter((el) => el.getBoundingClientRect().right > edge + 0.5).length;
+    });
+    expect(await wide()).toBe(0);
+    expect(await clipped()).toBe(0);
+    await summary(page).click();
+    await expect(summary(page)).toHaveText('Hide the other 17', { useInnerText: true });
+    expect(await wide()).toBe(0);
+    expect(await clipped()).toBe(0);
+  }
+
+  for (const size of sizes) {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      test.describe(`${size.width}x${size.height}, ${colorScheme}, scripts on`, () => {
+        test.use({ viewport: size, colorScheme, isMobile: false, hasTouch: false });
+
+        test('the block is the lesson’s stamp, then its sources: 20 in all, 3 shown, the rest behind one control', async ({ page }) => {
+          await learn(page);
+          const stamp = src(page).locator('.stamp');
+          await expect(stamp).toHaveText(STAMP);
+          expect(await stamp.evaluate((el) => el.tagName)).toBe('SPAN');
+          await expect(src(page).locator('a')).toHaveCount(20);
+          await expect(src(page)).not.toContainText('Sources:');
+          expect(squash(await src(page).innerText())).toBe(`${STAMP} 1 RFC 9114 2 RFC 9110 3 RFC 3986 Show the other 17`);
+        });
+
+        test('it opens in place and closes to the height it had', async ({ page }) => {
+          await learn(page);
+          await openAndClose(page);
+        });
+
+        test('open, the numbers run 1 to 20 and the lists say what they are', async ({ page }) => {
+          await learn(page);
+          await summary(page).click();
+          const nums = await src(page).locator('.demo__num').allTextContents();
+          expect(nums).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1)));
+          const lists = src(page).locator('ol.demo__list');
+          await expect(lists.nth(0)).toHaveAttribute('aria-label', 'Sources');
+          await expect(lists.nth(1)).toHaveAttribute('aria-label', 'Sources 4 to 20');
+          await expect(lists.nth(1)).toHaveAttribute('start', '4');
+        });
+
+        test('each link goes where the lesson’s own list goes, in order, with its full label as the title', async ({ page }) => {
+          await learn(page);
+          const foot = await lessonFoot(page);
+          const links = src(page).locator('a');
+          const hrefs = await links.evaluateAll((a) => a.map((el) => (el as HTMLAnchorElement).href));
+          expect(hrefs).toEqual(foot.hrefs);
+          expect(hrefs).toHaveLength(20);
+          expect(foot.top).toBe(STAMP);
+          expect(foot.stamp.startsWith('Checked 11 Nov 2026')).toBe(true);
+          expect(await links.last().getAttribute('title')).toMatch(/^RFC 6335: /);
+          expect(await links.evaluateAll((a) => a.filter((el) => el.hasAttribute('target')).length)).toBe(0);
+        });
+
+        test('from the HTTPS link the keyboard reaches 1, 2, 3, the control, and then the folded sources only when open', async ({ page }) => {
+          await learn(page);
+          await keyboard(page);
+        });
+
+        test('no sideways scroll, closed or open', async ({ page }) => {
+          await learn(page);
+          await noSideways(page);
+        });
+      });
+    }
+
+    test.describe(`${size.width}x${size.height}: sizes`, () => {
+      test.use({ viewport: size, isMobile: false, hasTouch: false });
+
+      test('touch targets and the block’s height', async ({ page }) => {
+        await learn(page);
+        const phone = size.width === 375;
+        // Closed, the block is at most 115px tall on a phone and 99px on a desktop.
+        expect(await heightOf(src(page))).toBeLessThanOrEqual(phone ? 115 : 99);
+        expect(await heightOf(summary(page))).toBeGreaterThanOrEqual(44);
+        for (const state of ['closed', 'open']) {
+          if (state === 'open') await summary(page).click();
+          if (phone) {
+            const heights = await src(page).locator('a:visible').evaluateAll((a) => a.map((el) => el.getBoundingClientRect().height));
+            expect(heights.length).toBe(state === 'open' ? 20 : 3);
+            for (const h of heights) expect(h).toBeGreaterThanOrEqual(44);
+          }
+        }
+      });
+    });
+  }
+
+  test.describe('scripts off', () => {
+    for (const size of sizes) {
+      test.describe(`${size.width}x${size.height}`, () => {
+        test.use({ viewport: size, javaScriptEnabled: false, isMobile: false, hasTouch: false });
+        test('it opens and closes, the keyboard works, and nothing scrolls sideways', async ({ page }) => {
+          await learn(page);
+          await openAndClose(page);
+          await keyboard(page);
+          await page.reload();
+          await demo(page).locator('.demo__parts label', { hasText: 'Learn' }).click();
+          await noSideways(page);
+        });
+      });
+    }
+  });
+
+  // Case 21: the shown list is three across and the folded one two across up to 860px; from 861 the folded list is three.
+  for (const width of [375, 768, 860, 861, 1440]) {
+    test.describe(`columns at ${width}px`, () => {
+      test.use({ viewport: { width, height: 900 }, isMobile: false, hasTouch: false });
+      test('three across, and two or three across when folded', async ({ page }) => {
+        await learn(page);
+        await summary(page).click();
+        const across = (list: Locator) => list.locator('li').evaluateAll((li) => new Set(li.map((el) => Math.round(el.getBoundingClientRect().left))).size);
+        const lists = src(page).locator('ol.demo__list');
+        expect(await across(lists.nth(0))).toBe(3);
+        expect(await across(lists.nth(1))).toBe(width <= 860 ? 2 : 3);
+        if (width <= 860) {
+          for (const h of await src(page).locator('a').evaluateAll((a) => a.map((el) => el.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(44);
+        }
+      });
+    });
+  }
+
+  test('the lesson’s words are quoted as the lesson has them', async ({ page }) => {
+    await page.goto('/');
+    const d = demo(page);
+    await expect(d.locator('.demo__say:visible')).toContainText('You type http://example.net and press Enter');
+    await d.locator('.demo__parts label', { hasText: 'Learn' }).click();
+    await expect(d.locator('.demo__pane--learn .demo__lead')).toContainText('In HTTP/1.1, getting a web page is a conversation in plain text.');
+    expect(await page.locator('main .demo').textContent()).not.toContain('HyperText');
+    await page.goto(HTTP_PATH);
+    await expect(page.locator('body')).toContainText('Hypertext Transfer Protocol');
+  });
+
+  test('Home has no island, and as many script elements as before H1 (two)', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+    expect(html).not.toContain('astro-island');
+    expect(html.match(/<script/g)).toHaveLength(2);
+  });
+
+  test.describe('the page on the laptop', () => {
+    test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false });
+    const part = (page: Page, which: 'text' | 'pic') => demo(page).locator(`svg[data-figure="net-map"] #nm-page [data-part="${which}"]`).first().evaluate((el) => getComputedStyle(el).opacity);
+
+    test('empty through step 4, drawn in step 5, and empty again going back to step 4', async ({ page }) => {
+      await page.goto('/');
+      const d = demo(page);
+      for (const n of [1, 2, 3]) {
+        await d.locator(`.demo__row[for="demo-s${n}"]`).click();
+        await expect(page.locator(`#demo-s${n}`)).toBeChecked();
+        expect(await part(page, 'text'), `words at step ${n}`).toBe('0');
+        expect(await part(page, 'pic'), `pictures at step ${n}`).toBe('0');
+      }
+      await d.locator('.demo__row[for="demo-s5"]').click();
+      await expect.poll(() => part(page, 'text')).toBe('1');
+      await expect.poll(() => part(page, 'pic')).toBe('1');
+      await d.locator('.demo__row[for="demo-s4"]').click();
+      await expect(page.locator('#demo-s4')).toBeChecked();
+      await expect.poll(() => part(page, 'text')).toBe('0');
+      await expect.poll(() => part(page, 'pic')).toBe('0');
+    });
+
+    test('choosing Learn straight from step 1, then Practice, keeps the page drawn', async ({ page }) => {
+      await page.goto('/');
+      const d = demo(page);
+      await d.locator('.demo__parts label', { hasText: 'Learn' }).click();
+      await expect.poll(() => part(page, 'text')).toBe('1');
+      await expect.poll(() => part(page, 'pic')).toBe('1');
+      await d.locator('.demo__parts label', { hasText: 'Practice' }).click();
+      await expect.poll(() => part(page, 'text')).toBe('1');
+      await expect.poll(() => part(page, 'pic')).toBe('1');
+    });
   });
 });

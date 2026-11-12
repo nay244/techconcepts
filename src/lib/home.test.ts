@@ -1,9 +1,12 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { afterEach, expect, test, vi } from 'vitest';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
+import { SOURCES } from '../content/sources';
 import { tracks } from '../content/tracks';
 import type { Lesson } from '../content/schema';
 import { numberedSources } from '../lesson/sourceNumbers';
-import { homeDemo, homeStops, leadText } from './home';
+import { foldSources, homeDemo, homeStops, leadText, litSteps, sourceName } from './home';
 
 // Lessons the registry hands out in place of the real ones, by slug; empty unless a test sets one.
 const swapped = vi.hoisted(() => new Map<string, unknown>());
@@ -20,7 +23,7 @@ const HTTP = () => getLesson('what-is-http')!.units[0]!;
 test('the demo is lesson 1, HTTP: every Watch step of how a web page arrives, in the lesson’s own words', () => {
   const demo = homeDemo();
   const unit = HTTP();
-  expect(demo.lesson).toMatchObject({ title: 'HTTP', fullName: 'HyperText Transfer Protocol', url: '/how-the-internet-works/what-is-http', number: 1, track: 'How the Internet Works' });
+  expect(demo.lesson).toMatchObject({ title: 'HTTP', fullName: 'Hypertext Transfer Protocol', url: '/how-the-internet-works/what-is-http', number: 1, track: 'How the Internet Works' });
   expect(demo.steps.map((s) => s.title)).toEqual(['Client Request', 'DNS Resolution', 'TCP Connection', 'HTTP Exchange', 'Render Page']);
   demo.steps.forEach((step, i) => {
     expect(step).toMatchObject({ n: i + 1, id: unit.steps[i]!.id, title: unit.steps[i]!.title, sub: unit.steps[i]!.sub, narrative: unit.steps[i]!.narrative });
@@ -72,7 +75,7 @@ test('the demo’s Learn part is the lesson’s lead, its ideas with their names
   expect(learn.lead).toBe(unit.learn.lead.map((s) => s.text).join(' '));
   expect(learn.terms.length).toBeGreaterThanOrEqual(4);
   expect(learn.terms).toEqual(unit.learn.terms.slice(0, learn.terms.length).map((t) => ({ idea: t.idea, name: t.name })));
-  expect(learn.sources).toEqual(numberedSources(unit).list.map((r) => ({ label: r.label, url: r.url })));
+  expect(learn.sources.map(({ label, url }) => ({ label, url }))).toEqual(numberedSources(unit).list.map((r) => ({ label: r.label, url: r.url })));
   expect(learn.sources.every((s) => s.url.startsWith('https://'))).toBe(true);
 });
 
@@ -156,4 +159,105 @@ test('the demo lists the sources in the order the Lesson page numbers them: the 
   const unit = getLesson('what-is-http')!.units[0]!;
   const raw = unit.references.map((r) => r.label);
   expect(homeDemo().learn.sources.map((s) => s.label)).toEqual([raw[1], raw[0]]);
+});
+
+// ---------------------------------------------------------------- the sources block (D5, variant A)
+
+const items = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+
+test('a list of 6 sources or fewer is shown whole; nothing is folded', () => {
+  for (const n of [0, 1, 2, 6]) expect(foldSources(items(n)), `${n} sources`).toEqual({ shown: items(n), folded: [] });
+});
+
+test('a list of 7 or more shows the first 3 and folds the rest, in the order given', () => {
+  for (const [n, folded] of [[7, 4], [12, 9], [31, 28]] as const) {
+    const out = foldSources(items(n));
+    expect(out.shown, `${n} shown`).toEqual([1, 2, 3]);
+    expect(out.folded.length, `${n} folded`).toBe(folded);
+    expect(out.folded[0], `${n}: the fourth source leads the fold`).toBe(4);
+    expect(out.folded.at(-1)).toBe(n);
+  }
+});
+
+test('a source’s name is its label up to the first “: ”, and a label without one is whole', () => {
+  expect(sourceName('RFC 3550: RTP: A Transport Protocol for Real-Time Applications')).toBe('RFC 3550');
+  expect(sourceName('RFC 9110:HTTP')).toBe('RFC 9110:HTTP');
+  expect(sourceName('Plain label')).toBe('Plain label');
+});
+
+test('the demo lists all 20 sources of lesson 1 in the lesson’s order, each named as the registry names it', () => {
+  const { sources } = homeDemo().learn;
+  expect(sources).toHaveLength(20);
+  expect(sources.slice(0, 4).map((s) => s.name)).toEqual(['RFC 9114', 'RFC 9110', 'RFC 3986', 'RFC 791']);
+  expect(sources[19]!.name).toBe('RFC 6335');
+  const listed = numberedSources(HTTP()).list;
+  sources.forEach((s, i) => {
+    expect(s.label, s.name).toBe(listed[i]!.label);
+    expect(s.label).toContain(': ');
+    expect(s.url).toBe(listed[i]!.url);
+    expect(s.name).toBe(SOURCES[listed[i]!.source!]!.short);
+  });
+});
+
+test('the demo carries the lesson’s stamp, and says its sources are numbered', () => {
+  const { learn } = homeDemo();
+  expect(learn.stamp).toEqual({ checked: '2026-11-11', sources: 20 });
+  expect(learn.numbered).toBe(true);
+});
+
+test('a lesson that cites nothing yet has no numbers on Home either', () => {
+  expect(homeDemo('what-is-https', 'what-is-tcp').learn.numbered).toBe(false);
+});
+
+test('a stamp that counts differently from the list makes the demo throw, naming the lesson and both counts', () => {
+  swapIn('what-is-http', (u) => { u.references[1] = { ...u.references[1]!, url: u.references[0]!.url }; });
+  expect(() => homeDemo()).toThrow(/(?=.*what-is-http)(?=.*\b19\b)(?=.*\b20\b)/);
+});
+
+// ---------------------------------------------------------------- the page on the laptop follows the lesson's cues
+
+test('the page’s words and pictures come from the lesson’s own cues', () => {
+  expect(homeDemo('what-is-http').page).toEqual({ words: 5, pictures: 5 });
+  expect(homeDemo('what-is-https', 'what-is-tcp').page).toEqual({ words: 5, pictures: 6 });
+  expect(homeDemo('what-is-tcp', 'what-is-https').page).toEqual({ words: 5, pictures: 5 });
+  expect(homeDemo('what-is-pop3', 'what-is-tcp').page).toEqual({ words: 4, pictures: 4 });
+});
+
+test('a lesson with no page cue cannot be Home’s demo, and the error names it', () => {
+  expect(() => homeDemo('what-is-udp', 'what-is-tcp')).toThrow(/what-is-udp has no page cue/);
+});
+
+test('a lesson whose page never shows its pictures cannot be Home’s demo either, and the error names it', () => {
+  swapIn('what-is-http', (u) => {
+    for (const step of u.steps) for (const e of step.events) if ('cues' in e && e.cues !== undefined) e.cues = e.cues.filter((c) => !(c.cue === 'page' && c.arg === 'full'));
+  });
+  expect(() => homeDemo()).toThrow(/what-is-http has no page: 'full' cue/);
+});
+
+test('a page cue on a note counts as much as one on a message', () => {
+  swapIn('what-is-http', (u) => {
+    const step = u.steps[3]!;
+    const note = { type: 'note' as const, id: 'moved', log: {}, plain: 'The words arrive.', cues: [{ cue: 'page', arg: 'text' }] };
+    u.steps[4]!.events.forEach((e) => { if ('cues' in e && e.cues !== undefined) e.cues = e.cues.filter((c) => !(c.cue === 'page' && c.arg === 'text')); });
+    step.events.push(note as never);
+  });
+  expect(homeDemo().page.words).toBe(4);
+});
+
+test('the page stays once drawn: lit from its step on, not at that step only, and through Learn and Practice', () => {
+  expect(litSteps({ words: 5, pictures: 6 }, 6)).toEqual({
+    words: { steps: [5, 6], parts: ['learn', 'practice'] },
+    pictures: { steps: [6], parts: ['learn', 'practice'] },
+  });
+});
+
+test('D5’s rules on Home hold no colour value other than a token', () => {
+  const page = readFileSync('src/pages/index.astro', 'utf8');
+  const open = page.indexOf("/* ---- D5: Learn's foot");
+  const close = page.indexOf('/* ---- end of D5: Learn');
+  expect(open, 'the comment that opens D5’s rules').toBeGreaterThan(-1);
+  expect(close, 'the comment that closes them').toBeGreaterThan(open);
+  const rules = page.slice(open, close);
+  expect(rules).toContain('var(--link)');
+  expect(rules).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
 });

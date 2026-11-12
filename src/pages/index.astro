@@ -9,9 +9,10 @@ import { pageFigure } from '../art/figures/pages';
 import { cropViewBox } from '../art/ids';
 import { factCheckSentence } from '../lib/about';
 import { lessonCheckCounts } from '../lib/checked';
-import { homeDemo, homeStops } from '../lib/home';
+import { foldSources, homeDemo, homeStops, litSteps } from '../lib/home';
 import { startLesson } from '../lib/start';
 import Rich from '../lesson/Rich';
+import Stamp from '../components/Stamp';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../art/scenes/net-map.css';
 import '../components/site.css';
@@ -25,6 +26,9 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
 const PARTS = ['watch', 'learn', 'practice'] as const;
 const PART_WORDS = { watch: 'Watch', learn: 'Learn', practice: 'Practice' } as const;
 const last = demo.steps.length;
+// Learn's foot (prototypes/d5-home-sources.md): the stamp, the first three sources, and the rest behind a <details>.
+const { shown, folded } = foldSources(demo.learn.sources);
+const List = demo.learn.numbered ? 'ol' : 'ul';
 
 // A cover, cropped close to its plate. Each copy on the page tags its own ids.
 const coverArt = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
@@ -59,12 +63,15 @@ for (const step of demo.steps) {
   if (step.lights.trail) css.push(`${when('demo-watch', id)} .home-trail[data-step="${step.n}"]{opacity:.9}`);
   css.push(`${step.lights.busy.map((busy) => `${when('demo-watch', id)} #${busy}`).join(',')}{opacity:1}`);
 }
-// The page on the laptop: its words arrive with the server's answer, in the last step but one; its pictures once the
-// browser has fetched the rest, in the last step, and they stay through Learn and Practice.
-const words = [when('demo-watch', `demo-s${last - 1}`), when('demo-watch', `demo-s${last}`), when('demo-learn'), when('demo-practice')];
-const pictures = words.slice(1);
-css.push(`${words.map((s) => `${s} #nm-page [data-part="text"]`).join(',')}{opacity:1!important}`);
-css.push(`${pictures.map((s) => `${s} #nm-page [data-part="pic"]`).join(',')}{opacity:1!important}`);
+// The page on the laptop follows the lesson's own cues (src/lib/home.ts): its words are lit from the first step that
+// has a page cue, its pictures from the first with page: 'full', and they stay through Learn and Practice.
+const lit = litSteps(demo.page, last);
+const litWhen = (on: { steps: number[]; parts: string[] }): string[] => [
+  ...on.steps.map((n) => when('demo-watch', `demo-s${n}`)),
+  ...on.parts.map((part) => when(`demo-${part}`)),
+];
+css.push(`${litWhen(lit.words).map((s) => `${s} #nm-page [data-part="text"]`).join(',')}{opacity:1!important}`);
+css.push(`${litWhen(lit.pictures).map((s) => `${s} #nm-page [data-part="pic"]`).join(',')}{opacity:1!important}`);
 demo.practice.options.forEach((option, i) => {
   const id = `demo-a${i + 1}`;
   css.push(`${when(id)} .demo__why--${i + 1}{display:block}`);
@@ -191,17 +198,39 @@ demo.practice.options.forEach((option, i) => {
               Lesson {demo.sealed.number}: {demo.sealed.title}
             </a>
           </p>
-          <p class="demo__src">
-            Sources:
+          <div class="demo__src">
+            <p class="demo__stamp"><Stamp stamp={demo.learn.stamp} /></p>
             {
-              demo.learn.sources.map((source, i) => (
-                <>
-                  {i > 0 && ', '}
-                  <a href={source.url}>{source.label}</a>
-                </>
-              ))
+              shown.length > 0 && (
+                <List class="demo__list" role="list" aria-label="Sources">
+                  {shown.map((source, i) => (
+                    <li>
+                      {demo.learn.numbered && <span class="demo__num">{i + 1}</span>}
+                      <a href={source.url} title={source.label}>{source.name}</a>
+                    </li>
+                  ))}
+                </List>
+              )
             }
-          </p>
+            {
+              folded.length > 0 && (
+                <details class="demo__more">
+                  <summary>
+                    <span class="demo__closed">Show the other {folded.length}</span>
+                    <span class="demo__open">Hide the other {folded.length}</span>
+                  </summary>
+                  <List class="demo__list" role="list" start={demo.learn.numbered ? shown.length + 1 : undefined} aria-label={`Sources ${shown.length + 1} to ${demo.learn.sources.length}`}>
+                    {folded.map((source, i) => (
+                      <li>
+                        {demo.learn.numbered && <span class="demo__num">{shown.length + i + 1}</span>}
+                        <a href={source.url} title={source.label}>{source.name}</a>
+                      </li>
+                    ))}
+                  </List>
+                </details>
+              )
+            }
+          </div>
           <div class="demo__nexts" aria-hidden="true">
             <label class="btn btn--primary demo__next demo__next--on" for="demo-practice">Go to Practice</label>
           </div>
@@ -569,17 +598,81 @@ demo.practice.options.forEach((option, i) => {
     color: var(--ink-strong);
     font: 600 16px/1.3 var(--display);
   }
-  .demo__src,
   .demo__after {
     margin: 12px 0 0;
     color: var(--muted);
     font-size: 14.5px;
   }
-  .demo__src a,
   .demo__after a,
   .facts a {
     color: var(--link);
   }
+  /* ---- D5: Learn's foot. The lesson's stamp, then its sources by their short names. ---- */
+  .demo__src { margin: 12px 0 0; }
+  .demo__stamp { margin: 0; line-height: 1; }
+  .demo__list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 10px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+    font: 400 14.5px/1.3 var(--sans);
+  }
+  /* A numbered list keeps the lesson's numbers, in a gutter as wide as the stamp's mark and its gap. */
+  .demo__list > li { display: grid; grid-template-columns: 15px minmax(0, 1fr); column-gap: 6px; align-items: center; min-height: 28px; }
+  ul.demo__list { padding-left: 21px; }
+  ul.demo__list > li { grid-template-columns: minmax(0, 1fr); }
+  .demo__num { color: var(--muted); font: 600 12px/1 var(--mono); text-align: right; }
+  .demo__list a { justify-self: start; padding: 4px 0; color: var(--link); text-underline-offset: 2px; overflow-wrap: anywhere; }
+  .demo__more { margin: 4px 0 0; }
+  .demo__more > summary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-strong);
+    font: 600 15px/1.2 var(--display);
+    letter-spacing: 0.01em;
+    list-style: none;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .demo__more > summary::-webkit-details-marker { display: none; }
+  /* A small square with a plus, a minus once open: the family's marker, in line with the stamp's ring. */
+  .demo__more > summary::before {
+    content: '';
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 2px;
+    background:
+      linear-gradient(var(--ink-strong), var(--ink-strong)) center / 7px 1.5px no-repeat,
+      linear-gradient(var(--ink-strong), var(--ink-strong)) center / 1.5px 7px no-repeat;
+  }
+  .demo__more[open] > summary::before {
+    background: linear-gradient(var(--ink-strong), var(--ink-strong)) center / 7px 1.5px no-repeat;
+  }
+  .demo__more > summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .demo__more > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+  .demo__open, .demo__more[open] .demo__closed { display: none; }
+  .demo__more[open] .demo__open { display: inline; }
+  .demo__more > .demo__list { margin: 0 0 4px; }
+  /* A phone: every link is a row 44px tall. The list that is always shown stays three across; the folded one, with
+     two-figure numbers and every kind of name, is two across. */
+  @media (max-width: 860px) {
+    .demo__list { gap: 0 6px; }
+    .demo__list > li { grid-template-columns: auto minmax(0, 1fr); column-gap: 5px; min-height: 44px; }
+    ul.demo__list > li { grid-template-columns: minmax(0, 1fr); }
+    .demo__list a { display: inline-flex; align-items: center; min-height: 44px; padding: 0; }
+    .demo__more > .demo__list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 10px; }
+    .demo__more > .demo__list > li { grid-template-columns: 15px minmax(0, 1fr); column-gap: 6px; }
+    .demo__more > ul.demo__list > li { grid-template-columns: minmax(0, 1fr); }
+  }
+  /* ---- end of D5: Learn's foot ---- */
   .demo__picks {
     display: grid;
     gap: 8px;
