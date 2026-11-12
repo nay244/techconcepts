@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9.
 
-**Status: planned on 2026-11-12, waiting for the owner's go.** One go covers batch 3 and batch 4 and approves the fourteen decisions below. Nothing after the two scouts has started.
+**Status: in progress.** The owner said go on 2026-11-12 ("Go", on the plan as shown), which covers batch 3 and batch 4 and approves the fourteen decisions below. Batch 3's three analysts started that day. One thing is done differently from the agents' standing instructions: analysts save their sources and reports in `.superpowers/analysis/<slug>/`, which git ignores and which lasts overnight, not in a temporary folder.
 
 ## Inputs
 

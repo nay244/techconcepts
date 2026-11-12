@@ -492,7 +492,7 @@ Also worth knowing: What is ICMP's Traceroute step shows Windows' tracert (echo-
 
 # Job 7: the last six tour lessons, two batches in one job (batches 3 and 4 of 5)
 
-Planned on 2026-11-12 in a fresh session, from the brief job 6's session left; direction 2.30. What is SMTP, What is POP3 and What is IMAP, then What is FTP, What is SSH and What is TLS. Waiting for the owner's go.
+Planned on 2026-11-12 in a fresh session, from the brief job 6's session left; direction 2.30. What is SMTP, What is POP3 and What is IMAP, then What is FTP, What is SSH and What is TLS. The owner said go that day.
 
 | Unit | Agent | Model | Tries | Tokens | Result |
 |---|---|---|---|---|---|
