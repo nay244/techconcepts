@@ -532,3 +532,86 @@ Planned on 2026-11-12 in a fresh session, from the brief job 6's session left; d
 | L13-p | analyst (the read before the check) | Opus | 1 | 195,766 | The same analyst, continued: 110 of 136 sound, fifteen rulings for the other 26 (one Learn fact added and four widened, three phrases shortened to what a source states, eight citations added or moved to the section that states the thing). The orchestrator kept Telnet's port 23, cited to IANA's registry as What is TCP cites it. All 183 passages found. Counted from its transcript. |
 | L14-b | author | Sonnet | 2 passes | 225,426 | What is TLS in the cited shape (`e800147`): 115 items, no override, no source added; the key exchange as What is HTTPS has it (one test's cell follows), RFC 9846, the badge spanning, the page cue removed, eight sizes to dashes, and two Learn facts of its own for the name and purpose. Pass 2 (`8317f4a`, 19,219) applied the analyst's seventeen rulings and registered one document; 120 items. |
 | L14-p | analyst (the read before the check) | Opus | 1 | 163,948 | The same analyst, continued: 98 of 115 sound, seventeen rulings (five Learn facts added so Watch sentences stay as written, two narrative sentences changed, a citation removed that gave another year than its sentence, a second publisher for "VPNs" and for "SSL is its old name"). It found the lesson agrees with What is HTTPS throughout. All 209 passages found. Counted from its transcript. |
+| L14-c | fact-checker | Opus | full check 1, re-check 1 | 248,545 and 32,139 | Full check: 119 of 120 pass, 1 imprecise, none wrong (`4f90d49`, as written): "From this message on, everything the server sends is already encrypted" reads as if the ServerHello itself were. 193 quotes confirmed in 34 sources. The author changed the sentence as the checker suggested (`e32e199`, 3,650). Re-check of that one item: **passed** (`f89d54e`); `--recheck --check`: `Report OK`. `npm test` in the worktree: 1,702 passed. |
+| L14-d | author | Sonnet | 1 | 35,374 | What is TLS's section of the track's report: 19 corrections, 2 removals, 22 additions, 1 rewording, 82 checker's notes; 1 source became 34. |
+| L12-c | fact-checker | Opus | full check 1, full check 2 | 173,185 and 223,185 | Full check 1: 121 of 122 pass, 1 imprecise, none wrong (`37019e5`, as written): "Safer: SFTP (22), FTPS (990)" gives FTPS only its implicit port, where standard FTPS starts on 21. It also noted, without failing an item, that three citations name the wrong heading of RFC 1579. The analyst ruled both (13,214) and the author applied them (`f848241`, 4,150); the heading fix put 23 items on a re-check sheet, over the 12 allowed, so the second check was a full one. Full check 2: **passed, all 122** (`e9fb438`), 163 quotes in 28 sources. `npm test` in the worktree: 1,702 passed. |
+| L12-d | author | Sonnet | 1 | 41,392 | What is FTP's section of the track's report: 9 corrections, 1 removal, 9 additions, no rewording, 58 checker's notes; 1 source became 28. |
+| L13-c | fact-checker | Opus | full check 1, re-check 1 | 236,327 and 64,979 | Full check: 135 of 137 pass, 2 imprecise, none wrong (`f0ff8f2`, as written): the badge that spans layers, when Cloudflare's page, which the lesson cites, says most sources call SSH layer 7; and a sentence that says the integrity check is built into both ciphers it names, when the sources state it of AES-GCM only. 212 quotes in 31 sources. The analyst looked for a second vendor for layer 7 on every allowed host and found none (40,297); the orchestrator read a community tutorial page in a browser and allowed its host. The author applied both fixes (`50c6ead`, 8,116). Re-check of the two items: **passed** (`96b886e`); `Report OK` for both files. `npm test` in the worktree: 1,702 passed. |
+| L13-d | author | Sonnet | 1 | 28,997 | What is SSH's section of the track's report: 19 corrections, 3 removals, 17 additions, 6 rewordings, 73 checker's notes; 2 sources became 32 with the badge's second page. |
+| M4 | orchestrator | Fable | 1 | not counted | Merged into `batch/4`: What is TLS (`c1461eb`, no conflict), What is FTP (`9abb179`) and What is SSH (`8b7d504`), the last two with the legacy list's test, the registry and its test reconciled (the legacy list now holds only Networking's three). One slip of the orchestrator's own: its first reconciliation of the registry joined two new entries into one object, the tests refused it at once (an unknown source), and `b64e0ed` separates them. `npm test` 1,702 passed after each merge as corrected. The three worktrees removed. |
+| T1 | orchestrator | Fable | 1 | not counted | `docs/lesson-changes/how-the-internet-works-lessons-9-to-14.md`: the six authors' sections joined under one opening. A script found every quoted before in each lesson's file at `b18acd9` and every after in the file as it passed: 200 table rows, 7 cells that are the authors' descriptions and not quotes, read by hand. The orchestrator read the checkers' notes on what they passed (about 420). |
+| F4 | orchestrator | Fable | 1 | not counted | One merge of `batch/4` into `revamp` (`062176c`). On it: `npm test` 119 files, 1,702 tests passed; `npm run build` "Every page is within budget (25 pages)."; `npm run e2e` 1,191 passed, 256 skipped, none failed (18.3 minutes, exit 0). The six built pages say "Checked 12 Nov 2026" with 28, 19, 18, 28, 32 and 34 sources, and About says 15 of 18 lessons have been through an independent check. The report, the ledger and the direction doc followed in a second merge of documents only. Merged branches left in place; nothing pushed. |
+
+## Spend by role
+
+| Role | Model | Tokens |
+|---|---|---|
+| scout | Haiku | 604,009 |
+| author | Sonnet | 1,639,760 |
+| analyst, fact-checker | Opus | 4,724,737 |
+| **All subagents** | | **6,968,506** |
+
+After the go (without the two scouts): 6,364,497, against 5.5 to 6.7 million planned. The plan's stops were 1.6 million for one lesson without an all-pass and 4.0 million for a batch; neither was reached. No designer, builder or reviewer in this job: Home needed no unit.
+
+## What each lesson cost, against the estimate
+
+The estimate was 0.85 to 1.25 million a lesson, 2.8 to 3.4 million for batch 3 and 2.7 to 3.3 million for batch 4.
+
+| | What is SMTP | What is POP3 | What is IMAP | What is FTP | What is SSH | What is TLS |
+|---|---|---|---|---|---|---|
+| Analyst: the report, the rulings, a lookup | 411,866 | 287,813 | 318,303 | 300,006 | 373,551 | 410,603 |
+| Analyst: the read before the check | 114,283 | 73,937 | 121,912 | 161,935 | 195,766 | 163,948 |
+| Analyst: words for held-back items | 17,362 | none | 28,261 | 13,214 | 40,297 | none |
+| Author: the lesson, the rulings, the fixes | 263,184 | 233,073 | 217,968 | 211,174 | 286,673 | 229,076 |
+| Author: its section of the report | 31,178 | 22,249 | 39,422 | 41,392 | 28,997 | 35,374 |
+| Fact-checker | 302,000 (a full check, a re-check) | 150,100 (one full check) | 261,220 (a full check, two re-checks) | 396,370 (two full checks) | 301,306 (a full check, a re-check) | 280,684 (a full check, a re-check) |
+| **The lesson** | **1,139,873** | **767,172** | **987,086** | **1,124,091** | **1,226,590** | **1,119,685** |
+| Items, sources | 147, 28 | 113, 19 | 121, 18 | 122, 28 | 137, 32 | 120, 34 |
+
+Batch 3: **2,894,131**, inside its estimate. Batch 4: **3,470,366**, about 170,000 over its estimate and under its stop.
+
+- **One of six passed on the first full check** (What is POP3); batch 2 had three of three. The other five were near-passes, one to three items each, none wrong. Four of the five passed on a targeted re-check; What is IMAP needed a second re-check and What is FTP a second full check.
+- **Batch 3's five held-back items were of one kind:** a Watch part or an Overview fact that says something small its traced Learn parts do not (a protocol's full name, a purpose line, "push", "lists what it can do"), and once a port number that is in the document but not in the cited section. Batch 4's reads were told to look for those kinds by name, cost 160,000 to 200,000 where batch 3's cost 74,000 to 122,000, and gave 17, 26 and 17 rulings; none of batch 4's first checks failed on those kinds.
+- **Batch 4's four held-back items were of substance**, where batch 3's were bookkeeping: FTPS's port, a sentence that read as if the ServerHello were encrypted, a claim made of two ciphers and sourced for one, and the badge the orchestrator had ruled to span.
+- **The analysts are just under half of a lesson's cost** (3,033,057 of 6,364,497), as in batch 2. Every analyst's context was summarised at least once.
+- **The authors' sections cost 198,612 for six**, where batches 1 and 2 spent about 24,000 a list. They are longer: each carries every note of its lesson's checks.
+
+## Corrections, beside the earlier batches'
+
+| Lesson | Corrections | Removals | Additions | Rewordings | Sources |
+|---|---|---|---|---|---|
+| What is HTTP (the old rule) | 41 | 7 | 12 | 3 | 2 became 20 |
+| Batch 1: What is HTTPS, What is TCP, What is DNS | 16, 11, 3 | 12, 3, 8 | 21, 17, 7 | 2, 2, 5 | to 41, 22, 29 |
+| Batch 2: What is IP, What is DHCP, What is ICMP | 10, 4, 16 | 5, 3, 8 | 11, 12, 11 | 2, 2, 1 | to 28, 25, 22 |
+| What is SMTP | 9 | 12 | 19 | 0 | 1 became 28 |
+| What is POP3 | 5 | 4 | 8 | 3 | 1 became 19 |
+| What is IMAP | 14 | 3 | 13 | 2 | 1 became 18 |
+| What is FTP | 9 | 1 | 9 | 0 | 1 became 28 |
+| What is SSH | 19 | 3 | 17 | 6 | 2 became 32 |
+| What is TLS | 19 | 2 | 22 | 1 | 1 became 34 |
+
+The lists do not count alike (one author files a widened Learn part as an addition, another as a rewording; "Removals" counts a lesson's message sizes as one row or as several). What is SSH's and What is TLS's 19 are mostly absolutes with no source ("most servers", "most apps", "43 characters") and, in What is TLS, the key exchange made to agree with What is HTTPS.
+
+## What the checkers passed as a simplification
+
+Every note is in the track's report, under each lesson's "What the checker passed as a simplification" (71, 49, 88, 58, 73 and 82 notes). The orchestrator read them. Each says what a general word leaves out: an optional command, a rarer mode, an exception a standard allows, a second address family. None gives a wrong cause, number, name or order.
+
+For the owner, none as a stop (they are in the report's opening, "For the owner to know"): What is SSH shows the key exchange OpenSSH 9.9 chose first, and names the newer one in a Go deeper; "passwords included" went from the Telnet sentence for want of a current source; the shared-secret explanation in What is SSH and What is TLS describes the X25519 half of a hybrid exchange; "SSL is its old name" stays in What is TLS's full name.
+
+## Could go one model lower next time
+
+- **The fix after a near-pass, when the checker names it.** Twice the fix was a trace or a few words the checker's own note gave (What is IMAP's second fix, What is TLS's sentence): the orchestrator sent them straight to the author, with no analyst, and both passed.
+- **Nothing else.** The reads before the check found 17 to 26 faults a lesson in batch 4, and the four items the checks still held back were ones no read had seen.
+
+## What to do differently next time
+
+- **Give the read before the check the list of what earlier checks failed on, from the first batch of a job.** `.superpowers/briefs/analyst-read-before-check.md` has it now; it should be in the repo beside the agents' instructions.
+- **Tell an author, in its first brief, to state the unit's full name and its purpose in a Learn part.** Two of batch 3's first checks failed on it; batch 4's authors were told and none did.
+- **A page the lesson cites can overrule a badge that spans.** The orchestrator ruled What is SSH's badge to span on a page that says "not strictly defined, but most sources describe it as layer 7"; the checker read the second half. Read the whole passage as a checker would before ruling.
+- **Check a citation's section name against the page's own heading before the first check.** A wrong heading that the checker only notes still has to be fixed, and the fix cost What is FTP a second full check (23 items is over a re-check's 12).
+- **The briefs kept outside the repo should be in it.** Seven files in `.superpowers/briefs/` and three scripts in `.superpowers/tools/` (token counts from a transcript, registry entries from a report, the check of the track's report) carried this job; the next session will not find them unless it is told. Moving them into the repo is a small unit of its own.
+- **Keep the batch's branch in a worktree of its own.** It let batch 3's end-to-end run and batch 4's registry go on together. The full unit suite failed seven playback tests while the end-to-end run had the machine; it passes alone.
+- **Reconcile a merge by reading the conflict first.** The orchestrator's first script for the registry joined the two sides blindly and made one entry of two; printing the conflict before resolving it, as it did for the next merge, costs a few lines.
+- **Six agents at once reached the owner's usage limit** an hour and a half into batch 3's checks. Nothing was lost, since each agent goes on from its transcript, but agents that had not yet written their report files would have lost that work in a crash: the brief now says to write in parts.
+- **`src/content/legacy.ts` still says in a comment that the tour's fourteen lessons keep their uncited words until their audit.** All fourteen have moved; the comment is for the job that moves Networking's three.
+- **Errata that came to the owner with this job:** direction 2.31 and 2.32 (five new hosts; three page cues changed or removed; which badges show a layer and which span; What is TLS made to agree with What is HTTPS; the Telnet sentence; What is POP3's second letter given a picture), and the three corrections the checks themselves made, which open the track's report.
