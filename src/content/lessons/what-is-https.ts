@@ -134,7 +134,7 @@ export default defineLesson({
   summary:
     'HTTPS is HTTP inside a sealed envelope. The asking and answering are the same, but nobody between you and the site can read or change them, and you can check that the site is really the one you meant.',
   figure: 'net-map',
-  backing: { traces: ['term-https', 'lead-1', 'lead-2', 'why-2', 'term-encrypted', 'term-cert'] },
+  backing: { traces: ['term-https', 'lead-1', 'lead-2', 'why-1', 'why-2', 'term-encrypted', 'term-cert', 'fact-used'] },
   units: [
     {
       id: 'https',
@@ -161,7 +161,7 @@ export default defineLesson({
       },
       overview: {
         hook: 'HTTPS is HTTP inside a sealed envelope. The asking and answering are the same, but nobody between you and the site can read or change them, and you can check that the site is really the one you meant.',
-        hookBacking: { traces: ['term-https', 'lead-1', 'lead-2', 'why-2', 'term-encrypted', 'term-cert'] },
+        hookBacking: { traces: ['term-https', 'lead-1', 'lead-2', 'why-1', 'why-2', 'term-encrypted', 'term-cert'] },
         description:
           'Think of a postcard and a locked box. With plain HTTP, every router on the way could read your postcard, and even rewrite it. With HTTPS, your browser and the site first agree on a lock only the two of them can open, then everything goes in the box. Here your browser opens techconcepts.app.',
         backing: { analogy: true },
@@ -206,7 +206,7 @@ export default defineLesson({
           status: 'Preparing a secure request',
           idle: 'Nothing on the network yet. The browser is still getting ready.',
           events: [],
-          backing: { traces: ['term-https', 'lead-1', 'fact-port', 'pattern', 'fact-dns', 'fact-tcp', 'fact-tls'] },
+          backing: { traces: ['term-https', 'lead-1', 'fact-is', 'fact-port', 'pattern', 'fact-dns', 'fact-tcp', 'fact-tls'] },
         },
         {
           id: 'dns-resolution',
@@ -221,6 +221,7 @@ export default defineLesson({
                 rfc('rfc-1035', '4.2.1', true),
                 rfc('rfc-9076', '1'),
                 rfc('rfc-8484', '1', true),
+                rfc('rfc-8484', '8.1'),
                 rfc('rfc-7858', '3.1', true),
                 CF_DNS,
                 CHROME_ALWAYS,
@@ -395,7 +396,7 @@ export default defineLesson({
           facts: [
             { label: 'Version', value: 'TLS 1.3', backing: { traces: ['fact-tls'] } },
             { label: 'Certificate for', value: 'techconcepts.app', backing: { traces: ['term-cert', 'why-2', 'fact-tls'] } },
-            { label: 'Shared key made by', value: 'X25519 key exchange', backing: { traces: ['fact-kx', 'term-key'] } },
+            { label: 'Shared key made by', value: 'X25519 with ML-KEM', backing: { traces: ['fact-kx', 'term-key'] } },
             { label: 'Costs', value: 'one more round trip', backing: { traces: ['fact-tls'] } },
           ],
           events: [
@@ -522,6 +523,8 @@ export default defineLesson({
               'term-encrypted',
               'fact-watch',
               'fact-drawing',
+              'fact-files',
+              'term-html',
             )({
               tag: 'ENCRYPTED',
               from: 'web',
@@ -540,7 +543,7 @@ export default defineLesson({
               rows: [{ key: 'res', cells: ['The reply', 'encrypted data, about 18 KB'] }],
             }),
           ],
-          backing: { traces: ['fact-inside', 'fact-type', 'fact-is', 'fact-records', 'term-encrypted', 'fact-watch', 'lead-2', 'pattern'] },
+          backing: { traces: ['fact-inside', 'fact-type', 'term-html', 'fact-is', 'fact-records', 'term-encrypted', 'fact-watch', 'lead-2', 'pattern'] },
         },
         {
           id: 'secure-session',
@@ -565,7 +568,7 @@ export default defineLesson({
           facts: [
             { label: 'Padlock means', value: 'encrypted, and the name checked out', backing: { traces: ['term-padlock'] } },
             { label: 'Doesn’t mean', value: 'the site is safe or honest', backing: { traces: ['fact-honest', 'term-padlock'] } },
-            { label: 'Next visit', value: 'resumes with the session ticket', backing: { traces: ['fact-ticket'] } },
+            { label: 'Next visit', value: 'can resume with the session ticket', backing: { traces: ['fact-ticket'] } },
             { label: 'Certificates last', value: 'a few months, then they’re renewed', backing: { traces: ['fact-validity'] } },
           ],
           events: [
@@ -620,6 +623,7 @@ export default defineLesson({
             }),
             ...msgOf(
               'fact-ticket',
+              'fact-tls',
               'fact-is',
               'fact-rides',
               'term-encrypted',
@@ -661,8 +665,8 @@ export default defineLesson({
           {
             id: 'term-https',
             idea: 'HTTP inside a sealed line',
-            name: 'HTTPS',
-            cite: [rfc('rfc-9112', '9.7', true), rfc('rfc-9110', '4.2.2', true), rfc('rfc-9110', '4.2', true)],
+            name: 'HTTPS (HTTP Secure)',
+            cite: [rfc('rfc-9112', '9.7', true), rfc('rfc-9110', '4.2.2', true), rfc('rfc-9110', '4.2', true), EDGE_HTTP],
           },
           {
             id: 'term-port',
@@ -699,6 +703,12 @@ export default defineLesson({
             idea: 'Scrambled so only the two ends can read it',
             name: 'Encrypted',
             cite: [rfc('rfc-9846', '1', true)],
+          },
+          {
+            id: 'term-html',
+            idea: 'The text that describes the page',
+            name: 'HTML',
+            cite: [html('1.3', 'background', true), html('1.10', 'a-quick-introduction-to-html', true)],
           },
           {
             id: 'term-padlock',
@@ -774,8 +784,8 @@ export default defineLesson({
           {
             id: 'fact-watch',
             label: 'Watchers still see',
-            value: 'addresses, the site’s name (SNI), sizes and timing',
-            cite: [rfc('rfc-9849', '1'), rfc('rfc-9846', '1', true), F3_9846, rfc('rfc-6066', '3', true)],
+            value: 'addresses and ports, the site’s name (SNI), sizes and timing',
+            cite: [rfc('rfc-9849', '1'), rfc('rfc-9846', '1', true), F3_9846, rfc('rfc-6066', '3', true), rfc('rfc-9110', '4.3.3', true)],
           },
           {
             id: 'fact-defined',
@@ -787,7 +797,7 @@ export default defineLesson({
             id: 'fact-used',
             label: 'Used for',
             value: 'web pages, and apps that talk to servers',
-            cite: [rfc('rfc-9110', '1.2'), rfc('rfc-9110', '3.5'), rfc('rfc-9114', '1')],
+            cite: [rfc('rfc-9110', '1.2'), rfc('rfc-9110', '3.5'), rfc('rfc-9114', '1'), EDGE_HTTP],
           },
           { id: 'fact-osi', label: 'OSI layer', value: '7, application', cite: [MS_L7, CF_L7] },
           {
@@ -807,7 +817,7 @@ export default defineLesson({
             id: 'fact-dns-plain',
             label: 'Plain DNS',
             value: 'not encrypted, so the name you look up shows; DoH (port 443) or DoT (port 853) can hide it',
-            cite: [rfc('rfc-9076', '5.1'), rfc('rfc-9076', '1'), rfc('rfc-8484', '1', true), rfc('rfc-7858', '3.1', true), CF_DNS],
+            cite: [rfc('rfc-9076', '5.1'), rfc('rfc-9076', '1'), rfc('rfc-8484', '1', true), rfc('rfc-8484', '8.1'), rfc('rfc-7858', '3.1', true), CF_DNS],
           },
           {
             id: 'fact-tcp',
@@ -882,7 +892,7 @@ export default defineLesson({
           {
             id: 'fact-ticket',
             label: 'Session ticket',
-            value: 'after the handshake the server may send a ticket; a later visit can resume with it, skip the certificate, and even send its first request at once (0-RTT)',
+            value: 'after the handshake the server may send a ticket (NewSessionTicket); a later visit can resume with it, skip the certificate, and even send its first request at once (0-RTT)',
             cite: [rfc('rfc-9846', '2.2', true), rfc('rfc-9846', '4.7.1', true), rfc('rfc-9846', '2.3', true)],
           },
           {
@@ -894,7 +904,7 @@ export default defineLesson({
           {
             id: 'fact-honest',
             label: 'Padlock does not mean',
-            value: 'the site is honest: scam sites can have valid certificates too',
+            value: 'the site is safe or honest: scam sites can have valid certificates too',
             cite: [EDGE_ICON, rfc('rfc-8555', '1')],
           },
         ],
