@@ -287,7 +287,7 @@ H1 is the first unit with a spec review before its build and a three-level build
 
 # Job 5: three lessons side by side (batch 1 of 5)
 
-Planned on 2026-11-11; it waits for the owner's go. What is HTTPS, What is TCP and What is DNS, each in its own worktree, under the rules of direction 2.24 and 2.25.
+Planned on 2026-11-11; the owner said go that day. What is HTTPS, What is TCP and What is DNS, each in its own worktree, under the rules of direction 2.24 and 2.25.
 
 | Unit | Agent | Model | Tries | Tokens | Result |
 |---|---|---|---|---|---|

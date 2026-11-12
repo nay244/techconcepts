@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3.
 
-**Status: written on 2026-11-11, waiting for the owner's go.** Nothing in it has started except the scout and one change to the fact-checker's instructions (decision 4). Nothing is pushed.
+**Status: the owner said go on 2026-11-11** ("Go"), which approves the nine decisions below. A fresh session carries it out; the results go in `team.md` under "Job 5". Nothing has started except the scout and the change to the fact-checker's instructions (decision 4). Nothing is pushed.
 
 ## Inputs
 
