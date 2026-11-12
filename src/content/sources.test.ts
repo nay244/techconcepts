@@ -232,7 +232,7 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s, batch 2’s and batch 3’s', () => {
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s, batch 2’s, batch 3’s and batch 4’s', () => {
     expect(Object.keys(SOURCES)).toEqual([
       'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
@@ -271,6 +271,20 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-2595', 'rfc-5034', 'rfc-7817', 'rfc-5322', 'rfc-2046', 'microsoft-imap-pop', 'google-gmail-pop',
       // and What is IMAP's.
       'rfc-9208', 'rfc-7162', 'microsoft-exchange-pop-imap', 'google-gmail-imap-settings', 'google-storage', 'rfc-5550',
+      // Batch 4: What is FTP's,
+      'rfc-2228', 'rfc-2577', 'rfc-4217', 'rfc-2428', 'rfc-1579', 'rfc-3659', 'rfc-1350',
+      'rfc-1635', 'microsoft-iis-ftp-firewall', 'microsoft-iis-ftp-ssl', 'microsoft-app-service-ftp', 'microsoft-azure-sftp', 'microsoft-sftp-connector', 'microsoft-iis-ftp-anonymous',
+      'microsoft-pxe-winpe', 'cloudflare-spectrum-ftp', 'cloudflare-spectrum-glossary', 'google-merchant-sftp', 'cisco-asa-inspect-overview', 'cisco-asa-inspect-basic', 'cisco-router-upgrade',
+      // What is SSH's,
+      'rfc-4251', 'rfc-4252', 'rfc-4253', 'rfc-4254', 'rfc-9941', 'rfc-10042', 'rfc-8709',
+      'rfc-5647', 'rfc-4256', 'rfc-9987', 'iana-ssh-parameters', 'nist-ir-7966', 'nist-sp800-123', 'microsoft-openssh-overview',
+      'microsoft-openssh-get-started', 'microsoft-openssh-keys', 'microsoft-openssh-server-config', 'microsoft-azure-ssh-quick', 'microsoft-azure-ssh-detailed', 'microsoft-hdinsight-ssh-tunnel', 'cisco-ssh-configure',
+      'openbsd-man-ssh-config', 'openbsd-man-sshd-config', 'openbsd-man-ssh', 'openbsd-man-sshd', 'openbsd-man-ssh-agent', 'openbsd-man-sftp', 'cloudflare-ssh',
+      // and What is TLS's.
+      'rfc-5869', 'rfc-5116', 'rfc-9162', 'rfc-6176', 'rfc-7568', 'rfc-8996', 'rfc-9325',
+      'rfc-9852', 'nist-sp800-52r2', 'microsoft-tls-protocol', 'microsoft-sql-tls-1-3', 'microsoft-app-service-certificates', 'paloalto-tls-handshake', 'paloalto-tls-certificate',
+      'cloudflare-client-certificates', 'microsoft-ms-sstp', 'microsoft-iis-ftp-messages',
+      'baeldung-ssh-intro',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

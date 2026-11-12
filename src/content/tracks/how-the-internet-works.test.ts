@@ -467,7 +467,7 @@ test('each protocol’s table ends with the mockup’s rows', () => {
     ['Name asked for', 'techconcepts.app'],
     ['Version', 'TLS 1.3'],
     ['Cipher suite', 'TLS_AES_128_GCM_SHA256'],
-    ['Key exchange', 'X25519'],
+    ['Key exchange', 'X25519 with ML-KEM'],
     ['Name on certificate', 'techconcepts.app ✓'],
     ['Signed by', 'a CA the laptop trusts ✓'],
     ['Server owns that key', 'yes ✓'],
@@ -758,9 +758,8 @@ test('each protocol’s sources are the RFCs its facts name', () => {
     }
   });
   // Some RFCs the facts name are not among the sources the plan drafted: HTTPS's RFC 8446 (TLS 1.3, the TLS part's
-  // own source), IP's RFC 8200 (IPv6), and the two of SSH's "RFC 4251 to 4254" it does not cite, 4252 (logging in)
-  // and 4254 (channels). The owner reviews the sources with the built lesson.
-  const uncited: Record<string, string[]> = { ssh: ['RFC 4252', 'RFC 4254'] };
+  // own source) and IP's RFC 8200 (IPv6). The owner reviews the sources with the built lesson.
+  const uncited: Record<string, string[]> = {};
   /** Each RFC a fact names, a range ("RFC 4251 to 4254") one by one. */
   const rfcsIn = (value: string) =>
     [...value.matchAll(/RFC (\d+)(?: to (\d+))?/g)].flatMap(([, from, to = from]) =>

@@ -5,8 +5,8 @@ import { liftedFixture, makeLesson, makeUnit } from './test-fixtures';
 
 const TOUR = ['dhcp', 'dns', 'ftp', 'http', 'https', 'icmp', 'imap', 'ip', 'pop3', 'smtp', 'ssh', 'tcp', 'tls', 'udp'];
 
-test('the legacy list is exactly the six lessons not yet moved: three of How the Internet Works and three of Networking (it may only shrink)', () => {
-  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'subnetting', ...TOUR.filter((p) => p !== 'udp' && p !== 'http' && p !== 'dns' && p !== 'tcp' && p !== 'https' && p !== 'dhcp' && p !== 'icmp' && p !== 'ip' && p !== 'pop3' && p !== 'smtp' && p !== 'imap').map((p) => `what-is-${p}`)]);
+test('the legacy list is exactly the three lessons not yet moved, all of Networking: every lesson of How the Internet Works has moved (it may only shrink)', () => {
+  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'subnetting', ...TOUR.filter((p) => p !== 'udp' && p !== 'http' && p !== 'dns' && p !== 'tcp' && p !== 'https' && p !== 'dhcp' && p !== 'icmp' && p !== 'ip' && p !== 'pop3' && p !== 'smtp' && p !== 'imap' && p !== 'tls' && p !== 'ftp' && p !== 'ssh').map((p) => `what-is-${p}`)]);
 });
 
 test('lifting keeps every word and adds empty citations', () => {
