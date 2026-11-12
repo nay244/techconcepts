@@ -2428,6 +2428,8 @@ export const SOURCES: SourceRegistry = defineSources([
     title: '[MS-SSTP]: Overview',
     publisher: 'Microsoft',
     url: 'https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sstp/70adc1df-c4fe-4b02-8872-f1d8b9ad806a',
+  },
+  {
     id: 'microsoft-iis-ftp-messages',
     kind: 'vendor',
     short: 'Microsoft IIS FTP messages',
