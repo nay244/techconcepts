@@ -80,6 +80,18 @@ const GOOGLE_OAUTH = vendor(
   'Transition from less secure apps to OAuth',
   'CalDAV%2C%20CardDAV%2C%20IMAP%2C%20SMTP%2C%20and%20POP%20will%20no%20longer%20work',
 );
+const MS_EXCHANGE_POLL = vendor(
+  'microsoft-exchange-pop-imap',
+  MS_EXCHANGE_URL,
+  'POP3 and IMAP4 applications and settings',
+  'Send%20and%20receive%20messages%20every%20set%20number%20of%20minutes',
+);
+const GOOGLE_POLL = vendor(
+  'google-gmail-imap-settings',
+  'https://support.google.com/mail/answer/78892',
+  'Choose your IMAP email client settings for Gmail',
+  'Check%20for%20new%20messages%20every%2010%20minutes',
+);
 const GOOGLE_SENT = vendor(
   'google-gmail-imap-settings',
   'https://support.google.com/mail/answer/78892',
@@ -145,7 +157,7 @@ export default defineLesson({
       purpose: 'Email kept in sync',
       group: 'app',
       osi: 'spans',
-      backing: { traces: ['term-imap', 'fact-stays'] },
+      backing: { traces: ['term-imap', 'fact-stays', 'fact-name'] },
       scene: {
         title: 'Your mail stays on the server, in sync',
         views: ['network', 'sequence'],
@@ -185,7 +197,7 @@ export default defineLesson({
           {
             label: 'Keeps',
             value: 'folders and read marks on the server',
-            backing: { traces: ['term-folders', 'term-flag', 'fact-seen'] },
+            backing: { traces: ['term-folders', 'term-flag', 'fact-seen', 'lead-1'] },
           },
           {
             label: 'New mail',
@@ -808,7 +820,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-idle', 'fact-idle', 'fact-delivery', 'fact-exists', 'fact-fetch', 'fact-replies', 'fact-seen', 'lead-1'],
+            traces: ['term-idle', 'fact-idle', 'fact-delivery', 'fact-exists', 'fact-fetch', 'fact-replies', 'fact-seen', 'lead-1', 'fact-push'],
           },
         },
       ],
@@ -999,6 +1011,18 @@ export default defineLesson({
             label: 'New mail arrives by',
             value: 'SMTP over TCP, on port 25, from other mail servers; the server puts it in your mailbox for IMAP to read',
             cite: [rfc('rfc-5321', '2.3.10', true), rfc('rfc-5321', '4.5.4.2', true), imap('5.2'), IANA_PORTS],
+          },
+          {
+            id: 'fact-name',
+            label: 'Stands for',
+            value: 'Internet Message Access Protocol',
+            cite: [IMAP_ABSTRACT],
+          },
+          {
+            id: 'fact-push',
+            label: 'Push, not polling',
+            value: 'without IDLE an app polls, asking the server for new mail every few minutes; with IDLE the server pushes news to the app as it happens',
+            cite: [imap('6.3.13'), MS_EXCHANGE_POLL, GOOGLE_POLL, rfc('rfc-5550', '5.4.2')],
           },
         ],
       },
