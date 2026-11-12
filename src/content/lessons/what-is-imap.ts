@@ -346,7 +346,7 @@ export default defineLesson({
             {
               label: 'Greeting',
               value: '* OK IMAP4rev2 ready',
-              backing: { traces: ['fact-replies'] },
+              backing: { traces: ['fact-replies', 'deep-version'] },
             },
             {
               label: 'Log in',
@@ -365,7 +365,7 @@ export default defineLesson({
             },
           ],
           events: [
-            ...msgOf('fact-replies', 'fact-rides', 'term-imap')({
+            ...msgOf('fact-replies', 'deep-version', 'fact-rides', 'term-imap')({
               tag: '* OK',
               from: 'mail',
               to: 'laptop',
@@ -527,7 +527,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-folders', 'term-select', 'fact-exists', 'term-fetch', 'fact-fetch', 'fact-seen', 'fact-replies', 'fact-stays'],
+            traces: ['term-folders', 'term-select', 'fact-exists', 'term-fetch', 'fact-fetch', 'fact-seen', 'fact-replies', 'fact-stays', 'fact-versus'],
           },
         },
         {
@@ -679,7 +679,7 @@ export default defineLesson({
             },
             {
               label: 'Restarted',
-              value: 'about every 29 minutes',
+              value: 'at least every 29 minutes',
               backing: { traces: ['fact-idle'] },
             },
           ],
@@ -808,7 +808,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-idle', 'fact-idle', 'fact-delivery', 'fact-exists', 'fact-fetch', 'fact-replies', 'fact-seen'],
+            traces: ['term-idle', 'fact-idle', 'fact-delivery', 'fact-exists', 'fact-fetch', 'fact-replies', 'fact-seen', 'lead-1'],
           },
         },
       ],
@@ -835,7 +835,7 @@ export default defineLesson({
           },
           {
             id: 'term-folders',
-            idea: 'Inbox, Sent, Archive',
+            idea: 'Inbox, Sent, Archive, your own',
             name: 'Folders (mailboxes)',
             cite: [IMAP_ABSTRACT, imap('5.1'), imap('7.3.1')],
           },
@@ -874,13 +874,13 @@ export default defineLesson({
           id: 'pattern',
           names: ['LOGIN', 'SELECT', 'FETCH', 'STORE', 'IDLE'],
           note: 'Every IMAP session goes roughly this way, and nothing is deleted unless you ask.',
-          cite: [imap('3.1'), imap('3.2'), imap('2.3.2'), imap('6.4.3')],
+          cite: [imap('3.1'), imap('3.2'), imap('2.3.2'), imap('6.4.3'), imap('6.2.3'), imap('6.3.2'), imap('6.4.5'), imap('6.4.6'), imap('6.3.13')],
         },
         why: [
           {
             id: 'why-1',
             text: 'With IMAP, the server holds the one true copy of your mailbox.',
-            cite: [IMAP_ABSTRACT, MS_EXCHANGE_STAYS],
+            cite: [IMAP_ABSTRACT, imap('2.3.2'), MS_EXCHANGE_STAYS],
           },
           {
             id: 'why-2',
@@ -892,7 +892,7 @@ export default defineLesson({
           {
             id: 'deep-version',
             text: 'IMAP4rev2 (RFC 9051) is the current version.',
-            cite: [IMAP_ABSTRACT, IMAP_CHANGES],
+            cite: [IMAP_ABSTRACT, imap('1.3'), IMAP_CHANGES],
           },
           {
             id: 'deep-sync',
@@ -932,7 +932,7 @@ export default defineLesson({
           {
             id: 'fact-versus',
             label: 'Versus POP3',
-            value: 'many devices, one mailbox; POP3 reads one folder, usually the inbox',
+            value: 'many devices, one mailbox; POP3 reads just one folder',
             cite: [IMAP_ABSTRACT, imap('5.2'), rfc('rfc-1939', '1', true), MS_IMAPPOP, MS_EXCHANGE_FOLDER],
           },
           {
@@ -958,8 +958,9 @@ export default defineLesson({
           {
             id: 'fact-replies',
             label: 'Replies',
-            value: 'lines starting * are untagged, like the greeting * OK; the final one carries the command’s tag and OK, NO or BAD',
-            cite: [imap('2.2.2'), imap('7.1.1')],
+            value:
+              'lines starting * are untagged, like the greeting * OK; the final one carries the command’s tag and OK, NO or BAD, so an app with several commands in progress knows which answer is which',
+            cite: [imap('2.2.2'), imap('7.1.1'), imap('5.5')],
           },
           {
             id: 'fact-login',
