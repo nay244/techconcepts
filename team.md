@@ -215,3 +215,72 @@ The owner said go on 2026-11-11 (plan at `46afa6b`). One lesson under the order 
 | H1 | builder | Sonnet | 1, then the review's three fixes | 189,571 | Implements D5 variant A and the errata (`6beb12f`, fixes `b88ff80`). Home's Learn part shows "Checked 11 Nov 2026, 20 sources", sources 1 to 3 and "Show the other 17"; the laptop's page is drawn from the lesson's own cues, at step 5. Each of the 26 cases has a test with a named break and its failure. `npm test` 1,698 passed; build within budget; `e2e/site.spec.ts` passed in all seven projects (77 in each desktop project, 87 on phone). |
 | H1 | reviewer (build review) | Opus, high | 1 | 75,567 | **PASS WITH FIXES**: no blockers, no drift from variant A, the eight errata built as written, nothing under `src/content/` touched. 12 breaks of its own each turned a unit test red; the H1 end-to-end block passed 37 of 37. Three fixes, all tests too weak (one title of 20 asserted; any folded link accepted after Enter; the control measured closed only). |
 | H1 | orchestrator | Fable | 1 | not counted | Ran the reviewer's "fixed when" check for each fix, with no second review: the title test goes red with the tooltip removed from the shown links (4 failed); the touch-target test goes red with the open control shrunk (`Expected: >= 44, Received: 19`); `'RFC 791'` is asserted in `keyboard()`; restored, the three pass (13 passed). Looked at the built Learn part at 375 and 1440 beside the prototype. |
+| Final | orchestrator | Fable | 1 | not counted | One merge into `revamp` (`d4fbed9`). On it: `npm test` 119 files, 1,698 tests passed; `npm run build` "Every page is within budget (25 pages)."; `npm run e2e` 1,191 passed, 256 skipped, none failed (18.3 minutes, lid open, exit 0). |
+
+## Designer spend
+
+| Unit | Variants | Tokens | Approved by the owner |
+|---|---|---|---|
+| D5 | 2 | 282,223 | 2026-11-11, variant A |
+
+## Spend by role
+
+| Role | Model | Tokens |
+|---|---|---|
+| scout | Haiku | 127,655 |
+| author, builder | Sonnet | 568,102 |
+| analyst, fact-checker (the canary included), reviewer | Opus | 1,022,916 |
+| designer | Fable | 282,223 |
+| **All subagents** | | **2,000,896** |
+
+The plan's estimate was about 2.0 to 2.2 million: 1.3 to 1.5 for the lesson, about 0.6 for Home, and the scout. The canary run (96,842) was not in the plan; it followed the owner's rule change.
+
+## What the lesson cost, against the estimate
+
+What is HTTP: **1,124,804 tokens**. The estimate was 1.3 to 1.5 million; What is UDP cost 2,020,730.
+
+| | Estimate | As it ran |
+|---|---|---|
+| Analyst | 150,000 to 200,000 | 341,451: the report on every idea (235,921), rulings on the author's doubts (74,287), words for the failed items (31,243) |
+| Author | 350,000 to 450,000 | 378,531: three passes (347,031) and the list of changed sentences (31,500) |
+| Fact-checker | 800,000 to 850,000 (three full checks, two re-checks) | 404,822: two full checks, no re-check |
+| **The lesson** | **1.3 to 1.5 million** | **1,124,804** |
+
+- **The analyst cost more than planned and the checker half.** The analyst was called three times, not once, and each call replaced a guess the checker would have failed. The lesson passed on its second full check, where What is UDP took five and a re-check.
+- **The first check failed on bookkeeping.** 16 of its 19 failures were a Watch item showing TCP, port 80, GET or "200 OK" with no trace to the Learn part that says so. The analyst's strict sweep before that check had judged words and citations and missed them; its second sweep, told to judge as the checker had, found those 16 and 4 more.
+- **Moving the lesson was again mostly rewriting:** 41 corrections, 7 removals, 12 additions, 3 rewordings; 2 sources became 20. The owner read the list and found most of the originals fine: about 15 corrections fixed something false or misleading and about 26 tightened a sentence that was true for a beginner. The rule that forced those is changed (direction 2.24).
+- **Home's rows: 651,595** against about 0.6 million: designer 282,223, reviewer 179,801 (spec review 104,234, build review 75,567), builder 189,571.
+
+## What the two review rules saved or cost
+
+H1 is the first unit with a spec review before its build and a three-level build review.
+
+- **Cost:** one more Opus read before the build, 104,234 tokens.
+- **What it found before a line was written:** eight holes, each with one right answer. Two would have been faults in the build (a lesson that carries only the "full page" cue had no step for the page's words; cues on notes were not read) and four were checks that could not fail as the spec wrote them.
+- **What followed:** the build passed its first review with no blocker and no drift. Its three findings were weak tests; under the old rule any finding was a FAIL, a second builder round and a fresh second review (45,000 to 110,000 tokens in job 1). Here the same builder fixed them for 3,664 tokens and the orchestrator ran the reviewer's three checks.
+- **For scale:** H1 took 369,372 tokens for its spec review, build and review, and one try each. Job 1's visual units took 290,000 to 715,000 and two tries each, and ten of the thirteen units reviewed before these rules failed their first review.
+- **One unit is one data point.** It was a small unit with a designer's spec that already had 16 acceptance checks.
+
+## Proposal for the other 15 lessons
+
+1. **Expect about 0.85 to 0.95 million tokens a lesson, so about 13 to 14 million for the 15.** One analyst report (about 240,000) and one follow-up (30,000 to 70,000); the author (about 330,000); one full check (about 200,000) and, after a near-pass, a targeted re-check (about 90,000); the list of changed sentences (about 30,000). That assumes the first check is a pass or a near-pass, which the sixth fault and the looser rule are for. At What is HTTP's cost it would be about 17 million; at What is UDP's, about 30.
+2. **Three lessons at a time, in worktrees.** The three analysts run together and change no file; the orchestrator registers the three lessons' documents in one commit on `revamp`; then three authors start, each in its own worktree on its own branch, and each lesson is checked and merged when it passes. Five jobs of three, a fresh session each.
+3. **Order:** What is HTTPS first (Home shows its lead), with What is TCP and What is DNS, whose documents What is HTTP already registered; then the other nine tour lessons; then DHCP, Subnetting and Firewalls.
+4. **The first batch tests the looser rule.** Count each lesson's corrections against What is HTTP's 41, and read the checker's notes on what it passed as a simplification; if a note names something a beginner would be misled by, the rule's wording is tightened before the second batch, with the owner's yes.
+5. **Before the first check, the analyst reads the claim sheet once as the checker will**, the traced items included. On this lesson that read, done after the failure, found everything the second check then passed.
+6. **Only What is HTTPS needs a Home unit**, and a small one: Home shows its lead, so a builder changes the tests that quote it.
+
+## Could go one model lower next time
+
+- **Applying a list of exact rulings** (the author's second and third passes, 33,951 tokens together): Haiku could apply "new words, these citations" line by line.
+- **The list of changed sentences** (31,500): a script for the comparison and Haiku for the reasons, as job 3 said.
+- **The build review of a unit whose spec review left cases** (75,567 on Opus): Sonnet at high effort could try named cases against a diff. Keep the spec review itself on Opus: its eight holes were the value.
+- Nothing else. The analyst and the fact-checker are what Opus is for, by the owner's rule, and D5 needed taste.
+
+## What to do differently next time
+
+- **A sweep must be told what the checker judges.** "Be strict" found 13 faults in words and citations and none of the 16 in traces. The brief that worked named the checker's test for a traced item.
+- **A resumed agent's token figure is its running total.** Record the difference for each pass, as this ledger does.
+- **A dev server in a worktree with linked `node_modules` returns 403 for fonts and the lesson island.** The designer measured against a build written to a scratch folder; a brief should say so.
+- **The owner's read of the changed-sentences list changed a rule.** The list is worth its tokens: show it before the next batch starts, not at the end of a job.
+- **Errata that came to the owner with this job:** the eight to H1's spec (`prototypes/d5-cases.md`); the page on Home's laptop drawn at step 5, from the lesson's cues; and the lesson's three source-forced changes (direction 2.23).

@@ -101,7 +101,7 @@ Done when the build fails for any cited content without a current all-pass repor
 
 Status: done. The build fails for a cited lesson whose report has no quote record, a record that does not match its quotes, or a passing claim with citations and no quote, and refuses any glossary entry or objective mapping outright until a path is built for that kind (decision 2.16). All 160 quotes in OSI Model's report are confirmed in its six sources; none was a misquote. The canary, checked again by the changed fact-checker, has every planted fault flagged and every correct claim passed (29 passing, 1 partial, 4 failing, where the record had 29, 2 and 3: one planted fault is judged failing, not partial). What the check does not prove, and what to do differently, are in `plan.md` and `team.md`.
 
-### Phase 4: How the Internet Works, verified — IN PROGRESS (1 of 17 lessons, 2026-11-11)
+### Phase 4: How the Internet Works, verified — IN PROGRESS (2 of 17 lessons, 2026-11-11)
 
 - A worklist of the 17 uncited lessons, the 14 tour lessons first (option 4).
 - Each lesson is moved to the cited shape and passes a fresh fact-checker, one lesson per branch. For scale: OSI Model took 127 checked items and at least six checker runs.
@@ -109,7 +109,7 @@ Status: done. The build fails for a cited lesson whose report has no quote recor
 
 Done when every live lesson's stamp says "Checked" with its date (§7).
 
-Status: What is UDP is cited and checked (2026-11-11), the first of the 17; `docs/lesson-changes/what-is-udp.md` lists every sentence that changed. The pilot showed a lesson is rewritten, not annotated (34 corrections, 15 removals, 20 additions; 1 source became 31), that an analyst on Opus is needed to keep its teaching, and that a fresh checker finds a different handful each run, which is why a targeted re-check may follow a near-pass (decision 2.19). A lesson cost about 2.0 million tokens and should cost about 1.3 to 1.5 million with what the pilot taught; `team.md` (job 3) has the working. What is HTTP is next, alone (decision 2.22); the other 15 wait for its numbers.
+Status: What is UDP is cited and checked (2026-11-11), the first of the 17; `docs/lesson-changes/what-is-udp.md` lists every sentence that changed. The pilot showed a lesson is rewritten, not annotated (34 corrections, 15 removals, 20 additions; 1 source became 31), that an analyst on Opus is needed to keep its teaching, and that a fresh checker finds a different handful each run, which is why a targeted re-check may follow a near-pass (decision 2.19). A lesson cost about 2.0 million tokens and should cost about 1.3 to 1.5 million with what the pilot taught; `team.md` (job 3) has the working. What is HTTP is cited and checked too (2026-11-11), alone as decision 2.22 asked; `docs/lesson-changes/what-is-http.md` lists its changes (41 corrections, 7 removals, 12 additions; 2 sources became 20). It cost 1.12 million tokens and passed on its second full check. The owner read its changed sentences and changed the rule a check passes by (decision 2.24). The other 15 wait for the owner's go on `team.md`'s proposal (job 4): three at a time, at about 0.85 to 0.95 million tokens a lesson.
 
 ### Phase 5: the Practice page — TODO
 
@@ -324,6 +324,8 @@ The owner, 2026-11-10: "Do not reference the old homepage layout. Create your ow
 **Measured, 1440×900 and 375×812.** The page is 3,761px tall on desktop and 4,176px on a phone, from 5,530px and 7,722px. Its HTML is 114 KB gzipped, from 145 KB; the map is most of it. No sideways scroll at either size; every control in the demo is at least 44px tall.
 
 **Kept from the owner's earlier decisions:** no Continue or resume link, nothing that reads progress, no exam tags, no time figures.
+
+**The demo's sources and its page (D5 and H1, 2026-11-11; the owner approved variant A).** Learn's last block is the lesson's stamp ("Checked 11 Nov 2026, 20 sources"), then its sources by short name with the lesson's own numbers, the full label as each link's `title`. Six or fewer are all shown; seven or more show the first three and fold the rest behind a native `<details>`, "Show the other 17", which needs no script. On a phone every source link and the control are 44px tall and the folded list is two across. The page on the laptop is lit from the lesson's own `page` cues, so it now appears at step 5, when the stylesheet arrives (decision 2.23), and Home cannot drift from the lesson. `prototypes/d5-home-sources.md` is the spec and `prototypes/d5-cases.md` its errata.
 
 **Not done:** the demo has no motion beyond a 200ms fade (the real lesson moves each message along its way). The header's small Start learning button is 40px tall, as before.
 
