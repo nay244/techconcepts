@@ -17,12 +17,14 @@ The owner keeps:
 
 ## Team
 
+**Models** (the owner's rule, 2026-11-12): "Opus 5.5 will be the new orchestrator and take over tasks previously done by the Fable model. Going forward no tasks should be done on the Fable model unless given permission." The orchestrator runs on Opus 5.5 (`claude-opus-5-5`); start no session or agent on Fable without the owner's word for that task. [docs/orchestrator-handbook.md](docs/orchestrator-handbook.md) is how a job is run, step by step; its briefs are in `docs/briefs/` and its scripts in `scripts/team/`.
+
 Since 2026-11-10 (the owner's rule) the main session is the **orchestrator**: it plans, splits, hands out, checks and merges, and spends its own tokens on decisions. Subagents in `.claude/agents/` do the work, each from a fresh context:
 
 | Agent | Model | Gets |
 |---|---|---|
 | `scout` | Haiku | anything with one right answer: searches, logs, summaries. Renames and formatting go to a script. |
-| `designer` | the orchestrator's (Fable) | anything that needs taste: layout, flows, naming, UX copy, interaction, a first prototype. One self-contained HTML file per screen in `prototypes/`, with its spec. |
+| `designer` | the orchestrator's (Opus 5.5) | anything that needs taste: layout, flows, naming, UX copy, interaction, a first prototype. One self-contained HTML file per screen in `prototypes/`, with its spec. |
 | `builder` | Sonnet | code: one unit, built and tested against its approved spec |
 | `reviewer` | Opus, high effort | before the build, the unit's spec: its holes and the attack cases a build must survive. After it, the diff, the unit, the approved prototype and those cases, nothing else: blockers, fixes and notes |
 | `author` | Sonnet | one lesson moved to the cited shape, its words kept wherever the sources allow, every changed sentence reported |
