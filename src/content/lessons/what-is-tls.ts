@@ -234,7 +234,7 @@ export default defineLesson({
           title: 'ServerHello',
           sub: 'Here’s what we’ll use',
           narrative:
-            'The server answers with a **ServerHello**: it picks TLS 1.3 and one cipher suite, and sends its own key share. Now each side has the other’s public half and its own secret half, and the maths gives both the same **shared secret**. It never crossed the network, so nobody watching can work it out. From this message on, everything the server sends is already encrypted.',
+            'The server answers with a **ServerHello**: it picks TLS 1.3 and one cipher suite, and sends its own key share. Now each side has the other’s public half and its own secret half, and the maths gives both the same **shared secret**. It never crossed the network, so nobody watching can work it out. After this message, everything the server sends is encrypted.',
           deep: [
             {
               text: 'This is elliptic-curve Diffie-Hellman, X25519, paired here with ML-KEM, a post-quantum method. Every connection uses fresh key shares, so someone who records the traffic and later steals the server’s private key still can’t unlock it; that’s forward secrecy. From the shared secret, both sides derive separate keys for each direction (with HKDF). If the client guessed the wrong method, the server sends a HelloRetryRequest, costing a round trip.',
