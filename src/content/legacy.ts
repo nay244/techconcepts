@@ -27,10 +27,7 @@ import {
  * keep their uncited words until each one's audit (owner, 2026-11-08: split now, audit later).
  */
 export const LEGACY_LESSONS = [
-  'what-is-https',
-  'what-is-tcp',
   'what-is-ip',
-  'what-is-dns',
   'what-is-dhcp',
   'what-is-icmp',
   'what-is-smtp',

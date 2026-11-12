@@ -164,11 +164,17 @@ describe('the four source groups added by the owner on 2026-11-08', () => {
     expect(() => defineSources([{ ...entry, short: 'WHATWG', publisher: 'WHATWG', url: 'https://html.spec.whatwg.org/index.html' }])).not.toThrow();
     for (const id of ['whatwg-html', 'whatwg-url', 'whatwg-fetch']) expect(SOURCES[id]!.kind).toBe('standards-body');
   });
+  // ICANN's host joined with What is DNS, the first lesson to cite an internet registry; the five regional registries' have not.
+  test('an internet-registry source is allowed on a listed host and refused on any other', () => {
+    const entry: SourceEntry = { id: 'example', kind: 'internet-registry', short: 'ARIN', title: 'Example page', publisher: 'ARIN', url: 'https://www.arin.net/resources/guide/ipv6/' };
+    expect(() => defineSources([entry])).toThrow(/www\.arin\.net is not an allowed host for internet-registry/);
+    expect(() => defineSources([{ ...entry, short: 'ICANN', publisher: 'ICANN', url: 'https://www.icann.org/en/rssac/faq' }])).not.toThrow();
+    expect(SOURCES['icann-rssac-faq']!.kind).toBe('internet-registry');
+  });
   // One real page per group; each publisher's host joins SOURCE_HOSTS with the first lesson that cites it.
   test.each([
     ['government', 'CISA', 'https://www.cisa.gov/known-exploited-vulnerabilities-catalog'],
     ['security-reference', 'FIRST', 'https://www.first.org/cvss/v4.0/specification-document'],
-    ['internet-registry', 'ARIN', 'https://www.arin.net/resources/guide/ipv6/'],
   ] as const)('a %s source is a kind of its own, refused until its host is listed', (kind, publisher, url) => {
     const entry: SourceEntry = { id: 'example', kind, short: publisher, title: 'Example page', publisher, url };
     expect(() => defineSources([entry])).toThrow(
@@ -225,7 +231,7 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, then the HTTP lesson’s', () => {
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s', () => {
     expect(Object.keys(SOURCES)).toEqual([
       'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
@@ -234,6 +240,18 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-3611', 'rfc-8445', 'rfc-9868', 'rfc-4961',
       'rfc-9110', 'rfc-9111', 'rfc-9112', 'rfc-9113', 'rfc-1034', 'rfc-9499', 'rfc-3986', 'rfc-6265', 'rfc-6335',
       'whatwg-html', 'whatwg-url', 'whatwg-fetch', 'iana-media-types', 'microsoft-app-gateway',
+      // Batch 1: What is HTTPS's,
+      'rfc-9846', 'rfc-6797', 'rfc-9849', 'rfc-6066', 'rfc-5280', 'rfc-9525', 'rfc-8484', 'rfc-7858', 'rfc-9076', 'rfc-9001', 'rfc-10024', 'rfc-7748', 'rfc-8555',
+      'cloudflare-dns-encryption', 'cloudflare-pqc-support', 'cloudflare-mixed-content', 'cloudflare-lb-proxy-modes', 'cloudflare-cert-validity',
+      'microsoft-edge-https-first', 'microsoft-edge-secure', 'google-chrome-secure', 'google-chrome-always-secure', 'letsencrypt-faq', 'letsencrypt-how',
+      // What is TCP's,
+      'rfc-2018', 'rfc-8985', 'rfc-6298', 'rfc-7413', 'rfc-4987', 'rfc-2914', 'rfc-9438', 'rfc-5321', 'rfc-959', 'microsoft-azure-tcpip-tuning',
+      // and What is DNS's.
+      'rfc-7766', 'rfc-9156', 'rfc-4033', 'rfc-3596', 'rfc-8305', 'rfc-8767', 'rfc-8806', 'rfc-7720', 'rfc-5625', 'rfc-2132', 'rfc-5452', 'rfc-3833',
+      'iana-root-servers', 'iana-root-zone', 'iana-root-db-app', 'iana-root-zone-file', 'icann-rssac-faq',
+      'microsoft-ipconfig', 'microsoft-365-add-domain', 'microsoft-traffic-manager',
+      // and What is HTTPS's second round.
+      'rfc-8404', 'rfc-9065',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

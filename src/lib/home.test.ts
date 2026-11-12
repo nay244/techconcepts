@@ -1,11 +1,13 @@
 // @ts-expect-error - no @types/node in this project; vitest runs under node
 import { readFileSync } from 'node:fs';
 import { afterEach, expect, test, vi } from 'vitest';
+import { LEGACY_LESSONS } from '../content/legacy';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
 import { SOURCES } from '../content/sources';
 import { tracks } from '../content/tracks';
 import type { Lesson } from '../content/schema';
 import { numberedSources } from '../lesson/sourceNumbers';
+import { lessonStamp } from './checked';
 import { foldSources, homeDemo, homeStops, leadText, litSteps, sourceName } from './home';
 
 // Lessons the registry hands out in place of the real ones, by slug; empty unless a test sets one.
@@ -84,6 +86,18 @@ test('Learn ends on the sealed version: HTTPS, the next lesson, in that lesson�
   const https = getLesson('what-is-https')!;
   expect(sealed).toEqual({ title: 'HTTPS', lead: https.units[0]!.learn.lead.map((s) => s.text).join(' '), url: '/how-the-internet-works/what-is-https', number: 2 });
   expect(sealed.lead).toContain('seal the line');
+});
+
+test('the sealed box reads the checked lead, word for word: two statements, one space between', () => {
+  expect(homeDemo().sealed.lead).toBe(
+    'HTTPS is HTTP with one extra job before the asking: seal the line. After that the conversation is the same, but only the two ends can read it.',
+  );
+});
+
+test('the lesson Home’s “And HTTPS?” points to is a checked one: off the legacy list, with the day it passed', () => {
+  const slug = homeDemo().sealed.url.split('/').at(-1)!;
+  expect(LEGACY_LESSONS as readonly string[], `${slug} on the legacy list`).not.toContain(slug);
+  expect(lessonStamp(getLesson(slug)!).checked, `${slug} has no check date`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 });
 
 test('the demo’s Practice part is the lesson’s first question, with exactly one right answer', () => {
@@ -206,7 +220,11 @@ test('the demo carries the lesson’s stamp, and says its sources are numbered',
 });
 
 test('a lesson that cites nothing yet has no numbers on Home either', () => {
-  expect(homeDemo('what-is-https', 'what-is-tcp').learn.numbered).toBe(false);
+  const cited = homeDemo().learn.numbered; // read before the swap, which lasts until the test ends
+  // What is HTTP with every reference's source taken away: its references stay, and none can be numbered.
+  swapIn('what-is-http', (u) => { u.references = u.references.map(({ source: _source, ...rest }) => rest as never); });
+  expect(homeDemo().learn.numbered).toBe(false);
+  expect(cited).toBe(true);
 });
 
 test('a stamp that counts differently from the list makes the demo throw, naming the lesson and both counts', () => {
@@ -218,9 +236,15 @@ test('a stamp that counts differently from the list makes the demo throw, naming
 
 test('the page’s words and pictures come from the lesson’s own cues', () => {
   expect(homeDemo('what-is-http').page).toEqual({ words: 5, pictures: 5 });
-  expect(homeDemo('what-is-https', 'what-is-tcp').page).toEqual({ words: 5, pictures: 6 });
-  expect(homeDemo('what-is-tcp', 'what-is-https').page).toEqual({ words: 5, pictures: 5 });
   expect(homeDemo('what-is-pop3', 'what-is-tcp').page).toEqual({ words: 4, pictures: 4 });
+});
+
+test('What is HTTPS draws its words at step 6 and has no “full” cue, so it cannot be Home’s demo; the error names it', () => {
+  expect(() => homeDemo('what-is-https', 'what-is-tcp')).toThrow(/what-is-https has no page: 'full' cue/);
+});
+
+test('What is TCP has no page cue, so it cannot be Home’s demo; the error names it', () => {
+  expect(() => homeDemo('what-is-tcp', 'what-is-https')).toThrow(/what-is-tcp has no page cue/);
 });
 
 test('a lesson with no page cue cannot be Home’s demo, and the error names it', () => {
@@ -241,7 +265,7 @@ test('a page cue on a note counts as much as one on a message', () => {
     u.steps[4]!.events.forEach((e) => { if ('cues' in e && e.cues !== undefined) e.cues = e.cues.filter((c) => !(c.cue === 'page' && c.arg === 'text')); });
     step.events.push(note as never);
   });
-  expect(homeDemo().page.words).toBe(4);
+  expect(homeDemo().page).toEqual({ words: 4, pictures: 5 });
 });
 
 test('the page stays once drawn: lit from its step on, not at that step only, and through Learn and Practice', () => {

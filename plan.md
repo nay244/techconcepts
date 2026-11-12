@@ -51,6 +51,55 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 
 The three analysts start together. R1 follows them. From there each lesson runs on its own; H2 waits for What is HTTPS and What is TCP; Final waits for all three and H2.
 
+## H2's spec (written 2026-11-11, with What is TCP on `batch/1` and What is HTTPS in its cited shape)
+
+**Nothing a visitor sees on Home changes.** Home's page reads from What is HTTPS only its title, its Learn lead, its address and its number (`src/lib/home.ts`, `sealed`). The lead is word for word, now as two statements joined by a space: "HTTPS is HTTP with one extra job before the asking: seal the line. After that the conversation is the same, but only the two ends can read it." So H2 changes tests only: `src/lib/home.test.ts`, and `e2e/site.spec.ts` only if a case below needs it. `src/lib/home.ts`, `src/pages/` and everything under `src/content/` stay as they are; if a test shows Home's code must change, the builder stops and reports.
+
+**Three samples in `src/lib/home.test.ts` used the lessons as they were** (line numbers on `batch/1`):
+
+1. Line 209, "a lesson that cites nothing yet has no numbers on Home either", uses What is HTTPS as the uncited lesson. It cites now, so `numbered` is true.
+2. Line 221 expects `homeDemo('what-is-https', 'what-is-tcp').page` to be `{ words: 5, pictures: 6 }`. What is HTTPS now draws the page's words at step 6 and has no `'full'` cue (direction 2.26), so that call throws "what-is-https has no page: 'full' cue".
+3. Line 222 expects `homeDemo('what-is-tcp', 'what-is-https').page` to be `{ words: 5, pictures: 5 }`. What is TCP has no page cue now, so that call throws "what-is-tcp has no page cue".
+
+**What the tests say after H2:**
+
+- **a. The uncited sample cannot go stale.** Every legacy lesson moves in batches 2 to 5, so no real slug stays uncited. The test makes its own lesson with `swapIn` (What is HTTP with its citations taken out, so `numberedSources` numbers nothing), and asserts `numbered` is false for it and true for the real What is HTTP beside it.
+- **b. The page test keeps real samples that have both cues** (What is HTTP `{ words: 5, pictures: 5 }`, What is POP3 `{ words: 4, pictures: 4 }`), and the two moved lessons become what they now are: `homeDemo('what-is-https', 'what-is-tcp')` throws naming `what-is-https` and the `'full'` cue, and `homeDemo('what-is-tcp', 'what-is-https')` throws naming `what-is-tcp` and the page cue. These are the first real lessons behind those two errors; the `swapIn` versions stay.
+- **c. The sealed box's words are held in `npm test`, not only end to end.** The "Learn ends on the sealed version" test asserts the lead as a literal, the two sentences above, beside its comparison with the lesson, so a change to the checked lead fails here and names Home. `e2e/site.spec.ts` line 203 already quotes the first sentence and stays.
+- **d. The sealed lesson is a cited one now.** A test asserts that the sealed lesson Home points to is off the legacy list and has a stamp with a date (`lessonStamp`), so Home's "And HTTPS?" never points a visitor at an unchecked lesson without a test saying so. If Home's code gives the sealed lesson no stamp to read, the test reads it from the registry; Home's page does not change.
+
+**Check:** each case of the spec review has a test seen failing against a named break; `npm test` (all green: H2 ends the one allowed failure); `npm run build`; `e2e/site.spec.ts` in the projects that run it, on `E2E_PORT=4471` in the main folder.
+
+### H2: errata to its spec, and the attack cases a build must survive
+
+From the spec review of H2 (reviewer, 2026-11-11), before the build, measured in a throwaway copy of `batch/1`. Every hole had one right answer once measured, so the orchestrator closed each as an erratum. Where an erratum and the spec differ, the erratum holds.
+
+**Errata**
+
+1. **A break to a lesson's content cannot be shown by editing the lesson.** The registry's gate refuses a lesson that changed since its check, so every test file goes red with no test reached, and the error names the report. Each content break below is shown with a temporary `swapIn` (or a temporary edit to `src/lib/home.ts`), taken out again. The literal lead of point c is shown failing with a `swapIn` of What is HTTPS that changes its second sentence: the literal goes red and the test's own comparison with the lesson stays green.
+2. **The uncited sample (point a) keeps every reference and deletes each one's `source`.** Measured: emptying every `cite` leaves `numbered` true; `references = []` gets through but cannot catch `numbered` being derived from the list. The sample still carries What is HTTP's stamp, so the test asserts `numbered`, not the stamp.
+3. **The real What is HTTP is read before the swap** (or after `swapped.clear()`), since a `swapIn` lasts until the test ends.
+4. **Point d reads the stamp from the registry** (`lessonStamp(getLesson(slug)!)`, from `./checked`), with the slug taken from `homeDemo().sealed.url`, and asserts `checked` is a date (`/^\d{4}-\d{2}-\d{2}$/`), not today's. It is shown failing by setting the default `sealedSlug` in `home.ts` to `'what-is-ip'` for the run. Putting the sealed lesson back on the legacy list fails at load, before any test: record that as seen, not as d's assertion.
+5. **The "page cue on a note" test asserts the whole page**, `{ words: 4, pictures: 5 }`: with What is HTTPS's old sample gone it is the only one where the pictures come after the words.
+6. The spec's line "it cites now, so `numbered` is true" is off: the call at line 209 throws for the missing `'full'` cue before it reaches `numbered`. Point a replaces the call either way.
+7. **Noted, not H2's:** What is POP3's `{ words: 4, pictures: 4 }` sample goes stale when batch 3 moves that lesson, as What is HTTPS's did.
+
+**Attack cases** (each has a test in `src/lib/home.test.ts` seen red against the named break)
+
+1. The checked lead's second sentence changed (`swapIn` of What is HTTPS): the sealed test's literal goes red; its comparison with the lesson stays green.
+2. `leadText` joins without a space: the literal and the three-statement test go red.
+3. A `'full'` cue added back to What is HTTPS (`swapIn`): the What is HTTPS throw test goes red.
+4. What is TCP given a page cue (`swapIn`): the What is TCP throw test goes red.
+5. The two messages in `home.ts` swapped: both throw tests go red, so their patterns are the full phrases, `/what-is-https has no page: 'full' cue/` and `/what-is-tcp has no page cue/`.
+6. The throw for a missing `'full'` cue removed: the What is HTTPS throw test goes red.
+7. The uncited sample built by emptying `cite` instead of deleting `source`: its `numbered` is true and the test goes red.
+8. `numbered` derived from the list's length, or set to `true`: the uncited test goes red.
+9. Pictures set equal to words whenever a `'full'` cue exists: the note-cue test goes red on `{ words: 4, pictures: 5 }`.
+10. Words read from the `'full'` cue: the note-cue test goes red.
+11. Home's "And HTTPS?" pointed at an unchecked lesson (default `sealedSlug = 'what-is-ip'`): point d goes red, and so does the sealed equality test.
+12. The sealed lesson put back on the legacy list: the registry refuses at load, and every file that loads it goes red.
+13. The real What is HTTP loses one reference's `source` (`swapIn`): the "real one beside it" half of the uncited test goes red.
+
 ## Estimate
 
 | Role | Model | Units | Tokens, roughly |
