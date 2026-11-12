@@ -367,14 +367,14 @@ export default defineLesson({
           title: 'Mailbox Status',
           sub: 'What’s waiting?',
           narrative:
-            'Your app asks what’s there with **STAT**: “+OK 2 22528”, two letters, 22 KB in all. Then **LIST** gives each letter’s number and size. To POP3 the mailbox is a simple numbered pile, 1 and 2, with no folders and no read or unread.',
+            'Your app asks what’s there with **STAT**: “+OK 2 22528”, two letters, 22 KB in all. Then **LIST** gives each letter’s number and size. To POP3 the mailbox is a simple numbered pile, 1 and 2, with no folders.',
           deep: [
             {
               text: 'UIDL gives each message an ID that stays the same between visits, so an app that leaves mail on the server can skip letters it already has.',
               cite: [pop('7'), pop('8')],
             },
             {
-              text: 'TOP fetches just a message’s headers.',
+              text: 'TOP fetches a message’s headers and its first few lines.',
               cite: [pop('7')],
             },
             {
@@ -543,7 +543,7 @@ export default defineLesson({
               rows: [{ key: 'm2', cells: ['2', '18 KB', 'Downloaded'] }],
             }),
           ],
-          backing: { traces: ['term-retr', 'fact-retr', 'lead-1', 'fact-device'] },
+          backing: { traces: ['term-retr', 'fact-retr', 'lead-1', 'fact-device', 'why-2'] },
         },
         {
           id: 'delete-and-quit',
@@ -689,9 +689,9 @@ export default defineLesson({
           { id: 'term-stat', idea: 'How many, how big?', name: 'STAT, LIST', cite: [pop('5')] },
           {
             id: 'term-retr',
-            idea: 'Download one, whole: headers, text and any pictures inside it',
+            idea: 'Retrieve one, whole: headers, text and any pictures inside it',
             name: 'RETR',
-            cite: [pop('5'), rfc('rfc-5322', '2.1', true), rfc('rfc-2046', '5.1', true), rfc('rfc-2046', '4.2', true)],
+            cite: [pop('5'), pop('1'), rfc('rfc-5322', '2.1', true), rfc('rfc-2046', '5.1', true), rfc('rfc-2046', '4.2', true)],
           },
           { id: 'term-dele', idea: 'Mark one for deleting', name: 'DELE', cite: [pop('5')] },
           { id: 'term-quit', idea: 'Leave, and delete what’s marked', name: 'QUIT', cite: [pop('6')] },
@@ -700,7 +700,7 @@ export default defineLesson({
           id: 'pattern',
           names: ['USER', 'PASS', 'STAT', 'RETR', 'DELE', 'QUIT'],
           note: 'A POP3 visit normally goes this way. The mailbox ends up on one device.',
-          cite: [pop('1'), MS_POP_DELETES, MS_POP_DEVICE, GMAIL_SINGLE],
+          cite: [pop('1'), pop('3'), pop('9'), MS_POP_DELETES, MS_POP_DEVICE, GMAIL_SINGLE],
         },
         why: [
           {
@@ -710,8 +710,8 @@ export default defineLesson({
           },
           {
             id: 'why-2',
-            text: 'That suited the days of dial-up and one computer each.',
-            cite: [pop('1')],
+            text: 'That suited the days of dial-up and one computer each: connect, collect the mail, then read it offline.',
+            cite: [pop('1'), GMAIL_SINGLE],
           },
           {
             id: 'why-3',
@@ -734,9 +734,9 @@ export default defineLesson({
             id: 'fact-sending',
             label: 'Sending',
             value: 'not POP3: that’s SMTP',
-            cite: [pop('2'), rfc('rfc-6409', '1', true), abstractOf('rfc-9051', '9051')],
+            cite: [pop('2'), rfc('rfc-6409', '1', true)],
           },
-          { id: 'fact-defined', label: 'Defined in', value: 'RFC 1939', cite: [pop('1')] },
+          { id: 'fact-defined', label: 'Defined in', value: 'RFC 1939, Post Office Protocol, version 3', cite: [pop('1')] },
           {
             id: 'fact-connection',
             label: 'Connection',
@@ -748,14 +748,14 @@ export default defineLesson({
             id: 'fact-tls',
             label: 'TLS on port 995',
             value:
-              'the app’s hello (ClientHello) names the server (SNI); the server answers with its hello (ServerHello), its certificate and Finished, and the app checks the certificate’s name; then every POP3 message travels inside TLS, on the TCP connection',
-            cite: [rfc('rfc-8314', '3.1', true), rfc('rfc-9846', '2', true), rfc('rfc-6066', '3', true), rfc('rfc-7817', '3', true)],
+              'the app’s hello (ClientHello) offers the ways it can seal the line and names the server (SNI); the server answers with its hello (ServerHello), its certificate and Finished, and the app checks the certificate’s name; then every POP3 message travels inside TLS, on the TCP connection, where nobody on the way can read it',
+            cite: [rfc('rfc-8314', '3.1', true), rfc('rfc-9846', '1', true), rfc('rfc-9846', '2', true), rfc('rfc-6066', '3', true), rfc('rfc-7817', '3', true)],
           },
           {
             id: 'fact-mailbox',
             label: 'The mailbox',
-            value: 'a numbered list of letters with sizes: no folders, no read marks; UIDL gives each letter an ID that lasts between visits',
-            cite: [pop('4'), pop('8'), pop('7'), pop('9')],
+            value: 'one inbox, a numbered list of letters with sizes: no folders; UIDL gives each letter an ID that lasts between visits',
+            cite: [pop('4'), pop('8'), pop('7')],
           },
           {
             id: 'fact-retr',
