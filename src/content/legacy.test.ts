@@ -5,8 +5,8 @@ import { liftedFixture, makeLesson, makeUnit } from './test-fixtures';
 
 const TOUR = ['dhcp', 'dns', 'ftp', 'http', 'https', 'icmp', 'imap', 'ip', 'pop3', 'smtp', 'ssh', 'tcp', 'tls', 'udp'];
 
-test('the legacy list is exactly the 15 lessons not yet moved: 12 of How the Internet Works and three of Networking (it may only shrink)', () => {
-  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'subnetting', ...TOUR.filter((p) => p !== 'udp' && p !== 'http').map((p) => `what-is-${p}`)]);
+test('the legacy list is exactly the 14 lessons not yet moved: 11 of How the Internet Works and three of Networking (it may only shrink)', () => {
+  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'subnetting', ...TOUR.filter((p) => p !== 'udp' && p !== 'http' && p !== 'https').map((p) => `what-is-${p}`)]);
 });
 
 test('lifting keeps every word and adds empty citations', () => {
