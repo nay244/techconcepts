@@ -14,7 +14,8 @@ import { cite } from '../sources';
  * claim is about the thing each defines; no vendor page is. The addresses (RFC 1918 and RFC 5737), the example names,
  * the clock times, the laptop’s port, the prompt, the channel number, the file names and OpenSSH’s version are
  * example data. No message size is shown: no source states one. The speaking tube (Overview description) is an
- * analogy and cites nothing. No source places SSH at an OSI layer, so the badge spans.
+ * analogy and cites nothing. No standard places SSH at an OSI layer; the badge rests on Cloudflare’s and Baeldung’s
+ * pages.
  */
 
 // ---------------------------------------------------------------- citations
@@ -113,6 +114,19 @@ const OPENBSD_OBSCURE = vendor('openbsd-man-ssh-config', `${OPENBSD}/ssh_config`
 const OPENBSD_SFTP = vendor('openbsd-man-sftp', `${OPENBSD}/sftp`, 'DESCRIPTION', 'sftp is a file transfer program');
 const OPENBSD_AGENT = vendor('openbsd-man-ssh-agent', `${OPENBSD}/ssh-agent`, 'DESCRIPTION', 'Authentication passphrases and private keys never go');
 
+const CF_OSI = vendor(
+  'cloudflare-ssh',
+  'https://www.cloudflare.com/learning/access-management/what-is-ssh/',
+  'How does SSH contrast with other protocols for tunneling?',
+  'exact OSI layer is not strictly defined',
+);
+const BAELDUNG_OSI = vendor(
+  'baeldung-ssh-intro',
+  'https://www.baeldung.com/cs/ssh-intro',
+  '2. What Is Secure Shell?',
+  'It is an application layer protocol that is in the 7th layer',
+);
+
 const CLOUDFLARE_TELNET = vendor(
   'cloudflare-ssh',
   'https://www.cloudflare.com/learning/access-management/what-is-ssh/',
@@ -168,8 +182,8 @@ export default defineLesson({
       purpose: 'Remote control, sealed',
       group: 'security',
       // No standard puts SSH at an OSI layer (RFC 4251 speaks of its own transport, authentication and connection
-      // layers), and no registered vendor page does, so the badge spans.
-      osi: 'spans',
+      // layers), so the badge rests on two publishers: Cloudflare’s page and Baeldung’s tutorial.
+      osi: { layers: [7], cite: [CF_OSI, BAELDUNG_OSI] },
       backing: { traces: ['fact-name', 'fact-purpose'] },
       scene: {
         title: 'A sealed line for typing on a faraway server',
@@ -339,7 +353,7 @@ export default defineLesson({
             'Next, each side sends a list of everything it can use: ways to make keys, kinds of lock, kinds of ID. This is **KEXINIT**. Each list is in order of preference, and both sides pick the first item on the client’s list that the server also has. Both sides work it out the same way.',
           deep: [
             {
-              text: 'The main kinds chosen are key exchange (here sntrup761x25519-sha512, which mixes X25519 with a post-quantum method; a newer choice, mlkem768x25519-sha256, pairs X25519 with ML-KEM), host key type (ssh-ed25519), cipher (chacha20-poly1305@openssh.com or aes256-gcm) and MAC, which those ciphers build in. Compression is usually none.',
+              text: 'The main kinds chosen are key exchange (here sntrup761x25519-sha512, which mixes X25519 with a post-quantum method; a newer choice, mlkem768x25519-sha256, pairs X25519 with ML-KEM), host key type (ssh-ed25519), cipher (chacha20-poly1305@openssh.com or aes256-gcm) and MAC, which AES-GCM builds in. Compression is usually none.',
               cite: [
                 d('rfc-4253', '7.1'),
                 d('rfc-9941', '1'),

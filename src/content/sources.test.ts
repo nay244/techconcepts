@@ -284,6 +284,7 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-5869', 'rfc-5116', 'rfc-9162', 'rfc-6176', 'rfc-7568', 'rfc-8996', 'rfc-9325',
       'rfc-9852', 'nist-sp800-52r2', 'microsoft-tls-protocol', 'microsoft-sql-tls-1-3', 'microsoft-app-service-certificates', 'paloalto-tls-handshake', 'paloalto-tls-certificate',
       'cloudflare-client-certificates',
+      'baeldung-ssh-intro',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
