@@ -132,7 +132,7 @@ export default defineLesson({
           { place: 'out', label: 'Your mail server', addr: '203.0.113.60' },
           { place: 'in', label: 'Sam’s mail server', addr: '198.51.100.88' },
         ],
-        backing: { traces: ['lead-1', 'term-outgoing', 'term-mx', 'fact-relay'] },
+        backing: { traces: ['lead-1', 'term-outgoing', 'term-mx', 'fact-relay', 'fact-mx'] },
       },
       overview: {
         hook: 'When you press Send, your email doesn’t go straight to your friend. It goes to your mail server, which finds your friend’s mail server and hands it over. SMTP is the language of both handovers, and you can read most of it: short commands and numbered replies.',
@@ -170,8 +170,8 @@ export default defineLesson({
               cite: [d('rfc-8314', '3.3'), d('rfc-6409', '3.1')],
             },
             {
-              text: 'Port 25 is for servers passing mail on, and many home networks block it going out, to stop spam. The TLS/SSL lesson covers the handshake.',
-              cite: [d('rfc-8314', '7.3'), d('rfc-5321', '4.5.4.2'), r('rfc-6409', '1'), MS_AZURE],
+              text: 'Port 25 is for servers passing mail on, and many networks block it going out, to stop spam. The TLS/SSL lesson covers the handshake.',
+              cite: [d('rfc-8314', '7.3'), d('rfc-5321', '4.5.4.2'), d('rfc-6409', '1'), MS_AZURE],
             },
           ],
           facts: [
@@ -305,7 +305,7 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Greeting', value: '220 smtp.example.net ready', backing: { traces: ['deep-codes', 'term-reply'] } },
+            { label: 'Greeting', value: '220 smtp.example.net ready', backing: { traces: ['deep-codes', 'term-reply', 'fact-greeting'] } },
             { label: 'Hello', value: 'EHLO [192.168.1.100]', backing: { traces: ['term-ehlo', 'fact-ehlo-name'] } },
             { label: 'Log in', value: 'AUTH PLAIN, then 235', backing: { traces: ['term-auth', 'fact-plain', 'deep-codes'] } },
             { label: 'Codes', value: '220 ready, 250 OK, 235 logged in', backing: { traces: ['deep-codes'] } },
@@ -413,7 +413,7 @@ export default defineLesson({
               known: true,
             }),
           ],
-          backing: { traces: ['deep-codes', 'term-reply', 'fact-codes', 'term-ehlo', 'term-auth', 'fact-plain'] },
+          backing: { traces: ['deep-codes', 'term-reply', 'fact-codes', 'term-ehlo', 'term-auth', 'fact-plain', 'fact-greeting'] },
         },
         {
           id: 'message-submission',
@@ -428,7 +428,7 @@ export default defineLesson({
             },
             {
               text: 'The From: and To: you see are headers inside the letter and can be different, which is how forged senders work; SPF, DKIM and DMARC check for that.',
-              cite: [d('rfc-5321', '7.2'), d('rfc-5321', '7.1'), r('rfc-9989', '1'), abstractOf('rfc-7208', 7208, true)],
+              cite: [d('rfc-5321', '7.2'), d('rfc-5321', '7.1'), d('rfc-9989', '1'), abstractOf('rfc-7208', 7208, true), abstractOf('rfc-6376', 6376, true)],
             },
             {
               text: 'The letter ends with a line holding a single dot, and 354 means “start sending, end with a dot”.',
@@ -554,11 +554,12 @@ export default defineLesson({
               dst: LAPTOP,
               size: '—',
               sum: '354: go ahead. End with a line holding just a dot.',
-              info: '354 Start mail input; end with <CRLF>.<CRLF>',
+              info: '354 Start mail input',
             }),
             ...msgOf(
               'term-data',
               'fact-end',
+              'fact-content',
               'fact-rides',
               'fact-ports',
             )({
@@ -599,7 +600,7 @@ export default defineLesson({
               rows: [{ key: 'leg1', cells: ['1', 'Your laptop', 'smtp.example.net', '250 queued'] }],
             }),
           ],
-          backing: { traces: ['term-envelope', 'term-data', 'deep-codes', 'fact-250'] },
+          backing: { traces: ['term-envelope', 'term-data', 'deep-codes', 'fact-250', 'fact-content'] },
         },
         {
           id: 'mx-lookup',
@@ -683,7 +684,7 @@ export default defineLesson({
             },
             {
               text: 'There’s no AUTH here: Sam’s server accepts mail for its own users from anyone, then filters it.',
-              cite: [d('rfc-6409', '1'), d('rfc-6409', '3.2'), r('rfc-9989', '1')],
+              cite: [d('rfc-6409', '1'), d('rfc-6409', '3.2'), d('rfc-9989', '1'), r('rfc-5598', '2.2.4')],
             },
           ],
           facts: [
@@ -962,6 +963,7 @@ export default defineLesson({
             ...msgOf(
               'term-data',
               'fact-end',
+              'fact-content',
               'fact-received',
               'fact-rides',
               'fact-ports',
@@ -1088,7 +1090,7 @@ export default defineLesson({
           {
             id: 'deep-codes',
             text: 'Codes worth knowing: 220 ready, 221 bye, 235 logged in, 250 OK, 354 send the letter, 421 try later, 550 no such mailbox.',
-            cite: [d('rfc-5321', '4.2.3'), d('rfc-4954', '6')],
+            cite: [d('rfc-5321', '4.2.3'), d('rfc-4954', '6'), d('rfc-5321', '4.2.1')],
           },
         ],
         facts: [
@@ -1116,6 +1118,18 @@ export default defineLesson({
             value: 'SPF, DKIM, DMARC',
             cite: [d('rfc-7208', '1'), abstractOf('rfc-6376', 6376, true), abstractOf('rfc-9989', 9989, true)],
           },
+          {
+            id: 'fact-greeting',
+            label: 'Who speaks first',
+            value: 'the server, with its 220 greeting',
+            cite: [d('rfc-5321', '3.1')],
+          },
+          {
+            id: 'fact-content',
+            label: 'The letter',
+            value: 'headers such as Subject, From and To, then the body',
+            cite: [d('rfc-5321', '2.3.1'), d('rfc-5321', '3.3')],
+          },
           { id: 'fact-defined', label: 'Defined in', value: 'RFC 5321', cite: [d('rfc-5321', '1.2')] },
           {
             id: 'fact-tcp',
@@ -1140,7 +1154,7 @@ export default defineLesson({
             label: 'TLS seal',
             value:
               'a handshake: the ClientHello says what the app can do; the server answers with ServerHello, its certificate and Finished, and the app checks the certificate’s name; after it, everything is encrypted',
-            cite: [d('rfc-9846', '2'), d('rfc-9846', '1'), d('rfc-8314', '3.3'), d('rfc-3207', '4.1')],
+            cite: [d('rfc-9846', '2'), d('rfc-9846', '1'), d('rfc-8314', '3.3'), d('rfc-3207', '4.1'), d('rfc-7817', '3')],
           },
           {
             id: 'fact-plain',
@@ -1168,10 +1182,10 @@ export default defineLesson({
           },
           {
             id: 'fact-mx',
-            label: 'MX lookup',
+            label: 'MX (mail exchanger) lookup',
             value:
-              'a DNS question, usually by UDP to port 53; the answer names the mail server with a priority (lowest first), often with its address; with no MX record, senders use the domain’s own address',
-            cite: [d('rfc-5321', '5.1'), d('rfc-1035', '3.3.9'), d('rfc-1035', '4.2.1')],
+              'a DNS question to a resolver, usually by UDP to port 53; the answer names the mail server with a priority (lowest first), often with its address; with no MX record, senders use the domain’s own address (its A record)',
+            cite: [d('rfc-5321', '5.1'), d('rfc-1035', '3.3.9'), d('rfc-1035', '4.2.1'), d('rfc-5321', '1.1'), d('rfc-1035', '2.1')],
           },
           {
             id: 'fact-pipelining',
@@ -1195,7 +1209,7 @@ export default defineLesson({
             id: 'fact-relay',
             label: 'Between servers',
             value: 'no login: a server takes mail for its own users, then filters it',
-            cite: [d('rfc-6409', '1'), d('rfc-6409', '3.2'), r('rfc-9989', '1')],
+            cite: [d('rfc-6409', '1'), d('rfc-6409', '3.2'), d('rfc-9989', '1'), r('rfc-5598', '2.2.4')],
           },
           { id: 'fact-osi', label: 'OSI layer', value: '7, application', cite: [PALO_L7_SMTP, PALO_L7_DEF, CF_L7_SMTP] },
         ],
