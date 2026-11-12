@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9.
 
-**Status: in progress.** The owner said go on 2026-11-12 ("Go", on the plan as shown), which covers batch 3 and batch 4 and approves the fourteen decisions below. Batch 3's three analysts started that day. One thing is done differently from the agents' standing instructions: analysts save their sources and reports in `.superpowers/analysis/<slug>/`, which git ignores and which lasts overnight, not in a temporary folder.
+**Status: done on 2026-11-12.** The owner said go that day ("Go", on the plan as shown), which covered both batches and approved the fourteen decisions below. The six lessons are cited and checked, `revamp` holds them, and the one report of their changed sentences is `docs/lesson-changes/how-the-internet-works-lessons-9-to-14.md`. The results are in `team.md` under "Job 7" and the decisions the sources forced in `docs/direction.md` 2.31 and 2.32. Three things went otherwise than planned: Home needed no unit; batch 4's branch lived in a worktree of its own, so the main folder stayed still for batch 3's end-to-end run; and the owner's usage limit was reached once, with six agents running, and the work went on when it reset. Nothing is pushed. Batch 5 is the next job, in a fresh session.
 
 ## Inputs
 
