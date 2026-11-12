@@ -117,7 +117,7 @@ export default defineLesson({
       // No standard puts SMTP at an OSI layer (RFC 5321 speaks of transport over TCP only), so the badge rests on two
       // vendors’ own explainer pages.
       osi: { layers: [7], cite: [PALO_L7_SMTP, PALO_L7_DEF, CF_L7_SMTP] },
-      backing: { traces: ['fact-defined', 'lead-1', 'fact-commands'] },
+      backing: { traces: ['fact-defined', 'lead-1', 'fact-commands', 'fact-name'] },
       scene: {
         title: 'Your letter goes to your mail server, then to Sam’s',
         views: ['network', 'sequence'],
@@ -163,7 +163,7 @@ export default defineLesson({
             },
             {
               text: 'Port 587 starts in plain text and upgrades with the STARTTLS command.',
-              cite: [d('rfc-8314', '3'), d('rfc-3207', '4')],
+              cite: [d('rfc-8314', '3'), d('rfc-3207', '4'), d('rfc-8314', '3.3')],
             },
             {
               text: 'Both are for submission, mail coming from a person’s app.',
@@ -413,7 +413,7 @@ export default defineLesson({
               known: true,
             }),
           ],
-          backing: { traces: ['deep-codes', 'term-reply', 'fact-codes', 'term-ehlo', 'term-auth', 'fact-plain', 'fact-greeting'] },
+          backing: { traces: ['deep-codes', 'term-reply', 'fact-codes', 'term-ehlo', 'term-auth', 'fact-plain', 'fact-greeting', 'fact-ehlo-reply'] },
         },
         {
           id: 'message-submission',
@@ -1212,6 +1212,8 @@ export default defineLesson({
             cite: [d('rfc-6409', '1'), d('rfc-6409', '3.2'), d('rfc-9989', '1'), r('rfc-5598', '2.2.4')],
           },
           { id: 'fact-osi', label: 'OSI layer', value: '7, application', cite: [PALO_L7_SMTP, PALO_L7_DEF, CF_L7_SMTP] },
+          { id: 'fact-name', label: 'Stands for', value: 'Simple Mail Transfer Protocol', cite: [d('rfc-5321', '1.1')] },
+          { id: 'fact-ehlo-reply', label: 'Reply to EHLO', value: 'the server lists what it can do', cite: [d('rfc-5321', '3.2')] },
         ],
       },
       practice: [
