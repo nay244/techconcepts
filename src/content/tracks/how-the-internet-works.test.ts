@@ -467,7 +467,7 @@ test('each protocol’s table ends with the mockup’s rows', () => {
     ['Name asked for', 'techconcepts.app'],
     ['Version', 'TLS 1.3'],
     ['Cipher suite', 'TLS_AES_128_GCM_SHA256'],
-    ['Key exchange', 'X25519'],
+    ['Key exchange', 'X25519 with ML-KEM'],
     ['Name on certificate', 'techconcepts.app ✓'],
     ['Signed by', 'a CA the laptop trusts ✓'],
     ['Server owns that key', 'yes ✓'],

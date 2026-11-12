@@ -29,7 +29,6 @@ import {
 export const LEGACY_LESSONS = [
   'what-is-ftp',
   'what-is-ssh',
-  'what-is-tls',
   'subnetting',
   'dhcp',
   'firewalls',

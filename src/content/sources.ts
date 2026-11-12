@@ -2421,6 +2421,14 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Cloudflare',
     url: 'https://developers.cloudflare.com/ssl/client-certificates/',
   },
+  {
+    id: 'microsoft-ms-sstp',
+    kind: 'vendor',
+    short: 'Microsoft MS-SSTP',
+    title: '[MS-SSTP]: Overview',
+    publisher: 'Microsoft',
+    url: 'https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sstp/70adc1df-c4fe-4b02-8872-f1d8b9ad806a',
+  },
 ]);
 
 /**
