@@ -599,7 +599,7 @@ For the owner, none as a stop (they are in the report's opening, "For the owner 
 
 ## Could go one model lower next time
 
-- **The fix after a near-pass, when the checker names it.** Three times the fix was a trace or a few words the checker's own note gave (What is IMAP's second fix, What is TLS's sentence): the orchestrator sent them straight to the author, with no analyst. That worked both times it was tried.
+- **The fix after a near-pass, when the checker names it.** Twice the fix was a trace or a few words the checker's own note gave (What is IMAP's second fix, What is TLS's sentence): the orchestrator sent them straight to the author, with no analyst, and both passed.
 - **Nothing else.** The reads before the check found 17 to 26 faults a lesson in batch 4, and the four items the checks still held back were ones no read had seen.
 
 ## What to do differently next time
