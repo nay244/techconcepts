@@ -409,4 +409,84 @@ Planned on 2026-11-12, after the owner's "Start batch 2"; the owner said go on t
 | L7-p | analyst (the read before the check) | Opus | 1 | 91,768 | The same analyst, continued: 104 of 118 sound, eight rulings for the other 14 (one trace added to five items, two Learn parts widened, the full name, two citations, two defining markers moved or removed). All 34 text fragments found on their pages. Counted from its transcript. |
 | L8-b | author | Sonnet | 2 passes | 221,061 | What is ICMP in the cited shape (`5f67a2b`): 118 items, 22 sources, no override; 6 corrections, 5 removals, 9 rewordings, 14 sizes to dashes, new Learn parts for every trace. Seven doubts. Pass 2 (`6ca07da`, 6,924) applied the eight rulings. |
 | L8-p | analyst (the read before the check) | Opus | 1 | 119,228 | The same analyst, continued: 110 of 118 sound, eight rulings (one trace, one Learn value widened, three word changes, three citation fixes). Counted from its transcript. |
+| L7-c | fact-checker | Opus | full check 1 | 185,487 | **Passed: all 118 items** (`3167b21`), on the first full check. 177 quotes confirmed in 25 sources, all current. `npm run fact-check -- what-is-dhcp --check`: `Report OK`. `npm test` in the worktree: 1,702 passed. |
+| L7-d | author | Sonnet | 1 | 23,619 | `docs/lesson-changes/what-is-dhcp.md` (`b4faa1c`): 4 corrections, 3 removals, 12 additions, 2 rewordings; 1 source became 25. Counted by script; the orchestrator's script found each quoted before and after in the two versions of the lesson's file. |
+| L8-c | fact-checker | Opus | full check 1 | 178,916 | **Passed: all 118 items** (`3a37993`), on the first full check. 171 quotes confirmed in 22 sources, all current; it read Cloudflare's page in the built-in browser. `Report OK`. `npm test` in the worktree: 1,702 passed. |
+| L8-d | author | Sonnet | 1 | 22,738 | `docs/lesson-changes/what-is-icmp.md` (`ccd0163`): 16 corrections, 8 removals, 11 additions, 1 rewording; 1 source became 22. Counted and checked by script, as above. |
+| L6-c | fact-checker | Opus | full check 1 | 196,408 | **Passed: all 97 items** (`456b731`), on the first full check. 164 quotes confirmed in 28 sources, all current. `Report OK`. `npm test` in the worktree: 1,702 passed. Its closest call, noted: the lesson shows one address translation and leaves out a provider's second one. |
+| L6-d | author | Sonnet | 1 | 25,884 | `docs/lesson-changes/what-is-ip.md` (`396b660`): 10 corrections, 5 removals, 11 additions, 2 rewordings; 1 source became 28. Counted and checked by script, as above. |
+| M2 | orchestrator | Fable | 1 | not counted | Merged into `batch/2`: What is DHCP (`34ce47a`, no conflict), What is ICMP (`054d88d`) and What is IP (`ba38c55`), the last two with the legacy list and its test reconciled to hold every move (nine lessons left, six of the tour). `npm test` 1,702 passed after each. The three worktrees removed. |
+| Rule | orchestrator | Fable | 1 | not counted | The owner's decision of 2026-11-12 (direction 2.29): the fact-check stays inside each batch, and the changed sentences become one report at the end of a track. In `CLAUDE.md` and `docs/direction.md` (`698f511`). |
+| Final | orchestrator | Fable | 1 | not counted | One merge into `revamp` (`4f36a0b`). On it: `npm test` 119 files, 1,702 tests passed; `npm run build` "Every page is within budget (25 pages)."; `npm run e2e` 1,191 passed, 256 skipped, none failed (17.8 minutes, lid open, exit 0). The three built pages say "Checked 12 Nov 2026" with 28, 25 and 22 sources. Merged branches left in place; nothing pushed. |
+
+## Spend by role
+
+| Role | Model | Tokens |
+|---|---|---|
+| scout | Haiku | 251,670 |
+| author | Sonnet | 745,805 |
+| analyst, fact-checker | Opus | 1,975,381 |
+| **All subagents** | | **2,972,856** |
+
+After the go (without the scout): 2,721,186. The plan's stop was 3.6 million for the batch and 1.5 million for one lesson; neither was reached. No designer, builder or reviewer in this job: nothing on Home rested on these lessons.
+
+## What each lesson cost, against the estimate
+
+The estimate was 0.75 to 1.25 million a lesson, 2.5 to 3.0 million for the three.
+
+| | What is IP | What is DHCP | What is ICMP |
+|---|---|---|---|
+| Analyst: the report, the rulings and a lookup | 353,825 | 387,302 | 340,269 |
+| Analyst: the read before the check | 122,178 | 91,768 | 119,228 |
+| Author: the lesson and the rulings | 214,611 | 237,892 | 221,061 |
+| Author: the list of changed sentences | 25,884 | 23,619 | 22,738 |
+| Fact-checker | 196,408 (one full check) | 185,487 (one) | 178,916 (one) |
+| **The lesson** | **912,906** | **926,068** | **882,212** |
+| Items, sources | 97, 28 | 118, 25 | 118, 22 |
+
+The three: **2,721,186**, inside the estimate, and 195,000 under batch 1's three.
+
+- **All three passed on the first full check, and none needed a re-check.** Batch 1 had two of three. The read before the check named two tests this time, for a traced item and for a claim, and gave 11, 8 and 8 rulings; five of the 27 were traces, and the rest citations, defining markers and a few words.
+- **The analysts are just over half of a lesson's cost** (1,414,570 of 2,721,186, against 1.1 to 1.4 million planned). All three had their context summarised.
+- **The authors came in under their estimate again** (745,805 against 750,000 to 850,000).
+- **The fact-checkers cost 560,811**, the bottom of 550,000 to 800,000, since no lesson needed a second check.
+
+## Corrections, beside batch 1's
+
+| Lesson | Corrections | Removals | Additions | Rewordings | Sources |
+|---|---|---|---|---|---|
+| What is HTTP (the old rule) | 41 | 7 | 12 | 3 | 2 became 20 |
+| What is HTTPS | 16 | 12 | 21 | 2 | 2 became 41 |
+| What is TCP | 11 | 3 | 17 | 2 | 1 became 22 |
+| What is DNS | 3 | 8 | 7 | 5 | 2 became 29 |
+| What is IP | 10 | 5 | 11 | 2 | 1 became 28 |
+| What is DHCP | 4 | 3 | 12 | 2 | 1 became 25 |
+| What is ICMP | 16 | 8 | 11 | 1 | 1 became 22 |
+
+What is ICMP's 16 are mostly details of tools (ping's count, what Linux and macOS probe with, mtr) that no two publishers state, reworded or cut under direction 2.28. The lists do not count alike: one author files a reworded detail as a correction and another as a rewording.
+
+## What the checkers passed as a simplification (decision 11)
+
+Every note is in the lesson's list of changed sentences, in its section on what the checker passed, taken from the `Note:` lines of the three reports. The orchestrator read all of them. Most say what a general word leaves out: "64 by default" for a starting TTL, a 169.254 address a device "may" give itself, renewal at half and at seven eighths of a lease as defaults a server can change, a server that "should" hold an offered address, "20 bytes" for an IPv4 header with no options. None gives a wrong cause, number, name or order.
+
+One is for the owner, not as a stop: **What is IP shows one address translation, at the home router, and says the routers on the way "only forward"**. Many providers run a second translation (carrier-grade NAT; RFC 4864 §2.6), and on a phone's mobile data that is the usual case. The checker called it its closest call and passed it as the home case the lesson draws. The orchestrator left it as it is. A short "unless your provider translates too" in one Go deeper would settle it, at the cost of a targeted re-check.
+
+Also worth knowing: What is ICMP's Traceroute step shows Windows' tracert (echo-request probes, an echo reply at the end); Learn says so, and says the classic traceroute probes with UDP.
+
+## Could go one model lower next time
+
+- **The one report of changed sentences at the end of a track** (direction 2.29): a script for the before and after of each sentence and Haiku for the reasons, since the authors who made the changes will be gone by then.
+- **Applying a list of exact rulings** stays with the continued author: 6,924 to 9,995 tokens a pass, less than a fresh agent would spend reading in.
+- Nothing else. The analyst and the fact-checker are what Opus is for.
+
+## What to do differently next time
+
+- **Keep both named tests in the read before the check.** Batch 1 named one and a check failed on the other; batch 2 named both and none failed.
+- **Have the analyst settle the badge.** The orchestrator found the second OSI source for What is DNS and for What is ICMP itself. The brief should ask for two vendors' pages that place the protocol, or a plain "none, so it spans".
+- **Tell the analysts how the allowed sites answer.** `www.cisco.com` answers a plain request and refuses an invented browser name; `www.cloudflare.com` refuses a command line and reads in a browser, which only the orchestrator, the author and the fact-checker have. One analyst wrote Cisco off as unreadable until told.
+- **A vendor's detail needs two publishers** (direction 2.28). Say it in the first brief, not in the rulings: it would have saved the three lookups.
+- **The scratchpad is emptied overnight.** Batch 1's saved sources and the token-counting script were gone the next day. Nothing in the repo depended on them, but a batch should finish in the day it starts or keep its sources somewhere that lasts.
+- **A session cannot be started while the owner is on Remote Control.** This batch ran in batch 1's session on the owner's word. A batch's first session is started in the desktop app.
+- **The owner wants fewer stops and less waiting** (direction 2.29). For the next plan: batches 3 and 4 planned together with one go and one scout, run one after the other in one fresh session; a note for the owner goes in the batch's report, not in a question, unless it is one of the plan's stops; and the lists wait for the track's end.
+- **Errata that came to the owner with this job:** direction 2.28 (two new hosts; What is DHCP's badge spans layers and its Overview fact "OSI layer: 7, application" is cut; no defining marker on a vendor page, so `arp -a` is cut; What is IP's step 3 reworded) and 2.29.
 
