@@ -29,7 +29,6 @@ import {
 export const LEGACY_LESSONS = [
   'what-is-ip',
   'what-is-dhcp',
-  'what-is-icmp',
   'what-is-smtp',
   'what-is-pop3',
   'what-is-imap',
