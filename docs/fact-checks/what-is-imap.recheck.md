@@ -2,13 +2,13 @@
 {
   "slug": "what-is-imap",
   "base": "0d8f485b47261e288491d447d2380315b52219aa3886d8176cb3516dd83d6d36",
-  "hash": "48b72c4d5b1f8da1adcc4d62f5c8f7dd1aa007f59f7f0c1610eb7a153df454cf",
+  "hash": "8862f56236c8bd2a249e94aca0bc5d33ed2b732dfb570d57f82ea97c894ede11",
   "checked": "2026-11-12",
   "checker": "claude-opus-5-5",
   "verdicts": {
     "title": "✅",
     "units[0].name": "✅",
-    "units[0].backing (the unit's full name and purpose)": "⚠️",
+    "units[0].backing (the unit's full name and purpose)": "✅",
     "units[0].overview.facts[2] (Overview fact \"Keeps\")": "✅",
     "units[0].steps[4] (step \"idle-push\")": "✅",
     "units[0].learn.facts[14] (\"fact-name\")": "✅",
@@ -24,12 +24,12 @@
   ],
   "quotes": {
     "checked": "2026-11-12",
-    "count": 5,
-    "digest": "e80e2b2ceed9f0a622d6604ae551ed0f7b8a2b267c81986e80b3c27e28083058",
+    "count": 6,
+    "digest": "fce3800e756722ab98cf4aeb2f03d2ed6c1a08f4a17a63cb04466ef825a714c7",
     "files": {
       "rfc-9051": "acf52a50eb748ea21b5ffdcb31c761d3fbba6242d53d4f53c2555de039c5c3cf",
       "microsoft-exchange-pop-imap": "9ea29704c654dca09cba291f3cc52fd7cdba3a42163375eb3fad99ad62ca1e3a",
-      "google-gmail-imap-settings": "52f52c2acbce4198eada02c46cc7aa1c695819cf7f2ea26492ebd3eccb09ec19",
+      "google-gmail-imap-settings": "7a007556c6b2d31e6e661f9e52583f8f804f8cf1cfc76d6432da80963e2516aa",
       "rfc-5550": "6576fe340607aac2af38424c4d2a114dd744b9ae3d1e03d3288f0c4888cd6b51"
     }
   }
@@ -38,7 +38,7 @@
 
 # Fact-check re-check: what-is-imap
 
-Targeted re-check of the nine items the re-check sheet lists. Everything else on the lesson is outside this report.
+A targeted re-check of the 9 items the re-check sheet lists. Every other item is outside this report.
 
 ## Claims
 
@@ -50,8 +50,8 @@ Stands for: Internet Message Access Protocol.
   > The Internet Message Access Protocol Version 4rev2 (IMAP4rev2) allows
   > a client to access and manipulate electronic mail messages on a
   > server.
-- Note: RFC 9051 is the document that defines IMAP4rev2, the current version of the protocol, and so defines its name; the abstract spells the name out in full. The lesson's label leaves off the version number, which is the ordinary way to name the protocol.
-- Note: RFC 9051 is a Proposed Standard on the Standards Track; the RFC Editor lists it as neither obsoleted nor updated (checked 2026-11-12).
+- Note: RFC 9051 is the defining standard for IMAP (version 4rev2), and its abstract gives the protocol's full name. The lesson's expansion leaves out the version suffix, which is not part of what the letters stand for.
+- Note: RFC 9051 is a Proposed Standard, not obsoleted and not updated by any later RFC (RFC Editor metadata, checked 2026-11-12).
 
 ### units[0].learn.facts[15] ("fact-push") — ✅
 
@@ -62,50 +62,58 @@ Push, not polling: without IDLE an app polls, asking the server for new mail eve
   > changes to the selected mailbox (new mail, deletions, and flag
   > changes).  It's often more desirable to have the server transmit
   > updates to the client in real time.
+- Note: RFC 9051 defines the IDLE command and its behaviour, so it is the defining standard for both halves of the claim (polling without it, real-time updates with it).
 - `microsoft-exchange-pop-imap` §POP3 and IMAP4 applications and settings
   > The application connects to the email server periodically to send messages and to download any new messages.
+- `microsoft-exchange-pop-imap` §POP3 and IMAP4 applications and settings
+  > If the application and server both support the IMAP4 IDLE command, users can send and receive messages in near real time
 - `google-gmail-imap-settings` §Choose your IMAP email client settings for Gmail
   > Check for new messages every 10 minutes.
 - `rfc-5550` §5.4.2
   > Lemonade and TCP provide for long-lived idle connections between the
   > client and mail store, allowing the server to push notifications
   > within IMAP.
-- Note: RFC 9051 defines the IDLE command and states both halves of the claim: without IDLE the client polls, and with it the server sends updates in real time. RFC 5550 is a second standard that names this server push.
-- Note: the interval "every few minutes" is not in RFC 9051; it is confirmed by two independent vendor pages (Microsoft's Exchange page describes mail apps checking on a set number of minutes, and Google's Gmail page has Thunderbird check every 10 minutes).
-- Note: true for a beginner. It leaves out that an app may also check only when opened or by hand, and other push mechanisms such as NOTIFY; polling on a timer is the ordinary case without IDLE.
-- Note: RFC 9051 and RFC 5550 are not obsoleted (RFC Editor, 2026-11-12); the Microsoft and Google pages are live and describe current products (Exchange Server 2016 and 2019; Gmail with Thunderbird).
+- Note: Microsoft's page and RFC 9051 are independent, and each states both the periodic check and the near-real-time updates with IDLE. Google's recommended Thunderbird setting gives a concrete polling interval of ten minutes, which "every few minutes" states loosely.
+- Note: True for a beginner. The claim leaves out that an app without IDLE may also check only at start-up or by hand, and that other push methods exist (NOTIFY, or out-of-band wake-ups, as RFC 5550 describes); the ordinary case is as stated.
+- Note: RFC 5550 is a Proposed Standard, not obsoleted or updated. The Microsoft and Google pages are live and describe current products, checked 2026-11-12.
 
-## Traced, example and analogy parts, and unbacked items
-
-### units[0].backing (the unit's full name and purpose) — ⚠️
-
-- Note: the full name traces to fact-name. The purpose, that IMAP keeps email in sync, is not stated by any part on its Traces line: term-imap and fact-stays say only that mail stays on the server, and fact-name gives the name. The lesson teaches syncing elsewhere (why-2's same folders, letters and read marks on every device; deep-sync), so adding why-2 (or deep-sync) to this item's traces, or rewording the purpose to what its traces say, would fix it.
-
-### units[0].overview.facts[2] (Overview fact "Keeps") — ✅
-
-- Note: folders trace to term-folders and lead-1 (the mailbox kept on the server); read marks kept on the server trace to term-flag and fact-seen. In its place between "Ports" and "New mail", the Overview list still reads true and in order.
-
-### units[0].steps[4] (step "idle-push") — ✅
-
-- Note: each statement traces. Polling every few minutes and push come from fact-push; IDLE's meaning from term-idle; the new letter reaching the server from fact-delivery; the * 3 EXISTS news and ending with DONE from fact-idle; EXISTS as the folder's count from fact-exists; fetching the new letter's header details from fact-fetch (ENVELOPE). "Within seconds" says loosely what lead-1 and fact-push say (the moment it arrives, as it happens). As the last step after Fetch and Flag, and following step 2's two letters, the count of 3 is consistent.
+## Traced, example, analogy and unbacked parts
 
 ### title — ✅
 
+"IMAP" makes no claim beyond the lesson.
+
 ### units[0].name — ✅
+
+"IMAP" makes no claim beyond the lesson.
+
+### units[0].backing (the unit's full name and purpose) — ✅
+
+- Note: The full name traces to fact-name. "Email kept in sync" traces to fact-stays, why-2 (every device shows the same folders, letters and read marks) and deep-sync (apps sync changes); it adds nothing beyond them.
+
+### units[0].overview.facts[2] (Overview fact "Keeps") — ✅
+
+- Note: Folders trace to term-folders and lead-1 (the mailbox is kept on the server); read marks kept on the server trace to term-flag and fact-seen. Nothing is added.
+
+### units[0].steps[4] (step "idle-push") — ✅
+
+- Note: Asking every few minutes traces to fact-push; IDLE as "tell me when something changes" to term-idle; the wait staying open until DONE to fact-idle; "* 3 EXISTS" meaning there are now three letters to fact-idle and fact-exists; fetching the new letter's headers to fact-fetch (ENVELOPE) and term-fetch; push and mail showing up promptly to fact-push and lead-1 ("the moment it arrives"). "Within seconds" is looser than what those parts say, not more. In its place after the fetch-and-flag step, the count of three follows the two letters SELECT reported, so the walk-through stays in order.
 
 ### units[0].practice[0].prompt (question "phone-shows") — ✅
 
-- Note: no false premise; reading on one device with IMAP is what the lesson teaches.
+- Note: The premise (reading a letter on a laptop with IMAP) is sound, and the question rests on why-2 and the fetch-and-flag step.
 
 ### units[0].practice[1].prompt (question "idle") — ✅
 
+- Note: No premise beyond IDLE existing, which the lesson teaches.
+
 ## Sources
 
-- `rfc-9051`: fetched from rfc-editor.org as plain text; the RFC Editor's record lists it as a Proposed Standard, obsoleting RFC 3501, with no obsoleting or updating RFC. Current. Checked 2026-11-12.
-- `rfc-5550`: fetched from rfc-editor.org as plain text; the RFC Editor's record lists it as a Proposed Standard, obsoleting RFC 4550, with no obsoleting or updating RFC. Current. Checked 2026-11-12.
-- `microsoft-exchange-pop-imap`: fetched from learn.microsoft.com; live, Microsoft's own documentation for POP3 and IMAP4 in current Exchange Server. Current. Checked 2026-11-12.
-- `google-gmail-imap-settings`: fetched from support.google.com; live, Google's own help page for Gmail's IMAP client settings. Current. Checked 2026-11-12.
+- `rfc-9051`: fetched as plain text from rfc-editor.org; RFC Editor metadata lists it as a Proposed Standard with no obsoleting or updating RFC. Checked 2026-11-12.
+- `rfc-5550`: fetched as plain text from rfc-editor.org; Proposed Standard, no obsoleting or updating RFC. Checked 2026-11-12.
+- `microsoft-exchange-pop-imap`: fetched from learn.microsoft.com; live, documents POP3 and IMAP4 in current Exchange Server. Checked 2026-11-12.
+- `google-gmail-imap-settings`: fetched from support.google.com; live Gmail Help page with current client settings. Checked 2026-11-12.
 
 ## Limit overrides
 
-Not part of a re-check; the full check's overrides stand.
+None in a re-check (the overrides are the full check's).
