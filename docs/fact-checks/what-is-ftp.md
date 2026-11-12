@@ -1,7 +1,7 @@
 ```json fact-check
 {
   "slug": "what-is-ftp",
-  "hash": "79086ce6cc931b53ea0a3da0f65753aaa888989a1b03b7e6422f1ba7c0a2c3a2",
+  "hash": "0174a71b6c9e52d1bb4c6e186bc69d12e3474f7e95307701e52b1cd7a01caa54",
   "checked": "2026-11-12",
   "checker": "claude-opus-5-5",
   "verdicts": {
@@ -111,7 +111,7 @@
     "units[0].learn.facts[0] (\"fact-ports\")": "✅",
     "units[0].learn.facts[1] (\"fact-codes\")": "✅",
     "units[0].learn.facts[2] (\"fact-encrypted\")": "✅",
-    "units[0].learn.facts[3] (\"fact-safer\")": "⚠️",
+    "units[0].learn.facts[3] (\"fact-safer\")": "✅",
     "units[0].learn.facts[4] (\"fact-defined\")": "✅",
     "units[0].learn.facts[5] (\"fact-tcp\")": "✅",
     "units[0].learn.facts[6] (\"fact-modes\")": "✅",
@@ -273,36 +273,36 @@
   "overrides": [],
   "quotes": {
     "checked": "2026-11-12",
-    "count": 159,
-    "digest": "d80a8a88ad0662417daeb65efd356a577826b76cefe1c05a26f869fe6298914e",
+    "count": 163,
+    "digest": "4ac7375625b5991cef429a00143e97ed654e9dacb836bbedb2492ee7656bc908",
     "files": {
-      "paloalto-layer-7": "fa3020067c4f849670f333db27c95ffb5601ecb24ff84ba461903b3ffe40ba91",
-      "cloudflare-ssh": "1697210d2f4fab43d65aa4be086d8ce83c0cc4c2c2cdda6a3df685b0c5acefdc",
+      "paloalto-layer-7": "456e329be0332faabd9ccd1861ff33eb760bd17d3bf013f160e6704af07709d8",
+      "cloudflare-ssh": "e71b30883a6ce65df7b3202fddb0251d29d00d68d726910c9d39c0945ab68bd4",
       "rfc-959": "e2eb01566e64c12ed75a0c4bd02231e62f91eebb86f596abc40999d5e8bc5a91",
       "rfc-5321": "7d560eddff1b213c17d4e1e5f95005728b2f05bc2b3947f0fcc91717c6707634",
       "rfc-1635": "985eaf085438fedb84f789e24859c0fe835659c017a44a5d04ddc50ff3cc9e62",
-      "microsoft-iis-ftp-anonymous": "79c04a0c789e60c42cbd36f392b1b434856dbd6dbcb5d2f7323a3368002540be",
+      "microsoft-iis-ftp-anonymous": "905a260d95c782e5f0ce6fd5ac0f745588d84a42db4fd01d93a2fbeedbac81c0",
       "rfc-4217": "01f4e42c696060afb3eef7f52bb48ecfef4984b85472cf051112be2e4f45b37c",
-      "microsoft-sftp-connector": "1bcf7e3d467d6c2e5bd2d523d7c2de54c1a174794194abc18e3c6c3d8ee6a34e",
+      "microsoft-sftp-connector": "81818acfe2803bfe1e068862a83028b348378feeb82d09954847d830aadb873a",
       "cloudflare-spectrum-glossary": "c5f9a795113be991e516ba927f30f41cca6099a07efd6f16d87b0ee97d302f05",
-      "microsoft-azure-sftp": "b8c59b273ddc3c477771f5d7d169fc6acfd1177b2dd83a1f7ba128b0ec046f60",
+      "microsoft-azure-sftp": "f8e26d4e82c4de46e1a0f382e59f7f5d79642bfb94b3037a9abeaeeb64a081b9",
       "cloudflare-spectrum-ftp": "5d0117a78ead01979e5e903509312d3754a36b43fd6fd90183321dd67da56dfa",
       "rfc-4253": "b471173305154f6c66facffcf7a4a25fc5c32765cb30542120be6c20a88f1ed3",
       "rfc-1579": "2a599875ad396f34e6cfda3317977170cef8a7d2a4f2132d83cfe2d65caf3da0",
       "rfc-2428": "d715138b8fa8eeb0aa8bc3a7428ceb65efdd7127b895d50449956835987ab19d",
-      "cisco-asa-inspect-basic": "5b4237cfa77b9ec93d98a0e1ad80c5f002cf0f477f1d69795269f7e1d678f5be",
+      "cisco-asa-inspect-basic": "b134a5876c6e17fd0d530217bde80f13b24caa24525f2ad64e0e08e3b662efc3",
       "rfc-3659": "76b266573f15c458b9cf847e7b27952016a01727c1243f3ec0c5ea60645fe714",
-      "google-merchant-sftp": "f1ea6fa8dfcca4ad74e2e216fcb525e7bb9a4117beaa0e26776cf31a6aaf7f79",
-      "iana-ports": "effec1145145a05374af14992086722392fe258e6f4ac69011c250bfd927a15b",
-      "microsoft-app-service-ftp": "14c8875a74a13c115f9e93a1d6265a334bb155b82550475ef502f8047de9a378",
+      "google-merchant-sftp": "9905edabd0c87ea77e4887d03f667edf105d3a43059a945fe4fe5e423631d132",
+      "iana-ports": "6f1b1cfc45642ea7c33da93581249779ea0814339a0389d9cb49b69b8ae247e3",
+      "microsoft-app-service-ftp": "a68d009f2023c45965989e262ebda5d19ac42a2974790536100b69a8b2958d37",
       "rfc-1350": "39c9534e5fa6fecd3ac083ffd6256c2cc9a58f9f1058cb2e472d1782040231f9",
-      "cisco-router-upgrade": "c3df70d8634f94ed31d8aacfbf13875246b25d191b06a5d2f7d8712e24575119",
-      "microsoft-pxe-winpe": "4e11473d7529005c0d0009e5dd560ca5928c08af92c4c3c51ef9550e419c8abc",
+      "cisco-router-upgrade": "7ab61ef19ccc627572dbb524dea636633660f88ec310614ff78c223a4bdb9e0a",
+      "microsoft-pxe-winpe": "b56e5ac970498652409a01b574e7b8edff081025445719a77de5c986777c4291",
       "rfc-2577": "8d45a14d53f9d6e8c8a74698d3befb9a64ff30fb9eae0b77f5ba8a06574dfbac",
       "rfc-2228": "269c97592b7ec2658a007080431082d98d43b2ba6351490214d2354acd08e6ea",
-      "microsoft-iis-ftp-messages": "cbbb78a691bd1d5de95a0e7fb82234a4b11cade6c20863f8407ce524edf3bf73",
-      "microsoft-iis-ftp-firewall": "ad4eaba58165af44e017156afb1abc4f8da34834c33f48e14feb20ee621dae7a",
-      "cisco-asa-inspect-overview": "d257adcc9710f0bb98d8ae7f19db4d9e9a37c936cff37f92e61efa577b83984d",
+      "microsoft-iis-ftp-messages": "2471703f6d44d50a670e5010eb7c82096f12579e0dca040569d34c546e07fafe",
+      "microsoft-iis-ftp-firewall": "d3bc5caece682db601dee74d02f12815f5816f0e112d5dffd8e2a222cd53a6e8",
+      "cisco-asa-inspect-overview": "8f05f96fb870d49665012840b8c34443f7db327b4ca480faf6b68d9f21d994b1",
       "rfc-9293": "6d9ac8be4b0286f8c3d337addf442b2eb6a9b14e1366594ea7fbc273f93dc2d9"
     }
   },
@@ -386,7 +386,7 @@
     "units[0].steps[2].deep[0] (step \"passive-mode\", Go deeper)": "8a141cf907ef70078654e4ec465753705dd9f76b57e81564afded675a75d3177",
     "units[0].steps[2].deep[1] (step \"passive-mode\", Go deeper)": "3878dce9dd3ecf83449ed11bb7b222c00a1849e4c5ab5f552df9fd75c26c15bb",
     "units[0].steps[2].deep[2] (step \"passive-mode\", Go deeper)": "5745704b0115bb2fbaa6bf67c0d5994556a6cb791c846c60a24b3dd5157dcdd2",
-    "units[0].steps[3].deep[0] (step \"data-connection\", Go deeper)": "74d396417172a6a2bc86b9f0a974feb5f26953b9d8acfca61eff0596fc199b66",
+    "units[0].steps[3].deep[0] (step \"data-connection\", Go deeper)": "adcd5d7c73c0be0fc0c4f76584763a942d87aa6aebf8b76c524ad8abf8d08b6c",
     "units[0].steps[3].deep[1] (step \"data-connection\", Go deeper)": "90483c165af50053c7fe03d3bd80b8c91915015c297a41da9aa5a9f937a9d8af",
     "units[0].steps[3].deep[2] (step \"data-connection\", Go deeper)": "358c7cd5566497109f08e4c0d10a2d93bed1a7409c4509b18510c1f92964e7c1",
     "units[0].steps[4].deep[0] (step \"file-transfer\", Go deeper)": "c7efbc65a47ecfa4b87b9fd598c6a872e2a0eb88a266a2c7755327c321e3e676",
@@ -410,19 +410,19 @@
     "units[0].learn.deep[0] (\"deep-1\", Learn's Go deeper)": "3cc5fdd133cb3c7d46bc81d50f4271674cf0ea3236f960204ca91b287fe4133c",
     "units[0].learn.deep[1] (\"deep-2\", Learn's Go deeper)": "abb0b043f79c5fc6aa5cdb84f9e4ff3e060f48ec330fa068d3882c9dfffe53b6",
     "units[0].learn.deep[2] (\"deep-3\", Learn's Go deeper)": "25c5e8ca0a738c9fa7e5b990b0e9454e97c4eec3d50843e4f90b635ac9cd9f35",
-    "units[0].learn.facts[0] (\"fact-ports\")": "9b60a9b308eea6e24a0306bd66aed2c0d6584f85a417061d5b36165a57669701",
+    "units[0].learn.facts[0] (\"fact-ports\")": "8583045595b13dbae64fb869c25ec138463c26b15ed1829895979f871fd1c20a",
     "units[0].learn.facts[1] (\"fact-codes\")": "0a7ac6311fff99495ce357b84c755d88352a8f09053bd9b36e1bd04a34df5d19",
     "units[0].learn.facts[2] (\"fact-encrypted\")": "8726d80338c8dfb749eda0645d884cdf2214e571323d6c6e3bf3dc0b1a4bda1e",
-    "units[0].learn.facts[3] (\"fact-safer\")": "f026157753c20503747357bc5dfc4377e2dbe0941a0e756888639d36eb3054b6",
+    "units[0].learn.facts[3] (\"fact-safer\")": "16e48ef544078d4a1e4133ad8d33f39da9522344a64903f09271afaf889f721d",
     "units[0].learn.facts[4] (\"fact-defined\")": "f4656b60f1b6d88eda2597fab004a9478baddb8273dab2124f64f8736cfff3d7",
     "units[0].learn.facts[5] (\"fact-tcp\")": "a2b7260c721d0b6b0289292e8961ab75f779ffc2b578fb1c544370b9105a059c",
     "units[0].learn.facts[6] (\"fact-modes\")": "0741702d8178255d60153935c16d44810a7ffa2d44f75280120197b94fbabc8f",
-    "units[0].learn.facts[7] (\"fact-each-file\")": "ddae512027af2fe1be7c634c4b38c8bb377b4654fe50e797b26a71d2f2028d9b",
+    "units[0].learn.facts[7] (\"fact-each-file\")": "12ef8334555807c4b0fb904ff99835888b696af73ca4bdd2e20cdbd70b472140",
     "units[0].learn.facts[8] (\"fact-tftp\")": "5f721eeab6cdcc43310e82b9131c14a674eff96735e178fa2d1fcf06e50fba0b",
     "units[0].learn.facts[9] (\"fact-osi\")": "9118ff61706dbc734f0f6d16a42ee4857f7497a5755c4012bdecd9d10ef4b9c2",
     "units[0].learn.facts[10] (\"fact-name\")": "e62cc2810194dc1d1cd698412b8be0ac4192eed4db8c25b57c0fd4470cf68f16",
     "units[0].practice[0].options[0] (question \"second-connection\")": "747d4b7e55448d7ea9910681ed349faed3a532797e2204bddec5f8efb0853dba",
-    "units[0].practice[0].options[1] (question \"second-connection\")": "29a2e0509275660010e61ace87612d7a7f9153b5c3c62301c5775833e0f05d23",
+    "units[0].practice[0].options[1] (question \"second-connection\")": "222c6e7d68edd5a4b6d95fc2c998cfb67d67fb328b350f41bd42f8145930869c",
     "units[0].practice[0].options[2] (question \"second-connection\")": "57c8a84763668a3ecd6e59931613127a2a798d6b9de42d8cb7de0a2f9d708b0a",
     "units[0].practice[1].options[0] (question \"wifi-login\")": "78c92092885b36d207df86ffa5e1f3bbb2ea7943841bf2eeb0a616a4ffaab0fb",
     "units[0].practice[1].options[1] (question \"wifi-login\")": "72dd128c226409fcac450e9dc1cfcea2cc147d6e9b14c5cbfe01158dce9b5a6a",
@@ -436,13 +436,13 @@
 
 # Fact-check: what-is-ftp
 
-Full check of every item on the claim sheet, against the sources fetched on 2026-11-12. 121 items pass; one Learn fact is imprecise.
+Full check of every item on the claim sheet, run 2026-11-12. Every source was fetched in this run from its publisher: the RFCs as plain text from the RFC Editor, the IANA registry in its text and XML forms, and the vendor pages as HTML. Four pages (two Cisco ASA guides, the Cisco router upgrade note and Cloudflare's SSH explainer) refused a command-line read and were read in the built-in browser.
 
 ## Claims
 
 ### units[0].osi — ✅
 
-Text: the OSI badge places FTP at layer 7.
+Badge: layer 7.
 
 - `paloalto-layer-7` §How does Layer 7 handle different application protocols?
   > Layer 7 supports a range of protocols, each tailored to specific types of network communication. For instance, HTTP is used for web browsing, SMTP for email, and FTP for file transfers.
@@ -450,67 +450,79 @@ Text: the OSI badge places FTP at layer 7.
   > Layer 7 is the application layer and highest level of the Open Systems Interconnection (OSI) model
 - `cloudflare-ssh` §How does SSH contrast with other protocols for tunneling?
   > most sources describe it as a layer 7/application layer protocol, like HTTP, FTP, and SMTP.
-- Note: no standard places FTP in an OSI layer; two independent vendors (Palo Alto Networks and Cloudflare) both put FTP at layer 7, as the project allows. Both pages are live explainers.
+- Note: Two vendors, on different sites, each place FTP at the application layer, layer 7. No standard places it; the owner's rule lets the badge rest on two vendors' pages. Both pages are live explainers.
 
 ### units[0].steps[0].deep[0] (step "control-connection", Go deeper) — ✅
 
-Text: FTP replies use three-digit codes like SMTP's: 1xx started, 2xx done, 3xx need more, 4xx try later, 5xx failed.
+"FTP replies use three-digit codes like SMTP's: 1xx started, 2xx done, 3xx need more, 4xx try later, 5xx failed."
 
 - `rfc-959` §4.2, page 37
+  > There are five values for the first digit of the reply code:
+  > 1yz Positive Preliminary reply
   > The requested action is being initiated; expect another reply before proceeding with a new command.
-  > … The requested action has been successfully completed.
-  > … The command has been accepted, but the requested action is being held in abeyance, pending receipt of further information.
-  > … but the error condition is temporary and the action may be requested again.
-  > … The command was not accepted and the requested action did not take place. The User-process is discouraged from repeating the exact request (in the same sequence).
+  > …
+  > 2yz Positive Completion reply
+  > The requested action has been successfully completed.
+  > …
+  > 3yz Positive Intermediate reply
+  > The command has been accepted, but the requested action is being held in abeyance, pending receipt of further information.
+  > …
+  > 4yz Transient Negative Completion reply
+  > The command was not accepted and the requested action did not take place, but the error condition is temporary and the action may be requested again.
+- `rfc-959` §4.2, page 37
+  > 5yz Permanent Negative Completion reply
 - `rfc-5321` §4.2.1
   > It is worth noting that the file transfer protocol (FTP) [34] uses a very similar code architecture and that the SMTP codes are based on the FTP model.
-- Note: RFC 959 §4.2 defines FTP's reply codes and their first-digit classes; the 5yz class is on page 38, still in §4.2.
-- Note: SMTP has no 1yz class (RFC 5321 says so); the sentence lists FTP's classes and only calls the scheme like SMTP's, which holds.
-- Note: RFC 959 is an Internet Standard (STD 9), updated but not obsoleted; RFC 5321 is not obsoleted (updated by RFC 7504, which does not touch this).
+- Note: RFC 959 defines FTP's reply codes. The five-value list starts on page 37 and its last entry, 5yz, sits at the top of page 38, in the same section 4.2.
+- Note: The short glosses ("started", "done", "need more", "try later", "failed") are everyday words for the five classes. RFC 5321 adds that SMTP has no 1yz class; "like SMTP's" still holds for the shared three-digit design.
+- Note: RFC 959 is an Internet Standard, not obsoleted. Its six updating RFCs (2228, 2640, 2773, 3659, 5797, 7151) add commands and options and leave the reply classes as they are. RFC 5321 is not obsoleted; RFC 7504 updates it with two SMTP codes only.
 
 ### units[0].steps[0].deep[1] (step "control-connection", Go deeper) — ✅
 
-Text: The control connection stays open for the whole session.
+"The control connection stays open for the whole session."
 
 - `rfc-959` §2.3, page 9
   > The protocol requires that the control connections be open while data transfer is in progress. It is the responsibility of the user to request the closing of the control connections when finished using the FTP service, while it is the server who takes the action.
-- Note: RFC 959 defines FTP's connections. It requires the control connection while transfers run and closes it when the user is finished; the claim says this in everyday words.
+- Note: RFC 959 is the defining standard for the FTP control connection and its lifetime.
+- Note: It leaves out the case of a dropped connection or a server timeout; in the ordinary case the line stays up until the user quits.
 
 ### units[0].steps[1].deep[0] (step "plaintext-login", Go deeper) — ✅
 
-Text: 331 means "user name OK, now the password"; 230 means logged in; 530 means the login failed.
+"331 means “user name OK, now the password”; 230 means logged in; 530 means the login failed."
 
 - `rfc-959` §4.2.1, page 40
   > 230 User logged in, proceed.
   > 530 Not logged in.
   > 331 User name okay, need password.
-- Note: RFC 959 §4.2.1 defines these reply codes. "The login failed" is a plain-words reading of 530 after a login attempt.
+- Note: RFC 959 defines these reply codes. "The login failed" is an everyday reading of "not logged in", which is the reply to a rejected login.
 
 ### units[0].steps[1].deep[1] (step "plaintext-login", Go deeper) — ✅
 
-Text: Anonymous FTP accepts the user anonymous with any password.
+"Anonymous FTP accepts the user anonymous with any password."
 
 - `rfc-1635` §What is Anonymous FTP?
   > Traditionally, this special anonymous user account accepts any string as a password, although it is common to use either the password "guest" or one's electronic mail (e-mail) address.
 - `microsoft-iis-ftp-anonymous` §Overview
-  > Anonymous users will typically log in by using a user name of ftp or anonymous, and most users will use their e-mail address as a password, although this is not required.
-- Note: two independent sources (an IETF FYI RFC and Microsoft's IIS documentation). The claim leaves out that some sites ask for an e-mail address and that some servers also accept the name ftp.
-- Note: RFC 1635 is not obsoleted.
+  > Anonymous users will typically log in by using a user name of
+  > …
+  > most users will use their e-mail address as a password, although this is not required.
+- Note: Two independent sources (an RFC and Microsoft's IIS documentation). The claim leaves out that some sites ask for an e-mail address, and that IIS also accepts the user name "ftp"; true in the ordinary case.
+- Note: RFC 1635 is not obsoleted. The IIS page is live and IIS's FTP service is a current Windows Server feature.
 
 ### units[0].steps[1].deep[2] (step "plaintext-login", Go deeper) — ✅
 
-Text: FTPS adds TLS to FTP (AUTH TLS).
+"FTPS adds TLS to FTP (AUTH TLS)."
 
 - `rfc-4217` §3
-  > In summary, an FTP session is established on the normal control port. A client requests TLS with the AUTH command and then decides if it wishes to secure the data connections by use of the PBSZ and PROT commands.
+  > A client requests TLS with the AUTH command and then decides if it wishes to secure the data connections by use of the PBSZ and PROT commands.
 - `rfc-4217` §4.2
   > In either case, '234' is the server response to an 'AUTH TLS' command that it will honour.
-- Note: RFC 4217 defines how FTP is secured with TLS and the AUTH TLS command. It does not use the name FTPS, which is the common name for it (Microsoft's App Service page, cited elsewhere in this lesson, calls FTP with TLS FTPS).
-- Note: RFC 4217 is not obsoleted; RFC 8996 updates it only to deprecate TLS 1.0 and 1.1.
+- Note: RFC 4217 is the defining standard for securing FTP with TLS through the AUTH TLS command. It does not use the name "FTPS"; that is the everyday name for this, used by Microsoft's and Cloudflare's pages elsewhere on this sheet.
+- Note: RFC 4217 is not obsoleted. RFC 8996 updates it only to retire TLS 1.0 and 1.1, which does not touch the claim.
 
 ### units[0].steps[1].deep[3] (step "plaintext-login", Go deeper) — ✅
 
-Text: SFTP is a different protocol altogether, which runs inside SSH on port 22.
+"SFTP is a different protocol altogether, which runs inside SSH on port 22."
 
 - `microsoft-sftp-connector` §SFTP - SSH
   > SFTP (SSH File Transfer Protocol) is a network protocol that provides file access, file transfer, and file management over any reliable data stream. It was designed by the Internet Engineering Task Force (IETF) as an extension of the Secure Shell protocol (SSH) version 2.0 to provide secure file transfer capabilities.
@@ -522,87 +534,97 @@ Text: SFTP is a different protocol altogether, which runs inside SSH on port 22.
   > Unlike FTP or FTPS, enabling Spectrum for SFTP does not require extra configuration. When setting up a Spectrum application for SSH, select port 22 and TCP.
 - `rfc-4253` §4.1
   > When used over TCP/IP, the server normally listens for connections on port 22.
-- Note: Microsoft (two pages, one source) and Cloudflare (two pages, one source) independently state that SFTP is its own protocol built on SSH and reached on port 22; RFC 4253 confirms SSH's port 22. Port 22 is the default, not the only port.
+- Note: Microsoft and Cloudflare each describe SFTP as its own protocol built on SSH; port 22 is SSH's normal port (RFC 4253, with Microsoft and Cloudflare). A server may listen on another port (Google's uses its own), which the claim leaves out.
+- Note: RFC 4253 is not obsoleted; its seven updates change algorithms, not the port.
 
 ### units[0].steps[2].deep[0] (step "passive-mode", Go deeper) — ✅
 
-Text: The 227 reply spells the port as two numbers: (203,0,113,21,195,80) means port 195 × 256 + 80 = 50000.
+"The 227 reply spells the port as two numbers: (203,0,113,21,195,80) means port 195 × 256 + 80 = 50000."
 
 - `rfc-959` §4.2.1, page 40
   > 227 Entering Passive Mode (h1,h2,h3,h4,p1,p2).
 - `rfc-959` §4.1.2, page 28
   > If this command is used, the argument is the concatenation of a 32-bit internet host address and a 16-bit TCP port address. This address information is broken into 8-bit fields and the value of each field is transmitted as a decimal number (in character string representation).
-- Note: RFC 959 defines the 227 reply and the host-port format. The 16-bit port split into two 8-bit fields, high byte first, gives p1 × 256 + p2; 195 × 256 + 80 = 50000 is correct arithmetic.
+- Note: RFC 959 defines the 227 reply and the h1..p2 format. A 16-bit port split into two 8-bit fields, high field first, gives p1 × 256 + p2; 195 × 256 + 80 = 50000 is correct. The address 203.0.113.21 is an RFC 5737 example address.
 
 ### units[0].steps[2].deep[1] (step "passive-mode", Go deeper) — ✅
 
-Text: In active mode (the PORT command), the server connects back to the client instead, which NAT and firewalls usually block.
+"In active mode (the PORT command), the server connects back to the client instead, which NAT and firewalls usually block."
 
 - `rfc-959` §3.2, page 18
   > The server, upon receiving the transfer request, will initiate the data connection to the port.
-  > … It is possible for the user to specify an alternate data port by use of the PORT command.
+  > …
+  > It is possible for the user to specify an alternate data port by use of the PORT command.
 - `rfc-1579` §Overview and Rational
   > By default, this connection is set up by an active open from the FTP server to the FTP client. However, this scheme does not work well with packet filter-based firewalls, which in general cannot permit incoming calls to random port numbers.
 - `cloudflare-spectrum-ftp` §How FTP Operates
   > In active mode, the server connects back to the client on a port that they have specified, which can create issues where clients are behind an NAT.
-- Note: RFC 959 defines the server-opened data connection and PORT. "Usually block" is loose: firewalls with an FTP helper can let active mode through, which the lesson teaches in deep-3; without one, the connection is blocked, as the RFC 1579 and Cloudflare passages say.
+- Note: RFC 959 defines how the server opens the data connection; RFC 1579 and Cloudflare each state that this server-to-client connection runs into firewalls and NAT. "Usually block" is a loose word for "does not work well" and "in general cannot permit"; true in the ordinary case.
+- Note: RFC 1579 is Informational and not obsoleted.
 
 ### units[0].steps[2].deep[2] (step "passive-mode", Go deeper) — ✅
 
-Text: EPSV is the modern form, and works with IPv6.
+"EPSV is the modern form, and works with IPv6."
 
 - `rfc-2428` §1
   > This document provides a specification for a way that FTP can communicate data connection endpoint information for network protocols other than IPv4. In this specification, the FTP commands PORT and PASV are replaced with EPRT and EPSV, respectively.
 - `rfc-2428` §3
-  > The response to this command includes only the TCP port number of the listening connection.
+  > The EPSV command requests that a server listen on a data port and wait for a connection.
 - `cloudflare-spectrum-ftp` §How FTP Operates
-  > Alternatively, more modern FTP server software supports FTP extensions … which introduces the EPSV command that omits the IP address that the client should connect on.
-- Note: RFC 2428 defines EPSV and states it replaces PASV for protocols beyond IPv4. RFC 2428 is not obsoleted.
+  > Alternatively, more modern FTP server software supports FTP extensions
+  > …
+  > which introduces the EPSV command that omits the IP address that the client should connect on.
+- Note: RFC 2428 is the defining standard for EPSV, the extended passive command made for IPv6. It is a Proposed Standard and not obsoleted.
 
 ### units[0].steps[3].deep[0] (step "data-connection", Go deeper) — ✅
 
-Text: Each file, and each directory listing (LIST), gets a data connection of its own, opened and closed every time.
+"Each file, and each directory listing (LIST), gets a data connection of its own, opened and closed every time."
 
 - `cisco-asa-inspect-basic` §FTP Inspection Overview
-  > Ports for these channels are negotiated through PORT or PASV commands. The channels are allocated in response to a file upload, a file download, or a directory listing event.
+  > The channels are allocated in response to a file upload, a file download, or a directory listing event.
 - `rfc-959` §4.1.3, page 32
   > This command causes a list to be sent from the server to the passive DTP.
-- `rfc-1579` §Overview and Rational
+  > …
+  > The data transfer is over the data connection in type ASCII or type EBCDIC.
+- `rfc-1579` §The Gory Details
   > A new connection is used for each transfer; to avoid running afoul of TCP's TIMEWAIT state, the client picks a new port number each time and sends a PORT command announcing that to the server.
 - `rfc-959` §3.3, page 19
   > When using the stream mode of data transfer the end of the file must be indicated by closing the connection.
-- Note: RFC 959 defines the data connection and its close at end of file in stream mode, the default. It leaves out the rare block and compressed modes, which can keep one data connection open.
-- Note: the RFC 1579 passage sits under the heading "The Gory Details", not "Overview and Rational"; the citation's text fragment reaches it, and the claim stands on RFC 959 and Cisco without it.
+- Note: RFC 959 defines LIST and the stream-mode close; Cisco and RFC 1579 state one connection per transfer. The claim leaves out block and compressed modes, which can reuse a connection but are rare.
 
 ### units[0].steps[3].deep[1] (step "data-connection", Go deeper) — ✅
 
-Text: TYPE I (binary) or TYPE A (text) is set first; binary sends the bytes exactly as they are.
+"TYPE I (binary) or TYPE A (text) is set first; binary sends the bytes exactly as they are."
 
 - `rfc-959` §4.1.2, page 28
-  > The following codes are assigned for type:
+  > A - ASCII
+  > …
+  > I - Image
 - `rfc-959` §4.1.2, page 27
   > The commands may be in any order except that they must precede the FTP service request.
 - `rfc-959` §3.1.1.1, page 11
-  > It is intended primarily for the transfer of text files, except when both hosts would find the EBCDIC type more convenient.
+  > It is intended primarily for the transfer of text files
 - `rfc-959` §3.1.1.3, page 12
+  > The data are sent as contiguous bits which, for transfer, are packed into the 8-bit transfer bytes. The receiving site must store the data as contiguous bits.
+  > …
   > Image type is intended for the efficient storage and retrieval of files and for the transfer of binary data.
 - `rfc-3659` §5.1
   > If the data representation TYPE is IMAGE and the STRUcture is File, for many systems the file will be stored exactly in the same format as it is sent across the data connection.
-- Note: RFC 959 defines TYPE with codes A (ASCII) and I (Image) on page 28; RFC 3659 updates it. The claim leaves out that ASCII is the default when no TYPE is sent.
-- Note: RFC 3659 is not obsoleted.
+- Note: RFC 959 defines TYPE and its codes; RFC 3659 (which updates it, and is not obsoleted) states that image type keeps the file byte for byte. The claim leaves out that TYPE is optional (ASCII is the default) and the rare padding case; true in the ordinary case.
 
 ### units[0].steps[3].deep[2] (step "data-connection", Go deeper) — ✅
 
-Text: RETR downloads a file and STOR uploads one.
+"RETR downloads a file and STOR uploads one."
 
 - `rfc-959` §4.1.3, page 30
   > This command causes the server-DTP to transfer a copy of the file, specified in the pathname, to the server- or user-DTP at the other end of the data connection.
-  > … This command causes the server-DTP to accept the data transferred via the data connection and to store the data as a file at the server site.
-- Note: RFC 959 defines RETR and STOR; download and upload are the client's view of them.
+  > …
+  > This command causes the server-DTP to accept the data transferred via the data connection and to store the data as a file at the server site.
+- Note: RFC 959 defines RETR (the first passage) and STOR (the second). "Downloads" and "uploads" are the everyday words, seen from the client.
 
 ### units[0].steps[4].deep[0] (step "file-transfer", Go deeper) — ✅
 
-Text: In stream mode, closing the data connection marks the end of the file.
+"In stream mode, closing the data connection marks the end of the file."
 
 - `rfc-959` §3.3, page 19
   > When using the stream mode of data transfer the end of the file must be indicated by closing the connection.
@@ -612,30 +634,30 @@ Text: In stream mode, closing the data connection marks the end of the file.
 
 ### units[0].steps[4].deep[1] (step "file-transfer", Go deeper) — ✅
 
-Text: REST lets an interrupted transfer carry on from a byte offset.
+"REST lets an interrupted transfer carry on from a byte offset."
 
 - `rfc-3659` §5.1
   > However, there is not really a need to have explicit restart markers in this case, as restart markers can be implied by the octet offset into the data stream.
 - `rfc-3659` §5.2
-  > This is done by using the SIZE command, if needed, in combination with the RESTART (REST) command, and one of the standard file transfer commands.
-- Note: RFC 3659 defines restart of stream-mode transfers by octet offset with REST.
+  > STREAM mode transfers with FILE STRUcture may be restarted even though no restart marker has been transferred in addition to the data itself. This is done by using the SIZE command, if needed, in combination with the RESTART (REST) command, and one of the standard file transfer commands.
+- Note: RFC 3659 is the defining standard for REST in stream mode. It is a Proposed Standard and not obsoleted.
 
 ### units[0].steps[4].deep[2] (step "file-transfer", Go deeper) — ✅
 
-Text: The server keeps your current directory (CWD, PWD) on the control connection.
+"The server keeps your current directory (CWD, PWD) on the control connection."
 
 - `rfc-959` §4.1.1, page 26
   > This command allows the user to work with a different directory or dataset for file storage or retrieval without altering his login or accounting information.
 - `rfc-959` §4.1.3, page 32
   > This command causes the name of the current working directory to be returned in the reply.
-- Note: RFC 959 defines CWD and PWD, commands sent on the control connection, and the server's current working directory for the session. "Keeps ... on the control connection" is loose wording for "for this session".
+- Note: RFC 959 defines CWD and PWD. The server holds the working directory for the session that the control connection carries, and the reply to PWD comes back on that line. "On the control connection" is a loose way to say "for this session"; it would not mislead.
 
 ### units[0].steps[5].deep[0] (step "session-close", Go deeper) — ✅
 
-Text: SFTP (the SSH File Transfer Protocol, port 22) is a separate protocol from FTP, built on SSH.
+"SFTP (the SSH File Transfer Protocol, port 22) is a separate protocol from FTP, built on SSH."
 
 - `microsoft-azure-sftp` §SSH File Transfer Protocol (SFTP) support for Azure Blob Storage
-  > Then you can set up local user identities for authentication to connect to your storage account with SFTP via port 22.
+  > Now, with SFTP support for Azure Blob Storage, you can enable SFTP support for Blob Storage accounts with a single click. Then you can set up local user identities for authentication to connect to your storage account with SFTP via port 22.
 - `google-merchant-sftp` §What is SFTP?
   > SFTP stands for SSH File Transfer Protocol.
 - `microsoft-sftp-connector` §SFTP - SSH
@@ -643,61 +665,64 @@ Text: SFTP (the SSH File Transfer Protocol, port 22) is a separate protocol from
 - `cloudflare-spectrum-glossary` §Glossary
   > A secure file transfer protocol that uses the Secure Socket Shell (SSH) protocol for encryption and authentication.
 - `cloudflare-spectrum-ftp` §SFTP
-  > When setting up a Spectrum application for SSH, select port 22 and TCP.
+  > Unlike FTP or FTPS, enabling Spectrum for SFTP does not require extra configuration. When setting up a Spectrum application for SSH, select port 22 and TCP.
 - `rfc-4253` §4.1
-  > This port number has been registered with the IANA, and has been officially assigned for SSH.
-- Note: Microsoft, Google and Cloudflare are independent publishers; each states SFTP's name or its basis on SSH, and Microsoft and Cloudflare give port 22.
+  > When used over TCP/IP, the server normally listens for connections on port 22.
+- Note: Google, Microsoft and Cloudflare are independent publishers. Port 22 is the usual SSH port; Google's own server uses another, which the claim's ordinary case leaves out.
 
 ### units[0].steps[5].deep[1] (step "session-close", Go deeper) — ✅
 
-Text: FTPS is FTP with TLS, on port 21 with AUTH TLS, or 990 with TLS from the start.
+"FTPS is FTP with TLS, on port 21 with AUTH TLS, or 990 with TLS from the start."
 
 - `rfc-4217` §4
   > The server listens on the normal FTP control port {FTP-PORT} and the session initiation is not secured at all. Once the client wishes to secure the session, the AUTH command is sent and the server MAY then allow TLS negotiation to take place.
 - `rfc-4217` §16
   > {FTP-PORT} - The port assigned to the FTP control connection is 21.
 - `iana-ports` §Registry
-  > ftps 990 tcp ftp protocol, control, over
+  > ftp protocol, control, over TLS/SSL
 - `microsoft-app-service-ftp` §Why does my connection fail when attempting to connect over FTPS using explicit encryption?
   > If you connect with explicit encryption, the connection is established via port 21.
+  > …
   > If you connect with implicit encryption, the connection is established via port 990.
-- Note: RFC 4217 defines FTP over TLS started with AUTH on port 21; the IANA registry defines the assignment of port 990 to FTP control over TLS/SSL (the registry line continues with TLS/SSL). Microsoft confirms both forms.
+- Note: RFC 4217 defines explicit FTPS on port 21; the IANA registry assigns port 990 to the service "ftps", FTP control over TLS/SSL. Microsoft confirms both ports.
 
 ### units[0].steps[5].deep[2] (step "session-close", Go deeper) — ✅
 
-Text: TFTP (UDP 69) is a tiny protocol of its own, with no login, used to load software onto devices over the network.
+"TFTP (UDP 69) is a tiny protocol of its own, with no login, used to load software onto devices over the network."
 
 - `rfc-1350` §1
-  > TFTP is a simple protocol to transfer files, and therefore was named the Trivial File Transfer Protocol or TFTP.
-  > … It cannot list directories, and currently has no provisions for user authentication.
+  > It is designed to be small and easy to implement. Therefore, it lacks most of the features of a regular FTP.
+  > …
+  > It cannot list directories, and currently has no provisions for user authentication.
 - `rfc-1350` §4
   > A requesting host chooses its source TID as described above, and sends its initial request to the known TID 69 decimal (105 octal) on the serving host.
 - `iana-ports` §Registry
-  > tftp 69 udp Trivial File Transfer
+  > Trivial File Transfer
 - `cisco-router-upgrade` §Background Information
   > Several protocols are available to copy the Cisco IOS image into the Cisco routers. The most commonly used protocol is Trivial File Transfer Protocol (TFTP).
 - `microsoft-pxe-winpe` §Prerequisites
   > A PXE server: A server running the TFTP service that can host Windows PE boot files that the client will download.
-- Note: RFC 1350 defines TFTP, its use of UDP, its lack of authentication and port 69; IANA defines the port assignment. Cisco and Microsoft independently show TFTP loading software onto devices. RFC 1350 is not obsoleted (option RFCs update it).
+- Note: RFC 1350 is the defining standard for TFTP (UDP, port 69, no login). Its seven updates add options and do not add a login. The uses are confirmed by two vendors, Cisco and Microsoft.
 
 ### units[0].learn.lead[0] ("lead-1") — ✅
 
-Text: FTP talks on one line and moves files on another, and everything on both, the password included, is plain text.
+"FTP talks on one line and moves files on another, and everything on both, the password included, is plain text."
 
 - `rfc-959` §2.2, page 4
   > The communication path between the USER-PI and SERVER-PI for the exchange of commands and replies.
-  > … A full duplex connection over which data is transferred, in a specified mode and type.
+  > …
+  > A full duplex connection over which data is transferred, in a specified mode and type.
 - `rfc-2577` §6
   > All data and control information (including passwords) is sent across the network in unencrypted form by standard FTP [PR85].
 - `rfc-2228` §1
-  > uses usernames and passwords passed in cleartext to authenticate clients to servers (via the USER and PASS commands).
+  > FTP does not currently have any provision for the encryption or verification of the authenticity of commands, replies, or transferred data.
 - `microsoft-app-service-ftp` §Enforce FTPS
-  > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
-- Note: RFC 959 defines the two connections. RFC 2577 and RFC 2228 are two independent RFCs that each state FTP sends everything, passwords included, unencrypted. "Plain text" here means unencrypted, as the lesson's term-plain defines it. The Microsoft passage only implies plain FTP is less secure.
+  > To disable unencrypted FTP:
+- Note: RFC 959 defines the two connections. RFC 2577 and RFC 2228 each state that FTP sends everything unencrypted. "Plain text" means unencrypted and readable, which is what the sources say. Both RFCs are not obsoleted.
 
 ### units[0].learn.terms[0] ("term-control") — ✅
 
-Text: Control connection: the line for commands and replies.
+"Control connection: the line for commands and replies."
 
 - `rfc-959` §2.2, page 4
   > The communication path between the USER-PI and SERVER-PI for the exchange of commands and replies.
@@ -705,17 +730,17 @@ Text: Control connection: the line for commands and replies.
 
 ### units[0].learn.terms[1] ("term-port") — ✅
 
-Text: Port 21: the door for commands.
+"Port 21: the door for commands."
 
 - `rfc-959` §8
   > The FTP control connection is established via TCP between the user process port U and the server process port L. This protocol is assigned the service port 21 (25 octal), that is L=21.
 - `iana-ports` §Registry
-  > ftp 21 tcp File Transfer Protocol
-- Note: RFC 959 defines the control port; the IANA registry defines the assignment.
+  > File Transfer Protocol
+- Note: RFC 959 defines the control port; the live IANA registry lists "ftp" on port 21, tcp, with the description quoted and RFC 959 as its reference.
 
 ### units[0].learn.terms[2] ("term-login") — ✅
 
-Text: USER, PASS: log in.
+"USER, PASS: log in."
 
 - `rfc-959` §4.1.1, page 25
   > The argument field is a Telnet string identifying the user.
@@ -725,7 +750,7 @@ Text: USER, PASS: log in.
 
 ### units[0].learn.terms[3] ("term-pasv") — ✅
 
-Text: Passive mode (PASV): "Tell me where to connect for the data".
+"Passive mode (PASV): “Tell me where to connect for the data”."
 
 - `rfc-959` §4.1.2, page 28
   > This command requests the server-DTP to "listen" on a data port (which is not its default data port) and to wait for a connection rather than initiate one upon receipt of a transfer command. The response to this command includes the host and port address this server is listening on.
@@ -733,25 +758,29 @@ Text: Passive mode (PASV): "Tell me where to connect for the data".
 
 ### units[0].learn.terms[4] ("term-data") — ✅
 
-Text: Data connection: the separate line for a file.
+"Data connection: the separate line for a file."
 
 - `rfc-959` §2.2, page 4
-  > A full duplex connection over which data is transferred, in a specified mode and type.
+  > A full duplex connection over which data is transferred, in a specified mode and type. The data transferred may be a part of a file, an entire file or a number of files.
 - `rfc-959` §4.1.3, page 29
   > The data, when transferred in response to FTP service
-- Note: the page-29 passage continues on page 30 with the words that the data shall always be sent over the data connection. RFC 959 defines the data connection. Directory listings use it too, which the lesson's Go deeper says.
+  > …
+  > commands, shall always be sent over the data connection, except for certain informative replies.
+- Note: RFC 959 defines the data connection. The sentence crosses from page 29 to page 30.
 
 ### units[0].learn.terms[5] ("term-stor") — ✅
 
-Text: STOR, RETR: upload a file, or download one.
+"STOR, RETR: upload a file, or download one."
 
 - `rfc-959` §4.1.3, page 30
+  > This command causes the server-DTP to transfer a copy of the file, specified in the pathname, to the server- or user-DTP at the other end of the data connection.
+  > …
   > This command causes the server-DTP to accept the data transferred via the data connection and to store the data as a file at the server site.
-- Note: RFC 959 defines STOR and RETR (RETR quoted under units[0].steps[3].deep[2]).
+- Note: RFC 959 defines RETR (the first passage, the download) and STOR (the second, the upload).
 
 ### units[0].learn.terms[6] ("term-plain") — ✅
 
-Text: Plain text: readable by anyone on the way.
+"Plain text: readable by anyone on the way."
 
 - `rfc-2577` §6
   > All data and control information (including passwords) is sent across the network in unencrypted form by standard FTP [PR85].
@@ -761,23 +790,25 @@ Text: Plain text: readable by anyone on the way.
   > this represents a security risk whereby passwords can be stolen through monitoring of local and wide-area networks.
 - `microsoft-app-service-ftp` §Enforce FTPS
   > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
-- Note: two independent RFCs. "Anyone on the way" means anyone who can watch the traffic on its path.
+- Note: Two independent RFCs state it. "Anyone on the way" is a loose word for anyone who can watch the network path.
 
 ### units[0].learn.terms[7] ("term-sftp") — ✅
 
-Text: SFTP: file transfer inside a sealed SSH connection.
+"SFTP: file transfer inside a sealed SSH connection."
 
 - `microsoft-sftp-connector` §SFTP - SSH
   > It was designed by the Internet Engineering Task Force (IETF) as an extension of the Secure Shell protocol (SSH) version 2.0 to provide secure file transfer capabilities.
 - `cloudflare-spectrum-glossary` §Glossary
   > A secure file transfer protocol that uses the Secure Socket Shell (SSH) protocol for encryption and authentication.
 - `google-merchant-sftp` §What is SFTP?
+  > SFTP stands for SSH File Transfer Protocol.
+  > …
   > With SFTP, data is securely transferred using encryption and no clear text file data is transferred.
-- Note: three independent vendors. "Sealed" is the lesson's everyday word for encrypted.
+- Note: Three vendors (Microsoft, Cloudflare, Google) agree. "Sealed" is the lesson's everyday word for encrypted.
 
 ### units[0].learn.pattern ("pattern") — ✅
 
-Text: Control Connection, Login, PASV, Data Connection, Transfer, QUIT. Every FTP transfer goes this way: commands on one line, the file on a second.
+Names: Control Connection, Login, PASV, Data Connection, Transfer, QUIT. Note: "Every FTP transfer goes this way: commands on one line, the file on a second."
 
 - `rfc-959` §2.2, page 4
   > The communication path between the USER-PI and SERVER-PI for the exchange of commands and replies.
@@ -786,45 +817,54 @@ Text: Control Connection, Login, PASV, Data Connection, Transfer, QUIT. Every FT
 - `rfc-959` §4.1.2, page 28
   > This command requests the server-DTP to "listen" on a data port (which is not its default data port) and to wait for a connection rather than initiate one upon receipt of a transfer command.
 - `rfc-959` §4.1.3, page 29
-  > The FTP service commands define the file transfer or the file system function requested by the user.
+  > The data, when transferred in response to FTP service
+  > …
+  > commands, shall always be sent over the data connection, except for certain informative replies.
 - `rfc-959` §4.1.3, page 30
   > This command causes the server-DTP to accept the data transferred via the data connection and to store the data as a file at the server site.
 - `rfc-959` §4.1.1, page 27
   > This command terminates a USER and if file transfer is not in progress, the server closes the control connection.
-- Note: RFC 959 defines each step. The "every" applies to the stated rule (commands on one line, the file on another), which holds; the PASV step is the passive-mode case, and the lesson teaches active mode separately.
+- Note: RFC 959 defines each step. The "every" is defined after the colon (commands on one line, the file on a second), which holds for every transfer, active or passive. The PASV step is the passive flow the lesson shows; the lesson also teaches active mode, and the note does not deny it.
 
 ### units[0].learn.why[0] ("why-1") — ✅
 
-Text: FTP is one of the oldest internet protocols: it was first built in the 1970s, to move files between computers on the ARPANET.
+"FTP is one of the oldest internet protocols: it was first built in the 1970s, to move files between computers on the ARPANET."
 
 - `rfc-959` §2.1, page 2
-  > FTP has had a long evolution over the years.
-  > … These include the first proposed file transfer mechanisms in 1971 that were developed for implementation on hosts at M.I.T. (RFC 114), plus comments and discussion in RFC 141.
-  > … The File Transfer Protocol was now defined as a protocol for file transfer between HOSTs on the ARPANET
-- Note: RFC 959's history section gives the 1971 start and the ARPANET. "One of the oldest internet protocols" is a fair beginner reading of that history.
+  > These include the first proposed file transfer mechanisms in 1971 that were developed for implementation on hosts at M.I.T. (RFC 114), plus comments and discussion in RFC 141.
+  > …
+  > The File Transfer Protocol was now defined as a protocol for file transfer between HOSTs on the ARPANET
+- Note: RFC 959's history section is the defining record. "One of the oldest internet protocols" is a loose summary of a protocol first proposed in 1971 for the ARPANET.
 
 ### units[0].learn.why[1] ("why-2") — ✅
 
-Text: It's worth knowing for two reasons: its two-line design, and as the classic lesson in why plain text and passwords don't mix.
+"It’s worth knowing for two reasons: its two-line design, and as the classic lesson in why plain text and passwords don’t mix."
 
 - `rfc-959` §2.2, page 4
   > The communication path between the USER-PI and SERVER-PI for the exchange of commands and replies.
+  > …
+  > A full duplex connection over which data is transferred, in a specified mode and type.
 - `rfc-2228` §1
-  > uses usernames and passwords passed in cleartext to authenticate clients to servers (via the USER and PASS commands). Except for services such as "anonymous" FTP archives, this represents a security risk whereby passwords can be stolen through monitoring of local and wide-area networks.
+  > uses usernames and passwords passed in cleartext to authenticate clients to servers (via the USER and PASS commands).
+  > …
+  > this represents a security risk whereby passwords can be stolen through monitoring of local and wide-area networks.
 - `rfc-2577` §5
   > Standard FTP [PR85] sends passwords in clear text using the "PASS" command.
-- Note: the facts (two connections; cleartext passwords are a risk) are stated; "worth knowing" and "classic lesson" are the lesson's framing, not factual claims.
+- Note: The facts (two connections; cleartext passwords are a risk) are stated by RFC 959 and by two other RFCs. "Worth knowing" and "classic lesson" are the lesson's framing, not a claim of fact.
 
 ### units[0].learn.deep[0] ("deep-1", Learn's Go deeper) — ✅
 
-Text: Codes worth knowing: 220 ready, often with the server's name and software in its text, 331 need password, 230 logged in, 227 passive, 150 opening data connection, 226 transfer complete, 221 goodbye, closing the control connection, 530 not logged in.
+"Codes worth knowing: 220 ready, often with the server’s name and software in its text, 331 need password, 230 logged in, 227 passive, 150 opening data connection, 226 transfer complete, 221 goodbye, closing the control connection, 530 not logged in."
 
 - `rfc-959` §4.2.1, page 40
   > 220 Service ready for new user.
   > 221 Service closing control connection.
-  > … 226 Closing data connection.
+  > …
+  > 226 Closing data connection.
   > Requested file action successful (for example, file transfer or file abort).
-  > … 227 Entering Passive Mode (h1,h2,h3,h4,p1,p2).
+  > 426 Connection closed; transfer aborted.
+  > 227 Entering Passive Mode (h1,h2,h3,h4,p1,p2).
+  > …
   > 230 User logged in, proceed.
   > 530 Not logged in.
   > 331 User name okay, need password.
@@ -833,84 +873,89 @@ Text: Codes worth knowing: 220 ready, often with the server's name and software 
 - `rfc-959` §4.2, page 35
   > In particular, the text may be server-dependent, so there are likely to be varying texts for each reply code.
 - `cisco-asa-inspect-basic` §Configure an FTP Inspection Policy Map
-  > a username and password, all FTP users are presented with a greeting banner. By default, this banner includes version information useful to hackers trying to identify weaknesses in a system.
+  > Before submitting a username and password, all FTP users are presented with a greeting banner. By default, this banner includes version information useful to hackers trying to identify weaknesses in a system.
 - `microsoft-iis-ftp-messages` §Overview
   > The suppressDefaultBanner attribute can be used in combination with the bannerMessage attribute to disguise your FTP server type.
-- Note: RFC 959 defines every code listed. Cisco and Microsoft independently confirm that the greeting usually reveals the server's software, so "often" holds.
+- Note: RFC 959 defines every code here. The note on the greeting is confirmed by two vendors: Cisco says the banner carries version information by default, and Microsoft says the default banner gives away the server type. "Often" fits: the banner can be changed or hidden.
 
 ### units[0].learn.deep[1] ("deep-2", Learn's Go deeper) — ✅
 
-Text: Active mode sends data from the server's port 20.
+"Active mode sends data from the server’s port 20."
 
 - `rfc-959` §5.2, page 44
   > The server shall initiate the data connection from his own default data port (L-1) using the specified user data port.
 - `rfc-959` §8
   > This protocol is assigned the service port 21 (25 octal), that is L=21.
 - `iana-ports` §Registry
-  > ftp-data 20 tcp File Transfer [Default Data]
+  > File Transfer [Default Data]
 - `microsoft-iis-ftp-firewall` §More Information about Working with Firewalls
   > In an active data connection, an FTP client sets up a port for data channel listening and the server initiates a connection to the port; this is typically from the server's port 20.
-- Note: RFC 959 defines the server's data port as L-1 with L=21, which is 20; IANA registers 20 as FTP default data; Microsoft confirms it is the usual case.
+- Note: RFC 959 defines the server's default data port as L-1 with L=21, which is port 20; IANA lists "ftp-data" on port 20; Microsoft confirms it.
 
 ### units[0].learn.deep[2] ("deep-3", Learn's Go deeper) — ✅
 
-Text: FTP's extra data connections are hard for firewalls, which need FTP helpers to open the right ports.
+"FTP’s extra data connections are hard for firewalls, which need FTP helpers to open the right ports."
 
 - `microsoft-iis-ftp-firewall` §More Information about Working with Firewalls
   > It is often challenging to create firewall rules for FTP server to work correctly, and the root cause for this challenge lies in the FTP protocol architecture.
 - `microsoft-iis-ftp-firewall` §More Information about Working with Firewalls
-  > These firewall filters are able to detect what ports are going to be used for data transfers and temporarily open them on firewall so that clients can open data connections.
+  > Some firewalls try to remedy problems with data connections with built-in filters that scan FTP traffic and dynamically allow data connections through the firewall.
 - `cisco-asa-inspect-overview` §Application Layer Protocol Inspection
   > Inspection engines are required for services that embed IP addressing information in the user data packet or that open secondary channels on dynamically assigned ports.
-- Note: Microsoft and Cisco are independent. The claim leaves out the other remedy, a fixed passive port range opened in the firewall, which Microsoft's page also describes.
+- Note: Microsoft and Cisco, two vendors, agree. The claim leaves out the other fix, a fixed passive port range opened by hand; true in the ordinary case.
 
 ### units[0].learn.facts[0] ("fact-ports") — ✅
 
-Text: Ports: 21 control, 20 active data, a high port for passive.
+"Ports: 21 control, 20 active data, a high port for passive."
 
 - `rfc-959` §8
   > This protocol is assigned the service port 21 (25 octal), that is L=21.
 - `rfc-959` §5.2, page 44
   > The server shall initiate the data connection from his own default data port (L-1) using the specified user data port.
 - `iana-ports` §Registry
-  > ftp-data 20 tcp File Transfer [Default Data]
+  > File Transfer [Default Data]
 - `microsoft-iis-ftp-firewall` §Step 1: Configure the Passive Port Range for the FTP Service
-  > The valid range for ports is 1024 through 65535.
-- `rfc-1579` §Overview and Rational
+  > The valid range for ports is 1024 through 65535. (Ports from 1 through 1023 are reserved for use by system services.)
+- `rfc-1579` §The Gory Details
   > If the client sends a PASV command, the server will do a passive TCP open on some random port, and inform the client of the port number.
-- Note: RFC 959 and IANA define 21 and 20. "A high port" is the ordinary case (Microsoft's passive range starts at 1024; RFC 1579 says some random port). The RFC 1579 passage sits under "The Gory Details", not "Overview and Rational"; the text fragment reaches it.
+- Note: RFC 959 and IANA define 21 and 20. "A high port" for passive is Microsoft's 1024 to 65535 range with RFC 1579's random port, in a beginner's words.
 
 ### units[0].learn.facts[1] ("fact-codes") — ✅
 
-Text: Codes: 220, 331, 230, 227, 150, 226, 221; in 227 the port is the fifth number × 256 + the sixth.
+"Codes: 220, 331, 230, 227, 150, 226, 221; in 227 the port is the fifth number × 256 + the sixth."
 
 - `rfc-959` §4.2.1, page 40
   > 220 Service ready for new user.
-  > 221 Service closing control connection.
+  > …
+  > 227 Entering Passive Mode (h1,h2,h3,h4,p1,p2).
 - `rfc-959` §4.2.1, page 41
   > 150 File status okay; about to open data connection.
 - `rfc-959` §4.1.2, page 28
-  > If this command is used, the argument is the concatenation of a 32-bit internet host address and a 16-bit TCP port address. This address information is broken into 8-bit fields
-- Note: RFC 959 defines the codes (the rest are quoted under deep-1) and the host-port format; the high byte of the 16-bit port is the fifth field, so × 256 plus the sixth is right.
+  > If this command is used, the argument is the concatenation of a 32-bit internet host address and a 16-bit TCP port address. This address information is broken into 8-bit fields and the value of each field is transmitted as a decimal number (in character string representation).
+- Note: RFC 959 defines all seven codes (221, 226, 230 and 331 are quoted under deep-1, on the same page 40). The 16-bit port in two 8-bit fields, high field first, is p1 × 256 + p2.
 
 ### units[0].learn.facts[2] ("fact-encrypted") — ✅
 
-Text: Encrypted? No.
+"Encrypted? No."
 
 - `rfc-2577` §6
   > All data and control information (including passwords) is sent across the network in unencrypted form by standard FTP [PR85].
 - `rfc-2228` §1
   > FTP does not currently have any provision for the encryption or verification of the authenticity of commands, replies, or transferred data.
 - `microsoft-app-service-ftp` §Enforce FTPS
-  > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
-- Note: two independent RFCs; neither is obsoleted.
+  > To disable unencrypted FTP:
+- Note: Plain FTP; the extensions that add encryption (FTPS) are taught as the safer choice.
 
-### units[0].learn.facts[3] ("fact-safer") — ⚠️
+### units[0].learn.facts[3] ("fact-safer") — ✅
 
-Text: Safer: SFTP (22), FTPS (990).
+"Safer: SFTP (22), FTPS (21 with AUTH TLS, or 990)."
 
 - `microsoft-app-service-ftp` §Enforce FTPS
   > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
+- `microsoft-app-service-ftp` §Why does my connection fail when attempting to connect over FTPS using explicit encryption?
+  > If you connect with explicit encryption, the connection is established via port 21.
+  > …
+  > If you connect with implicit encryption, the connection is established via port 990.
 - `google-merchant-sftp` §What is SFTP?
   > With SFTP, data is securely transferred using encryption and no clear text file data is transferred.
 - `microsoft-azure-sftp` §SSH File Transfer Protocol (SFTP) support for Azure Blob Storage
@@ -918,22 +963,26 @@ Text: Safer: SFTP (22), FTPS (990).
 - `cloudflare-spectrum-ftp` §SFTP
   > When setting up a Spectrum application for SSH, select port 22 and TCP.
 - `iana-ports` §Registry
-  > ftps 990 tcp ftp protocol, control, over
+  > ftp protocol, control, over TLS/SSL
 - `rfc-4217` §3
   > In summary, an FTP session is established on the normal control port. A client requests TLS with the AUTH command
-- Note: "SFTP (22)" and "safer" are confirmed. The problem is "FTPS (990)": it gives 990 as FTPS's port, but the cited RFC 4217 §3 says the standard form of FTPS starts on the normal control port, 21. Port 990 is only implicit FTPS (Microsoft's App Service page says so too). A beginner would think FTPS always uses port 990. The lesson's own session-close Go deeper gives both ports. Fix: "FTPS (21 with AUTH TLS, or 990)", or drop the FTPS port.
+- `rfc-4217` §4.1
+  > If a client wishes to attempt to secure a session, then it SHOULD, in accordance with [RFC-2228], send the AUTH command with the parameter requesting TLS {TLS-PARM} ('TLS').
+- `rfc-4217` §16
+  > {FTP-PORT} - The port assigned to the FTP control connection is 21.
+- Note: RFC 4217 defines FTPS on port 21 with AUTH TLS; IANA assigns 990 to "ftps". SFTP on 22 is confirmed by Microsoft and Cloudflare, and its encryption by Google and Microsoft.
 
 ### units[0].learn.facts[4] ("fact-defined") — ✅
 
-Text: Defined in RFC 959.
+"Defined in: RFC 959."
 
 - `rfc-959` §1
-  > The objectives of FTP are 1) to promote sharing of files (computer programs and/or data), 2) to encourage indirect or implicit (via programs) use of remote computers, 3) to shield a user from variations in file storage systems among hosts, and 4) to transfer data reliably and efficiently.
-- Note: RFC 959 is the current defining document for FTP (STD 9; updated, not obsoleted). Its status section, just above §1, calls it the official FTP specification.
+  > The objectives of FTP are 1) to promote sharing of files (computer programs and/or data), 2) to encourage indirect or implicit (via programs) use of remote computers
+- Note: RFC 959 is FTP's defining standard (Internet Standard, STD 9), not obsoleted; the memo's own status line names it the official specification. Its updates extend it without replacing it.
 
 ### units[0].learn.facts[5] ("fact-tcp") — ✅
 
-Text: Runs on TCP, inside IP: each connection opens with a handshake of three messages (SYN, SYN-ACK, ACK), carries the data in pieces, and closes with FIN.
+"Runs on: TCP, inside IP: each connection opens with a handshake of three messages (SYN, SYN-ACK, ACK), carries the data in pieces, and closes with FIN."
 
 - `rfc-959` §8
   > The FTP control connection is established via TCP between the user process port U and the server process port L.
@@ -941,16 +990,19 @@ Text: Runs on TCP, inside IP: each connection opens with a handshake of three me
   > The FTP protocol [1] uses a secondary TCP connection for actual transmission of files.
 - `rfc-9293` §3.5
   > The "three-way handshake" is the procedure used to establish a connection.
+  > …
+  > In line 3, TCP Peer B sends a SYN and acknowledges the SYN it received from TCP Peer A.
+  > …
+  > At line 4, TCP Peer A responds with an empty segment containing an ACK for TCP Peer B's SYN
 - `rfc-9293` §2.2
   > The application byte-stream is conveyed over the network via TCP segments, with each TCP segment sent as an Internet Protocol (IP) datagram.
 - `rfc-9293` §3.1
-  > FIN: 1 bit
   > No more data from sender.
-- Note: RFC 959 defines FTP's use of TCP; RFC 9293 (Internet Standard, not obsoleted) defines the handshake, segments in IP datagrams and FIN.
+- Note: RFC 9293 is TCP's defining standard (Internet Standard, not obsoleted). The last passage is its meaning for the FIN bit; closing in full is in section 3.6, not cited, but the FIN meaning carries the claim. Both FTP connections run on TCP per RFC 959 and RFC 1579.
 
 ### units[0].learn.facts[6] ("fact-modes") — ✅
 
-Text: Modes: passive (usual): the client opens the data connection, which gets through home routers; active: the server connects back from port 20, often blocked.
+"Modes: passive (usual): the client opens the data connection, which gets through home routers; active: the server connects back from port 20, often blocked."
 
 - `rfc-959` §4.1.2, page 28
   > This command requests the server-DTP to "listen" on a data port (which is not its default data port) and to wait for a connection rather than initiate one upon receipt of a transfer command.
@@ -961,45 +1013,46 @@ Text: Modes: passive (usual): the client opens the data connection, which gets t
 - `rfc-1579` §Overview and Rational
   > If, on the other hand, clients use the PASV command, the data channel will be an outgoing call through the firewall. Such calls are more easily handled, and present fewer problems.
 - `rfc-1579` §Overview and Rational
-  > By default, this connection is set up by an active open from the FTP server to the FTP client. However, this scheme does not work well with packet filter-based firewalls
+  > However, this scheme does not work well with packet filter-based firewalls, which in general cannot permit incoming calls to random port numbers.
 - `microsoft-iis-ftp-firewall` §More Information about Working with Firewalls
-  > Passive connections work much better in Internet scenarios and recommended by RFC 1579 (Firewall-Friendly FTP).
+  > In a passive data connection, an FTP server sets up a port for data channel listening and the client initiates a connection to the port. Passive connections work much better in Internet scenarios and recommended by RFC 1579
 - `microsoft-iis-ftp-firewall` §More Information about Working with Firewalls
   > Active data connections used to be the default way of connecting to FTP server; however, active data connections are no longer recommended because they do not work well in Internet scenarios.
 - `cloudflare-spectrum-ftp` §How FTP Operates
   > In active mode, the server connects back to the client on a port that they have specified, which can create issues where clients are behind an NAT.
-- Note: RFC 959 defines both modes and port 20. Microsoft supports "usual" for passive today: active used to be the default and is no longer recommended.
+- Note: RFC 959 defines both modes; RFC 1579, Microsoft and Cloudflare confirm which one gets through. "Usual" rests on Microsoft saying active is no longer the default or recommended; "home routers" is an everyday word for NAT and packet filters. True in the ordinary case.
 
 ### units[0].learn.facts[7] ("fact-each-file") — ✅
 
-Text: Each file gets a data connection of its own, and the sender closes it to mark the end of the file.
+"Each file gets a data connection of its own, and the sender closes it to mark the end of the file."
 
 - `rfc-959` §3.3, page 19
   > When using the stream mode of data transfer the end of the file must be indicated by closing the connection.
 - `rfc-959` §3.4.1, page 21
   > If the structure is a file structure, the EOF is indicated by the sending host closing the data connection and all bytes are data bytes.
-- `rfc-1579` §Overview and Rational
+- `rfc-1579` §The Gory Details
   > A new connection is used for each transfer
 - `cisco-asa-inspect-basic` §FTP Inspection Overview
   > The channels are allocated in response to a file upload, a file download, or a directory listing event.
-- Note: RFC 959 defines this for stream mode, the default; the rare block and compressed modes are left out. The RFC 1579 passage sits under "The Gory Details", not "Overview and Rational".
+- Note: RFC 959 defines the stream-mode close. Stream mode is the default; the rarer block and compressed modes are left out.
 
 ### units[0].learn.facts[8] ("fact-tftp") — ✅
 
-Text: Cousin: TFTP, a tiny separate protocol on UDP port 69, with no login.
+"Cousin: TFTP: a tiny separate protocol on UDP port 69, with no login."
 
 - `rfc-1350` §1
-  > It has been implemented on top of the Internet User Datagram protocol (UDP or Datagram) [2]
-  > … It cannot list directories, and currently has no provisions for user authentication.
+  > TFTP is a simple protocol to transfer files, and therefore was named the Trivial File Transfer Protocol or TFTP. It has been implemented on top of the Internet User Datagram protocol (UDP or Datagram) [2]
+  > …
+  > It cannot list directories, and currently has no provisions for user authentication.
 - `rfc-1350` §4
   > sends its initial request to the known TID 69 decimal (105 octal) on the serving host.
 - `iana-ports` §Registry
-  > tftp 69 udp Trivial File Transfer
-- Note: RFC 1350 defines TFTP; IANA defines the port assignment.
+  > Trivial File Transfer
+- Note: RFC 1350 is TFTP's defining standard (Internet Standard, not obsoleted); IANA lists "tftp" on port 69.
 
 ### units[0].learn.facts[9] ("fact-osi") — ✅
 
-Text: OSI layer: 7, application.
+"OSI layer: 7, application."
 
 - `paloalto-layer-7` §How does Layer 7 handle different application protocols?
   > For instance, HTTP is used for web browsing, SMTP for email, and FTP for file transfers.
@@ -1007,53 +1060,59 @@ Text: OSI layer: 7, application.
   > Layer 7 is the application layer and highest level of the Open Systems Interconnection (OSI) model
 - `cloudflare-ssh` §How does SSH contrast with other protocols for tunneling?
   > most sources describe it as a layer 7/application layer protocol, like HTTP, FTP, and SMTP.
-- Note: two independent vendors, as for the OSI badge.
+- Note: Two vendors, Palo Alto Networks and Cloudflare, place FTP at layer 7.
 
 ### units[0].learn.facts[10] ("fact-name") — ✅
 
-Text: Stands for File Transfer Protocol.
+"Stands for: File Transfer Protocol."
 
 - `rfc-959` §Status of this Memo
   > This memo is the official specification of the File Transfer Protocol (FTP).
-- Note: RFC 959 is the defining document and gives the name.
+- Note: RFC 959 is the defining standard and gives the name.
 
 ### units[0].practice[0].options[0] (question "second-connection") — ✅
 
-Text: "In case the first one fails." (not the answer). Feedback: the second one is not a spare; it carries the file, and the first carries the commands.
+Option "In case the first one fails." (wrong). Feedback: "Not quite. The second one isn’t a spare. It carries the file, while the first carries the commands."
 
 - `rfc-959` §2.2, page 4
   > The communication path between the USER-PI and SERVER-PI for the exchange of commands and replies.
+  > …
+  > A full duplex connection over which data is transferred, in a specified mode and type.
 - `rfc-959` §4.1.3, page 29
-  > The FTP service commands define the file transfer or the file system function requested by the user.
-- Note: RFC 959 defines the roles of the two connections; the feedback is right for a wrong option.
+  > The data, when transferred in response to FTP service
+  > …
+  > commands, shall always be sent over the data connection, except for certain informative replies.
+- Note: Wrong, as marked; the feedback matches RFC 959's roles for the two connections.
 
 ### units[0].practice[0].options[1] (question "second-connection") — ✅
 
-Text: "Commands go on one line and each file on another." (the answer). Feedback: the control connection talks; the data connection carries the file.
+Option "Commands go on one line and each file on another." (right). Feedback: "Right. The control connection talks; the data connection carries the file."
 
 - `rfc-959` §2.2, page 4
+  > The communication path between the USER-PI and SERVER-PI for the exchange of commands and replies.
+  > …
   > A full duplex connection over which data is transferred, in a specified mode and type.
 - `rfc-959` §3.3, page 19
   > When using the stream mode of data transfer the end of the file must be indicated by closing the connection.
-- `rfc-1579` §Overview and Rational
+- `rfc-1579` §The Gory Details
   > A new connection is used for each transfer
-- Note: RFC 959 defines both connections. The RFC 1579 passage sits under "The Gory Details".
+- Note: Right, as marked.
 
 ### units[0].practice[0].options[2] (question "second-connection") — ✅
 
-Text: "To encrypt the file." (not the answer). Feedback: neither FTP line is encrypted.
+Option "To encrypt the file." (wrong). Feedback: "Not quite. Neither FTP line is encrypted."
 
 - `rfc-2577` §6
   > All data and control information (including passwords) is sent across the network in unencrypted form by standard FTP [PR85].
 - `rfc-2228` §1
   > FTP does not currently have any provision for the encryption or verification of the authenticity of commands, replies, or transferred data.
 - `microsoft-app-service-ftp` §Enforce FTPS
-  > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
-- Note: two independent RFCs.
+  > To disable unencrypted FTP:
+- Note: Wrong, as marked; plain FTP encrypts neither line.
 
 ### units[0].practice[1].options[0] (question "wifi-login") — ✅
 
-Text: "Your user name and your password." (the answer). Feedback: FTP sends both as plain text, which is why SFTP and FTPS are the safer choices.
+Option "Your user name and your password." (right). Feedback: "Yes. FTP sends both as plain text. That’s why SFTP and FTPS are the safer choices."
 
 - `rfc-2577` §5
   > Standard FTP [PR85] sends passwords in clear text using the "PASS" command.
@@ -1065,136 +1124,142 @@ Text: "Your user name and your password." (the answer). Feedback: FTP sends both
   > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
 - `google-merchant-sftp` §What is SFTP?
   > With SFTP, data is securely transferred using encryption and no clear text file data is transferred.
-- Note: two independent RFCs for the cleartext login; Microsoft and Google for the safer choices.
+- Note: Right, as marked.
 
 ### units[0].practice[1].options[1] (question "wifi-login") — ✅
 
-Text: "Only that you used FTP." (not the answer). Feedback: with no seal, they can read everything, the password included.
+Option "Only that you used FTP." (wrong). Feedback: "Not quite. With no seal, they can read everything, the password included."
 
 - `rfc-2577` §6
   > All data and control information (including passwords) is sent across the network in unencrypted form by standard FTP [PR85].
 - `rfc-2228` §1
-  > An attacker may be able to access valuable or sensitive data merely by monitoring a network
+  > this represents a security risk whereby passwords can be stolen through monitoring of local and wide-area networks.
 - `microsoft-app-service-ftp` §Enforce FTPS
-  > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
-- Note: two independent RFCs.
+  > To disable unencrypted FTP:
+- Note: Wrong, as marked.
 
 ### units[0].practice[1].options[2] (question "wifi-login") — ✅
 
-Text: "Nothing: FTP passwords are hidden." (not the answer). Feedback: FTP has no encryption; the password crosses as plain text.
+Option "Nothing: FTP passwords are hidden." (wrong). Feedback: "Not quite. FTP has no encryption. The password crosses as plain text."
 
 - `rfc-2577` §5
   > Standard FTP [PR85] sends passwords in clear text using the "PASS" command.
 - `rfc-2228` §1
   > uses usernames and passwords passed in cleartext to authenticate clients to servers (via the USER and PASS commands).
 - `rfc-959` §4.1.1, page 26
-  > Since password information is quite sensitive, it is desirable in general to "mask" it or suppress typeout. It appears that the server has no foolproof way to achieve this.
+  > The argument field is a Telnet string specifying the user's password.
 - `microsoft-app-service-ftp` §Enforce FTPS
-  > FTPS is a more secure form of FTP that uses Transport Layer Security (TLS) and Secure Sockets Layer (SSL).
-- Note: two independent RFCs; RFC 959 defines PASS. The RFC 959 passage is about hiding the password on screen; the claim rests on RFC 2577 and RFC 2228.
+  > To disable unencrypted FTP:
+- Note: Wrong, as marked. RFC 959 only suggests the client hide the password on the user's own screen, which is not hiding it on the network.
 
 ## Traced, example and analogy parts, and unbacked items
 
-Each traced item says nothing beyond the Learn parts it traces to. The addresses (192.168.1.100, RFC 1918; 203.0.113.21, RFC 5737), client ports, timings, the user name, the sample password, report.pdf and files.example.net are clearly example data.
+Each traced item was read against the Learn parts its Traces line names. Example values were checked against the allowed ranges: 203.0.113.21 is an RFC 5737 address, 192.168.1.100 is RFC 1918 private, and files.example.net uses a reserved example name. Port numbers 50961 and 50962, the user alex, the password sunflower7, report.pdf, its 2.4 MB size and the timings are made-up example data.
 
-- `title` (unbacked) — ✅
-- `units[0].name` (unbacked) — ✅
-- `backing (the lesson's subtitle and summary)` (traced) — ✅
-- `units[0].backing (the unit's full name and purpose)` (traced) — ✅
-- `units[0].scene.backing (the scene)` (traced) — ✅
-- `units[0].overview.hookBacking (the Overview hook)` (traced) — ✅
-- `units[0].overview.backing (the Overview description)` (analogy) — ✅ (analogy: a phone call for talking and a separate loading door for each box matches the two connections and does not mislead)
-- `units[0].overview.facts[0] (Overview fact "Used for")` (traced) — ✅
-- `units[0].overview.facts[1] (Overview fact "Ports")` (traced) — ✅
-- `units[0].overview.facts[2] (Overview fact "Modes")` (traced) — ✅
-- `units[0].overview.facts[3] (Overview fact "Encrypted?")` (traced) — ✅
-- `units[0].overview.facts[4] (Overview fact "OSI layer")` (traced) — ✅
-- `units[0].overview.facts[5] (Overview fact "This example")` (example) — ✅
-- `units[0].steps[0] (step "control-connection")` (traced) — ✅
-- `units[0].steps[0].facts[0] (step "control-connection", fact "To")` (example) — ✅
-- `units[0].steps[0].facts[1] (step "control-connection", fact "Port")` (traced) — ✅
-- `units[0].steps[0].facts[2] (step "control-connection", fact "Carries")` (traced) — ✅
-- `units[0].steps[0].facts[3] (step "control-connection", fact "Greeting")` (traced) — ✅
-- `units[0].steps[0].events[0] (event "m1")` (traced) — ✅
-- `units[0].steps[0].events[1] (event "m2")` (traced) — ✅
-- `units[0].steps[0].events[2] (event "m3")` (traced) — ✅
-- `units[0].steps[0].events[3] (event "m4")` (traced) — ✅
-- `units[0].steps[0].events[4] (event "readable-1")` (traced) — ✅
-- `units[0].steps[1] (step "plaintext-login")` (traced) — ✅
-- `units[0].steps[1].facts[0] (step "plaintext-login", fact "Commands")` (traced) — ✅
-- `units[0].steps[1].facts[1] (step "plaintext-login", fact "Replies")` (traced) — ✅
-- `units[0].steps[1].facts[2] (step "plaintext-login", fact "Sealed?")` (traced) — ✅
-- `units[0].steps[1].facts[3] (step "plaintext-login", fact "Safer")` (traced) — ✅
-- `units[0].steps[1].events[0] (event "m5")` (traced) — ✅
-- `units[0].steps[1].events[1] (event "readable-2")` (traced) — ✅
-- `units[0].steps[1].events[2] (event "m6")` (traced) — ✅
-- `units[0].steps[1].events[3] (event "m7")` (traced) — ✅
-- `units[0].steps[1].events[4] (event "readable-3")` (traced) — ✅
-- `units[0].steps[1].events[5] (event "m8")` (traced) — ✅
-- `units[0].steps[2] (step "passive-mode")` (traced) — ✅
-- `units[0].steps[2].facts[0] (step "passive-mode", fact "Command")` (traced) — ✅
-- `units[0].steps[2].facts[1] (step "passive-mode", fact "Reply")` (traced) — ✅
-- `units[0].steps[2].facts[2] (step "passive-mode", fact "Means")` (traced) — ✅
-- `units[0].steps[2].facts[3] (step "passive-mode", fact "Active mode")` (traced) — ✅
-- `units[0].steps[2].events[0] (event "m9")` (traced) — ✅
-- `units[0].steps[2].events[1] (event "m10")` (traced) — ✅
-- `units[0].steps[2].events[2] (event "readable-4")` (traced) — ✅
-- `units[0].steps[3] (step "data-connection")` (traced) — ✅
-- `units[0].steps[3].facts[0] (step "data-connection", fact "Data line")` (traced) — ✅
-- `units[0].steps[3].facts[1] (step "data-connection", fact "Command")` (traced) — ✅
-- `units[0].steps[3].facts[2] (step "data-connection", fact "Reply")` (traced) — ✅
-- `units[0].steps[3].facts[3] (step "data-connection", fact "Lines open")` (traced) — ✅
-- `units[0].steps[3].events[0] (event "m11")` (traced) — ✅
-- `units[0].steps[3].events[1] (event "m12")` (traced) — ✅
-- `units[0].steps[3].events[2] (event "m13")` (traced) — ✅
-- `units[0].steps[3].events[3] (event "m14")` (traced) — ✅
-- `units[0].steps[3].events[4] (event "readable-5")` (traced) — ✅
-- `units[0].steps[3].events[5] (event "m15")` (traced) — ✅
-- `units[0].steps[4] (step "file-transfer")` (traced) — ✅
-- `units[0].steps[4].facts[0] (step "file-transfer", fact "Sent")` (example) — ✅
-- `units[0].steps[4].facts[1] (step "file-transfer", fact "End of file")` (traced) — ✅
-- `units[0].steps[4].facts[2] (step "file-transfer", fact "Reply")` (traced) — ✅
-- `units[0].steps[4].facts[3] (step "file-transfer", fact "Readable on the way")` (traced) — ✅
-- `units[0].steps[4].events[0] (event "m16")` (traced) — ✅
-- `units[0].steps[4].events[1] (event "readable-6")` (traced) — ✅
-- `units[0].steps[4].events[2] (event "m17")` (traced) — ✅
-- `units[0].steps[4].events[3] (event "m18")` (traced) — ✅
-- `units[0].steps[5] (step "session-close")` (traced) — ✅
-- `units[0].steps[5].facts[0] (step "session-close", fact "Command")` (traced) — ✅
-- `units[0].steps[5].facts[1] (step "session-close", fact "Reply")` (traced) — ✅
-- `units[0].steps[5].facts[2] (step "session-close", fact "Use instead")` (traced) — ✅ (traces fact-safer but names no FTPS port, so that item's fault does not carry over)
-- `units[0].steps[5].facts[3] (step "session-close", fact "Cousin")` (traced) — ✅
-- `units[0].steps[5].events[0] (event "m19")` (traced) — ✅
-- `units[0].steps[5].events[1] (event "m20")` (traced) — ✅
-- `units[0].practice[0].prompt (question "second-connection")` (unbacked) — ✅
-- `units[0].practice[1].prompt (question "wifi-login")` (unbacked) — ✅ (no false premise: it assumes the watcher sees the traffic, and the lesson teaches that FTP does not hide it)
+- `title` — ✅
+- `units[0].name` — ✅
+- `backing` (subtitle and summary) — ✅ (why-1, lead-1, term-plain)
+- `units[0].backing` (full name and purpose) — ✅ (fact-name, why-1)
+- `units[0].scene.backing` — ✅ (the table's "FTP has no seal" and "What someone watching can read" repeat term-plain and lead-1; addresses are example data)
+- `units[0].overview.hookBacking` — ✅
+- `units[0].overview.backing` (analogy) — ✅ (the phone call and the separate loading door match one line for talking and another per file; it does not mislead)
+- `units[0].overview.facts[0]` — ✅
+- `units[0].overview.facts[1]` — ✅ ("another for each file" reads as a line other than port 21 for each file's own connection, per fact-each-file)
+- `units[0].overview.facts[2]` — ✅
+- `units[0].overview.facts[3]` — ✅
+- `units[0].overview.facts[4]` — ✅
+- `units[0].overview.facts[5]` (example) — ✅
+- `units[0].steps[0]` — ✅
+- `units[0].steps[0].facts[0]` (example) — ✅
+- `units[0].steps[0].facts[1]` — ✅
+- `units[0].steps[0].facts[2]` — ✅
+- `units[0].steps[0].facts[3]` — ✅
+- `units[0].steps[0].events[0]` — ✅
+- `units[0].steps[0].events[1]` — ✅
+- `units[0].steps[0].events[2]` — ✅
+- `units[0].steps[0].events[3]` — ✅
+- `units[0].steps[0].events[4]` — ✅ (the row repeats deep-1; "can read" comes from the scene's table, which traces term-plain)
+- `units[0].steps[1]` — ✅
+- `units[0].steps[1].facts[0]` — ✅
+- `units[0].steps[1].facts[1]` — ✅
+- `units[0].steps[1].facts[2]` — ✅
+- `units[0].steps[1].facts[3]` — ✅
+- `units[0].steps[1].events[0]` — ✅
+- `units[0].steps[1].events[1]` — ✅
+- `units[0].steps[1].events[2]` — ✅
+- `units[0].steps[1].events[3]` — ✅
+- `units[0].steps[1].events[4]` — ✅
+- `units[0].steps[1].events[5]` — ✅
+- `units[0].steps[2]` — ✅ ("an address and a port" is term-pasv's "where to connect", with fact-codes)
+- `units[0].steps[2].facts[0]` — ✅
+- `units[0].steps[2].facts[1]` — ✅
+- `units[0].steps[2].facts[2]` — ✅ (195 × 256 + 80 = 50000, per fact-codes)
+- `units[0].steps[2].facts[3]` — ✅
+- `units[0].steps[2].events[0]` — ✅
+- `units[0].steps[2].events[1]` — ✅
+- `units[0].steps[2].events[2]` — ✅ (as for events[4] of step 0)
+- `units[0].steps[3]` — ✅
+- `units[0].steps[3].facts[0]` — ✅
+- `units[0].steps[3].facts[1]` — ✅
+- `units[0].steps[3].facts[2]` — ✅
+- `units[0].steps[3].facts[3]` — ✅
+- `units[0].steps[3].events[0]` — ✅
+- `units[0].steps[3].events[1]` — ✅
+- `units[0].steps[3].events[2]` — ✅
+- `units[0].steps[3].events[3]` — ✅
+- `units[0].steps[3].events[4]` — ✅ (as for events[4] of step 0)
+- `units[0].steps[3].events[5]` — ✅
+- `units[0].steps[4]` — ✅
+- `units[0].steps[4].facts[0]` (example) — ✅
+- `units[0].steps[4].facts[1]` — ✅
+- `units[0].steps[4].facts[2]` — ✅
+- `units[0].steps[4].facts[3]` — ✅
+- `units[0].steps[4].events[0]` — ✅
+- `units[0].steps[4].events[1]` — ✅
+- `units[0].steps[4].events[2]` — ✅
+- `units[0].steps[4].events[3]` — ✅
+- `units[0].steps[5]` — ✅
+- `units[0].steps[5].facts[0]` — ✅
+- `units[0].steps[5].facts[1]` — ✅
+- `units[0].steps[5].facts[2]` — ✅
+- `units[0].steps[5].facts[3]` — ✅
+- `units[0].steps[5].events[0]` — ✅
+- `units[0].steps[5].events[1]` — ✅
+- `units[0].practice[0].prompt` — ✅ (no false premise: FTP does open a second connection)
+- `units[0].practice[1].prompt` — ✅ (no false premise; watching a shared network is the risk RFC 2228 names)
 
 ## Sources
 
-All checked on 2026-11-12.
+All checked 2026-11-12.
 
-- `rfc-959`: RFC Editor info page lists it as an Internet Standard (STD 9), not obsoleted; updated by RFC 2228, 2640, 2773, 3659, 5797 and 7151, none of which changes these claims. Current.
-- `rfc-1350`: not obsoleted; updated only by TFTP option RFCs. Current.
-- `rfc-1579`: Informational, not obsoleted. Current.
-- `rfc-1635`: FYI, not obsoleted. Current.
-- `rfc-2228`: Proposed Standard, not obsoleted. Current.
-- `rfc-2428`: Proposed Standard, not obsoleted. Current.
-- `rfc-2577`: Informational, not obsoleted. Current.
-- `rfc-3659`: Proposed Standard, not obsoleted. Current.
-- `rfc-4217`: Proposed Standard, not obsoleted; updated by RFC 8996 (TLS 1.0 and 1.1 deprecated), which does not touch these claims. Current.
-- `rfc-4253`: Proposed Standard, not obsoleted; its updates concern algorithms, not port 22. Current.
-- `rfc-5321`: not obsoleted; updated by RFC 7504 (two new reply codes). Current.
-- `rfc-9293`: Internet Standard, not obsoleted. Current.
-- `iana-ports`: live registry, last updated 2026-11-10. Current.
-- `cisco-asa-inspect-basic`, `cisco-asa-inspect-overview`: live Cisco documentation for ASA 9.24, a current release. Current.
-- `cisco-router-upgrade`: live Cisco support page. Its example routers are old, but using TFTP to load Cisco IOS images is still current practice. Current.
-- `cloudflare-spectrum-ftp` (updated Apr 2026), `cloudflare-spectrum-glossary`: live Cloudflare product docs. Current.
-- `cloudflare-ssh`: live Cloudflare Learning Center page. The command line got a browser check, so it was read in the built-in browser. Current.
-- `google-merchant-sftp`: live Google Merchant Center Help page. Current.
-- `microsoft-app-service-ftp`, `microsoft-azure-sftp`, `microsoft-sftp-connector`: live Microsoft Learn pages for current Azure products. Current.
-- `microsoft-iis-ftp-anonymous`, `microsoft-iis-ftp-firewall`, `microsoft-iis-ftp-messages`: live Microsoft Learn pages for IIS FTP, which still ships with Windows Server. Current.
-- `microsoft-pxe-winpe`: live Microsoft Learn page (updated 2025). Its walkthrough names Windows 10, but serving boot files over TFTP for PXE is current practice. Current.
-- `paloalto-layer-7`: live Palo Alto Networks Cyberpedia explainer. Current.
+- `rfc-959` — RFC Editor info page: Internet Standard, not obsoleted; updated by RFCs 2228, 2640, 2773, 3659, 5797 and 7151, none of which changes the claims checked. Current.
+- `rfc-1350` — Internet Standard, not obsoleted; updated by option RFCs (1782 to 1785, 2347 to 2349), which add options and no login. Current.
+- `rfc-1579` — Informational, not obsoleted or updated. Current.
+- `rfc-1635` — Informational (FYI), not obsoleted or updated. Current.
+- `rfc-2228` — Proposed Standard, not obsoleted or updated. Current.
+- `rfc-2428` — Proposed Standard, not obsoleted or updated. Current.
+- `rfc-2577` — Informational, not obsoleted or updated. Current.
+- `rfc-3659` — Proposed Standard, not obsoleted or updated. Current.
+- `rfc-4217` — Proposed Standard, not obsoleted; updated by RFC 8996 (retires TLS 1.0 and 1.1), which does not touch the claims. Current.
+- `rfc-4253` — Proposed Standard, not obsoleted; its seven updates concern algorithms, not port 22. Current.
+- `rfc-5321` — Draft Standard, not obsoleted; updated by RFC 7504 (two SMTP codes). Current.
+- `rfc-9293` — Internet Standard, not obsoleted. Current.
+- `iana-ports` — the live registry (last updated 2026-11-10), read in its text and XML forms. Current.
+- `cisco-asa-inspect-basic` — Cisco ASA 9.24 configuration guide, live; read in the browser after a 403. Current.
+- `cisco-asa-inspect-overview` — same guide, live; read in the browser after a 403. Current.
+- `cisco-router-upgrade` — Cisco tech note, live, updated 2024-12-10; read in the browser after a 403. The claim it backs (TFTP is the usual way to load an image onto a router) is current practice. Current.
+- `cloudflare-spectrum-ftp` — Cloudflare docs, live, updated 2026-04-17. Current.
+- `cloudflare-spectrum-glossary` — Cloudflare docs, live, updated 2026-04-16. Current.
+- `cloudflare-ssh` — Cloudflare Learning Center explainer, live; read in the browser after a 403. Current.
+- `google-merchant-sftp` — Google Merchant Center Help, live. Current.
+- `microsoft-app-service-ftp` — Microsoft Learn, live (2025-06-16), current Azure product. Current.
+- `microsoft-azure-sftp` — Microsoft Learn, live (2026-02-26), current Azure product. Current.
+- `microsoft-iis-ftp-anonymous` — Microsoft Learn IIS reference, live; IIS's FTP service is still shipped in Windows Server. Current.
+- `microsoft-iis-ftp-firewall` — Microsoft Learn IIS article, live; written for IIS 7 but its account of active and passive connections is current practice. Current.
+- `microsoft-iis-ftp-messages` — Microsoft Learn IIS reference, live. Current.
+- `microsoft-pxe-winpe` — Microsoft Learn, live (2022-11-23), current Windows deployment practice. Current.
+- `microsoft-sftp-connector` — Microsoft Learn connector reference, live, current product. Current.
+- `paloalto-layer-7` — Palo Alto Networks Cyberpedia explainer, live. Current.
 
 ## Limit overrides
 
