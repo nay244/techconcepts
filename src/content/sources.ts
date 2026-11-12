@@ -1869,6 +1869,15 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Google',
     url: 'https://support.google.com/googleone/answer/9312312',
   },
+  {
+    id: 'rfc-5550',
+    kind: 'rfc',
+    short: 'RFC 5550',
+    title: 'The Internet Email to Support Diverse Service Environments (Lemonade) Profile',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc5550.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc5550.html#section-{n}',
+  },
 ]);
 
 /**

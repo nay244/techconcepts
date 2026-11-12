@@ -270,7 +270,7 @@ describe('the OSI Model lesson’s sources', () => {
       // What is POP3's,
       'rfc-2595', 'rfc-5034', 'rfc-7817', 'rfc-5322', 'rfc-2046', 'microsoft-imap-pop', 'google-gmail-pop',
       // and What is IMAP's.
-      'rfc-9208', 'rfc-7162', 'microsoft-exchange-pop-imap', 'google-gmail-imap-settings', 'google-storage',
+      'rfc-9208', 'rfc-7162', 'microsoft-exchange-pop-imap', 'google-gmail-imap-settings', 'google-storage', 'rfc-5550',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
