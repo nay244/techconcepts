@@ -490,3 +490,11 @@ Also worth knowing: What is ICMP's Traceroute step shows Windows' tracert (echo-
 - **The owner wants fewer stops and less waiting** (direction 2.29). For the next plan: batches 3 and 4 planned together with one go and one scout, run one after the other in one fresh session; a note for the owner goes in the batch's report, not in a question, unless it is one of the plan's stops; and the lists wait for the track's end.
 - **Errata that came to the owner with this job:** direction 2.28 (two new hosts; What is DHCP's badge spans layers and its Overview fact "OSI layer: 7, application" is cut; no defining marker on a vendor page, so `arp -a` is cut; What is IP's step 3 reworded) and 2.29.
 
+# Job 7: the last six tour lessons, two batches in one job (batches 3 and 4 of 5)
+
+Planned on 2026-11-12 in a fresh session, from the brief job 6's session left; direction 2.30. What is SMTP, What is POP3 and What is IMAP, then What is FTP, What is SSH and What is TLS. Waiting for the owner's go.
+
+| Unit | Agent | Model | Tries | Tokens | Result |
+|---|---|---|---|---|---|
+| S7 | scout | Haiku | 1 | 275,677 | Done before the go. Batch 3's three lessons: sizes, documents (RFC 1939 and RFC 9051 are not registered), page cues and what the story has fetched at each, what rests on their words and shape (one line of Home's tests reads What is POP3's page cues; no end-to-end check names them), what the three share and say about each other, and the five files where three branches collide: `prototypes/s7-batch-3-facts.md`, every fact with a `path:line`. |
+| S8 | scout | Haiku | 1 | 328,332 | Done before the go, beside S7. Batch 4's three lessons, in the same form, with What is TLS beside What is HTTPS idea by idea (six differences), the `uncited` exception for What is SSH, and the two tests outside a lesson's files that hold What is TLS's full name: `prototypes/s8-batch-4-facts.md`. |
