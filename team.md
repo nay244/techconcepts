@@ -537,9 +537,10 @@ Planned on 2026-11-12 in a fresh session, from the brief job 6's session left; d
 | L12-c | fact-checker | Opus | full check 1, full check 2 | 173,185 and 223,185 | Full check 1: 121 of 122 pass, 1 imprecise, none wrong (`37019e5`, as written): "Safer: SFTP (22), FTPS (990)" gives FTPS only its implicit port, where standard FTPS starts on 21. It also noted, without failing an item, that three citations name the wrong heading of RFC 1579. The analyst ruled both (13,214) and the author applied them (`f848241`, 4,150); the heading fix put 23 items on a re-check sheet, over the 12 allowed, so the second check was a full one. Full check 2: **passed, all 122** (`e9fb438`), 163 quotes in 28 sources. `npm test` in the worktree: 1,702 passed. |
 | L12-d | author | Sonnet | 1 | 41,392 | What is FTP's section of the track's report: 9 corrections, 1 removal, 9 additions, no rewording, 58 checker's notes; 1 source became 28. |
 | L13-c | fact-checker | Opus | full check 1, re-check 1 | 236,327 and 64,979 | Full check: 135 of 137 pass, 2 imprecise, none wrong (`f0ff8f2`, as written): the badge that spans layers, when Cloudflare's page, which the lesson cites, says most sources call SSH layer 7; and a sentence that says the integrity check is built into both ciphers it names, when the sources state it of AES-GCM only. 212 quotes in 31 sources. The analyst looked for a second vendor for layer 7 on every allowed host and found none (40,297); the orchestrator read a community tutorial page in a browser and allowed its host. The author applied both fixes (`50c6ead`, 8,116). Re-check of the two items: **passed** (`96b886e`); `Report OK` for both files. `npm test` in the worktree: 1,702 passed. |
-| L13-d | author | Sonnet | 1 | 28,997 | What is SSH's section of the track's report: 19 corrections, 3 removals, 17 additions, 6 rewordings, 73 checker's notes; 2 sources became 31. |
+| L13-d | author | Sonnet | 1 | 28,997 | What is SSH's section of the track's report: 19 corrections, 3 removals, 17 additions, 6 rewordings, 73 checker's notes; 2 sources became 32 with the badge's second page. |
 | M4 | orchestrator | Fable | 1 | not counted | Merged into `batch/4`: What is TLS (`c1461eb`, no conflict), What is FTP (`9abb179`) and What is SSH (`8b7d504`), the last two with the legacy list's test, the registry and its test reconciled (the legacy list now holds only Networking's three). One slip of the orchestrator's own: its first reconciliation of the registry joined two new entries into one object, the tests refused it at once (an unknown source), and `b64e0ed` separates them. `npm test` 1,702 passed after each merge as corrected. The three worktrees removed. |
 | T1 | orchestrator | Fable | 1 | not counted | `docs/lesson-changes/how-the-internet-works-lessons-9-to-14.md`: the six authors' sections joined under one opening. A script found every quoted before in each lesson's file at `b18acd9` and every after in the file as it passed: 200 table rows, 7 cells that are the authors' descriptions and not quotes, read by hand. The orchestrator read the checkers' notes on what they passed (about 420). |
+| F4 | orchestrator | Fable | 1 | not counted | One merge of `batch/4` into `revamp` (`062176c`). On it: `npm test` 119 files, 1,702 tests passed; `npm run build` "Every page is within budget (25 pages)."; `npm run e2e` 1,191 passed, 256 skipped, none failed (18.3 minutes, exit 0). The six built pages say "Checked 12 Nov 2026" with 28, 19, 18, 28, 32 and 34 sources, and About says 15 of 18 lessons have been through an independent check. The report, the ledger and the direction doc followed in a second merge of documents only. Merged branches left in place; nothing pushed. |
 
 ## Spend by role
 
@@ -565,7 +566,7 @@ The estimate was 0.85 to 1.25 million a lesson, 2.8 to 3.4 million for batch 3 a
 | Author: its section of the report | 31,178 | 22,249 | 39,422 | 41,392 | 28,997 | 35,374 |
 | Fact-checker | 302,000 (a full check, a re-check) | 150,100 (one full check) | 261,220 (a full check, two re-checks) | 396,370 (two full checks) | 301,306 (a full check, a re-check) | 280,684 (a full check, a re-check) |
 | **The lesson** | **1,139,873** | **767,172** | **987,086** | **1,124,091** | **1,226,590** | **1,119,685** |
-| Items, sources | 147, 28 | 113, 19 | 121, 18 | 122, 28 | 137, 31 | 120, 34 |
+| Items, sources | 147, 28 | 113, 19 | 121, 18 | 122, 28 | 137, 32 | 120, 34 |
 
 Batch 3: **2,894,131**, inside its estimate. Batch 4: **3,470,366**, about 170,000 over its estimate and under its stop.
 
@@ -586,7 +587,7 @@ Batch 3: **2,894,131**, inside its estimate. Batch 4: **3,470,366**, about 170,0
 | What is POP3 | 5 | 4 | 8 | 3 | 1 became 19 |
 | What is IMAP | 14 | 3 | 13 | 2 | 1 became 18 |
 | What is FTP | 9 | 1 | 9 | 0 | 1 became 28 |
-| What is SSH | 19 | 3 | 17 | 6 | 2 became 31 |
+| What is SSH | 19 | 3 | 17 | 6 | 2 became 32 |
 | What is TLS | 19 | 2 | 22 | 1 | 1 became 34 |
 
 The lists do not count alike (one author files a widened Learn part as an addition, another as a rewording; "Removals" counts a lesson's message sizes as one row or as several). What is SSH's and What is TLS's 19 are mostly absolutes with no source ("most servers", "most apps", "43 characters") and, in What is TLS, the key exchange made to agree with What is HTTPS.

@@ -12,7 +12,7 @@ This is the one report for the six (direction 2.29). The earlier eight lessons e
 | What is POP3 | all 113 on the first full check | 113 | 19 (1) | 5 | 4 | 8 | 3 |
 | What is IMAP | 116 of 119, then 8 of 9 re-checked, then all 9 | 121 | 18 (1) | 14 | 3 | 13 | 2 |
 | What is FTP | 121 of 122, then all 122 on a second full check | 122 | 28 (1) | 9 | 1 | 9 | 0 |
-| What is SSH | 135 of 137, then both re-checked | 137 | 31 (2) | 19 | 3 | 17 | 6 |
+| What is SSH | 135 of 137, then both re-checked | 137 | 32 (2) | 19 | 3 | 17 | 6 |
 | What is TLS | 119 of 120, then the one re-checked | 120 | 34 (1) | 19 | 2 | 22 | 1 |
 
 The counts are each author's, and they do not count alike: one author files a widened Learn part as an addition and another as a rewording. "Removed" counts a lesson's message sizes as one row. Most additions are new Learn facts, added so that everything the Watch tab shows is stated by a Learn part: the lessons' Watch words were kept and Learn grew to carry them.
@@ -614,7 +614,7 @@ Every `Note:` line of the passing report (`docs/fact-checks/what-is-ftp.md`, the
 
 ## What is SSH
 
-Moving this lesson to the cited shape meant tying each claim to the source section that states it, and changing any sentence a source did not support. The lesson now cites 31 sources (it listed two, RFC 4251 and RFC 4253, before) and passed its fact-check on 2026-11-12: 135 of 137 items on the first full check, then a targeted re-check of the 2 imprecise items (the OSI badge and one sentence in step 2’s Go deeper), both of which passed. The check ran under the owner’s rule of 2026-11-11: a sentence that is true for a beginner stays word for word, even where the source is more exact, and only what would leave a beginner believing something false was changed. Compared with the lesson as it was before the move (`revamp:src/content/lessons/what-is-ssh.ts`), it has 19 corrections, 3 removals, 17 additions and 6 rewordings; the last sections list what the checker passed as a simplification.
+Moving this lesson to the cited shape meant tying each claim to the source section that states it, and changing any sentence a source did not support. The lesson now cites 32 sources (it listed two, RFC 4251 and RFC 4253, before) and passed its fact-check on 2026-11-12: 135 of 137 items on the first full check, then a targeted re-check of the 2 imprecise items (the OSI badge and one sentence in step 2’s Go deeper), both of which passed. The check ran under the owner’s rule of 2026-11-11: a sentence that is true for a beginner stays word for word, even where the source is more exact, and only what would leave a beginner believing something false was changed. Compared with the lesson as it was before the move (`revamp:src/content/lessons/what-is-ssh.ts`), it has 19 corrections, 3 removals, 17 additions and 6 rewordings; the last sections list what the checker passed as a simplification.
 
 Source names are the ones the lesson’s Sources list shows. Section numbers are the RFC’s own; a vendor page has none, so it is cited by its heading.
 
@@ -783,7 +783,7 @@ Every `Note:` line of the passing reports on an item that passed, with the item.
 
 ### Counts
 
-19 corrections, 3 removals (the 25 sizes are one row), 17 additions and 6 rewordings, counted from the numbered rows of the tables above. The sources are the claim sheet’s list (31) against the two references of the original. The lesson passed all 137 items; 73 notes are listed above.
+19 corrections, 3 removals (the 25 sizes are one row), 17 additions and 6 rewordings, counted from the numbered rows of the tables above. The sources are the lesson page’s list (32, with the page added for the badge after the first check) against the two references of the original. The lesson passed all 137 items; 73 notes are listed above.
 
 ## What is TLS
 
