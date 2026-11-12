@@ -157,7 +157,7 @@ export default defineLesson({
       purpose: 'Email kept in sync',
       group: 'app',
       osi: 'spans',
-      backing: { traces: ['term-imap', 'fact-stays', 'fact-name'] },
+      backing: { traces: ['term-imap', 'fact-stays', 'fact-name', 'why-2', 'deep-sync'] },
       scene: {
         title: 'Your mail stays on the server, in sync',
         views: ['network', 'sequence'],
