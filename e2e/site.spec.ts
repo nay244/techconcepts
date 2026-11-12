@@ -1416,7 +1416,7 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
   const heightOf = async (locator: Locator): Promise<number> => (await locator.boundingBox())!.height;
 
   /** The links at the foot of the lesson's own Learn part, read in a window of its own with scripts on. */
-  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; stamp: string; top: string }> {
+  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; labels: string[]; stamp: string; top: string }> {
     const context = await page.context().browser()!.newContext({ viewport: { width: 1440, height: 900 } });
     const lesson = await context.newPage();
     try {
@@ -1426,7 +1426,8 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
       await expect(kicker(lesson)).toHaveText('Learn');
       const items = lesson.locator('.console__explain .explain__foot ol.explain__sources > li');
       const hrefs = await items.locator('a').evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
-      return { hrefs, stamp: squash(await lesson.locator('.console__explain .explain__foot .stamp').innerText()), top };
+      const labels = await items.locator('a').evaluateAll((links) => links.map((a) => a.firstChild?.textContent ?? ''));
+      return { hrefs, labels, stamp: squash(await lesson.locator('.console__explain .explain__foot .stamp').innerText()), top };
     } finally {
       await context.close();
     }
@@ -1463,7 +1464,7 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
     await page.keyboard.press('Enter');
     await expect(summary(page)).toHaveText('Hide the other 17', { useInnerText: true });
     await page.keyboard.press('Tab');
-    expect(await where()).toMatchObject({ tag: 'A', text: expect.stringContaining('RFC') as unknown as string, folded: true });
+    expect(await where()).toMatchObject({ tag: 'A', text: 'RFC 791', folded: true });
     expect((await page.evaluate(() => document.activeElement!.getAttribute('title')))!.length).toBeGreaterThan(5);
     await page.keyboard.press('Shift+Tab');
     expect((await where()).tag).toBe('SUMMARY');
@@ -1529,6 +1530,7 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
           expect(hrefs).toHaveLength(20);
           expect(foot.top).toBe(STAMP);
           expect(foot.stamp.startsWith('Checked 11 Nov 2026')).toBe(true);
+          expect(await links.evaluateAll((a) => a.map((el) => el.getAttribute('title')))).toEqual(foot.labels);
           expect(await links.last().getAttribute('title')).toMatch(/^RFC 6335: /);
           expect(await links.evaluateAll((a) => a.filter((el) => el.hasAttribute('target')).length)).toBe(0);
         });
@@ -1553,9 +1555,9 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
         const phone = size.width === 375;
         // Closed, the block is at most 115px tall on a phone and 99px on a desktop.
         expect(await heightOf(src(page))).toBeLessThanOrEqual(phone ? 115 : 99);
-        expect(await heightOf(summary(page))).toBeGreaterThanOrEqual(44);
         for (const state of ['closed', 'open']) {
           if (state === 'open') await summary(page).click();
+          expect(await heightOf(summary(page)), `the control, ${state}`).toBeGreaterThanOrEqual(44);
           if (phone) {
             const heights = await src(page).locator('a:visible').evaluateAll((a) => a.map((el) => el.getBoundingClientRect().height));
             expect(heights.length).toBe(state === 'open' ? 20 : 3);
