@@ -23,14 +23,9 @@ import { cite } from '../sources';
 const d = (source: string, section: string) => cite(source, section, { defining: true });
 /** A numbered section of an RFC that only mentions or explains it. */
 const r = (source: string, section: string) => cite(source, section);
-/** An RFC’s abstract has no numbered section, so it is cited by the fragment of its heading. */
-const abstractOf = (source: string, number: number) =>
-  cite(source, 'Abstract', { url: `https://www.rfc-editor.org/rfc/rfc${number}.html#abstract`, defining: true });
 
 const IANA_PORTS_URL = 'https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml#table-service-names-port-numbers';
 const IANA_PORTS = cite('iana-ports', 'Registry', { url: IANA_PORTS_URL, defining: true });
-/** The same record, cited for the port number only, not as the thing that defines the claim. */
-const IANA_PORT_23 = cite('iana-ports', 'Registry', { url: IANA_PORTS_URL });
 
 const IANA_SSH = 'https://www.iana.org/assignments/ssh-parameters';
 const IANA_KEX = cite('iana-ssh-parameters', 'Key Exchange Method Names', { url: `${IANA_SSH}#ssh-parameters-16` });
@@ -100,6 +95,7 @@ const CISCO_VERSION_LINE = vendor('cisco-ssh-configure', CISCO_URL, CISCO_DEBUG,
 const CISCO_KEX_LINE = vendor('cisco-ssh-configure', CISCO_URL, CISCO_DEBUG, 'debug1: kex: server->client cipher');
 const CISCO_KNOWN = vendor('cisco-ssh-configure', CISCO_URL, CISCO_DEBUG, 'debug1: Found key in');
 const CISCO_SHOW_IP_SSH = vendor('cisco-ssh-configure', CISCO_URL, 'Debug and Show Commands', 'Encryption Algorithms:chacha20');
+const CISCO_LOCAL_VERSION = vendor('cisco-ssh-configure', CISCO_URL, CISCO_DEBUG, 'debug1: Local version string');
 const CISCO_FINGERPRINT = vendor('cisco-ssh-configure', CISCO_URL, CISCO_DEBUG, 'debug1: Server host key: ssh-rsa');
 
 const OPENBSD = 'https://man.openbsd.org';
@@ -111,6 +107,7 @@ const OPENBSD_AUTH_KEYS = vendor('openbsd-man-sshd-config', `${OPENBSD}/sshd_con
 const OPENBSD_SUBSYSTEM = vendor('openbsd-man-sshd-config', `${OPENBSD}/sshd_config`, 'DESCRIPTION', 'Configures an external subsystem');
 const OPENBSD_PASSWORD = vendor('openbsd-man-sshd-config', `${OPENBSD}/sshd_config`, 'DESCRIPTION', 'Specifies whether password authentication is allowed');
 const OPENBSD_CIPHERS = vendor('openbsd-man-ssh-config', `${OPENBSD}/ssh_config`, 'DESCRIPTION', 'The default is: chacha20-poly1305@openssh.com');
+const OPENBSD_VERSION_KEYWORD = vendor('openbsd-man-ssh-config', `${OPENBSD}/ssh_config`, 'DESCRIPTION', 'The version keyword matches against');
 const OPENBSD_COMPRESSION = vendor('openbsd-man-ssh-config', `${OPENBSD}/ssh_config`, 'DESCRIPTION', 'Specifies whether to use compression');
 const OPENBSD_OBSCURE = vendor('openbsd-man-ssh-config', `${OPENBSD}/ssh_config`, 'DESCRIPTION', 'Specifies whether ssh(1) should try to obscure');
 const OPENBSD_SFTP = vendor('openbsd-man-sftp', `${OPENBSD}/sftp`, 'DESCRIPTION', 'sftp is a file transfer program');
@@ -195,7 +192,7 @@ export default defineLesson({
           'Picture a long, private speaking tube from your desk to a machine room far away. Whatever you type comes out at the other end and the machine’s answers come back, and nobody can listen in or slip in words of their own. Here you log in to srv.example.net and run a command.',
         backing: { analogy: true },
         facts: [
-          { label: 'Used for', value: 'running servers, and copying files (SFTP, scp)', backing: { traces: ['fact-also', 'why-3'] } },
+          { label: 'Used for', value: 'running servers, and copying files (SFTP, scp)', backing: { traces: ['fact-also', 'deep-2', 'why-3'] } },
           { label: 'Port', value: 'TCP 22', backing: { traces: ['fact-port', 'fact-rides'] } },
           { label: 'Checks the server by', value: 'its host key', backing: { traces: ['term-hostkey', 'fact-hostkey'] } },
           { label: 'Logs you in with', value: 'a key, or a password', backing: { traces: ['fact-logins'] } },
@@ -216,17 +213,17 @@ export default defineLesson({
             },
             {
               text: 'SSH-1, the older version, was never a written standard and is much weaker.',
-              cite: [d('rfc-4253', '5'), CISCO_V2],
+              cite: [d('rfc-4253', '5'), CISCO_V2, cite('nist-ir-7966', '3.1', { url: NIST_IR_URL })],
             },
             {
               text: 'The line is sent before anything is sealed, so anyone watching can read which software a server runs.',
-              cite: [d('rfc-4253', '4.2'), CISCO_VERSION_LINE],
+              cite: [d('rfc-4253', '4.2'), d('rfc-4253', '6.3'), CISCO_VERSION_LINE],
             },
           ],
           facts: [
             { label: 'To', value: 'srv.example.net, 203.0.113.22', backing: { example: true } },
             { label: 'Port', value: '22', backing: { traces: ['fact-port'] } },
-            { label: 'Both say', value: 'SSH-2.0-OpenSSH_9.9', backing: { traces: ['term-version'] } },
+            { label: 'Both say', value: 'SSH-2.0-OpenSSH_9.9', backing: { traces: ['term-version', 'fact-version'] } },
             { label: 'Sealed?', value: 'not yet', backing: { traces: ['fact-newkeys'] } },
           ],
           events: [
@@ -291,6 +288,7 @@ export default defineLesson({
             }),
             ...msgOf(
               'term-version',
+              'fact-version',
               'fact-rides',
               'fact-port',
             )({
@@ -309,6 +307,7 @@ export default defineLesson({
             }),
             ...msgOf(
               'term-version',
+              'fact-version',
               'fact-newkeys',
               'fact-rides',
               'fact-port',
@@ -330,20 +329,20 @@ export default defineLesson({
               rows: [{ key: 'ver', cells: ['Version', 'SSH 2.0'] }],
             }),
           ],
-          backing: { traces: ['fact-command', 'fact-tcp', 'fact-rides', 'fact-port', 'term-version', 'fact-newkeys'] },
+          backing: { traces: ['fact-command', 'fact-tcp', 'fact-rides', 'fact-port', 'term-version', 'fact-version', 'fact-newkeys'] },
         },
         {
           id: 'algorithm-negotiation',
           title: 'Algorithm Negotiation',
           sub: 'Pick the tools',
           narrative:
-            'Next, each side sends a list of everything it can use: ways to make keys, kinds of lock, kinds of ID. This is **KEXINIT**. Each list is in order of preference, and both sides pick the first item on the client’s list that the server also has. No choice is sent back: both work it out the same way.',
+            'Next, each side sends a list of everything it can use: ways to make keys, kinds of lock, kinds of ID. This is **KEXINIT**. Each list is in order of preference, and both sides pick the first item on the client’s list that the server also has. Both sides work it out the same way.',
           deep: [
             {
               text: 'The main kinds chosen are key exchange (here sntrup761x25519-sha512, which mixes X25519 with a post-quantum method; a newer choice, mlkem768x25519-sha256, pairs X25519 with ML-KEM), host key type (ssh-ed25519), cipher (chacha20-poly1305@openssh.com or aes256-gcm) and MAC, which those ciphers build in. Compression is usually none.',
               cite: [
                 d('rfc-4253', '7.1'),
-                abstractOf('rfc-9941', 9941),
+                d('rfc-9941', '1'),
                 d('rfc-10042', '2.3.3'),
                 d('rfc-8709', '1'),
                 IANA_CIPHER,
@@ -358,7 +357,7 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Sent by', value: 'both sides at once', backing: { traces: ['fact-choice', 'term-kexinit'] } },
+            { label: 'Sent by', value: 'both sides', backing: { traces: ['fact-choice', 'term-kexinit'] } },
             { label: 'Key exchange', value: 'sntrup761x25519-sha512', backing: { traces: ['fact-algorithms'] } },
             { label: 'Host key', value: 'ssh-ed25519', backing: { traces: ['fact-algorithms'] } },
             { label: 'Cipher', value: 'chacha20-poly1305', backing: { traces: ['fact-algorithms'] } },
@@ -423,7 +422,7 @@ export default defineLesson({
           deep: [
             {
               text: 'The exchange works like Diffie-Hellman (here X25519 combined with a post-quantum method).',
-              cite: [d('rfc-9941', '3'), d('rfc-4253', '8')],
+              cite: [d('rfc-9941', '3'), d('rfc-9941', '1'), d('rfc-4253', '8')],
             },
             {
               text: 'If a server’s host key ever changes, ssh warns you loudly, because that’s exactly what an attacker in the middle would look like.',
@@ -669,7 +668,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Channel types include session (a shell or one command), direct-tcpip (forwarding a port from your side) and forwarded-tcpip (forwarding a port from the server’s side).',
-              cite: [d('rfc-4254', '6'), d('rfc-4254', '7.2')],
+              cite: [d('rfc-4254', '6'), d('rfc-4254', '6.1'), d('rfc-4254', '7.2')],
             },
             {
               text: 'Requests on a session include pty-req (a terminal), env, shell, exec (one command) and subsystem (such as sftp).',
@@ -781,7 +780,7 @@ export default defineLesson({
           title: 'Interactive Session',
           sub: 'Each keystroke is a packet',
           narrative:
-            'You type ls and press Enter. Each key goes to the server the moment you press it, in its own small sealed packet, and the server sends the letter back so it appears on your screen. That’s the **echo**. When you press Enter, the server runs the command and sends back what it printed. All of these packets are sealed, so a watcher sees only small bursts of data.',
+            'You type ls and press Enter. Each key goes to the server as you type it, in its own small sealed packet, and the server sends the letter back so it appears on your screen. That’s the **echo**. When you press Enter, the server runs the command and sends back what it printed. All of these packets are sealed, so a watcher sees only small bursts of data.',
           deep: [
             {
               text: 'Each keystroke packet is mostly wrapping: the smallest SSH packet is about 28 bytes.',
@@ -792,7 +791,7 @@ export default defineLesson({
               cite: [r('rfc-4251', '9.3.9'), OPENBSD_OBSCURE],
             },
             {
-              text: 'Typing exit ends the shell; the server reports how it ended and closes the channel.',
+              text: 'When the shell ends, the server reports how it ended and closes the channel.',
               cite: [d('rfc-4254', '6.10')],
             },
           ],
@@ -893,6 +892,7 @@ export default defineLesson({
             }),
             ...msgOf(
               'fact-typing',
+              'term-shell',
               'fact-session',
               'fact-newkeys',
               'fact-messages',
@@ -937,7 +937,7 @@ export default defineLesson({
               done: true,
             }),
           ],
-          backing: { traces: ['fact-typing', 'fact-session', 'fact-newkeys'] },
+          backing: { traces: ['fact-typing', 'fact-session', 'fact-newkeys', 'term-shell'] },
         },
       ],
       learn: {
@@ -1035,12 +1035,12 @@ export default defineLesson({
           {
             id: 'deep-3',
             text: 'On servers you run, use keys and turn off password logins.',
-            cite: [MS_NO_PASSWORDS, OPENBSD_PASSWORD, r('rfc-4251', '9.4.5')],
+            cite: [MS_BRUTE_FORCE, MS_NO_PASSWORDS, OPENBSD_PASSWORD, r('rfc-4251', '9.4.5')],
           },
         ],
         facts: [
           { id: 'fact-port', label: 'Port', value: '22', cite: [d('rfc-4253', '4.1'), IANA_PORTS] },
-          { id: 'fact-replaced', label: 'Replaced', value: 'Telnet (23), rlogin', cite: [r('rfc-4251', '4.1'), NIST_IR_BASICS, IANA_PORT_23] },
+          { id: 'fact-replaced', label: 'Replaced', value: 'Telnet (23), rlogin', cite: [r('rfc-4251', '4.1'), NIST_IR_BASICS, IANA_PORTS] },
           { id: 'fact-logins', label: 'Logins', value: 'public key, password', cite: [d('rfc-4252', '7'), d('rfc-4252', '8')] },
           {
             id: 'fact-also',
@@ -1075,14 +1075,14 @@ export default defineLesson({
           {
             id: 'fact-algorithms',
             label: 'In this example',
-            value: 'key exchange sntrup761x25519-sha512 (X25519 with a post-quantum method), host key ssh-ed25519, cipher chacha20-poly1305',
-            cite: [abstractOf('rfc-9941', 9941), IANA_KEX, d('rfc-8709', '1'), IANA_HOSTKEY, IANA_CIPHER, CISCO_SHOW_IP_SSH],
+            value: 'key exchange sntrup761x25519-sha512 (X25519 with a post-quantum method), host key and login key ssh-ed25519, cipher chacha20-poly1305',
+            cite: [d('rfc-9941', '1'), IANA_KEX, d('rfc-8709', '1'), d('rfc-4252', '7'), IANA_HOSTKEY, IANA_CIPHER, CISCO_SHOW_IP_SSH],
           },
           {
             id: 'fact-hostkey',
             label: 'Host key',
             value:
-              'signs the key exchange; your laptop checks it against its list of known servers (~/.ssh/known_hosts), and the first time asks you to check the key’s fingerprint',
+              'the server sends it in its key exchange reply and signs the exchange with it; your laptop checks it against its list of known servers (~/.ssh/known_hosts), and the first time asks you to check the key’s fingerprint',
             cite: [d('rfc-4253', '8'), d('rfc-4251', '4.1'), MS_FINGERPRINT, MS_KNOWN, CISCO_KNOWN],
           },
           {
@@ -1102,15 +1102,15 @@ export default defineLesson({
             id: 'fact-session',
             label: 'Session',
             value:
-              'opened as a channel (one connection carries many channels at once); pty-req asks for a terminal (such as 80 by 24), then shell starts one; output comes back as CHANNEL_DATA',
+              'opened as a channel, which each side knows by a number, here 0 (one connection carries many channels at once); pty-req asks for a terminal (such as 80 by 24), then shell starts one; output comes back as CHANNEL_DATA',
             cite: [d('rfc-4254', '5'), d('rfc-4254', '6.1'), d('rfc-4254', '6.2'), d('rfc-4254', '6.5'), d('rfc-4254', '6.6')],
           },
           {
             id: 'fact-typing',
             label: 'Typing',
             value:
-              'each key goes at once, as one byte, in its own small sealed packet, and the server echoes it back; a watcher can see only the size and timing of the packets',
-            cite: [d('rfc-4253', '5.3'), d('rfc-4254', '8'), r('rfc-4251', '9.3.9'), d('rfc-4253', '6.3')],
+              'each key goes as you type, as one byte in its own small sealed packet, and the server’s terminal echoes it back; a watcher can see only the size and timing of the packets',
+            cite: [d('rfc-4253', '5.3'), d('rfc-4254', '8'), d('rfc-4254', '6.2'), r('rfc-4251', '9.3.9'), OPENBSD_OBSCURE, d('rfc-4253', '6.3')],
           },
           {
             id: 'fact-messages',
@@ -1146,6 +1146,12 @@ export default defineLesson({
             label: 'The ssh command',
             value: 'ssh user@host connects and logs you in on the named computer',
             cite: [MS_COMMAND, CISCO_COMMAND, OPENBSD_COMMAND],
+          },
+          {
+            id: 'fact-version',
+            label: 'Version line',
+            value: 'one line of text that each side sends once the TCP connection is open: SSH-2.0, then the name and version of its software (here OpenSSH_9.9)',
+            cite: [d('rfc-4253', '4.2'), CISCO_LOCAL_VERSION, OPENBSD_VERSION_KEYWORD],
           },
         ],
       },
