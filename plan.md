@@ -46,6 +46,17 @@ How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. 
 
 D5 and L2-a start together. L2-b follows L2-a. H1 follows D5's approval and L2-c's pass, whichever is later.
 
+## H1's spec (written 2026-11-11, after the lesson's pass; it waits for the owner's approval of D5)
+
+H1 makes Home follow the checked lesson. It is built on `lesson/what-is-http`, after `design/d5-home-sources` is merged into it so the prototype and its spec are on the branch.
+
+1. **The source block is D5**, in the variant the owner approves: `prototypes/d5-home-sources.md` is its spec, word for word, with its 16 acceptance checks. Written here for variant A. With the checked lesson the block reads "Checked 11 Nov 2026, 20 sources", lists sources 1 to 3 and folds 17.
+2. **The page on the laptop follows the lesson's cues.** Home showed the page's words from step 4 and its pictures from step 5, by position ("the last step but one"). The lesson now draws the words when the stylesheet arrives, in step 5 (direction 2.23). `homeDemo` works out, from the lesson's own events, the number of the step whose events carry the `page: 'text'` cue and the one that carries `page: 'full'`, returns them (`page: { words, pictures }`), and throws by name when the lesson has neither; `src/pages/index.astro` lights `#nm-page`'s words and pictures from those numbers, through Learn and Practice as today, and its comment says so. With this lesson both are step 5, and at step 4 the laptop's page is still empty.
+3. **Home's tests assert the lesson's checked words.** `src/lib/home.test.ts` and `e2e/site.spec.ts`, wherever they quote the lesson: "Hypertext Transfer Protocol"; step 1's "You type http://example.net and press Enter"; the lead "In HTTP/1.1, getting a web page is a conversation in plain text."; the sources (D5's checks replace the old two-label line); the page's words absent at step 4 and present at step 5. A test that quotes the lesson quotes it literally, as these do today.
+4. **Nothing else changes.** No lesson content (a change to `src/content/` would make the fact-check report stale), nothing on Home outside the demo's source block and the page cue, no script added, the budgets hold.
+
+**Check.** Each attack case of the spec review (`prototypes/d5-cases.md`) has a test seen failing against a broken build; `npm test`; `npm run build`; `e2e/site.spec.ts` in the projects that run it; Home at 375px and 1440px in both themes beside the prototype.
+
 ## Estimate
 
 | Role | Model | Units | Tokens, roughly |
