@@ -109,7 +109,7 @@ test('each lesson is one protocol, its fields taken from the section', () => {
 
 test('each protocol keeps its name, full name, purpose, group and OSI layers', () => {
   const rows = [
-    ['HTTP', 'HyperText Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
+    ['HTTP', 'Hypertext Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
     ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', { layers: [7], cite: [] }],
     ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core', { layers: [4], cite: [] }],
     ['UDP', 'User Datagram Protocol', 'Quick, no guarantees', 'core', { layers: [4], cite: [] }],

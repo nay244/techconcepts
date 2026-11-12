@@ -7,6 +7,8 @@ import { getEntries, getLesson, trackTotals, type AvailableSummary } from '../co
 import { tracks } from '../content/tracks';
 import { positionOf } from '../engine/timeline';
 import { numberedSources } from '../lesson/sourceNumbers';
+import { lessonStamp } from './checked';
+import type { LessonStamp } from './stamp';
 import { firstSentence } from './text';
 import { TRACK_COVERS } from './tracks-page';
 
@@ -29,7 +31,16 @@ export interface HomeDemo {
   lesson: { title: string; fullName: string; url: string; number: number; track: string };
   /** Every Watch step, in the lesson's own words. */
   steps: HomeDemoStep[];
-  learn: { lead: string; terms: { idea: string; name: string }[]; sources: { label: string; url: string }[] };
+  learn: {
+    lead: string;
+    terms: { idea: string; name: string }[];
+    /** Every source, in the order the Lesson page numbers them: its short name, its full label and where it is. */
+    sources: HomeSource[];
+    /** Whether the lesson numbers its sources (a lesson that cites nothing yet does not). */
+    numbered: boolean;
+    /** The lesson's stamp: the day it was checked, or null, and how many sources it lists in all. */
+    stamp: LessonStamp;
+  };
   /** The same exchange with the line sealed: the next lesson, in its own words. */
   sealed: { title: string; lead: string; url: string; number: number };
   /** The lesson's first question. Each choice explains itself; one is right. */
@@ -38,6 +49,42 @@ export interface HomeDemo {
   scene: string;
   /** The full lesson, opened at its first step, its Learn part and its Practice part. */
   parts: { watch: string; learn: string; practice: string };
+  /** The first Watch step (counted from 1) in which the page on the laptop shows its words, and the first its pictures. */
+  page: { words: number; pictures: number };
+}
+
+export interface HomeSource {
+  name: string;
+  label: string;
+  url: string;
+}
+
+/** A source's short name: its label up to the first ": ". A label with no ": " is its own name. */
+export function sourceName(label: string): string {
+  const at = label.indexOf(': ');
+  return at === -1 ? label : label.slice(0, at);
+}
+
+/** A lesson with this many sources or fewer shows them all. */
+const SHOW_ALL = 6;
+/** A longer list shows this many and folds the rest. */
+const SHOWN = 3;
+
+/** The sources Learn shows, and the ones it folds behind "Show the other N" (never fewer than 4). */
+export function foldSources<T>(sources: T[]): { shown: T[]; folded: T[] } {
+  return sources.length <= SHOW_ALL ? { shown: sources, folded: [] } : { shown: sources.slice(0, SHOWN), folded: sources.slice(SHOWN) };
+}
+
+/** Where the page on the laptop is lit: Watch steps from a start on, and then Learn and Practice. */
+export interface Lit {
+  steps: number[];
+  parts: ('learn' | 'practice')[];
+}
+
+/** The page stays once drawn: its words from step `words` on and its pictures from step `pictures` on, through Learn and Practice. */
+export function litSteps(page: { words: number; pictures: number }, last: number): { words: Lit; pictures: Lit } {
+  const from = (first: number): Lit => ({ steps: Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i), parts: ['learn', 'practice'] });
+  return { words: from(page.words), pictures: from(page.pictures) };
 }
 
 /** The driver's own trail and its edge, where the demo's lit ways are drawn in beside them (src/art/scenes/net-map.ts). */
@@ -115,10 +162,21 @@ export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): H
     };
   });
 
+  // The page on the laptop follows the lesson's own cues, whatever step they fall in.
+  const cued = (match: (arg: string | undefined) => boolean): number => unit.steps.findIndex((step) => step.events.some((e) => ('cues' in e ? e.cues ?? [] : []).some((c) => c.cue === 'page' && match(c.arg)))) + 1;
+  const page = { words: cued(() => true), pictures: cued((arg) => arg === 'full') };
+  if (page.words === 0) throw new Error(`Home's demo draws the page on the laptop from the lesson's cues; ${slug} has no page cue.`);
+  if (page.pictures === 0) throw new Error(`Home's demo draws the page's pictures from the lesson's cues; ${slug} has no page: 'full' cue.`);
+
   // The words the lesson gives the laptop: what it wants, and the address in its browser.
   const labels = unit.scene.labels;
   const drawn = write(write(figure.svg, 'nm-lapState', labels.laptop ?? ''), 'nm-url', labels.url ?? '');
   if (!drawn.includes(TRAIL)) throw new Error("The network map's trail is not where Home's demo draws beside it.");
+  const listed = numberedSources(unit);
+  const stamp = lessonStamp(lesson);
+  if (stamp.sources !== listed.list.length) {
+    throw new Error(`Home's demo lists ${listed.list.length} sources for ${slug}, and the lesson's stamp says ${stamp.sources}.`);
+  }
   const at = (kind: 'step' | 'learn' | 'practice'): string => `${entry.url}?step=${positionOf(lesson, 0, kind)}`;
   return {
     lesson: { title: lesson.title, fullName: unit.fullName, url: entry.url, number: entry.number, track: track.title },
@@ -126,12 +184,15 @@ export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): H
     learn: {
       lead: leadText(unit.learn.lead),
       terms: unit.learn.terms.slice(0, TERMS).map((t) => ({ idea: t.idea, name: t.name })),
-      sources: numberedSources(unit).list.map((r) => ({ label: r.label, url: r.url })),
+      sources: listed.list.map((r) => ({ name: sourceName(r.label), label: r.label, url: r.url })),
+      numbered: listed.numberOf.size > 0,
+      stamp,
     },
     sealed: { title: sealedLesson.title, lead: leadText(sealedLesson.units[0]!.learn.lead), url: sealedEntry.url, number: sealedEntry.number },
     practice: { prompt: question.prompt, options: question.options.map((o, i) => ({ text: o.text, feedback: o.feedback, right: i === question.answer })) },
     scene: drawn.replace(TRAIL, `${TRAIL}${trails.join('')}`),
     parts: { watch: at('step'), learn: at('learn'), practice: at('practice') },
+    page,
   };
 }
 
