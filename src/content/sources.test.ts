@@ -184,7 +184,8 @@ describe('the four source groups added by the owner on 2026-11-08', () => {
 });
 
 describe('community sources, added by the owner on 2026-11-09', () => {
-  test('a blog, forum or post is a community source, refused until its host is listed', () => {
+  // Canonical's blog joined with What is DHCP, the first lesson to cite a community source; no other site has.
+  test('a blog, forum or post is a community source, allowed on a listed host and refused on any other', () => {
     const entry: SourceEntry = {
       id: 'example-post',
       kind: 'community',
@@ -193,9 +194,9 @@ describe('community sources, added by the owner on 2026-11-09', () => {
       publisher: 'Example blog',
       url: 'https://blog.example.com/how-dhcp-works',
     };
-    expect(() => defineSources([entry])).toThrow(
-      /no host is allowed yet for community; add blog\.example\.com, if it is the publisher's own, to SOURCE_HOSTS/,
-    );
+    expect(() => defineSources([entry])).toThrow(/blog\.example\.com is not an allowed host for community/);
+    expect(() => defineSources([{ ...entry, url: 'https://canonical.com/blog/how-dhcp-works' }])).not.toThrow();
+    expect(SOURCES['canonical-dhcp-concepts']!.kind).toBe('community');
   });
 });
 
@@ -231,7 +232,7 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s', () => {
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s and batch 2’s', () => {
     expect(Object.keys(SOURCES)).toEqual([
       'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
@@ -252,6 +253,17 @@ describe('the OSI Model lesson’s sources', () => {
       'microsoft-ipconfig', 'microsoft-365-add-domain', 'microsoft-traffic-manager',
       // and What is HTTPS's second round.
       'rfc-8404', 'rfc-9065',
+      // Batch 2: What is IP's,
+      'rfc-8200', 'rfc-826', 'rfc-894', 'rfc-1918', 'rfc-3022', 'rfc-1812', 'rfc-4632', 'rfc-4271', 'rfc-4861',
+      'rfc-4864', 'rfc-6250', 'rfc-3704', 'rfc-5227', 'rfc-9724', 'rfc-7066', 'rfc-792', 'iana-ip-parameters', 'iana-protocol-numbers',
+      'microsoft-route', 'microsoft-arp', 'cisco-route-command', 'cisco-dai',
+      // What is DHCP's,
+      'rfc-3927', 'rfc-9915', 'rfc-4862', 'rfc-7610', 'rfc-7513', 'iana-dhcp-parameters', 'microsoft-dhcp-troubleshoot',
+      'microsoft-dhcp-basics', 'microsoft-dhcp-server', 'microsoft-dhcp-quickstart', 'microsoft-dhcp-training', 'microsoft-network-settings', 'google-nest-lan-ip', 'google-nest-dhcp-reservation',
+      'paloalto-dhcp-overview', 'paloalto-dhcp-messages', 'cisco-dhcp-server', 'cisco-dhcp-troubleshoot', 'canonical-dhcp-concepts',
+      // and What is ICMP's.
+      'rfc-1191', 'rfc-2151', 'rfc-2923', 'rfc-4443', 'rfc-4890', 'rfc-9099', 'iana-icmp-parameters',
+      'microsoft-ping', 'microsoft-tracert', 'cisco-ping-traceroute', 'cisco-traceroute-os', 'cloudflare-icmp', 'paloalto-icmp',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
