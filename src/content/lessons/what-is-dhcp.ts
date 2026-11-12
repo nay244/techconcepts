@@ -28,6 +28,9 @@ const opt = (section: string) => rfc('rfc-2132', section, true);
 /** RFC 1122 has no ids below its top-level sections, so its section 3.2.1.3 is cited by the page it starts on (30). */
 const RFC1122_ADDRESSES = cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-30' });
 
+/** The same section, marked as the defining standard for the term Broadcast: RFC 1122 defines the IP broadcast addresses. */
+const RFC1122_BROADCAST = cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-30', defining: true });
+
 const IANA_PORTS = cite('iana-ports', 'Registry', {
   url: 'https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml#table-service-names-port-numbers',
   defining: true,
@@ -567,6 +570,7 @@ export default defineLesson({
               'fact-replies',
               'fact-ack',
               'fact-settings',
+              'fact-home',
               'fact-defined',
             )({
               tag: 'ACK',
@@ -631,7 +635,7 @@ export default defineLesson({
             {
               label: 'Sent to',
               value: 'the router directly, 192.168.1.1',
-              backing: { traces: ['fact-renewal'] },
+              backing: { traces: ['fact-renewal', 'fact-home'] },
             },
             {
               label: 'If no answer',
@@ -650,6 +654,7 @@ export default defineLesson({
               'term-renewal',
               'fact-renewal',
               'fact-ports',
+              'fact-home',
               'fact-defined',
             )({
               tag: 'REQUEST',
@@ -673,6 +678,7 @@ export default defineLesson({
               'fact-renewal',
               'fact-ports',
               'fact-replies',
+              'fact-home',
               'fact-defined',
             )({
               tag: 'ACK',
@@ -693,7 +699,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-renewal', 'fact-renewal', 'fact-same', 'term-lease', 'term-request'],
+            traces: ['term-renewal', 'fact-renewal', 'fact-same', 'term-lease', 'term-request', 'fact-home'],
           },
         },
       ],
@@ -722,7 +728,7 @@ export default defineLesson({
             id: 'term-broadcast',
             idea: 'A message to everyone on the network',
             name: 'Broadcast',
-            cite: [RFC1122_ADDRESSES, dhcp('3.1')],
+            cite: [RFC1122_BROADCAST, rfc('rfc-2131', '3.1')],
           },
           {
             id: 'term-discover',
@@ -758,7 +764,7 @@ export default defineLesson({
             id: 'term-ip',
             idea: 'The laptop’s own number on the network, so messages can find it',
             name: 'IP address',
-            cite: [rfc('rfc-791', '2.3', true), dhcp('1.5')],
+            cite: [rfc('rfc-791', '2.3', true), rfc('rfc-2131', '1.5')],
           },
           {
             id: 'term-renewal',
@@ -836,7 +842,7 @@ export default defineLesson({
           {
             id: 'fact-defined',
             label: 'Defined in',
-            value: 'RFC 2131',
+            value: 'RFC 2131, Dynamic Host Configuration Protocol',
             cite: [dhcp('1')],
           },
           {
@@ -848,14 +854,14 @@ export default defineLesson({
           {
             id: 'fact-first',
             label: 'Before it has an address',
-            value: 'a client sends from 0.0.0.0 to 255.255.255.255, everyone on its network',
-            cite: [dhcp('4.1'), dhcp('4.4.1'), RFC1122_ADDRESSES],
+            value: 'a client has no address to talk from and doesn’t know the server, so it calls out from 0.0.0.0 to 255.255.255.255, everyone on its network',
+            cite: [dhcp('4.1'), dhcp('4.4.1'), dhcp('4.4.4'), RFC1122_ADDRESSES],
           },
           {
             id: 'fact-settings',
             label: 'Hands out',
-            value: 'an IP address, the subnet mask, the router and the DNS server, with a lease time',
-            cite: [dhcp('3.1'), dhcp('4.3.1'), opt('3.3'), opt('3.5'), opt('3.8'), opt('9.2')],
+            value: 'what a new device needs and doesn’t have yet: an IP address, the subnet mask, the router and the DNS server, with a lease time',
+            cite: [dhcp('3.1'), dhcp('4.3.1'), dhcp('1.6'), opt('3.3'), opt('3.5'), opt('3.8'), opt('9.2')],
           },
           {
             id: 'fact-discover',
@@ -867,7 +873,7 @@ export default defineLesson({
             id: 'fact-replies',
             label: 'Replies',
             value: 'from port 67 to port 68, sent straight to the laptop at the offered address, or broadcast',
-            cite: [dhcp('4.1')],
+            cite: [dhcp('4.1'), IANA_PORTS, MS_PORTS],
           },
           {
             id: 'fact-offer',
@@ -880,7 +886,7 @@ export default defineLesson({
             label: 'The Request',
             value:
               'is broadcast from 0.0.0.0 and names the chosen server (option 54) and the address (option 50); other servers take back their offers',
-            cite: [dhcp('3.1'), dhcp('4.3.2'), opt('9.7'), opt('9.1'), IANA_OPTIONS],
+            cite: [dhcp('3.1'), dhcp('4.3.2'), dhcp('4.1'), opt('9.7'), opt('9.1'), IANA_OPTIONS],
           },
           {
             id: 'fact-ack',
