@@ -14,7 +14,6 @@ The owner keeps:
 - anything that leaves this machine: push, pull request, merge, deploy, the domain
 - sign-ins, accounts and credentials
 - installing skills or plugins
-- the original folder (below)
 
 ## Team
 
@@ -53,7 +52,7 @@ Settled, so a lesson does not stop for them: a sentence that is true in the ordi
 
 ## Boundaries
 
-- **Two folders.** Work here. The sibling folder with the plural name is the frozen original: read it, change nothing in it. Ask the owner before moving, renaming or copying a whole folder.
+- **One folder** (the owner, 2026-11-12). This folder is the site's only checkout. The original project's folder was retired that day: every commit it held is in this repository and on `origin`, and the few files that existed only there (the audit plans of 9 and 10 November, the first direction document, two skills not installed here) are kept, untracked, in `.superpowers/original/`. Ask the owner before moving, renaming or copying a whole folder.
 - **Public repo, live `main`.** `origin` is public and Cloudflare deploys `main`. Work on branches off `revamp`.
 - **Repo-relative paths** in every tracked file, so the machine's folder names stay out of the repo.
 - **Named stashes:** `git stash push -m "<why>"`.
