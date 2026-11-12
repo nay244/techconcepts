@@ -294,6 +294,10 @@ export default defineLesson({
                 rfc('rfc-9308', '8'),
                 rfc('rfc-9001', '3', true),
                 rfc('rfc-9001', '4', true),
+                rfc('rfc-8404', '3.1.1'),
+                rfc('rfc-8404', '2.1.2'),
+                rfc('rfc-9065', '1'),
+                rfc('rfc-9293', '3.1'),
               ],
             },
           ],
@@ -482,6 +486,8 @@ export default defineLesson({
                 F3_9846,
                 rfc('rfc-9849', '1'),
                 rfc('rfc-9112', '9.7', true),
+                rfc('rfc-8404', '3.1.1'),
+                rfc('rfc-9065', '2.3.2'),
               ],
             },
           ],
@@ -785,7 +791,7 @@ export default defineLesson({
             id: 'fact-watch',
             label: 'Watchers still see',
             value: 'addresses and ports, the site’s name (SNI), sizes and timing',
-            cite: [rfc('rfc-9849', '1'), rfc('rfc-9846', '1', true), F3_9846, rfc('rfc-6066', '3', true), rfc('rfc-9110', '4.3.3', true)],
+            cite: [rfc('rfc-9849', '1'), rfc('rfc-9846', '1', true), F3_9846, rfc('rfc-6066', '3', true), rfc('rfc-9110', '4.3.3', true), rfc('rfc-8404', '3.1.1'), rfc('rfc-9065', '1'), rfc('rfc-9065', '2.3.2'), rfc('rfc-9293', '3.1')],
           },
           {
             id: 'fact-defined',
@@ -823,7 +829,7 @@ export default defineLesson({
             id: 'fact-tcp',
             label: 'TCP connection',
             value: 'opened by a handshake of three messages (SYN, SYN-ACK, ACK); HTTP/1.1 keeps it open for more requests by default',
-            cite: [rfc('rfc-9293', '3.5', true), rfc('rfc-9293', '3.5.1', true), rfc('rfc-9112', '9.3', true)],
+            cite: [rfc('rfc-9293', '3.5', true), rfc('rfc-9112', '9.3', true)],
           },
           {
             id: 'fact-rides',
@@ -922,7 +928,7 @@ export default defineLesson({
             {
               text: 'Which site you went to, but not what you read or typed.',
               feedback: 'Right. The addresses and the name show; what’s inside the seal doesn’t.',
-              cite: [rfc('rfc-9849', '1'), rfc('rfc-9846', '1', true), F3_9846],
+              cite: [rfc('rfc-9849', '1'), rfc('rfc-9846', '1', true), F3_9846, rfc('rfc-8404', '3.1.1'), rfc('rfc-9065', '2.3.2'), rfc('rfc-6066', '3', true), rfc('rfc-9076', '5.1')],
             },
             {
               text: 'Nothing at all, not even the site.',
