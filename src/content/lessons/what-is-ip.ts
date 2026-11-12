@@ -34,6 +34,9 @@ const rfc4787 = (section: string) => rfc('rfc-4787', section);
 const host = (section: string, page: number) =>
   cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}`, defining: true });
 
+/** RFC 1122's section 1.1 is an overview of the architecture, not a definition, so these citations carry no defining marker. */
+const hostOverview = (section: string, page: number) => cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}` });
+
 /** RFC 826, 894 and 792 have no section ids, so each section is cited by a text fragment that starts in it. */
 const textFragment = (source: string, file: string, section: string, fragment: string) =>
   cite(source, section, { url: `https://www.rfc-editor.org/rfc/${file}.html#:~:text=${fragment}`, defining: true });
@@ -43,7 +46,7 @@ const ARP_GENERATION = arp('Packet Generation', 'As%20a%20packet%20is%20sent%20d
 const ARP_RECEPTION = arp('Packet Reception', 'Send%20the%20packet%20to%20the');
 const ARP_EXAMPLE = arp('An Example', 'and%20broadcasts%20this%20packet%20to%20everybody');
 const ETHERNET_FRAME = textFragment('rfc-894', 'rfc894', 'Frame Format', 'IP%20datagrams%20are%20transmitted%20in%20standard%20Ethernet%20frames');
-const ETHERNET_BROADCAST = textFragment('rfc-894', 'rfc894', 'Address Mappings', 'It%20should%20also%20use%20ARP');
+const ETHERNET_BROADCAST = cite('rfc-894', 'Address Mappings', { url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=It%20should%20also%20use%20ARP' });
 const ICMP_DF = textFragment('rfc-792', 'rfc792', 'Destination Unreachable Message', 'Another%20case%20is%20when%20a%20datagram%20must%20be%20fragmented');
 
 const NAT_ABSTRACT = cite('rfc-3022', 'Abstract', { url: 'https://www.rfc-editor.org/rfc/rfc3022.html#abstract' });
@@ -117,7 +120,7 @@ const msgOf =
 
 // ---------------------------------------------------------------- lesson
 
-const HOOK_TRACES = ['fact-label', 'term-forwarding', 'fact-hop', 'why-1', 'why-2'];
+const HOOK_TRACES = ['term-header', 'fact-label', 'term-forwarding', 'fact-hop', 'why-1', 'why-2'];
 
 export default defineLesson({
   slug: 'what-is-ip',
@@ -158,12 +161,12 @@ export default defineLesson({
       },
       overview: {
         hook: 'IP puts an address on every packet and lets routers pass it along, hop by hop, toward where it’s going. It’s what makes many separate networks act like one internet.',
-        hookBacking: { traces: HOOK_TRACES },
+        hookBacking: { traces: ['term-ip', ...HOOK_TRACES] },
         description:
           'It works like posting a parcel. You write the address on it and hand it to your local post office, which passes it to a bigger sorting office, and so on. Nobody on the way knows the whole route; each one only knows which way to send it next. Here your laptop sends one packet to example.net and gets a reply.',
         backing: { analogy: true },
         facts: [
-          { label: 'Used for', value: 'every packet on the internet', backing: { traces: ['why-1'] } },
+          { label: 'Used for', value: 'every packet on the internet', backing: { traces: ['why-1', 'why-2'] } },
           { label: 'Addresses', value: 'IPv4 (like 203.0.113.80) and IPv6', backing: { traces: ['fact-ipv4', 'fact-ipv6'] } },
           { label: 'Each hop', value: 'a router picks the next one', backing: { traces: ['fact-hop'] } },
           { label: 'Promises', value: 'none: best effort', backing: { traces: ['deep-1'] } },
@@ -273,7 +276,7 @@ export default defineLesson({
               known: true,
             }),
           ],
-          backing: { traces: ['term-mac', 'term-arp', 'fact-arp'] },
+          backing: { traces: ['term-mac', 'term-arp', 'fact-arp', 'fact-frame'] },
         },
         {
           id: 'ip-encapsulation',
@@ -342,6 +345,7 @@ export default defineLesson({
               cite: [
                 rfc1918('3'),
                 rfc4787('3'),
+                cite('rfc-4864', '2.3', { url: 'https://www.rfc-editor.org/rfc/rfc4864.html#section-2.3' }),
                 rfc3022('1'),
                 rfc3022('2.2'),
                 router('5.2.4.3'),
@@ -411,7 +415,7 @@ export default defineLesson({
           title: 'Return Routing',
           sub: 'Back, hop by hop',
           narrative:
-            'example.net replies to the address it saw, 198.51.100.23, which is your router. The routers pass the reply back hop by hop. When it reaches your router, the router checks its notes, sees this reply belongs to your laptop, and swaps the destination back to 192.168.1.100. The laptop gets its answer and never knew its address was swapped.',
+            'example.net replies to the address it saw, 198.51.100.23, which is your router. The routers pass the reply back hop by hop. When it reaches your router, the router checks its notes, sees this reply belongs to your laptop, and swaps the destination back to 192.168.1.100. The laptop gets its answer.',
           deep: [
             {
               text: 'The reply’s TTL starts fresh, at the server’s own default (often 64). The way back doesn’t have to match the way out: each direction is routed on its own. NAT is also why a device at home can’t easily be reached from outside, unless the router forwards a port to it.',
@@ -507,7 +511,7 @@ export default defineLesson({
             id: 'term-mac',
             idea: 'The hardware number of a network card',
             name: 'MAC address',
-            cite: [rfc('rfc-9724', '2.1'), ARP_ABSTRACT],
+            cite: [rfc('rfc-9724', '2.1'), cite('rfc-826', 'Abstract', { url: 'https://www.rfc-editor.org/rfc/rfc826.html#:~:text=Presented%20here%20is%20a%20protocol' })],
           },
           { id: 'term-arp', idea: '“Who has this address?”', name: 'ARP', cite: [ARP_ABSTRACT, ARP_GENERATION] },
           { id: 'term-header', idea: 'The label on the front of the packet', name: 'IP header', cite: [ip4('2.2'), ip4('1.4')] },
@@ -546,13 +550,13 @@ export default defineLesson({
           {
             id: 'why-1',
             text: 'IP is the one thing every network on the internet agrees on.',
-            cite: [host('1.1.3', 10), ip4('1.4'), host('1.1.2', 7)],
+            cite: [hostOverview('1.1.3', 10), ip4('1.4'), hostOverview('1.1.2', 7)],
           },
           {
             id: 'why-2',
             text: 'Wi-Fi, Ethernet and mobile networks all work differently underneath, but they all carry IP packets, so a packet can cross all of them to reach any public address.',
             cite: [
-              host('1.1.3', 10),
+              hostOverview('1.1.3', 10),
               ip4('1.3'),
               rfc('rfc-9724', '2.1'),
               rfc('rfc-9724', '1'),
@@ -566,7 +570,7 @@ export default defineLesson({
           {
             id: 'deep-1',
             text: 'IP is best effort: it promises neither delivery nor order; TCP adds those.',
-            cite: [ip4('1.4'), rfc('rfc-6250', '2'), host('1.1.3', 10), rfc('rfc-9293', '2.2', true)],
+            cite: [ip4('1.4'), rfc('rfc-6250', '2'), hostOverview('1.1.3', 10), rfc('rfc-9293', '2.2', true)],
           },
           {
             id: 'deep-2',
@@ -589,7 +593,7 @@ export default defineLesson({
           { id: 'fact-ipv6', label: 'IPv6', value: '128 bits, like 2001:db8::80', cite: [ip6('1')] },
           { id: 'fact-private', label: 'Private ranges', value: '10/8, 172.16/12, 192.168/16', cite: [rfc1918('3')] },
           { id: 'fact-header', label: 'Header', value: '20 bytes (IPv4), 40 (IPv6)', cite: [ip4('3.1'), ip6('1'), ip6('8.3')] },
-          { id: 'fact-defined', label: 'Defined in', value: 'RFC 791 (IPv4), RFC 8200 (IPv6)', cite: [ip4('3.1'), ip6('1')] },
+          { id: 'fact-defined', label: 'Defined in', value: 'RFC 791, Internet Protocol (IPv4); RFC 8200 (IPv6)', cite: [ip4('3.1'), ip4('1.1'), ip6('1')] },
           { id: 'fact-osi', label: 'OSI layer', value: '3, network', cite: OSI_L3 },
           {
             id: 'fact-label',
@@ -601,7 +605,7 @@ export default defineLesson({
             id: 'fact-ttl',
             label: 'TTL',
             value: 'set by the sender, 64 by default; each router takes 1 off, and at 0 the packet is dropped',
-            cite: [ip4('1.4'), IANA_TTL, router('5.3.1')],
+            cite: [ip4('1.4'), IANA_TTL, host('3.2.1.7', 34), router('5.3.1')],
           },
           {
             id: 'fact-arp',
@@ -651,7 +655,7 @@ export default defineLesson({
             {
               text: 'To hide what’s inside the packet.',
               feedback: 'Not quite. NAT doesn’t encrypt anything. It swaps a private address for a public one.',
-              cite: [NAT_ABSTRACT, rfc3022('2.1'), rfc4787('3')],
+              cite: [NAT_ABSTRACT, rfc3022('2.1'), rfc4787('3'), cite('rfc-4864', '2.4', { url: 'https://www.rfc-editor.org/rfc/rfc4864.html#section-2.4' })],
             },
             {
               text: 'Private addresses can’t be reached from the internet, so it puts its public one on.',
