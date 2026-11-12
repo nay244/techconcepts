@@ -53,8 +53,15 @@ const NIST_52_INTRO = cite('nist-sp800-52r2', '1', { url: `${NIST_52}#page=10` }
 const NIST_52_REVOCATION = cite('nist-sp800-52r2', '4.2.2', { url: `${NIST_52}#page=44` });
 const NIST_52_CT = cite('nist-sp800-52r2', '3.4.2.15', { url: `${NIST_52}#page=36` });
 const NIST_52_HISTORY = cite('nist-sp800-52r2', '1.1', { url: `${NIST_52}#page=10` });
+const NIST_52_HISTORY_2 = cite('nist-sp800-52r2', '1.1', { url: `${NIST_52}#page=11` });
 const NIST_77_SSLVPN = cite('nist-sp800-77r1', '8.2', { url: 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf#page=105' });
 
+const MS_SSTP = vendor(
+  'microsoft-ms-sstp',
+  'https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sstp/70adc1df-c4fe-4b02-8872-f1d8b9ad806a',
+  '1.3 Overview',
+  'When%20a%20client%20establishes%20an%20SSTP-based%20VPN%20connection',
+);
 const MS_TLS = 'https://learn.microsoft.com/en-us/windows-server/security/tls/transport-layer-security-protocol';
 const MS_TLS_LAYERS = vendor('microsoft-tls-protocol', MS_TLS, 'Transport Layer Security protocol', 'The%20TLS%20%28and%20SSL%29%20protocols%20are%20located');
 const MS_TLS_TCP = vendor('microsoft-tls-protocol', MS_TLS, 'Transport Layer Security protocol', 'TLS%20and%20SSL%20assume');
@@ -155,7 +162,7 @@ export default defineLesson({
         facts: [
           { label: 'Used by', value: 'HTTPS, secure email, many apps', backing: { traces: ['fact-used'] } },
           { label: 'Current version', value: 'TLS 1.3', backing: { traces: ['fact-current'] } },
-          { label: 'SSL', value: 'the old name; every SSL version is retired', backing: { traces: ['fact-retired', 'fact-stands'] } },
+          { label: 'SSL', value: 'the old name; SSL 2.0 and 3.0 are retired', backing: { traces: ['fact-retired', 'fact-stands'] } },
           { label: 'Proves identity with', value: 'certificates', backing: { traces: ['term-cert', 'fact-gives'] } },
           { label: 'Sits', value: 'between TCP and the app', backing: { traces: ['fact-runs-on'] } },
           { label: 'This example', value: 'techconcepts.app, port 443', backing: { traces: ['fact-inside'] } },
@@ -200,6 +207,7 @@ export default defineLesson({
               'fact-sni',
               'fact-current',
               'fact-kx',
+              'fact-hello',
             )({
               tag: 'CLIENT HELLO',
               from: 'laptop',
@@ -218,7 +226,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-clienthello', 'term-suite', 'term-keyshare', 'fact-current', 'fact-sni', 'fact-kx', 'fact-handshake', 'fact-runs-on'],
+            traces: ['term-clienthello', 'term-suite', 'term-keyshare', 'fact-current', 'fact-sni', 'fact-kx', 'fact-handshake', 'fact-runs-on', 'fact-hello'],
           },
         },
         {
@@ -261,6 +269,7 @@ export default defineLesson({
               'fact-current',
               'fact-kx',
               'fact-records',
+              'term-keyshare',
             )({
               tag: 'SERVER HELLO',
               from: 'web',
@@ -284,7 +293,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-serverhello', 'term-suite', 'term-shared', 'fact-kx', 'fact-fs', 'fact-keys', 'fact-handshake', 'fact-records'],
+            traces: ['term-serverhello', 'term-suite', 'term-shared', 'fact-kx', 'fact-fs', 'fact-keys', 'fact-handshake', 'fact-records', 'term-keyshare', 'fact-secret'],
           },
         },
         {
@@ -292,7 +301,7 @@ export default defineLesson({
           title: 'Certificate Verification',
           sub: 'Prove who you are',
           narrative:
-            'Anyone could do the key maths, an impostor included. So the server sends its **certificate**, a document saying “this key belongs to techconcepts.app”, signed by a **certificate authority** (CA). The browser checks three things: the name matches, the dates are valid, and the signatures lead back to a CA it already trusts. Then the server signs the whole handshake with its private key, the **CertificateVerify**, to prove the certificate is really its own.',
+            'Anyone could do the key maths, an impostor included. So the server sends its **certificate**, a document saying “this key belongs to techconcepts.app”, signed by a **certificate authority** (CA). The browser checks that the name matches, the dates are valid, and the signatures lead back to a CA it already trusts. Then the server signs the whole handshake with its private key, the **CertificateVerify**, to prove the certificate is really its own.',
           deep: [
             {
               text: 'The server sends a chain: its own certificate and an intermediate CA’s. The root CA is already in the browser’s or system’s trust store. The browser also checks the certificate hasn’t been revoked, and certificates are recorded in public Certificate Transparency logs, where anyone can spot one issued by mistake. A self-signed certificate isn’t trusted, because nobody vouches for it.',
@@ -326,6 +335,7 @@ export default defineLesson({
               'fact-certs',
               'fact-chain',
               'fact-checks',
+              'fact-sent',
             )({
               tag: 'CERTIFICATE',
               from: 'web',
@@ -370,7 +380,7 @@ export default defineLesson({
             }),
           ],
           backing: {
-            traces: ['term-cert', 'term-ca', 'fact-checks', 'fact-chain', 'fact-certverify', 'fact-certs', 'fact-handshake'],
+            traces: ['term-cert', 'term-ca', 'fact-checks', 'fact-chain', 'fact-certverify', 'fact-certs', 'fact-handshake', 'fact-why-cert'],
           },
         },
         {
@@ -398,7 +408,7 @@ export default defineLesson({
             { label: 'Round trips', value: 'one (TLS 1.2 took two)', backing: { traces: ['fact-rtt'] } },
           ],
           events: [
-            ...msgOf('fact-runs-on', 'fact-handshake', 'fact-inside', 'term-finished')({
+            ...msgOf('fact-runs-on', 'fact-handshake', 'fact-inside', 'term-finished', 'fact-finished')({
               tag: 'FINISHED',
               from: 'web',
               to: 'laptop',
@@ -413,7 +423,7 @@ export default defineLesson({
               sum: 'That’s my side of the handshake, and here’s its code.',
               info: 'Finished (server, encrypted)',
             }),
-            ...msgOf('fact-runs-on', 'fact-handshake', 'fact-inside', 'term-finished', 'fact-rtt')({
+            ...msgOf('fact-runs-on', 'fact-handshake', 'fact-inside', 'term-finished', 'fact-rtt', 'fact-finished')({
               tag: 'FINISHED',
               from: 'laptop',
               to: 'web',
@@ -432,14 +442,14 @@ export default defineLesson({
               rows: [{ key: 'fin', cells: ['Handshake', 'complete and untouched ✓'] }],
             }),
           ],
-          backing: { traces: ['term-finished', 'fact-handshake', 'fact-rtt', 'fact-0rtt'] },
+          backing: { traces: ['term-finished', 'fact-handshake', 'fact-rtt', 'fact-0rtt', 'fact-finished'] },
         },
         {
           id: 'encrypted-application-data',
           title: 'Encrypted Application Data',
           sub: 'Sealed messages',
           narrative:
-            'Now the app’s own messages go through the seal. Here the browser’s HTTP request goes out as **application data**: encrypted with the shared key, plus a tag that proves it wasn’t changed. On the map the tags just say ENCRYPTED, because that’s all anyone in between can see. The server unlocks the request, and its reply comes back the same way.',
+            'Now the app’s own messages go through the seal. Here the browser’s HTTP request goes out as **application data**: encrypted with keys made from the shared secret, and checked so that any change shows. On the map the tags just say ENCRYPTED, because that’s all anyone in between can see. The server unlocks the request, and its reply comes back the same way.',
           deep: [
             {
               text: 'Each message is sealed in one or more TLS records of up to 16 KB, with AEAD (here AES-128-GCM), which encrypts and authenticates in one go. Every record has its own sequence number, so records can’t be replayed or reordered. Keys can be refreshed mid-connection with KeyUpdate. A watcher still sees each record’s size and timing.',
@@ -491,7 +501,7 @@ export default defineLesson({
               known: true,
             }),
           ],
-          backing: { traces: ['fact-inside', 'fact-records', 'fact-runs-on'] },
+          backing: { traces: ['fact-inside', 'fact-records', 'fact-runs-on', 'fact-keys'] },
         },
         {
           id: 'close-notify',
@@ -560,7 +570,7 @@ export default defineLesson({
           {
             id: 'lead-1',
             text: 'In one round trip, two strangers agreed on secret keys in plain view, one proved who it was, and both checked that nobody had meddled.',
-            cite: [rfc('rfc-9846', '2', true), F1_9846],
+            cite: [rfc('rfc-9846', '2', true), F1_9846, rfc('rfc-9846', '2.3', true), MS_SQL_RTT],
           },
         ],
         terms: [
@@ -578,7 +588,7 @@ export default defineLesson({
           id: 'pattern',
           names: ['ClientHello', 'ServerHello', 'Certificate', 'Finished', 'Application Data'],
           note: 'Every full handshake starts this way; a resumed one skips the certificate. After Finished, the app’s data goes sealed until close_notify.',
-          cite: [rfc('rfc-9846', '2', true), rfc('rfc-9846', '2.2', true), rfc('rfc-9846', '4.7', true)],
+          cite: [rfc('rfc-9846', '2', true), rfc('rfc-9846', '2.2', true), rfc('rfc-9846', '4.7', true), rfc('rfc-9846', '4.5.3', true), rfc('rfc-9846', '6.1', true)],
         },
         why: [
           {
@@ -589,7 +599,7 @@ export default defineLesson({
           {
             id: 'why-2',
             text: 'HTTPS, secure email, VPNs and many other apps borrow it instead of inventing their own.',
-            cite: [rfc('rfc-9325', '1'), NIST_77_SSLVPN, NIST_52_INTRO, rfc('rfc-9846', '1', true)],
+            cite: [rfc('rfc-9325', '1'), NIST_77_SSLVPN, NIST_52_INTRO, rfc('rfc-9846', '1', true), MS_SSTP],
           },
         ],
         deep: [
@@ -604,10 +614,11 @@ export default defineLesson({
             cite: [
               RFC8996_ABSTRACT,
               rfc('rfc-9325', '3.1.1'),
-              rfc('rfc-7568', '1'),
+              rfc('rfc-9846', '12.2'),
+              rfc('rfc-9325', '8.1'),
               MS_SQL_RTT,
               PA_RTT,
-              NIST_52_HISTORY,
+              NIST_52_HISTORY_2,
               rfc('rfc-9846', '1.3', true),
               E5_9846,
             ],
@@ -668,7 +679,7 @@ export default defineLesson({
             id: 'fact-used',
             label: 'Used by',
             value: 'HTTPS, secure email, VPNs and many other apps',
-            cite: [rfc('rfc-9325', '1'), rfc('rfc-9112', '9.7', true), rfc('rfc-8314', '1', true), NIST_77_SSLVPN],
+            cite: [rfc('rfc-9325', '1'), rfc('rfc-9112', '9.7', true), rfc('rfc-8314', '1', true), NIST_77_SSLVPN, MS_SSTP],
           },
           {
             id: 'fact-sni',
@@ -748,13 +759,44 @@ export default defineLesson({
             id: 'fact-stands',
             label: 'Stands for',
             value: 'Transport Layer Security; SSL (Secure Sockets Layer) is its old name',
-            cite: [ABSTRACT_9846, NIST_77_SSLVPN, MS_APP_SERVICE_NAME],
+            cite: [ABSTRACT_9846, NIST_77_SSLVPN, MS_APP_SERVICE_NAME, PA_SSL_CERT, NIST_52_HISTORY],
           },
           {
             id: 'fact-purpose',
             label: 'Purpose',
             value: 'the seal itself: a secure channel between two ends, private and unchanged, with the server’s identity checked',
             cite: [rfc('rfc-9846', '1', true)],
+          },
+          {
+            id: 'fact-hello',
+            label: 'ClientHello carries',
+            value:
+              'the TLS versions the browser speaks, its cipher suites, a random number, and a key share made fresh for this connection, for the method it guesses the server will pick; a wrong guess costs a HelloRetryRequest and another round trip',
+            cite: [rfc('rfc-9846', '2', true), rfc('rfc-9846', '4.3.8', true), rfc('rfc-9846', '4.2.1', true)],
+          },
+          {
+            id: 'fact-secret',
+            label: 'Shared secret',
+            value: 'each side combines its own secret half with the other’s public half; the secret itself never crosses the network, and nobody watching can work it out',
+            cite: [rfc('rfc-7748', '6.1'), F1_9846],
+          },
+          {
+            id: 'fact-why-cert',
+            label: 'Why a certificate',
+            value: 'the key exchange alone doesn’t show who is on the other end: without a checked certificate, an impostor in the middle could do the same maths',
+            cite: [rfcAt('rfc-9846', 'C.5', 9846, 'appendix-C.5', true), MS_APP_SERVICE_KX],
+          },
+          {
+            id: 'fact-sent',
+            label: 'Certificate message',
+            value: 'the server sends its own certificate first, then the one that signed it (here the intermediate’s); the root, which the browser already holds, can be left out',
+            cite: [rfc('rfc-9846', '4.5.1', true)],
+          },
+          {
+            id: 'fact-finished',
+            label: 'Finished',
+            value: 'a code (an HMAC) over every handshake message so far, made with a key from the handshake; each side checks the other’s, and if it doesn’t match, the connection ends',
+            cite: [rfc('rfc-9846', '2', true), rfc('rfc-9846', '4.5', true), rfc('rfc-9846', '4.5.3', true)],
           },
         ],
       },
