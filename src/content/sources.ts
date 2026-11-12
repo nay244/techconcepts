@@ -1083,6 +1083,25 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Microsoft',
     url: 'https://learn.microsoft.com/en-us/azure/traffic-manager/traffic-manager-how-it-works',
   },
+  // What is HTTPS's failed items needed these two (what a watcher can see).
+  {
+    id: 'rfc-8404',
+    kind: 'rfc',
+    short: 'RFC 8404',
+    title: 'Effects of Pervasive Encryption on Operators',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc8404.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc8404.html#section-{n}',
+  },
+  {
+    id: 'rfc-9065',
+    kind: 'rfc',
+    short: 'RFC 9065',
+    title: 'Considerations around Transport Header Confidentiality, Network Operations, and the Evolution of Internet Transport Protocols',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc9065.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc9065.html#section-{n}',
+  },
 ]);
 
 /**

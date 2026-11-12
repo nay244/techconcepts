@@ -760,7 +760,7 @@ test('each protocol’s sources are the RFCs its facts name', () => {
   // Some RFCs the facts name are not among the sources the plan drafted: HTTPS's RFC 8446 (TLS 1.3, the TLS part's
   // own source), IP's RFC 8200 (IPv6), and the two of SSH's "RFC 4251 to 4254" it does not cite, 4252 (logging in)
   // and 4254 (channels). The owner reviews the sources with the built lesson.
-  const uncited: Record<string, string[]> = { https: ['RFC 8446'], ip: ['RFC 8200'], ssh: ['RFC 4252', 'RFC 4254'] };
+  const uncited: Record<string, string[]> = { ip: ['RFC 8200'], ssh: ['RFC 4252', 'RFC 4254'] };
   /** Each RFC a fact names, a range ("RFC 4251 to 4254") one by one. */
   const rfcsIn = (value: string) =>
     [...value.matchAll(/RFC (\d+)(?: to (\d+))?/g)].flatMap(([, from, to = from]) =>

@@ -250,6 +250,8 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-7766', 'rfc-9156', 'rfc-4033', 'rfc-3596', 'rfc-8305', 'rfc-8767', 'rfc-8806', 'rfc-7720', 'rfc-5625', 'rfc-2132', 'rfc-5452', 'rfc-3833',
       'iana-root-servers', 'iana-root-zone', 'iana-root-db-app', 'iana-root-zone-file', 'icann-rssac-faq',
       'microsoft-ipconfig', 'microsoft-365-add-domain', 'microsoft-traffic-manager',
+      // and What is HTTPS's second round.
+      'rfc-8404', 'rfc-9065',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
