@@ -37,7 +37,7 @@ const R792_ECHO_DATA = rfc792('Echo or Echo Reply Message, page 15', 15);
 const RFC1122 = 'https://www.rfc-editor.org/rfc/rfc1122.html';
 const rfc1122 = (section: string, page: number) => cite('rfc-1122', section, { url: `${RFC1122}#page-${page}` });
 const R1122_ERROR = rfc1122('3.2.2', 38);
-const R1122_PORT = rfc1122('3.2.2.1', 40);
+const R1122_PORT = cite('rfc-1122', '3.2.2.1', { url: `${RFC1122}#page-40`, defining: true });
 const R1122_ECHO = rfc1122('3.2.2.6', 42);
 
 /** RFC 1812 defines what an IPv4 router must do, RFC 791 the TTL field, RFC 1034 what a resolver does. */
@@ -176,7 +176,7 @@ export default defineLesson({
         hook: 'ICMP is how the network reports problems and answers check-ups. Ping uses it to ask “are you there?”, and traceroute uses it to find every router on the way.',
         hookBacking: { traces: ['lead-1', 'lead-2', 'term-ping', 'term-echo-request', 'term-traceroute'] },
         description:
-          'It’s like a doctor’s check-up for the network. Ping taps on a door and times how long the answer takes. Traceroute walks the corridor, knocking on every door on the way. And when a packet can’t be delivered, ICMP is how the network sends back a note to say why. Here you check the way from your laptop to example.net.',
+          'It’s like a doctor’s check-up for the network. Ping taps on a door and times how long the answer takes. Traceroute walks the corridor, knocking on every door on the way. And when a packet can’t be delivered, ICMP is how the network can send back a note to say why. Here you check the way from your laptop to example.net.',
         backing: { analogy: true },
         facts: [
           { label: 'Used for', value: 'tests and error notes', backing: { traces: ['fact-used', 'lead-1'] } },
@@ -297,7 +297,7 @@ export default defineLesson({
               rows: [{ key: 'ping', cells: ['ping', EXAMPLE, 'Echo reply', '31 ms'] }],
             }),
           ],
-          backing: { traces: ['term-echo-reply', 'term-ping', 'term-latency', 'term-loss'] },
+          backing: { traces: ['term-echo-reply', 'term-ping', 'term-latency', 'term-loss', 'fact-echo'] },
         },
         {
           id: 'time-exceeded-hop-1',
@@ -381,7 +381,7 @@ export default defineLesson({
             'Next probe: TTL 2. Your router takes 1 off and passes it on. The next router, your provider’s, takes off the last one and sends back its own time exceeded note. Hop 2 found. Each probe gets one router further than the last.',
           deep: [
             {
-              text: 'Each time is a round trip to that hop: a rough idea of the delay, not a precise measure.',
+              text: 'Each time is a round trip to that hop: a rough idea of the delay.',
               cite: [CISCO_PERF, rfc2151('3.4')],
             },
             {
@@ -451,7 +451,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Each line of output is one hop: its address (and name, if it has one) and three round-trip times.',
-              cite: [rfc2151('3.4'), MS_TRACERT_PARAMS, CISCO_CHARS],
+              cite: [rfc2151('3.4'), MS_TRACERT_PARAMS, CISCO_CHARS, CISCO_TRACE],
             },
           ],
           facts: [
@@ -606,7 +606,7 @@ export default defineLesson({
               cite: [R792_DU, IANA_CODES_3, rfc1812('5.2.7.1'), R1122_PORT, rfc1191('2'), AZURE_PMTUD],
             },
             {
-              text: 'Host unreachable comes only once the router has asked for the machine with ARP and had no answer.',
+              text: 'Here, host unreachable comes once the router has asked for the machine with ARP and had no answer.',
               cite: [rfc1812('3.3.2', true), rfc1812('5.2.7.1', true)],
             },
             {
@@ -750,7 +750,7 @@ export default defineLesson({
           {
             id: 'fact-echo',
             label: 'Echo request',
-            value: 'type 8, code 0, with an identifier and a sequence number that come back in the reply, so ping can match them',
+            value: 'type 8, code 0, with an identifier and a sequence number that come back in the reply, so ping can match them; the reply carries back the same data',
             cite: [R792_ECHO, R792_ECHO_DATA],
           },
           {
@@ -823,7 +823,7 @@ export default defineLesson({
             {
               text: 'Only that no reply came back. It could be one of several things.',
               feedback: 'Yes. It may be down, unreachable, or just ignoring pings. Traceroute helps narrow it down.',
-              cite: [rfc2151('3.2'), CISCO_PING, rfc1812('5.2.7.1', true), rfc1812('4.3.3.6'), CISCO_ACL, CISCO_TRACE],
+              cite: [rfc2151('3.2'), CISCO_PING, rfc1812('5.2.7.1', true), rfc1812('4.3.3.6'), CISCO_ACL, CISCO_TRACE, rfc2151('3.4')],
             },
           ],
           answer: 2,
