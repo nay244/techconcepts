@@ -110,11 +110,11 @@ const CISCO_TFTP = vendor(
   'Background Information',
   'The%20most%20commonly%20used%20protocol',
 );
-const R1579_NEW = rfcText('rfc-1579', 1579, 'Overview and Rational', 'A%20new%20connection%20is%20used');
+const R1579_NEW = rfcText('rfc-1579', 1579, 'The Gory Details', 'A%20new%20connection%20is%20used');
 const R1579_PASV = rfcText('rfc-1579', 1579, 'Overview and Rational', 'If%2C%20on%20the%20other%20hand%2C%20clients%20use%20the%20PASV');
 const R1579_ACTIVE = rfcText('rfc-1579', 1579, 'Overview and Rational', 'By%20default%2C%20this%20connection%20is%20set%20up%20by%20an');
 const R1579_TCP = rfcText('rfc-1579', 1579, 'Overview and Rational', 'uses%20a%20secondary%20TCP%20connection');
-const R1579_OPEN = rfcText('rfc-1579', 1579, 'Overview and Rational', 'If%20the%20client%20sends%20a%20PASV%20command');
+const R1579_OPEN = rfcText('rfc-1579', 1579, 'The Gory Details', 'If%20the%20client%20sends%20a%20PASV%20command');
 
 const PALO_URL = 'https://www.paloaltonetworks.com/cyberpedia/what-is-layer-7';
 const PALO_L7_FTP = vendor('paloalto-layer-7', PALO_URL, 'How does Layer 7 handle different application protocols?', 'FTP%20for%20file%20transfers');
@@ -783,8 +783,8 @@ export default defineLesson({
           {
             id: 'fact-safer',
             label: 'Safer',
-            value: 'SFTP (22), FTPS (990)',
-            cite: [MS_FTPS, GOOGLE_SFTP, MS_AZURE_SFTP, CF_FTP_SFTP, IANA_PORTS, d('rfc-4217', '3')],
+            value: 'SFTP (22), FTPS (21 with AUTH TLS, or 990)',
+            cite: [MS_FTPS, MS_FTPS_PORTS, GOOGLE_SFTP, MS_AZURE_SFTP, CF_FTP_SFTP, IANA_PORTS, d('rfc-4217', '3'), d('rfc-4217', '4.1'), d('rfc-4217', '16')],
           },
           { id: 'fact-defined', label: 'Defined in', value: 'RFC 959', cite: [d959s('1')] },
           {
