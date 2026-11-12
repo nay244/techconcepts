@@ -1,88 +1,92 @@
 # Plan
 
-How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519.
+How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3.
 
-**Status: done on 2026-11-11.** What is HTTP is cited and checked, Home follows it (D5 in variant A, H1), and both are merged into `revamp` at `d4fbed9`, where `npm test`, `npm run build` and `npm run e2e` pass. The results, the lesson's cost against the estimate and the proposal for the other 15 are in `team.md` under "Job 4". Nothing is pushed.
+**Status: written on 2026-11-11, waiting for the owner's go.** Nothing in it has started except the scout and one change to the fact-checker's instructions (decision 4). Nothing is pushed.
 
 ## Inputs
 
 | | |
 |---|---|
-| **The job** | Phase 4, lesson 2 of 17: **What is HTTP** moved to the cited shape and through a fresh fact-check, alone (the owner, 2026-11-11: "HTTP first"). It is the first lesson under the order the pilot taught (analyst, author, fact-checker, targeted re-checks) and the first job with a spec review and a three-level build review. It stops there, with the lesson's measured cost, for the owner to decide how the other 15 run. |
-| **Done means** | What is HTTP is cited, has a passing fact-check (a full report, or a full report and a re-check) with a confirmed quote record, and shows "Checked" with a date. Home's demo shows the lesson's checked words and matches its approved design (D5). Every changed sentence is in `docs/lesson-changes/what-is-http.md`. `npm test`, `npm run build` and `npm run e2e` pass on `revamp`, with their output in `team.md`. `team.md` has what the lesson cost against the estimate below, what the two new review rules saved or cost, and a proposal for the other 15. Nothing is pushed. |
-| **Budget** | Not set by the owner. The estimate is 1.3 to 1.5 million subagent tokens for the lesson and about 0.6 million for Home, which only this lesson needs (table below). **Stop for the owner** if the lesson passes 2.0 million without an all-pass, which is what What is UDP cost. |
-| **Design refs** | For the lesson: `docs/content-model.md` (§8 is the workflow), `src/content/lessons/what-is-udp.ts` (the worked example), `docs/lesson-changes/what-is-udp.md`. For Home: the Home page as built (`src/pages/index.astro`, the demo's Learn panel), `docs/direction.md` §6 (the look, "Patch") and the stamp and numbered sources of the Lesson page (`prototypes/d1-lesson-reading.*`). |
+| **The job** | Phase 4, lessons 3 to 5 of 17: **What is HTTPS, What is TCP and What is DNS** moved to the cited shape and through a fresh fact-check, **side by side** (the owner, 2026-11-11: "Yes, plan it", on `team.md`'s proposal for the other 15). It is the first batch of five, the first job with three lessons at once, and the first under the two rules the owner changed that day (direction 2.24): a check passes what is true for a beginner, and the author sweeps for missing traces before the first check. |
+| **Done means** | Each of the three is cited, has a passing fact-check with a confirmed quote record, and shows "Checked" with a date. `docs/lesson-changes/<slug>.md` lists every changed sentence of each. Home's tests assert What is HTTPS's checked words. `npm test`, `npm run build` and `npm run e2e` pass on `revamp`, with their output in `team.md`. `team.md` has each lesson's cost against the estimate, each lesson's count of corrections against What is HTTP's 41, what the checkers passed as a simplification, and what to change for batch 2. Nothing is pushed. |
+| **Budget** | Not set by the owner. The estimate is 0.85 to 1.0 million subagent tokens a lesson, so 2.6 to 3.0 million for the three, and about 0.2 million for Home (table below). **Stop for the owner** if one lesson passes 1.5 million without an all-pass, or the batch passes 3.6 million. |
+| **Design refs** | For the lessons: `docs/content-model.md` (§8 is the workflow, with "What a check passes"), `src/content/lessons/what-is-http.ts` and `what-is-udp.ts` (the two checked tour lessons), `docs/lesson-changes/what-is-http.md`, `docs/direction.md` decisions 2.23 and 2.24. For Home: `prototypes/d5-home-sources.md` and `prototypes/d5-cases.md`, as built. No screen changes its layout in this job, so it has no design unit. |
 
-## What the scout found (S4)
+## What the scout found (S5; `prototypes/s5-batch-1-facts.md` has every `path:line`)
 
-- **The lesson's size.** 5 Watch steps, 31 facts, 14 events, 10 terms, 6 Go deeper paragraphs, 2 questions of 3 options. It names two documents, RFC 9110 and RFC 9112; neither is registered. RFC 9114 (HTTP/3) is.
-- **Home shows this lesson.** Home's demo plays all 5 steps and shows the lead, the first 6 terms, every source and the first question. It reads them from the lesson, so the lesson's new words reach Home with no code change.
-- **Home lists every source in one line.** The lesson has 2 today. What is UDP went from 1 to 31 when it was cited. A line of twenty links is a change to a screen, so it is designed and approved first (D5).
-- **Tests quote the lesson.** `src/lib/home.test.ts` and `e2e/site.spec.ts` assert Home's words: the lead's first sentence, three terms, the two source labels, the first question and its feedback, the step titles. `src/content/tracks/how-the-internet-works.test.ts` restates the lesson's titles, scene, table and references. `src/content/legacy.test.ts` and `src/content/sources.test.ts` hold exact lists.
-- **Progress counts on its shape.** `src/progress/internet-split.ts` gives the lesson 8 positions, and tests and one end-to-end check ("3 of 14", position 30) rest on that.
+- **Sizes.** What is HTTPS: 6 Watch steps, 20 events, 7 Go deeper paragraphs, 2 questions. What is TCP: 6 steps, 19 events, 7 paragraphs, 2 questions. What is DNS: 5 steps, 11 events, 6 paragraphs, 2 questions. Each has 8 terms and 5 Learn facts. What is HTTP had 5 steps and 14 events, so the first two are a little larger.
+- **Their documents.** RFC 9110, RFC 9293, RFC 1034 and RFC 1035 are registered. What is HTTPS names RFC 2818, which RFC 9110 made obsolete, and RFC 8446 (TLS 1.3), which is not registered.
+- **Home reads What is HTTPS**: its title, lead, address and number, in the "And HTTPS?" box. `e2e/site.spec.ts` and `src/lib/home.test.ts` quote that lead, and `home.test.ts` uses What is HTTPS as its uncited lesson and What is HTTPS and What is TCP for the step their page appears at. No Home code reads What is DNS.
+- **Progress counts on their shape**: 9, 9 and 8 positions, with tests on them.
+- **Three branches collide in five files.** `src/content/legacy.ts` (two of the three slugs are on touching lines), `src/content/legacy.test.ts`, the end of `src/content/sources.ts` and of the list in `sources.test.ts`, and five places in `src/content/tracks/how-the-internet-works.test.ts` where two lessons' rows touch.
+- **A cited lesson still on the legacy list** builds, and fails when the registry loads, with the reason. So each branch takes its own slug off the list.
 
 ## Decisions in this plan (the orchestrator's; the go approves them)
 
-1. **The order is `CLAUDE.md`'s:** analyst, author, a full check, targeted re-checks after a near-pass, the list of changed sentences. No rehearsal.
-2. **The Watch tab keeps its shape:** five steps, their order and the scene. A step's words change where a source contradicts them or does not state them. If a source would add, remove or reorder a step, the author stops and the orchestrator decides, since progress positions and Home's demo rest on the shape.
-3. **Home's source list is designed before the lesson merges** (D5), with What is UDP's 31 sources as the worst case. The lesson's work does not wait for it: D5 changes only `prototypes/`, in its own worktree, while the lesson runs. Only the Home build unit (H1) waits at the design gate.
-4. **Who changes which test.** The author changes what restates the lesson: its file, the legacy list and the source registry with their two tests, and the track's test. A builder changes Home's tests (H1), once the fact-check has passed and the words are final.
-5. **The lesson and Home merge together.** H1 is built on the lesson's branch after its pass, and `revamp` moves once, so Home is never live with an undesigned source list.
-6. **The lesson's known documents are registered before the author starts:** RFC 9110, RFC 9112 and every document the analyst's report names, in one commit.
-7. **When a claim will not pass:** after two failed checks on the same claim it goes to the analyst; after a third it comes to the owner.
+1. **Three lessons side by side.** The three analysts run together and change no file. The orchestrator registers the three lessons' documents in one commit, then each author works in its own worktree on its own branch. Each lesson goes at its own pace from there: a slow one does not hold the others.
+2. **The order within a lesson is `CLAUDE.md`'s, with one read added.** Analyst, author, then the same analyst reads the claim sheet once as the checker will (the traced items included) and rules on the author's doubts, the author applies it, and only then a full check. On What is HTTP that read came after the first check failed and found everything the second check then passed.
+3. **Each lesson keeps its shape:** its Watch steps, their order, its scene and its two questions, since progress positions rest on them. A ruling made for What is HTTP holds for the same idea here (direction 2.23): the page is drawn when the stylesheet arrives; "plain text" is HTTP/1.1; the reader types the scheme. Where a source would add, remove or reorder a step, the author stops and the orchestrator decides.
+4. **The fact-checker is told which folder to work in.** Its prompt was "the slug and nothing else". A lesson in a worktree needs its folder named, so the prompt is now the slug and that folder, and still nothing about the lesson. `.claude/agents/fact-checker.md` and `docs/content-model.md` §8 say so, changed with this plan so the session that carries it out loads them; no judgment rule changed. If the owner says no, that change is taken back and the checks run one at a time in the main folder.
+5. **An idea two lessons share is said once.** The analysts are given the two checked tour lessons, and where What is HTTP or What is UDP already states an idea (the handshake, a lookup, port 443, HTTP over TLS), the new lesson uses its checked words and citations unless the source says more that this lesson needs.
+6. **A branch for the batch.** Passed lessons merge into `batch/1`, where the five colliding files are reconciled (both sides are kept; each has one right answer) and `npm test` runs after each merge. Home's unit is built there. `revamp` moves once, at the end, so it is never between states.
+7. **Who changes which test.** An author: its lesson's file, its slug off the legacy list and that list's test, the registry only for a document the analyst missed, and its lesson's rows in the track's test. A builder (H2): Home's tests and anything in `e2e/`.
+8. **The first batch tests the looser rule.** For each lesson the orchestrator counts corrections against What is HTTP's 41 and reads every note the checker left on a claim it passed as a simplification. A note that names something a beginner would be misled by comes to the owner before batch 2, with the wording that let it through.
+9. **When a claim will not pass:** after two failed checks on the same claim it goes to the analyst; after a third it comes to the owner.
 
 ## Units
 
 | Unit | Owner | What | Check |
 |---|---|---|---|
-| S4 | scout | What else in the repo rests on this lesson's words and shape. Done: 127,655 tokens. | Every fact has a `path:line`. |
-| D5 | designer | **Home's demo with a long source list.** How the demo's Learn panel shows a lesson's sources when there are 2, about 12 and 31, at 375px and 1440px in both themes, with JavaScript off. It says nothing untrue about the list (a shortened list says it is shortened and leads to the whole one). Two variants at most. | A prototype and spec in `prototypes/d5-home-sources.*` with acceptance checks; screenshots at both sizes in both themes. **Then the design gate: the owner approves before H1.** |
-| L2-a | analyst | **Every idea What is HTTP teaches**, with the source and section that states it or "no source", and what is wrong in the original. It also answers: what the lesson may say about plain text now that HTTP/2 and HTTP/3 are binary. | Every idea in the lesson's Learn, Watch and Practice has a row. |
-| L2-b | orchestrator, then author | Register the documents (decision 6), then **the lesson in the cited shape** on `lesson/what-is-http`, within decision 2, with the five-fault sweep. | The claim sheet prints (`npm run fact-check -- what-is-http`); the author's report lists every changed sentence. |
-| L2-c | fact-checker, a fresh one each run; author for fixes | **The fact-check.** A full check; after a near-pass, targeted re-checks. A failing report is committed as written before its fix. | `npm run fact-check -- what-is-http --check` (or `--recheck --check`) says OK, with the quote record confirmed. |
-| L2-d | author | `docs/lesson-changes/what-is-http.md`: every reader-visible change against the original. | Its counts match the diff of the lesson's words. |
-| H1 | reviewer (spec review), builder, reviewer (build review) | **Home follows the cited lesson.** D5 as approved, in `src/pages/index.astro` and `src/lib/home.ts`; Home's unit and end-to-end tests assert the lesson's checked words. Starts after D5 is approved and L2-c has passed. | The spec review's attack cases each have a test seen failing; `npm test`, `npm run build`, `e2e/site.spec.ts` in the projects that run it; Home at 375px and 1440px in both themes beside the prototype. |
-| Final | orchestrator | Merge into `revamp`, then `npm test`, `npm run build` and the full `npm run e2e` once, lid open. Then the ledger: the lesson's cost against the estimate, the review rules' effect, and a proposal for the other 15. | The three outputs are in `team.md`. |
+| S5 | scout | What rests on the three lessons and where three branches collide. Done: 250,966 tokens. | Every fact has a `path:line`. |
+| L3-a, L4-a, L5-a | analyst, one each, together | **Every idea the lesson teaches** (L3 What is HTTPS, L4 What is TCP, L5 What is DNS): the source and section that backs it, and one of four verdicts: stated; true for a beginner as written, so it stays; false or misleading, with the smallest change; no source. It names every document with a proposed registry entry, and says whether a source forces a change to a step or the scene. | Every idea in Learn, Watch and Practice has a row. |
+| R1 | orchestrator | Make `batch/1` from `revamp`; register the three lessons' documents on it in one commit (with `sources.test.ts`); make the three worktrees from it (`.superpowers/wt/<slug>`, branch `lesson/<slug>`, `node_modules` linked). | `npm test` passes on `batch/1`. |
+| L3-b, L4-b, L5-b | author, one each, in its worktree | **The lesson in the cited shape**, within decisions 3, 5 and 7, with the six-fault sweep. | The claim sheet prints; `npx astro check` has no error; the report lists every changed sentence. |
+| L3-p, L4-p, L5-p | the lesson's analyst, continued; then its author | **The read before the check** (decision 2): the sheet judged as the checker will, and the author's doubts ruled on, each with exact words and citations; the author applies them. | The rulings are applied as written; the sheet prints. |
+| L3-c, L4-c, L5-c | fact-checker, a fresh one each run, in the lesson's worktree; author for fixes | **The fact-check.** A full check; after a near-pass, targeted re-checks. A failing report is committed as written before its fix. | `npm run fact-check -- <slug> --check` (or `--recheck --check`) says OK, with the quote record confirmed. |
+| L3-d, L4-d, L5-d | author | `docs/lesson-changes/<slug>.md`, against the lesson on `revamp`. | Its counts match its rows. |
+| M1 | orchestrator | Merge each passed lesson into `batch/1`, reconcile the five files, remove its worktree. | `npm test` after each merge; the only failures allowed are Home's tests that H2 changes. |
+| H2 | reviewer (spec review), builder, reviewer (build review), on `batch/1` | **Home's tests follow What is HTTPS** (and What is TCP where they use it): the lead quoted in the "And HTTPS?" box, the lesson used as the uncited one, the steps the pages appear at. Home's code changes only if a test shows it must. The orchestrator writes its spec here once What is HTTPS and What is TCP have passed. | The spec review's cases each have a test seen failing; `npm test`, `npm run build`, `e2e/site.spec.ts` in the projects that run it. |
+| Final | orchestrator | Merge `batch/1` into `revamp` once, then `npm test`, `npm run build` and the full `npm run e2e`, lid open. Then the ledger, and the three lists of changed sentences shown to the owner before batch 2 is planned. | The three outputs are in `team.md`. |
 
-D5 and L2-a start together. L2-b follows L2-a. H1 follows D5's approval and L2-c's pass, whichever is later.
-
-## H1's spec (written 2026-11-11, after the lesson's pass; the owner approved D5 in variant A that day)
-
-H1 makes Home follow the checked lesson. It is built on `lesson/what-is-http`, after `design/d5-home-sources` is merged into it so the prototype and its spec are on the branch.
-
-1. **The source block is D5**, in variant A (open in place), which the owner approved: `prototypes/d5-home-sources.md` is its spec, word for word, with its 16 acceptance checks. Variant B is not built. With the checked lesson the block reads "Checked 11 Nov 2026, 20 sources", lists sources 1 to 3 and folds 17.
-2. **The page on the laptop follows the lesson's cues.** Home showed the page's words from step 4 and its pictures from step 5, by position ("the last step but one"). The lesson now draws the words when the stylesheet arrives, in step 5 (direction 2.23). `homeDemo` works out, from the cues of every event of the lesson's steps, the first step with any `page` cue (`words`) and the first with `page: 'full'` (`pictures`), returns them (`page: { words, pictures }`), and throws by name when the lesson has no `page` cue or no `full`; `src/pages/index.astro` lights `#nm-page`'s words from step `words` on and its pictures from step `pictures` on, through Learn and Practice as today, and its comment says so (errata 1 to 3 in `prototypes/d5-cases.md`). With this lesson both are step 5, and at step 4 the laptop's page is still empty.
-3. **Home's tests assert the lesson's checked words.** `src/lib/home.test.ts` and `e2e/site.spec.ts`, wherever they quote the lesson: "Hypertext Transfer Protocol"; step 1's "You type http://example.net and press Enter"; the lead "In HTTP/1.1, getting a web page is a conversation in plain text."; the sources (D5's checks replace the old two-label line); the page's words absent at step 4 and present at step 5. A test that quotes the lesson quotes it literally, as these do today.
-4. **Nothing else changes.** No lesson content (a change to `src/content/` would make the fact-check report stale), nothing on Home outside the demo's source block and the page cue, no script added, the budgets hold.
-
-**Spec review, 2026-11-11.** Eight holes, each with one right answer once measured, closed by the orchestrator as errata; 26 attack cases. Both are in `prototypes/d5-cases.md`, which holds where it and this section differ.
-
-**Check.** Each attack case of the spec review (`prototypes/d5-cases.md`) has a test seen failing against a broken build; `npm test`; `npm run build`; `e2e/site.spec.ts` in the projects that run it; Home at 375px and 1440px in both themes beside the prototype.
+The three analysts start together. R1 follows them. From there each lesson runs on its own; H2 waits for What is HTTPS and What is TCP; Final waits for all three and H2.
 
 ## Estimate
 
 | Role | Model | Units | Tokens, roughly |
 |---|---|---|---|
-| scout | Haiku | S4 | 127,655 (spent) |
-| analyst | Opus | L2-a | 150,000 to 200,000 |
-| author | Sonnet | L2-b, fixes, L2-d | 350,000 to 450,000 |
-| fact-checker | Opus | L2-c: three full checks and two re-checks | 800,000 to 850,000 |
-| designer | Fable | D5 | 200,000 to 300,000 |
-| reviewer | Opus | H1: spec review and build review | 200,000 |
-| builder | Sonnet | H1 | 150,000 to 200,000 |
+| scout | Haiku | S5 | 250,966 (spent) |
+| analyst | Opus | three reports, three reads before the check | 800,000 to 950,000 |
+| author | Sonnet | three lessons, fixes, three lists | 1,000,000 to 1,150,000 |
+| fact-checker | Opus | per lesson: one full check and one re-check | 800,000 to 900,000 |
+| reviewer | Opus | H2: spec review and build review | 100,000 to 130,000 |
+| builder | Sonnet | H2 | 60,000 to 90,000 |
 
-The lesson's own rows come to 1.3 to 1.5 million, the figure the pilot predicted. Home's rows, about 0.6 million, are this lesson's alone: no other lesson is shown on Home in full.
+The lessons' rows come to 2.6 to 3.0 million: What is HTTP's 1.12 million, less the second full check and the second analyst round that the missing traces cost it, a little more for the two larger lessons. If a first check is not a near-pass, that lesson costs about 200,000 more.
+
+## The other four batches
+
+Each is a job of its own, planned after the one before it: the three mail lessons share their documents, and the last three are the Networking track's own.
+
+| Batch | Lessons |
+|---|---|
+| 2 | What is IP, What is DHCP, What is ICMP |
+| 3 | What is SMTP, What is POP3, What is IMAP |
+| 4 | What is FTP, What is SSH, What is TLS |
+| 5 | DHCP, Subnetting, Firewalls |
 
 ## What could go wrong
 
-- **A sentence Home leads with does not survive.** "A web page is a conversation in plain text" is the lesson's first line and Home's. If no source states it, it changes or is marked as an analogy, and Home changes with it. The changed-sentences list shows the owner both.
-- **The source list is short after all.** Then D5 still settles what Home does for the later lessons' leads, at a designer's cost that the lesson did not strictly need. Accepted: Home changes for a reader the moment the list grows, and the gate is the owner's.
-- **The fact-checker's verdicts wander between runs**, as on What is UDP. The stop at 2.0 million tokens is for that.
-- **D5 is approved late.** The lesson waits on its branch, passed and unmerged. Nothing else is blocked.
+- **The looser rule passes something it should not.** The canary shows it still catches planted faults, not that it draws the line well on a real simplification. Decision 8 is for that, and the owner reads the changed sentences before batch 2.
+- **The looser rule changes little.** Then the corrections stay near 41 a lesson and the saving is the traces alone.
+- **Three sets of agents at once use the allowance three times as fast.** The owner's usage limit was reached once during What is HTTP. If it is reached here, the agents stop where they are and the session carries on when it resets; nothing is lost, but the batch takes longer.
+- **What is HTTPS teaches TLS before What is TLS is moved** (batch 4). What it says about the handshake is checked now, and What is TLS will have to agree with it.
+- **A merge's reconciliation goes wrong.** `npm test` after each merge holds the exact lists, and each lesson's report fails the build if its lesson changed.
+- **One lesson stalls.** The other two merge into `batch/1` and wait; if it stops for the owner, the batch can finish without it only on the owner's word.
 
 ## Not in this plan
 
-- The other 15 lessons: the next plan, after this lesson's numbers.
-- What is HTTPS, whose lead Home also shows. Its line on Home changes when it is cited.
-- Home beyond the demo's source list.
+- The other twelve lessons.
+- Anything on Home but its tests, unless a test shows the code must change.
+- Restoring What is HTTP's original sentences under the looser rule.
 - Anything that leaves this machine.

@@ -1,6 +1,6 @@
 # Team ledger
 
-The job in `plan.md` now is What is HTTP, the second lesson of Phase 4, alone: its rows are under "Job 4" at the end. Job 1 was the Lesson page (Phase 2), job 2 was Phase 3, one fact-check path, and job 3 was the Phase 4 pilot; all three are done.
+The job in `plan.md` now is the first batch of three lessons, What is HTTPS, What is TCP and What is DNS: its rows are under "Job 5" at the end. Job 1 was the Lesson page (Phase 2), job 2 was Phase 3, one fact-check path, job 3 was the Phase 4 pilot and job 4 was What is HTTP alone; all four are done.
 
 One row per unit of `plan.md`, added when the unit ends. Tokens are the subagent's total for the unit, all tries together.
 
@@ -284,3 +284,11 @@ H1 is the first unit with a spec review before its build and a three-level build
 - **A dev server in a worktree with linked `node_modules` returns 403 for fonts and the lesson island.** The designer measured against a build written to a scratch folder; a brief should say so.
 - **The owner's read of the changed-sentences list changed a rule.** The list is worth its tokens: show it before the next batch starts, not at the end of a job.
 - **Errata that came to the owner with this job:** the eight to H1's spec (`prototypes/d5-cases.md`); the page on Home's laptop drawn at step 5, from the lesson's cues; and the lesson's three source-forced changes (direction 2.23).
+
+# Job 5: three lessons side by side (batch 1 of 5)
+
+Planned on 2026-11-11; it waits for the owner's go. What is HTTPS, What is TCP and What is DNS, each in its own worktree, under the rules of direction 2.24 and 2.25.
+
+| Unit | Agent | Model | Tries | Tokens | Result |
+|---|---|---|---|---|---|
+| S5 | scout | Haiku | 1 | 250,966 | Done before the go. The three lessons' sizes and documents, what rests on their words and shape, and the five files where three branches collide: `prototypes/s5-batch-1-facts.md`, every fact with a `path:line`. It also sized the other twelve. |
