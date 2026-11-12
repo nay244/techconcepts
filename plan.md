@@ -70,6 +70,36 @@ The three analysts start together. R1 follows them. From there each lesson runs 
 
 **Check:** each case of the spec review has a test seen failing against a named break; `npm test` (all green: H2 ends the one allowed failure); `npm run build`; `e2e/site.spec.ts` in the projects that run it, on `E2E_PORT=4471` in the main folder.
 
+### H2: errata to its spec, and the attack cases a build must survive
+
+From the spec review of H2 (reviewer, 2026-11-11), before the build, measured in a throwaway copy of `batch/1`. Every hole had one right answer once measured, so the orchestrator closed each as an erratum. Where an erratum and the spec differ, the erratum holds.
+
+**Errata**
+
+1. **A break to a lesson's content cannot be shown by editing the lesson.** The registry's gate refuses a lesson that changed since its check, so every test file goes red with no test reached, and the error names the report. Each content break below is shown with a temporary `swapIn` (or a temporary edit to `src/lib/home.ts`), taken out again. The literal lead of point c is shown failing with a `swapIn` of What is HTTPS that changes its second sentence: the literal goes red and the test's own comparison with the lesson stays green.
+2. **The uncited sample (point a) keeps every reference and deletes each one's `source`.** Measured: emptying every `cite` leaves `numbered` true; `references = []` gets through but cannot catch `numbered` being derived from the list. The sample still carries What is HTTP's stamp, so the test asserts `numbered`, not the stamp.
+3. **The real What is HTTP is read before the swap** (or after `swapped.clear()`), since a `swapIn` lasts until the test ends.
+4. **Point d reads the stamp from the registry** (`lessonStamp(getLesson(slug)!)`, from `./checked`), with the slug taken from `homeDemo().sealed.url`, and asserts `checked` is a date (`/^\d{4}-\d{2}-\d{2}$/`), not today's. It is shown failing by setting the default `sealedSlug` in `home.ts` to `'what-is-ip'` for the run. Putting the sealed lesson back on the legacy list fails at load, before any test: record that as seen, not as d's assertion.
+5. **The "page cue on a note" test asserts the whole page**, `{ words: 4, pictures: 5 }`: with What is HTTPS's old sample gone it is the only one where the pictures come after the words.
+6. The spec's line "it cites now, so `numbered` is true" is off: the call at line 209 throws for the missing `'full'` cue before it reaches `numbered`. Point a replaces the call either way.
+7. **Noted, not H2's:** What is POP3's `{ words: 4, pictures: 4 }` sample goes stale when batch 3 moves that lesson, as What is HTTPS's did.
+
+**Attack cases** (each has a test in `src/lib/home.test.ts` seen red against the named break)
+
+1. The checked lead's second sentence changed (`swapIn` of What is HTTPS): the sealed test's literal goes red; its comparison with the lesson stays green.
+2. `leadText` joins without a space: the literal and the three-statement test go red.
+3. A `'full'` cue added back to What is HTTPS (`swapIn`): the What is HTTPS throw test goes red.
+4. What is TCP given a page cue (`swapIn`): the What is TCP throw test goes red.
+5. The two messages in `home.ts` swapped: both throw tests go red, so their patterns are the full phrases, `/what-is-https has no page: 'full' cue/` and `/what-is-tcp has no page cue/`.
+6. The throw for a missing `'full'` cue removed: the What is HTTPS throw test goes red.
+7. The uncited sample built by emptying `cite` instead of deleting `source`: its `numbered` is true and the test goes red.
+8. `numbered` derived from the list's length, or set to `true`: the uncited test goes red.
+9. Pictures set equal to words whenever a `'full'` cue exists: the note-cue test goes red on `{ words: 4, pictures: 5 }`.
+10. Words read from the `'full'` cue: the note-cue test goes red.
+11. Home's "And HTTPS?" pointed at an unchecked lesson (default `sealedSlug = 'what-is-ip'`): point d goes red, and so does the sealed equality test.
+12. The sealed lesson put back on the legacy list: the registry refuses at load, and every file that loads it goes red.
+13. The real What is HTTP loses one reference's `source` (`swapIn`): the "real one beside it" half of the uncited test goes red.
+
 ## Estimate
 
 | Role | Model | Units | Tokens, roughly |
