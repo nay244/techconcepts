@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b.
 
-**Status: the owner said go on 2026-11-12** ("Start batch 2", said again on the plan as shown), which approves the twelve decisions below. A fresh session carries it out; the results go in `team.md` under "Job 6". Nothing has started except the scout. Nothing is pushed.
+**Status: the owner said go on 2026-11-12** ("Start batch 2", said again on the plan as shown), which approves the twelve decisions below. By the owner's word that day ("For this batch start it here"), the session that ran batch 1 carries it out, since the app could not start a new one while the owner was on Remote Control; batch 3 gets a fresh session. The results go in `team.md` under "Job 6". Nothing is pushed.
 
 ## Inputs
 
