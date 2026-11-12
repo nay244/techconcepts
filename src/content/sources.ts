@@ -53,7 +53,8 @@ export const SOURCE_HOSTS: Record<SourceKind, readonly string[]> = {
   // joins here with the first lesson that cites it. Wikipedia, videos and AI output never count.
   // Canonical's blog joined with What is DHCP: with Microsoft's page it is the second publisher that calls the four
   // messages DORA.
-  community: ['canonical.com'],
+  // Baeldung's computer-science tutorials joined with What is SSH: with Cloudflare's page, its "Introduction to SSH" is the second publisher that places SSH at an OSI layer.
+  community: ['canonical.com', 'www.baeldung.com'],
   // Three joined with What is HTTPS: what a browser shows and tries first is in its maker's own help pages
   // (Microsoft's and Google's), and what Let's Encrypt issues is in its own documentation.
   vendor: [
@@ -2436,6 +2437,14 @@ export const SOURCES: SourceRegistry = defineSources([
     title: 'Default FTP Messages <messages>',
     publisher: 'Microsoft',
     url: 'https://learn.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/sitedefaults/ftpserver/messages',
+  },
+  {
+    id: 'baeldung-ssh-intro',
+    kind: 'community',
+    short: 'Baeldung SSH',
+    title: 'Introduction to SSH',
+    publisher: 'Baeldung',
+    url: 'https://www.baeldung.com/cs/ssh-intro',
   },
 ]);
 
