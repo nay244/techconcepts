@@ -394,7 +394,7 @@ Two are for the owner before batch 2:
 
 # Job 6: three lessons side by side (batch 2 of 5)
 
-Planned on 2026-11-12, after the owner's "Start batch 2"; it waits for the go. What is IP, What is DHCP and What is ICMP, under direction 2.27.
+Planned on 2026-11-12, after the owner's "Start batch 2"; the owner said go on the plan that day. What is IP, What is DHCP and What is ICMP, under direction 2.27.
 
 | Unit | Agent | Model | Tries | Tokens | Result |
 |---|---|---|---|---|---|
