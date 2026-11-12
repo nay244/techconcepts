@@ -232,7 +232,7 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s and batch 2’s', () => {
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s, batch 2’s and batch 3’s', () => {
     expect(Object.keys(SOURCES)).toEqual([
       'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
@@ -263,7 +263,14 @@ describe('the OSI Model lesson’s sources', () => {
       'paloalto-dhcp-overview', 'paloalto-dhcp-messages', 'cisco-dhcp-server', 'cisco-dhcp-troubleshoot', 'canonical-dhcp-concepts',
       // and What is ICMP's.
       'rfc-1191', 'rfc-2151', 'rfc-2923', 'rfc-4443', 'rfc-4890', 'rfc-9099', 'iana-icmp-parameters',
-      'microsoft-ping', 'microsoft-tracert', 'cisco-ping-traceroute', 'cisco-traceroute-os', 'cloudflare-icmp', 'paloalto-icmp',
+      'microsoft-ping', 'microsoft-tracert', 'cisco-ping-traceroute', 'cisco-traceroute-os', 'cloudflare-icmp', 'paloalto-icmp',      // Batch 3: What is SMTP's,
+      'rfc-6409', 'rfc-8314', 'rfc-3207', 'rfc-4954', 'rfc-4616', 'rfc-1870', 'rfc-2920', 'rfc-5598',
+      'rfc-7208', 'rfc-6376', 'rfc-9989', 'rfc-8461', 'rfc-7672', 'rfc-1939', 'rfc-9051',
+      'google-lsa-oauth', 'google-app-passwords', 'microsoft-outlook-com-settings', 'microsoft-app-passwords', 'microsoft-azure-outbound-smtp', 'paloalto-layer-7', 'cloudflare-layer-7',
+      // What is POP3's,
+      'rfc-2595', 'rfc-5034', 'rfc-7817', 'rfc-5322', 'rfc-2046', 'microsoft-imap-pop', 'google-gmail-pop',
+      // and What is IMAP's.
+      'rfc-9208', 'rfc-7162', 'microsoft-exchange-pop-imap', 'google-gmail-imap-settings', 'google-storage', 'rfc-5550',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
