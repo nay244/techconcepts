@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team). The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3.
 
-**Status: the owner said go on 2026-11-11** ("Go"), which approves the nine decisions below. A fresh session carries it out; the results go in `team.md` under "Job 5". Nothing has started except the scout and the change to the fact-checker's instructions (decision 4). Nothing is pushed.
+**Status: done on 2026-11-11.** The owner said go that day ("Go"), which approved the nine decisions below. The three lessons are cited and checked, Home's tests follow them, and the three checks pass on `revamp` at `17461e4`; the results are in `team.md` under "Job 5" and the decisions the sources forced in `docs/direction.md` 2.26. The three lists of changed sentences go to the owner before batch 2 is planned. Nothing is pushed.
 
 ## Inputs
 

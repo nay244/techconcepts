@@ -313,4 +313,82 @@ Planned on 2026-11-11; the owner said go that day. What is HTTPS, What is TCP an
 | L3-c | fact-checker | Opus | full check 2 | 234,710 | **Passed: all 118 items** (`03639a0`). 219 quotes confirmed in 41 sources, all current. `Report OK`. `npm test` in the worktree: two failures, both Home's samples (H2's). No re-check was needed. |
 | L3-d | author | Sonnet | 1 | 21,101 | `docs/lesson-changes/what-is-https.md` (`b2760ae`): 16 corrections, 12 removals, 21 additions, 2 rewordings; 2 sources became 41. Counted by script; the orchestrator checked each quoted before and after against the two versions of the lesson's file. |
 | M1 | orchestrator | Fable | 1 | not counted | What is HTTPS merged into `batch/1` (`8b99fe6`): two conflicts, the legacy list and its test, reconciled to hold all three moves (12 lessons left, nine of the tour). `npm test` 1,696 passed, 2 failed (Home's two samples, as allowed). Its worktree removed. |
+| H2 | orchestrator | Fable | 1 | not counted | H2's spec written into `plan.md` once What is TCP was on `batch/1` (`978d50a`): no word on Home changes, three samples in Home's tests used the lessons as they were. |
+| H2 | reviewer (spec review) | Opus, high | 1 | 84,925 | Before the build, measured in a throwaway copy: five holes, each with one right answer (a break to a lesson's content fails at the registry's gate, not at a test; "citations taken out" had three readings and one works; the real and the swapped lesson cannot both be read after a swap; the legacy-list assertion can never be the one that goes red; the only sample with pictures after words was lost), closed by the orchestrator as errata, and 13 attack cases. Under the unit in `plan.md` (`ffbe7c1`). |
+| H2 | builder | Sonnet | 1 | 104,666 | `5604d7e`: `src/lib/home.test.ts` only. The uncited sample makes its own lesson, What is HTTPS and What is TCP are the first real lessons behind the two page-cue errors, the sealed box's two sentences are held as a literal, and the lesson Home points to must be off the legacy list with a dated stamp. Twelve of the 13 cases listed with a break and its failure. `npm test` 1,702 passed; build within budget; `e2e/site.spec.ts` 549 passed. |
+| H2 | reviewer (build review) | Opus, high | 1 | 58,342 | **PASS**: no blockers, no fixes. It made all 13 breaks in a copy and each turned a test red for the reason its case names, case 13 included (the one the builder's table left out). Nothing outside `src/lib/home.test.ts` changed. Three notes: the literal is a test of its own; one test's name says "step 6" and nothing asserts it; a message that never prints when a stamp is missing (the test still goes red). |
+| Final | orchestrator | Fable | 1 | not counted | One merge into `revamp` (`17461e4`). On it: `npm test` 119 files, 1,702 tests passed; `npm run build` "Every page is within budget (25 pages)."; `npm run e2e` 1,191 passed, 256 skipped, none failed (18.5 minutes, lid open, exit 0). The three built pages say "Checked 11 Nov 2026" with 41, 22 and 29 sources. Merged branches left in place; nothing pushed. |
+
+## Spend by role
+
+| Role | Model | Tokens |
+|---|---|---|
+| scout | Haiku | 250,966 |
+| author, builder | Sonnet | 897,880 |
+| analyst, fact-checker, reviewer | Opus | 2,266,179 |
+| **All subagents** | | **3,415,025** |
+
+After the go (without the scout): 3,164,059. The plan's stop was 3.6 million for the batch and 1.5 million for one lesson; neither was reached. No designer in this job.
+
+## What each lesson cost, against the estimate
+
+The estimate was 0.85 to 1.0 million a lesson, 2.6 to 3.0 million for the three.
+
+| | What is HTTPS | What is TCP | What is DNS |
+|---|---|---|---|
+| Analyst: the report and the rulings | 363,483 | 314,600 | 293,311 |
+| Analyst: the read before the check | 116,225 | 143,821 | 48,425 |
+| Analyst: words for failed items | 43,505 | none | none |
+| Author: the lesson and the rulings | 272,583 | 236,358 | 210,516 |
+| Author: the list of changed sentences | 21,101 | 23,557 | 29,099 |
+| Fact-checker | 450,127 (two full checks) | 187,479 (one) | 161,936 (one) |
+| **The lesson** | **1,267,024** | **905,815** | **743,287** |
+| Items, sources | 118, 41 | 123, 22 | 89, 29 |
+
+The three: **2,916,126**, inside the estimate. Home's unit: 247,933 against about 0.2 million.
+
+- **Two of three passed on the first full check, and none needed a re-check.** What is UDP took five full checks and a re-check; What is HTTP two. The read before the check found 6, 13 and 13 rulings, 10 of the 32 for traces; no first check failed on a trace.
+- **What is HTTPS failed four items on one idea**, what a watcher on the network can see, cited to one document that states part of it. Four is one over a near-pass, so the second check was a full one: 234,710 where a re-check costs about 90,000.
+- **The analysts cost 1,323,370 against 800,000 to 950,000.** A report ran 280,000 to 350,000 where What is HTTP's was 236,000, and the read before the check 48,000 to 144,000 where the plan had 30,000 to 70,000: it reads the whole sheet again. Two analysts' contexts were summarised during that read.
+- **The authors cost 793,214 against 1.0 to 1.15 million.** Each wrote once from a report with rulings in it and applied rulings in passes of 9,000 to 17,000.
+
+## Corrections, against What is HTTP's 41
+
+| Lesson | Corrections | Removals | Additions | Rewordings | Sources |
+|---|---|---|---|---|---|
+| What is HTTP (the old rule) | 41 | 7 | 12 | 3 | 2 became 20 |
+| What is HTTPS | 16 | 12 | 21 | 2 | 2 became 41 |
+| What is TCP | 11 | 3 | 17 | 2 | 1 became 22 |
+| What is DNS | 3 | 8 | 7 | 5 | 2 became 29 |
+
+Corrections fell to between a fourteenth and two fifths of What is HTTP's. Most removals are message sizes turned to dashes (8 of DNS's 8, 9 of HTTPS's 12; TCP's 14 are one row). The additions are almost all Learn parts added so a Watch item has something to trace to: the looser rule cut corrections, and the trace rule moved the work into additions.
+
+## What the checkers passed as a simplification (decision 8)
+
+Every note is in the lesson's list of changed sentences, under "Passed with a note" (What is HTTPS, 15), "What the checker passed as a simplification" (What is TCP, 20) and "Passed as a simplification, with a note" (What is DNS, 24), taken from the `Note:` lines of the three reports. The orchestrator read all of them. Most say what a general word leaves out ("many sites", "a few months", "usually up to 1460 bytes", "hundreds of copies" where ICANN counts more than 1,500, "most sites have at least two name servers" where the standard asks it of every zone, "hide your lookups from the network" where the resolver still sees them, "one round trip before any data" without TCP Fast Open). None gives a wrong cause, number, name or order.
+
+Two are for the owner before batch 2:
+
+1. **`techconcepts.app` is the example site of What is HTTPS and What is DNS.** It is this site's real domain, and the lessons give it made-up records (198.51.100.7, `ns1.techconcepts.app`). All three checks passed it: the rule's words are "example names like `example.com`", and each checker read the name as clearly the lesson's own example, with documentation addresses. Two of the three said so and asked for the call. A beginner who looks the name up gets other answers than the lesson's. Keeping it is direction 2.26; changing it to a reserved name changes the scene's labels, DNS's `.app` steps and plate, their tests, and both reports.
+2. **What is TCP, step 4: "the laptop had already sent ACK 1461", and the animation has no row for that first ACK.** The words are true and follow from the numbers; the reader is told of a message the log never showed. Adding the row is a new event, which decision 3 kept out of this job.
+
+## Could go one model lower next time
+
+- **Applying a list of exact rulings** (seven passes, 8,810 to 16,576 each, 55,582 in all): Haiku, as job 4 said.
+- **The list of changed sentences** (73,757 for three): a script for the comparison and Haiku for the reasons.
+- **The build review of a tests-only unit with named cases** (58,342 on Opus): Sonnet at high effort. The spec review stays on Opus: its five holes were the unit.
+- Nothing else. The analyst's read before the check is what made the first checks pass.
+
+## What to do differently next time
+
+- **Name the checker's test for a claim, too, in the read before the check.** The brief named it for a traced item and no check failed on a trace. What is HTTPS failed on a sentence whose one cited passage states part of it ("addresses" where the passage has the server's address, and no ports). The test to name: every part of a claim, each item of a list included, is in a quoted passage of a defining document or of two publishers.
+- **Plan about 450,000 for the analyst of a lesson**, not 300,000, or narrow the read before the check to the traced items, the new Learn parts and the author's doubts.
+- **Four items on one missing citation is not a near-pass.** The rule (direction 2.19) counts items, so one idea said in four places cost a full check. It is the owner's rule; this is the first case against it.
+- **An agent's token figure falls when its context is summarised.** The figure is the size of its context, so the difference between two passes is wrong after a summary. Count the growth between requests from the agent's transcript, as the two reads marked above were.
+- **Authors took the analyst's passages as found**; two said so, though their instructions say to read each. No check failed for it, since the analyst's quotes are found by script and the checker reads the sections. Say in the brief which the author must read: the sections it cites on its own.
+- **Tell an author not to run a formatter.** The repo has no formatter settings, and two lesson files were restyled twice.
+- **A wait loop on `pgrep -f "playwright test"` matches itself.** The builder left three behind. Wait on the log's `EXIT` line.
+- **A page cue stays only where the story fetched what it draws.** What is IMAP and What is TLS carry `page: 'full'` and What is POP3 and What is SSH both cues; rule it for each from its analyst's report, as here.
+- **What is POP3's sample in Home's tests goes stale in batch 3**, as What is HTTPS's did (H2's erratum 7).
+- **Errata that came to the owner with this job:** direction 2.26 (five new hosts; the page no longer drawn in What is TCP and drawn as words at step 6 in What is HTTPS; one Go deeper paragraph added to What is DNS; `techconcepts.app` kept), and the seven to H2's spec (`plan.md`).
 
