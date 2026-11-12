@@ -392,3 +392,11 @@ Two are for the owner before batch 2:
 - **What is POP3's sample in Home's tests goes stale in batch 3**, as What is HTTPS's did (H2's erratum 7).
 - **Errata that came to the owner with this job:** direction 2.26 (five new hosts; the page no longer drawn in What is TCP and drawn as words at step 6 in What is HTTPS; one Go deeper paragraph added to What is DNS; `techconcepts.app` kept), and the seven to H2's spec (`plan.md`).
 
+# Job 6: three lessons side by side (batch 2 of 5)
+
+Planned on 2026-11-12, after the owner's "Start batch 2"; it waits for the go. What is IP, What is DHCP and What is ICMP, under direction 2.27.
+
+| Unit | Agent | Model | Tries | Tokens | Result |
+|---|---|---|---|---|---|
+| S6 | scout | Haiku | 1 | 251,670 | Done before the go. The three lessons' sizes, documents, example names and addresses, what rests on their words and shape (nothing on Home; two named end-to-end checks, neither on words), the two DHCP lessons (nothing keys on the shared unit id), and the five files where three branches collide: `prototypes/s6-batch-2-facts.md`, every fact with a `path:line`. |
+
