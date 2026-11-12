@@ -40,25 +40,25 @@ const IANA_PORTS = cite('iana-ports', 'Registry', {
 /** A vendor’s page has no section numbers, so a section is cited by a text fragment that starts in it. None is the defining standard. */
 const vendor = (source: string, base: string, section: string, text: string) => cite(source, section, { url: `${base}#:~:text=${text}` });
 
-const R959_INTRO = cite('rfc-959', 'Status of this Memo', { url: `${RFC959}#:~:text=official%20specification%20of%20the%20File%20Transfer%20Protocol`, defining: true });
+const R959_INTRO = cite('rfc-959', 'Status of this Memo', { url: `${RFC959}#:~:text=official%20specification%20of%20the%20File%20Transfer`, defining: true });
 const R2577_PLAIN = r('rfc-2577', '6');
 const R2577_PASS = r('rfc-2577', '5');
 const R2228_PLAIN = r('rfc-2228', '1');
 
 const MS_FTPS_URL = 'https://learn.microsoft.com/en-us/azure/app-service/deploy-ftp';
 const MS_FTPS = vendor('microsoft-app-service-ftp', MS_FTPS_URL, 'Enforce FTPS', 'FTPS%20is%20a%20more%20secure%20form%20of%20FTP');
-const MS_FTPS_PORTS = vendor('microsoft-app-service-ftp', MS_FTPS_URL, 'FAQ', 'If%20you%20connect%20with%20explicit%20encryption');
+const MS_FTPS_PORTS = vendor('microsoft-app-service-ftp', MS_FTPS_URL, 'Why does my connection fail when attempting to connect over FTPS using explicit encryption?', 'If%20you%20connect%20with%20explicit%20encryption');
 const MS_FW_URL = 'https://learn.microsoft.com/en-us/iis/publish/using-the-ftp-service/configuring-ftp-firewall-settings-in-iis-7';
 const MS_FW = (text: string) => vendor('microsoft-iis-ftp-firewall', MS_FW_URL, 'More Information about Working with Firewalls', text);
 const MS_FW_ACTIVE = MS_FW('Active%20Data%20Connections');
 const MS_FW_PASSIVE = MS_FW('Passive%20Data%20Connections');
 const MS_FW_HARD = MS_FW('It%20is%20often%20challenging');
 const MS_FW_FILTERS = MS_FW('Some%20firewalls%20try%20to%20remedy');
-const MS_FW_RANGE = vendor('microsoft-iis-ftp-firewall', MS_FW_URL, 'Step 1', 'The%20valid%20range%20for%20ports');
+const MS_FW_RANGE = vendor('microsoft-iis-ftp-firewall', MS_FW_URL, 'Step 1: Configure the Passive Port Range for the FTP Service', 'The%20valid%20range%20for%20ports');
 const MS_AZURE_SFTP = vendor(
   'microsoft-azure-sftp',
   'https://learn.microsoft.com/en-us/azure/storage/blobs/secure-file-transfer-protocol-support',
-  'Overview',
+  'SSH File Transfer Protocol (SFTP) support for Azure Blob Storage',
   'Now%2C%20with%20SFTP%20support',
 );
 const MS_SFTP_CONNECTOR = vendor('microsoft-sftp-connector', 'https://learn.microsoft.com/en-us/connectors/sftpwithssh/', 'SFTP - SSH', 'SFTP%20(SSH%20File%20Transfer%20Protocol)%20is%20a%20network%20protocol');
@@ -78,13 +78,25 @@ const CF_FTP_URL = 'https://developers.cloudflare.com/spectrum/about/ftp/';
 const CF_FTP_OPERATES = vendor('cloudflare-spectrum-ftp', CF_FTP_URL, 'How FTP Operates', 'There%20are%20two%20ways%20in%20which%20client%20and%20server');
 const CF_FTP_EPSV = vendor('cloudflare-spectrum-ftp', CF_FTP_URL, 'How FTP Operates', 'Alternatively%2C%20more%20modern%20FTP%20server%20software');
 const CF_FTP_SFTP = vendor('cloudflare-spectrum-ftp', CF_FTP_URL, 'SFTP', 'Unlike%20FTP%20or%20FTPS');
-const CF_GLOSSARY_SFTP = vendor('cloudflare-spectrum-glossary', 'https://developers.cloudflare.com/spectrum/glossary/', 'SFTP', 'A%20secure%20file%20transfer%20protocol');
-const GOOGLE_SFTP = vendor('google-merchant-sftp', 'https://support.google.com/merchants/answer/13813117', 'How to submit product data sources using SFTP', 'SFTP%20stands%20for%20SSH%20File%20Transfer%20Protocol');
+const CF_GLOSSARY_SFTP = vendor('cloudflare-spectrum-glossary', 'https://developers.cloudflare.com/spectrum/glossary/', 'Glossary', 'A%20secure%20file%20transfer%20protocol');
+const GOOGLE_SFTP = vendor('google-merchant-sftp', 'https://support.google.com/merchants/answer/13813117', 'What is SFTP?', 'SFTP%20stands%20for%20SSH%20File%20Transfer%20Protocol');
 const CISCO_CHANNELS = vendor(
   'cisco-asa-inspect-basic',
   'https://www.cisco.com/c/en/us/td/docs/security/asa/asa924/configuration/firewall/asa-924-firewall-config/inspect-basic.html',
   'FTP Inspection Overview',
   'The%20channels%20are%20allocated%20in%20response',
+);
+const CISCO_BANNER = vendor(
+  'cisco-asa-inspect-basic',
+  'https://www.cisco.com/c/en/us/td/docs/security/asa/asa924/configuration/firewall/asa-924-firewall-config/inspect-basic.html',
+  'Configure an FTP Inspection Policy Map',
+  'all%20FTP%20users%20are%20presented%20with%20a%20greeting%20banner',
+);
+const MS_BANNER = vendor(
+  'microsoft-iis-ftp-messages',
+  'https://learn.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/sitedefaults/ftpserver/messages',
+  'Overview',
+  'to%20disguise%20your%20FTP%20server%20type',
 );
 const CISCO_ENGINES = vendor(
   'cisco-asa-inspect-overview',
@@ -100,7 +112,8 @@ const CISCO_TFTP = vendor(
 );
 const R1579_NEW = rfcText('rfc-1579', 1579, 'Overview and Rational', 'A%20new%20connection%20is%20used');
 const R1579_PASV = rfcText('rfc-1579', 1579, 'Overview and Rational', 'If%2C%20on%20the%20other%20hand%2C%20clients%20use%20the%20PASV');
-const R1579_ACTIVE = rfcText('rfc-1579', 1579, 'Overview and Rational', 'By%20default%2C%20this%20connection%20is%20set%20up%20by%20an%20active%20open');
+const R1579_ACTIVE = rfcText('rfc-1579', 1579, 'Overview and Rational', 'By%20default%2C%20this%20connection%20is%20set%20up%20by%20an');
+const R1579_TCP = rfcText('rfc-1579', 1579, 'Overview and Rational', 'uses%20a%20secondary%20TCP%20connection');
 const R1579_OPEN = rfcText('rfc-1579', 1579, 'Overview and Rational', 'If%20the%20client%20sends%20a%20PASV%20command');
 
 const PALO_URL = 'https://www.paloaltonetworks.com/cyberpedia/what-is-layer-7';
@@ -185,7 +198,7 @@ export default defineLesson({
         hookBacking: { traces: ['why-1', 'lead-1', 'term-plain'] },
         description:
           'It’s like phoning a warehouse to arrange a delivery. You talk on the phone, “I’m sending a box, which door?”, and the box goes in through a separate loading door. FTP works the same way: one connection for talking and another for each file. Here you upload report.pdf to files.example.net.',
-        backing: { traces: ['term-control', 'term-data', 'fact-each-file'] },
+        backing: { analogy: true },
         facts: [
           { label: 'Used for', value: 'moving files to and from servers', backing: { traces: ['why-1', 'term-stor'] } },
           { label: 'Ports', value: '21 for commands, another for each file', backing: { traces: ['term-port', 'fact-each-file'] } },
@@ -455,7 +468,7 @@ export default defineLesson({
             },
             {
               text: 'TYPE I (binary) or TYPE A (text) is set first; binary sends the bytes exactly as they are.',
-              cite: [d959('4.1.2', 28), d959('4.1.2', 27), d959('3.1.1.3', 12), d('rfc-3659', '5.1')],
+              cite: [d959('4.1.2', 28), d959('4.1.2', 27), d959('3.1.1.1', 11), d959('3.1.1.3', 12), d('rfc-3659', '5.1')],
             },
             {
               text: 'RETR downloads a file and STOR uploads one.',
@@ -641,7 +654,7 @@ export default defineLesson({
             },
             {
               text: 'FTPS is FTP with TLS, on port 21 with AUTH TLS, or 990 with TLS from the start.',
-              cite: [d('rfc-4217', '4'), IANA_PORTS, MS_FTPS_PORTS],
+              cite: [d('rfc-4217', '4'), d('rfc-4217', '16'), IANA_PORTS, MS_FTPS_PORTS],
             },
             {
               text: 'TFTP (UDP 69) is a tiny protocol of its own, with no login, used to load software onto devices over the network.',
@@ -727,7 +740,7 @@ export default defineLesson({
         why: [
           {
             id: 'why-1',
-            text: 'FTP was first built in the 1970s, to move files between computers on the ARPANET.',
+            text: 'FTP is one of the oldest internet protocols: it was first built in the 1970s, to move files between computers on the ARPANET.',
             cite: [d959('2.1', 2)],
           },
           {
@@ -739,8 +752,8 @@ export default defineLesson({
         deep: [
           {
             id: 'deep-1',
-            text: 'Codes worth knowing: 220 ready, 331 need password, 230 logged in, 227 passive, 150 opening data connection, 226 transfer complete, 221 goodbye, 530 not logged in.',
-            cite: [d959('4.2.1', 40), d959('4.2.1', 41)],
+            text: 'Codes worth knowing: 220 ready, often with the server’s name and software in its text, 331 need password, 230 logged in, 227 passive, 150 opening data connection, 226 transfer complete, 221 goodbye, closing the control connection, 530 not logged in.',
+            cite: [d959('4.2.1', 40), d959('4.2.1', 41), d959('4.2', 35), CISCO_BANNER, MS_BANNER],
           },
           {
             id: 'deep-2',
@@ -771,20 +784,20 @@ export default defineLesson({
             id: 'fact-safer',
             label: 'Safer',
             value: 'SFTP (22), FTPS (990)',
-            cite: [MS_FTPS, GOOGLE_SFTP, MS_AZURE_SFTP, IANA_PORTS, d('rfc-4217', '3')],
+            cite: [MS_FTPS, GOOGLE_SFTP, MS_AZURE_SFTP, CF_FTP_SFTP, IANA_PORTS, d('rfc-4217', '3')],
           },
           { id: 'fact-defined', label: 'Defined in', value: 'RFC 959', cite: [d959s('1')] },
           {
             id: 'fact-tcp',
             label: 'Runs on',
             value: 'TCP, inside IP: each connection opens with a handshake of three messages (SYN, SYN-ACK, ACK), carries the data in pieces, and closes with FIN',
-            cite: [d959s('8'), d('rfc-9293', '3.5'), d('rfc-9293', '2.2'), d('rfc-9293', '3.1')],
+            cite: [d959s('8'), R1579_TCP, d('rfc-9293', '3.5'), d('rfc-9293', '2.2'), d('rfc-9293', '3.1')],
           },
           {
             id: 'fact-modes',
             label: 'Modes',
             value: 'passive (usual): the client opens the data connection, which gets through home routers; active: the server connects back from port 20, often blocked',
-            cite: [d959('4.1.2', 28), d959('5.2', 44), R1579_PASV, R1579_ACTIVE, MS_FW_PASSIVE, CF_FTP_OPERATES],
+            cite: [d959('4.1.2', 28), d959('5.2', 44), d959s('8'), R1579_PASV, R1579_ACTIVE, MS_FW_PASSIVE, MS_FW_ACTIVE, CF_FTP_OPERATES],
           },
           {
             id: 'fact-each-file',

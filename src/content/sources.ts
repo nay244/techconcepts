@@ -2421,6 +2421,14 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Cloudflare',
     url: 'https://developers.cloudflare.com/ssl/client-certificates/',
   },
+  {
+    id: 'microsoft-iis-ftp-messages',
+    kind: 'vendor',
+    short: 'Microsoft IIS FTP messages',
+    title: 'Default FTP Messages <messages>',
+    publisher: 'Microsoft',
+    url: 'https://learn.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/sitedefaults/ftpserver/messages',
+  },
 ]);
 
 /**
