@@ -28,7 +28,6 @@ import {
  */
 export const LEGACY_LESSONS = [
   'what-is-smtp',
-  'what-is-pop3',
   'what-is-imap',
   'what-is-ftp',
   'what-is-ssh',
