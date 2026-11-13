@@ -30,8 +30,8 @@ async function openAt(page: Page, path: string, size: [number, number], theme: (
 }
 
 /** An element's box, or null when it is not shown. */
-const boxOf = (page: Page, selector: string): Promise<Box | null> =>
-  page.locator(selector).first().evaluate((el) => {
+const boxOf = async (page: Page, selector: string): Promise<Box | null> =>
+  (await page.locator(selector).count()) === 0 ? null : page.locator(selector).first().evaluate((el) => {
     const style = getComputedStyle(el);
     if (style.display === 'none' || style.visibility === 'hidden') return null;
     const b = el.getBoundingClientRect();
@@ -229,6 +229,9 @@ for (const theme of THEMES) {
         expect(await shown(page, '.topbar__crumb > a[href*="networking"]')).toBe(true);
         expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
         expect(await shown(page, '.topbar__segments')).toBe(true);
+        // DHCP spans layers since batch 5, so it has no OSI chips; Firewalls (layers 3 and 4) shows them at this width.
+        expect(await shown(page, '.topbar__osi')).toBe(false);
+        await openAt(page, '/networking/firewalls?step=2', [width, 768], theme);
         expect(await shown(page, '.topbar__osi')).toBe(true);
       });
     }

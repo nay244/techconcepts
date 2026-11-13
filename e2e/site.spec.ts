@@ -277,7 +277,8 @@ test.describe('desktop', () => {
       await open(page, '/');
       const facts = page.locator('main #sources');
       await expect(facts.getByRole('heading', { level: 2 })).toHaveText('Where the facts come from');
-      await expect(facts).toContainText(/So far \d+ of \d+ lessons ha(s|ve) also been through an independent check/);
+      // Since batch 5 every lesson is checked, and the sentence says so (src/lib/about.ts).
+      await expect(facts).toContainText(/So far \d+ of \d+ lessons ha(s|ve) also been through an independent check|Every lesson has also been through an independent check/);
       await expect(facts).not.toContainText(/every lesson is checked|all lessons are checked/i);
       await expect(facts.getByRole('link', { name: 'How a lesson is made and checked', exact: true })).toHaveAttribute('href', '/about#facts');
       // The figure is decoration here: the words carry the meaning.
@@ -1277,7 +1278,8 @@ test.describe('phone', { tag: '@phone' }, () => {
           for (const row of rows) {
             const short = row.locator('td.log__short');
             await expect(short).toHaveCount(3);
-            await expect(short).toHaveText([/^\d[\d.]* ?s$/, /^DHCP/, /\d+ ?B$/]);
+            // DHCP's sizes are dashes since batch 5: no source states a DHCP message's size.
+            await expect(short).toHaveText([/^\d[\d.]* ?s$/, /^DHCP/, '—']);
             const tops = await short.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
             expect(new Set(tops).size).toBe(1);
             // They are the row's last line: each sits below the Info words, and the row ends with them.
