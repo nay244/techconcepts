@@ -2679,6 +2679,15 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Cloudflare',
     url: 'https://www.cloudflare.com/learning/security/what-is-a-firewall/',
   },
+  {
+    id: 'rfc-7680',
+    kind: 'rfc',
+    short: 'RFC 7680',
+    title: 'A One-Way Loss Metric for IP Performance Metrics (IPPM)',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc7680.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc7680.html#section-{n}',
+  },
 ]);
 
 /**
