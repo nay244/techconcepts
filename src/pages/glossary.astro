@@ -1,6 +1,6 @@
 ---
 // The Glossary page (prototypes/d9-glossary.md): every entry A to Z under the letter keys, each with its written definition,
-// the sources it was checked against and the lessons that teach it. Built from `siteGlossary()`; no island, no script.
+// the sources it was checked against and the tracks whose lessons describe it. Built from `siteGlossary()`; no island, no script.
 import GlossaryEntry from '../components/GlossaryEntry.astro';
 import GlossaryKeys from '../components/GlossaryKeys.astro';
 import GlossaryStamp from '../components/GlossaryStamp.astro';
@@ -11,7 +11,7 @@ import '../components/site.css';
 const { letters, keys, stamp } = siteGlossary();
 const LEAD = 'Definitions written for this site, each one checked against its sources.';
 const NOTE =
-  'Under each definition are the sources it was checked against and the lessons that teach the term. A term with two meanings has a definition for each. New definitions are added once they pass the same check.';
+  'Under each definition are the sources it was checked against and the tracks whose lessons describe the term. A term with two meanings has a definition for each. New definitions are added once they pass the same check.';
 ---
 
 <BaseLayout title="Glossary" current="glossary" description={LEAD}>
@@ -80,13 +80,16 @@ const NOTE =
   .gl-entry dd + dd { margin-top: 6px; padding-top: 14px; border-top: 1px dashed var(--line-strong); }
   .gl-sense { margin: 0 0 3px; color: var(--ink-strong); font: 700 17px/1.25 var(--display); letter-spacing: 0.01em; }
   .gl-def { max-width: 36em; margin: 0; color: var(--ink-strong); font-size: 17px; line-height: 27px; }
-  /* NEW: the two lines under a definition, "Sources" and "Taught in". Each link is 44px tall to a finger. */
+  /* NEW: the two lines under a definition, "Sources" and "Described in". Each source link is 44px tall to a finger. */
   .gl-foot { margin-top: 2px; }
   .gl-row { margin: 0; color: var(--muted); font: 600 15px/20px var(--display); letter-spacing: 0.02em; }
   .gl-row a { display: inline-block; max-width: 100%; padding-block: 12px; }
   .gl-row .gl-label { margin-inline-end: 4px; }
   a.gl-src { color: var(--link); text-underline-offset: 2px; }
-  a.gl-lesson, .gl-see a { color: var(--ink-strong); }
+  .gl-see a { color: var(--ink-strong); }
+  /* The tracks whose lessons describe the term. Plain text, no link: 26px tall at every width. */
+  .gl-row--tracks { padding-block: 3px; }
+  .gl-tracks { color: var(--ink); }
   /* NEW: another spelling, filed at its own letter. A dashed tape is a pointer, as a dashed key is an empty letter. */
   .gl-name--see { border-style: dashed; background: none; color: var(--ink); font-weight: 600; }
   .gl-entry--see { padding-bottom: 2px; }
@@ -103,7 +106,7 @@ const NOTE =
     .gl-entry dd + dd { margin-top: 8px; padding-top: 14px; }
     .gl-entry--see dd { padding-top: 0; }
   }
-  /* ---- from 960px: the ledger. Name; definition; beside it, its sources and its lessons. ---- */
+  /* ---- from 960px: the ledger. Name; definition; beside it, its sources and the tracks that describe it. ---- */
   @media (min-width: 960px) {
     .gl-entry, .gl-entry:first-child { grid-template-columns: 220px minmax(0, 1fr); padding-block: 14px; }
     .gl-entry dd { display: grid; grid-template-columns: minmax(0, 1fr) 220px; column-gap: 24px; align-items: start; }
