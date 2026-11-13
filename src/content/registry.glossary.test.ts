@@ -126,18 +126,18 @@ describe('E5 the registry\'s wiring', () => {
     await expect(import('./registry')).rejects.toThrow(/ties term "term-ping" of lesson "what-is-icmp", which glossary group "first", entry "ping-a" already ties/);
   });
   test('with ./glossary mocked to one group, the real registry refuses for its missing report', async () => {
-    const pilot = defineGlossaryGroup(
-      { id: 'pilot', entries: [{ id: 'get', term: 'GET', definition: [{ id: 'get-1', text: 'A GET request asks for a current representation of a resource.', cite: [cite('rfc-9110', '9.3.1', { defining: true })] }] }] },
+    const fixture = defineGlossaryGroup(
+      { id: 'wiring-fixture', entries: [{ id: 'wiring-get', term: 'Wiring GET', definition: [{ id: 'wiring-get-1', text: 'A GET request asks for a current representation of a resource.', cite: [cite('rfc-9110', '9.3.1', { defining: true })] }] }] },
       SOURCES,
     );
     vi.stubEnv('MODE', 'test');
     vi.resetModules();
-    vi.doMock('./glossary', () => ({ GLOSSARY_GROUPS: [pilot], GLOSSARY: pilot.entries }));
-    await expect(import('./registry')).rejects.toThrow('glossary/pilot: no fact-check report at docs/fact-checks/glossary/pilot.md');
+    vi.doMock('./glossary', () => ({ GLOSSARY_GROUPS: [fixture], GLOSSARY: fixture.entries }));
+    await expect(import('./registry')).rejects.toThrow('glossary/wiring-fixture: no fact-check report at docs/fact-checks/glossary/wiring-fixture.md');
   });
-  test('with no group, the real registry loads', async () => {
+  test('with the real glossary, the real registry loads', async () => {
     vi.resetModules();
-    vi.doMock('./glossary', () => ({ GLOSSARY_GROUPS: [], GLOSSARY: [] }));
+    vi.doMock('./glossary', async () => vi.importActual('./glossary'));
     await expect(import('./registry')).resolves.toHaveProperty('getLesson');
   });
 });
