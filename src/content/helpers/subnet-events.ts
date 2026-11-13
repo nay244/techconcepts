@@ -121,7 +121,16 @@ function glyphOf(cues: Cue[] | undefined): NonNullable<NoteEvent['glyph']> {
  * that shows the mask before it has a prefix throws: the schema allows it, but
  * there is no mask to show.
  */
-export function calc(o: { id: string; row: string; shown: Shown; plain: string; board: Board; cues?: Cue[] }): NoteEvent {
+export function calc(o: {
+  id: string;
+  row: string;
+  shown: Shown;
+  plain: string;
+  board: Board;
+  cues?: Cue[];
+  /** The Learn parts the note traces to, for a lesson in the cited shape. */
+  traces?: string[];
+}): NoteEvent {
   const { board } = o;
   if (board.mask && board.prefix === null) throw new Error(`"${o.id}": ${board.who}’s board shows the mask, but it has no prefix yet.`);
   checkThird(o.id, board);
@@ -133,6 +142,7 @@ export function calc(o: { id: string; row: string; shown: Shown; plain: string; 
     board,
     glyph: glyphOf(o.cues),
     ...(o.cues === undefined ? {} : { cues: o.cues }),
+    ...(o.traces === undefined ? {} : { backing: { traces: o.traces } }),
   };
 }
 

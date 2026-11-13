@@ -1,24 +1,80 @@
 import { formatIPv4, parseIPv4, toOctetBits, type IPv4 } from '../../engine/net/ipv4';
 import { maskFromPrefix, sameSubnet, subnetInfo, type SubnetInfo } from '../../engine/net/subnet';
 import { calc, checkStated, subnetValue, type Stated } from '../helpers/subnet-events';
-import { defineLegacyLesson } from '../legacy';
-import type { Board, Cue, NoteEvent } from '../schema';
+import { defineLesson } from '../define';
+import type { Backing, Board, Cue, NoteEvent } from '../schema';
+import { cite } from '../sources';
 
 /**
  * Subnetting, lesson 7 of 19. An office cuts its one /24 into four /26s, one
- * per team, without a single new cable: the learner sees an address split
+ * per team: the learner sees an address split
  * into its network and host parts, works out the mask, the network and
  * broadcast addresses and the usable addresses, borrows 2 bits to cut the
  * floor, checks whether two devices are on the same subnet, and ends on a /30
  * link to the provider.
  *
- * The words are the approved mockup's (subnet-v1.html). Every number is the
+ * The words are the approved mockup's (subnet-v1.html), changed only where a
+ * source does not state them. The addresses (RFC 1918 and RFC 5737) are example
+ * data, and the analogies (the street, the card with holes) cite nothing.
+ * Every number is the
  * engine's (src/engine/net): each log row is worked out by `calc`, the boards
  * take their network and broadcast rows from the engine, the bare values (the
  * scene's title, the facts, Practice's number options) are worked out here, and
  * `STATED` pins each number a sentence states to the place it is written,
  * checked against the engine as the lesson loads, so a wrong one stops the build.
  */
+
+// ------------------------------------------------------------------ citations
+
+/** A citation of one section of an RFC, optionally marked as the defining standard, optionally at a named fragment. */
+const rfc = (source: string, section: string, defining = false, fragment?: string) =>
+  cite(source, section, {
+    ...(fragment === undefined ? {} : { url: `https://www.rfc-editor.org/rfc/${source.replace('-', '')}.html#${fragment}` }),
+    ...(defining ? { defining: true as const } : {}),
+  });
+/** RFC 1122 and RFC 950 have no ids below their top-level sections, so a section is cited by the page it starts on. */
+const host = (section: string, page: number) =>
+  cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}`, defining: true });
+const rfc950 = (section: string, page: number, defining = true) =>
+  cite('rfc-950', section, { url: `https://www.rfc-editor.org/rfc/rfc950.html#page-${page}`, ...(defining ? { defining: true as const } : {}) });
+/** RFC 1122 where it does not define the thing claimed (the OSI layer). */
+const hostPlain = (section: string, page: number) => cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}` });
+/** RFC 826 has no section ids, so a section is cited by a text fragment that starts in it. */
+const ARP_GENERATION = cite('rfc-826', 'Packet Generation', {
+  url: 'https://www.rfc-editor.org/rfc/rfc826.html#:~:text=As%20a%20packet%20is%20sent%20down%20through%20the%20network%20layers',
+  defining: true,
+});
+
+/** Microsoft's page, by heading. A vendor's own documentation, so none is marked defining. */
+const MICROSOFT_SUBNETTING = 'https://learn.microsoft.com/en-us/troubleshoot/windows-client/networking/tcpip-addressing-and-subnetting';
+const ms = (section: string, heading: string) => cite('microsoft-tcpip-subnetting', section, { url: `${MICROSOFT_SUBNETTING}#${heading}` });
+
+/** Cisco's two pages have no heading ids to cite, so each section is cited by a text fragment that starts in it. */
+const CISCO_SUBNETS = 'https://www.cisco.com/c/en/us/support/docs/ip/routing-information-protocol-rip/13788-3.html';
+const CISCO_QUANTITIES = 'https://www.cisco.com/c/en/us/support/docs/ip/routing-information-protocol-rip/13790-8.html';
+const CISCO_ADDRESSES = cite('cisco-ip-subnets', 'Understand IP Addresses', { url: `${CISCO_SUBNETS}#:~:text=The%20address%20is%20made%20up%20of%2032%20binary%20bits` });
+const CISCO_MASKS = cite('cisco-ip-subnets', 'Network Masks', { url: `${CISCO_SUBNETS}#:~:text=Any%20address%20bits%20which%20have%20corresponding%20mask%20bits` });
+const CISCO_SUBNETTING = cite('cisco-ip-subnets', 'Understand Subnetting', { url: `${CISCO_SUBNETS}#:~:text=Each%20data%20link%20on%20a%20network%20must%20have` });
+const CISCO_EXERCISE = cite('cisco-ip-subnets', 'Sample Exercise 1', { url: `${CISCO_SUBNETS}#:~:text=Look%20at%20the%20address%20bits%20that%20have` });
+const CISCO_VLSM = cite('cisco-ip-subnets', 'VLSM', { url: `${CISCO_SUBNETS}#:~:text=Variable%20Length%20Subnet%20Masks` });
+const CISCO_CIDR = cite('cisco-ip-subnets', 'CIDR', { url: `${CISCO_SUBNETS}#:~:text=Length%20means%20the%20number%20of%20left-most` });
+const CISCO_31BIT = cite('cisco-ip-subnets', '31-bit Subnets', { url: `${CISCO_SUBNETS}#:~:text=A%2030-bit%20subnet%20mask%20allows%20for%20four` });
+const CISCO_BACKGROUND = cite('cisco-host-subnet-quantities', 'Background Information', { url: `${CISCO_QUANTITIES}#:~:text=An%20IP%20address%20is%2032%20bits%20long` });
+const CISCO_SUBNETTING_TABLES = cite('cisco-host-subnet-quantities', 'Subnetting and Tables', { url: `${CISCO_QUANTITIES}#:~:text=As%20a%20concept%2C%20subnetting%20divides%20the%20network` });
+const CISCO_TABLE = cite('cisco-host-subnet-quantities', 'Class C Host/Subnet Table', { url: `${CISCO_QUANTITIES}#:~:text=Class%20C%20Host%2FSubnet%20Table` });
+const CISCO_QUANTITIES_B = cite('cisco-host-subnet-quantities', 'Class B Host/Subnet Table', { url: `${CISCO_QUANTITIES}#:~:text=Class%20B%20Host%2FSubnet%20Table` });
+const CISCO_EXAMPLE = cite('cisco-host-subnet-quantities', 'Subnet Example', { url: `${CISCO_QUANTITIES}#:~:text=A%20host%20portion%20with%20all%20zeros` });
+
+/** No standard puts IP at an OSI layer, so the badge rests on two vendors, as What is IP's does. */
+const CLOUDFLARE = 'https://developers.cloudflare.com/fundamentals/reference/network-layers/';
+const MICROSOFT_OSI = 'https://learn.microsoft.com/en-us/windows-hardware/drivers/network/windows-network-architecture-and-the-osi-model';
+const OSI_L3 = [
+  cite('cloudflare-network-layers', 'Network Layers', { url: `${CLOUDFLARE}#:~:text=3%20Network%20layer` }),
+  cite('microsoft-osi', 'Transport layer', { url: `${MICROSOFT_OSI}#transport-layer` }),
+];
+
+/** A backing that traces to cited Learn parts. */
+const traces = (...ids: string[]): Backing => ({ traces: ids });
 
 // ------------------------------------------------------------------ the office
 
@@ -117,14 +173,14 @@ const LINK_BOARD = { addr: OFFICE_ROUTER_LINK, who: 'Office router' };
 const floorBoard: Board = { ...LAPTOP_BOARD, prefix: FLOOR };
 
 /** A note comparing the board's address with its third row: the row says whether the network parts match, as the engine finds. */
-function compare(o: { id: string; plain: string; board: Board; cues?: Cue[] }): NoteEvent {
+function compare(o: { id: string; plain: string; board: Board; cues?: Cue[]; traces: string[] }): NoteEvent {
   const { board } = o;
   if (board.third?.mode !== 'cmp' || board.prefix === null) throw new Error(`Subnetting: "${o.id}" compares nothing.`);
   const same = sameSubnet(parse(board.addr), parse(board.third.addr), board.prefix);
   return calc({ ...o, row: same ? 'Same subnet' : 'Different subnet', shown: 'compared' });
 }
 
-const subnetting = defineLegacyLesson({
+const subnetting = defineLesson({
   slug: 'subnetting',
   title: 'Subnetting',
   subtitle: 'Splitting networks into smaller ones',
@@ -133,17 +189,15 @@ const subnetting = defineLegacyLesson({
   summary:
     'See how one big network is cut into smaller ones, how many devices fit in each, and how a device tells whether another device is its neighbour.',
   figure: 'subnet',
+  backing: traces('term-subnet', 'fact-usable', 'lead-2'),
   units: [
     {
       id: 'subnetting',
       name: 'Subnetting',
       fullName: 'Cutting one network into smaller ones',
       purpose: 'One network, cut into four',
-      osiLayers: [3],
-      references: [
-        { label: 'RFC 950: Internet Standard Subnetting Procedure', url: 'https://www.rfc-editor.org/rfc/rfc950' },
-        { label: 'RFC 4632: Classless Inter-domain Routing (CIDR)', url: 'https://www.rfc-editor.org/rfc/rfc4632' },
-      ],
+      osi: { layers: [3], cite: [...OSI_L3, hostPlain('3.2.1.3', 31), rfc950('2.1', 6, false)] },
+      backing: traces('term-subnet', 'lead-1'),
       scene: {
         title: `Office network · ${FLOOR_CIDR}`,
         views: ['network'],
@@ -164,17 +218,28 @@ const subnetting = defineLegacyLesson({
           ],
         },
         parties: [],
+        backing: traces('fact-examples', 'fact-cidr', 'lead-1'),
       },
       overview: {
-        hook: 'An office has one block of addresses and four teams: Sales, Design, the servers, and the guest Wi-Fi. It wants each kept to itself, so a guest’s phone can’t wander onto the servers. It doesn’t need new cables to do that. It cuts its one network into four smaller ones, using nothing but the addresses.',
+        hook: 'An office has one block of addresses and four teams: Sales, Design, the servers, and the guest Wi-Fi. It wants each kept to itself, so a guest’s phone can’t wander onto the servers. It cuts its one network into four smaller ones, one for each team.',
+        hookBacking: traces('why-1', 'term-subnet', 'lead-1'),
         description:
-          'Every IP address has two parts: which network, then which device. A number called the subnet mask says where one part ends and the other begins. Move that line, and one network becomes several. Subnetting has a name for being hard, but it comes down to moving a line and counting.',
+          'Every IP address has two parts: which network, then which device. A number called the subnet mask says where one part ends and the other begins. Move that line, and one network becomes several. Subnetting comes down to moving a line and counting.',
+        backing: traces('term-network', 'term-host', 'term-mask', 'term-borrow', 'term-subnet', 'fact-usable'),
         facts: [
-          { label: 'Written as', value: FLOOR_CIDR },
-          { label: 'Mask', value: mask(FLOOR) },
-          { label: 'Usable addresses', value: `${BIT_VALUES} to the power of the host bits, minus ${KEPT_BACK}` },
-          { label: 'Addresses here', value: 'private (192.168.x.x) and documentation (203.0.113.x) examples' },
-          { label: 'Defined in', value: 'RFC 950, RFC 4632' },
+          { label: 'Written as', value: FLOOR_CIDR, backing: traces('fact-cidr') },
+          { label: 'Mask', value: mask(FLOOR), backing: traces('fact-cidr', 'term-mask') },
+          {
+            label: 'Usable addresses',
+            value: `${BIT_VALUES} to the power of the host bits, minus ${KEPT_BACK}, up to a /${LINK}`,
+            backing: traces('fact-usable'),
+          },
+          {
+            label: 'Addresses here',
+            value: 'private (192.168.x.x) and documentation (203.0.113.x) examples',
+            backing: traces('fact-examples'),
+          },
+          { label: 'Defined in', value: 'RFC 950, RFC 4632', backing: traces('fact-defined') },
         ],
       },
       steps: [
@@ -184,14 +249,28 @@ const subnetting = defineLegacyLesson({
           sub: 'Which network, then which device',
           narrative:
             'Think of an address like 12 Oak Street: the street, then the house. An IP address works the same way. The Sales laptop is 192.168.1.10. The first three numbers, 192.168.1, say which network it’s on, and they’re the same for every device in this office. The last number, 10, says which device it is. The first part is the **network portion**, and the second is the **host portion**. A host is any device with an address. Under the map, the same address is written the way a computer reads it: 32 ones and zeros, called bits.',
-          deep: 'Each of the four numbers is one byte: 8 bits, so it runs from 0 to 255. 192 is 11000000 and 10 is 00001010. Nothing in the address itself says where the network part ends. That is the mask’s job, in the next step. The IP Address lesson covers turning numbers into bits and back.',
+          deep: [
+            {
+              text: 'Each of the four numbers is one byte: 8 bits, so it runs from 0 to 255. 192 is 11000000 and 10 is 00001010. Nothing in the address itself says where the network part ends. That is the mask’s job, in the next step.',
+              cite: [rfc('rfc-791', '2.3', true), CISCO_ADDRESSES, ms('IP addresses, networks and hosts', 'ip-addresses-networks-and-hosts'), ms('Subnet mask', 'subnet-mask'), rfc('rfc-4632', '3.1', true), ms('Glossary', 'glossary')],
+            },
+          ],
           facts: [
-            { label: 'Address', value: formatIPv4(laptop) },
-            { label: 'Network portion', value: `${subnetValue('network-part', floorBoard)} (the first ${FLOOR} bits)` },
-            { label: 'Host portion', value: `${subnetValue('host-part', floorBoard)} (the last ${hostBits(FLOOR)} bits)` },
+            { label: 'Address', value: formatIPv4(laptop), backing: { example: true } },
+            {
+              label: 'Network portion',
+              value: `${subnetValue('network-part', floorBoard)} (the first ${FLOOR} bits)`,
+              backing: traces('term-network', 'term-prefix', 'fact-cidr'),
+            },
+            {
+              label: 'Host portion',
+              value: `${subnetValue('host-part', floorBoard)} (the last ${hostBits(FLOOR)} bits)`,
+              backing: traces('term-host', 'term-prefix', 'fact-cidr'),
+            },
             {
               label: 'Whole address',
               value: `${ADDRESS_BITS} bits, in ${NUMBER_WORDS[ADDRESS_BITS / OCTET_BITS]} groups of ${OCTET_BITS}`,
+              backing: traces('fact-bits'),
             },
           ],
           events: [
@@ -205,6 +284,7 @@ const subnetting = defineLegacyLesson({
                 { cue: 'glow', arg: 'laptop' },
                 { cue: 'focus', arg: 'sales' },
               ],
+              traces: ['fact-bits'],
             }),
             calc({
               id: 'network-part',
@@ -213,6 +293,7 @@ const subnetting = defineLegacyLesson({
               plain: 'Which network: the same for the whole office',
               board: { ...LAPTOP_BOARD, prefix: FLOOR, pick: 'net' },
               cues: [{ cue: 'one-net' }, { cue: 'pulse', arg: 'onenet' }],
+              traces: ['term-network', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'host-part',
@@ -224,8 +305,10 @@ const subnetting = defineLegacyLesson({
                 { cue: 'glow', arg: 'laptop' },
                 { cue: 'focus', arg: 'sales' },
               ],
+              traces: ['term-host', 'term-prefix', 'fact-cidr'],
             }),
           ],
+          backing: traces('term-network', 'term-host', 'fact-bits', 'term-prefix', 'fact-examples', 'fact-cidr'),
         },
         {
           id: 'subnet-mask',
@@ -233,12 +316,25 @@ const subnetting = defineLegacyLesson({
           sub: 'A number marks where the network ends',
           narrative:
             'How does the laptop know where the network part ends? Picture a card with holes in it, laid over the address. The bits under the holes are the network part, and the covered ones are the host part. That card is the **subnet mask**: a 1 for every network bit and a 0 for every host bit. 255.255.255.0 is 24 ones, then 8 zeros. People usually just count the ones and write the count after a slash: 192.168.1.10/24. That count is the **prefix length**.',
-          deep: 'Writing /24 is called CIDR notation, from Classless Inter-Domain Routing. A mask’s ones always come first and never mix with its zeros, so the prefix length says everything the mask does. Common pairs: /8 is 255.0.0.0, /16 is 255.255.0.0 and /24 is 255.255.255.0.',
+          deep: [
+            {
+              text: 'Writing /24 is called CIDR notation, from Classless Inter-Domain Routing. A mask’s ones always come first and never mix with its zeros, so the prefix length says everything the mask does. Common pairs: /8 is 255.0.0.0, /16 is 255.255.0.0 and /24 is 255.255.255.0.',
+              cite: [
+                rfc('rfc-4632', '3.1', true),
+                rfc('rfc-4632', 'Abstract', true, 'abstract'),
+                rfc('rfc-1812', '2.2.5.1'),
+                rfc('rfc-1812', '2.2.5.2'),
+                ms('Subnet mask', 'subnet-mask'),
+                CISCO_CIDR,
+                CISCO_MASKS,
+              ],
+            },
+          ],
           facts: [
-            { label: 'Mask', value: mask(FLOOR) },
-            { label: 'In bits', value: toOctetBits(maskFromPrefix(FLOOR)).join('.') },
-            { label: 'Prefix length', value: `/${FLOOR} (${ones(FLOOR)} ones)` },
-            { label: 'Written', value: `${formatIPv4(laptop)}/${FLOOR}` },
+            { label: 'Mask', value: mask(FLOOR), backing: traces('term-mask', 'fact-cidr') },
+            { label: 'In bits', value: toOctetBits(maskFromPrefix(FLOOR)).join('.'), backing: traces('term-mask', 'fact-cidr') },
+            { label: 'Prefix length', value: `/${FLOOR} (${ones(FLOOR)} ones)`, backing: traces('term-prefix', 'fact-cidr') },
+            { label: 'Written', value: `${formatIPv4(laptop)}/${FLOOR}`, backing: traces('term-prefix', 'fact-cidr') },
           ],
           events: [
             calc({
@@ -247,6 +343,7 @@ const subnetting = defineLegacyLesson({
               shown: 'mask',
               plain: '24 ones, then 8 zeros',
               board: { ...LAPTOP_BOARD, prefix: FLOOR, mask: true, pick: 'mask' },
+              traces: ['term-mask', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'prefix-24',
@@ -255,8 +352,10 @@ const subnetting = defineLegacyLesson({
               plain: 'Written 192.168.1.10/24',
               board: { ...LAPTOP_BOARD, prefix: FLOOR, mask: true, pick: 'line' },
               cues: [{ cue: 'pulse', arg: 'onenet' }],
+              traces: ['term-prefix', 'fact-cidr'],
             }),
           ],
+          backing: traces('term-mask', 'term-prefix', 'fact-cidr', 'fact-examples'),
         },
         {
           id: 'network-broadcast',
@@ -264,12 +363,34 @@ const subnetting = defineLegacyLesson({
           sub: 'Two addresses are kept back',
           narrative:
             'A street has a name of its own, and a loudspeaker every house can hear. A network keeps two addresses back in the same way. Set every host bit to 0 and you get 192.168.1.0, the network’s own name: the **network address**. Set every host bit to 1 and you get 192.168.1.255, the address every device hears at once: the **broadcast address**. Watch the laptop send to it: the whole floor hears. Neither can be given to a device, so 8 host bits make 256 addresses, minus 2: 254 for devices.',
-          deep: 'The number of usable addresses is 2 to the power of the host bits, minus 2. A broadcast reaches every device on the network, which is how DHCP and ARP find each other before they know any addresses. Routers don’t pass broadcasts on, so a broadcast never leaves its network.',
+          deep: [
+            {
+              text: 'Up to a /30, the number of usable addresses is 2 to the power of the host bits, minus 2. A broadcast reaches every device on the network, which is how DHCP finds a server and ARP finds a neighbour’s hardware address. Routers don’t pass broadcasts on, so a broadcast never leaves its network.',
+              cite: [
+                CISCO_EXAMPLE,
+                rfc('rfc-3021', '2.1', true),
+                ms('Subnetting', 'subnetting'),
+                rfc('rfc-1812', '4.2.2.11'),
+                rfc('rfc-2131', '3.1', true),
+                ARP_GENERATION,
+                rfc('rfc-1812', '5.3.5.1', true),
+                rfc('rfc-2644', '3', true),
+              ],
+            },
+          ],
           facts: [
-            { label: 'Network address', value: formatIPv4(floor.network) },
-            { label: 'Broadcast address', value: formatIPv4(floor.broadcast) },
-            { label: 'Usable addresses', value: `${floor.usableHosts} (${BIT_VALUES}${superscript(hostBits(FLOOR))} − ${KEPT_BACK})` },
-            { label: 'Usable range', value: `${formatIPv4(floor.firstHost)} to ${formatIPv4(floor.lastHost)}` },
+            { label: 'Network address', value: formatIPv4(floor.network), backing: traces('term-netaddr', 'fact-cidr') },
+            { label: 'Broadcast address', value: formatIPv4(floor.broadcast), backing: traces('term-broadcast', 'fact-cidr') },
+            {
+              label: 'Usable addresses',
+              value: `${floor.usableHosts} (${BIT_VALUES}${superscript(hostBits(FLOOR))} − ${KEPT_BACK})`,
+              backing: traces('fact-usable', 'lead-1', 'fact-cidr'),
+            },
+            {
+              label: 'Usable range',
+              value: `${formatIPv4(floor.firstHost)} to ${formatIPv4(floor.lastHost)}`,
+              backing: traces('term-netaddr', 'term-broadcast', 'fact-usable', 'fact-cidr'),
+            },
           ],
           events: [
             calc({
@@ -279,6 +400,7 @@ const subnetting = defineLegacyLesson({
               plain: 'Host bits all 0: the network’s own name',
               board: { ...LAPTOP_BOARD, prefix: FLOOR, mask: true, third: { who: 'Network', addr: network(LAPTOP, FLOOR), mode: 'net' } },
               cues: [{ cue: 'pulse', arg: 'onenet' }],
+              traces: ['term-netaddr', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'broadcast-24',
@@ -296,6 +418,7 @@ const subnetting = defineLegacyLesson({
                 { cue: 'glow', arg: 'laptop' },
                 { cue: 'focus', arg: 'sales' },
               ],
+              traces: ['term-broadcast', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'usable-24',
@@ -309,8 +432,10 @@ const subnetting = defineLegacyLesson({
                 third: { who: 'Broadcast', addr: broadcast(LAPTOP, FLOOR), mode: 'bcast' },
                 pick: 'host',
               },
+              traces: ['fact-usable', 'lead-1', 'term-netaddr', 'term-broadcast', 'term-prefix', 'fact-cidr'],
             }),
           ],
+          backing: traces('term-netaddr', 'term-broadcast', 'fact-usable', 'lead-1', 'term-prefix', 'fact-examples', 'fact-cidr'),
         },
         {
           id: 'borrowing-bits',
@@ -318,14 +443,34 @@ const subnetting = defineLegacyLesson({
           sub: 'Move the line right for smaller networks',
           narrative:
             'The office wants each team on a network of its own. So the line moves right by 2 bits, and the mask grows from /24 to /26. Those 2 bits used to name devices. Now they name a smaller network. That is called **borrowing bits**. 2 bits can be 00, 01, 10 or 11, so the one network becomes 4 **subnets** of 64 addresses each, starting at .0, .64, .128 and .192. The Design PC, 192.168.1.70, has 01 in those bits, so it’s in the second subnet, 192.168.1.64. Now when it broadcasts, only Design hears.',
-          deep: 'Each borrowed bit doubles the number of subnets and halves their size. At /26 the 6 host bits give 64 addresses, 62 of them usable. The mask’s last number, 192, is 256 minus 64, the block size, and every subnet starts at a multiple of it. The router now needs an address in each subnet: here .1, .65, .129 and .193.',
+          deep: [
+            {
+              text: 'Each borrowed bit doubles the number of subnets and halves their size. At /26 the 6 host bits give 64 addresses, 62 of them usable. The mask’s last number, 192, is 256 minus 64, the block size, and every subnet starts at a multiple of it. The router now needs an address in each subnet: here .1, .65, .129 and .193.',
+              cite: [
+                CISCO_SUBNETTING,
+                rfc('rfc-1812', '2.2.7'),
+                rfc('rfc-4632', '3.1', true),
+                CISCO_TABLE,
+                ms('Subnetting', 'subnetting'),
+              ],
+            },
+          ],
           facts: [
-            { label: 'Mask', value: `${mask(CUT)} (/${CUT})` },
-            { label: `Cut from one /${FLOOR}`, value: `${cutSubnets.length} subnets of ${sales.totalAddresses} addresses` },
-            { label: 'Design’s subnet', value: `${formatIPv4(design.network)} to ${formatIPv4(design.broadcast)}` },
+            { label: 'Mask', value: `${mask(CUT)} (/${CUT})`, backing: traces('fact-26', 'term-mask') },
+            {
+              label: `Cut from one /${FLOOR}`,
+              value: `${cutSubnets.length} subnets of ${sales.totalAddresses} addresses`,
+              backing: traces('fact-borrow', 'fact-26', 'term-subnet', 'term-prefix', 'fact-cidr'),
+            },
+            {
+              label: 'Design’s subnet',
+              value: `${formatIPv4(design.network)} to ${formatIPv4(design.broadcast)}`,
+              backing: traces('term-subnet', 'term-netaddr', 'term-broadcast', 'deep-block'),
+            },
             {
               label: 'Usable addresses',
               value: `${design.usableHosts} (${formatIPv4(design.firstHost)} to ${formatIPv4(design.lastHost)})`,
+              backing: traces('fact-26', 'fact-usable', 'deep-block'),
             },
           ],
           events: [
@@ -336,6 +481,7 @@ const subnetting = defineLegacyLesson({
               plain: '2 host bits borrowed for the network',
               board: { ...LAPTOP_BOARD, prefix: CUT, borrow: FLOOR, mask: true, pick: 'borrow' },
               cues: [{ cue: 'cut' }],
+              traces: ['term-borrow', 'term-mask', 'term-prefix', 'fact-26'],
             }),
             calc({
               id: 'subnets-26',
@@ -344,6 +490,7 @@ const subnetting = defineLegacyLesson({
               plain: 'Starting at .0, .64, .128 and .192',
               board: { ...LAPTOP_BOARD, prefix: CUT, borrow: FLOOR, mask: true, pick: 'borrow' },
               cues: [{ cue: 'pulse', arg: 'pads' }],
+              traces: ['term-subnet', 'term-borrow', 'term-prefix', 'fact-borrow', 'fact-26', 'deep-block'],
             }),
             calc({
               id: 'network-26',
@@ -362,6 +509,7 @@ const subnetting = defineLegacyLesson({
                 { cue: 'glow', arg: 'pc' },
                 { cue: 'focus', arg: 'design' },
               ],
+              traces: ['term-netaddr', 'term-borrow', 'term-prefix', 'deep-block'],
             }),
             calc({
               id: 'broadcast-26',
@@ -380,27 +528,60 @@ const subnetting = defineLegacyLesson({
                 { cue: 'glow', arg: 'pc' },
                 { cue: 'focus', arg: 'design' },
               ],
+              traces: ['term-broadcast', 'term-prefix', 'why-1'],
             }),
           ],
+          backing: traces(
+            'term-borrow',
+            'term-subnet',
+            'fact-borrow',
+            'fact-26',
+            'deep-block',
+            'term-netaddr',
+            'term-broadcast',
+            'why-1',
+            'term-mask',
+            'term-prefix',
+            'fact-cidr',
+          ),
         },
         {
           id: 'local-remote',
           title: 'Local vs. Remote Delivery',
           sub: 'Same subnet: direct. Different: the router',
           narrative:
-            'Before it sends anything, the laptop checks: is the other device on my subnet? It lays its mask over both addresses and compares the network parts. The printer, 192.168.1.20, matches, so the laptop sends straight to it. That’s **local delivery**. The Design PC, 192.168.1.70, doesn’t match: the borrowed bits differ, 00 against 01. So the laptop hands the message to the router, its way out, called the **default gateway**. When two devices can’t reach each other, this is one of the first things a helpdesk checks.',
-          deep: 'The comparison is a bitwise AND: each address with the laptop’s own mask. If the results match, the laptop finds the printer’s hardware address with ARP and sends to it directly. If not, it sends to its default gateway, 192.168.1.1, and the router passes it on. At /24 the same two addresses would be on one network and talk directly. The Router lesson covers what happens inside the router.',
+            'Before it sends anything, the laptop checks: is the other device on my subnet? It lays its mask over both addresses and compares the network parts. The printer, 192.168.1.20, matches, so the laptop sends straight to it. That’s **local delivery**. The Design PC, 192.168.1.70, doesn’t match: the borrowed bits differ, 00 against 01. So the laptop hands the message to the router, its way out, called the **default gateway**.',
+          deep: [
+            {
+              text: 'The comparison is a bitwise AND: each address with the laptop’s own mask. If the results match, the laptop finds the printer’s hardware address with ARP and sends to it directly. If not, it sends to its default gateway, 192.168.1.1, and the router passes it on. At /24 the same two addresses would be on one network and talk directly.',
+              cite: [
+                rfc950('2.2', 7),
+                CISCO_EXERCISE,
+                host('3.3.1.1', 47),
+                ARP_GENERATION,
+                host('3.3.1.2', 48),
+                ms('Default gateways', 'default-gateways'),
+                ms('Subnetting', 'subnetting'),
+              ],
+            },
+          ],
           facts: [
-            { label: 'Laptop', value: `${formatIPv4(laptop)}, in ${formatIPv4(sales.network)}/${CUT}` },
+            {
+              label: 'Laptop',
+              value: `${formatIPv4(laptop)}, in ${formatIPv4(sales.network)}/${CUT}`,
+              backing: traces('term-subnet', 'term-prefix', 'fact-cidr', 'deep-block'),
+            },
             {
               label: 'Printer',
               value: `${formatIPv4(printer)}: ${matches(laptop, printer, CUT, 'same subnet, sent directly', 'another subnet, sent via the router')}`,
+              backing: traces('lead-2', 'deep-block'),
             },
             {
               label: 'Design PC',
               value: `${formatIPv4(designPc)}: in ${formatIPv4(design.network)}/${CUT}, ${matches(laptop, designPc, CUT, 'sent directly', 'sent via the router')}`,
+              backing: traces('lead-2', 'term-gateway', 'term-subnet', 'term-prefix', 'deep-block'),
             },
-            { label: 'Default gateway', value: GATEWAY },
+            { label: 'Default gateway', value: GATEWAY, backing: traces('term-gateway') },
           ],
           events: [
             compare({
@@ -412,6 +593,7 @@ const subnetting = defineLegacyLesson({
                 { cue: 'busy', arg: 'printer' },
                 { cue: 'focus', arg: 'sales' },
               ],
+              traces: ['lead-2', 'term-prefix'],
             }),
             compare({
               id: 'different-subnet',
@@ -422,21 +604,41 @@ const subnetting = defineLegacyLesson({
                 { cue: 'busy', arg: 'pc' },
                 { cue: 'focus', arg: 'router' },
               ],
+              traces: ['lead-2', 'term-gateway', 'term-prefix', 'deep-block'],
             }),
           ],
+          backing: traces('lead-2', 'term-gateway', 'term-borrow', 'deep-block'),
         },
         {
           id: 'point-to-point',
           title: 'Point-to-Point Subnet',
           sub: 'A /30 holds exactly two devices',
           narrative:
-            'Some networks are tiny on purpose. The office router has one cable to its internet provider’s router, and that cable needs exactly two addresses, one for each end. A /30 leaves 2 host bits: 4 addresses. Take away the network and broadcast addresses and 2 are left, just right. Here the link is 203.0.113.4/30. The provider’s router is 203.0.113.5 and the office router is 203.0.113.6. A tiny subnet like this, joining two routers, is a **point-to-point** link, and it wastes no addresses.',
-          deep: 'The link’s network address is 203.0.113.4 and its broadcast address is 203.0.113.7. Many networks now use a /31 for links like this: RFC 3021 lets both of its 2 addresses be used, with no network or broadcast address. 203.0.113.0/24 is set aside for documentation, so these addresses are examples.',
+            'Some networks are tiny on purpose. The office router has one cable to its internet provider’s router, and that cable needs exactly two addresses, one for each end. A /30 leaves 2 host bits: 4 addresses. Take away the network and broadcast addresses and 2 are left, just right. Here the link is 203.0.113.4/30. The provider’s router is 203.0.113.5 and the office router is 203.0.113.6. A tiny subnet like this, joining two routers, is a **point-to-point** link, and it wastes very few addresses.',
+          deep: [
+            {
+              text: 'The link’s network address is 203.0.113.4 and its broadcast address is 203.0.113.7. Routers may instead use a /31 for links like this: RFC 3021 lets both of its 2 addresses be used, with no network or broadcast address. 203.0.113.0/24 is set aside for documentation, so these addresses are examples.',
+              cite: [
+                ms('Glossary', 'glossary'),
+                rfc('rfc-3021', '2.1', true),
+                CISCO_31BIT,
+                rfc('rfc-5737', '3', true),
+              ],
+            },
+          ],
           facts: [
-            { label: 'Mask', value: `${mask(LINK)} (/${LINK})` },
-            { label: 'This subnet', value: `${formatIPv4(link.network)} to ${formatIPv4(link.broadcast)}` },
-            { label: 'Usable addresses', value: `${link.usableHosts} (${formatIPv4(link.firstHost)} and ${formatIPv4(link.lastHost)})` },
-            { label: 'Typical use', value: 'a link between two routers' },
+            { label: 'Mask', value: `${mask(LINK)} (/${LINK})`, backing: traces('fact-30', 'term-mask') },
+            {
+              label: 'This subnet',
+              value: `${formatIPv4(link.network)} to ${formatIPv4(link.broadcast)}`,
+              backing: traces('term-netaddr', 'term-broadcast', 'fact-30', 'deep-block'),
+            },
+            {
+              label: 'Usable addresses',
+              value: `${link.usableHosts} (${formatIPv4(link.firstHost)} and ${formatIPv4(link.lastHost)})`,
+              backing: traces('fact-30', 'term-p2p'),
+            },
+            { label: 'Typical use', value: 'a link between two routers', backing: traces('term-p2p') },
           ],
           events: [
             calc({
@@ -446,6 +648,7 @@ const subnetting = defineLegacyLesson({
               plain: '30 network bits, 2 host bits',
               board: { ...LINK_BOARD, prefix: LINK, mask: true, pick: 'host' },
               cues: [{ cue: 'link' }, { cue: 'focus', arg: 'router' }],
+              traces: ['term-mask', 'term-prefix', 'fact-30', 'term-p2p'],
             }),
             calc({
               id: 'network-30',
@@ -459,6 +662,7 @@ const subnetting = defineLegacyLesson({
                 third: { who: 'Network', addr: network(OFFICE_ROUTER_LINK, LINK), mode: 'net' },
               },
               cues: [{ cue: 'pulse', arg: 'link' }],
+              traces: ['term-netaddr', 'term-broadcast', 'term-prefix', 'fact-30', 'fact-examples', 'deep-block'],
             }),
             calc({
               id: 'usable-30',
@@ -471,33 +675,167 @@ const subnetting = defineLegacyLesson({
                 { cue: 'busy', arg: 'provider' },
                 { cue: 'focus', arg: 'provider' },
               ],
+              traces: ['term-p2p', 'term-prefix', 'fact-30', 'fact-examples'],
             }),
           ],
+          backing: traces('term-p2p', 'fact-30', 'term-netaddr', 'term-broadcast', 'why-2', 'fact-examples', 'fact-usable', 'deep-block'),
         },
       ],
       learn: {
-        lead: 'One office, one block of 256 addresses, cut into four smaller networks without a single new cable. Here is what each part was, and what it’s called.',
+        lead: [
+          {
+            id: 'lead-1',
+            text: 'One office, one block of 256 addresses, cut into four smaller networks, one for each team. Here is what each part was, and what it’s called.',
+            cite: [rfc('rfc-4632', '3.1', true), ms('Subnetting', 'subnetting')],
+          },
+          {
+            id: 'lead-2',
+            text: 'Before it sends, a device lays its mask over its own address and the other one, a bitwise AND, and compares the network parts. If they match, the device finds the other’s hardware address with ARP and sends to it directly: that is local delivery. If not, it sends to its default gateway.',
+            cite: [host('3.3.1.1', 47), rfc950('2.2', 7), ARP_GENERATION, ms('Default gateways', 'default-gateways')],
+          },
+        ],
         terms: [
-          { idea: 'The part of an address that says which network', name: 'Network portion' },
-          { idea: 'The part that says which device', name: 'Host portion' },
-          { idea: 'The card laid over the address: a 1 for each network bit', name: 'Subnet mask' },
-          { idea: 'Counting the mask’s ones and writing them after a slash', name: 'Prefix length' },
-          { idea: 'The network’s own name: every host bit 0', name: 'Network address' },
-          { idea: 'The address every device on the network hears: every host bit 1', name: 'Broadcast address' },
-          { idea: 'A smaller network cut out of a bigger one', name: 'Subnet' },
-          { idea: 'Turning host bits into network bits to make smaller networks', name: 'Borrowing bits' },
-          { idea: 'The router a device sends to when the other address is on another subnet', name: 'Default gateway' },
-          { idea: 'A tiny subnet with exactly two addresses, one for each end of a link', name: 'Point-to-point /30' },
+          {
+            id: 'term-network',
+            idea: 'The part of an address that says which network, the same for every device on it',
+            name: 'Network portion',
+            cite: [ms('IP addresses, networks and hosts', 'ip-addresses-networks-and-hosts'), CISCO_BACKGROUND],
+          },
+          {
+            id: 'term-host',
+            idea: 'The part that says which device, or host: any device with an address',
+            name: 'Host portion',
+            cite: [ms('IP addresses, networks and hosts', 'ip-addresses-networks-and-hosts'), CISCO_BACKGROUND, ms('Glossary', 'glossary')],
+          },
+          {
+            id: 'term-mask',
+            idea: 'The card laid over the address: a 1 for each network bit and a 0 for each host bit',
+            name: 'Subnet mask',
+            cite: [CISCO_MASKS, rfc950('2.2', 7)],
+          },
+          {
+            id: 'term-prefix',
+            idea: 'Counting the mask’s ones and writing them after a slash',
+            name: 'Prefix length',
+            cite: [rfc('rfc-1812', '2.2.5.1'), rfc('rfc-4632', '3.1', true)],
+          },
+          {
+            id: 'term-netaddr',
+            idea: 'The network’s own name: every host bit 0',
+            name: 'Network address',
+            cite: [ms('Glossary', 'glossary'), CISCO_EXAMPLE],
+          },
+          {
+            id: 'term-broadcast',
+            idea: 'The address every device on the network hears: every host bit 1',
+            name: 'Broadcast address',
+            cite: [ms('Glossary', 'glossary'), rfc('rfc-1812', '5.3.5'), ms('Subnetting', 'subnetting')],
+          },
+          {
+            id: 'term-subnet',
+            idea: 'A smaller network cut out of a bigger one',
+            name: 'Subnet',
+            cite: [ms('Glossary', 'glossary'), CISCO_SUBNETTING_TABLES],
+          },
+          {
+            id: 'term-borrow',
+            idea: 'Turning host bits into network bits to make smaller networks',
+            name: 'Borrowing bits',
+            cite: [CISCO_SUBNETTING_TABLES, ms('Subnetting', 'subnetting')],
+          },
+          {
+            id: 'term-gateway',
+            idea: 'The router a device sends to when the other address is on another subnet',
+            name: 'Default gateway',
+            cite: [host('3.3.1.2', 48), ms('Default gateways', 'default-gateways')],
+          },
+          {
+            id: 'term-p2p',
+            idea: 'A tiny subnet with exactly two usable addresses, one for each end of a link, such as between two routers',
+            name: 'Point-to-point /30',
+            cite: [rfc('rfc-3021', '1'), CISCO_31BIT],
+          },
         ],
         pattern: {
+          id: 'pattern',
           names: ['Subnet Mask', 'Network Address', 'Broadcast Address', 'Usable Addresses'],
-          note: 'Any address, any prefix: work these four out in this order. Steps 2 and 3 did it for a /24, step 4 for a /26 and step 6 for a /30.',
+          note: 'Any address, any prefix up to /30: work these four out in this order. Steps 2 and 3 did it for a /24, step 4 for a /26 and step 6 for a /30.',
+          cite: [ms('Subnet mask', 'subnet-mask'), ms('Glossary', 'glossary'), ms('Subnetting', 'subnetting'), CISCO_EXAMPLE],
         },
-        why: 'Subnets keep groups apart. A guest’s phone can’t reach the servers unless the router lets it, and one team’s broadcasts don’t disturb the others. They also stop addresses going to waste: a link between two routers needs 2 addresses, not 254.',
-        deep: 'Each prefix has a block size: 256 minus the mask’s last number below 255. Subnets start at multiples of it. To find which subnet an address is in, round its last number down to a multiple of the block size: at /26, .70 rounds down to .64. The broadcast address is the next subnet’s start, minus 1.',
+        why: [
+          {
+            id: 'why-1',
+            text: 'Subnets keep groups apart. A guest’s phone can’t reach the servers unless the router lets it, and one team’s broadcasts don’t disturb the others.',
+            cite: [
+              CISCO_SUBNETTING,
+              host('3.3.1.1', 47),
+              rfc('rfc-1812', '5.3.9', true),
+              rfc('rfc-1812', '5.3.5.1', true),
+              rfc('rfc-2644', '3', true),
+            ],
+          },
+          {
+            id: 'why-2',
+            text: 'They also stop addresses going to waste: a link between two routers needs 2 addresses, not 254.',
+            cite: [CISCO_VLSM, rfc('rfc-3021', '1'), rfc('rfc-4632', '2'), CISCO_31BIT, CISCO_QUANTITIES_B],
+          },
+        ],
+        deep: [
+          {
+            id: 'deep-block',
+            text: 'From /24 on, each prefix has a block size: 256 minus the mask’s last number below 255. Subnets start at multiples of it. To find which subnet an address is in, round its last number down to a multiple of the block size: at /26, .70 rounds down to .64. The broadcast address is the next subnet’s start, minus 1.',
+            cite: [rfc('rfc-4632', '3.1', true), ms('Subnetting', 'subnetting')],
+          },
+        ],
         facts: [
-          ...LEARN_PREFIXES.map((p) => ({ label: `/${p}`, value: `${total(p)} addresses, ${usable(p)} usable` })),
-          { label: 'Defined in', value: `RFC 950 (subnets), RFC 4632 (CIDR), RFC 3021 (/${RFC_3021_LINK} links)` },
+          ...LEARN_PREFIXES.map((p) => ({
+            id: `fact-${p}`,
+            label: `/${p}`,
+            value: `${mask(p)}: ${total(p)} addresses, ${usable(p)} usable`,
+            cite: [rfc('rfc-4632', '3.1', true), CISCO_TABLE],
+          })),
+          {
+            id: 'fact-defined',
+            label: 'Defined in',
+            value: `RFC 950 (subnets), RFC 4632 (CIDR), RFC 3021 (/${RFC_3021_LINK} links)`,
+            cite: [rfc950('Overview', 1), rfc('rfc-4632', 'Abstract', true, 'abstract'), rfc('rfc-3021', 'Abstract', true, 'abstract')],
+          },
+          {
+            id: 'fact-bits',
+            label: 'An address',
+            value: `${ADDRESS_BITS} bits: ${NUMBER_WORDS[ADDRESS_BITS / OCTET_BITS]} numbers of ${OCTET_BITS} bits, each ${OCTET_MIN} to ${OCTET_MAX}`,
+            cite: [rfc('rfc-791', '2.3', true), CISCO_ADDRESSES, ms('Glossary', 'glossary')],
+          },
+          {
+            id: 'fact-usable',
+            label: 'Usable addresses',
+            value: `${BIT_VALUES} to the power of the host bits, minus ${KEPT_BACK}, up to a /${LINK}: the network and broadcast addresses are kept back`,
+            cite: [CISCO_EXAMPLE, rfc('rfc-1812', '4.2.2.11'), rfc('rfc-4632', '2')],
+          },
+          {
+            id: 'fact-borrow',
+            label: 'Each borrowed bit',
+            value: `doubles the subnets and halves their size: ${CUT - FLOOR} borrowed bits can be ${borrowedValues.slice(0, -1).join(', ')} or ${borrowedValues.at(-1)}, which makes ${cutSubnets.length} subnets`,
+            cite: [CISCO_SUBNETTING, CISCO_EXAMPLE, rfc('rfc-4632', '3.1', true), ms('Subnetting', 'subnetting')],
+          },
+          {
+            id: 'fact-examples',
+            label: 'Example addresses',
+            value: '192.168.x.x is private; 203.0.113.x is for documentation',
+            cite: [rfc('rfc-1918', '3', true), rfc('rfc-5737', '3', true)],
+          },
+          {
+            id: 'fact-cidr',
+            label: 'Written as',
+            value: `an address, a slash and the prefix length: ${FLOOR_CIDR} has the mask ${mask(FLOOR)}, ${ones(FLOOR)} ones then ${zeros(FLOOR)} zeros`,
+            cite: [rfc('rfc-4632', '3.1', true), CISCO_CIDR, ms('Subnet mask', 'subnet-mask')],
+          },
+          {
+            id: 'fact-osi',
+            label: 'OSI layer',
+            value: '3, network: subnetting is part of how IP addresses work',
+            cite: [...OSI_L3, hostPlain('3.2.1.3', 31), rfc950('2.1', 6, false)],
+          },
         ],
       },
       practice: [
@@ -509,12 +847,18 @@ const subnetting = defineLegacyLesson({
               text: String(total(CUT)),
               feedback:
                 'Not quite. 64 is how many addresses a /26 has. Two of them are kept back, the network and broadcast addresses, so 62 are left for devices.',
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11'), CISCO_TABLE, CISCO_EXAMPLE],
             },
             {
               text: String(usable(CUT)),
               feedback: 'Right. A /26 leaves 6 host bits: 64 addresses. Take away the network and broadcast addresses and 62 are left.',
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11'), CISCO_TABLE, CISCO_EXAMPLE],
             },
-            { text: String(usable(NEXT_CUT)), feedback: 'Not quite. 30 is a /27. A /26 has 6 host bits: 64 addresses, minus 2, is 62.' },
+            {
+              text: String(usable(NEXT_CUT)),
+              feedback: 'Not quite. 30 is a /27. A /26 has 6 host bits: 64 addresses, minus 2, is 62.',
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11'), CISCO_TABLE, CISCO_EXAMPLE],
+            },
           ],
           answer: 1,
         },
@@ -526,16 +870,19 @@ const subnetting = defineLegacyLesson({
               text: 'To the router, because the network parts differ.',
               feedback:
                 'Right. Under a /26 mask the borrowed bits differ, 00 against 01, so they’re on different subnets. The laptop hands the message to its default gateway.',
+              cite: [host('3.3.1.1', 47), host('3.3.1.2', 48), ms('Subnetting', 'subnetting'), ms('Default gateways', 'default-gateways')],
             },
             {
               text: 'Straight to 192.168.1.70, because both start 192.168.1.',
               feedback:
                 'Not quite. That would be true at /24. At /26 the network part takes 2 more bits, and those differ, so the message goes via the router.',
+              cite: [ms('Subnetting', 'subnetting'), host('3.3.1.1', 47)],
             },
             {
               text: 'To every device, as a broadcast.',
               feedback:
                 'Not quite. A broadcast is for when you don’t know who to ask. The laptop knows the address. It only checks whether to send directly or via the router.',
+              cite: [rfc('rfc-919', '3', true), host('3.3.1.1', 47)],
             },
           ],
           answer: 0,
@@ -547,17 +894,20 @@ const subnetting = defineLegacyLesson({
             {
               text: 'A smaller subnet makes the link faster.',
               feedback:
-                'Not quite. The size of a subnet doesn’t change its speed. The link uses a /30 because it needs exactly 2 addresses.',
+                'Not quite. A subnet’s size only sets how many addresses it has. The link uses a /30 because it needs exactly 2 addresses.',
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-3021', '1'), CISCO_31BIT],
             },
             {
               text: 'It keeps the guest Wi-Fi off the link.',
               feedback:
                 'Not quite. Keeping guests out is the router’s job. The /30 is about size: the link has two ends, so it needs exactly 2 addresses.',
+              cite: [rfc('rfc-1812', '5.3.9', true), host('3.3.1.1', 47), rfc('rfc-3021', '1'), CISCO_31BIT],
             },
             {
               text: 'It has exactly 2 usable addresses, one for each end.',
               feedback:
-                'Yes. A /30 has 4 addresses: the network, the broadcast, and 2 for devices. A link has two ends, so none go to waste.',
+                'Yes. A /30 has 4 addresses: the network, the broadcast, and 2 for devices. A link has two ends, so neither usable address goes to waste.',
+              cite: [rfc('rfc-3021', '1'), CISCO_31BIT],
             },
           ],
           answer: 2,
@@ -660,8 +1010,8 @@ export const STATED: Stated[] = [
   },
   {
     at: step('network-broadcast', 'deep'),
-    text: 'The number of usable addresses is 2 to the power of the host bits, minus 2.',
-    value: () => `The number of usable addresses is ${BIT_VALUES} to the power of the host bits, minus ${KEPT_BACK}.`,
+    text: 'Up to a /30, the number of usable addresses is 2 to the power of the host bits, minus 2.',
+    value: () => `Up to a /${LINK}, the number of usable addresses is ${BIT_VALUES} to the power of the host bits, minus ${KEPT_BACK}.`,
   },
   {
     at: plainOf('network-broadcast', 'network-24'),
@@ -811,10 +1161,15 @@ export const STATED: Stated[] = [
 
   // Learn.
   { at: 'learn.lead', text: 'one block of 256 addresses', value: () => `one block of ${floor.totalAddresses} addresses` },
-  { at: 'learn.terms.2.idea', text: 'a 1 for each network bit', value: () => `a ${MASK_NETWORK_BIT} for each network bit` },
+  {
+    at: 'learn.terms.2.idea',
+    text: 'a 1 for each network bit and a 0 for each host bit',
+    value: () => `a ${MASK_NETWORK_BIT} for each network bit and a ${MASK_HOST_BIT} for each host bit`,
+  },
   { at: 'learn.terms.4.idea', text: 'own name: every host bit 0', value: () => `own name: every host bit ${NETWORK_BIT}` },
   { at: 'learn.terms.5.idea', text: 'hears: every host bit 1', value: () => `hears: every host bit ${BROADCAST_BIT}` },
   { at: 'learn.terms.9.name', text: 'Point-to-point /30', value: () => `Point-to-point /${LINK}` },
+  { at: 'learn.pattern.note', text: 'any prefix up to /30', value: () => `any prefix up to /${LINK}` },
   {
     at: 'learn.pattern.note',
     text: 'did it for a /24, step 4 for a /26 and step 6 for a /30.',
@@ -823,8 +1178,8 @@ export const STATED: Stated[] = [
   { at: 'learn.why', text: 'needs 2 addresses, not 254.', value: () => `needs ${link.usableHosts} addresses, not ${floor.usableHosts}.` },
   {
     at: 'learn.deep',
-    text: 'a block size: 256 minus the mask’s last number below 255',
-    value: () => `a block size: ${OCTET_MAX + 1} minus the mask’s last number below ${OCTET_MAX}`,
+    text: 'From /24 on, each prefix has a block size: 256 minus the mask’s last number below 255',
+    value: () => `From /${FLOOR} on, each prefix has a block size: ${OCTET_MAX + 1} minus the mask’s last number below ${OCTET_MAX}`,
   },
   {
     at: 'learn.deep',
