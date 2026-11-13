@@ -1,5 +1,7 @@
 # G1: the glossary's list of terms (proposed)
 
+> **Approved by the owner on 2026-11-13: all 113 entries, the borderline ones included** ("All 113"; direction 2.41). The protocol names in the note below are still open.
+
 > **For the owner (the orchestrator, 2026-11-13).** Proposed: 113 entries (21 borderline), 5 words with two senses, 25 other spellings, 102 words left in their lessons. After the pilot's ten, 103 entries in about 9 groups: roughly 2.3 to 2.9 million subagent tokens at job 7's rate (82 entries, 1.8 to 2.3 million, without the borderline ones); the pilot will replace this rate with a measured one. One open point: the protocols the lessons are named for (DHCP, DNS, HTTP, FTP, SMTP, SSH, ICMP) are in neither list, while TCP, UDP, IP and TLS get entries. The orchestrator would give each protocol a lesson teaches an entry of its own (a reader meets "DHCP" outside its lesson), about 7 more entries. Nothing beyond the pilot is written until the owner approves the list.
 
 Job 9, unit G1 (decision 5). Proposed by the analyst; the owner approves it. No repo file was changed.
