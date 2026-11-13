@@ -232,7 +232,7 @@ describe('the OSI Model lesson’s sources', () => {
   const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
   const NIST = 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-77r1.pdf';
 
-  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s, batch 2’s, batch 3’s and batch 4’s', () => {
+  test('SOURCES holds the OSI Model lesson’s sources, then the UDP lesson’s, the HTTP lesson’s, then batch 1’s to batch 5’s', () => {
     expect(Object.keys(SOURCES)).toEqual([
       'itu-x200', 'rfc-1122', 'nist-sp800-77r1', 'microsoft-osi', 'cisco-ipip-decap', 'rfc-2003',
       'rfc-768', 'rfc-8085', 'rfc-3550', 'rfc-3551', 'rfc-9000', 'rfc-4787', 'rfc-9293', 'rfc-1035', 'rfc-2131', 'rfc-791', 'iana-ports',
@@ -285,6 +285,10 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-9852', 'nist-sp800-52r2', 'microsoft-tls-protocol', 'microsoft-sql-tls-1-3', 'microsoft-app-service-certificates', 'paloalto-tls-handshake', 'paloalto-tls-certificate',
       'cloudflare-client-certificates', 'microsoft-ms-sstp', 'microsoft-iis-ftp-messages',
       'baeldung-ssh-intro',
+      // Batch 5: Subnetting's, then Firewalls'.
+      'rfc-950', 'rfc-3021', 'rfc-5737', 'rfc-2644', 'rfc-919', 'microsoft-tcpip-subnetting', 'cisco-ip-subnets', 'cisco-host-subnet-quantities',
+      'nist-sp800-41r1', 'cisco-asa-access-rules', 'cisco-asa-connections', 'cisco-fmc-access-rules', 'cisco-firewall', 'cisco-ngfw', 'microsoft-windows-firewall', 'microsoft-windows-firewall-rules', 'microsoft-azure-nsg', 'microsoft-azure-firewall-rule-sets',
+      'microsoft-azure-network-best-practices', 'paloalto-firewall-types', 'paloalto-stateful-firewall', 'paloalto-firewall-rules', 'paloalto-firewall', 'paloalto-ngfw', 'paloalto-rulebase-best-practices', 'paloalto-security-rules', 'google-cloud-firewall-insights', 'cloudflare-firewall',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
