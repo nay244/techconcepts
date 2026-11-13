@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orchestrator-handbook.md`. The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9, batches 3 and 4 at e8ea005.
 
-**Status: in progress.** Planned on 2026-11-12; the owner said go that day ("Go", on the plan as shown), which approves the thirteen decisions below.
+**Status: done** (2026-11-12). Planned on 2026-11-12; the owner said go that day ("Go", on the plan as shown), which approves the thirteen decisions below. All three lessons are cited and checked, the legacy list is empty, and the changed sentences are in `docs/lesson-changes/networking-dhcp-subnetting-firewalls.md` (direction 2.36; `team.md`, job 8).
 
 ## Inputs
 
@@ -94,6 +94,7 @@ Everything else the orchestrator decides, records in the direction doc and repor
 
 - **Remove the legacy path:** with the list empty, `defineLegacyLesson`, `src/content/legacy.ts`, the "Unchecked" stamp and the tests on them are dead code. A unit of its own, planned in the next job.
 - **Registry addresses that moved:** IANA's port registry and two Palo Alto DHCP pages answer at new addresses (direction 2.35). Re-registering them changes every checked lesson that cites them, so it comes with re-checks.
+- **About's sources box:** with DHCP's sixteen sources, "Cisco DHCP troubleshooting" and "Microsoft DHCP troubleshooting" overflow the short-name column into the title at 375 and 1440 (decision 9). A design unit for the owner.
 - Phase 5, the Practice page (direction §3).
 
 ## Not in this plan

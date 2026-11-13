@@ -13,7 +13,7 @@ Written 2026-11-12 by the session that ran job 7, for the orchestrator that take
 
 ## 2. Where the project stands
 
-- Phase 4 (every lesson cited and fact-checked): 15 of 18 lessons are checked. All 14 of How the Internet Works are done (jobs 3 to 7 in `team.md`). **Left: batch 5**, the three Networking Concepts lessons on the legacy list (`src/content/legacy.ts`): `dhcp`, `subnetting`, `firewalls`.
+- Phase 4 (every lesson cited and fact-checked) is done (2026-11-12, job 8): all of How the Internet Works and Networking's DHCP, Subnetting and Firewalls are checked, and the legacy list (`src/content/legacy.ts`) is empty. Its path is dead code, to remove in a unit of its own (`plan.md`, "After this job").
 - Then Phase 5 (the Practice page), then "After the revamp" in `docs/direction.md` §3: Networking Concepts' 15 lessons still to write, CompTIA A+, the glossary.
 - Everything is on branch `revamp`, local. **Nothing is pushed**; push, pull request, merge to `main` and deploy are the owner's.
 - `plan.md` holds the last plan (job 7, done) and is the form to follow. `team.md` is the ledger; each job ends with "What to do differently next time". Read job 7's.
@@ -87,7 +87,7 @@ About 420 million tokens were re-read from cache, 15 million written to it, and 
 
 What saves most, in order:
 
-1. **Analysts are 44% of the re-reading.** Each ran about 177 requests in one context that reached 370,000 tokens: the report, the rulings, the read before the check and the fixes. Earlier jobs kept one analyst going because a continued agent "spends less than a fresh one reading in"; that was judged by growth, the wrong measure. For batch 5, **try a fresh analyst for the read before the check on one lesson**, given the report file, the rulings and the saved sources, and compare "read in all" and the first check's result with the other two lessons. Also tell analysts to search a saved source for the passage they need, not read it whole, and to do several commands in one request.
+1. **Analysts are 44% of the re-reading.** Each ran about 177 requests in one context that reached 370,000 tokens: the report, the rulings, the read before the check and the fixes. Earlier jobs kept one analyst going because a continued agent "spends less than a fresh one reading in"; that was judged by growth, the wrong measure. Batch 5 tried a fresh analyst for the read before the check on one lesson: it read more (7.45 million against 3.16 and 5.04) and its lesson was the only near-pass, so **keep the continued analyst for the read** (direction 2.36). Also tell analysts to search a saved source for the passage they need, not read it whole, and to do several commands in one request.
 2. **One batch of three lessons a session** (the orchestrator is 27%). Its context grew from 82,000 to 734,000 tokens over two batches, and the second half of the session was 65% of its re-reading. A fresh session for batch 4 would have cut the orchestrator's total by roughly 40%. One plan and one go can still cover two batches.
 3. **Ask every agent for a short reply:** the result, the counts, the path to its report file and its open questions, in 150 words or fewer. Job 7's 69 hand-backs came to about 105,000 tokens, each carried through every later request. Read from a report only the sections you must rule on.
 4. **Read little at the start** (step 1 of section 3), and never read a whole lesson file, a whole report or a transcript yourself.
