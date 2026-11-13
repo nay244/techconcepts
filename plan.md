@@ -113,3 +113,62 @@ A unit that fails two build reviews comes back to the orchestrator with both rep
 - The Practice page, or any change to a lesson's Practice.
 - A search box; copying another site's text; a new source host that is not a publisher's own.
 - Anything that leaves this machine.
+
+## B7: spec review (reviewer, Opus, 2026-11-13) and errata
+
+The review found 8 holes; each has one right answer, closed by the orchestrator:
+
+- **E1 (H1)** The check's command is `grep -rni legacy src e2e scripts | grep -v LEGACY_PROGRESS_KEY | grep -v 'nistpubs/Legacy/' | grep -v 'with%20legacy'`, which prints nothing (the NIST URLs and POP3's text fragment are content and stay); `git diff revamp...b7/legacy -- src/content/lessons src/content/sources.ts docs/fact-checks` is empty.
+- **E2 (H2)** A test-only validator moves into `src/content/test-fixtures.ts`: it parses the terse fixture shape, lifts it, runs `checkStructure`, throws `LessonValidationError`, and never calls `markDefined`; `define.test.ts`'s `issuesOf` uses it. The registry tests get their defined lessons from `validateLesson({ ...makeCitedLesson(), slug, title }, FIXTURE_SOURCES)`, with `FIXTURE_SOURCES` passed to `lessonsFromModules`. `markDefined` stays private to the defining path.
+- **E3 (H3)** `lessonCheckCounts` counts a lesson as checked when `checkedOn(slug) !== null`, the stamp's own truth.
+- **E4 (H4)** `ReadyLesson.checked` goes; `e2e/global-setup.ts` throws on any ready stop whose stamp does not start `Checked`; `e2e/site.spec.ts:594-596` and `:1356` accept only `Checked d Mon yyyy`; the title at `:590` loses "a lesson not moved yet is not".
+- **E5 (H5)** Both rules of `checkLegacyRules` go with `legacy.ts` (the multi-unit Practice rule is unreachable: `cited.ts` Rule 1 refuses a lesson of several units); their tests are named as removed.
+- **E6 (H6)** `sourceNumbers.ts`'s unnumbered branch and `source` being optional stay; only the comment is reworded.
+- **E7 (H7)** B7 rewrites `docs/content-model.md` §4 to one line (the legacy path was removed in job 9, B7) and its lines about `defineLegacyLesson` and the exemption. The agent files and briefs are B9's (decision 8); `plan.md` and the direction doc are the orchestrator's.
+- **E8 (H8)** The three vacuous tests are `registry.test.ts:247-262`, `:435-437` and `:439-445`; they are deleted (retargeting them fails: lessons carry backings and one has an override).
+
+### B7 attack cases, grouped under B7's check
+
+The check has five parts; decision 12's "goes" and "stays" lists are tested under the part that would catch each.
+
+#### Check 1: `grep -rni legacy src e2e scripts` finds only the v1 progress key's lines (blocked by H1)
+- **A1.1** Refuse: the builder rewords the NIST URLs or POP3's text fragment to pass the grep. A right build leaves `src/content/lessons/*.ts`, `src/content/sources.ts` and `docs/fact-checks/` byte-identical: `git diff revamp...b7/legacy --stat -- src/content/lessons src/content/sources.ts docs/fact-checks` prints nothing.
+- **A1.2** Refuse: `LegacyLessonInput`, `LegacyUnitInput`, `liftLegacy`, `legacyLessonSchema` survive by moving into `test-fixtures.ts` under their old names. A right build renames them (grep, with H1's filters, prints nothing).
+- **A1.3** Refuse: test names and comments keep the word (`Explanation.test.tsx:199` "as its legacy text", `cited.test.ts:362` and `:450`, `Practice.test.tsx:84`, `sourceNumbers.test.ts:7`, `sourceNumbers.ts:20`, `schema.ts:24`, `:487`, `cited.ts:8`, `:169`, `gate.ts:12`, `timeline.test.ts:18`). A right build rewords each to what is true now.
+- **A1.4** Accept: every `LEGACY_PROGRESS_KEY` line stays, including `src/test/progress.ts:1`, `:22`, `src/components/progress-islands.test.tsx:12`, `:83`, `src/progress/useProgress.ts:4`, `:67`, and their tests; `store.test.ts:43` still expects `'techconcepts:v1'`. A build that renames the constant fails.
+- **A1.5** Refuse: a renamed survivor of the list, such as `UNCHECKED_LESSONS = []` or a `'fixture'` value of `origin`. A right build has no `origin` on `Lesson` (`schema.ts:488`): `grep -rn "\.origin\b\|origin: '" src e2e | grep -v "url\|location\|transform-origin\|iso-kit\|osi.ts"` prints nothing.
+
+#### Check 2: `npm test` passes with no skipped test, every removed test named with its reason
+- **A2.1** Refuse: the four `test.skipIf(LISTED === undefined)` cases (`define.test.ts:555`, `:560`, `legacy.test.ts:77`, `cli.defaults.test.ts:11`) turned into plain tests that pass on nothing, or into `test.todo`. A right build deletes them; vitest's summary shows `0 skipped` and no `todo`; `grep -rn "skipIf\|\.todo(" src` prints nothing.
+- **A2.2** Refuse: removing a structural test along with the legacy ones. Every `define.test.ts` case that tests `checkStructure` survives and still fails on its fault (H2): with any one structural rule in `define.ts` disabled (say, the duplicate event id check at `:300`), `define.test.ts` goes red. The number of tests in `define.test.ts` drops by exactly the named removals.
+- **A2.3** Refuse: `issuesOf` re-pointed at a helper that throws a ZodError or runs no `checkStructure`. A shape fault (`makeLesson()` with `units: []`, or a step with no `narrative`) still returns a `LessonValidationError` issue, not a crash, and a structural fault still returns its message.
+- **A2.4** Refuse: a test helper that calls `markDefined`. With `definedFor` rewritten, `lessonsFromModules` still throws `NOT_DEFINED` for a hand-built lesson and for `{ ...defined }` (`registry.test.ts:310-326`), and throws the other-source-list error for a lesson checked against `FIXTURE_SOURCES` but loaded with the default `SOURCES`.
+- **A2.5** Accept: every registry test that used `definedFor` (7 uses) still runs its scenario through a lesson `validateLesson` returned.
+- **A2.6** The gate, `gate.ts:212`: refuse a build that keeps exempting some lessons. `checkFactChecks([liftedFixture()], {}, FIXTURE_SOURCES)` now returns an issue naming the missing report (the old "legacy lessons need no report", `gate.test.ts:91`, inverted, not just deleted); a report whose slug no lesson owns is still an issue.
+- **A2.7** The CLI, `cli.ts:103-104`: accept any lesson the registry has; an unknown slug is still refused with its message (`cli.test.ts`). `cli.test.ts:135-141`, `cli.recheck.test.ts:88-96` ("stamp 5"), `cli.defaults.test.ts:11-16` are named as removed.
+- **A2.8** `checkedOn`, `registry.ts:305-314`: a lesson with a report returns its date; a slug no lesson has returns null; a lesson with no report returns null (the dev path). Each is a test that goes red when `checkedOn` returns a constant.
+- **A2.9** The stamp's not-checked state stays: `Stamp.test.tsx:13-18`, `stamp.test.ts:8-10`, `:15`, `TopBar.test.ts:55`, `Explanation.test.tsx:92-93`, `:272-276`, `TrackRoute.test.tsx:50-52`, `track.test.ts:122-125` all still run and pass; `checked.test.ts:17-28` keeps its "a lesson not checked yet carries none" assertion on `liftedFixture(makeLesson({ slug: 'a-lesson-not-checked' }))`, with `LEGACY_LESSONS` gone from it. With `strokeDasharray` in `Stamp.tsx:21` made unconditional, a test goes red.
+- **A2.10** `lessonCheckCounts` (H3): whichever answer, a test pins it so that the other answer goes red (for `checkedOn`: with `checkedOn` mocked to null for one ready slug, `checked` is `total - 1`).
+- **A2.11** `home.test.ts:97-100`: the "And HTTPS?" lesson still must have a check date; only its list assertion goes. Refuse deleting the whole test.
+- **A2.12** `how-the-internet-works.test.ts:130`, `:749`, `:774`: the cited branch is kept unconditionally; the legacy branch and the data only it read (`rows[i]`'s `osi` column, `expectedReferences`, `uncited`) go. Refuse keeping the legacy branch's expectations: with a ready HIW lesson's `references` emptied, the test goes red.
+- **A2.13** `cited.test.ts:450` ("a lesson in the legacy shape is rejected by the strict path, on its shape alone") is not legacy-only: it proves `defineLesson` refuses the terse fixture shape. Refuse deleting it; rename it.
+- **A2.14** Multi-unit code stays (decision 12): `timeline.test.ts:31` `twoUnits`, `makeTwoUnitLesson`, `Outline.test.tsx`'s Alpha/Beta fixture and `Outline.tsx:193-277` still run and pass. Refuse deleting `Outline.tsx`'s protocol rows or `LessonSummary.units` as "legacy".
+- **A2.15** The moved fixture schema still refuses a typo (`timeline.test.ts:18` relies on it): `liftedFixture({ ...makeLesson(), units: [{ ...makeUnit(), stepz: [] }] } as never)` throws. A `z.any()` or cast-only fixture passes it.
+- **A2.16** The report names each removed test with its reason, one line each, and the names match `git diff` (every `test(`/`test.skipIf(` line removed appears in the list; none listed is still present).
+
+#### Check 3: `npx astro check` clean
+- **A3.1** Refuse: `as any` / `as never` / `@ts-expect-error` added to silence a removed `origin` or a renamed type. `git diff revamp...b7/legacy | grep -n "^+.*\(as any\|ts-expect-error\|ts-ignore\)"` prints nothing new beyond what A2.15 needs.
+- **A3.2** `e2e/` is type-checked with the site's settings (`support.ts:24-26`): a dangling `ReadyLesson.checked` read (`site.spec.ts:345`, `:594`) is an error, not a runtime surprise.
+
+#### Check 4: `npm run build`
+- **A4.1** Refuse: `registry.ts` still calls a renamed `checkLegacyList`, or keeps a closed-list check over nothing. The build passes with `checkLegacyList` and its call at `:251` gone.
+- **A4.2** Refuse: a production module importing `test-fixtures.ts` to reach the moved schema. `grep -rln "test-fixtures" src | grep -v "\.test\.\|test-fixtures.ts"` prints nothing (today it prints nothing).
+- **A4.3** The error messages that named the legacy path (`registry.ts:150-155`: "or defineLegacyLesson ... legacy list") are reworded, and `registry.test.ts`'s `NOT_DEFINED` string matches the new words; a lesson file that is a plain object still fails the build naming `defineLesson`.
+- **A4.4** With one report removed from `docs/fact-checks/` (in a scratch copy), `npm run build` still fails naming that lesson; `astro dev`'s warn path is unchanged (`refuseOrWarn`, `registry.ts:289-294`).
+
+#### Check 5: `e2e/site.spec.ts` and `e2e/lesson.spec.ts` pass on port 4481 (shaped by H4)
+- **A5.1** Refuse: `site.spec.ts:344-356` kept as a skipped or always-passing test. It is deleted (it needs a page with the not-checked stamp, which a build cannot have) and named as removed; the stamp's not-checked state is covered by the unit tests in A2.9.
+- **A5.2** Refuse: `global-setup.ts` that no longer reads the stamp at all. A right build still fails the run when a ready stop's stamp does not say `Checked d Mon yyyy`: with the stamp text forced to "Not checked yet" in `TrackRoute.tsx`, global setup throws.
+- **A5.3** `site.spec.ts:590-600` and `:1356`: with `Checked` replaced by "Not checked yet" for one lesson, both go red (under H4's answer).
+- **A5.4** Accept: `e2e/tablet.spec.ts`, `e2e/visual.spec.ts` and `site.spec.ts:318-327`, `:1047-1052`, `:1402-1432` are untouched and their screenshots unchanged; the stamp's look and placement do not move.
+- **A5.5** The run uses `E2E_PORT=4481`, so it cannot pick up a server from the main folder (4471); the report shows the port and the pass count, with 0 skipped from `site.spec.ts` (the remaining skips are the project-scoped ones in `lesson.spec.ts:45`, `:291`, which stay).
