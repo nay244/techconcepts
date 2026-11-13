@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orchestrator-handbook.md`. The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9, batches 3 and 4 at e8ea005, batch 5 at 1a1fbb4, and job 9's first plan, the Practice page, at 8fd2947.
 
-**Status: re-planned, waiting for the owner's go** (2026-11-13). At the design gate for the Practice page the owner changed the page: "Let's turn the practice page into a simple glossary. This page will contain concept terms used in the Tracks." The Practice page's designs (D6, D7) were not approved and are set aside. The go approves the twelve decisions below (direction 2.38).
+**Status: the owner said go on the re-plan** (2026-11-13, "Go", on the plan as shown), which approves the twelve decisions below. D8 and A1 are under way; the build waits for the design gate. At the design gate for the Practice page the owner changed the page: "Let's turn the practice page into a simple glossary. This page will contain concept terms used in the Tracks." The Practice page's designs (D6, D7) were not approved and are set aside. (Direction 2.38.)
 
 ## Inputs
 

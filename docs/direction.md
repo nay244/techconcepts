@@ -130,7 +130,7 @@ Status: What is UDP is cited and checked (2026-11-11), the first of the 17; `doc
 
 Design and build a simple Glossary page of the concept terms the tracks' lessons teach, each in its lesson's checked words (owner, 2026-11-13; decision 2.38). Until that day this phase was the standalone Practice page over the 40 existing questions, with the private missed-questions list from the earlier direction doc §6.6 (option 3); that page is held.
 
-Status: first planned as the Practice page (job 9, 2026-11-12, decision 2.37; the owner's go that day); its designs reached the design gate on 2026-11-13 and the owner changed the page there. Re-planned the same day as the Glossary page (decision 2.38; `plan.md`), waiting for the owner's go. One design unit (D8) and a read of the terms out of their lessons come to the owner before anything is built. The legacy path is removed in the same job, as a build unit of its own.
+Status: first planned as the Practice page (job 9, 2026-11-12, decision 2.37; the owner's go that day); its designs reached the design gate on 2026-11-13 and the owner changed the page there. Re-planned the same day as the Glossary page (decision 2.38; `plan.md`); the owner said go on it that day. One design unit (D8) and a read of the terms out of their lessons come to the owner before anything is built. The legacy path is removed in the same job, as a build unit of its own.
 
 ### After the revamp
 
