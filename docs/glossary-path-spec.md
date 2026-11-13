@@ -167,3 +167,4 @@ The review found 14 holes; each had one right answer and is closed here by the o
 - **E12** Acceptance check 10 above.
 - **E13** Rule 9 ignores case and outer spaces on both halves (`also: ['ttl']` beside `term: 'TTL'` is refused in the group); `also`, where given, is non-empty.
 - **E14** Rule 13 refuses a pair that matches more than one term in its lesson (possible only in a lesson of several units).
+- **E15** (the build review, Fix 3) The author's done check in §8 was wrong: in development mode a group with no report only warns, so `npx vitest run --mode development` passes (the canary report test aside) and prints the warning; `npm test` fails every test file that loads the real registry until the group's report passes. `docs/briefs/author-glossary-group.md` says so.

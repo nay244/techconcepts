@@ -14,7 +14,7 @@ Write one glossary group, once, from the analyst's report (`.superpowers/analysi
 
 - `npm run fact-check -- glossary/<id>` prints the claim sheet (it runs every rule of the group and the ties).
 - `npx astro check` is clean.
-- `npx vitest run --mode development` fails only on the group's missing report (the gate asks for it).
+- `npx vitest run --mode development` passes except the canary group's report test (`canary.glossary.test.ts`, "the canary report matches the group", until that report is committed), and prints the gate's warning `glossary/<id>: no fact-check report at docs/fact-checks/glossary/<id>.md` for the group. That is "done, waiting for the check". Plain `npm test` throws that same message at import, so every test file that loads the real registry fails (32 files in the measured state) until the group's report passes; any other failure is real.
 - Committed on the branch, locally: `type: a sentence saying what is now true`, with the co-author line the history uses.
 
 Your report lists every entry and every statement you wrote, with the source and section each rests on, every doubt, and the tail of each command.

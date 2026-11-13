@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { GLOSSARY, GLOSSARY_GROUPS, checkGlossaryGroups, groupsFromModules } from './glossary';
+import { checkGlossaryGroups, groupsFromModules } from './glossary';
 import { makeGroup, statement } from './glossary-fixtures';
 import { FIXTURE_SOURCES } from './test-fixtures';
 
@@ -15,8 +15,6 @@ const group = (id: string, entries: { id: string; term: string; also?: string[] 
 describe('loading', () => {
   test('with no group file, the glossary and its groups are empty and valid', () => {
     expect(groupsFromModules({})).toEqual([]);
-    expect(GLOSSARY_GROUPS).toEqual([]);
-    expect(GLOSSARY).toEqual([]);
   });
 
   test('every entry comes in group order, then file order', () => {

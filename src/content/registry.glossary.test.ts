@@ -102,15 +102,35 @@ describe('A7: objective mappings are still refused, and only they', () => {
 });
 
 describe('E5 the registry\'s wiring', () => {
+  // The registry reads the mode it runs in: the build and the tests throw, `astro dev` only warns. Pin the mode so this block
+  // holds under `vitest run --mode development` too.
   afterEach(() => {
     vi.doUnmock('./glossary');
+    vi.unstubAllEnvs();
     vi.resetModules();
+  });
+  const realGroup = (id: string, entry: string, term: string, tied: string) =>
+    defineGlossaryGroup(
+      {
+        id,
+        entries: [{ id: entry, term, definition: [{ id: `${entry}-1`, text: 'A GET request asks for a current representation of a resource.', cite: [cite('rfc-9110', '9.3.1', { defining: true })] }], lessons: [{ lesson: 'what-is-icmp', term: tied }] }],
+      },
+      SOURCES,
+    );
+  test('with ./glossary mocked to two groups tying one lesson term, the real registry refuses the second tie', async () => {
+    const a = realGroup('first', 'ping-a', 'Ping A', 'term-ping');
+    const b = realGroup('second', 'ping-b', 'Ping B', 'term-ping');
+    vi.stubEnv('MODE', 'test');
+    vi.resetModules();
+    vi.doMock('./glossary', () => ({ GLOSSARY_GROUPS: [a, b], GLOSSARY: [...a.entries, ...b.entries] }));
+    await expect(import('./registry')).rejects.toThrow(/ties term "term-ping" of lesson "what-is-icmp", which glossary group "first", entry "ping-a" already ties/);
   });
   test('with ./glossary mocked to one group, the real registry refuses for its missing report', async () => {
     const pilot = defineGlossaryGroup(
       { id: 'pilot', entries: [{ id: 'get', term: 'GET', definition: [{ id: 'get-1', text: 'A GET request asks for a current representation of a resource.', cite: [cite('rfc-9110', '9.3.1', { defining: true })] }] }] },
       SOURCES,
     );
+    vi.stubEnv('MODE', 'test');
     vi.resetModules();
     vi.doMock('./glossary', () => ({ GLOSSARY_GROUPS: [pilot], GLOSSARY: pilot.entries }));
     await expect(import('./registry')).rejects.toThrow('glossary/pilot: no fact-check report at docs/fact-checks/glossary/pilot.md');
