@@ -15,6 +15,7 @@ const R792_ECHO_DATA = rfc792('Echo or Echo Reply Message, page 15', 15);
 const R792_DU = rfc792('Destination Unreachable Message, page 4', 4);
 const R792_DU_HOST = rfc792('Destination Unreachable Message, page 5', 5);
 const R792_TE = rfc792('Time Exceeded Message, page 6', 6);
+const R792_TE_HOST = rfc792('Time Exceeded Message, page 7', 7);
 /** The Introduction is on page 1, which has no id, so it is cited by a text fragment; it does not define packet loss, so it is not marked. */
 const R792_INTRO = cite('rfc-792', 'Introduction', { url: `${RFC792}#:~:text=Some%20datagrams%20may%20still%20be%20undelivered` });
 
@@ -60,7 +61,7 @@ export default defineGlossaryGroup({
         {
           id: 'echo-request-2',
           text: 'The device sends back an echo reply carrying the same data, which shows that it can be reached.',
-          cite: [R792_ECHO_DATA, R1122_ECHO, rfc2151('3.2')],
+          cite: [R792_ECHO_DATA, R1122_ECHO, rfc2151('3.2'), MS_PING],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-echo-request' }],
@@ -73,7 +74,7 @@ export default defineGlossaryGroup({
         {
           id: 'echo-reply-2',
           text: 'It carries the request’s data back to the sender, which learns that the device was reached and how long the answer took.',
-          cite: [R792_ECHO_DATA, MS_PING, CISCO_PERF],
+          cite: [R792_ECHO_DATA, MS_PING, rfc2151('3.2'), CISCO_PERF],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-echo-reply' }],
@@ -90,7 +91,7 @@ export default defineGlossaryGroup({
         {
           id: 'ping-2',
           text: 'It tells you whether the device can be reached, the round-trip time and how many packets were lost.',
-          cite: [rfc2151('3.2'), AZURE_PING, CISCO_PING],
+          cite: [rfc2151('3.2'), MS_PING, AZURE_PING, CISCO_PING],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-ping' }],
@@ -102,8 +103,8 @@ export default defineGlossaryGroup({
         { id: 'latency-1', text: 'Latency is the delay data meets on its way across a network.', cite: [G114_INTRO, AZURE_LATENCY] },
         {
           id: 'latency-2',
-          text: 'It can be measured one way, or there and back as the round-trip time, which is what ping shows for each reply.',
-          cite: [G114_INTRO, AZURE_PING, CISCO_PERF],
+          text: 'Ping measures it there and back, as the round-trip time it shows for each reply.',
+          cite: [AZURE_PING, rfc2151('3.2'), CISCO_PERF],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-latency' }],
@@ -127,7 +128,7 @@ export default defineGlossaryGroup({
               text: 'Each router that passes the packet on lowers it by at least one, and at zero the packet is thrown away, so it cannot circle the network forever.',
               cite: [R1812_TTL, R1122_TTL],
             },
-            { id: 'ttl-ip-3', text: 'IPv6 calls the same field the Hop Limit.', cite: [cite('rfc-8200', '3', { defining: true })] },
+            { id: 'ttl-ip-3', text: 'In IPv6, the field that does this job is called the Hop Limit.', cite: [cite('rfc-8200', '3', { defining: true })] },
           ],
           lessons: [
             { lesson: 'what-is-icmp', term: 'term-ttl' },
@@ -158,11 +159,11 @@ export default defineGlossaryGroup({
           text: 'Time exceeded is the ICMP message a router sends back to a packet’s sender when it throws the packet away because its TTL ran out.',
           cite: [R792_TE, rfc1812('5.2.7.3', true)],
         },
-        { id: 'time-exceeded-2', text: 'Traceroute depends on these messages.', cite: [R1812_TTL] },
+        { id: 'time-exceeded-2', text: 'Traceroute depends on these messages.', cite: [rfc1812('5.3.1'), MS_TRACERT] },
         {
           id: 'time-exceeded-3',
           text: 'A host may also send one when it gives up putting a split packet back together.',
-          cite: [R792_TE],
+          cite: [R792_TE_HOST],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-time-exceeded' }],
@@ -178,8 +179,8 @@ export default defineGlossaryGroup({
         },
         {
           id: 'traceroute-2',
-          text: 'It sends probes with a TTL of 1, then 2, then 3, and each router where a probe’s TTL runs out sends back a time exceeded message, so the routers appear in order.',
-          cite: [MS_TRACERT, CISCO_TRACE, rfc1812('5.3.1')],
+          text: 'It sends probes with a TTL of 1, then 2, then 3, and the router where each probe’s TTL runs out normally sends back a time exceeded message, so the routers appear in order.',
+          cite: [MS_TRACERT, rfc2151('3.4'), rfc1812('5.3.1'), CISCO_TRACE],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-traceroute' }],
@@ -207,13 +208,13 @@ export default defineGlossaryGroup({
       definition: [
         {
           id: 'packet-loss-1',
-          text: 'Packet loss is packets that are sent but never arrive.',
+          text: 'Packet loss is packets that are sent but do not arrive.',
           cite: [cite('rfc-7680', '2.4'), R792_INTRO],
         },
         {
           id: 'packet-loss-2',
-          text: 'Ping shows it as the share of its echo requests that got no reply in time, such as 1 lost out of 6.',
-          cite: [rfc2151('3.2'), MS_PING_PARAMS, CISCO_PING],
+          text: 'Ping shows it as the share of its echo requests that got no reply, such as 1 lost out of 6.',
+          cite: [rfc2151('3.2'), MS_PING_PARAMS, AZURE_PING, CISCO_PING],
         },
       ],
       lessons: [{ lesson: 'what-is-icmp', term: 'term-loss' }],
@@ -229,13 +230,13 @@ export default defineGlossaryGroup({
         },
         {
           id: 'ip-address-2',
-          text: 'It belongs to one network connection, so a device with several connections has several addresses.',
+          text: 'It is given to a network connection, so a device with several connections has several addresses.',
           cite: [cite('rfc-8200', '2', { defining: true }), rfc791('2.3')],
         },
         {
           id: 'ip-address-3',
           text: 'It is unique within its own network; private addresses are reused on other networks.',
-          cite: [MS_SUBNET, cite('rfc-1918', '3')],
+          cite: [MS_SUBNET, cite('rfc-1918', '3', { defining: true })],
         },
       ],
       lessons: [
