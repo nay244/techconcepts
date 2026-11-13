@@ -289,6 +289,8 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-950', 'rfc-3021', 'rfc-5737', 'rfc-2644', 'rfc-919', 'microsoft-tcpip-subnetting', 'cisco-ip-subnets', 'cisco-host-subnet-quantities',
       'nist-sp800-41r1', 'cisco-asa-access-rules', 'cisco-asa-connections', 'cisco-fmc-access-rules', 'cisco-firewall', 'cisco-ngfw', 'microsoft-windows-firewall', 'microsoft-windows-firewall-rules', 'microsoft-azure-nsg', 'microsoft-azure-firewall-rule-sets',
       'microsoft-azure-network-best-practices', 'paloalto-firewall-types', 'paloalto-stateful-firewall', 'paloalto-firewall-rules', 'paloalto-firewall', 'paloalto-ngfw', 'paloalto-rulebase-best-practices', 'paloalto-security-rules', 'google-cloud-firewall-insights', 'cloudflare-firewall',
+      // Job 9: the glossary pilot's.
+      'rfc-7680',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
