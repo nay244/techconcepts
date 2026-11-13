@@ -1,7 +1,7 @@
-import { formatBytes, formatTime } from '../../lib/format';
-import { dhcpLayer, ethernetLayer, ipv4Layer, packet, udpLayer } from '../helpers/packets';
-import { defineLegacyLesson } from '../legacy';
-import type { Field, MessageEvent, MessageKind, Packet, TableEvent } from '../schema';
+import { formatTime } from '../../lib/format';
+import { defineLesson } from '../define';
+import type { MessageEvent, MessageKind, TableEvent } from '../schema';
+import { cite } from '../sources';
 
 /**
  * DHCP, lesson 9 of 19. A laptop joins a home Wi-Fi network and gets its
@@ -9,17 +9,96 @@ import type { Field, MessageEvent, MessageKind, Packet, TableEvent } from '../sc
  * and renews at half-time (section 4.4.5). The phone on the same Wi-Fi hears
  * the broadcasts and ignores them.
  *
- * The words are the approved mockup's (lesson-v3.html). The frames are the
- * live lesson's: values that would differ in a real capture (transaction IDs,
- * identification numbers, checksums) are examples, and each frame has its own.
+ * The words are the approved mockup's (lesson-v3.html), changed only where a source does not state them. The
+ * addresses (RFC 1918), the MAC addresses (the documentation range 00:00:5E:00:53:xx), the 24-hour lease and its 12
+ * hours, and the times in the log are example data, and the scene's events carry them beside the claims they trace
+ * to. No message size is shown: no source states one. The hotel desk is an analogy and cites nothing. No source
+ * places DHCP at an OSI layer, so the badge spans.
  */
+
+// ---------------------------------------------------------------- citations
+
+/** A citation of one numbered section of an RFC, optionally marked as the defining standard. */
+const rfc = (source: string, section: string, defining = false) => cite(source, section, defining ? { defining: true } : {});
+/** RFC 2131 defines DHCP, and RFC 2132 its options, so their citations are the defining standard. */
+const dhcp = (section: string) => rfc('rfc-2131', section, true);
+const opt = (section: string) => rfc('rfc-2132', section, true);
+
+/** RFC 1122 has no ids below its top-level sections, so its section 3.2.1.3 is cited by the page it starts on (30). */
+const RFC1122_ADDRESSES = cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-30' });
+
+/** The same section, marked as the defining standard for the term Broadcast: RFC 1122 defines the IP broadcast addresses. */
+const RFC1122_BROADCAST = cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-30', defining: true });
+
+/** RFC 894 maps the broadcast Internet address to the broadcast Ethernet address, under "Address Mappings". */
+const ETHERNET_BROADCAST = cite('rfc-894', 'Address Mappings', { url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address' });
+
+const abstractOf = (source: string, number: string, defining = false) =>
+  cite(source, 'Abstract', { url: `https://www.rfc-editor.org/rfc/rfc${number}.html#abstract`, ...(defining ? { defining: true as const } : {}) });
+
+/** A vendor's page has no section numbers, so a section is cited by a text fragment that starts in it. */
+const vendor = (source: string, base: string, section: string, text: string) => cite(source, section, { url: `${base}#:~:text=${text}` });
+
+const MS_NETSET = vendor(
+  'microsoft-network-settings',
+  'https://support.microsoft.com/en-us/windows/experience/connectivity-networking/essential-network-settings-and-tasks-in-windows',
+  'Change TCP/IP Settings',
+  'IP%20address%20settings%20and%20DNS%20server%20address%20setting%20are%20set%20automatically',
+);
+const GOOGLE_LAN = vendor(
+  'google-nest-lan-ip',
+  'https://support.google.com/googlehome/answer/7571856',
+  'Set a custom LAN IP',
+  'customize%20your%20router%20LAN%20address',
+);
+
+const MS_TROUBLE_URL = 'https://learn.microsoft.com/en-us/windows-server/troubleshoot/troubleshoot-dhcp-issue';
+const msTrouble = (text: string) => vendor('microsoft-dhcp-troubleshoot', MS_TROUBLE_URL, 'More information', text);
+const MS_DORA = msTrouble('Broadcast-based%20DORA');
+const MS_PORTS = msTrouble('All%20communication%20is%20done%20on%20UDP%20ports%2067%20and%2068');
+const MS_T1 = msTrouble('renew%20the%20IP%20address%20assignment%20after%2050%20percent');
+const MS_T2 = msTrouble('sent%20after%2087.5%20percent');
+
+const MS_BASICS_URL = 'https://learn.microsoft.com/en-us/windows-server/troubleshoot/dynamic-host-configuration-protocol-basics';
+const msBasics = (section: string, text: string) => vendor('microsoft-dhcp-basics', MS_BASICS_URL, section, text);
+const MS_BASICS_MAC = msBasics('DHCPDISCOVER', 'identifies%20the%20client%20in%20two%20places');
+const MS_BASICS_OFFER = msBasics('DHCPOFFER', 'Note%20the%20CHADDR%20field');
+const MS_BASICS_ZERO = msBasics('DHCPREQUEST', 'The%20client%20retains%200.0.0.0');
+
+const MS_SERVER_URL = 'https://learn.microsoft.com/en-us/windows-server/networking/technologies/dhcp/dhcp-top';
+const msServer = (text: string) => vendor('microsoft-dhcp-server', MS_SERVER_URL, 'Why use DHCP?', text);
+const MS_MANUAL = msServer('Without%20DHCP,%20IP%20addresses%20for%20new%20computers');
+const MS_DATABASE = msServer('The%20DHCP%20server%20stores%20the%20configuration%20information');
+
+const MS_TRAINING_URL =
+  'https://learn.microsoft.com/en-us/training/modules/deploy-manage-dynamic-host-configuration-protocol/2-use-dynamic-host-configuration-protocol-simplify-ip-configuration';
+const MS_TRAINING_UNICAST = vendor('microsoft-dhcp-training', MS_TRAINING_URL, 'DHCP lease renewal', 'sends%20a%20unicast%20DHCPREQUEST');
+const MS_TRAINING_RESET = vendor('microsoft-dhcp-training', MS_TRAINING_URL, 'DHCP lease renewal', 'If%20renewal%20is%20successful');
+
+const MS_IPCONFIG_RENEW = vendor(
+  'microsoft-ipconfig',
+  'https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig',
+  'Parameters',
+  'Renews%20DHCP%20configuration%20for%20all%20adapters',
+);
+
+const CISCO_URL = 'https://www.cisco.com/c/en/us/support/docs/ip/dynamic-address-allocation-resolution/27470-100.html';
+const cisco = (section: string, text: string) => vendor('cisco-dhcp-troubleshoot', CISCO_URL, section, text);
+const CISCO_OFFER_OPTIONS = cisco('DHCPOFFER', 'The%20subnet%20mask%20and%20default%20gateway%20are%20specified');
+const CISCO_OFFER_CHADDR = cisco('DHCPOFFER', 'includes%20the%20client%20hardware%20address%20in%20the%20chaddr%20field');
+const CISCO_LEASE_DB = cisco('DHCPACK', 'Meanwhile,%20the%20DHCP%20server%20stores%20the%20lease');
+const CISCO_RENEW = cisco('Renew the Lease', 'When%20one%20half%20of%20the%20lease%20time');
+const CISCO_REBIND = cisco('Renew the Lease', 'it%20attempts%20to%20renew%20the%20address%20from%20any%20DHCP%20server');
+const CISCO_IPCONFIG = cisco('C. Verify Issue as a Startup Problem', 'Issue%20the%20command%20ipconfig/renew');
+
+const CANONICAL_URL = 'https://canonical.com/blog/basic-dhcp-concepts';
+const CANONICAL_DORA = vendor('canonical-dhcp-concepts', CANONICAL_URL, 'The network version of DORA', 'The%20DHCP%20negotiation%20process%20is%20known%20as%20DORA');
+const CANONICAL_IGNORE = vendor('canonical-dhcp-concepts', CANONICAL_URL, 'The network version of DORA', 'Every%20machine%20on%20the%20network%20will%20see%20the%20packet');
 
 // ------------------------------------------------------------------ constants
 
-const ROUTER_MAC = '00:00:5E:00:53:01';
 const LAPTOP_MAC = '00:00:5E:00:53:10';
 const PHONE_MAC = '00:00:5E:00:53:11';
-const EVERYONE_MAC = 'ff:ff:ff:ff:ff:ff';
 
 const NO_ADDRESS = '0.0.0.0';
 const EVERYONE = '255.255.255.255';
@@ -30,174 +109,9 @@ const LAPTOP_IP = '192.168.1.100';
 const LEASE_SECONDS = 86400;
 const RENEW_SECONDS = LEASE_SECONDS / 2;
 
-// -------------------------------------------------------------------- options
-
-const subnetMask: Field = {
-  name: 'Subnet mask (option 1)',
-  value: '255.255.255.0',
-  explain: 'Says how much of an address names the network: 255.255.255.0 means the first three numbers do.',
-};
-const routerOption: Field = {
-  name: 'Router (option 3)',
-  value: ROUTER_IP,
-  explain: 'The default gateway: where the client sends anything meant for another network.',
-};
-const dnsOption: Field = {
-  name: 'DNS server (option 6)',
-  value: ROUTER_IP,
-  explain: 'The server the client asks to turn names into addresses; at home it is often the router itself.',
-};
-const leaseTime: Field = {
-  name: 'IP address lease time (option 51)',
-  value: `${LEASE_SECONDS} seconds (24 hours)`,
-  explain: 'How long the client may keep the address before it has to renew it.',
-};
-const serverIdentifier: Field = {
-  name: 'Server identifier (option 54)',
-  value: ROUTER_IP,
-  explain: 'The address of the DHCP server this message is about, so a client can tell servers apart if several answer.',
-};
-const requestedAddress = (address: string): Field => ({
-  name: 'Requested IP address (option 50)',
-  value: address,
-  explain: 'The address the client is asking for: the one it was just offered.',
-});
-
-/** What a server sends in an Offer and in an Acknowledge. */
-const settings: Field[] = [subnetMask, routerOption, dnsOption, leaseTime, serverIdentifier];
-
-// -------------------------------------------------------------------- packets
-
-interface FrameSpec {
-  name: string;
-  summary: string;
-  seenAt: string;
-  srcMac: string;
-  dstMac: string;
-  srcIp: string;
-  dstIp: string;
-  /** Clients send from UDP 68 to 67; servers send from 67 to 68. */
-  fromClient: boolean;
-  /** A different number in every frame, as in a real capture. */
-  identification: string;
-  dhcp: Parameters<typeof dhcpLayer>[0];
-}
-
-/** Every message is a 342-byte frame: Ethernet 14 + IPv4 20 + UDP 8 + the 300-byte DHCP message. */
-function frame(o: FrameSpec): Packet {
-  return packet({
-    name: o.name,
-    summary: o.summary,
-    seenAt: o.seenAt,
-    layers: [
-      ethernetLayer({ src: o.srcMac, dst: o.dstMac, type: 'IPv4' }),
-      ipv4Layer({ src: o.srcIp, dst: o.dstIp, protocol: 'UDP', ttl: 64, totalLength: 328, identification: o.identification }),
-      udpLayer({ srcPort: o.fromClient ? 68 : 67, dstPort: o.fromClient ? 67 : 68, length: 308 }),
-      dhcpLayer(o.dhcp),
-    ],
-  });
-}
-
-// One transaction ID per exchange: the laptop's first exchange, then its renewal.
-const XID_LAPTOP = '0x3903F326';
-const XID_RENEW = '0x7B2C91A4';
-
-const packets = {
-  // ---- the laptop joins the network
-  discover: frame({
-    name: 'DHCP Discover',
-    summary: "The laptop's first message on the network: a broadcast asking any DHCP server for an address.",
-    seenAt: 'Captured on the Wi-Fi as the laptop joins the network.',
-    srcMac: LAPTOP_MAC,
-    dstMac: EVERYONE_MAC,
-    srcIp: NO_ADDRESS,
-    dstIp: EVERYONE,
-    fromClient: true,
-    identification: '0x5a1c',
-    dhcp: { messageType: 'DISCOVER', xid: XID_LAPTOP, clientMac: LAPTOP_MAC, broadcastFlag: true, options: [] },
-  }),
-  offer: frame({
-    name: 'DHCP Offer',
-    summary: 'The router offers the laptop an address and the settings that go with it.',
-    seenAt: 'Captured on the Wi-Fi 3 milliseconds after the Discover, on its way from the router.',
-    srcMac: ROUTER_MAC,
-    dstMac: EVERYONE_MAC,
-    srcIp: ROUTER_IP,
-    dstIp: EVERYONE,
-    fromClient: false,
-    identification: '0x2f08',
-    dhcp: { messageType: 'OFFER', xid: XID_LAPTOP, clientMac: LAPTOP_MAC, yiaddr: LAPTOP_IP, broadcastFlag: true, options: settings },
-  }),
-  request: frame({
-    name: 'DHCP Request',
-    summary: 'The laptop accepts the offer and names the server and the address it chose.',
-    seenAt: 'Captured on the Wi-Fi as the laptop accepts the offer.',
-    srcMac: LAPTOP_MAC,
-    dstMac: EVERYONE_MAC,
-    srcIp: NO_ADDRESS,
-    dstIp: EVERYONE,
-    fromClient: true,
-    identification: '0x5a1d',
-    dhcp: {
-      messageType: 'REQUEST',
-      xid: XID_LAPTOP,
-      clientMac: LAPTOP_MAC,
-      broadcastFlag: true,
-      options: [requestedAddress(LAPTOP_IP), serverIdentifier],
-    },
-  }),
-  ack: frame({
-    name: 'DHCP Acknowledge',
-    summary: "The router confirms the lease: the address is the laptop's to use.",
-    seenAt: 'Captured on the Wi-Fi as the router confirms the lease.',
-    srcMac: ROUTER_MAC,
-    dstMac: EVERYONE_MAC,
-    srcIp: ROUTER_IP,
-    dstIp: EVERYONE,
-    fromClient: false,
-    identification: '0x2f09',
-    dhcp: { messageType: 'ACK', xid: XID_LAPTOP, clientMac: LAPTOP_MAC, yiaddr: LAPTOP_IP, broadcastFlag: true, options: settings },
-  }),
-
-  // ---- half the lease later: the laptop renews, straight to the server
-  'renew-request': frame({
-    name: 'DHCP Request (renew)',
-    summary: 'The laptop asks the server that gave it the address to let it keep the address.',
-    seenAt: 'Captured on the Wi-Fi 12 hours into the lease, as the laptop renews.',
-    srcMac: LAPTOP_MAC,
-    dstMac: ROUTER_MAC,
-    srcIp: LAPTOP_IP,
-    dstIp: ROUTER_IP,
-    fromClient: true,
-    identification: '0x8b50',
-    // A renewing client already owns its address, so it states it in ciaddr and leaves options 50 and 54 out (RFC 2131 section 4.3.2).
-    dhcp: { messageType: 'REQUEST', xid: XID_RENEW, clientMac: LAPTOP_MAC, ciaddr: LAPTOP_IP, broadcastFlag: false, options: [] },
-  }),
-  'renew-ack': frame({
-    name: 'DHCP Acknowledge (renew)',
-    summary: 'The router agrees and starts a fresh lease.',
-    seenAt: 'Captured on the Wi-Fi as the router extends the lease.',
-    srcMac: ROUTER_MAC,
-    dstMac: LAPTOP_MAC,
-    srcIp: ROUTER_IP,
-    dstIp: LAPTOP_IP,
-    fromClient: false,
-    identification: '0x3a47',
-    dhcp: {
-      messageType: 'ACK',
-      xid: XID_RENEW,
-      clientMac: LAPTOP_MAC,
-      ciaddr: LAPTOP_IP,
-      yiaddr: LAPTOP_IP,
-      broadcastFlag: false,
-      options: settings,
-    },
-  }),
-} satisfies Record<string, Packet>;
-
 // --------------------------------------------------------------------- events
 
-/** A DHCP message. Its log row's size is its frame's, so the two always agree. */
+/** A DHCP message. No source states a DHCP message's size, so every log row's size is a dash. */
 function message(o: {
   id: string;
   from: 'laptop' | 'router';
@@ -209,9 +123,9 @@ function message(o: {
   dst: string;
   info: string;
   plain: string;
-  packet: keyof typeof packets;
+  traces: string[];
 }): MessageEvent {
-  const { id, from, to, tag, kind, time, src, dst, info, plain, packet } = o;
+  const { id, from, to, tag, kind, time, src, dst, info, plain, traces } = o;
   return {
     type: 'message',
     id,
@@ -219,9 +133,9 @@ function message(o: {
     to,
     tag,
     kind,
-    packet,
-    log: { time, source: src, destination: dst, protocol: 'DHCP', info, size: formatBytes(packets[packet].size) },
+    log: { time, source: src, destination: dst, protocol: 'DHCP', info, size: '—' },
     plain,
+    backing: { traces },
   };
 }
 
@@ -232,6 +146,7 @@ const leaseAdded: TableEvent = {
   op: 'add',
   row: { ip: LAPTOP_IP, mac: LAPTOP_MAC, device: 'Laptop', expires: 'in 24 h' },
   summary: 'The router writes down that 192.168.1.100 belongs to the laptop for 24 hours.',
+  backing: { traces: ['term-lease-table', 'term-lease', 'fact-mac'] },
 };
 
 const leaseRenewed: TableEvent = {
@@ -242,11 +157,12 @@ const leaseRenewed: TableEvent = {
   key: LAPTOP_IP,
   row: { expires: 'in 24 h (renewed)' },
   summary: 'The router moves the expiry forward by a full lease.',
+  backing: { traces: ['deep-3', 'term-lease-table', 'term-lease'] },
 };
 
 // ------------------------------------------------------------------- lesson
 
-export default defineLegacyLesson({
+export default defineLesson({
   slug: 'dhcp',
   title: 'DHCP',
   subtitle: 'Getting an address automatically',
@@ -255,17 +171,15 @@ export default defineLegacyLesson({
   summary:
     'Watch a laptop join a Wi-Fi network and get an address, plus the other settings it needs to go online, from the router in four short messages.',
   figure: 'dhcp',
+  backing: { traces: ['term-ip', 'fact-settings', 'fact-home', 'pattern', 'fact-ack'] },
   units: [
     {
       id: 'dhcp',
       name: 'DHCP',
       fullName: 'Dynamic Host Configuration Protocol',
       purpose: 'How a device gets its address',
-      osiLayers: [7],
-      references: [
-        { label: 'RFC 2131: Dynamic Host Configuration Protocol', url: 'https://www.rfc-editor.org/rfc/rfc2131' },
-        { label: 'RFC 2132: DHCP Options and BOOTP Vendor Extensions', url: 'https://www.rfc-editor.org/rfc/rfc2132' },
-      ],
+      osi: 'spans',
+      backing: { traces: ['fact-name', 'fact-defined', 'fact-settings'] },
       scene: {
         title: 'Home Wi-Fi network',
         views: ['network', 'sequence'],
@@ -283,7 +197,7 @@ export default defineLegacyLesson({
             ],
             keyColumn: 'ip',
             initialRows: [],
-            empty: 'Empty. No device has an address yet.',
+            empty: 'Empty. No leases yet.',
           },
         },
         log: {
@@ -307,19 +221,22 @@ export default defineLegacyLesson({
           { place: 'router', label: 'Router', addr: ROUTER_IP },
           { place: 'phone', label: 'Phone', addr: PHONE_MAC },
         ],
-        packets,
+        backing: {
+          traces: ['fact-home', 'term-lease-table', 'term-broadcast', 'fact-replies', 'deep-3', 'fact-first', 'fact-ack', 'fact-ignore', 'fact-mac'],
+        },
       },
       overview: {
         hook: 'When you join a Wi-Fi network, your device needs an address so messages can find it, like a room number in a hotel. You don’t make one up. You ask the front desk, and they hand you a free one. DHCP is that front desk. It’s why you never type an address in yourself.',
+        hookBacking: { traces: ['term-ip', 'fact-home', 'term-offer', 'why-1'] },
         description:
           'DHCP hands each new device the few things it needs to start talking on a network. Your router usually does this job. It lends addresses out for a while, and keeps a list of who has which one.',
+        backing: { traces: ['fact-settings', 'fact-home', 'term-lease', 'term-lease-table'] },
         facts: [
-          { label: 'Layer', value: 'Application (7)' },
-          { label: 'Ports', value: 'UDP 67 (server), UDP 68 (client)' },
-          { label: 'Hands out', value: 'IP address, subnet mask, default gateway, DNS server' },
-          { label: 'Exchange', value: 'Discover, Offer, Request, Acknowledge' },
-          { label: 'Lease', value: 'Renewed at half its length' },
-          { label: 'Defined in', value: 'RFC 2131, RFC 2132' },
+          { label: 'Ports', value: 'UDP 67 (server), UDP 68 (client)', backing: { traces: ['fact-ports'] } },
+          { label: 'Hands out', value: 'IP address, subnet mask, default gateway, DNS server', backing: { traces: ['fact-settings'] } },
+          { label: 'Exchange', value: 'Discover, Offer, Request, Acknowledge', backing: { traces: ['pattern'] } },
+          { label: 'Lease', value: 'Renewed at half its length', backing: { traces: ['fact-t1', 'term-lease'] } },
+          { label: 'Defined in', value: 'RFC 2131, RFC 2132', backing: { traces: ['fact-defined'] } },
         ],
       },
       steps: [
@@ -329,12 +246,17 @@ export default defineLegacyLesson({
           sub: 'The laptop asks: is anyone there?',
           narrative:
             'Your laptop just joined the Wi-Fi, but it has no address yet. It doesn’t know who to ask, so it shouts to everyone on the network at once: “Can anyone give me an address?” That shout is called a **Discover**. Every device hears it. The phone hears it too, but it isn’t the one that hands out addresses, so it ignores it.',
-          deep: 'The shout is a broadcast to 255.255.255.255, sent from 0.0.0.0 (“I have no address yet”) to UDP port 67, where DHCP servers listen. Lessons 10 and 11 cover ports and UDP.',
+          deep: [
+            {
+              text: 'The shout is a broadcast to 255.255.255.255, sent from 0.0.0.0 (“I have no address yet”) to UDP port 67, where DHCP servers listen.',
+              cite: [dhcp('4.1'), dhcp('4.4.1'), RFC1122_ADDRESSES],
+            },
+          ],
           facts: [
-            { label: 'From', value: '0.0.0.0, UDP port 68' },
-            { label: 'To', value: '255.255.255.255, UDP port 67' },
-            { label: 'Ethernet destination', value: 'ff:ff:ff:ff:ff:ff (everyone)' },
-            { label: 'Laptop MAC', value: '00:00:5E:00:53:10' },
+            { label: 'From', value: '0.0.0.0, UDP port 68', backing: { traces: ['fact-first', 'fact-ports'] } },
+            { label: 'To', value: '255.255.255.255, UDP port 67', backing: { traces: ['fact-first', 'fact-ports'] } },
+            { label: 'MAC destination', value: 'ff:ff:ff:ff:ff:ff (everyone)', backing: { traces: ['fact-link', 'term-broadcast'] } },
+            { label: 'Laptop MAC', value: LAPTOP_MAC, backing: { traces: ['fact-mac'] } },
           ],
           events: [
             message({
@@ -348,9 +270,10 @@ export default defineLegacyLesson({
               dst: `${EVERYONE}:67`,
               info: 'DHCP Discover: can anyone give me an address?',
               plain: 'The laptop shouts to everyone: can anyone give me an address?',
-              packet: 'discover',
+              traces: ['term-discover', 'term-broadcast', 'fact-first', 'fact-ports', 'fact-ignore', 'fact-defined'],
             }),
           ],
+          backing: { traces: ['term-discover', 'term-broadcast', 'fact-first', 'fact-ignore'] },
         },
         {
           id: 'offer',
@@ -358,12 +281,17 @@ export default defineLegacyLesson({
           sub: 'The router offers a free address',
           narrative:
             'The router is the one that hands out addresses. It hears the shout, picks a free address, 192.168.1.100, and offers it to the laptop. With it come a few other settings the laptop will need, and a time limit: it can keep the address for 24 hours. That’s the **Offer**.',
-          deep: 'Along with the address, the Offer carries a subnet mask, a default gateway and a DNS server (lessons 7 and 13). It names the laptop’s MAC address, which is how the phone knows the Offer isn’t for it.',
+          deep: [
+            {
+              text: 'Along with the address, the Offer carries a subnet mask, a default gateway and a DNS server. It names the laptop’s MAC address, which is how the phone knows the Offer isn’t for it.',
+              cite: [dhcp('3.1'), opt('3.3'), opt('3.5'), opt('3.8'), CISCO_OFFER_OPTIONS, dhcp('2'), dhcp('4.4.1'), CISCO_OFFER_CHADDR, MS_BASICS_OFFER],
+            },
+          ],
           facts: [
-            { label: 'Address offered', value: '192.168.1.100' },
-            { label: 'Subnet mask', value: '255.255.255.0' },
-            { label: 'Gateway and DNS', value: '192.168.1.1 (the router, for both)' },
-            { label: 'Lease', value: '86400 seconds (24 hours)' },
+            { label: 'Address offered', value: LAPTOP_IP, backing: { traces: ['term-offer', 'fact-settings'] } },
+            { label: 'Subnet mask', value: '255.255.255.0', backing: { traces: ['fact-settings'] } },
+            { label: 'Gateway and DNS', value: '192.168.1.1 (the router, for both)', backing: { traces: ['fact-settings', 'fact-home'] } },
+            { label: 'Lease', value: '86400 seconds (24 hours)', backing: { traces: ['term-lease', 'fact-settings'] } },
           ],
           events: [
             message({
@@ -377,9 +305,10 @@ export default defineLegacyLesson({
               dst: `${EVERYONE}:68`,
               info: 'DHCP Offer: you can have 192.168.1.100 for 24 hours',
               plain: 'The router offers 192.168.1.100, plus the other settings the laptop needs, for 24 hours.',
-              packet: 'offer',
+              traces: ['term-offer', 'fact-replies', 'fact-ports', 'fact-settings', 'term-lease', 'fact-home', 'fact-defined'],
             }),
           ],
+          backing: { traces: ['term-offer', 'fact-home', 'fact-settings', 'term-lease'] },
         },
         {
           id: 'request',
@@ -387,11 +316,16 @@ export default defineLegacyLesson({
           sub: 'The laptop says yes, please',
           narrative:
             'The laptop answers: “Yes, I’ll take 192.168.1.100.” It still shouts this to everyone, not just the router. That’s on purpose: if a second router had offered an address too, it now knows it wasn’t picked. This answer is called a **Request**.',
-          deep: 'The Request is still sent from 0.0.0.0, because the address isn’t the laptop’s until the router confirms. A field called the server identifier says whose offer won, so any other DHCP server can free up the address it offered.',
+          deep: [
+            {
+              text: 'The Request is still sent from 0.0.0.0, because the address isn’t the laptop’s until the router confirms. A field called the server identifier says whose offer won, so any other DHCP server can free up the address it offered.',
+              cite: [dhcp('4.1'), dhcp('3.1'), opt('9.7'), MS_BASICS_ZERO],
+            },
+          ],
           facts: [
-            { label: 'Address requested', value: '192.168.1.100' },
-            { label: 'Server chosen', value: '192.168.1.1 (server identifier)' },
-            { label: 'Sent from', value: '0.0.0.0, still no address' },
+            { label: 'Address requested', value: LAPTOP_IP, backing: { traces: ['fact-request'] } },
+            { label: 'Server chosen', value: '192.168.1.1 (server identifier)', backing: { traces: ['fact-request'] } },
+            { label: 'Sent from', value: '0.0.0.0, still no address', backing: { traces: ['fact-first', 'fact-request'] } },
           ],
           events: [
             message({
@@ -405,21 +339,27 @@ export default defineLegacyLesson({
               dst: `${EVERYONE}:67`,
               info: 'DHCP Request: I’ll take 192.168.1.100, please',
               plain: 'The laptop says yes: I’ll take 192.168.1.100 from 192.168.1.1.',
-              packet: 'request',
+              traces: ['term-request', 'fact-request', 'fact-first', 'fact-ports', 'term-broadcast', 'fact-ignore', 'fact-defined'],
             }),
           ],
+          backing: { traces: ['term-request', 'fact-request', 'term-broadcast'] },
         },
         {
           id: 'acknowledge',
           title: 'DHCP Acknowledge',
           sub: 'The router says: it’s yours',
           narrative:
-            'The router confirms: “192.168.1.100 is yours for 24 hours.” Then it writes it down in its lease table, a list of which device has which address. That list is how two devices never end up with the same address. Now the laptop can go online. These four messages are often called DORA: Discover, Offer, Request, **Acknowledge**.',
-          deep: 'The confirmation is called an ACK. The lease table usually sits behind your router’s “connected devices” page.',
+            'The router confirms: “192.168.1.100 is yours for 24 hours.” It also writes it down in its lease table, a list of which device has which address. That list is how two devices never end up with the same address. Now the laptop can go online. These four messages are often called DORA: Discover, Offer, Request, **Acknowledge**.',
+          deep: [
+            {
+              text: 'The confirmation is called an ACK.',
+              cite: [dhcp('3.1')],
+            },
+          ],
           facts: [
-            { label: 'Address', value: '192.168.1.100' },
-            { label: 'Lease', value: '24 hours' },
-            { label: 'Lease table row', value: '192.168.1.100, 00:00:5E:00:53:10, Laptop' },
+            { label: 'Address', value: LAPTOP_IP, backing: { traces: ['term-ack'] } },
+            { label: 'Lease', value: '24 hours', backing: { traces: ['term-lease'] } },
+            { label: 'Lease table row', value: `${LAPTOP_IP}, ${LAPTOP_MAC}, Laptop`, backing: { traces: ['term-lease-table', 'fact-mac'] } },
           ],
           events: [
             message({
@@ -433,10 +373,11 @@ export default defineLegacyLesson({
               dst: `${EVERYONE}:68`,
               info: 'DHCP Acknowledge: 192.168.1.100 is yours',
               plain: 'The router confirms: 192.168.1.100 is the laptop’s for 24 hours.',
-              packet: 'ack',
+              traces: ['term-ack', 'fact-replies', 'fact-ports', 'term-lease', 'fact-home', 'fact-defined'],
             }),
             leaseAdded,
           ],
+          backing: { traces: ['term-ack', 'term-lease', 'term-lease-table', 'why-2', 'fact-ack', 'pattern'] },
         },
         {
           id: 'renew',
@@ -444,11 +385,16 @@ export default defineLegacyLesson({
           sub: 'Halfway through, ask to keep it',
           narrative:
             'The address is only borrowed, like a hotel room. Halfway through the 24 hours, the laptop asks the router directly: “Can I keep my address a bit longer?” The router says yes, and the clock starts again. No shouting this time: the laptop knows exactly who to ask. This is called a **Renew**.',
-          deep: 'Renewal happens at half the lease, 43,200 seconds here. If the router stays silent, the laptop asks any server at 87.5% of the lease, and if the lease runs out it starts again with a Discover. On Windows, ipconfig /renew does this on demand.',
+          deep: [
+            {
+              text: 'Renewal happens at half the lease, 43,200 seconds here. If the router stays silent, the laptop asks any server at 87.5% of the lease, and if the lease runs out it starts again with a Discover. On Windows, ipconfig /renew does this on demand.',
+              cite: [dhcp('4.4.5'), dhcp('4.4.1'), CISCO_RENEW, MS_T2, CISCO_REBIND, MS_IPCONFIG_RENEW, CISCO_IPCONFIG],
+            },
+          ],
           facts: [
-            { label: 'Renews at', value: '43200 seconds (half of 86400)' },
-            { label: 'Sent to', value: '192.168.1.1, UDP port 67, directly' },
-            { label: 'New expiry', value: 'in 24 h (renewed)' },
+            { label: 'Renews at', value: '43200 seconds (half of 86400)', backing: { traces: ['fact-t1', 'deep-3'] } },
+            { label: 'Sent to', value: '192.168.1.1, UDP port 67, directly', backing: { traces: ['deep-3', 'fact-ports', 'fact-home'] } },
+            { label: 'New expiry', value: 'in 24 h (renewed)', backing: { traces: ['term-lease', 'deep-3'] } },
           ],
           events: [
             message({
@@ -462,7 +408,7 @@ export default defineLegacyLesson({
               dst: `${ROUTER_IP}:67`,
               info: 'DHCP Request: can I keep 192.168.1.100?',
               plain: 'Halfway through, the laptop asks the router directly: can I keep my address?',
-              packet: 'renew-request',
+              traces: ['deep-3', 'fact-t1', 'term-renew', 'term-request', 'fact-ports', 'fact-ack', 'fact-home', 'fact-defined'],
             }),
             message({
               id: 'msg-renew-ack',
@@ -475,37 +421,159 @@ export default defineLegacyLesson({
               dst: `${LAPTOP_IP}:68`,
               info: 'DHCP Acknowledge: yes, for another 24 hours',
               plain: 'The router says yes, and the 24 hours start again.',
-              packet: 'renew-ack',
+              traces: ['deep-3', 'term-ack', 'fact-replies', 'fact-ports', 'term-lease', 'fact-home', 'fact-defined'],
             }),
             leaseRenewed,
           ],
+          backing: { traces: ['term-lease', 'term-renew', 'deep-3', 'fact-t1'] },
         },
       ],
       learn: {
-        lead: 'Your laptop joined the Wi-Fi with no address. Four short messages later it had one, borrowed from the router for 24 hours. Here is what each part was, and what it’s called.',
+        lead: [
+          {
+            id: 'lead-1',
+            text: 'Your laptop joined the Wi-Fi with no address. Four short messages later it had one, borrowed from the router for 24 hours. Here is what each part was, and what it’s called.',
+            cite: [dhcp('3.1'), dhcp('2.2'), MS_NETSET, GOOGLE_LAN],
+          },
+        ],
         terms: [
-          { idea: 'Shouting to every device on the network at once, because you don’t know who to ask', name: 'Broadcast' },
-          { idea: 'Asking: can anyone give me an address?', name: 'Discover' },
-          { idea: 'The router suggesting a free address, with a time limit', name: 'Offer' },
-          { idea: 'Saying yes to that address, out loud, so every router knows', name: 'Request' },
-          { idea: 'The router confirming the address is yours', name: 'Acknowledge' },
-          { idea: 'The router’s list of which device has which address', name: 'Lease table' },
-          { idea: 'Borrowing an address for a set time', name: 'Lease' },
-          { idea: 'Asking to keep it a while longer, halfway through', name: 'Renew' },
+          {
+            id: 'term-broadcast',
+            idea: 'Shouting to every device on the network at once, because you don’t know who to ask',
+            name: 'Broadcast',
+            cite: [RFC1122_BROADCAST, dhcp('4.4.4')],
+          },
+          { id: 'term-discover', idea: 'Asking: can anyone give me an address?', name: 'Discover', cite: [dhcp('3.1')] },
+          { id: 'term-offer', idea: 'The router suggesting a free address, with a time limit', name: 'Offer', cite: [dhcp('3.1'), opt('9.2')] },
+          { id: 'term-request', idea: 'Saying yes to that address, out loud, so every router knows', name: 'Request', cite: [dhcp('3.1'), opt('9.7')] },
+          { id: 'term-ack', idea: 'The router confirming the address is yours', name: 'Acknowledge (ACK)', cite: [dhcp('3.1')] },
+          {
+            id: 'term-lease-table',
+            idea: 'The router’s list of which device has which address',
+            name: 'Lease table',
+            cite: [dhcp('1.5'), dhcp('3.1'), CISCO_LEASE_DB, MS_DATABASE],
+          },
+          { id: 'term-lease', idea: 'Borrowing an address for a set time', name: 'Lease', cite: [dhcp('2.2')] },
+          {
+            id: 'term-renew',
+            idea: 'Asking to keep it a while longer, halfway through',
+            name: 'Renew',
+            cite: [dhcp('4.4.5'), dhcp('2.2')],
+          },
+          {
+            id: 'term-ip',
+            idea: 'The laptop’s own number on the network, so messages can find it',
+            name: 'IP address',
+            cite: [rfc('rfc-791', '2.3', true), rfc('rfc-2131', '1.5')],
+          },
         ],
         pattern: {
+          id: 'pattern',
           names: ['Discover', 'Offer', 'Request', 'Acknowledge'],
           note: 'Remember the first four in order: Discover, Offer, Request, Acknowledge.',
+          cite: [dhcp('3.1'), MS_DORA, CANONICAL_DORA],
         },
-        why: 'Without DHCP you would type an address into every device yourself, and two devices could end up with the same one. The router keeps the list, so that never happens.',
-        deep: 'DHCP messages travel over UDP. Before it has an address, a device sends from 0.0.0.0 to 255.255.255.255, the address that means everyone on this network. The client renews at half the lease, often called T1. If its own server stays silent, it asks any server at 87.5% of the lease, called T2.',
+        why: [
+          {
+            id: 'why-1',
+            text: 'Without DHCP you would type an address into every device yourself, and two devices could end up with the same one.',
+            cite: [dhcp('1.6'), MS_MANUAL, rfc('rfc-5227', '1', true)],
+          },
+          {
+            id: 'why-2',
+            text: 'The router keeps the list, so that never happens.',
+            cite: [dhcp('1.6'), dhcp('2.2'), CISCO_LEASE_DB],
+          },
+        ],
+        deep: [
+          { id: 'deep-1', text: 'DHCP messages travel over UDP.', cite: [dhcp('4.1')] },
+          {
+            id: 'deep-2',
+            text: 'Before it has an address, a device sends from 0.0.0.0 to 255.255.255.255, the address that means everyone on this network.',
+            cite: [dhcp('4.1'), dhcp('4.4.1'), RFC1122_ADDRESSES],
+          },
+          {
+            id: 'deep-3',
+            text: 'The client renews at half the lease, often called T1, with a Request sent straight to its server; the server’s ACK starts the lease again.',
+            cite: [dhcp('4.4.5'), MS_TRAINING_UNICAST, MS_TRAINING_RESET, CISCO_RENEW],
+          },
+          {
+            id: 'deep-4',
+            text: 'If its own server stays silent, it asks any server at 87.5% of the lease, called T2.',
+            cite: [dhcp('4.4.5'), MS_T2, CISCO_REBIND],
+          },
+        ],
         facts: [
-          { label: 'Ports', value: 'UDP 67 (server), UDP 68 (client)' },
-          { label: 'First messages', value: 'from 0.0.0.0 to 255.255.255.255' },
-          { label: 'Renew (T1)', value: 'at 50% of the lease' },
-          { label: 'Rebind (T2)', value: 'at 87.5% of the lease' },
-          { label: 'No server answers', value: 'Windows gives itself 169.254.x.x (APIPA)' },
-          { label: 'Defined in', value: 'RFC 2131, RFC 2132' },
+          { id: 'fact-ports', label: 'Ports', value: 'UDP 67 (server), UDP 68 (client)', cite: [dhcp('4.1'), MS_PORTS] },
+          {
+            id: 'fact-first',
+            label: 'First messages',
+            value: 'from 0.0.0.0 to 255.255.255.255',
+            cite: [dhcp('4.1'), dhcp('4.4.1'), RFC1122_ADDRESSES],
+          },
+          { id: 'fact-t1', label: 'Renew (T1)', value: 'at 50% of the lease', cite: [dhcp('4.4.5'), opt('9.11'), MS_T1] },
+          { id: 'fact-t2', label: 'Rebind (T2)', value: 'at 87.5% of the lease', cite: [dhcp('4.4.5'), opt('9.12'), MS_T2] },
+          {
+            id: 'fact-no-server',
+            label: 'No server answers',
+            value: 'the device may give itself a 169.254.x.x address, which only reaches its neighbours',
+            cite: [abstractOf('rfc-3927', '3927', true), rfc('rfc-3927', '1', true)],
+          },
+          { id: 'fact-defined', label: 'Defined in', value: 'RFC 2131, RFC 2132', cite: [dhcp('1'), opt('1')] },
+          {
+            id: 'fact-home',
+            label: 'In a home',
+            value: 'the Wi-Fi router is the DHCP server, with a pool of addresses to lend',
+            cite: [MS_NETSET, GOOGLE_LAN],
+          },
+          {
+            id: 'fact-settings',
+            label: 'Hands out',
+            value: 'an IP address, the subnet mask, the default gateway and the DNS server, with a lease time',
+            cite: [dhcp('3.1'), opt('3.3'), opt('3.5'), opt('3.8'), opt('9.2'), CISCO_OFFER_OPTIONS],
+          },
+          {
+            id: 'fact-mac',
+            label: 'MAC address',
+            value: 'every message names the laptop’s hardware address, so the server can tell clients apart and the laptop knows a reply is for it',
+            cite: [dhcp('4.4.1'), dhcp('2'), MS_BASICS_MAC, CISCO_OFFER_CHADDR],
+          },
+          {
+            id: 'fact-replies',
+            label: 'Replies',
+            value: 'from port 67 to port 68, sent straight to the laptop at the offered address, or broadcast',
+            cite: [dhcp('4.1'), MS_PORTS],
+          },
+          {
+            id: 'fact-request',
+            label: 'The Request',
+            value: 'is broadcast from 0.0.0.0 and names the chosen server (option 54) and the address (option 50); other servers take back their offers',
+            cite: [dhcp('3.1'), dhcp('4.1'), opt('9.7'), opt('9.1'), MS_BASICS_ZERO],
+          },
+          {
+            id: 'fact-ack',
+            label: 'After the ACK',
+            value: 'the client uses the address and settings; not before',
+            cite: [dhcp('3.1'), MS_BASICS_ZERO],
+          },
+          {
+            id: 'fact-ignore',
+            label: 'Who answers',
+            value: 'only a DHCP server; the other devices that hear a broadcast, like the phone, ignore it',
+            cite: [dhcp('1'), CANONICAL_IGNORE, RFC1122_ADDRESSES],
+          },
+          {
+            id: 'fact-link',
+            label: 'On the link',
+            value: 'the broadcast goes to the hardware address ff:ff:ff:ff:ff:ff, which means everyone',
+            cite: [dhcp('4.4.1'), ETHERNET_BROADCAST],
+          },
+          {
+            id: 'fact-name',
+            label: 'Stands for',
+            value: 'Dynamic Host Configuration Protocol, the way a device gets its address and other settings',
+            cite: [abstractOf('rfc-2131', '2131', true), dhcp('1'), dhcp('1.5')],
+          },
         ],
       },
       practice: [
@@ -517,15 +585,18 @@ export default defineLegacyLesson({
               text: 'It doesn’t know yet who hands out addresses.',
               feedback:
                 'Right. With no address and no idea which device is the router, shouting to everyone is the only way to reach it. That shout is the Discover.',
+              cite: [dhcp('4.4.4'), dhcp('3.1'), RFC1122_ADDRESSES],
             },
             {
               text: 'Shouting is faster than asking one device.',
               feedback: 'Not quite. Speed isn’t the reason. The laptop shouts because it doesn’t know yet who hands out addresses.',
+              cite: [dhcp('4.4.4'), dhcp('3.1')],
             },
             {
               text: 'So the phone can answer if the router is busy.',
               feedback:
                 'Not quite. The phone doesn’t hand out addresses, so it ignores the shout. The laptop shouts because it doesn’t know yet who to ask.',
+              cite: [dhcp('1'), CANONICAL_IGNORE, dhcp('4.4.4')],
             },
           ],
           answer: 0,
@@ -537,15 +608,18 @@ export default defineLegacyLesson({
             {
               text: 'It gives every device the same address, then changes it later.',
               feedback:
-                'Not quite. Two devices with the same address would get each other’s messages. The router keeps a list and only offers addresses that are free.',
+                'Not quite. Two devices with the same address couldn’t both work properly. The router keeps a list and only offers addresses that are free.',
+              cite: [rfc('rfc-5227', '2.4', true), dhcp('3.1'), dhcp('1.5')],
             },
             {
               text: 'It writes each loan in its lease table, and only offers addresses that are free.',
               feedback: 'That’s it. The lease table is the router’s list of who has which address.',
+              cite: [dhcp('3.1'), dhcp('1.5'), CISCO_LEASE_DB],
             },
             {
               text: 'It asks the phone which addresses are taken.',
               feedback: 'Not quite. The phone doesn’t keep track of addresses. The router does, in its lease table.',
+              cite: [dhcp('1.5'), dhcp('1'), CISCO_LEASE_DB],
             },
           ],
           answer: 1,
@@ -557,14 +631,17 @@ export default defineLegacyLesson({
             {
               text: 'After about 12 hours, halfway through.',
               feedback: 'Yes. Asking halfway leaves plenty of time if the router doesn’t answer. That’s a Renew.',
+              cite: [dhcp('4.4.5'), MS_T1],
             },
             {
               text: 'Only once the 24 hours have run out.',
               feedback: 'Not quite. Waiting until the end could leave the laptop without an address for a while. It asks halfway through.',
+              cite: [dhcp('4.4.5'), MS_T1],
             },
             {
               text: 'Every time it sends a message.',
-              feedback: 'Not quite. That would be a lot of asking. It asks once, halfway through the 24 hours.',
+              feedback: 'Not quite. That would be a lot of asking. It first asks halfway through the 24 hours.',
+              cite: [dhcp('4.4.5'), MS_T1],
             },
           ],
           answer: 0,

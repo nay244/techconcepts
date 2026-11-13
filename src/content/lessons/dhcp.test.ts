@@ -2,8 +2,7 @@
 import { expect, test } from 'vitest';
 import { drawDhcp } from '../../art/scenes/dhcp';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
-import { formatBytes } from '../../lib/format';
-import { lessonNumbers, misnamedLessons } from '../../test/lesson-references';
+import { lessonNumbers } from '../../test/lesson-references';
 import { showSweep } from '../../test/show-sweep';
 import { checkStructure } from '../define';
 import type { MessageEvent } from '../schema';
@@ -37,14 +36,9 @@ test('the lease table ends with the laptop’s lease after step 4 and its renewe
   expect(leasesAfterStep(5)).toEqual([{ ...laptop, expires: 'in 24 h (renewed)' }]);
 });
 
-test('every message’s packet size still matches its packet', () => {
+test('no source states a DHCP message’s size, so every log size is a dash', () => {
   expect(messages).toHaveLength(6);
-  for (const m of messages) {
-    const packet = unit.scene.packets![m.packet!]!;
-    expect(packet.size).toBe(packet.layers.reduce((sum, layer) => sum + layer.size, 0));
-    expect(m.log.size).toBe(formatBytes(packet.size));
-  }
-  expect(messages.map((m) => m.log.size)).toEqual(Array(6).fill('342 B'));
+  expect(messages.map((m) => m.log.size)).toEqual(Array(6).fill('—'));
 });
 
 test('every message rides a tag the figure draws, between the laptop and the router', () => {
@@ -97,17 +91,8 @@ test('the log and the parties are the console’s packet log and the figure’s 
   expect(unit.scene.views).toEqual(['network', 'sequence']);
 });
 
-/** The words a sentence uses for each lesson it may point at. */
-const TOPIC: Record<string, string> = {
-  subnetting: 'subnet mask',
-  ports: 'ports',
-  'tcp-udp': 'UDP',
-  dns: 'DNS',
-};
-
-test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
-  expect(lessonNumbers(dhcp)).toHaveLength(4);
-  expect(misnamedLessons(dhcp, TOPIC)).toEqual([]);
+test('no text points at another lesson by number', () => {
+  expect(lessonNumbers(dhcp)).toEqual([]);
 });
 
 test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', () => {

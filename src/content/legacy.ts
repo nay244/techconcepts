@@ -28,7 +28,6 @@ import {
  */
 export const LEGACY_LESSONS = [
   'subnetting',
-  'dhcp',
   'firewalls',
 ] as const;
 
