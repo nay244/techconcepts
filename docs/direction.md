@@ -131,7 +131,7 @@ Status: What is UDP is cited and checked (2026-11-11), the first of the 17; `doc
 
 A Glossary of definitions written for it, each cited and fact-checked, shown on a page of its own and with the terms in the lessons (owner, 2026-11-13; decision 2.39), begun as a pilot of ten entries. Earlier the same day it was a page of the terms in the lessons' own checked words (decision 2.38), which the owner did not approve. Until that day this phase was the standalone Practice page over the 40 existing questions, with the private missed-questions list from the earlier direction doc §6.6 (option 3); that page is held.
 
-Status: first planned as the Practice page (job 9, 2026-11-12, decision 2.37); re-planned on 2026-11-13 as a glossary in the lessons' own lines (2.38), whose design (D8) the owner did not approve; re-planned the same day as a glossary of written definitions (2.39; `plan.md`), waiting for the owner's go. The owner sees the list of terms, then the pilot's ten checked entries on a design, before the rest is written. The legacy path is removed in the same job.
+Status: first planned as the Practice page (job 9, 2026-11-12, decision 2.37); re-planned on 2026-11-13 as a glossary in the lessons' own lines (2.38), whose design (D8) the owner did not approve; re-planned the same day as a glossary of written definitions (2.39; `plan.md`); the owner said go on it that day. The owner sees the list of terms, then the pilot's ten checked entries on a design, before the rest is written. The legacy path is removed in the same job.
 
 ### After the revamp
 
