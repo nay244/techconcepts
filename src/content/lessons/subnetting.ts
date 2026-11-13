@@ -35,8 +35,10 @@ const rfc = (source: string, section: string, defining = false, fragment?: strin
 /** RFC 1122 and RFC 950 have no ids below their top-level sections, so a section is cited by the page it starts on. */
 const host = (section: string, page: number) =>
   cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}`, defining: true });
-const rfc950 = (section: string, page: number) =>
-  cite('rfc-950', section, { url: `https://www.rfc-editor.org/rfc/rfc950.html#page-${page}`, defining: true });
+const rfc950 = (section: string, page: number, defining = true) =>
+  cite('rfc-950', section, { url: `https://www.rfc-editor.org/rfc/rfc950.html#page-${page}`, ...(defining ? { defining: true as const } : {}) });
+/** RFC 1122 where it does not define the thing claimed (the OSI layer). */
+const hostPlain = (section: string, page: number) => cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}` });
 /** RFC 826 has no section ids, so a section is cited by a text fragment that starts in it. */
 const ARP_GENERATION = cite('rfc-826', 'Packet Generation', {
   url: 'https://www.rfc-editor.org/rfc/rfc826.html#:~:text=As%20a%20packet%20is%20sent%20down%20through%20the%20network%20layers',
@@ -60,6 +62,7 @@ const CISCO_31BIT = cite('cisco-ip-subnets', '31-bit Subnets', { url: `${CISCO_S
 const CISCO_BACKGROUND = cite('cisco-host-subnet-quantities', 'Background Information', { url: `${CISCO_QUANTITIES}#:~:text=An%20IP%20address%20is%2032%20bits%20long` });
 const CISCO_SUBNETTING_TABLES = cite('cisco-host-subnet-quantities', 'Subnetting and Tables', { url: `${CISCO_QUANTITIES}#:~:text=As%20a%20concept%2C%20subnetting%20divides%20the%20network` });
 const CISCO_TABLE = cite('cisco-host-subnet-quantities', 'Class C Host/Subnet Table', { url: `${CISCO_QUANTITIES}#:~:text=Class%20C%20Host%2FSubnet%20Table` });
+const CISCO_QUANTITIES_B = cite('cisco-host-subnet-quantities', 'Class B Host/Subnet Table', { url: `${CISCO_QUANTITIES}#:~:text=Class%20B%20Host%2FSubnet%20Table` });
 const CISCO_EXAMPLE = cite('cisco-host-subnet-quantities', 'Subnet Example', { url: `${CISCO_QUANTITIES}#:~:text=A%20host%20portion%20with%20all%20zeros` });
 
 /** No standard puts IP at an OSI layer, so the badge rests on two vendors, as What is IP's does. */
@@ -193,7 +196,7 @@ const subnetting = defineLesson({
       name: 'Subnetting',
       fullName: 'Cutting one network into smaller ones',
       purpose: 'One network, cut into four',
-      osi: { layers: [3], cite: OSI_L3 },
+      osi: { layers: [3], cite: [...OSI_L3, hostPlain('3.2.1.3', 31), rfc950('2.1', 6, false)] },
       backing: traces('term-subnet', 'lead-1'),
       scene: {
         title: `Office network · ${FLOOR_CIDR}`,
@@ -249,7 +252,7 @@ const subnetting = defineLesson({
           deep: [
             {
               text: 'Each of the four numbers is one byte: 8 bits, so it runs from 0 to 255. 192 is 11000000 and 10 is 00001010. Nothing in the address itself says where the network part ends. That is the mask’s job, in the next step.',
-              cite: [rfc('rfc-791', '2.3', true), CISCO_ADDRESSES, ms('IP addresses, networks and hosts', 'ip-addresses-networks-and-hosts'), ms('Subnet mask', 'subnet-mask'), rfc('rfc-4632', '3.1', true)],
+              cite: [rfc('rfc-791', '2.3', true), CISCO_ADDRESSES, ms('IP addresses, networks and hosts', 'ip-addresses-networks-and-hosts'), ms('Subnet mask', 'subnet-mask'), rfc('rfc-4632', '3.1', true), ms('Glossary', 'glossary')],
             },
           ],
           facts: [
@@ -257,12 +260,12 @@ const subnetting = defineLesson({
             {
               label: 'Network portion',
               value: `${subnetValue('network-part', floorBoard)} (the first ${FLOOR} bits)`,
-              backing: traces('term-network', 'term-prefix'),
+              backing: traces('term-network', 'term-prefix', 'fact-cidr'),
             },
             {
               label: 'Host portion',
               value: `${subnetValue('host-part', floorBoard)} (the last ${hostBits(FLOOR)} bits)`,
-              backing: traces('term-host', 'term-prefix'),
+              backing: traces('term-host', 'term-prefix', 'fact-cidr'),
             },
             {
               label: 'Whole address',
@@ -290,7 +293,7 @@ const subnetting = defineLesson({
               plain: 'Which network: the same for the whole office',
               board: { ...LAPTOP_BOARD, prefix: FLOOR, pick: 'net' },
               cues: [{ cue: 'one-net' }, { cue: 'pulse', arg: 'onenet' }],
-              traces: ['term-network', 'term-prefix'],
+              traces: ['term-network', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'host-part',
@@ -302,10 +305,10 @@ const subnetting = defineLesson({
                 { cue: 'glow', arg: 'laptop' },
                 { cue: 'focus', arg: 'sales' },
               ],
-              traces: ['term-host', 'term-prefix'],
+              traces: ['term-host', 'term-prefix', 'fact-cidr'],
             }),
           ],
-          backing: traces('term-network', 'term-host', 'fact-bits', 'term-prefix', 'fact-examples'),
+          backing: traces('term-network', 'term-host', 'fact-bits', 'term-prefix', 'fact-examples', 'fact-cidr'),
         },
         {
           id: 'subnet-mask',
@@ -319,6 +322,7 @@ const subnetting = defineLesson({
               cite: [
                 rfc('rfc-4632', '3.1', true),
                 rfc('rfc-4632', 'Abstract', true, 'abstract'),
+                rfc('rfc-1812', '2.2.5.1'),
                 rfc('rfc-1812', '2.2.5.2'),
                 ms('Subnet mask', 'subnet-mask'),
                 CISCO_CIDR,
@@ -366,7 +370,7 @@ const subnetting = defineLesson({
                 CISCO_EXAMPLE,
                 rfc('rfc-3021', '2.1', true),
                 ms('Subnetting', 'subnetting'),
-                rfc('rfc-1812', '4.2.2.11', true),
+                rfc('rfc-1812', '4.2.2.11'),
                 rfc('rfc-2131', '3.1', true),
                 ARP_GENERATION,
                 rfc('rfc-1812', '5.3.5.1', true),
@@ -375,17 +379,17 @@ const subnetting = defineLesson({
             },
           ],
           facts: [
-            { label: 'Network address', value: formatIPv4(floor.network), backing: traces('term-netaddr') },
-            { label: 'Broadcast address', value: formatIPv4(floor.broadcast), backing: traces('term-broadcast') },
+            { label: 'Network address', value: formatIPv4(floor.network), backing: traces('term-netaddr', 'fact-cidr') },
+            { label: 'Broadcast address', value: formatIPv4(floor.broadcast), backing: traces('term-broadcast', 'fact-cidr') },
             {
               label: 'Usable addresses',
               value: `${floor.usableHosts} (${BIT_VALUES}${superscript(hostBits(FLOOR))} − ${KEPT_BACK})`,
-              backing: traces('fact-usable', 'lead-1'),
+              backing: traces('fact-usable', 'lead-1', 'fact-cidr'),
             },
             {
               label: 'Usable range',
               value: `${formatIPv4(floor.firstHost)} to ${formatIPv4(floor.lastHost)}`,
-              backing: traces('term-netaddr', 'term-broadcast', 'fact-usable'),
+              backing: traces('term-netaddr', 'term-broadcast', 'fact-usable', 'fact-cidr'),
             },
           ],
           events: [
@@ -396,7 +400,7 @@ const subnetting = defineLesson({
               plain: 'Host bits all 0: the network’s own name',
               board: { ...LAPTOP_BOARD, prefix: FLOOR, mask: true, third: { who: 'Network', addr: network(LAPTOP, FLOOR), mode: 'net' } },
               cues: [{ cue: 'pulse', arg: 'onenet' }],
-              traces: ['term-netaddr', 'term-prefix'],
+              traces: ['term-netaddr', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'broadcast-24',
@@ -414,7 +418,7 @@ const subnetting = defineLesson({
                 { cue: 'glow', arg: 'laptop' },
                 { cue: 'focus', arg: 'sales' },
               ],
-              traces: ['term-broadcast', 'term-prefix'],
+              traces: ['term-broadcast', 'term-prefix', 'fact-cidr'],
             }),
             calc({
               id: 'usable-24',
@@ -428,10 +432,10 @@ const subnetting = defineLesson({
                 third: { who: 'Broadcast', addr: broadcast(LAPTOP, FLOOR), mode: 'bcast' },
                 pick: 'host',
               },
-              traces: ['fact-usable', 'lead-1', 'term-netaddr', 'term-broadcast', 'term-prefix'],
+              traces: ['fact-usable', 'lead-1', 'term-netaddr', 'term-broadcast', 'term-prefix', 'fact-cidr'],
             }),
           ],
-          backing: traces('term-netaddr', 'term-broadcast', 'fact-usable', 'lead-1', 'term-prefix', 'fact-examples'),
+          backing: traces('term-netaddr', 'term-broadcast', 'fact-usable', 'lead-1', 'term-prefix', 'fact-examples', 'fact-cidr'),
         },
         {
           id: 'borrowing-bits',
@@ -444,6 +448,7 @@ const subnetting = defineLesson({
               text: 'Each borrowed bit doubles the number of subnets and halves their size. At /26 the 6 host bits give 64 addresses, 62 of them usable. The mask’s last number, 192, is 256 minus 64, the block size, and every subnet starts at a multiple of it. The router now needs an address in each subnet: here .1, .65, .129 and .193.',
               cite: [
                 CISCO_SUBNETTING,
+                rfc('rfc-1812', '2.2.7'),
                 rfc('rfc-4632', '3.1', true),
                 CISCO_TABLE,
                 ms('Subnetting', 'subnetting'),
@@ -455,7 +460,7 @@ const subnetting = defineLesson({
             {
               label: `Cut from one /${FLOOR}`,
               value: `${cutSubnets.length} subnets of ${sales.totalAddresses} addresses`,
-              backing: traces('fact-borrow', 'fact-26', 'term-subnet', 'term-prefix'),
+              backing: traces('fact-borrow', 'fact-26', 'term-subnet', 'term-prefix', 'fact-cidr'),
             },
             {
               label: 'Design’s subnet',
@@ -465,7 +470,7 @@ const subnetting = defineLesson({
             {
               label: 'Usable addresses',
               value: `${design.usableHosts} (${formatIPv4(design.firstHost)} to ${formatIPv4(design.lastHost)})`,
-              backing: traces('fact-26', 'fact-usable'),
+              backing: traces('fact-26', 'fact-usable', 'deep-block'),
             },
           ],
           events: [
@@ -537,6 +542,7 @@ const subnetting = defineLesson({
             'why-1',
             'term-mask',
             'term-prefix',
+            'fact-cidr',
           ),
         },
         {
@@ -563,17 +569,17 @@ const subnetting = defineLesson({
             {
               label: 'Laptop',
               value: `${formatIPv4(laptop)}, in ${formatIPv4(sales.network)}/${CUT}`,
-              backing: traces('term-subnet', 'term-prefix', 'fact-cidr'),
+              backing: traces('term-subnet', 'term-prefix', 'fact-cidr', 'deep-block'),
             },
             {
               label: 'Printer',
               value: `${formatIPv4(printer)}: ${matches(laptop, printer, CUT, 'same subnet, sent directly', 'another subnet, sent via the router')}`,
-              backing: traces('lead-2'),
+              backing: traces('lead-2', 'deep-block'),
             },
             {
               label: 'Design PC',
               value: `${formatIPv4(designPc)}: in ${formatIPv4(design.network)}/${CUT}, ${matches(laptop, designPc, CUT, 'sent directly', 'sent via the router')}`,
-              backing: traces('lead-2', 'term-gateway', 'term-subnet', 'term-prefix'),
+              backing: traces('lead-2', 'term-gateway', 'term-subnet', 'term-prefix', 'deep-block'),
             },
             { label: 'Default gateway', value: GATEWAY, backing: traces('term-gateway') },
           ],
@@ -598,10 +604,10 @@ const subnetting = defineLesson({
                 { cue: 'busy', arg: 'pc' },
                 { cue: 'focus', arg: 'router' },
               ],
-              traces: ['lead-2', 'term-gateway', 'term-prefix'],
+              traces: ['lead-2', 'term-gateway', 'term-prefix', 'deep-block'],
             }),
           ],
-          backing: traces('lead-2', 'term-gateway', 'term-borrow'),
+          backing: traces('lead-2', 'term-gateway', 'term-borrow', 'deep-block'),
         },
         {
           id: 'point-to-point',
@@ -625,7 +631,7 @@ const subnetting = defineLesson({
             {
               label: 'This subnet',
               value: `${formatIPv4(link.network)} to ${formatIPv4(link.broadcast)}`,
-              backing: traces('term-netaddr', 'term-broadcast', 'fact-30'),
+              backing: traces('term-netaddr', 'term-broadcast', 'fact-30', 'deep-block'),
             },
             {
               label: 'Usable addresses',
@@ -656,7 +662,7 @@ const subnetting = defineLesson({
                 third: { who: 'Network', addr: network(OFFICE_ROUTER_LINK, LINK), mode: 'net' },
               },
               cues: [{ cue: 'pulse', arg: 'link' }],
-              traces: ['term-netaddr', 'term-broadcast', 'term-prefix', 'fact-30', 'fact-examples'],
+              traces: ['term-netaddr', 'term-broadcast', 'term-prefix', 'fact-30', 'fact-examples', 'deep-block'],
             }),
             calc({
               id: 'usable-30',
@@ -672,7 +678,7 @@ const subnetting = defineLesson({
               traces: ['term-p2p', 'term-prefix', 'fact-30', 'fact-examples'],
             }),
           ],
-          backing: traces('term-p2p', 'fact-30', 'term-netaddr', 'term-broadcast', 'why-2', 'fact-examples'),
+          backing: traces('term-p2p', 'fact-30', 'term-netaddr', 'term-broadcast', 'why-2', 'fact-examples', 'fact-usable', 'deep-block'),
         },
       ],
       learn: {
@@ -703,7 +709,7 @@ const subnetting = defineLesson({
           },
           {
             id: 'term-mask',
-            idea: 'The card laid over the address: a 1 for each network bit',
+            idea: 'The card laid over the address: a 1 for each network bit and a 0 for each host bit',
             name: 'Subnet mask',
             cite: [CISCO_MASKS, rfc950('2.2', 7)],
           },
@@ -723,7 +729,7 @@ const subnetting = defineLesson({
             id: 'term-broadcast',
             idea: 'The address every device on the network hears: every host bit 1',
             name: 'Broadcast address',
-            cite: [ms('Glossary', 'glossary'), rfc('rfc-1812', '5.3.5', true)],
+            cite: [ms('Glossary', 'glossary'), rfc('rfc-1812', '5.3.5'), ms('Subnetting', 'subnetting')],
           },
           {
             id: 'term-subnet',
@@ -771,7 +777,7 @@ const subnetting = defineLesson({
           {
             id: 'why-2',
             text: 'They also stop addresses going to waste: a link between two routers needs 2 addresses, not 254.',
-            cite: [CISCO_VLSM, rfc('rfc-3021', '1'), rfc('rfc-4632', '2', true)],
+            cite: [CISCO_VLSM, rfc('rfc-3021', '1'), rfc('rfc-4632', '2'), CISCO_31BIT, CISCO_QUANTITIES_B],
           },
         ],
         deep: [
@@ -804,13 +810,13 @@ const subnetting = defineLesson({
             id: 'fact-usable',
             label: 'Usable addresses',
             value: `${BIT_VALUES} to the power of the host bits, minus ${KEPT_BACK}, up to a /${LINK}: the network and broadcast addresses are kept back`,
-            cite: [CISCO_EXAMPLE, rfc('rfc-1812', '4.2.2.11', true), rfc('rfc-4632', '2', true)],
+            cite: [CISCO_EXAMPLE, rfc('rfc-1812', '4.2.2.11'), rfc('rfc-4632', '2')],
           },
           {
             id: 'fact-borrow',
             label: 'Each borrowed bit',
             value: `doubles the subnets and halves their size: ${CUT - FLOOR} borrowed bits can be ${borrowedValues.slice(0, -1).join(', ')} or ${borrowedValues.at(-1)}, which makes ${cutSubnets.length} subnets`,
-            cite: [CISCO_SUBNETTING, CISCO_EXAMPLE, rfc('rfc-4632', '3.1', true)],
+            cite: [CISCO_SUBNETTING, CISCO_EXAMPLE, rfc('rfc-4632', '3.1', true), ms('Subnetting', 'subnetting')],
           },
           {
             id: 'fact-examples',
@@ -822,13 +828,13 @@ const subnetting = defineLesson({
             id: 'fact-cidr',
             label: 'Written as',
             value: `an address, a slash and the prefix length: ${FLOOR_CIDR} has the mask ${mask(FLOOR)}, ${ones(FLOOR)} ones then ${zeros(FLOOR)} zeros`,
-            cite: [rfc('rfc-4632', '3.1', true), CISCO_CIDR],
+            cite: [rfc('rfc-4632', '3.1', true), CISCO_CIDR, ms('Subnet mask', 'subnet-mask')],
           },
           {
             id: 'fact-osi',
             label: 'OSI layer',
             value: '3, network: subnetting is part of how IP addresses work',
-            cite: [...OSI_L3, host('3.2.1.3', 31)],
+            cite: [...OSI_L3, hostPlain('3.2.1.3', 31), rfc950('2.1', 6, false)],
           },
         ],
       },
@@ -841,17 +847,17 @@ const subnetting = defineLesson({
               text: String(total(CUT)),
               feedback:
                 'Not quite. 64 is how many addresses a /26 has. Two of them are kept back, the network and broadcast addresses, so 62 are left for devices.',
-              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11', true), CISCO_TABLE],
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11'), CISCO_TABLE, CISCO_EXAMPLE],
             },
             {
               text: String(usable(CUT)),
               feedback: 'Right. A /26 leaves 6 host bits: 64 addresses. Take away the network and broadcast addresses and 62 are left.',
-              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11', true), CISCO_TABLE, CISCO_EXAMPLE],
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11'), CISCO_TABLE, CISCO_EXAMPLE],
             },
             {
               text: String(usable(NEXT_CUT)),
               feedback: 'Not quite. 30 is a /27. A /26 has 6 host bits: 64 addresses, minus 2, is 62.',
-              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11', true), CISCO_TABLE],
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-1812', '4.2.2.11'), CISCO_TABLE, CISCO_EXAMPLE],
             },
           ],
           answer: 1,
@@ -889,7 +895,7 @@ const subnetting = defineLesson({
               text: 'A smaller subnet makes the link faster.',
               feedback:
                 'Not quite. A subnet’s size only sets how many addresses it has. The link uses a /30 because it needs exactly 2 addresses.',
-              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-3021', '1')],
+              cite: [rfc('rfc-4632', '3.1', true), rfc('rfc-3021', '1'), CISCO_31BIT],
             },
             {
               text: 'It keeps the guest Wi-Fi off the link.',
@@ -1155,7 +1161,11 @@ export const STATED: Stated[] = [
 
   // Learn.
   { at: 'learn.lead', text: 'one block of 256 addresses', value: () => `one block of ${floor.totalAddresses} addresses` },
-  { at: 'learn.terms.2.idea', text: 'a 1 for each network bit', value: () => `a ${MASK_NETWORK_BIT} for each network bit` },
+  {
+    at: 'learn.terms.2.idea',
+    text: 'a 1 for each network bit and a 0 for each host bit',
+    value: () => `a ${MASK_NETWORK_BIT} for each network bit and a ${MASK_HOST_BIT} for each host bit`,
+  },
   { at: 'learn.terms.4.idea', text: 'own name: every host bit 0', value: () => `own name: every host bit ${NETWORK_BIT}` },
   { at: 'learn.terms.5.idea', text: 'hears: every host bit 1', value: () => `hears: every host bit ${BROADCAST_BIT}` },
   { at: 'learn.terms.9.name', text: 'Point-to-point /30', value: () => `Point-to-point /${LINK}` },
