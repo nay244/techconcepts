@@ -1,6 +1,6 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { checkStructure, definedWith, defineTrack, LessonValidationError } from './define';
-import { defineLegacyLesson, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
+import { defineLegacyLesson, LEGACY_LESSONS, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
 import type { CertificationTrack } from './schema';
 import { cite } from './sources';
 import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeLesson, makeLongLesson, makeTwoUnitLesson, makeUnit, OBJ_URL } from './test-fixtures';
@@ -549,13 +549,19 @@ test('a multi-unit legacy lesson needs exactly 2 questions per unit, and a one-u
 
 // ---------------------------------------------------------------- defineLegacyLesson / defineTrack
 
-test('defineLegacyLesson returns the validated lesson, lifted', () => {
-  const lesson = defineLegacyLesson(makeLesson({ slug: 'dhcp' }));
-  expect([lesson.slug, lesson.origin]).toEqual(['dhcp', 'legacy']);
+// A slug still on the legacy list, for the cases that need one; once the list is empty they are skipped (plan.md, job 8).
+const LISTED = (LEGACY_LESSONS as readonly string[])[0];
+
+test.skipIf(LISTED === undefined)('defineLegacyLesson returns the validated lesson, lifted', () => {
+  const lesson = defineLegacyLesson(makeLesson({ slug: LISTED! }));
+  expect([lesson.slug, lesson.origin]).toEqual([LISTED, 'legacy']);
 });
 
-test('the legacy path’s lesson is a defined lesson, recorded as legacy; one lifted without its checks is not', () => {
-  expect(definedWith(defineLegacyLesson(makeLesson({ slug: 'dhcp' })))).toBe('legacy');
+test.skipIf(LISTED === undefined)('the legacy path’s lesson is a defined lesson, recorded as legacy', () => {
+  expect(definedWith(defineLegacyLesson(makeLesson({ slug: LISTED! })))).toBe('legacy');
+});
+
+test('a lesson validated on the legacy path is recorded as legacy; one lifted without its checks is not', () => {
   expect(definedWith(validateLegacyLesson(makeLesson()))).toBe('legacy');
   expect(definedWith(liftedFixture())).toBeUndefined();
   expect(definedWith(undefined)).toBeUndefined();
@@ -563,7 +569,7 @@ test('the legacy path’s lesson is a defined lesson, recorded as legacy; one li
 });
 
 test('defineLegacyLesson throws LessonValidationError for a bad lesson', () => {
-  const input = makeLesson({ slug: 'dhcp' });
+  const input = makeLesson({ slug: LISTED ?? 'dhcp' });
   unit(input).references = [];
   expect(() => defineLegacyLesson(input)).toThrow(LessonValidationError);
 });
