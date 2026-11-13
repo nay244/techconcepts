@@ -20,7 +20,7 @@ Written 2026-11-12 by the session that ran job 7, for the orchestrator that take
 
 ## 3. How a job runs
 
-1. **A fresh session per plan.** Read `CLAUDE.md`, `docs/direction.md` (section 2's latest decisions and the phase's status), the last job in `team.md`, `plan.md`, `docs/content-model.md` §8.
+1. **A fresh session per plan, and per batch of three lessons** (section 6a says why). Read `CLAUDE.md`, this file, the phase's status in `docs/direction.md` §3 and the decisions this file names, `plan.md`, and `docs/content-model.md` §8. Open `team.md` only for the last job's "What to do differently next time"; this file already carries the earlier jobs' lessons.
 2. **Scout first** (Haiku), before the plan: sizes of each lesson, its documents and whether they are registered, what tests and pages rest on its words and shape, what it shares with checked lessons, where branches collide. The form is `prototypes/s8-batch-4-facts.md`. Have it write its report to a file and save that in `prototypes/`.
 3. **Write the plan** in `plan.md` (inputs, what the scout found, decisions, units, estimate, stops, what could go wrong), record it in `docs/direction.md`, start the job in `team.md`, commit on `revamp`, show the owner, **wait for the go**.
 4. Carry it out (section 4), keep the ledger as units finish, and end with `npm test`, `npm run build` and the full `npm run e2e` on `revamp`.
@@ -68,6 +68,31 @@ From `CLAUDE.md` and direction 2.23 to 2.32:
 ## 6. What the last job cost, for estimates
 
 A lesson of 110 to 150 claim-sheet items cost 0.77 to 1.23 million subagent tokens: analyst about half (report 290,000 to 410,000; the read before the check 75,000 to 195,000), author 230,000 to 290,000 plus 20,000 to 40,000 for its section, a full check 150,000 to 250,000, a re-check 30,000 to 65,000. A scout for three lessons is about 300,000 on Haiku.
+
+## 6a. Where the tokens really go, and how to use fewer
+
+**The ledger's figures are not usage.** A figure in `team.md` is the size an agent's context reached. Every request re-reads the whole context, so what an agent uses is its context summed over all its requests. `scripts/team/tokens.py <transcript>` prints both: "growth" (the ledger's figure) and "read in all". Job 7, measured from the transcripts:
+
+| Role | Requests | Written | Re-read from cache | Ledger's figure |
+|---|---|---|---|---|
+| analyst (6, Opus) | 1,062 | 1.13 million | 185 million | 3.03 million |
+| orchestrator (1) | 245 | 0.24 million | 114 million | not counted |
+| author (6, Sonnet) | 293 | 0.41 million | 55 million | 1.64 million |
+| fact-checker (12 runs, Opus) | 482 | 0.47 million | 52 million | 1.69 million |
+| scout (2, Haiku) | 100 | 0.26 million | 15 million | 0.60 million |
+
+About 420 million tokens were re-read from cache, 15 million written to it, and 2.5 million written as output. A cached re-read is charged at about a tenth of fresh input at API prices; how a subscription's usage limit weighs it is not visible from here.
+
+**Writing the ledger cost about 9,200 tokens of the orchestrator's output in 15 writes: 3.9% of what it wrote, and far under 1% of the job.** Dropping it would save almost nothing. Keep it, and keep it short.
+
+What saves most, in order:
+
+1. **Analysts are 44% of the re-reading.** Each ran about 177 requests in one context that reached 370,000 tokens: the report, the rulings, the read before the check and the fixes. Earlier jobs kept one analyst going because a continued agent "spends less than a fresh one reading in"; that was judged by growth, the wrong measure. For batch 5, **try a fresh analyst for the read before the check on one lesson**, given the report file, the rulings and the saved sources, and compare "read in all" and the first check's result with the other two lessons. Also tell analysts to search a saved source for the passage they need, not read it whole, and to do several commands in one request.
+2. **One batch of three lessons a session** (the orchestrator is 27%). Its context grew from 82,000 to 734,000 tokens over two batches, and the second half of the session was 65% of its re-reading. A fresh session for batch 4 would have cut the orchestrator's total by roughly 40%. One plan and one go can still cover two batches.
+3. **Ask every agent for a short reply:** the result, the counts, the path to its report file and its open questions, in 150 words or fewer. Job 7's 69 hand-backs came to about 105,000 tokens, each carried through every later request. Read from a report only the sections you must rule on.
+4. **Read little at the start** (step 1 of section 3), and never read a whole lesson file, a whole report or a transcript yourself.
+5. **One short ledger row a unit** (who, model, tries, both token figures, the result in a line), written when the unit ends. At the job's end add the totals by role and "What to do differently next time". Write the per-lesson cost table, the corrections table and the notes on simplifications only when the owner asks or a plan needs them.
+6. **Say less while waiting.** A status line when something finishes is enough.
 
 ## 7. New lessons and new tracks
 

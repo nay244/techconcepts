@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Count an agent's tokens from its transcript: the growth of its context between requests.
 Usage: tokens.py <transcript.jsonl> ...   Prints, per file: requests, last context size, peak, and the summed growth
-(which equals the last context size when the context was never summarised)."""
+(which equals the last context size when the context was never summarised), and "read in all": the context summed
+over every request, which is what counts against a usage limit."""
 import json, sys
 for path in sys.argv[1:]:
     seen, sizes = set(), []
@@ -22,4 +23,4 @@ for path in sys.argv[1:]:
         if s >= prev: growth += s - prev
         else: drops += 1; growth += 0
         prev = s
-    print(f"{path.split('/')[-1]}: requests {len(sizes)}, last {sizes[-1] if sizes else 0}, peak {max(sizes) if sizes else 0}, growth {growth}, drops {drops}")
+    print(f"{path.split('/')[-1]}: requests {len(sizes)}, last {sizes[-1] if sizes else 0}, peak {max(sizes) if sizes else 0}, growth {growth}, drops {drops}, read in all {sum(sizes)}")
