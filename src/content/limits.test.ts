@@ -1,14 +1,13 @@
 import { expect, test } from 'vitest';
 import { applyOverrides, checkLimits, overrideSchema, unneededOverrides } from './limits';
-import type { LegacyLessonInput, LegacyUnitInput } from './legacy';
-import { FIXTURE_LIMITS, liftedFixture, makeLesson, makeLongLesson } from './test-fixtures';
+import { FIXTURE_LIMITS, liftedFixture, makeLesson, makeLongLesson, type TerseLessonInput, type TerseUnitInput } from './test-fixtures';
 
 // The numeric limits a track sets, checked on a lifted fixture: the shape every lesson reaches the registry in.
 
-const unit = (l: LegacyLessonInput): LegacyUnitInput => l.units[0]!;
+const unit = (l: TerseLessonInput): TerseUnitInput => l.units[0]!;
 const words = (n: number) => 'word '.repeat(n).trim();
-const issuesOf = (l: LegacyLessonInput) => checkLimits(liftedFixture(l), FIXTURE_LIMITS);
-const joined = (l: LegacyLessonInput) => issuesOf(l).join('\n');
+const issuesOf = (l: TerseLessonInput) => checkLimits(liftedFixture(l), FIXTURE_LIMITS);
+const joined = (l: TerseLessonInput) => issuesOf(l).join('\n');
 
 test('the fixture fits the limits', () => {
   expect(issuesOf(makeLesson())).toEqual([]);

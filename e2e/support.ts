@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { LEGACY_LESSONS } from '../src/content/legacy';
 
 // ---------------------------------------------------------------- the ready lessons
 
@@ -10,12 +9,7 @@ export interface ReadyLesson {
   title: string;
   /** Its page, such as `/networking/dhcp` or `/how-the-internet-works/what-is-http`. */
   path: string;
-  /** Whether it has passed the fact-check: true unless its slug is on the closed legacy list. Never read from the page. */
-  checked: boolean;
 }
-
-/** Whether a lesson has passed the fact-check, from the closed legacy list (every lesson on it is unchecked). */
-export const isChecked = (slug: string): boolean => !(LEGACY_LESSONS as readonly string[]).includes(slug);
 
 /** Where `global-setup.ts` leaves the lessons it found for the specs. */
 export const LESSONS_ENV = 'TECHCONCEPTS_E2E_LESSONS';

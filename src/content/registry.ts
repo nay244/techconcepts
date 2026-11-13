@@ -6,7 +6,6 @@ import { parseReport } from './factcheck/report';
 import { recheckPath } from './factcheck/recheck';
 import { claimSheet } from './factcheck/sheet';
 import { GLOSSARY, type GlossaryEntry } from './glossary';
-import { LEGACY_LESSONS } from './legacy';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
 import { SOURCES, type SourceRegistry } from './sources';
@@ -133,7 +132,7 @@ const LESSON_PATH = /^\.\/lessons\/([^/]+)\.ts$/;
 
 /**
  * Keys the glob result by slug. A lesson is a file directly in `lessons/`, and the file name must equal the lesson's
- * slug. Each lesson must be the one `defineLesson` or `defineLegacyLesson` returned, so a lesson file cannot skip the
+ * slug. Each lesson must be the one `defineLesson` returned, so a lesson file cannot skip the
  * rules (direction doc §3.4: the build fails if a lesson is missing a citation), and a cited lesson must have been
  * checked against `sources`, the real `SOURCES` outside tests, so it cannot bring a source list of its own.
  */
@@ -144,15 +143,15 @@ export function lessonsFromModules(modules: Record<string, Lesson>, sources: Sou
     if (match === null) throw new Error(`Unexpected lesson file path "${path}".`);
     const [, fileName] = match as unknown as [string, string];
     if (typeof lesson !== 'object' || lesson === null || typeof lesson.slug !== 'string') {
-      throw new Error(`${path} must default-export defineLesson({ ... }), or defineLegacyLesson({ ... }) for a lesson on the legacy list.`);
+      throw new Error(`${path} must default-export defineLesson({ ... }).`);
     }
     const checkedAgainst = definedWith(lesson);
     if (checkedAgainst === undefined) {
       throw new Error(
-        `${path}: the lesson was not made with defineLesson (or defineLegacyLesson for a lesson on the legacy list); wrap it so every rule runs.`,
+        `${path}: the lesson was not made with defineLesson; wrap it so every rule runs.`,
       );
     }
-    if (checkedAgainst !== 'legacy' && checkedAgainst !== sources) {
+    if (checkedAgainst !== sources) {
       throw new Error(
         `${path}: the lesson was checked against a different source list; use defineLesson, which checks against SOURCES in src/content/sources.ts.`,
       );
@@ -208,30 +207,6 @@ export function checkListings(lessons: Record<string, Lesson>, trackList: readon
 }
 
 /**
- * Holds the legacy list closed: throws, naming each, when a lesson is legacy but not on `LEGACY_LESSONS`, or a slug on
- * the list has no lesson or a lesson that is cited. So the list only ever shrinks, as each lesson moves to citations
- * (once it grew, when How the Internet Works was split into the 14 legacy lessons it was made of).
- */
-export function checkLegacyList(lessons: readonly Lesson[]): void {
-  const listed: readonly string[] = LEGACY_LESSONS;
-  const problems: string[] = [];
-  for (const lesson of lessons) {
-    if (lesson.origin === 'legacy' && !listed.includes(lesson.slug)) {
-      problems.push(`"${lesson.slug}" is a legacy lesson, but it is not on the legacy list, which is closed.`);
-    }
-  }
-  for (const slug of listed) {
-    const own = lessons.filter((l) => l.slug === slug);
-    if (own.length === 0) {
-      problems.push(`"${slug}" is on the legacy list, but no lesson has that slug; take it off the list.`);
-    } else if (own.some((l) => l.origin !== 'legacy')) {
-      problems.push(`"${slug}" is on the legacy list, but its lesson is cited; take it off the list.`);
-    }
-  }
-  if (problems.length > 0) throw new Error(`The legacy list is out of date:\n${problems.map((p) => `  - ${p}`).join('\n')}`);
-}
-
-/**
  * Checks every track again with `defineTrack` against `sources` (the real `SOURCES` outside tests), throwing as it
  * does. So a track written as a plain object, or defined against another source list, fails the build: a
  * certification track's pin and objectives are checked against the real registry.
@@ -248,7 +223,6 @@ const modules = import.meta.glob<Lesson>(['./lessons/*.ts', '!./lessons/*.test.t
 });
 const lessonsBySlug = lessonsFromModules(modules);
 checkLessonFolders(Object.keys(import.meta.glob(['./lessons/*/*.ts', '!./lessons/*/*.test.ts'])), Object.keys(lessonsBySlug));
-checkLegacyList(Object.values(lessonsBySlug));
 checkTracks(tracks);
 checkListings(lessonsBySlug, tracks);
 
@@ -302,12 +276,12 @@ checkUnpathedContent(GLOSSARY, tracks);
 
 /**
  * The day a lesson passed its fact-check, as its report gives it ('2026-11-08'), or the later of that and its re-check's
- * when the pair passes the gate; null for a lesson not checked yet: a legacy lesson, or in `astro dev` a cited one whose
- * report is missing or cannot be read.
+ * when the pair passes the gate; null for a lesson not checked yet: in `astro dev`, one whose report is
+ * missing or cannot be read.
  */
 export function checkedOn(slug: string): string | null {
-  const lesson = lessonsBySlug[slug];
-  if (lesson?.origin !== 'cited') return null;
+  const lesson = getLesson(slug);
+  if (lesson === undefined) return null;
   const full = Object.entries(reports).find(([path]) => path.endsWith(`/${reportPath(slug)}`))?.[1];
   const recheck = Object.entries(rechecks).find(([path]) => path.endsWith(`/${recheckPath(slug)}`))?.[1];
   // The sheet is only needed to judge a pair; a lesson with no re-check is read as it always was.

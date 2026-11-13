@@ -8,9 +8,8 @@ import { itemsToJudge, matchBase, nearPass, recheckMessages, recheckPath, RECHEC
 import { claimSheet, limitsHash, type ClaimSheet } from './sheet';
 
 /**
- * The build gate (fact-checker design §7): a lesson in the cited shape builds only with a current report in which
- * every item passes. Lessons still on the legacy list are exempt until they move across (direction doc §10 tasks
- * 4–6). Every issue names the report's path and says what to do.
+ * The build gate (fact-checker design §7): a lesson builds only with a current report in which every item passes.
+ * Every issue names the report's path and says what to do.
  *
  * A lesson changed since its full check may carry a targeted re-check beside it (`recheck.ts`): the pair is read by
  * `checkPair`, and a lesson with no re-check file is read exactly as it always was.
@@ -203,19 +202,18 @@ const slugOf = (path: string, suffix = '.md'): string => {
 
 /**
  * Every issue with the fact checks of these lessons. `reports` is the registry's glob of `docs/fact-checks/*.md`, and
- * `rechecks` its glob of `docs/fact-checks/*.recheck.md`, each keyed by path; a report or a re-check no cited lesson
+ * `rechecks` its glob of `docs/fact-checks/*.recheck.md`, each keyed by path; a report or a re-check no lesson
  * owns is an issue too. A lesson with no re-check is read as it always was.
  */
 export function checkFactChecks(lessons: readonly Lesson[], reports: Record<string, string>, sources: SourceRegistry, rechecks: Record<string, string> = {}): string[] {
   const bySlug = new Map(Object.entries(reports).map(([path, raw]) => [slugOf(path), raw]));
   const reBySlug = new Map(Object.entries(rechecks).map(([path, raw]) => [slugOf(path, '.recheck.md'), raw]));
-  const cited = lessons.filter((l) => l.origin === 'cited');
-  const issues = cited.flatMap((l) => {
+  const issues = lessons.flatMap((l) => {
     const sheet = claimSheet(l, sources);
     const recheck = reBySlug.get(l.slug);
     return recheck === undefined ? checkReport(sheet, bySlug.get(l.slug), reportPath(l.slug)) : checkPair(sheet, bySlug.get(l.slug), recheck, reportPath(l.slug), recheckPath(l.slug));
   });
-  const owned = new Set(cited.map((l) => l.slug));
+  const owned = new Set(lessons.map((l) => l.slug));
   for (const slug of bySlug.keys()) {
     if (!owned.has(slug)) issues.push(`${reportPath(slug)}: a fact-check report with no cited lesson "${slug}"; delete it, or fix its file name.`);
   }

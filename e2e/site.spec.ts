@@ -341,23 +341,6 @@ test.describe('desktop', () => {
     expect(new Set(numbers).size).toBeGreaterThan(1);
   });
 
-  test('a lesson not checked yet says so, in the same places, and its sources carry no numbers', async ({ page }) => {
-    const unchecked = LESSONS.find((l) => !l.checked);
-    test.skip(unchecked === undefined, 'No ready lesson is on the legacy list: no real page is left to show the not-checked stamp on.');
-    await open(page, unchecked!.path);
-    const top = page.locator('.console__top .stamp');
-    await expect(top).toHaveText(/^Not checked yet, \d+ sources?$/);
-    const listed = Number((await top.textContent())!.match(/(\d+) source/)![1]);
-    expect(listed).toBeGreaterThan(0);
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
-    const foot = page.locator('.console__explain .explain__foot');
-    await expect(foot.locator('.stamp')).toHaveText('Not checked yet');
-    await expect(foot.locator('ul.explain__sources > li')).toHaveCount(listed);
-    await expect(page.locator('.console__explain').getByRole('link', { name: /^Source \d+: / })).toHaveCount(0);
-    // The top bar's title is whole beside the stamp.
-    expect(await page.locator('.topbar__crumb h1').evaluate((h) => h.scrollWidth <= h.clientWidth)).toBe(true);
-  });
-
   test('the skip link is the first stop on every page, and reaches the main region', async ({ page }) => {
     for (const { path } of ALL_PAGES) {
       await open(page, path);
@@ -587,13 +570,11 @@ test.describe('desktop', () => {
       await expect(page.locator('main .route__end a')).toHaveAttribute('href', INTERNET_TRACK);
     });
 
-    test('Track page: every ready stop says whether its lesson is checked; OSI Model is, a lesson not moved yet is not', async ({ page }) => {
+    test('Track page: every ready stop says its lesson is checked, with the day', async ({ page }) => {
       await open(page, '/networking');
       await expect(lessonCard(page, 'osi-model').locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
       for (const lesson of NETWORKING_LESSONS) {
-        await expect(lessonCard(page, lesson.slug).locator('.stamp'), lesson.slug).toHaveText(
-          lesson.checked ? /^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/ : 'Not checked yet',
-        );
+        await expect(lessonCard(page, lesson.slug).locator('.stamp'), lesson.slug).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
       }
       await expect(page.locator('main .route li.stop:not(.stop--soon) .stamp')).toHaveCount(NETWORKING_LESSONS.length);
       await expect(page.locator('main .route li.stop--soon .stamp')).toHaveCount(0);
@@ -1353,7 +1334,7 @@ test.describe('phone', { tag: '@phone' }, () => {
             expect(s.x).toBeGreaterThan(k.x + k.width);
             expect(s.x + s.width).toBeLessThanOrEqual(screen.width);
             expect(s.height).toBeGreaterThanOrEqual(24);
-            expect(await stamp.textContent()).toMatch(/^(Checked \d{1,2} [A-Z][a-z]{2} \d{4}|Not checked yet), \d+ sources?$/);
+            expect(await stamp.textContent()).toMatch(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, \d+ sources?$/);
             // Its words are the top bar's, which is in the page and hidden at this width.
             expect(await stamp.textContent(), slug).toBe(await page.locator('.console__top .stamp').textContent());
             await expect(stamp).toHaveAttribute('href', '/about#facts');

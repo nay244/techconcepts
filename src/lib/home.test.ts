@@ -1,7 +1,6 @@
 // @ts-expect-error - no @types/node in this project; vitest runs under node
 import { readFileSync } from 'node:fs';
 import { afterEach, expect, test, vi } from 'vitest';
-import { LEGACY_LESSONS } from '../content/legacy';
 import { getEntries, getLesson, trackTotals } from '../content/registry';
 import { SOURCES } from '../content/sources';
 import { tracks } from '../content/tracks';
@@ -94,9 +93,8 @@ test('the sealed box reads the checked lead, word for word: two statements, one 
   );
 });
 
-test('the lesson Home’s “And HTTPS?” points to is a checked one: off the legacy list, with the day it passed', () => {
+test('the lesson Home’s “And HTTPS?” points to is a checked one, with the day it passed', () => {
   const slug = homeDemo().sealed.url.split('/').at(-1)!;
-  expect(LEGACY_LESSONS as readonly string[], `${slug} on the legacy list`).not.toContain(slug);
   expect(lessonStamp(getLesson(slug)!).checked, `${slug} has no check date`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 });
 

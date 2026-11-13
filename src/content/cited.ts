@@ -5,7 +5,7 @@ import { textsAt } from './texts';
 /**
  * The rules only a lesson in the cited shape keeps (direction doc §3.1, §6.4; the owner's ruling 4), as readable
  * issues. Each names its place by path, such as `units[0].learn.lead[1] ("lead-2")`, and says what to do.
- * `validateLesson` (`define.ts`) runs them before the structural rules every lesson keeps; the legacy path does not.
+ * `validateLesson` (`define.ts`) runs them before the structural rules every lesson keeps.
  *
  * What cites: Learn's statements, terms, pattern, Go deeper and facts; every Watch step's Go deeper; every Practice
  * option (its feedback explains the answer); and the OSI layers, unless the unit spans layers. A Learn lead or why
@@ -166,7 +166,7 @@ export function backedPartsOf(lesson: Lesson): BackedPart[] {
 
 // ---------------------------------------------------------------- the rules, in the order they are reported
 
-/** Rule 1: one unit. Lessons of several units exist only on the legacy path. */
+/** Rule 1: one unit. A lesson of several units is split into lessons of one each. */
 function oneUnit(lesson: Lesson): string[] {
   const n = lesson.units.length;
   return n === 1 ? [] : [`A cited lesson has exactly one unit; this one has ${n}. Make each unit a lesson of its own.`];

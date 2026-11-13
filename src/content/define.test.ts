@@ -1,11 +1,24 @@
 import { afterEach, expect, test, vi } from 'vitest';
-import { checkStructure, definedWith, defineTrack, LessonValidationError } from './define';
-import { defineLegacyLesson, LEGACY_LESSONS, validateLegacyLesson, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
+import { checkStructure, definedWith, defineTrack, LessonValidationError, validateLesson } from './define';
 import type { CertificationTrack } from './schema';
 import { cite } from './sources';
-import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeLesson, makeLongLesson, makeTwoUnitLesson, makeUnit, OBJ_URL } from './test-fixtures';
+import {
+  FIXTURE_LIMITS,
+  FIXTURE_SOURCES,
+  liftedFixture,
+  makeCertTrack,
+  makeCitedLesson,
+  makeLesson,
+  makeLongLesson,
+  makeTwoUnitLesson,
+  makeUnit,
+  OBJ_URL,
+  validateFixture,
+  type TerseLessonInput,
+  type TerseUnitInput,
+} from './test-fixtures';
 
-// The structural rules (`checkStructure`) and the legacy-only rules, through the legacy path, which runs both.
+// The structural rules (`checkStructure`), through the fixture validator, which runs the shape check and them.
 
 // The real FIGURE_PARTS is empty until each figure is built; the stand-in has
 // places, a flag cue and a text cue, layers, and a board on `subnet` only.
@@ -13,7 +26,7 @@ vi.mock('../art/scenes/parts', async () => ({ FIGURE_PARTS: (await import('./tes
 
 const issuesOf = (input: unknown): string[] => {
   try {
-    validateLegacyLesson(input);
+    validateFixture(input);
     return [];
   } catch (e) {
     if (e instanceof LessonValidationError) return e.issues;
@@ -27,11 +40,11 @@ afterEach(() => {
 });
 
 // Shorthand for reaching into the first unit and its events.
-const unit = (l: LegacyLessonInput, i = 0): LegacyUnitInput => l.units[i]!;
-const ev = (l: LegacyLessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
+const unit = (l: TerseLessonInput, i = 0): TerseUnitInput => l.units[i]!;
+const ev = (l: TerseLessonInput, step: number, i: number): any => unit(l).steps[step]!.events[i];
 
 /** The fixture with a rules panel, as Firewalls has: a rule list and the connections it remembers. */
-function withRulesPanel(): LegacyLessonInput {
+function withRulesPanel(): TerseLessonInput {
   const l = makeLesson();
   const columns = [
     { key: 'n', label: '#' },
@@ -51,7 +64,7 @@ function withRulesPanel(): LegacyLessonInput {
 
 test('a valid one-unit lesson passes and comes back lifted, every word as written', () => {
   const input = makeLesson();
-  expect(validateLegacyLesson(input)).toEqual(liftedFixture(input));
+  expect(validateFixture(input)).toEqual(liftedFixture(input));
 });
 
 test('the two-unit fixture is valid, and every call gives a fresh copy', () => {
@@ -68,7 +81,7 @@ test('layers and labels default to empty', () => {
   const input = makeLesson();
   delete (unit(input).scene as any).layers;
   delete (unit(input).scene as any).labels;
-  const lesson = validateLegacyLesson(input);
+  const lesson = validateFixture(input);
   expect(lesson.units[0]!.scene.layers).toEqual([]);
   expect(lesson.units[0]!.scene.labels).toEqual({});
 });
@@ -152,21 +165,18 @@ test('a board prefix is a whole number from 0 to 32, or null', () => {
 
 test('reports every broken rule together', () => {
   const l = makeLesson();
-  unit(l).references = [];
   ev(l, 0, 0).from = 'mars';
   ev(l, 0, 0).cues = [{ cue: 'status' }];
   ev(l, 1, 0).log.colour = 'blue';
   let caught: unknown;
   try {
-    validateLegacyLesson(l);
+    validateFixture(l);
   } catch (e) {
     caught = e;
   }
   expect(caught).toBeInstanceOf(LessonValidationError);
   const err = caught as LessonValidationError;
-  expect(err.issues).toHaveLength(4);
-  // The structural rules first, then the legacy-only rules.
-  expect(err.issues.at(-1)).toMatch(/at least 1 reference/);
+  expect(err.issues).toHaveLength(3);
   expect(err.issues.join('\n')).toMatch(/"mars"/);
   expect(err.issues.join('\n')).toMatch(/cue "status" needs an arg/);
   expect(err.issues.join('\n')).toMatch(/"colour"/);
@@ -174,7 +184,7 @@ test('reports every broken rule together', () => {
   for (const issue of err.issues) expect(err.message).toContain(issue);
 });
 
-// ---------------------------------------------------------------- legacy-only rules and answers
+// ---------------------------------------------------------------- answers
 // The numeric limits (steps, facts, words, questions, options, terms, names) are a track's: see limits.test.ts.
 
 test('a question’s answer points at one of its options', () => {
@@ -186,12 +196,6 @@ test('a question’s answer points at one of its options', () => {
   const frac = makeLesson();
   unit(frac).practice[0]!.answer = 0.5;
   expect(joined(frac)).toMatch(/answer/);
-});
-
-test('each unit needs a reference', () => {
-  const noRef = makeTwoUnitLesson();
-  unit(noRef, 1).references = [];
-  expect(joined(noRef)).toMatch(/Unit "beta".*at least 1 reference/);
 });
 
 test('a lesson may carry no cert tags (a cited one needs none either: cited.test.ts)', () => {
@@ -278,7 +282,7 @@ test('a scene with no start is given an empty one, as its layers and labels are'
   const l = makeLesson();
   delete (unit(l).scene as { start?: unknown }).start;
   delete (unit(l).scene as { layers?: unknown }).layers;
-  const lesson = validateLegacyLesson(l);
+  const lesson = validateFixture(l);
   expect([lesson.units[0]!.scene.start, lesson.units[0]!.scene.layers]).toEqual([[], []]);
 });
 
@@ -508,7 +512,7 @@ test('sequence view needs two parties', () => {
 });
 
 test('net-map scene titles over 51 characters are rejected', () => {
-  const at = (figure: LegacyLessonInput['figure'], length: number) => {
+  const at = (figure: TerseLessonInput['figure'], length: number) => {
     const l = makeLesson({ figure });
     unit(l).scene.title = 'x'.repeat(length);
     return issuesOf(l);
@@ -537,41 +541,26 @@ test('a lesson may override a limit once, not twice', () => {
   expect(checkStructure(doubled)).toEqual([expect.stringMatching(/"fixture-lesson".*hookWords.*more than once/)]);
 });
 
-test('a multi-unit legacy lesson needs exactly 2 questions per unit, and a one-unit lesson is left to its track', () => {
-  const three = makeTwoUnitLesson();
-  unit(three, 1).practice.push({ ...structuredClone(unit(three, 1).practice[0]!), id: 'q3' });
-  expect(joined(three)).toMatch(/Unit "beta".*exactly 2 questions/);
-  const four = makeLesson();
-  unit(four).practice.push({ ...structuredClone(unit(four).practice[0]!), id: 'q3' });
-  unit(four).practice.push({ ...structuredClone(unit(four).practice[0]!), id: 'q4' });
-  expect(issuesOf(four)).toEqual([]);
-});
+// ---------------------------------------------------------------- the fixture validator / defineTrack
 
-// ---------------------------------------------------------------- defineLegacyLesson / defineTrack
-
-// A slug still on the legacy list, for the cases that need one; once the list is empty they are skipped (plan.md, job 8).
-const LISTED = (LEGACY_LESSONS as readonly string[])[0];
-
-test.skipIf(LISTED === undefined)('defineLegacyLesson returns the validated lesson, lifted', () => {
-  const lesson = defineLegacyLesson(makeLesson({ slug: LISTED! }));
-  expect([lesson.slug, lesson.origin]).toEqual([LISTED, 'legacy']);
-});
-
-test.skipIf(LISTED === undefined)('the legacy path’s lesson is a defined lesson, recorded as legacy', () => {
-  expect(definedWith(defineLegacyLesson(makeLesson({ slug: LISTED! })))).toBe('legacy');
-});
-
-test('a lesson validated on the legacy path is recorded as legacy; one lifted without its checks is not', () => {
-  expect(definedWith(validateLegacyLesson(makeLesson()))).toBe('legacy');
+test('a fixture is not recorded as defined; a lesson validateLesson returned is, with the sources it was checked against', () => {
+  expect(definedWith(validateFixture(makeLesson()))).toBeUndefined();
+  expect(definedWith(validateLesson(makeCitedLesson(), FIXTURE_SOURCES))).toBe(FIXTURE_SOURCES);
   expect(definedWith(liftedFixture())).toBeUndefined();
   expect(definedWith(undefined)).toBeUndefined();
   expect(definedWith('dhcp')).toBeUndefined();
 });
 
-test('defineLegacyLesson throws LessonValidationError for a bad lesson', () => {
-  const input = makeLesson({ slug: LISTED ?? 'dhcp' });
-  unit(input).references = [];
-  expect(() => defineLegacyLesson(input)).toThrow(LessonValidationError);
+test('the fixture validator throws LessonValidationError for a shape fault and for a structural one, and never a ZodError', () => {
+  const noUnits = makeLesson();
+  noUnits.units = [];
+  expect(() => validateFixture(noUnits)).toThrow(LessonValidationError);
+  const noNarrative = makeLesson();
+  delete (noNarrative.units[0]!.steps[0] as { narrative?: string }).narrative;
+  expect(() => validateFixture(noNarrative)).toThrow(LessonValidationError);
+  const badEvent = makeLesson();
+  ev(badEvent, 0, 0).from = 'mars';
+  expect(() => validateFixture(badEvent)).toThrow(/"mars"/);
 });
 
 const trackOf = (parts: { id: string; slugs: string[] }[]) => ({
@@ -679,7 +668,7 @@ test('a certification track against the empty real registry has no source to pin
 // ---------------------------------------------------------------- a message's headers (osi)
 
 /** The fixture as an osi lesson: the scene gives its one word, and the panel is a labels panel. */
-function osiLesson(): LegacyLessonInput {
+function osiLesson(): TerseLessonInput {
   const l = makeLesson({ figure: 'osi' });
   unit(l).scene.labels = { plate: 'P' };
   unit(l).scene.panel = { type: 'labels' };

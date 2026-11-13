@@ -30,9 +30,8 @@ const vendorCite = () =>
 
 // ---------------------------------------------------------------- the fixture
 
-test('the cited fixture is valid, comes back cited, with its sources derived', () => {
+test('the cited fixture is valid, with its sources derived', () => {
   const l = validateLesson(makeCitedLesson(), FIXTURE_SOURCES);
-  expect(l.origin).toBe('cited');
   expect(l.units[0]!.references.map((s) => s.label)).toEqual(['RFC 9999: Example Protocol', 'Example vendor: Example page']);
   expect(l.units[0]!.references.map((s) => s.url)).toEqual(['https://www.rfc-editor.org/rfc/rfc9999.html', 'https://learn.microsoft.com/example']);
 });
@@ -359,7 +358,7 @@ test('a trace to a Learn part with no citation is rejected', () => {
 });
 
 test('a trace to an id this lesson does not have is rejected, such as another lesson’s', () => {
-  // The legacy fixture's lead statement: a real Learn id, of another lesson.
+  // The terse fixture's lead statement: a real Learn id, of another lesson.
   const other = liftedFixture().units[0]!.learn.lead[0]!.id;
   const l = makeCitedLesson();
   l.backing = { traces: ['lead-1', other] };
@@ -447,7 +446,7 @@ test('a cited lesson needs no cert tag: its concepts are not an exam', () => {
 
 // ---------------------------------------------------------------- shape, and the entry point
 
-test('a lesson in the legacy shape is rejected by the strict path, on its shape alone', () => {
+test('a lesson in the terse fixture shape is rejected by the strict path, on its shape alone', () => {
   const issues = issuesOf(makeLesson());
   expect(issues.join('\n')).toMatch(/units\[0\]: Unrecognized key: "osiLayers"/);
   expect(issues.every((issue) => !/no citation|no backing/.test(issue))).toBe(true);

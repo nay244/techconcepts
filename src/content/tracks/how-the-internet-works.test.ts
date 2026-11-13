@@ -9,7 +9,6 @@ import { netMapDriver } from '../../scenes/drivers/net-map';
 import { lessonNumbers, lessonTitles, textsOf } from '../../test/lesson-references';
 import { showSweep } from '../../test/show-sweep';
 import { checkStructure } from '../define';
-import { LEGACY_LESSONS } from '../legacy';
 import { getEntries, getLesson } from '../registry';
 import type { Lesson, MessageEvent, Unit } from '../schema';
 import { internetTrack, networkingTrack, tracks } from './index';
@@ -18,8 +17,6 @@ import { internetTrack, networkingTrack, tracks } from './index';
 const TOUR: Lesson[] = getEntries('how-the-internet-works').map((e) => getLesson(e.slug)!);
 /** Their protocol sections stitched into one lesson, in track order, so the map's checks below walk all 14 as before. */
 const internet: Lesson = { ...TOUR[0]!, slug: 'tour', title: 'How the Internet Works', units: TOUR.flatMap((l) => l.units) };
-/** Whether a lesson is still in the legacy shape: only those keep the uncited details pinned below. */
-const isLegacy = (lesson: Lesson): boolean => (LEGACY_LESSONS as readonly string[]).includes(lesson.slug);
 const PROTOCOLS = ['http', 'https', 'tcp', 'udp', 'ip', 'dns', 'dhcp', 'icmp', 'smtp', 'pop3', 'imap', 'ftp', 'ssh', 'tls'];
 
 afterEach(() => {
@@ -107,33 +104,29 @@ test('each lesson is one protocol, its fields taken from the section', () => {
   }
 });
 
-test('each protocol keeps its name, full name, purpose, group and OSI layers', () => {
+test('each protocol keeps its name, full name, purpose and group, and a badge with layers cites them', () => {
   const rows = [
-    ['HTTP', 'Hypertext Transfer Protocol', 'Asking for web pages', 'app', { layers: [7], cite: [] }],
-    ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security', { layers: [7], cite: [] }],
-    ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core', { layers: [4], cite: [] }],
-    ['UDP', 'User Datagram Protocol', 'Quick, no guarantees', 'core', { layers: [4], cite: [] }],
-    ['IP', 'Internet Protocol', 'Addresses and routes', 'core', { layers: [3], cite: [] }],
-    ['DNS', 'Domain Name System', 'Names into numbers', 'app', { layers: [7], cite: [] }],
-    ['DHCP', 'Dynamic Host Configuration Protocol', 'Getting an address', 'app', { layers: [7], cite: [] }],
-    ['ICMP', 'Internet Control Message Protocol', 'Network check-ups', 'core', { layers: [3], cite: [] }],
-    ['SMTP', 'Simple Mail Transfer Protocol', 'Sending email', 'app', { layers: [7], cite: [] }],
-    ['POP3', 'Post Office Protocol, version 3', 'Downloading email', 'app', { layers: [7], cite: [] }],
-    ['IMAP', 'Internet Message Access Protocol', 'Email kept in sync', 'app', { layers: [7], cite: [] }],
-    ['FTP', 'File Transfer Protocol', 'Moving files', 'app', { layers: [7], cite: [] }],
-    ['SSH', 'Secure Shell', 'Remote control, sealed', 'security', { layers: [7], cite: [] }],
-    ['TLS/SSL', 'Transport Layer Security (SSL is its old name)', 'The seal itself', 'security', { layers: [6], cite: [] }],
+    ['HTTP', 'Hypertext Transfer Protocol', 'Asking for web pages', 'app'],
+    ['HTTPS', 'HTTP Secure', 'Web pages, sealed', 'security'],
+    ['TCP', 'Transmission Control Protocol', 'Delivery you can count on', 'core'],
+    ['UDP', 'User Datagram Protocol', 'Quick, no guarantees', 'core'],
+    ['IP', 'Internet Protocol', 'Addresses and routes', 'core'],
+    ['DNS', 'Domain Name System', 'Names into numbers', 'app'],
+    ['DHCP', 'Dynamic Host Configuration Protocol', 'Getting an address', 'app'],
+    ['ICMP', 'Internet Control Message Protocol', 'Network check-ups', 'core'],
+    ['SMTP', 'Simple Mail Transfer Protocol', 'Sending email', 'app'],
+    ['POP3', 'Post Office Protocol, version 3', 'Downloading email', 'app'],
+    ['IMAP', 'Internet Message Access Protocol', 'Email kept in sync', 'app'],
+    ['FTP', 'File Transfer Protocol', 'Moving files', 'app'],
+    ['SSH', 'Secure Shell', 'Remote control, sealed', 'security'],
+    ['TLS/SSL', 'Transport Layer Security (SSL is its old name)', 'The seal itself', 'security'],
   ];
   expect(TOUR).toHaveLength(rows.length);
   TOUR.forEach((lesson, i) => {
     const u = lesson.units[0]!;
-    if (isLegacy(lesson)) {
-      expect([u.name, u.fullName, u.purpose, u.group, u.osi], lesson.slug).toEqual(rows[i]);
-    } else {
-      // A cited lesson may cite its layers or span them; what stays true is its name and group, and that a badge with layers cites them.
-      expect([u.name, u.fullName, u.purpose, u.group], lesson.slug).toEqual(rows[i]!.slice(0, 4));
-      if (u.osi !== 'spans') expect(u.osi!.layers.length > 0 && u.osi!.cite.length > 0, lesson.slug).toBe(true);
-    }
+    // A lesson may cite its layers or span them; what stays true is its name and group, and that a badge with layers cites them.
+    expect([u.name, u.fullName, u.purpose, u.group], lesson.slug).toEqual(rows[i]);
+    if (u.osi !== 'spans') expect(u.osi!.layers.length > 0 && u.osi!.cite.length > 0, lesson.slug).toBe(true);
   });
 });
 
@@ -716,62 +709,27 @@ test('every log cell in a column of figures fits its width at 1280 px, as the mo
 });
 
 test('each protocol’s sources are the RFCs its facts name', () => {
-  const expectedReferences = [
-    [
-      { label: 'RFC 9110: HTTP Semantics', url: 'https://www.rfc-editor.org/rfc/rfc9110' },
-      { label: 'RFC 9112: HTTP/1.1', url: 'https://www.rfc-editor.org/rfc/rfc9112' },
-    ],
-    [
-      { label: 'RFC 2818: HTTP Over TLS', url: 'https://www.rfc-editor.org/rfc/rfc2818' },
-      { label: 'RFC 9110: HTTP Semantics', url: 'https://www.rfc-editor.org/rfc/rfc9110' },
-    ],
-    [{ label: 'RFC 9293: Transmission Control Protocol (TCP)', url: 'https://www.rfc-editor.org/rfc/rfc9293' }],
-    [{ label: 'RFC 768: User Datagram Protocol', url: 'https://www.rfc-editor.org/rfc/rfc768' }],
-    [{ label: 'RFC 791: Internet Protocol', url: 'https://www.rfc-editor.org/rfc/rfc791' }],
-    [
-      { label: 'RFC 1034: Domain Names, Concepts and Facilities', url: 'https://www.rfc-editor.org/rfc/rfc1034' },
-      { label: 'RFC 1035: Domain Names, Implementation and Specification', url: 'https://www.rfc-editor.org/rfc/rfc1035' },
-    ],
-    [{ label: 'RFC 2131: Dynamic Host Configuration Protocol', url: 'https://www.rfc-editor.org/rfc/rfc2131' }],
-    [{ label: 'RFC 792: Internet Control Message Protocol', url: 'https://www.rfc-editor.org/rfc/rfc792' }],
-    [{ label: 'RFC 5321: Simple Mail Transfer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc5321' }],
-    [{ label: 'RFC 1939: Post Office Protocol, Version 3', url: 'https://www.rfc-editor.org/rfc/rfc1939' }],
-    [{ label: 'RFC 9051: Internet Message Access Protocol (IMAP), Version 4rev2', url: 'https://www.rfc-editor.org/rfc/rfc9051' }],
-    [{ label: 'RFC 959: File Transfer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc959' }],
-    [
-      { label: 'RFC 4251: The Secure Shell (SSH) Protocol Architecture', url: 'https://www.rfc-editor.org/rfc/rfc4251' },
-      { label: 'RFC 4253: The Secure Shell (SSH) Transport Layer Protocol', url: 'https://www.rfc-editor.org/rfc/rfc4253' },
-    ],
-    [{ label: 'RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3', url: 'https://www.rfc-editor.org/rfc/rfc8446' }],
-  ];
-  TOUR.forEach((lesson, i) => {
+  for (const lesson of TOUR) {
+    // A lesson's references carry their registry id and may be more or fewer than the RFCs its facts name; each still names a page.
     const refs = lesson.units[0]!.references;
-    if (isLegacy(lesson)) {
-      expect(refs, lesson.slug).toEqual(expectedReferences[i]);
-    } else {
-      // A cited lesson's references also carry their registry id and may be more or fewer; each still names a page.
-      expect(refs.length, lesson.slug).toBeGreaterThan(0);
-      for (const r of refs) {
-        expect(r.label.length, lesson.slug).toBeGreaterThan(0);
-        expect(r.url, lesson.slug).toMatch(/^https:\/\//);
-      }
+    expect(refs.length, lesson.slug).toBeGreaterThan(0);
+    for (const r of refs) {
+      expect(r.label.length, lesson.slug).toBeGreaterThan(0);
+      expect(r.url, lesson.slug).toMatch(/^https:\/\//);
     }
-  });
-  // Some RFCs the facts name are not among the sources the plan drafted: HTTPS's RFC 8446 (TLS 1.3, the TLS part's
-  // own source) and IP's RFC 8200 (IPv6). The owner reviews the sources with the built lesson.
-  const uncited: Record<string, string[]> = {};
+  }
   /** Each RFC a fact names, a range ("RFC 4251 to 4254") one by one. */
   const rfcsIn = (value: string) =>
     [...value.matchAll(/RFC (\d+)(?: to (\d+))?/g)].flatMap(([, from, to = from]) =>
       Array.from({ length: Number(to) - Number(from) + 1 }, (_, i) => `RFC ${Number(from) + i}`),
     );
   expect(rfcsIn('RFC 4251 to 4254, RFC 9110')).toEqual(['RFC 4251', 'RFC 4252', 'RFC 4253', 'RFC 4254', 'RFC 9110']);
-  for (const [i, u] of internet.units.entries()) {
+  for (const u of internet.units) {
     const named = rfcsIn(u.learn.facts.find((f) => f.label === 'Defined in')!.value);
     expect(named.length, u.id).toBeGreaterThan(0);
     const missing = named.filter((rfc) => !u.references.some((r) => r.label.startsWith(`${rfc}:`)));
-    // The exceptions are for lessons still uncited; a cited lesson's facts must cite what they name.
-    expect(missing, u.id).toEqual(isLegacy(TOUR[i]!) ? (uncited[u.id] ?? []) : []);
+    // A lesson's facts must cite what they name.
+    expect(missing, u.id).toEqual([]);
   }
 });
 

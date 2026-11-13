@@ -4,7 +4,7 @@ import { liftedFixture } from '../content/test-fixtures';
 import { numberedSources, sourceMarks } from './sourceNumbers';
 
 const osi = getLesson('osi-model')!.units[0]!;
-// A lesson that cites nothing: the legacy path's lifted fixture (every real lesson is cited once batch 5 is done).
+// A lesson that cites nothing: a lifted fixture (every real lesson cites).
 const uncited = liftedFixture().units[0]!;
 
 test('a cited lesson’s sources are numbered in the order Learn first cites them', () => {

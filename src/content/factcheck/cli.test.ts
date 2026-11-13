@@ -1,6 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
 import { validateLesson } from '../define';
-import type { Lesson } from '../schema';
 import { FIXTURE_SOURCES, makeCitedLesson } from '../test-fixtures';
 import { CANARY_SLUG, type FactCheckDeps, canaryReportPath, runFactCheck } from './cli';
 import { keysNeedingQuotes } from './quotes';
@@ -130,13 +129,5 @@ describe('--quotes <folder>', () => {
     expect(none.code).toBe(1);
     expect(none.out).toContain('no fact-check report');
     expect((await runFactCheck([SLUG, '--quotes', 'tmp'], deps())).code).toBe(1);
-  });
-
-  test('a legacy lesson is refused', async () => {
-    const legacy = { ...cited(), origin: 'legacy' } as unknown as Lesson;
-    const { deps: d } = quoteDeps(quoting());
-    const run = await runFactCheck([SLUG, '--quotes', 'tmp'], { ...d, getLesson: async () => legacy });
-    expect(run.code).toBe(1);
-    expect(run.out).toContain('legacy');
   });
 });

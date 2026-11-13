@@ -309,26 +309,26 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
 // ---------------------------------------------------------------- public API
 
 /**
- * The lessons a validator has returned, each with what it was checked against: the source registry for a cited
- * lesson, 'legacy' for the legacy path. The registry accepts only these, and only a cited lesson checked against the
- * real `SOURCES`, so no lesson file can skip the rules or bring its own sources.
+ * The lessons `validateLesson` has returned, each with the source registry it was checked against. The registry
+ * accepts only these, and only when checked against the real `SOURCES`, so no lesson file can skip the rules or bring
+ * its own sources.
  */
-const defined = new WeakMap<object, SourceRegistry | 'legacy'>();
+const defined = new WeakMap<object, SourceRegistry>();
 
 /**
- * @internal Only the two lesson paths call it: records a lesson that `validateLesson` (with the registry it used) or
- * `validateLegacyLesson` (with 'legacy') has just checked, and returns it. A lesson file never calls it.
+ * @internal Only `validateLesson` calls it: records a lesson it has just checked, with the registry it used, and
+ * returns it. A lesson file never calls it.
  */
-export function markDefined(lesson: Lesson, checkedAgainst: SourceRegistry | 'legacy'): Lesson {
+function markDefined(lesson: Lesson, checkedAgainst: SourceRegistry): Lesson {
   defined.set(lesson, checkedAgainst);
   return lesson;
 }
 
 /**
- * What a validator checked `l` against when it returned `l`: the source registry of a cited lesson, or 'legacy'.
- * Undefined for anything a validator did not return, such as a copy or a lesson built by hand.
+ * The source registry `validateLesson` checked `l` against when it returned `l`. Undefined for anything it did not
+ * return, such as a copy or a lesson built by hand.
  */
-export function definedWith(l: unknown): SourceRegistry | 'legacy' | undefined {
+export function definedWith(l: unknown): SourceRegistry | undefined {
   return typeof l === 'object' && l !== null ? defined.get(l) : undefined;
 }
 
@@ -364,7 +364,7 @@ export function checkStructure(lesson: Lesson): string[] {
 export type LessonInput = z.input<typeof lessonSchema>;
 
 /**
- * Checks a lesson in the cited shape against `sources` and returns it, origin 'cited', with each unit's references
+ * Checks a lesson in the cited shape against `sources` and returns it, with each unit's references
  * listed from its citations in reading order. Its shape first (alone, as `parseLessonShape` reports it); then,
  * together, the cited rules (`cited.ts`: one unit, no written references, citations, the OSI badge, backing and
  * traces, sound citations, no lesson numbers) and the structural rules every lesson keeps (`checkStructure`). Throws
@@ -373,7 +373,7 @@ export type LessonInput = z.input<typeof lessonSchema>;
  * another list is for tests alone.
  */
 export function validateLesson(input: unknown, sources: SourceRegistry = SOURCES): Lesson {
-  const lesson: Lesson = { ...parseLessonShape(lessonSchema, input), origin: 'cited' };
+  const lesson: Lesson = parseLessonShape(lessonSchema, input);
   const issues = [...checkCitedRules(lesson, sources), ...checkStructure(lesson)];
   if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
   const units = lesson.units.map((u) => ({ ...u, references: sourceListOf(citationsOf(u), sources) }));

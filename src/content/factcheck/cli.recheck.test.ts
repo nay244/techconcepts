@@ -85,15 +85,13 @@ describe('--stamp', () => {
     }
   });
 
-  test('stamp 5: it needs to write, a stamped report stamps to the same text, and a legacy lesson is refused', async () => {
+  test('stamp 5: it needs to write, and a stamped report stamps to the same text', async () => {
     const { deps: d } = setup({ [FULL]: plain() });
     const { writeFile: _, ...noWriter } = d;
     expect((await runFactCheck([SLUG, '--stamp'], noWriter)).code).toBe(1);
     const again = setup({ [FULL]: stampedReportFor(sheetB()) });
     expect((await runFactCheck([SLUG, '--stamp'], again.deps)).code).toBe(0);
     expect(again.written[FULL]).toBe(stampedReportFor(sheetB()));
-    const legacy = { ...lessonB(), origin: 'legacy' } as unknown as Lesson;
-    expect((await runFactCheck([SLUG, '--stamp'], setup({ [FULL]: plain() }, legacy).deps)).out).toContain('legacy');
   });
 });
 

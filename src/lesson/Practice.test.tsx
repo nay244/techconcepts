@@ -81,7 +81,7 @@ test('a wrong pick always reads Not quite, even when its feedback does not start
 // ---------------------------------------------------------------- source numbers in the feedback (D1 §6, checks 7 to 9)
 
 const OSI = getLesson('osi-model')!.units[0]!;
-// A lesson that cites nothing: the legacy path's lifted fixture (every real lesson is cited once batch 5 is done).
+// A lesson that cites nothing: a lifted fixture (every real lesson cites).
 const UNCITED_UNIT = liftedFixture().units[0]!;
 
 /** OSI Model's marks by question and option (D1 §6): the numbers, in order. */
