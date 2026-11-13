@@ -283,3 +283,19 @@ Each is one line: the setup, and what a right build does. "Refuse" cases are the
 - The cap of 12 with the entry rule limits an entry to 12 items for a cheap re-check: two senses with three statements and ties is 11. Worth a word in the analyst's and author's briefs so the pilot stays re-checkable.
 - `docs/direction.md` 2.16 and the Phase 3 lines (`direction.md:44, :112, :117`) still say glossary entries are refused; §8 updates `content-model.md:305` only. The orchestrator's to change with the merge.
 - `checkedOn`/`checkedDate` have no group form yet; B8 will need one for a "checked on" mark.
+
+## B8: spec review (reviewer, Opus, 2026-11-13) and errata
+
+The review of D9's spec found 11 holes; each has one right answer, closed by the orchestrator (Opus 5.5). The spec file stays as approved; these errata are read with it. The attack cases are in `prototypes/d9-cases.md`.
+
+- **E1 (H1)** Without JavaScript a lesson serves only its Overview (`LessonConsole.tsx:208`), so no term list and no definition is in any lesson's HTML. Check 37 becomes: every lesson's HTML has no `.explain__terms` and no `.explain__def`, and `no-script.test.ts` and `lesson.spec.ts`'s no-JavaScript test pass unchanged. §10's two `:root:not(.js)` rules are not added.
+- **E2 (H2)** The end-to-end specs cannot load the glossary (`import.meta.glob`). The data-exact parts of checks 3, 11, 12, 13 and 19 run in a Vitest file that renders `glossary.astro` with Astro's container and jsdom, as `no-script.test.ts` does. `e2e/glossary.spec.ts` keeps what needs a browser, on the entries the spec names, and checks the stamp's count against the page's own entries.
+- **E3 (H3)** D8's checks 15 and 23 run on the last letter that has an item, read from the keys (T in the pilot); at 1440 Tab focuses the first link inside that letter's `dl`. D8's check 21 reads `.gl-row a` where it says `.gl-from`.
+- **E4 (H4)** Check 18's fixture of 13 letters runs on the keys' markup in a unit test (the keys drawn from the function's output). Check 32's markup half runs in `Explanation.test.tsx` with a `definitions` prop of three; its height half runs end to end on the DNS lesson (only `term-ttl` tied): untied rows have no `data-def`, no button, and the one-line row is 42.2px (±0.5) at 1440.
+- **E5 (H5)** Check 33 opens the lesson at `…/what-is-icmp?step=7`, follows "Ping in the glossary" and goes Back to Learn. A reader who walked to Learn by Next comes Back to the Overview with "Resume at …": the console writes no position to the address, and the spec does not ask it to. **A note for the owner.**
+- **E6 (H6)** Check 38 is `git diff --stat revamp...b8/glossary -- src/content/lessons src/content/glossary-groups src/content/sources.ts docs/fact-checks`, which prints nothing.
+- **E7 (H7)** `registry.ts` gains `glossaryCheckedOn(groupId)`, the group twin of `checkedOn`. The pure function takes its inputs as arguments (groups, lessons with tracks and addresses, sources, a date per group); the pages pass the real ones.
+- **E8 (H8)** An empty glossary, or `astro dev` with a group whose report is missing, does not throw: the latest date is taken over the groups that have one, and with none the page draws no `.gl-stamp`. One unit test pins "no group, no throw, no stamp".
+- **E9 (H9)** Variant B only: no `data-def="shown"`; the bracketed halves of checks 26 and 27 are dropped.
+- **E10 (H10)** The prototype's CSS stands: the "… in the glossary" link is 44px at `(max-width: 760px), (pointer: coarse)`, 26px otherwise; §11's "phone layout" reads "760px and below".
+- **E11 (H11)** The "0–9" key counts as one of the 13: the rule is about how many keys are live (§16, "Twenty dashed keys over ten entries read as a broken page"). One unit test pins it.
