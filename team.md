@@ -655,3 +655,12 @@ Planned on 2026-11-12 in a fresh session, the first run by Opus 5.5 as orchestra
 - The orchestrator writing the rulings straight into each report (R5) worked and cost less than a second analyst pass.
 - Before the full e2e, run the specs that name the batch's lessons (`grep -l <slug> e2e/`) in the worktree: one 19-minute run would have been enough.
 - A Learn part sourced from two publishers needs both found by the analyst; the one near-pass was a second publisher missing.
+
+# Job 9: the Practice page (Phase 5), and the legacy path removed
+
+Planned on 2026-11-12 in a fresh session; direction 2.37, `plan.md`. The plan and the design run on Fable 5.2 by the owner's word for this job ("Have Fable 5.2 design and plan out our practice page"); every other unit keeps its usual model. The session's first minutes, the reading in and the scout's brief, ran on Opus 5.5 before it was switched. Token figures are "growth" and "read in all", from `scripts/team/tokens.py`. The designer's spend is counted apart.
+
+| Unit | Agent | Model | Tries | Growth | Read in all | Result |
+|---|---|---|---|---|---|---|
+| S10 | scout | Haiku | 1 | 246,512 | 9,563,194 | Done before the go: `prototypes/s10-job-9-facts.md`, saved by the orchestrator from the scout's reply (the scout does not write files). 40 questions in 18 lessons; §6.6 word for word; four places that promise nothing is saved; the legacy lift is what 27 test files build fixtures with; "Not checked yet" still shows in `astro dev`. |
+| Plan | orchestrator | Fable 5.2 | 1 | not counted | not counted | `plan.md`: fifteen decisions, two design units (D6, D7), four build units (B7 to B10). Waiting for the owner's go. |
