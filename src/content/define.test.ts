@@ -555,8 +555,8 @@ test('the fixture validator throws LessonValidationError for a shape fault and f
   const noUnits = makeLesson();
   noUnits.units = [];
   expect(() => validateFixture(noUnits)).toThrow(LessonValidationError);
-  const noNarrative = makeLesson() as any;
-  delete noNarrative.units[0].steps[0].narrative;
+  const noNarrative = makeLesson();
+  delete (noNarrative.units[0]!.steps[0] as { narrative?: string }).narrative;
   expect(() => validateFixture(noNarrative)).toThrow(LessonValidationError);
   const badEvent = makeLesson();
   ev(badEvent, 0, 0).from = 'mars';
