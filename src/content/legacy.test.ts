@@ -3,10 +3,11 @@ import { LessonValidationError } from './define';
 import { defineLegacyLesson, LEGACY_LESSONS, legacyLessonSchema } from './legacy';
 import { liftedFixture, makeLesson, makeUnit } from './test-fixtures';
 
-const TOUR = ['dhcp', 'dns', 'ftp', 'http', 'https', 'icmp', 'imap', 'ip', 'pop3', 'smtp', 'ssh', 'tcp', 'tls', 'udp'];
+// A slug still on the list, for the cases that need one; once the list is empty they are skipped (plan.md, job 8).
+const LISTED = (LEGACY_LESSONS as readonly string[])[0];
 
-test('the legacy list is exactly the three lessons not yet moved, all of Networking: every lesson of How the Internet Works has moved (it may only shrink)', () => {
-  expect([...LEGACY_LESSONS].sort()).toEqual(['dhcp', 'firewalls', 'subnetting', ...TOUR.filter((p) => p !== 'udp' && p !== 'http' && p !== 'dns' && p !== 'tcp' && p !== 'https' && p !== 'dhcp' && p !== 'icmp' && p !== 'ip' && p !== 'pop3' && p !== 'smtp' && p !== 'imap' && p !== 'tls' && p !== 'ftp' && p !== 'ssh').map((p) => `what-is-${p}`)]);
+test('the legacy list holds only Networking lessons not yet moved: every lesson of How the Internet Works has moved, and it may only shrink', () => {
+  expect(['dhcp', 'firewalls', 'subnetting']).toEqual(expect.arrayContaining([...LEGACY_LESSONS]));
 });
 
 test('lifting keeps every word and adds empty citations', () => {
@@ -59,7 +60,7 @@ test('a legacy lesson lifts with no overrides', () => {
   expect(legacyLessonSchema.safeParse({ ...makeLesson(), overrides: [] }).success).toBe(false);
 });
 
-test('the list is checked before anything else, and a listed lesson is still checked in full', () => {
+test('the list is checked before anything else', () => {
   // A lesson off the list is refused for that alone, however broken it is.
   let caught: unknown;
   try {
@@ -71,8 +72,10 @@ test('the list is checked before anything else, and a listed lesson is still che
   const issues = (caught as LessonValidationError).issues;
   expect(issues).toHaveLength(1);
   expect(issues[0]).toMatch(/osi-model.*not on the legacy list/);
-  // A listed slug goes on to the shape and the rules.
-  const broken = () => defineLegacyLesson({ ...makeLesson(), slug: 'dhcp', units: [] });
+});
+
+test.skipIf(LISTED === undefined)('a listed lesson is still checked in full', () => {
+  const broken = () => defineLegacyLesson({ ...makeLesson(), slug: LISTED!, units: [] });
   expect(broken).toThrow(LessonValidationError);
   expect(broken).toThrow(/units/);
 });
