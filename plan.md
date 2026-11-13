@@ -94,7 +94,7 @@ Everything else the orchestrator decides, records in the direction doc and repor
 
 - **Remove the legacy path:** with the list empty, `defineLegacyLesson`, `src/content/legacy.ts`, the "Unchecked" stamp and the tests on them are dead code. A unit of its own, planned in the next job.
 - **Registry addresses that moved:** IANA's port registry and two Palo Alto DHCP pages answer at new addresses (direction 2.35). Re-registering them changes every checked lesson that cites them, so it comes with re-checks.
-- **About's sources box:** with DHCP's sixteen sources, "Cisco DHCP troubleshooting" and "Microsoft DHCP troubleshooting" overflow the short-name column into the title at 375 and 1440 (decision 9). A design unit for the owner.
+- **About's sources box:** with DHCP's sixteen sources, "Cisco DHCP troubleshooting" and "Microsoft DHCP troubleshooting" overflow the short-name column into the title at 375 and 1440 (decision 9). A design unit, held: the owner said "Not now" on 2026-11-12.
 - Phase 5, the Practice page (direction §3).
 
 ## Not in this plan
