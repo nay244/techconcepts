@@ -5,6 +5,7 @@ import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
 import type { Citation } from '../content/sources';
 import { positionOf, type Position, type Slot } from '../engine/timeline';
+import type { LessonDefinition } from '../lib/glossary';
 import { lessonLine, UP_NEXT_KICKER } from '../lib/hub';
 import type { LessonStamp } from '../lib/stamp';
 import { wrapAtDots } from '../lib/wrapAtDots';
@@ -36,6 +37,11 @@ export interface ExplanationProps {
   trackUrl: string;
   /** Whether the lesson has been fact-checked, and when: shown with Learn's sources. */
   stamp: LessonStamp;
+  /**
+   * The glossary's definition for each of this lesson's terms that has one, by term id (`definitionsFor`). A term with no
+   * key is drawn as it always was.
+   */
+  definitions?: Record<string, LessonDefinition>;
   onGo(position: Position): void;
   /** The current unit's Practice picks, which the console keeps in memory. */
   picked: Picks;
@@ -237,9 +243,17 @@ function EndRow({ lesson, unit, next, nextFigure, number, total, trackUrl, onJum
  * they left it from one position to the next.
  */
 export function Explanation(props: ExplanationProps) {
-  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, stamp, onGo, picked, onPick, panelRef } = props;
+  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, stamp, definitions, onGo, picked, onPick, panelRef } = props;
   const { list: sources, numberOf: numbers } = numberedSources(unit);
   const [deeperOpen, setDeeperOpen] = useState(false);
+  // The terms whose definition is open: in memory for as long as the lesson is open, saved nowhere.
+  const [openDefs, setOpenDefs] = useState<ReadonlySet<string>>(new Set());
+  const toggleDef = (id: string): void =>
+    setOpenDefs((open) => {
+      const next = new Set(open);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   const ownPanel = useRef<HTMLElement>(null);
   const panel = panelRef ?? ownPanel;
@@ -300,16 +314,48 @@ export function Explanation(props: ExplanationProps) {
         <h2 className="explain__title">{LEARN_TITLE}</h2>
         <p className="explain__sub">{LEARN_SUB}</p>
         <Statements items={learn.lead} numbers={numbers} />
+        {learn.terms.some((term) => definitions?.[term.id] !== undefined) ? <p className="explain__hint">Press a name for its definition.</p> : null}
         <ol className="explain__terms" aria-label="Terms">
-          {learn.terms.map((term, i) => (
-            <li key={i}>
+          {learn.terms.map((term, i) => {
+            const def = definitions?.[term.id];
+            const idea = (
               <span className="explain__idea">
                 <Rich text={term.idea} />
                 <Marks cite={term.cite} numbers={numbers} />
               </span>
-              <span className="explain__term">{term.name}</span>
-            </li>
-          ))}
+            );
+            if (def === undefined) {
+              return (
+                <li key={i}>
+                  {idea}
+                  <span className="explain__term">{term.name}</span>
+                </li>
+              );
+            }
+            const open = openDefs.has(term.id);
+            const defId = `def-${term.id}`;
+            return (
+              <li key={i} data-def={open ? 'open' : 'closed'}>
+                {idea}
+                <button type="button" className="explain__term" aria-expanded={open} aria-controls={defId} onClick={() => toggleDef(term.id)}>
+                  <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                    <path d="M4 2l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>{term.name}</span>
+                </button>
+                <div className="explain__def" id={defId} hidden={!open}>
+                  {def.label === undefined ? null : <p className="explain__def-sense">{def.label}</p>}
+                  <p className="explain__def-text">{def.text}</p>
+                  <p className="explain__def-src">
+                    <span className="explain__def-label">Sources</span> {def.sources.join(', ')}
+                  </p>
+                  <p className="explain__def-more">
+                    <a href={`/glossary#${def.entryId}`}>{def.entryTerm} in the glossary</a>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ol>
         <div className="explain__pattern">
           <p className="explain__pattern-names">

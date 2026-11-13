@@ -356,7 +356,7 @@ test.describe('desktop', () => {
   });
 
   test('Home, Tracks, the track pages and About show no time figure', async ({ page }) => {
-    for (const path of ['/', '/tracks', INTERNET_TRACK, '/networking', '/about']) {
+    for (const path of ['/', '/tracks', INTERNET_TRACK, '/networking', '/about', '/glossary']) {
       await open(page, path);
       await expect(page.locator('body')).not.toContainText(/\b\d+ ?min\b|\bminutes\b|one sitting|Short guided/i);
     }
@@ -413,14 +413,63 @@ test.describe('desktop', () => {
     await expect(page.locator('.site-head .theme-toggle')).toHaveAccessibleName(`Switch to ${before} theme`);
   });
 
-  test('the header links are Tracks, How a lesson works, Sources and About', async ({ page }) => {
+  test('the header links are Tracks, Glossary, How a lesson works, Sources and About, and the menu lists the same five', async ({ page }) => {
     for (const { path } of SITE_PAGES) {
       await open(page, path);
       const nav = page.getByRole('navigation', { name: 'Site', exact: true });
-      await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'How a lesson works', 'Sources', 'About']);
-      expect(await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/tracks', '/#try', '/#sources', '/about']);
+      await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About']);
+      expect(await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/tracks', '/glossary', '/#try', '/#sources', '/about']);
       await expect(nav.getByRole('link', { name: 'Practice' }), path).toHaveCount(0);
+      // The phone's menu is drawn from the same list, in the same order (its panel is hidden until opened).
+      const menu = page.locator('#menu-panel');
+      expect(await menu.locator('a:not(.btn)').evaluateAll((as) => as.map((a) => a.textContent)), path).toEqual(['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About']);
+      expect(await menu.locator('a:not(.btn)').evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/tracks', '/glossary', '/#try', '/#sources', '/about']);
     }
+  });
+
+  test('Glossary is current ("page") on /glossary and nowhere else', async ({ page }) => {
+    for (const { path } of SITE_PAGES) {
+      await open(page, path);
+      const link = page.getByRole('navigation', { name: 'Site', exact: true }).getByRole('link', { name: 'Glossary', exact: true });
+      if (path === '/glossary') await expect(link, path).toHaveAttribute('aria-current', 'page');
+      else await expect(link, path).not.toHaveAttribute('aria-current');
+    }
+  });
+
+  test('the footer lists Glossary after All tracks and opens /glossary on every page', async ({ page }) => {
+    for (const { path } of SITE_PAGES) {
+      await open(page, path);
+      const footer = page.getByRole('contentinfo');
+      await expect(footer.getByRole('link', { name: 'Glossary', exact: true }), path).toHaveAttribute('href', '/glossary');
+      const learn = footer.locator('div:has(> h3:text-is("Learn")) > ul a');
+      expect(await learn.evaluateAll((as) => as.map((a) => a.getAttribute('href'))), path).toEqual(['/how-the-internet-works', '/networking', '/tracks', '/glossary', '/#try']);
+    }
+    await open(page, '/');
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Glossary', exact: true }).click();
+    await expect(page).toHaveURL(/\/glossary$/);
+  });
+
+  test('the menu button takes over at 959px and the row of five shows at 960px, on every page', async ({ page }) => {
+    for (const { path } of SITE_PAGES) {
+      await page.setViewportSize({ width: 959, height: 800 });
+      await open(page, path);
+      await expect(page.locator('.menu-btn'), path).toBeVisible();
+      await expect(page.locator('.site-nav'), path).toBeHidden();
+      await page.setViewportSize({ width: 960, height: 800 });
+      await expect(page.locator('.menu-btn'), path).toBeHidden();
+      await expect(page.locator('.site-nav'), path).toBeVisible();
+      for (const box of await page.locator('.site-nav a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(Math.round(box), path).toBe(32);
+      const start = page.locator('.site-head .head-end a.btn--primary');
+      if (['/tracks', '/networking', INTERNET_TRACK].includes(path)) await expect(start, path).toHaveCount(0);
+      else expect((await start.boundingBox())!.width, path).toBeGreaterThanOrEqual(122);
+    }
+  });
+
+  test('at 959px the opened menu lists the five, then Start learning where the page has it', async ({ page }) => {
+    await page.setViewportSize({ width: 959, height: 800 });
+    await open(page, '/glossary');
+    await page.locator('#menu').click();
+    await expect(page.locator('#menu-panel a')).toHaveText(['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About', 'Start learning']);
   });
 
   test.describe('Tracks page', () => {

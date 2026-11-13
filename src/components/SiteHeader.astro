@@ -5,7 +5,7 @@ import './site.css';
 
 interface Props {
   /** The section the page belongs to; its link gets aria-current ("page" on the section's own page, else "true"). */
-  current?: 'tracks' | 'how' | 'about';
+  current?: 'tracks' | 'glossary' | 'how' | 'about';
   /** Home: the header sits over the hero, clear at the top of the page and solid once it scrolls (home-v6). */
   overHero?: boolean;
 }
@@ -15,6 +15,7 @@ const { current, overHero = false } = Astro.props;
 const showStart = current !== 'tracks';
 const links = [
   { key: 'tracks', href: '/tracks', label: 'Tracks' },
+  { key: 'glossary', href: '/glossary', label: 'Glossary' },
   { key: 'how', href: '/#try', label: 'How a lesson works' },
   { key: 'sources', href: '/#sources', label: 'Sources' },
   { key: 'about', href: '/about', label: 'About' },
@@ -183,7 +184,7 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
     background: var(--bg-soft);
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 959px) {
     .site-head .wrap {
       grid-template-columns: 1fr auto;
     }

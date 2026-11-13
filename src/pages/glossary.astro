@@ -1,0 +1,149 @@
+---
+// The Glossary page (prototypes/d9-glossary.md): every entry A to Z under the letter keys, each with its written definition,
+// the sources it was checked against and the lessons that teach it. Built from `siteGlossary()`; no island, no script.
+import GlossaryEntry from '../components/GlossaryEntry.astro';
+import GlossaryKeys from '../components/GlossaryKeys.astro';
+import GlossaryStamp from '../components/GlossaryStamp.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteGlossary } from '../lib/glossary-site';
+import '../components/site.css';
+
+const { letters, keys, stamp } = siteGlossary();
+const LEAD = 'Definitions written for this site, each one checked against its sources.';
+const NOTE =
+  'Under each definition are the sources it was checked against and the lessons that teach the term. A term with two meanings has a definition for each. New definitions are added once they pass the same check.';
+---
+
+<BaseLayout title="Glossary" current="glossary" description={LEAD}>
+  <div class="wrap gl">
+    <div class="gl-head">
+      <h1 class="disp">Glossary</h1>
+      <p class="gl-lead">{LEAD}</p>
+      <p class="gl-note">{NOTE}</p>
+      <GlossaryStamp stamp={stamp} />
+    </div>
+
+    <GlossaryKeys keys={keys} />
+
+    {
+      letters.map((l) => (
+        <section class="gl-letter" id={l.id}>
+          <div class="gl-bar">
+            <h2>{l.letter}</h2>
+            <a class="gl-up" href="#letters">All letters</a>
+          </div>
+          <dl class="gl-list">
+            {l.items.map((item) => <GlossaryEntry item={item} />)}
+          </dl>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .gl { padding-top: 36px; padding-bottom: 72px; }
+  .gl-head h1 { font-size: 64px; }
+  .gl-lead { max-width: 30em; margin: 14px 0 0; color: var(--ink-strong); font-size: 20px; line-height: 1.4; }
+  .gl-note { max-width: 40em; margin: 10px 0 0; color: var(--muted); font-size: 16px; line-height: 1.55; }
+  /* NEW: the page's stamp. The link is 44px tall; its words stay one line down to 320px. */
+  .gl-stamp { margin: 8px 0 0; }
+  .gl-stamp .stamp { min-height: 44px; font-size: 15px; white-space: normal; }
+
+  /* ---- the letters: a row of keys (D8). A letter with no term is a dashed, empty key and not a link. ---- */
+  .gl-az { margin: 20px 0 0; scroll-margin-top: 84px; }
+  .gl-az ul { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+  .gl-key { display: grid; place-items: center; height: 44px; border: 1px solid var(--line-strong); border-radius: var(--r-tile); background: var(--card); color: var(--ink-strong); font: 700 18px/1 var(--display); text-decoration: none; }
+  a.gl-key { transition: background-color 150ms ease; }
+  a.gl-key:hover { background: var(--bg-soft); border-color: var(--ink-strong); }
+  a.gl-key:active { transform: scale(0.96); }
+  .gl-key--none { border-style: dashed; background: none; color: var(--muted); font-weight: 600; }
+
+  /* ---- a letter: its bar stays under the header while its terms pass, with the way back to the letters (D8) ---- */
+  .gl-letter { margin-top: 28px; scroll-margin-top: 72px; }
+  .gl-bar { position: sticky; top: 68px; z-index: 5; display: flex; align-items: center; gap: 14px; margin-inline: -32px; padding: 8px 32px; background: var(--ground); }
+  .gl-bar h2 { display: grid; place-items: center; flex: none; min-width: 40px; height: 40px; margin: 0; padding: 0 8px; border-radius: var(--r-tile); background: var(--ink-strong); color: var(--ground); font-size: 24px; line-height: 1; }
+  .gl-bar::after { content: ''; flex: 1; order: 1; height: 1px; background: var(--line-strong); }
+  .gl-up { order: 2; display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-strong); font: 600 15px/1 var(--display); letter-spacing: 0.02em; white-space: nowrap; }
+
+  /* ---- an entry: the name on label tape, then its definition, then what the definition stands on ---- */
+  .gl-list { margin: 0; }
+  .gl-entry { margin-inline: -12px; padding: 14px 12px 6px; border-top: 1px solid var(--line); scroll-margin-top: 136px; }
+  .gl-entry:first-child { border-top: 0; padding-top: 8px; }
+  .gl-entry dt { margin: 0; }
+  .gl-name { display: inline-block; max-width: 100%; padding: 4px 9px 5px; border: 1px solid var(--line-strong); border-radius: 2px; background: var(--card); color: var(--ink-strong); font: 700 19px/1.2 var(--display); letter-spacing: 0.01em; overflow-wrap: anywhere; }
+  /* NEW: the name's other spellings, under the tape. */
+  .gl-also { margin: 7px 0 0; color: var(--muted); font-size: 15px; line-height: 1.4; }
+  .gl-also b { color: var(--ink); font-weight: 500; }
+  /* NEW: one definition. An entry has one; a term with two meanings has one for each, a dashed line between. */
+  .gl-entry dd { margin: 0; padding-top: 10px; }
+  .gl-entry dd + dd { margin-top: 6px; padding-top: 14px; border-top: 1px dashed var(--line-strong); }
+  .gl-sense { margin: 0 0 3px; color: var(--ink-strong); font: 700 17px/1.25 var(--display); letter-spacing: 0.01em; }
+  .gl-def { max-width: 36em; margin: 0; color: var(--ink-strong); font-size: 17px; line-height: 27px; }
+  /* NEW: the two lines under a definition, "Sources" and "Taught in". Each link is 44px tall to a finger. */
+  .gl-foot { margin-top: 2px; }
+  .gl-row { margin: 0; color: var(--muted); font: 600 15px/20px var(--display); letter-spacing: 0.02em; }
+  .gl-row a { display: inline-block; max-width: 100%; padding-block: 12px; }
+  .gl-row .gl-label { margin-inline-end: 4px; }
+  a.gl-src { color: var(--link); text-underline-offset: 2px; }
+  a.gl-lesson, .gl-see a { color: var(--ink-strong); }
+  /* NEW: another spelling, filed at its own letter. A dashed tape is a pointer, as a dashed key is an empty letter. */
+  .gl-name--see { border-style: dashed; background: none; color: var(--ink); font-weight: 600; }
+  .gl-entry--see { padding-bottom: 2px; }
+  .gl-entry--see dd { padding-top: 0; }
+  /* Where you landed: the orange is "here" (D8). */
+  .gl-entry:target { background: var(--here-soft); box-shadow: inset 3px 0 0 var(--here); }
+
+  /* ---- from 640px: the name stands beside its definitions. (D8 set two columns of stacked entries here; a
+     definition is too tall for that: a reader would scroll down one column and back up for the next.) ---- */
+  @media (min-width: 640px) {
+    .gl-entry, .gl-entry:first-child { display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 24px; align-items: start; padding-block: 14px 8px; }
+    .gl-entry dt { grid-row: 1 / span 9; }
+    .gl-entry dd { grid-column: 2; padding-top: 2px; }
+    .gl-entry dd + dd { margin-top: 8px; padding-top: 14px; }
+    .gl-entry--see dd { padding-top: 0; }
+  }
+  /* ---- from 960px: the ledger. Name; definition; beside it, its sources and its lessons. ---- */
+  @media (min-width: 960px) {
+    .gl-entry, .gl-entry:first-child { grid-template-columns: 220px minmax(0, 1fr); padding-block: 14px; }
+    .gl-entry dd { display: grid; grid-template-columns: minmax(0, 1fr) 220px; column-gap: 24px; align-items: start; }
+    .gl-entry dd + dd { margin-top: 14px; }
+    .gl-foot { margin-top: 0; }
+    .gl-entry--see dd { display: block; }
+  }
+  @media (min-width: 640px) {
+    .gl-entry--see, .gl-entry--see:first-child { padding-block: 4px; }
+  }
+  @media (min-width: 1200px) {
+    .gl-entry, .gl-entry:first-child { grid-template-columns: 280px minmax(0, 1fr); column-gap: 32px; }
+    .gl-entry dd { grid-template-columns: minmax(0, 1fr) 300px; column-gap: 32px; }
+  }
+  /* With a mouse, from 960px, the two lines close up: a link is 26px tall. A finger keeps 44px at every width. */
+  @media (min-width: 960px) and (pointer: fine) {
+    .gl-row a { padding-block: 3px; }
+    .gl-row + .gl-row { margin-top: 4px; }
+    .gl-foot { padding-top: 1px; }
+    .gl-entry--see .gl-row a { padding-block: 7px; }
+  }
+
+  /* ---- the letters in one row, staying under the header; a letter's bar then scrolls with its terms (D8) ---- */
+  @media (min-width: 1280px) {
+    .gl-az { position: sticky; top: 68px; z-index: 6; margin-inline: -32px; padding: 10px 32px; border-bottom: 1px solid var(--line); background: var(--ground); }
+    .gl-az ul { grid-template-columns: repeat(26, minmax(0, 1fr)); gap: 2px; }
+    .gl-bar { position: static; }
+    .gl-up { display: none; }
+    .gl-letter { scroll-margin-top: 140px; }
+    .gl-entry { scroll-margin-top: 134px; }
+  }
+
+  /* ---- narrower (D8) ---- */
+  @media (max-width: 599px) {
+    .gl-head h1 { font-size: 44px; }
+    .gl-lead { font-size: 18px; }
+    .gl-az { margin-inline: -16px; }
+    .gl-az ul { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+  }
+  @media (max-width: 359px) {
+    .gl-az ul { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+  }
+</style>

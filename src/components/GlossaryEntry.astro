@@ -1,0 +1,60 @@
+---
+// One item of the Glossary page (prototypes/d9-glossary.md §3): an entry with a definition for each meaning, or a pointer
+// from another spelling to its entry. Styled by the page.
+import type { GlossaryItem } from '../lib/glossary';
+
+interface Props {
+  item: GlossaryItem;
+}
+const { item } = Astro.props;
+---
+
+{
+  item.kind === 'pointer' ? (
+    <div class="gl-entry gl-entry--see" id={item.id}>
+      <dt>
+        <span class="gl-name gl-name--see">{item.name}</span>
+      </dt>
+      <dd>
+        <p class="gl-row gl-see">
+          See <a href={`#${item.entryId}`}>{item.entryTerm}</a>
+        </p>
+      </dd>
+    </div>
+  ) : (
+    <div class="gl-entry" id={item.id}>
+      <dt>
+        <span class="gl-name">{item.name}</span>
+        {item.also.length > 0 && (
+          <p class="gl-also">
+            Also called {item.also.map((a, i) => <Fragment>{i > 0 ? ', ' : ''}<b>{a}</b></Fragment>)}
+          </p>
+        )}
+      </dt>
+      {item.definitions.map((d) => (
+        <dd>
+          <div class="gl-body">
+            {d.label !== undefined && <p class="gl-sense">{d.label}</p>}
+            <p class="gl-def">{d.text}</p>
+          </div>
+          <div class="gl-foot">
+            <p class="gl-row">
+              <span class="gl-label">Sources</span>{' '}
+              {d.sources.map((s, i) => (
+                <Fragment>{i > 0 ? ', ' : ''}<a class="gl-src" href={s.url} target="_blank" rel="noopener" title={s.places} aria-label={`${s.short}: ${s.places} (opens in a new tab)`}>{s.short}</a></Fragment>
+              ))}
+            </p>
+            {d.lessons.length > 0 && (
+              <p class="gl-row">
+                <span class="gl-label">Taught in</span>{' '}
+                {d.lessons.map((x, i) => (
+                  <Fragment>{i > 0 ? ', ' : ''}<a class="gl-lesson" href={x.href}>{x.words}</a></Fragment>
+                ))}
+              </p>
+            )}
+          </div>
+        </dd>
+      ))}
+    </div>
+  )
+}

@@ -8,6 +8,8 @@ import { tracks } from '../../content/tracks';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LessonConsole from '../../lesson/LessonConsole';
 import { lessonStamp } from '../../lib/checked';
+import { definitionsFor } from '../../lib/glossary';
+import { siteGlossary } from '../../lib/glossary-site';
 
 /** One page for every lesson that has been written, in every track. */
 export const getStaticPaths = (() =>
@@ -52,6 +54,7 @@ const nextFigure = next === null ? null : lessonFigure(track.id, next);
     nextFigure={nextFigure}
     entries={entries}
     stamp={lessonStamp(lesson)}
+    definitions={definitionsFor(siteGlossary().lessonMap, lesson.slug)}
     figureData={data}
   >
     <Fragment slot="figure" set:html={svg} />

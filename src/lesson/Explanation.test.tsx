@@ -7,7 +7,7 @@ import type { Lesson } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import { positionOf, slotsFor } from '../engine/timeline';
-import { Explanation } from './Explanation';
+import { Explanation, type ExplanationProps } from './Explanation';
 import { Rich } from './Rich';
 
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
@@ -21,7 +21,7 @@ const NETWORKING = buildEntries(networkingTrack, { dhcp: DHCP, firewalls: FIREWA
 const TOUR = buildEntries(internetTrack, { 'what-is-http': TWO, 'what-is-https': HTTPS, 'what-is-tls': TLS }, () => 'how-the-internet-works');
 
 /** Shows a lesson as its own track's page does: numbered among, and leading on to, that track's lessons. */
-function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
+function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn(), definitions?: ExplanationProps['definitions']) {
   const tour = TOUR.some((e) => e.slug === lesson.slug);
   const entries = tour ? TOUR : NETWORKING;
   const entry = entries.find((e) => e.slug === lesson.slug)!;
@@ -40,6 +40,7 @@ function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn()) {
       total={entries.length}
       trackUrl={tour ? '/how-the-internet-works' : '/networking'}
       stamp={{ checked: null, sources: lesson.units[slot.unit]!.references.length }}
+      definitions={definitions}
       onGo={onGo}
     />,
   );
@@ -274,4 +275,125 @@ test('the Overview’s first line holds the kicker and the stamp, which links to
   const step = show(1).container;
   expect(step.querySelector('.explain__lead')).toBeNull();
   expect(step.querySelector('.stamp')).toBeNull();
+});
+
+// A term's definition in Learn (prototypes/d9-glossary.md §10, checks 26 to 28, 31, 32, 34; attack cases 26 to 28, 31, 32, 34).
+// The fixture lesson's Learn has three terms: Hello, Neighbor table, Retransmission.
+const learnAt = () => slotsFor(DHCP).findIndex((s) => s.kind === 'learn');
+const DEFS = {
+  'term-1': { entryId: 'hello', entryTerm: 'Hello', text: 'A hello is the first message.', sources: ['RFC 9999', 'Example vendor'] },
+  'term-3': { entryId: 'retry', entryTerm: 'Retry', label: 'In IP packets', text: 'A retry sends it again.', sources: ['RFC 9999'] },
+};
+const lis = () => [...document.querySelectorAll('ol.explain__terms > li')];
+const nameButton = (name: string) => screen.getByRole('button', { name });
+
+test('26: with a definition the hint stands right before the list; with none the list is today’s, no attribute, no button', () => {
+  const { container } = show(learnAt(), DHCP, undefined, DEFS);
+  const hint = container.querySelector('.explain__hint')!;
+  expect(hint).toHaveTextContent('Press a name for its definition.');
+  expect(container.querySelectorAll('.explain__hint')).toHaveLength(1);
+  expect(hint.nextElementSibling).toBe(container.querySelector('ol.explain__terms'));
+});
+test('26: a lesson none of whose terms has an entry shows no hint, and each li holds only the idea and the name', () => {
+  for (const defs of [undefined, {}]) {
+    const { container, unmount } = show(learnAt(), DHCP, undefined, defs);
+    expect(container.querySelector('.explain__hint')).toBeNull();
+    for (const li of lis()) {
+      expect(li.getAttributeNames()).toEqual([]);
+      expect([...li.children].map((c) => c.className)).toEqual(['explain__idea', 'explain__term']);
+      expect(li.querySelector('button')).toBeNull();
+    }
+    unmount();
+  }
+});
+test('27: a term with an entry is a closed button whose definition is hidden; the others are as today, 32: no button, no data-def', () => {
+  show(learnAt(), DHCP, undefined, DEFS);
+  const hello = nameButton('Hello');
+  expect(hello).toHaveAttribute('aria-expanded', 'false');
+  const def = document.getElementById(hello.getAttribute('aria-controls')!)!;
+  expect(def).toHaveAttribute('hidden');
+  expect(def).not.toBeVisible();
+  const [one, two, three] = lis();
+  expect([one!.getAttribute('data-def'), two!.getAttribute('data-def'), three!.getAttribute('data-def')]).toEqual(['closed', null, 'closed']);
+  expect(two!.querySelector('button')).toBeNull();
+  expect(two!.querySelector('span.explain__term')).toHaveTextContent('Neighbor table');
+  expect(two!.getAttributeNames()).toEqual([]);
+});
+test('28: pressing shows the definition, its sources named and not linked, and the glossary link; pressing again hides; each row is on its own', async () => {
+  const user = userEvent.setup();
+  show(learnAt(), DHCP, undefined, DEFS);
+  const hello = nameButton('Hello');
+  await user.click(hello);
+  expect(hello).toHaveAttribute('aria-expanded', 'true');
+  const def = document.getElementById(hello.getAttribute('aria-controls')!)!;
+  expect(def).toBeVisible();
+  expect(def.querySelector('.explain__def-text')).toHaveTextContent(/^A hello is the first message\.$/);
+  expect(def.querySelector('.explain__def-src')).toHaveTextContent('Sources RFC 9999, Example vendor');
+  expect(def.querySelector('.explain__def-src a')).toBeNull();
+  expect(def.querySelector('.explain__def-sense')).toBeNull();
+  const link = within(def).getByRole('link', { name: 'Hello in the glossary' });
+  expect(link).toHaveAttribute('href', '/glossary#hello');
+  expect(link).not.toHaveAttribute('target');
+  expect(nameButton('Retransmission')).toHaveAttribute('aria-expanded', 'false');
+  await user.click(nameButton('Retransmission'));
+  expect(hello).toHaveAttribute('aria-expanded', 'true');
+  expect(nameButton('Retransmission')).toHaveAttribute('aria-expanded', 'true');
+  await user.click(hello);
+  expect(hello).toHaveAttribute('aria-expanded', 'false');
+  expect(def).not.toBeVisible();
+  expect(nameButton('Retransmission')).toHaveAttribute('aria-expanded', 'true');
+});
+test('30: a sense’s label heads its definition', async () => {
+  show(learnAt(), DHCP, undefined, DEFS);
+  await userEvent.setup().click(nameButton('Retransmission'));
+  const def = document.getElementById(nameButton('Retransmission').getAttribute('aria-controls')!)!;
+  expect([...def.children].map((c) => c.className)).toEqual(['explain__def-sense', 'explain__def-text', 'explain__def-src', 'explain__def-more']);
+  expect(def.querySelector('.explain__def-sense')).toHaveTextContent('In IP packets');
+});
+test('31: the tape keeps the lesson’s name; the link names the entry', async () => {
+  show(learnAt(), DHCP, undefined, { 'term-2': { entryId: 'latency', entryTerm: 'Latency', text: 'x', sources: ['RFC 9999'] } });
+  await userEvent.setup().click(nameButton('Neighbor table'));
+  expect(screen.getByRole('link', { name: 'Latency in the glossary' })).toHaveAttribute('href', '/glossary#latency');
+});
+test('34: Enter and Space open it and focus stays on the button; closed, the glossary link is out of the tab order', async () => {
+  const user = userEvent.setup();
+  show(learnAt(), DHCP, undefined, DEFS);
+  const hello = nameButton('Hello');
+  hello.focus();
+  await user.keyboard('{Enter}');
+  expect(hello).toHaveAttribute('aria-expanded', 'true');
+  expect(document.activeElement).toBe(hello);
+  await user.tab();
+  expect(document.activeElement).toBe(screen.getByRole('link', { name: 'Hello in the glossary' }));
+  await user.keyboard('{Shift>}{Tab}{/Shift}');
+  await user.keyboard(' ');
+  expect(hello).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.queryByRole('link', { name: 'Hello in the glossary' })).toBeNull();
+});
+test('28: what is open stays open when the reader goes to Practice and back', async () => {
+  const user = userEvent.setup();
+  const view = show(learnAt(), DHCP, undefined, DEFS);
+  await user.click(nameButton('Hello'));
+  const element = (position: number) => (
+    <Explanation
+      lesson={DHCP}
+      position={position}
+      slot={slotsFor(DHCP)[position]!}
+      unit={DHCP.units[0]!}
+      picked={{}}
+      onPick={vi.fn()}
+      next={null}
+      nextFigure={null}
+      number={1}
+      total={1}
+      trackUrl="/networking"
+      stamp={{ checked: null, sources: 0 }}
+      definitions={DEFS}
+      onGo={vi.fn()}
+    />
+  );
+  view.rerender(element(learnAt() + 1));
+  expect(screen.queryByRole('button', { name: 'Hello' })).toBeNull();
+  view.rerender(element(learnAt()));
+  expect(nameButton('Hello')).toHaveAttribute('aria-expanded', 'true');
 });

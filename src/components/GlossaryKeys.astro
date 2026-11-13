@@ -1,0 +1,31 @@
+---
+// The Glossary page's letter keys (prototypes/d9-glossary.md §6): a link for each letter that has a term, a dashed
+// empty key for one that has none. Styled by the page.
+import type { GlossaryKey } from '../lib/glossary';
+
+interface Props {
+  keys: GlossaryKey[];
+}
+const { keys } = Astro.props;
+---
+
+<nav class="gl-az" id="letters" aria-label="Jump to a letter">
+  <ul>
+    {
+      keys.map((k) => (
+        <li>
+          {k.live ? (
+            <a class="gl-key" href={`#${k.id}`}>
+              {k.letter}
+            </a>
+          ) : (
+            <span class="gl-key gl-key--none">
+              <span aria-hidden="true">{k.letter}</span>
+              <span class="sr-only">{k.letter}, no terms</span>
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</nav>

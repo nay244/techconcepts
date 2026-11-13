@@ -47,6 +47,7 @@ export const SITE_PAGES = [
   { name: 'track-internet', path: '/how-the-internet-works' },
   { name: 'track', path: '/networking' },
   { name: 'about', path: '/about' },
+  { name: 'glossary', path: '/glossary' },
   { name: '404', path: '/does-not-exist' },
 ] as const;
 
