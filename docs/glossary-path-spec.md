@@ -93,23 +93,23 @@ Near-pass and the cap of 12 are the lesson's. What a re-check judges: every item
 
 ## 7. The canary group
 
-`src/content/factcheck/canary/glossary.ts` exports a group `fact-check-canary`, checked against `CANARY_SOURCES` (not `SOURCES`, never in `GLOSSARY`), reached as `npm run fact-check -- glossary/fact-check-canary`, with its report at `docs/fact-checks/canary/glossary-fact-check-canary.md`, which the gate never reads. Its planted faults are listed in a test file, not in the canary's file, as `canary.test.ts` does for the lesson canary. Its ties name real lesson terms; they are not subject to rule 14.
+`src/content/factcheck/canary/glossary.ts` exports a group `fact-check-canary`, checked against `CANARY_SOURCES` (not `SOURCES`, never in `GLOSSARY`), reached as `npm run fact-check -- glossary/fact-check-canary`, with its report at `docs/fact-checks/canary/glossary-fact-check-canary.md`, which the gate never reads. Its planted faults are listed in a test file, not in the canary's file, as `canary.test.ts` does for the lesson canary. Its ties name the canary lesson's terms (`CANARY_LESSON`, frozen), so no lesson's edit makes it stale; `groupSheet` is given `[CANARY_LESSON]` for it, and rule 14 does not apply to it.
 
 Before writing it, fetch RFC 2131 and RFC 9110 from rfc-editor.org and confirm by `grep` that each correct statement's cited section states it; put the passage in the test file's comment, as `canary.test.ts` does. If a correct statement below is not stated as written, reword it to what the section says and say so in your report.
 
 | Entry | Item | Words (the author's; reword only to match the section) | Cites | Planted |
 |---|---|---|---|---|
 | `dhcp` | names | term `DHCP`, also `Dynamic Host Configuration Protocol`, `Dynamic Host Control Protocol` | | **fault**: no statement gives the second spelling |
-| | statement 1 | The Dynamic Host Configuration Protocol (DHCP) passes configuration information, such as a network address, to hosts on a TCP/IP network. | rfc-2131 §1, defining | correct |
-| | statement 2 | DHCP messages travel over UDP: a client sends to the server port, 67, and a server answers on the client port, 68. | rfc-2131 §4.1, defining | correct |
+| | statement 1 | The Dynamic Host Configuration Protocol (DHCP) provides configuration parameters to Internet hosts. | rfc-2131 §1, defining | correct |
+| | statement 2 | DHCP messages travel over UDP: a client's messages go to the server port, 67, and a server's go to the client port, 68. | rfc-2131 §4.1, defining | correct |
 | `discover` | names | term `Discover`, also `DHCPDISCOVER` | | correct |
 | | statement 1 | A client looking for an address broadcasts a discover message, DHCPDISCOVER, to find the servers that can give it one. | rfc-2131 §3.1, defining | correct |
-| | lessons | `dhcp` `term-discover` | | correct |
+| | lessons | the canary lesson's `term-1` (DHCPDISCOVER) | | correct |
 | `offer` | names | term `Offer`, also `DHCPOFFER` | | correct |
 | | statement 1 | Each server that receives a discover message may answer with an offer message, DHCPOFFER, that holds an address it can give. | rfc-2131 §3.1, defining | correct |
-| | lessons | `dhcp` `term-broadcast` | | **fault**: the lesson's term is Broadcast, another thing |
+| | lessons | the canary lesson's `term-dhcp` (the protocol's full name) | | **fault**: the term names the protocol, another thing |
 | `lease` | names | term `Lease` | | correct |
-| | statement 1 | A DHCP server always lends an address for exactly 24 hours. | rfc-2131 §1, defining | **fault**: no source gives a fixed 24 hours; the lease time is the server's choice |
+| | statement 1 | A DHCP server always lends an address, as a lease, for exactly 24 hours. | rfc-2131 §1, defining | **fault**: no source gives a fixed 24 hours; the lease time is the server's choice |
 | `request` | names | term `Request` | | correct |
 | | sense `dhcp`, label | In DHCP | | correct |
 | | sense `dhcp`, statement 1 | After choosing one offer, the client broadcasts a request message, DHCPREQUEST, asking for the offered address. | rfc-2131 §3.1 and rfc-9110 §9.3.1, neither defining | **fault**: RFC 9110 §9.3.1 is about HTTP GET and does not state it |
@@ -146,3 +146,24 @@ Five faults, the rest correct. Tests: the canary group is valid and outside the 
 7. Objective mappings are still refused.
 8. The canary group as section 7.
 9. `npm test`, `npx astro check` and `npm run build` pass (with section 7's one exception until the canary's report is committed).
+
+10. Section 8 (E12): `git diff revamp...b9/glossary-path -- .claude/agents/fact-checker.md` shows only added lines; each named section heading and each new brief exists (by grep); `docs/content-model.md`'s refusal paragraph names only objective mappings; `grep -rnw defineGlossary docs .claude src` finds nothing.
+
+## 10. Errata from the spec review (reviewer, Opus, 2026-11-13)
+
+The review found 14 holes; each had one right answer and is closed here by the orchestrator. Its attack cases are under B9 in `plan.md`. E1 to E4 are already written into section 7's table.
+
+- **E1** The canary's `lease` statement gives the name ("as a lease"), so its names item is correct and its one fault stays the 24 hours.
+- **E2** `dhcp` statement 1 uses §1's own words (the earlier words were the Abstract's).
+- **E3** `dhcp` statement 2: "a client's messages go to the server port, 67, and a server's go to the client port, 68".
+- **E4** The canary ties to `CANARY_LESSON`'s frozen terms (`term-1` agrees; `term-dhcp` is the wrong-thing fault), so a lesson edit never stales the canary.
+- **E5** The wiring is tested: with `./glossary` mocked to one fixture group (`vi.doMock`), importing `./registry` in a build mode rejects with the message for a missing report at `docs/fact-checks/glossary/<id>.md`; and a fixture orphan report in that folder, read through the same exported glob patterns the registry uses, is refused.
+- **E6** A group's re-check sheet (its slug starts `glossary/`) prints no Learn-context section, and its intro reads: "Judge only the items below: those that changed since the full check, and every item of an entry any of whose items changed or was taken out. Every other item keeps its verdict from the full check."
+- **E7** A message that speaks of a lesson takes, for a group, the same words with "lesson" made "glossary group" where it names one (`the glossary group "pilot" has changed since it was checked (report …, group …)`), "cited lesson" made "glossary group" (`a fact-check report with no glossary group "<id>"`), and "the lesson" as a noun made "the group" ("Fix the group, then …"). Lesson messages stay byte for byte. The build report lists every message and its group form.
+- **E8** The command loads only the asked-for group file (rules 11 and 12 do not run there; the build runs them), through a new dep `getGlossaryGroup(id)`, and each tied lesson through `getLesson`. `groupSheet` throws, naming the entry or sense and the pair, when a tied lesson or term does not exist (the sheet never prints a tie with no words). The canary group comes through its own dep, as the lesson canary does. Tests inject these deps.
+- **E9** Item content: names `{ names: [term, ...also] }`; a claim `{ text, place }` with `place` 1 to 3; a label `{ label }`; a tie `{ lessons: [{ lesson, term, name, idea }] }`. A tie prints as its one-a-line list in place of the JSON block. A group sheet keeps `## Limit overrides` with `- None.`
+- **E10** The sheet lists entries sorted by entry id (within an entry, as written), so moving an entry in its file changes nothing. Moving a statement or a sense inside an entry may change the hash; that is intended.
+- **E11** `glossary.ts` refuses, naming the file: a file whose name is not its group's id; a default export not made with `defineGlossaryGroup`; a group checked against a source list other than `SOURCES`. The words follow the lesson's own refusals in `registry.ts`.
+- **E12** Acceptance check 10 above.
+- **E13** Rule 9 ignores case and outer spaces on both halves (`also: ['ttl']` beside `term: 'TTL'` is refused in the group); `also`, where given, is non-empty.
+- **E14** Rule 13 refuses a pair that matches more than one term in its lesson (possible only in a lesson of several units).

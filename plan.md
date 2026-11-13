@@ -172,3 +172,114 @@ The check has five parts; decision 12's "goes" and "stays" lists are tested unde
 - **A5.3** `site.spec.ts:590-600` and `:1356`: with `Checked` replaced by "Not checked yet" for one lesson, both go red (under H4's answer).
 - **A5.4** Accept: `e2e/tablet.spec.ts`, `e2e/visual.spec.ts` and `site.spec.ts:318-327`, `:1047-1052`, `:1402-1432` are untouched and their screenshots unchanged; the stamp's look and placement do not move.
 - **A5.5** The run uses `E2E_PORT=4481`, so it cannot pick up a server from the main folder (4471); the report shows the port and the pass count, with 0 skipped from `site.spec.ts` (the remaining skips are the project-scoped ones in `lesson.spec.ts:45`, `:291`, which stay).
+
+## B9: spec review (reviewer, Opus, 2026-11-13)
+
+14 holes, each closed as errata E1 to E14 in `docs/glossary-path-spec.md` §10. The attack cases:
+
+
+Each is one line: the setup, and what a right build does. "Refuse" cases are the nearest wrong input that is easy to let through; "accept" cases the nearest right input that is easy to refuse.
+
+#### Check 1: every lesson report and re-check passes, no byte of `docs/fact-checks/*.md` changed
+
+- **A1.1** For each of the 18 lessons, `claimSheet(lesson, SOURCES).hash` equals its re-check's `hash` where a `.recheck.md` exists (6), else its report's `hash` (12). Goes red if the build adds anything to the hashed body (a `kind`, a `group: undefined` turned into `null`, `overrides ?? []` serialised differently) or touches `canonical`.
+- **A1.2** For each of the 12 lessons with no re-check whose report has an `items` record, `itemHashes(claimSheet(...))` equals that record exactly. Goes red if `itemHash` gains the key, the kind list, or anything else.
+- **A1.3** For each of the 6 re-check pairs, `itemsToJudge(full.items, sheet).judge` equals the re-check's verdict keys, in order, after the entry rule is added; the entry rule adds no key to any lesson.
+- **A1.4** `git diff --name-status revamp...b9/glossary-path -- docs/fact-checks` shows only `A` lines, each under `docs/fact-checks/glossary/` or `docs/fact-checks/canary/`; `docs/fact-checks/canary/fact-check-canary.md` is not among them.
+- **A1.5** The lesson canary still passes `canary.test.ts`'s report test: its hash is unchanged even if `CANARY_SOURCES` moves to a shared file for the group canary.
+- **A1.6** No test fixture report lands in `docs/fact-checks/glossary/` (it would be an orphan and fail the build): after the build, that folder is absent or empty.
+
+#### Check 2: each rule of section 2 broken and kept
+
+- **R1 refuse**: an unknown key on an entry (`note`), on a sense (`also` inside a sense), on a statement (`analogy: true` with a cite), on a tie (`{ lesson, term, sense }`); entry id `ttl_dns`, sense id `In-IP`, statement id `S1`, group id `Pilot`. **Accept**: `ttl-dns`, `dns`, `s-1`.
+- **R2 refuse**: an entry with both `definition` and `senses`; with neither; `senses` of one item. **Accept**: two senses and no `definition`.
+- **R3 refuse**: `definition: []`; four statements; one sense with four while the other has one. **Accept**: exactly 3, and exactly 1.
+- **R4 refuse**: `cite: []` (the lesson `statementSchema` defaults it, `schema.ts:62`); one non-defining citation; two vendor pages of one publisher (count once, `cited.ts:102-110`); a `cert-objectives` source; a hand-built citation whose label or url differs from `cite()`'s; a source not in the registry passed. **Accept**: one citation marked `defining`; two different RFCs, neither defining; a group checked against a registry passed as an argument (the canary's `CANARY_SOURCES`).
+- **R5 refuse**: one definition of 61 words across three statements, the message naming group, entry (and sense) and the count. **Accept**: exactly 60 across three; two senses of 60 each (not summed); `TCP/IP` counted as one word, a spaced ` — ` as one, double spaces and outer spaces as none, a tab or newline as a space. The limit is one exported constant, `GLOSSARY_DEFINITION_WORDS = 60`; no override key exists (`overrides` on a group is refused by R1).
+- **R6 refuse**: `**` in a term, in one `also`, in a label, in a statement. **Accept**: a single `*` (`a * wildcard`); a tied lesson term's idea with `**bold**` (it is the lesson's text, not the group's, and must not be refused).
+- **R7 refuse**: a 7-word label; labels `In IP` and `in ip` in one entry; two senses with id `ip` in one entry. **Accept**: a 6-word label; sense id `ip` in two different entries.
+- **R8 refuse**: statement id `s-1` in two entries of one group; in an entry and in a sense of another entry; two entries with id `ttl` in one group. **Accept**: statement id `s-1` in two different groups.
+- **R9 refuse**: `term: 'TTL', also: ['TTL']`; `also: ['Time to Live', 'time to live']`; per H13, `also: ['ttl']`, `also: ['TTL ']`, `also: []`. **Accept**: `term: 'TTL', also: ['Time to Live']`.
+- **R10 refuse**: `lessons: []`; the same `{ lesson, term }` twice in one list; `lessons` on an entry that has `senses`; `{ lesson: 'What-is-ip', term: 'term-ttl' }`. **Accept**: one lesson with two different terms; `lessons` on each sense.
+- **R11 refuse**: entry id `ttl` in group `a` and in group `b`, the message naming both groups. **Accept**: entry `ttl` and entry `ttl-dns`.
+- **R12 refuse**: term `TTL` in group `a` and `also: [' ttl']` in group `b`; one entry's term equal to another's `also`, ignoring case. **Accept**: `IP address` and `IP-address` (different names).
+- **R13 refuse** (`refuseOrWarn`: throws in `production` and `test`, warns in `development`): a tie to `what-is-nope`; to `what-is-icmp` with a term id that exists only in another lesson; to a Learn id that exists in the lesson but is not a term (`lead-1`, `fact-ports`). **Accept**: a real `{ lesson, term }`.
+- **R14 refuse**: the same `{ lesson, term }` tied by entries in two groups; by two senses of one entry (rule 10 does not catch it). **Accept**: `{ what-is-ip, term-ttl }` on sense `ip` and `{ what-is-dns, term-ttl }` on sense `dns` (one term id in two lessons).
+- **All at once**: a group breaking R3, R5 and R7 throws one error listing all three, each naming group, entry and part.
+- **Loading**: with no group file, `GLOSSARY_GROUPS` and `GLOSSARY` are `[]`; a file in `glossary-groups/old/` and a `glossary-groups/x.test.ts` are not loaded; `GLOSSARY` is group then file order; per H11, file `pilot.ts` exporting id `pilot-1`, a plain object, or a group defined against fixture sources is refused naming the file.
+- **Old shape gone**: `grep -rnw defineGlossary src` finds nothing; each removed `glossary.test.ts` test is rewritten or named with its reason.
+
+#### Check 3: the group sheet's keys, kinds, content and hash
+
+- **A3.1** A one-sense fixture with `also`, three statements and `lessons` gives exactly the keys, in order: `entry "ttl": names` (unbacked), `entry "ttl": statement "<s1>"`, `... "<s2>"`, `... "<s3>"` (claim), `entry "ttl": lessons` (tie). A two-sense fixture gives `entry "<id>": names`, then per sense `entry "<id>", sense "<sid>": label`, its statements, its `lessons`, sense by sense in file order.
+- **A3.2** An entry or sense with no `lessons` has no `lessons` item (not an empty one); an entry with no `also` has a `names` item holding only the term.
+- **A3.3** `sheet.slug` is `glossary/<id>`; `sheet.overrides` is `[]`; the test recomputes `sha256(canonical({ slug, items, sources, overrides: [] }))` and gets `sheet.hash`.
+- **A3.4** Swapping statements 1 and 2 of one definition changes both claims' item hashes (place is content); renaming an entry's term changes only its `names` item hash.
+- **A3.5** Changing a tied term's `idea` (or `name`) in its lesson changes the tie item's hash and the group hash; changing that lesson's title, or an untied term of the same lesson, changes neither.
+- **A3.6** `sources` holds only cited sources, sorted by id; editing the registry entry of a cited source changes the hash, of an uncited one does not.
+- **A3.7** A tie's content is `{ lesson, term, name, idea }` per tied term in the order written; `cite` and `traces` are `[]`; its kind prints `Kind: tie`.
+- **A3.8** `renderSheet` prints each tie line exactly `` `what-is-icmp` term `term-ping`: Ping — The tool that sends those `` (em dash, idea as written, bold markers kept), and the CLI output ends `Write your report to: docs/fact-checks/glossary/<id>.md`.
+- **A3.9** Adding a fixture group to the glossary leaves every lesson's `claimSheet(...).hash` as before (A1.1 run with a group present).
+- **A3.10** Per H10: swapping two entries in the file: either the hash is unchanged (if sorted) or it changes and `itemsToJudge` returns `judge: []`; the test pins whichever is ruled.
+
+#### Check 4: every command form, through `runFactCheck`
+
+- **A4.1** `['glossary/pilot']` (fixture deps) prints the group sheet and `Write your report to: docs/fact-checks/glossary/pilot.md`, code 0.
+- **A4.2** `['glossary/nope']` gives exactly `No glossary group "nope".`, code 1; `['glossary/']`, `['glossary/../dhcp']` and `['glossary/Pilot']` give code 1 and never load a lesson or a file outside `glossary-groups/`; `['glossary']` gives `No lesson "glossary".`; `['dhcp']` still prints the lesson sheet.
+- **A4.3** `--check` on a passing fixture report: `Report OK: docs/fact-checks/glossary/pilot.md`; on a report whose header `slug` is `pilot` (no prefix): the slug-mismatch message, code 1.
+- **A4.4** `--quotes <folder>` writes the record into `docs/fact-checks/glossary/pilot.md` with `items` (one per sheet key) and `limits` = `sha256("[]")`; a `- \`rfc-792\` §...` quote under the `names`, `label` or `lessons` heading is refused ("this item cites nothing").
+- **A4.5** `--stamp` writes `items` and `limits` at the sheet's hash, and refuses at another hash.
+- **A4.6** `--recheck` after one changed statement prints the re-check sheet with the whole entry, refuses when the full report is not a near-pass, when nothing changed, and when more than 12 items; `--recheck --quotes` writes the re-check's record; `--recheck --check` gives `Report OK: docs/fact-checks/glossary/pilot.md and docs/fact-checks/glossary/pilot.recheck.md`.
+- **A4.7** `['glossary/fact-check-canary']` loads the canary group with `CANARY_SOURCES` and points to `docs/fact-checks/canary/glossary-fact-check-canary.md`; `['fact-check-canary']` still loads the canary lesson at its own path.
+- **A4.8** Per H8: a tie to a missing lesson or term gives a message naming entry and pair, not a thrown TypeError; a broken group file does not stop `['glossary/other']` if one-file loading is ruled.
+- **A4.9** `USAGE` and the header of `scripts/fact-check.mjs` name `glossary/<id>` (a look).
+
+#### Check 5: the gate
+
+- **A5.1 Refuse** (build-mode, i.e. `production` and `test` throw, `development` warns): a group with no report; a stale report (one statement edited); a ⚠️ verdict; a missing verdict key; a verdict for an unknown key; a cited source missing from `sources` or `current: false`; no `quotes` record; a quote edited after the record; a passing cited statement with no quote; header `slug` `pilot` instead of `glossary/pilot`.
+- **A5.2 Refuse orphans**: `glossary/old.md` with no group `old`; `glossary/old.recheck.md` with no group; `glossary/pilot.recheck.md` is never read as the full report of a group `pilot.recheck`. Each message names `docs/fact-checks/glossary/<file>`, not `docs/fact-checks/<file>` (`slugOf`, `gate.ts:199-202`, drops the folder).
+- **A5.3 Accept**: a group with a passing report; a passing near-pass pair; a pair whose re-check judges the whole changed entry.
+- **A5.4** A group whose id equals a lesson slug (`dhcp`): the lesson reads `docs/fact-checks/dhcp.md` and the group reads `docs/fact-checks/glossary/dhcp.md`; neither is an orphan of the other (a build that merges both maps by `slugOf` fails this).
+- **A5.5** The lesson gate's globs are unchanged and depth 1: a stale file in `glossary/` never yields "no cited lesson"; a failing `docs/fact-checks/canary/glossary-fact-check-canary.md` never reaches any gate.
+- **A5.6** The wiring, per H5: the real registry, given one fixture group by mock, refuses for its missing report at `docs/fact-checks/glossary/<id>.md`.
+- **A5.7** `checkUnpathedKinds` no longer names any glossary entry: a fixture glossary with a passing report gives no "has no fact-check path yet" line.
+
+#### Check 6: the re-check judges a whole entry; no lesson rule on a group, no entry rule on a lesson
+
+- **A6.1** Entry `a` (names, three statements, lessons), with entries `b` and `c`: editing `a`'s statement 2 gives `judge` = all five of `a`'s items, `changed` = that statement (and statement 3 if its place moved), `pulled` = the rest of `a`; nothing of `b` or `c`.
+- **A6.2** Taking statement 3 out of `a` pulls `a`'s remaining items; the removed key is not judged.
+- **A6.3** Prefix: entries `ttl` and `ttl-dns`; editing `ttl` does not pull `ttl-dns` (the prefix is `entry "ttl"` with its closing quote). Editing a sense of `request` pulls both senses, the label items and `names`.
+- **A6.4** Editing a tied lesson term's idea makes that entry's (or sense's) tie changed and pulls its whole entry.
+- **A6.5** Renaming entry `a` to `a2`: every `a2` item changed; nothing else pulled.
+- **A6.6** No lesson rule on a group: a changed `names` item (unbacked) in `a` does not pull `b`'s and `c`'s `names` and `label` items (the lesson's "every unbacked item when a Learn part changed", `recheck.ts:168`, must not be generalised to "when anything changed").
+- **A6.7** A three-sense entry with three statements each (16 items) changed in one statement: the CLI refuses with the "more than 12" message and the gate refuses a re-check of it.
+- **A6.8** Editing the registry entry of a source cited by two entries pulls both entries whole.
+- **A6.9** The group re-check sheet has no `## Learn parts, as context` heading and no `## Where the items to judge sit` section (H6); its intro states the entry rule.
+- **A6.10** No entry rule on a lesson: A1.3 (the six real pairs) stays green, and a lesson fixture with one changed Learn part judges exactly what it judged before B9.
+
+#### Check 7: objective mappings still refused
+
+- **A7.1 Refuse**: a certification track lesson with objective `EX-101 2.6` gives the message ending `the build refuses objective mappings until one is built (docs/direction.md, decision 2.16)`, byte for byte as today (`gate.ts:242`).
+- **A7.2 Accept**: a non-certification track with objectives yields nothing (as `gate.ts:239`); no tracks and no glossary yields `[]`.
+- **A7.3** The rewritten `registry.test.ts:484-494` still shows `production` and `test` throwing and `development` warning for an objective mapping.
+
+#### Check 8: the canary group
+
+- **A8.1** `canary/glossary.ts` exports a group `fact-check-canary` valid under every in-group rule with `CANARY_SOURCES`; it is not in `GLOSSARY` or `GLOSSARY_GROUPS`, and no file under `glossary-groups/` defines it.
+- **A8.2** The five planted keys are keys of its sheet: `entry "dhcp": names`, `entry "offer": lessons`, `entry "lease": statement "<id>"`, `entry "request", sense "dhcp": statement "<id>"`, `entry "request", sense "http": statement "<id>"`; the list is in the test file and `canary/glossary.ts` names no fault (grep for "fault", "wrong", "planted" finds nothing there).
+- **A8.3** Its ties name real terms: the test asserts `dhcp` has `term-discover` and `term-broadcast` in its Learn terms (or the canary lesson's, per H4).
+- **A8.4** The report test: the header's hash equals the sheet's; every planted key is not ✅; every other key is ✅. Until the report exists it fails with a message naming the path and the prompt to send, and it is the only failing test.
+- **A8.5** The test file's comment quotes, for each correct statement, the passage found by grep: RFC 2131 §1 lines 89-93 (per H2), §3.1 Table 2 "DHCPDISCOVER - Client broadcast to locate available servers." and step 2 "Each server may respond with a DHCPOFFER message that includes an available network address", step 3 "The client broadcasts a DHCPREQUEST message" and "The 'requested IP address' option MUST be set to the value of 'yiaddr' in the DHCPOFFER message", §4.1 "DHCP uses UDP as its transport protocol. DHCP messages from a client to a server are sent to the 'DHCP server' port (67), and DHCP messages from a server to a client are sent to the 'DHCP client' port (68).", RFC 9110 §9.3.1 "The GET method requests transfer of a current selected representation for the target resource."
+- **A8.6** Per H1-H3: the `lease` names item, and `dhcp` statements 1 and 2, are worded so a correct checker passes them; a run that marks any of the three not ✅ is a canary failure the build must not cause.
+
+#### Check 9: `npm test`, `npx astro check`, `npm run build`
+
+- **A9.1** `npx vitest run` fails exactly one test, the canary group's report test, until that report is committed; then none.
+- **A9.2** `npx astro check` clean with `GlossaryEntry` (old) gone from `gate.ts:1` and `registry.ts:8`, and `ItemKind` gaining `'tie'` without a `switch` left non-exhaustive.
+- **A9.3** `npm run build` passes with an empty glossary and no `docs/fact-checks/glossary/` folder.
+
+## 4. Notes (nothing in B9 changes for them)
+
+- The cap of 12 with the entry rule limits an entry to 12 items for a cheap re-check: two senses with three statements and ties is 11. Worth a word in the analyst's and author's briefs so the pilot stays re-checkable.
+- `docs/direction.md` 2.16 and the Phase 3 lines (`direction.md:44, :112, :117`) still say glossary entries are refused; §8 updates `content-model.md:305` only. The orchestrator's to change with the merge.
+- `checkedOn`/`checkedDate` have no group form yet; B8 will need one for a "checked on" mark.
