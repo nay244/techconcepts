@@ -29,7 +29,6 @@ import {
 export const LEGACY_LESSONS = [
   'subnetting',
   'dhcp',
-  'firewalls',
 ] as const;
 
 // The parts of today's authoring shape that the cited shape changes. Everything else (the scene, its panels and log,
