@@ -61,7 +61,7 @@ test('Firewalls validates', () => {
   expect(unit.practice).toHaveLength(3);
 });
 
-test('the lesson’s own words: title, subtitle, cert tags, summary, unit and reference', () => {
+test('the lesson’s own words: title, subtitle, cert tags, summary, unit and badge', () => {
   expect(firewalls).toMatchObject({
     slug: 'firewalls',
     title: 'Firewalls',
@@ -71,10 +71,10 @@ test('the lesson’s own words: title, subtitle, cert tags, summary, unit and re
     summary: 'Watch a firewall check each connection against its list of rules, from the top down, and see why the order of the rules matters.',
     figure: 'firewall',
   });
-  expect(unit).toMatchObject({ id: 'firewalls', name: 'Firewall', fullName: 'Network firewall', purpose: 'A guard for your network', osi: { layers: [3, 4], cite: [] } });
-  expect(unit.references).toEqual([
-    { label: 'NIST SP 800-41 Rev. 1: Guidelines on Firewalls and Firewall Policy', url: 'https://csrc.nist.gov/pubs/sp/800/41/r1/final' },
-  ]);
+  expect(unit).toMatchObject({ id: 'firewalls', name: 'Firewall', fullName: 'Network firewall', purpose: 'A guard for your network', osi: { layers: [3, 4] } });
+  expect(unit.osi === 'spans' ? [] : unit.osi.cite.map((c) => c.source)).toEqual(['paloalto-firewall-types', 'microsoft-azure-firewall-rule-sets', 'cloudflare-firewall']);
+  // A cited lesson writes no references; its list is built from its citations.
+  expect(unit.references.map((r) => r.source)).toContain('nist-sp800-41r1');
 });
 
 test('step titles are the technical terms, in order, and Learn’s pattern names four of them', () => {
@@ -294,7 +294,7 @@ const TOPIC: Record<string, string> = {
 };
 
 test('every “lesson N” in the text names the lesson its sentence is about, in the track’s numbering', () => {
-  expect(lessonNumbers(firewalls).map((x) => x.n)).toEqual([11, 14, 12, 7, 19]);
+  expect(lessonNumbers(firewalls).map((x) => x.n)).toEqual([]);
   expect(misnamedLessons(firewalls, TOPIC)).toEqual([]);
 });
 

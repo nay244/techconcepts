@@ -26,9 +26,7 @@ import {
  * this file. A legacy lesson split into parts stays legacy until it is migrated: How the Internet Works' 14 lessons
  * keep their uncited words until each one's audit (owner, 2026-11-08: split now, audit later).
  */
-export const LEGACY_LESSONS = [
-  'firewalls',
-] as const;
+export const LEGACY_LESSONS = [] as const;
 
 // The parts of today's authoring shape that the cited shape changes. Everything else (the scene, its panels and log,
 // the events and packets) is the runtime schema's own.
