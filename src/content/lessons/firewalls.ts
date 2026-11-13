@@ -266,7 +266,7 @@ const firewalls = defineLesson({
             },
             {
               text: 'The web server’s address, 10.0.0.10, is private, so in real life the visit reaches it through NAT.',
-              cite: [d('rfc-1918', '3'), NIST_NAT],
+              cite: [d('rfc-1918', '3'), NIST_NAT, d('rfc-3022', '2.2')],
             },
           ],
           facts: [
