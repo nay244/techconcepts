@@ -2,7 +2,7 @@
 
 How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orchestrator-handbook.md`. The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9, batches 3 and 4 at e8ea005.
 
-**Status: planned on 2026-11-12, waiting for the owner's go.**
+**Status: in progress.** Planned on 2026-11-12; the owner said go that day ("Go", on the plan as shown), which approves the thirteen decisions below.
 
 ## Inputs
 
