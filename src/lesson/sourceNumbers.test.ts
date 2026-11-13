@@ -1,9 +1,11 @@
 import { expect, test } from 'vitest';
 import { getLesson } from '../content/registry';
+import { liftedFixture } from '../content/test-fixtures';
 import { numberedSources, sourceMarks } from './sourceNumbers';
 
 const osi = getLesson('osi-model')!.units[0]!;
-const dhcp = getLesson('dhcp')!.units[0]!;
+// A lesson that cites nothing: the legacy path's lifted fixture (every real lesson is cited once batch 5 is done).
+const uncited = liftedFixture().units[0]!;
 
 test('a cited lesson’s sources are numbered in the order Learn first cites them', () => {
   const { list, numberOf } = numberedSources(osi);
@@ -35,8 +37,8 @@ test('a claim gets one mark for each source, which opens the first place it cite
 });
 
 test('a lesson that cites nothing yet keeps its list as written, with no numbers and no marks', () => {
-  const { list, numberOf } = numberedSources(dhcp);
-  expect(list).toEqual(dhcp.references);
+  const { list, numberOf } = numberedSources(uncited);
+  expect(list).toEqual(uncited.references);
   expect(numberOf.size).toBe(0);
-  expect(sourceMarks(dhcp.learn.lead[0]!.cite, numberOf)).toEqual([]);
+  expect(sourceMarks(uncited.learn.lead[0]!.cite, numberOf)).toEqual([]);
 });
