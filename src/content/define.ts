@@ -319,7 +319,7 @@ const defined = new WeakMap<object, SourceRegistry>();
  * @internal Only `validateLesson` calls it: records a lesson it has just checked, with the registry it used, and
  * returns it. A lesson file never calls it.
  */
-export function markDefined(lesson: Lesson, checkedAgainst: SourceRegistry): Lesson {
+function markDefined(lesson: Lesson, checkedAgainst: SourceRegistry): Lesson {
   defined.set(lesson, checkedAgainst);
   return lesson;
 }
