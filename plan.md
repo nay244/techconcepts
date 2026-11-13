@@ -299,3 +299,7 @@ The review of D9's spec found 11 holes; each has one right answer, closed by the
 - **E9 (H9)** Variant B only: no `data-def="shown"`; the bracketed halves of checks 26 and 27 are dropped.
 - **E10 (H10)** The prototype's CSS stands: the "… in the glossary" link is 44px at `(max-width: 760px), (pointer: coarse)`, 26px otherwise; §11's "phone layout" reads "760px and below".
 - **E11 (H11)** The "0–9" key counts as one of the 13: the rule is about how many keys are live (§16, "Twenty dashed keys over ten entries read as a broken page"). One unit test pins it.
+
+## B8a: the glossary independent of the lessons (owner, 2026-11-13; direction 2.43)
+
+The owner, after B8 was merged: the glossary is a page of its own; an entry names the tracks that describe it without a link; a lesson does not link to the glossary. The owner's message approved the design ("Build from my words"). **D9a** (designer, Opus 5.5): `prototypes/d9a-glossary-independent.md`, drawn in `prototypes/d9-glossary.html` (its panel's "Design" switch shows D9 beside D9a). **B8a** (builder, Sonnet; spec review and build review by reviewer, Opus): build D9a on `revamp` in the worktree `.superpowers/wt/b8a-glossary`, branch `b8a/glossary`, `E2E_PORT=4481`. Check: D9a's acceptance checks and its attack cases as tests; `npm test`; `npm run build`; the end-to-end specs it touches on its port; 375 and 1440 in both themes beside the prototype. Then the full `npm run e2e` on `revamp`.
