@@ -8,7 +8,7 @@ import { cite } from '../content/sources';
 import { tracks } from '../content/tracks';
 import pilotReport from '../../docs/fact-checks/glossary/pilot.md?raw';
 import { FIXTURE_SOURCES, liftedFixture, makeLesson } from '../content/test-fixtures';
-import { definitionsFor, glossaryData, stampLine, type GlossaryInput, type GlossaryLesson } from './glossary';
+import { definitionsFor, glossaryData, stampLine, type Definition, type GlossaryInput, type GlossaryLesson } from './glossary';
 import { siteGlossary } from './glossary-site';
 
 // The glossary page's data: D9 §9 as D9a amends it (rule 6: a definition's tracks), the checks of §15 G, errata E7 to E11 and
@@ -211,12 +211,17 @@ describe('7. tracks of a definition (D9a rule 6; E1, E3, E7)', () => {
     expect(tracksOf(entry('a', 'A'))).toEqual([]);
     expect(tracksOf(entry('a', 'A', { lessons: ties(['y', 'term-1']) }), { lessons: [lesson('y', [])] })).toEqual([]);
   });
-  test('E3: the shape — label, text, sources, tracks; no lesson field, title, address or step', () => {
-    const d = items(run([group([entry('a', 'A', { lessons: ties(['x', 'term-1']) })])], { lessons }))[0]!.definitions[0]!;
+  const expectShape = (d: Definition, titles: readonly string[]) => {
     expect(Object.keys(d).sort()).toEqual(['label', 'sources', 'text', 'tracks']);
-    expect(d.tracks.every((t) => SITE_ORDER.includes(t))).toBe(true);
+    expect(d.tracks.every((t) => titles.includes(t))).toBe(true);
     const strings = [d.label, d.text, ...d.tracks, ...d.sources.flatMap((s) => [s.short, s.places])].filter((v): v is string => typeof v === 'string');
     expect(strings.some((v) => /\?step=/.test(v) || v.startsWith('/'))).toBe(false);
+  };
+  test('E3: the shape — label, text, sources, tracks; no lesson field, title, address or step; on the fixture and on every pilot definition', () => {
+    expectShape(items(run([group([entry('a', 'A', { lessons: ties(['x', 'term-1']) })])], { lessons }))[0]!.definitions[0]!, SITE_ORDER);
+    const pilot = siteGlossary().letters.flatMap((l) => l.items.flatMap((i) => i.definitions));
+    expect(pilot).toHaveLength(11);
+    for (const d of pilot) expectShape(d, tracks.map((t) => t.title));
   });
 });
 
