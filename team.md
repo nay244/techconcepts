@@ -615,3 +615,11 @@ For the owner, none as a stop (they are in the report's opening, "For the owner 
 - **Six agents at once reached the owner's usage limit** an hour and a half into batch 3's checks. Nothing was lost, since each agent goes on from its transcript, but agents that had not yet written their report files would have lost that work in a crash: the brief now says to write in parts.
 - **`src/content/legacy.ts` still says in a comment that the tour's fourteen lessons keep their uncited words until their audit.** All fourteen have moved; the comment is for the job that moves Networking's three.
 - **Errata that came to the owner with this job:** direction 2.31 and 2.32 (five new hosts; three page cues changed or removed; which badges show a layer and which span; What is TLS made to agree with What is HTTPS; the Telnet sentence; What is POP3's second letter given a picture), and the three corrections the checks themselves made, which open the track's report.
+
+# Job 8: Networking's DHCP, Subnetting and Firewalls (batch 5 of 5)
+
+Planned on 2026-11-12 in a fresh session, the first run by Opus 5.5 as orchestrator; direction 2.34, `plan.md`. Token figures are "growth" (the context an agent reached) and "read in all" (its context summed over every request), both from `scripts/team/tokens.py`.
+
+| Unit | Agent | Model | Tries | Growth | Read in all | Result |
+|---|---|---|---|---|---|---|
+| S9 | scout | Haiku | 1 | 350,290 | 17,258,925 | Done before the go: `prototypes/s9-batch-5-facts.md`. Sizes, documents (RFC 950, RFC 3021, RFC 5737 and NIST SP 800-41 not registered), DHCP's four differences from What is DHCP, pointers to unwritten lessons, three tests that use `dhcp` as the legacy sample, About reading DHCP's references. |
