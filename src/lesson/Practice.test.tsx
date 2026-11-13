@@ -81,7 +81,8 @@ test('a wrong pick always reads Not quite, even when its feedback does not start
 // ---------------------------------------------------------------- source numbers in the feedback (D1 §6, checks 7 to 9)
 
 const OSI = getLesson('osi-model')!.units[0]!;
-const DHCP_UNIT = getLesson('dhcp')!.units[0]!;
+// A lesson that cites nothing: the legacy path's lifted fixture (every real lesson is cited once batch 5 is done).
+const UNCITED_UNIT = liftedFixture().units[0]!;
 
 /** OSI Model's marks by question and option (D1 §6): the numbers, in order. */
 const OSI_MARKS: string[][][] = [
@@ -124,9 +125,9 @@ test('OSI Model question 1, option A: mark 1 opens X.200 at page 19, mark 3 name
   expect(four!.getAttribute('href')).toMatch(/#page-17$/);
 });
 
-test('DHCP’s Practice shows no link in any feedback', async () => {
-  render(<Harness questions={DHCP_UNIT.practice} numbers={numberedSources(DHCP_UNIT).numberOf} />);
-  for (const [qi, question] of DHCP_UNIT.practice.entries()) {
+test('an uncited lesson’s Practice shows no link in any feedback', async () => {
+  render(<Harness questions={UNCITED_UNIT.practice} numbers={numberedSources(UNCITED_UNIT).numberOf} />);
+  for (const [qi, question] of UNCITED_UNIT.practice.entries()) {
     const item = screen.getAllByRole('listitem').filter((li) => li.classList.contains('practice__question'))[qi]!;
     for (const oi of question.options.keys()) {
       await userEvent.click(within(item).getAllByRole('button')[oi]!);
