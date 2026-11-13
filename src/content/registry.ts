@@ -4,7 +4,7 @@ import { definedWith, defineTrack } from './define';
 import { checkedDate, checkFactChecks, checkGlossaryFactChecks, checkUnpathedKinds, reportPath } from './factcheck/gate';
 import { parseReport } from './factcheck/report';
 import { recheckPath } from './factcheck/recheck';
-import { claimSheet } from './factcheck/sheet';
+import { claimSheet, groupSheet } from './factcheck/sheet';
 import { GLOSSARY_GROUPS } from './glossary';
 import { partsOf, type GlossaryGroup } from './glossary-group';
 import { checkLimits, unneededOverrides } from './limits';
@@ -340,6 +340,19 @@ export function checkedOn(slug: string): string | null {
   // The sheet is only needed to judge a pair; a lesson with no re-check is read as it always was.
   if (full === undefined || recheck === undefined) return full === undefined ? null : (parseReport(full).header?.checked ?? null);
   return checkedDate(claimSheet(lesson, SOURCES), full, recheck);
+}
+
+/**
+ * The group twin of `checkedOn`: the day a glossary group passed its fact-check, or the later of that and its re-check's when
+ * the pair passes the gate; null for a group with no report (`astro dev` only: the build refuses that) or no such group.
+ */
+export function glossaryCheckedOn(groupId: string): string | null {
+  const group = GLOSSARY_GROUPS.find((g) => g.id === groupId);
+  if (group === undefined) return null;
+  const full = Object.entries(glossaryReports).find(([path]) => path.endsWith(`/${groupId}.md`))?.[1];
+  const recheck = Object.entries(glossaryRechecks).find(([path]) => path.endsWith(`/${groupId}.recheck.md`))?.[1];
+  if (full === undefined || recheck === undefined) return full === undefined ? null : (parseReport(full).header?.checked ?? null);
+  return checkedDate(groupSheet(group, SOURCES, Object.values(lessonsBySlug)), full, recheck);
 }
 
 /** The tracks that list a lesson, in `tracks` order; empty for a slug no track lists. */

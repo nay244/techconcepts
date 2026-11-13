@@ -1,0 +1,24 @@
+---
+// The Glossary page's stamp (prototypes/d9-glossary.md §3): how many terms are checked and when the latest check was.
+// Nothing is drawn when no check has a date: the page invents none.
+import { stampLine, type GlossaryData } from '../lib/glossary';
+
+interface Props {
+  stamp: GlossaryData['stamp'];
+}
+const { stamp } = Astro.props;
+---
+
+{
+  stamp !== null && (
+    <p class="gl-stamp">
+      <a class="stamp" href="/about#facts" data-checked>
+        <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+          <circle cx="7" cy="7" r="5.75" />
+          <path d="M4.3 7.3l1.9 1.9 3.6-4" />
+        </svg>
+        {stampLine(stamp)}
+      </a>
+    </p>
+  )
+}

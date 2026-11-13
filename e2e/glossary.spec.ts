@@ -1,0 +1,496 @@
+import { expect, test, type Page } from '@playwright/test';
+import { hydrated, kicker, open, pageOverflow, settledFrame } from './support';
+
+// The Glossary page and a term's definition in Learn (prototypes/d9-glossary.md; errata E1 to E11 in plan.md). The
+// data-exact parts of the page's checks (counts, every entry's words, every source link) run in Vitest
+// (`src/lib/glossary-page.test.ts`), since the specs cannot load the glossary (E2); this file keeps what needs a browser,
+// on the entries the spec names: ping, ttl, time-to-live, ip-address, packet-loss.
+
+const ICMP = '/how-the-internet-works/what-is-icmp';
+const ICMP_LEARN = `${ICMP}?step=7`;
+const NINE = [
+  ['“Are you there?”', 'Echo request'],
+  ['“Yes, I’m here”', 'Echo reply'],
+  ['The tool that sends those', 'Ping'],
+  ['How long there and back', 'Latency (round-trip time)'],
+  ['The hop counter on every packet', 'TTL'],
+  ['“Your packet ran out of hops here”', 'Time exceeded'],
+  ['Listing every router on the way', 'Traceroute'],
+  ['“I can’t deliver this”', 'Destination unreachable'],
+  ['Pings that never come back', 'Packet loss'],
+] as const;
+const PING_TEXT = /^Ping is a tool that sends .* were lost\.$/;
+
+test.beforeEach(async ({}, testInfo) => {
+  // One desktop project of each theme is enough: every test sets its own window size.
+  test.skip(!['d1440-light', 'd1440-dark'].includes(testInfo.project.name), 'runs in the 1440 projects');
+});
+
+const box = async (page: Page, selector: string) => (await page.locator(selector).first().boundingBox())!;
+const top = async (page: Page, selector: string) => (await box(page, selector)).y;
+
+test.describe('the Glossary page', () => {
+  test('answers 200 with its title, one h1 and a stamp that links to About', async ({ page }) => {
+    const response = await page.goto('/glossary');
+    expect(response!.status()).toBe(200);
+    await expect(page).toHaveTitle('Glossary · TechConcepts');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Glossary');
+    const stamp = page.locator('.gl-stamp a');
+    await expect(stamp).toHaveAttribute('href', '/about#facts');
+    // The count is the page's own entries.
+    const entries = await page.locator('.gl-entry:not(.gl-entry--see)').count();
+    await expect(stamp).toHaveText(new RegExp(`^${entries} terms checked, the latest on \\d{1,2} [A-Z][a-z]{2} 20\\d\\d$`));
+  });
+
+  test('"ICMP lesson" under Ping opens the lesson at Learn, with the term Ping', async ({ page }) => {
+    await page.goto('/glossary');
+    await page.locator('#ping').getByRole('link', { name: 'ICMP lesson' }).click();
+    await expect(page).toHaveURL(new RegExp(`${ICMP}\\?step=7$`));
+    await hydrated(page);
+    await expect(kicker(page)).toHaveText(/Learn$/);
+    await expect(page.getByRole('list', { name: 'Terms' }).getByRole('button', { name: 'Ping' })).toBeVisible();
+  });
+
+  test('"See TTL" puts #ttl in the address and the entry under every sticky foot', async ({ page }) => {
+    for (const size of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
+      await page.setViewportSize(size);
+      await page.goto('/glossary');
+      await page.locator('#time-to-live').getByRole('link', { name: 'TTL' }).click();
+      await expect(page).toHaveURL(/\/glossary#ttl$/);
+      await expect(page.locator('#ttl')).toBeInViewport();
+      expect(await top(page, '#ttl')).toBeGreaterThan(await stickyFoot(page));
+    }
+  });
+
+  /** The foot of whatever sticks at the top: the header, and the letter's bar (below 1280px) or the keys (from 1280px). */
+  async function stickyFoot(page: Page): Promise<number> {
+    const header = await box(page, '.site-head');
+    const wide = (page.viewportSize()?.width ?? 0) >= 1280;
+    // Below 1280px the bar that sticks is the one of the letter the target is in, not the first letter's.
+    const second = wide
+      ? await box(page, '.gl-az')
+      : (await page.evaluate(() => {
+          const r = (document.querySelector(location.hash || '#ttl')!.closest('section')!.querySelector('.gl-bar') as HTMLElement).getBoundingClientRect();
+          return { y: r.y, height: r.height };
+        }));
+    return Math.max(header.y + header.height, second.y + second.height);
+  }
+
+  test('landing on #ttl at 375 and 1440: below the sticky foot, within the first screen, tinted', async ({ page }) => {
+    for (const size of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
+      await page.setViewportSize(size);
+      await page.goto('/glossary#ttl');
+      await settledFrame(page);
+      const t = await top(page, '#ttl');
+      expect(t).toBeGreaterThan(await stickyFoot(page) - 1);
+      expect(t).toBeLessThan(size.height);
+      const [entry, body] = await Promise.all([page.locator('#ttl').evaluate((e) => getComputedStyle(e).backgroundColor), page.evaluate(() => getComputedStyle(document.body).backgroundColor)]);
+      expect(entry).not.toBe(body);
+      await expect(page.locator('#ttl')).toHaveCSS('box-shadow', /inset/);
+    }
+  });
+
+  test('the keys are the letters that have a term, and a key lands the letter under the sticky parts', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/glossary');
+    const keys = await page.locator('a.gl-key').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    expect(keys).toEqual(await page.locator('section.gl-letter').evaluateAll((s) => s.map((x) => `#${x.id}`)));
+    await expect(page.locator('.gl-key--none')).toHaveCount(0);
+    const last = keys[keys.length - 1]!;
+    // 375: the bar of the last letter is 68 to 80px from the top; Tab then focuses "All letters" in it.
+    await page.locator(`a.gl-key[href="${last}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`${last}$`));
+    const bar = (await box(page, `${last} .gl-bar`)).y;
+    expect(bar).toBeGreaterThanOrEqual(68);
+    expect(bar).toBeLessThanOrEqual(80);
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.closest('section.gl-letter')?.id)).toBe(last.slice(1));
+    expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('All letters');
+    // 1440: the bar is below the foot of the keys, and Tab focuses the first link inside the letter's list.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/glossary');
+    await page.locator(`a.gl-key[href="${last}"]`).click();
+    const keysFoot = await box(page, '.gl-az');
+    expect(await top(page, `${last} .gl-bar`)).toBeGreaterThanOrEqual(keysFoot.y + keysFoot.height);
+    await page.keyboard.press('Tab');
+    const first = await page.locator(`${last} dl a`).first().evaluate((a) => a.outerHTML);
+    expect(await page.evaluate(() => document.activeElement?.outerHTML)).toBe(first);
+    await expect(page.locator('.gl-up').first()).toBeHidden();
+  });
+
+  test('scrolled into the middle of the last letter at 375, its bar sticks at 68px and "All letters" brings the keys back', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/glossary');
+    const last = (await page.locator('section.gl-letter').last().getAttribute('id'))!;
+    const section = page.locator(`#${last}`);
+    await section.evaluate((s) => window.scrollTo(0, s.getBoundingClientRect().top + window.scrollY + s.getBoundingClientRect().height / 2));
+    await settledFrame(page);
+    const bar = page.locator(`#${last} .gl-bar`);
+    expect(Math.abs((await bar.boundingBox())!.y - 68)).toBeLessThanOrEqual(1);
+    await bar.getByRole('link', { name: 'All letters' }).click();
+    await expect(page.locator('#letters')).toBeInViewport();
+  });
+
+  test('no sideways scroll, at the top and at the foot, at every width', async ({ page }) => {
+    for (const width of [320, 375, 768, 959, 960, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/glossary');
+      expect((await pageOverflow(page)).sideways, `${width} top`).toBe(0);
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      expect((await pageOverflow(page)).sideways, `${width} foot`).toBe(0);
+    }
+  });
+
+  test('the words: no time figure on the page', async ({ page }) => {
+    await page.goto('/glossary');
+    await expect(page.locator('body')).not.toContainText(/\b\d+ ?min\b|\bminutes\b|one sitting|Short guided/i);
+  });
+
+  test('layout: stacked at 375, beside the name at 768, a ledger of three columns at 1440', async ({ page }) => {
+    const parts = async () => {
+      const at = async (sel: string) => box(page, `#ping ${sel}`);
+      return { name: await at('.gl-name'), def: await at('.gl-def'), src: await at('.gl-foot .gl-row:nth-child(1)'), taught: await at('.gl-foot .gl-row:nth-child(2)') };
+    };
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/glossary');
+    let p = await parts();
+    expect(p.name.y).toBeLessThan(p.def.y);
+    expect(p.def.y).toBeLessThan(p.src.y);
+    expect(p.src.y).toBeLessThan(p.taught.y);
+    await page.setViewportSize({ width: 768, height: 900 });
+    p = await parts();
+    expect(p.name.x).toBeLessThan(p.def.x);
+    expect(Math.abs(p.name.y - p.def.y)).toBeLessThan(40);
+    expect(p.src.y).toBeGreaterThan(p.def.y + p.def.height - 1);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    p = await parts();
+    expect(p.name.x).toBeLessThan(p.def.x);
+    expect(p.def.x).toBeLessThan(p.src.x);
+    expect(Math.abs(p.name.y - p.def.y)).toBeLessThan(40);
+    expect(Math.abs(p.src.y - p.def.y)).toBeLessThan(40);
+    expect(p.def.width).toBeLessThanOrEqual(612.5);
+    await page.setViewportSize({ width: 960, height: 900 });
+    expect((await box(page, '#ping dt')).width).toBeCloseTo(220, 0);
+    await page.setViewportSize({ width: 1200, height: 900 });
+    const dd = await box(page, '#ping dd');
+    expect((await box(page, '#ping dt')).width).toBeCloseTo(280, 0);
+    expect((await box(page, '#ping .gl-foot')).width).toBeCloseTo(300, 0);
+    expect(dd.width).toBeGreaterThan(300);
+  });
+
+  test.describe('as a touch screen', () => {
+    test.use({ hasTouch: true, isMobile: true });
+    for (const width of [375, 768]) {
+      test(`at ${width}: every link in a row, the stamp and "All letters" are 44px or more, and no two link boxes overlap`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto('/glossary');
+        const boxes = await page.locator('.gl-row a, .gl-stamp a, .gl-up').evaluateAll((as) => as.map((a) => [...a.getClientRects()].map((r) => ({ x: r.x, y: r.y + scrollY, w: r.width, h: r.height }))));
+        expect(boxes.length).toBeGreaterThan(60);
+        for (const rects of boxes) for (const r of rects) expect(r.h).toBeGreaterThanOrEqual(43.9);
+        const flat = boxes.flat();
+        for (let i = 0; i < flat.length; i++) {
+          for (let j = i + 1; j < flat.length; j++) {
+            const a = flat[i]!;
+            const b = flat[j]!;
+            const overlap = a.x < b.x + b.w - 0.5 && b.x < a.x + a.w - 0.5 && a.y < b.y + b.h - 0.5 && b.y < a.y + a.h - 0.5;
+            expect(overlap, `${i} and ${j}`).toBe(false);
+          }
+        }
+      });
+    }
+    test('at 1024 a touch screen keeps 44px', async ({ page }) => {
+      await page.setViewportSize({ width: 1024, height: 768 });
+      await page.goto('/glossary');
+      for (const h of await page.locator('.gl-row a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(43.9);
+    });
+    test('the keys are 44px tall and at least 44px wide at 375, and "All letters" 44px', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.goto('/glossary');
+      for (const r of await page.locator('a.gl-key').evaluateAll((as) => as.map((a) => a.getBoundingClientRect()))) {
+        expect(r.height).toBeGreaterThanOrEqual(44);
+        expect(r.width).toBeGreaterThanOrEqual(44);
+      }
+    });
+  });
+
+  test('with a mouse at 1440 the links close up to 26px, a pointer’s to 34px', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/glossary');
+    for (const h of await page.locator('#ping .gl-row a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(h).toBeCloseTo(26, 0);
+    expect((await box(page, '#time-to-live .gl-row a')).height).toBeCloseTo(34, 0);
+  });
+
+  test('without JavaScript the page is the same page: main’s HTML is equal, a key, #ttl and "See TTL" work, storage is untouched', async ({ browser, baseURL }) => {
+    const viewport = { width: 1440, height: 900 };
+    const on = await browser.newContext({ baseURL, viewport });
+    const onPage = await on.newPage();
+    await onPage.goto('/glossary');
+    const html = await onPage.locator('main').innerHTML();
+    await on.close();
+    expect(html).not.toContain('astro-island');
+    expect(html).not.toContain('<script');
+
+    const off = await browser.newContext({ baseURL, viewport, javaScriptEnabled: false });
+    const page = await off.newPage();
+    await page.goto('/glossary');
+    expect(await page.locator('main').innerHTML()).toBe(html);
+    // The key and the landing are the browser's own.
+    const last = (await page.locator('a.gl-key').last().getAttribute('href'))!;
+    await page.locator(`a.gl-key[href="${last}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`${last}$`));
+    await page.goto('/glossary#ttl');
+    expect(await top(page, '#ttl')).toBeGreaterThan(await stickyFoot(page) - 1);
+    await page.goto('/glossary');
+    await page.locator('#time-to-live').getByRole('link', { name: 'TTL' }).click();
+    await expect(page).toHaveURL(/#ttl$/);
+    expect(await top(page, '#ttl')).toBeGreaterThan(await stickyFoot(page) - 1);
+    await off.close();
+  });
+
+  test('loading the page leaves localStorage as it was', async ({ page }) => {
+    await page.goto('/about');
+    await page.evaluate(() => localStorage.setItem('seed', '1'));
+    const before = await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
+    await page.goto('/glossary');
+    expect(await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()))).toBe(before);
+  });
+});
+
+// ---------------------------------------------------------------- a term's definition in Learn
+
+const terms = (page: Page) => page.getByRole('list', { name: 'Terms' });
+const termButton = (page: Page, name: string) => terms(page).getByRole('button', { name, exact: true });
+
+async function learn(page: Page, path = ICMP_LEARN): Promise<void> {
+  await page.goto(path);
+  await hydrated(page);
+  await expect(kicker(page)).toHaveText(/Learn$/);
+}
+/** The definition a name's button controls. */
+const definition = (page: Page, name: string) => page.locator('.explain__terms > li', { has: page.getByRole('button', { name, exact: true }) }).locator('.explain__def');
+const rect = (page: Page, selector: string) => page.locator(selector).first().evaluate((e) => {
+  const r = e.getBoundingClientRect();
+  return [r.x, r.y, r.width, r.height].map((n) => Math.round(n * 10) / 10);
+});
+
+test.describe('Learn with definitions', () => {
+  test('25: the nine ideas and the nine names are today’s, in order, each idea with its source numbers', async ({ page }) => {
+    await learn(page);
+    const rows = terms(page).locator('> li');
+    await expect(rows).toHaveCount(9);
+    for (const [i, [idea, name]] of NINE.entries()) {
+      await expect(rows.nth(i).locator('.explain__idea')).toContainText(idea);
+      expect((await rows.nth(i).locator('.explain__idea').evaluate((e) => e.firstChild?.textContent)) ?? '').toBe(idea);
+      await expect(rows.nth(i).locator('.explain__term')).toHaveText(name);
+      expect(await rows.nth(i).locator('.explain__marks a').count(), name).toBeGreaterThanOrEqual(2);
+    }
+    expect(await terms(page).locator('.explain__marks a').evaluateAll((as) => as.every((a) => /^\d+$/.test(a.textContent ?? '') && a.getAttribute('target') === '_blank'))).toBe(true);
+  });
+
+  test('26 and 27: the hint stands once right before the list; nine closed buttons, each controlling a hidden element', async ({ page }) => {
+    await learn(page);
+    await expect(page.getByText('Press a name for its definition.')).toHaveCount(1);
+    expect(await page.locator('.explain__hint').evaluate((h) => h.nextElementSibling?.matches('ol.explain__terms'))).toBe(true);
+    const buttons = terms(page).getByRole('button');
+    await expect(buttons).toHaveCount(9);
+    for (const [i, [, name]] of NINE.entries()) {
+      const button = buttons.nth(i);
+      await expect(button).toHaveText(name);
+      await expect(button).toHaveAttribute('aria-expanded', 'false');
+      const id = (await button.getAttribute('aria-controls'))!;
+      await expect(page.locator(`#${id}`)).toBeHidden();
+      expect(await page.locator(`#${id}`).evaluate((e) => e.hasAttribute('hidden'))).toBe(true);
+    }
+    await expect(page.locator('.explain__def-text:visible')).toHaveCount(0);
+  });
+
+  test('26: a lesson with no tied term has no hint, no attribute and no button on its terms', async ({ page }) => {
+    await page.goto('/networking/osi-model?step=1');
+    await hydrated(page);
+    for (let step = 1; step < 14 && !/Learn$/.test((await kicker(page).textContent()) ?? ''); step++) await page.goto(`/networking/osi-model?step=${step}`);
+    await expect(kicker(page)).toHaveText(/Learn$/);
+    await expect(page.locator('.explain__hint')).toHaveCount(0);
+    const rows = await terms(page).locator('> li').evaluateAll((lis) => lis.map((li) => ({ attrs: li.getAttributeNames(), kids: [...li.children].map((c) => c.className) })));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect(r.attrs).toEqual([]);
+      expect(r.kids).toEqual(['explain__idea', 'explain__term']);
+    }
+  });
+
+  test('28: Ping opens to its definition, the sources named, a link to the glossary; again closes; Ping and Traceroute can both be open', async ({ page }) => {
+    await learn(page);
+    const ping = termButton(page, 'Ping');
+    await ping.click();
+    await expect(ping).toHaveAttribute('aria-expanded', 'true');
+    const def = definition(page, 'Ping');
+    await expect(def.locator('.explain__def-text')).toHaveText(PING_TEXT);
+    await expect(def.locator('.explain__def-src')).toHaveText('Sources Microsoft ping, RFC 2151, Cisco ping and traceroute, Microsoft Azure TCP/IP tuning');
+    await expect(def.locator('.explain__def-src a')).toHaveCount(0);
+    const link = def.getByRole('link', { name: 'Ping in the glossary' });
+    await expect(link).toHaveAttribute('href', '/glossary#ping');
+    expect(await link.getAttribute('target')).toBeNull();
+    await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(1);
+    await termButton(page, 'Traceroute').click();
+    await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(2);
+    await ping.click();
+    await expect(ping).toHaveAttribute('aria-expanded', 'false');
+    await expect(def).toBeHidden();
+  });
+
+  test('28: an open definition stays open through Practice and back; a reload closes all and saves nothing', async ({ page }) => {
+    await learn(page);
+    await page.evaluate(() => localStorage.setItem('seed', '1'));
+    await termButton(page, 'Ping').click();
+    const before = await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
+    await page.getByRole('button', { name: 'Next step', exact: true }).click();
+    await expect(kicker(page)).not.toHaveText(/Learn$/);
+    await page.getByRole('button', { name: 'Previous step', exact: true }).click();
+    await expect(kicker(page)).toHaveText(/Learn$/);
+    await expect(termButton(page, 'Ping')).toHaveAttribute('aria-expanded', 'true');
+    // The reader's visit is recorded by the console as before; opening a definition adds nothing of its own.
+    const keys = (json: string) => (JSON.parse(json) as [string, string][]).map(([k]) => k).filter((k) => !k.includes('progress'));
+    expect(keys(await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort())))).toEqual(keys(before));
+    await page.reload();
+    await hydrated(page);
+    for (const b of await terms(page).getByRole('button').all()) await expect(b).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('29: pressing the row on its words opens it; pressing a source number opens the source and not the definition', async ({ page, context }) => {
+    await learn(page);
+    const idea = terms(page).locator('> li').nth(0).locator('.explain__idea');
+    const r = (await idea.boundingBox())!;
+    await page.mouse.click(r.x + r.width / 2, r.y + 4);
+    await expect(termButton(page, 'Echo request')).toHaveAttribute('aria-expanded', 'true');
+    await termButton(page, 'Echo request').click();
+    const popup = context.waitForEvent('page');
+    await terms(page).locator('> li').nth(0).locator('.explain__marks a').first().click();
+    await (await popup).close();
+    await expect(termButton(page, 'Echo request')).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('30: the ICMP lesson shows TTL’s IP sense only; the DNS lesson shows the DNS sense; its other rows are today’s', async ({ page }) => {
+    await learn(page);
+    await termButton(page, 'TTL').click();
+    const def = definition(page, 'TTL');
+    await expect(def.locator('.explain__def-sense')).toHaveText('In IP packets');
+    await expect(def.locator('.explain__def-text')).toContainText('every IPv4 packet’s header');
+    await expect(page.locator('body')).not.toContainText('In DNS, the TTL');
+    await learn(page, '/how-the-internet-works/what-is-dns?step=6');
+    await termButton(page, 'TTL').click();
+    await expect(definition(page, 'TTL').locator('.explain__def-sense')).toHaveText('In DNS');
+    await expect(definition(page, 'TTL').locator('.explain__def-text')).toContainText('In DNS, the TTL');
+    await expect(page.locator('body')).not.toContainText('every IPv4 packet’s header');
+  });
+
+  test('31: Latency keeps the lesson’s name on the tape and the entry’s name in the link', async ({ page }) => {
+    await learn(page);
+    await termButton(page, 'Latency (round-trip time)').click();
+    await expect(definition(page, 'Latency (round-trip time)').getByRole('link', { name: 'Latency in the glossary' })).toHaveAttribute('href', '/glossary#latency');
+  });
+
+  test('32: in the DNS lesson only TTL is tied; the other rows have no data-def, no button, no min-height, and one is 42.2px at 1440', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await learn(page, '/how-the-internet-works/what-is-dns?step=6');
+    const rows = await terms(page).locator('> li').evaluateAll((lis) => lis.map((li) => ({ def: li.getAttribute('data-def'), button: li.querySelector('button') !== null, min: getComputedStyle(li).minHeight, text: li.querySelector('.explain__term')?.textContent })));
+    const tied = rows.filter((r) => r.def !== null);
+    expect(tied.map((r) => r.text)).toEqual(['TTL']);
+    for (const r of rows.filter((x) => x.def === null)) {
+      expect(r.button).toBe(false);
+      expect(['0px', 'auto']).toContain(r.min);
+    }
+    const cache = terms(page).locator('> li', { hasText: 'Answers kept for next time' });
+    expect((await cache.boundingBox())!.height).toBeGreaterThan(41.7);
+    expect((await cache.boundingBox())!.height).toBeLessThan(42.7);
+  });
+
+  test('33: "Ping in the glossary" lands on #ping, marked; "ICMP lesson" goes back to Learn; Back from the glossary returns to Learn', async ({ page }) => {
+    await learn(page);
+    await termButton(page, 'Ping').click();
+    await definition(page, 'Ping').getByRole('link', { name: 'Ping in the glossary' }).click();
+    await expect(page).toHaveURL(/\/glossary#ping$/);
+    await expect(page.locator('#ping')).toHaveCSS('box-shadow', /inset/);
+    expect(await page.evaluate(() => document.querySelector('#ping')?.matches(':target'))).toBe(true);
+    await page.goBack();
+    await hydrated(page);
+    await expect(kicker(page)).toHaveText(/Learn$/);
+    await page.goto('/glossary#ping');
+    await page.locator('#ping').getByRole('link', { name: 'ICMP lesson' }).click();
+    await hydrated(page);
+    await expect(kicker(page)).toHaveText(/Learn$/);
+    await page.goBack();
+    await page.goBack();
+    await hydrated(page);
+    await expect(kicker(page)).toHaveText(/Learn$/);
+  });
+
+  test('34: Tab reaches the button, Enter opens it and focus stays, the next Tab is the glossary link, Space toggles, closed skips the link', async ({ page }) => {
+    await learn(page);
+    const ping = termButton(page, 'Ping');
+    await ping.focus();
+    await page.keyboard.press('Enter');
+    await expect(ping).toHaveAttribute('aria-expanded', 'true');
+    expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('Ping');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: 'Ping in the glossary' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Space');
+    await expect(ping).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.textContent)).not.toBe('Ping in the glossary');
+    // Tab from the last mark of Ping's row reaches Ping's button.
+    await page.locator('.explain__terms > li').nth(2).locator('.explain__marks a').last().focus();
+    await page.keyboard.press('Tab');
+    await expect(ping).toBeFocused();
+  });
+
+  for (const size of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
+    test(`35: with all nine open at ${size.width}, the window does not scroll and the panels stay where they were`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await learn(page);
+      const before = [await rect(page, '.console__explain'), await rect(page, '.console__stage')];
+      for (const b of await terms(page).getByRole('button').all()) await b.click();
+      await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(9);
+      await page.locator('.console__explain').evaluate((e) => (e.scrollTop = e.scrollHeight));
+      await settledFrame(page);
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+      expect([await rect(page, '.console__explain'), await rect(page, '.console__stage')]).toEqual(before);
+      expect(await page.locator('.console__explain').evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+    });
+  }
+
+  test('35: the Explanation panel does not scroll sideways at 320, 768 by 1024 and 1024 by 768 with a definition open', async ({ page }) => {
+    for (const size of [{ width: 320, height: 700 }, { width: 768, height: 1024 }, { width: 1024, height: 768 }]) {
+      await page.setViewportSize(size);
+      await learn(page);
+      await termButton(page, 'Destination unreachable').click();
+      const panel = page.locator('.console__explain');
+      expect(await panel.evaluate((e) => e.scrollWidth <= e.clientWidth), `${size.width}`).toBe(true);
+      expect((await pageOverflow(page)).sideways).toBe(0);
+    }
+  });
+
+  test('35: with a mouse the glossary link is 26px tall', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await learn(page);
+    await termButton(page, 'Ping').click();
+    expect((await definition(page, 'Ping').getByRole('link').boundingBox())!.height).toBeCloseTo(26, 0);
+  });
+
+  test.describe('as a touch screen at 375', () => {
+    test.use({ hasTouch: true, isMobile: true, viewport: { width: 375, height: 812 } });
+    test('36: the row’s first 44px is the button’s target, the list’s width; the glossary link is 44px tall', async ({ page }) => {
+      await learn(page);
+      // Packet loss's row is 61px at 375, so the point 46px down is inside the row but past the button's 44px target.
+      const row = terms(page).locator('> li').nth(8);
+      await row.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+      const r = (await row.boundingBox())!;
+      const hits = (x: number, y: number) => page.evaluate(([px, py]) => { const el = document.elementFromPoint(px!, py!); return el?.closest('button.explain__term')?.textContent === 'Packet loss'; }, [x, y]);
+      expect(await hits(r.x + 2, r.y + 43)).toBe(true);
+      expect(await hits(r.x + r.width - 2, r.y + 1)).toBe(true);
+      expect(await hits(r.x + 2, r.y + 46)).toBe(false);
+      await termButton(page, 'Ping').click();
+      expect((await definition(page, 'Ping').getByRole('link').boundingBox())!.height).toBeGreaterThanOrEqual(43.9);
+    });
+  });
+});
