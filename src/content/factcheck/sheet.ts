@@ -1,4 +1,5 @@
 import { backedPartsOf, citedPartsOf } from '../cited';
+import { partsOf, type GlossaryGroup } from '../glossary-group';
 import type { Backing, Lesson } from '../schema';
 import type { Citation, SourceEntry, SourceRegistry } from '../sources';
 import { sha256 } from './sha256';
@@ -19,7 +20,7 @@ import { sha256 } from './sha256';
  * report unless it goes in `DISPLAY_ONLY`.
  */
 
-export type ItemKind = 'claim' | 'osi' | 'traced' | 'example' | 'analogy' | 'unbacked';
+export type ItemKind = 'claim' | 'osi' | 'traced' | 'example' | 'analogy' | 'unbacked' | 'tie';
 
 export interface SheetItem {
   /** Where the item sits, as the cited rules name it: `units[0].learn.lead[1] ("lead-2")`. */
@@ -103,7 +104,7 @@ const isEmpty = (v: unknown): boolean => (Array.isArray(v) ? v.length === 0 : is
  * JSON with every object's keys sorted, at every depth: the same value always gives the same text. A key whose value
  * is undefined, an empty list or an empty record is left out, so a new field whose default is empty changes nothing.
  */
-function canonical(value: unknown): string {
+export function canonical(value: unknown): string {
   const sorted = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(sorted);
     if (isRecord(v)) {
@@ -172,6 +173,46 @@ export function claimSheet(lesson: Lesson, sources: SourceRegistry): ClaimSheet 
   return { ...body, hash: sha256(canonical(body)) };
 }
 
+/** A glossary group's sheet slug: `glossary/<id>`. A lesson slug has no `/`, so none can start with it. */
+export const GLOSSARY_SLUG_PREFIX = 'glossary/';
+export const isGroupSlug = (slug: string): boolean => slug.startsWith(GLOSSARY_SLUG_PREFIX);
+
+const pairName = (lesson: string, term: string): string => `lesson "${lesson}", term "${term}"`;
+
+/**
+ * A glossary group's claim sheet (docs/glossary-path-spec.md §3, E8 to E10): the same kind of sheet and hash as a lesson's,
+ * for the group's entries sorted by id, each entry's items as written. Keys name ids, never positions. `lessons` are the
+ * lessons the group's ties name; a tie to a lesson or term not among them throws, naming the entry or sense and the pair,
+ * so a sheet never prints a tie with no words.
+ */
+export function groupSheet(group: GlossaryGroup, sources: SourceRegistry, lessons: readonly Lesson[]): ClaimSheet {
+  const items: SheetItem[] = [];
+  const entries = [...group.entries].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const e of entries) {
+    const at = `entry "${e.id}"`;
+    items.push({ key: `${at}: names`, kind: 'unbacked', content: { names: [e.term, ...(e.also ?? [])] }, cite: [], traces: [] });
+    for (const part of partsOf(e)) {
+      const here = part.sense === undefined ? at : `${at}, sense "${part.sense.id}"`;
+      if (part.sense !== undefined) items.push({ key: `${here}: label`, kind: 'unbacked', content: { label: part.sense.label }, cite: [], traces: [] });
+      part.definition.forEach((s, i) => {
+        items.push({ key: `${here}: statement "${s.id}"`, kind: 'claim', content: { text: s.text, place: i + 1 }, cite: s.cite, traces: [] });
+      });
+      if (part.lessons.length > 0) {
+        const tied = part.lessons.map((t) => {
+          const term = lessons.find((l) => l.slug === t.lesson)?.units.flatMap((u) => u.learn.terms).find((x) => x.id === t.term);
+          if (term === undefined) throw new Error(`${here}: ties ${pairName(t.lesson, t.term)}, which does not exist; fix the tie.`);
+          return { lesson: t.lesson, term: t.term, name: term.name, idea: term.idea };
+        });
+        items.push({ key: `${here}: lessons`, kind: 'tie', content: { lessons: tied }, cite: [], traces: [] });
+      }
+    }
+  }
+  const ids = [...new Set(items.flatMap((item) => item.cite.map((c) => c.source)))].sort();
+  const cited = ids.flatMap((id) => (Object.hasOwn(sources, id) ? [sources[id]!] : []));
+  const body = { slug: `${GLOSSARY_SLUG_PREFIX}${group.id}`, items, sources: cited, overrides: [] as Lesson['overrides'] };
+  return { ...body, hash: sha256(canonical(body)) };
+}
+
 /** A source's line on a printed sheet. */
 export function sourceLine(s: SourceEntry): string {
   return `- \`${s.id}\` (${s.kind}${s.version ? `, version ${s.version}` : ''}): ${s.short}, ${s.title}. ${s.publisher}. ${s.url}`;
@@ -179,6 +220,10 @@ export function sourceLine(s: SourceEntry): string {
 
 /** An item as the fact-checker reads it on a printed sheet: its heading, kind, content, citations and traces. */
 export function itemLines(item: SheetItem): string[] {
+  if (item.kind === 'tie') {
+    const tied = (item.content as { lessons: { lesson: string; term: string; name: string; idea: string }[] }).lessons;
+    return ['', `### ${item.key}`, '', `Kind: ${item.kind}`, '', ...tied.map((t) => `- \`${t.lesson}\` term \`${t.term}\`: ${t.name} — ${t.idea}`)];
+  }
   const lines = ['', `### ${item.key}`, '', `Kind: ${item.kind}`, '', '```json', JSON.stringify(item.content, null, 2), '```'];
   if (item.cite.length > 0) {
     lines.push('', 'Citations:');

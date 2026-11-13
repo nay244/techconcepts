@@ -1,4 +1,4 @@
-import { itemHashes, itemLines, sourceLine, type ClaimSheet, type SheetItem } from './sheet';
+import { isGroupSlug, itemHashes, itemLines, sourceLine, type ClaimSheet, type SheetItem } from './sheet';
 
 /**
  * The targeted re-check (plan.md, "Targeted re-checks"; docs/content-model.md §8): after a near-pass, the next check
@@ -77,6 +77,9 @@ const questionOf = (key: string): string | undefined => {
   const m = QUESTION.exec(key);
   return m === null ? undefined : `${m[1]} ${m[2]}`;
 };
+
+/** Which entry of a glossary group an item belongs to: the id in `entry "<id>"`, so `ttl` and `ttl-dns` are two entries. */
+const entryOf = (key: string): string | undefined => /^entry "([^"]+)"/.exec(key)?.[1];
 
 /** The pairs (i, j) of a longest common subsequence of two lists of labels, earliest first. */
 function commonSubsequence(a: readonly string[], b: readonly string[]): [number, number][] {
@@ -160,12 +163,18 @@ export function itemsToJudge(items: Readonly<Record<string, string>>, sheet: Cla
   const changed = sheet.items.filter((item) => !matched.has(item.key)).map((item) => item.key);
   const changedSet = new Set(changed);
   const extra = new Set<string>();
-  const targets = traceTargets(sheet);
-  for (const item of sheet.items) if (item.traces.some((id) => changedSet.has(targets.get(id)?.key ?? ''))) extra.add(item.key);
-  const questions = new Set([...changed, ...removed].flatMap((key) => questionOf(key) ?? []));
-  for (const item of sheet.items) if (questions.has(questionOf(item.key) ?? '')) extra.add(item.key);
-  // A Learn part taken out counts too: what rested on the whole lesson rested on it.
-  if ([...changed, ...removed].some((key) => LEARN_ID.test(key))) for (const item of sheet.items) if (item.kind === 'unbacked') extra.add(item.key);
+  if (isGroupSlug(sheet.slug)) {
+    // A group has no traces, questions or Learn parts: an entry is judged whole when any of its items changed or was taken out.
+    const entries = new Set([...changed, ...removed].flatMap((key) => entryOf(key) ?? []));
+    for (const item of sheet.items) if (entries.has(entryOf(item.key) ?? '')) extra.add(item.key);
+  } else {
+    const targets = traceTargets(sheet);
+    for (const item of sheet.items) if (item.traces.some((id) => changedSet.has(targets.get(id)?.key ?? ''))) extra.add(item.key);
+    const questions = new Set([...changed, ...removed].flatMap((key) => questionOf(key) ?? []));
+    for (const item of sheet.items) if (questions.has(questionOf(item.key) ?? '')) extra.add(item.key);
+    // A Learn part taken out counts too: what rested on the whole lesson rested on it.
+    if ([...changed, ...removed].some((key) => LEARN_ID.test(key))) for (const item of sheet.items) if (item.kind === 'unbacked') extra.add(item.key);
+  }
   const pulled = sheet.items.filter((item) => !changedSet.has(item.key) && extra.has(item.key)).map((item) => item.key);
   const pulledSet = new Set(pulled);
   return { changed, pulled, judge: sheet.items.filter((item) => changedSet.has(item.key) || pulledSet.has(item.key)).map((item) => item.key) };
@@ -192,18 +201,24 @@ function contextOf(sheet: ClaimSheet, item: SheetItem): SheetItem[] {
 
 const clip = (hash: string): string => `${hash.slice(0, 12)}…`;
 
-/** Each message the re-check commands and the gate share, for the path of the file they speak of. */
+/**
+ * Each message the re-check commands and the gate share, for the path of the file they speak of. A message that speaks
+ * of a lesson takes, for a glossary group (a `slug` that starts `glossary/`), the same words about the group
+ * (docs/glossary-path-spec.md, E7); with no `slug` it is the lesson's, byte for byte.
+ */
 export const recheckMessages = {
   noItems: (path: string, slug: string): string =>
     `${path}: has no items record with a limits hash, so a re-check cannot tell what changed; run npm run fact-check -- ${slug} --stamp at the commit it was checked on, or run a full check (docs/content-model.md §8).`,
-  notNearPass: (path: string, near: { notPassing: number; wrong: number }): string =>
-    `${path}: the full check was not a near-pass (${near.notPassing} ${near.notPassing === 1 ? 'item' : 'items'} did not pass, ${near.wrong} wrong (❌); a re-check needs at most ${NEAR_PASS_MAX_FAILING} not passing and none wrong); fix the lesson, then run a full check (docs/content-model.md §8).`,
+  notNearPass: (path: string, near: { notPassing: number; wrong: number }, slug = ''): string =>
+    `${path}: the full check was not a near-pass (${near.notPassing} ${near.notPassing === 1 ? 'item' : 'items'} did not pass, ${near.wrong} wrong (❌); a re-check needs at most ${NEAR_PASS_MAX_FAILING} not passing and none wrong); fix the ${isGroupSlug(slug) ? 'group' : 'lesson'}, then run a full check (docs/content-model.md §8).`,
   tooMany: (path: string, count: number): string =>
     `${path}: ${count} items to judge, more than ${RECHECK_MAX_ITEMS}; a re-check is for a few changed items, so run a full check (docs/content-model.md §8).`,
-  overrides: (path: string, lesson: string, report: string): string =>
-    `${path}: the lesson's limit overrides are not those of the full report (hash ${clip(lesson)}, the report's ${clip(report)}: a limit, a bound or a reason changed); a re-check does not judge a limit, so run a full check (docs/content-model.md §8).`,
-  changedSince: (path: string, then: string, now: string): string =>
-    `${path}: the lesson changed since it was re-checked (re-check ${clip(then)}, lesson ${clip(now)}); run the re-check again, against the same full check (docs/content-model.md §8).`,
+  overrides: (path: string, lesson: string, report: string, slug = ''): string =>
+    `${path}: the ${isGroupSlug(slug) ? 'group' : 'lesson'}'s limit overrides are not those of the full report (hash ${clip(lesson)}, the report's ${clip(report)}: a limit, a bound or a reason changed); a re-check does not judge a limit, so run a full check (docs/content-model.md §8).`,
+  changedSince: (path: string, then: string, now: string, slug = ''): string =>
+    isGroupSlug(slug)
+      ? `${path}: the glossary group "${slug.slice('glossary/'.length)}" changed since it was re-checked (re-check ${clip(then)}, group ${clip(now)}); run the re-check again, against the same full check (docs/content-model.md §8).`
+      : `${path}: the lesson changed since it was re-checked (re-check ${clip(then)}, lesson ${clip(now)}); run the re-check again, against the same full check (docs/content-model.md §8).`,
 };
 
 /**
@@ -217,9 +232,12 @@ export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging,
   const changed = new Set(judging.changed);
   const items = sheet.items.filter((item) => judge.has(item.key));
   const cited = new Set(items.flatMap((item) => item.cite.map((c) => c.source)));
+  const group = isGroupSlug(sheet.slug);
   const lines = [`# Re-check sheet: ${sheet.slug}`, '', `Hash: \`${sheet.hash}\``, `Base: \`${base}\``, ''];
   lines.push(
-    'A re-check judges only the items below: those that changed since the full check (an item that moved counts as changed, and is judged in its place), those that trace to a part that did, a whole question when any of it changed, and the items that rest on the whole lesson when a Learn part changed or was taken out. Judge each by every rule in your instructions. A part shown as context is for reading only: it gets no verdict, no heading and no quote in your report. Write `base` into your header as the Base above, and no `overrides` (the limit overrides are the full check\'s).',
+    group
+      ? 'Judge only the items below: those that changed since the full check, and every item of an entry any of whose items changed or was taken out. Every other item keeps its verdict from the full check.\n\nJudge each by every rule in your instructions. Write `base` into your header as the Base above, and no `overrides` (a group has none).'
+      : 'A re-check judges only the items below: those that changed since the full check (an item that moved counts as changed, and is judged in its place), those that trace to a part that did, a whole question when any of it changed, and the items that rest on the whole lesson when a Learn part changed or was taken out. Judge each by every rule in your instructions. A part shown as context is for reading only: it gets no verdict, no heading and no quote in your report. Write `base` into your header as the Base above, and no `overrides` (the limit overrides are the full check\'s).',
     '',
     '## Sources',
     '',
@@ -238,7 +256,7 @@ export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging,
     }
   }
   // An item that rests on the whole lesson is judged against every cited Learn part, which the checker reads and does not judge.
-  if (items.some((item) => item.kind === 'unbacked')) {
+  if (!group && items.some((item) => item.kind === 'unbacked')) {
     lines.push('', '## Learn parts, as context (no verdict)');
     for (const part of sheet.items.filter((item) => LEARN_ID.test(item.key) && item.cite.length > 0)) {
       lines.push('', `Context (no verdict): ${part.key}`, '', '```json', JSON.stringify(part.content, null, 2), '```');
@@ -252,7 +270,7 @@ export function renderRecheck(sheet: ClaimSheet, base: string, judging: Judging,
     const { group } = slotOf(item.key, ids);
     if (group !== '') lists.set(group, [...(lists.get(group) ?? []), item]);
   }
-  const places = [...lists.values()].filter((list) => list.some((item) => judge.has(item.key)));
+  const places = group ? [] : [...lists.values()].filter((list) => list.some((item) => judge.has(item.key)));
   if (places.length > 0) {
     lines.push('', '## Where the items to judge sit, as context (no verdict)', '', 'An item in a list is judged in its place. Each list below is in the order it has now; an item marked "to judge" is printed in full above.');
     for (const list of places) {

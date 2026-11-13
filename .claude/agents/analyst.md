@@ -16,6 +16,8 @@ You answer one hard question about a concept a lesson teaches, from a fresh cont
 - Where sources differ, say which is the defining one, which is current, and why they differ (version, layer, vendor practice).
 - Every file in the repository stays as it is.
 
+The question may be a glossary group instead of a lesson: then the brief is `docs/briefs/analyst-glossary-group.md`.
+
 ## Report
 
 1. **The answer**, in five lines or fewer.

@@ -1,4 +1,6 @@
-// Prints a lesson's claim sheet for the fact-checker, or checks the report it wrote (docs/content-model.md §8):
+// Prints a lesson's claim sheet for the fact-checker, or checks the report it wrote (docs/content-model.md §8). A glossary
+// group takes every form below with glossary/<id> for <slug> (npm run fact-check -- glossary/<id>), and its reports are
+// docs/fact-checks/glossary/<id>.md and <id>.recheck.md:
 //   npm run fact-check -- <slug>           the claim sheet, then where to write the report
 //   npm run fact-check -- <slug> --check   "Report OK: <path>", or every issue with the report, one per line
 //   npm run fact-check -- <slug> --quotes <folder>   looks for every quoted passage in the folder's source files;

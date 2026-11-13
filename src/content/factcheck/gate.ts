@@ -1,11 +1,11 @@
-import type { GlossaryEntry } from '../glossary';
+import type { GlossaryGroup } from '../glossary-group';
 import type { Lesson, Track } from '../schema';
 import type { SourceRegistry } from '../sources';
 import { keysMissingQuotes } from './quotecheck';
 import { parseQuotes, quotesDigest, type QuoteMode } from './quotes';
 import { parseRecheck, parseReport, type RecheckHeader, type ReportHeader } from './report';
 import { itemsToJudge, matchBase, nearPass, recheckMessages, recheckPath, RECHECK_MAX_ITEMS } from './recheck';
-import { claimSheet, limitsHash, type ClaimSheet } from './sheet';
+import { claimSheet, groupSheet, isGroupSlug, limitsHash, type ClaimSheet } from './sheet';
 
 /**
  * The build gate (fact-checker design §7): a lesson builds only with a current report in which every item passes.
@@ -16,6 +16,15 @@ import { claimSheet, limitsHash, type ClaimSheet } from './sheet';
  */
 
 const AGAIN = 'run the fact-checker on it again (docs/content-model.md §8)';
+
+/** What a message calls the thing a report is about: "lesson", or "group" for a glossary group (docs/glossary-path-spec.md, E7). */
+const noun = (slug: string): string => (isGroupSlug(slug) ? 'group' : 'lesson');
+
+/** "the lesson has changed since it was checked (report …, lesson …)", or the glossary group's form. Shared with the command's `--stamp`. */
+export const changedSinceChecked = (path: string, sheet: ClaimSheet, report: string): string =>
+  isGroupSlug(sheet.slug)
+    ? `${path}: the glossary group "${sheet.slug.slice('glossary/'.length)}" has changed since it was checked (report ${report.slice(0, 12)}…, group ${sheet.hash.slice(0, 12)}…); ${AGAIN}.`
+    : `${path}: the lesson has changed since it was checked (report ${report.slice(0, 12)}…, lesson ${sheet.hash.slice(0, 12)}…); ${AGAIN}.`;
 
 /** Where a lesson's report lives: by slug, since a lesson is shared between tracks. */
 export function reportPath(slug: string): string {
@@ -29,17 +38,17 @@ export function checkReport(sheet: ClaimSheet, raw: string | undefined, path: st
   if (header === undefined) return issues.map((i) => `${path}: cannot be read: ${i}`);
   if (header.slug !== sheet.slug) return [`${path}: is the report for "${header.slug}", not "${sheet.slug}"; fix its slug or its file name.`];
   if (header.hash !== sheet.hash) {
-    return [`${path}: the lesson has changed since it was checked (report ${header.hash.slice(0, 12)}…, lesson ${sheet.hash.slice(0, 12)}…); ${AGAIN}.`];
+    return [changedSinceChecked(path, sheet, header.hash)];
   }
   const problems: string[] = [];
   const keys = new Set(sheet.items.map((i) => i.key));
   for (const key of keys) if (!Object.hasOwn(header.verdicts, key)) problems.push(`${path}: no verdict for ${key}; ${AGAIN}.`);
   for (const key of Object.keys(header.verdicts)) {
-    if (!keys.has(key)) problems.push(`${path}: a verdict for ${key}, which the lesson does not have; ${AGAIN}.`);
+    if (!keys.has(key)) problems.push(`${path}: a verdict for ${key}, which the ${noun(sheet.slug)} does not have; ${AGAIN}.`);
   }
   const failed = Object.entries(header.verdicts).filter(([key, v]) => keys.has(key) && v !== '✅');
   if (failed.length > 0) {
-    problems.push(`${path}: ${failed.length} item(s) did not pass: ${failed.map(([key, v]) => `${v} ${key}`).join('; ')}. Fix the lesson, then ${AGAIN}.`);
+    problems.push(`${path}: ${failed.length} item(s) did not pass: ${failed.map(([key, v]) => `${v} ${key}`).join('; ')}. Fix the ${noun(sheet.slug)}, then ${AGAIN}.`);
   }
   const checked = new Map(header.sources.map((s) => [s.id, s]));
   for (const s of sheet.sources) {
@@ -128,7 +137,7 @@ export function checkPair(sheet: ClaimSheet, fullRaw: string | undefined, rechec
       `${rePath}: does not belong to ${path}: its base (${rh.base.slice(0, 12)}…) is not that report's hash (${fh.hash.slice(0, 12)}…); it was made against another full check, so remove it, or run the re-check again against this one.`,
     ];
   }
-  if (rh.hash !== sheet.hash) return [recheckMessages.changedSince(rePath, rh.hash, sheet.hash)];
+  if (rh.hash !== sheet.hash) return [recheckMessages.changedSince(rePath, rh.hash, sheet.hash, sheet.slug)];
 
   const problems: string[] = [];
   const keys = new Set(sheet.items.map((i) => i.key));
@@ -137,7 +146,7 @@ export function checkPair(sheet: ClaimSheet, fullRaw: string | undefined, rechec
   // 2
   if (fh.items === undefined || fh.limits === undefined) problems.push(recheckMessages.noItems(path, sheet.slug));
   const near = nearPass(fh.verdicts);
-  if (!near.ok) problems.push(recheckMessages.notNearPass(path, near));
+  if (!near.ok) problems.push(recheckMessages.notNearPass(path, near, sheet.slug));
   // 3
   if (fh.items !== undefined) {
     const judge = itemsToJudge(fh.items, sheet).judge;
@@ -152,7 +161,7 @@ export function checkPair(sheet: ClaimSheet, fullRaw: string | undefined, rechec
   // 4
   const failed = Object.entries(rh.verdicts).filter(([key, v]) => keys.has(key) && v !== '✅');
   if (failed.length > 0) {
-    problems.push(`${rePath}: ${failed.length} item(s) did not pass: ${failed.map(([key, v]) => `${v} ${key}`).join('; ')}. Fix the lesson, then run the re-check again, against the same full check (docs/content-model.md §8).`);
+    problems.push(`${rePath}: ${failed.length} item(s) did not pass: ${failed.map(([key, v]) => `${v} ${key}`).join('; ')}. Fix the ${noun(sheet.slug)}, then run the re-check again, against the same full check (docs/content-model.md §8).`);
   }
   // An item that moved (an inserted part shifted its index) is judged in the full report under the key it had there.
   const was = fh.items === undefined ? new Map<string, string>() : matchBase(fh.items, sheet);
@@ -166,7 +175,7 @@ export function checkPair(sheet: ClaimSheet, fullRaw: string | undefined, rechec
     }
   }
   // 5
-  if (fh.limits !== undefined && fh.limits !== limitsHash(sheet.overrides)) problems.push(recheckMessages.overrides(rePath, limitsHash(sheet.overrides), fh.limits));
+  if (fh.limits !== undefined && fh.limits !== limitsHash(sheet.overrides)) problems.push(recheckMessages.overrides(rePath, limitsHash(sheet.overrides), fh.limits, sheet.slug));
   // 6
   const reChecked = new Map(rh.sources.map((s) => [s.id, s]));
   const fullChecked = new Map(fh.sources.map((s) => [s.id, s]));
@@ -223,16 +232,58 @@ export function checkFactChecks(lessons: readonly Lesson[], reports: Record<stri
   return issues;
 }
 
+/**
+ * Where a glossary group's reports live: in a folder of their own, so a group and a lesson of one name never meet
+ * (`reportPath` and `recheckPath` of the sheet's slug `glossary/<id>` give the same).
+ */
+export const GLOSSARY_REPORT_DIR = 'docs/fact-checks/glossary/';
+
+/**
+ * Every issue with the fact checks of these glossary groups, as `checkFactChecks` reads a lesson's: `reports` is the
+ * registry's glob of `docs/fact-checks/glossary/*.md` (not the re-checks), `rechecks` its glob of `*.recheck.md` there,
+ * each keyed by path. A report or re-check no group owns is an issue too. A group whose ties name a lesson or term that
+ * does not exist is reported by name, not thrown.
+ */
+export function checkGlossaryFactChecks(
+  groups: readonly GlossaryGroup[],
+  lessons: readonly Lesson[],
+  reports: Record<string, string>,
+  sources: SourceRegistry,
+  rechecks: Record<string, string> = {},
+): string[] {
+  const bySlug = new Map(Object.entries(reports).map(([path, raw]) => [slugOf(path), raw]));
+  const reBySlug = new Map(Object.entries(rechecks).map(([path, raw]) => [slugOf(path, '.recheck.md'), raw]));
+  const issues = groups.flatMap((g) => {
+    let sheet: ClaimSheet;
+    try {
+      sheet = groupSheet(g, sources, lessons);
+    } catch (e) {
+      return [`glossary group "${g.id}": ${(e as Error).message}`];
+    }
+    const path = reportPath(sheet.slug);
+    const recheck = reBySlug.get(g.id);
+    return recheck === undefined ? checkReport(sheet, bySlug.get(g.id), path) : checkPair(sheet, bySlug.get(g.id), recheck, path, recheckPath(sheet.slug));
+  });
+  const owned = new Set(groups.map((g) => g.id));
+  for (const id of bySlug.keys()) {
+    if (!owned.has(id)) issues.push(`${reportPath(`glossary/${id}`)}: a fact-check report with no glossary group "${id}"; delete it, or fix its file name.`);
+  }
+  for (const id of reBySlug.keys()) {
+    if (!owned.has(id)) issues.push(`${recheckPath(`glossary/${id}`)}: a re-check report with no glossary group "${id}"; delete it, or fix its file name.`);
+  }
+  return issues;
+}
+
 const NO_PATH = 'has no fact-check path yet: the build refuses';
 const DECISION = 'until one is built (docs/direction.md, decision 2.16)';
 
 /**
- * Content of a kind no fact-check covers yet is refused outright: every glossary entry and every objective mapping of a
- * certification track. Both carry citations, but there is no claim sheet for them; the path is built by the job that
- * first needs one. `glossary` and `tracks` are arguments so a test can pass some.
+ * Content of a kind no fact-check covers yet is refused outright: every objective mapping of a certification track. It
+ * carries citations, but there is no claim sheet for it; the path is built by the job that first needs one. (Glossary
+ * entries have their path: `checkGlossaryFactChecks`.) `tracks` is an argument so a test can pass some.
  */
-export function checkUnpathedKinds(glossary: readonly GlossaryEntry[], tracks: readonly Track[]): string[] {
-  const issues = glossary.map((e) => `glossary entry "${e.id}" ${NO_PATH} glossary entries ${DECISION}`);
+export function checkUnpathedKinds(tracks: readonly Track[]): string[] {
+  const issues: string[] = [];
   for (const t of tracks) {
     if (t.type !== 'certification') continue;
     for (const part of t.parts) {

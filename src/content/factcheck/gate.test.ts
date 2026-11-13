@@ -1,10 +1,10 @@
 import { expect, test, vi } from 'vitest';
 import { validateLesson } from '../define';
 import { SOURCES } from '../sources';
-import type { GlossaryEntry } from '../glossary';
 import { FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeCitedLesson } from '../test-fixtures';
 import { checkFactChecks, checkReport, checkUnpathedKinds, reportPath } from './gate';
 import { claimSheet } from './sheet';
+import { internetTrack, networkingTrack } from '../tracks';
 import { recordedReportFor as reportFor, reportFor as bareReportFor } from './test-helpers';
 import { parseReport } from './report';
 
@@ -161,20 +161,13 @@ test('a passing claim with citations and no quote fails, naming the key', () => 
 
 // ---------------------------------------------------------------- kinds with no fact-check path yet
 
-const entry = (id: string): GlossaryEntry => ({ id, term: id, definition: [] });
-
-test('no glossary entries and no objective mappings give no problem', () => {
-  expect(checkUnpathedKinds([], [])).toEqual([]);
-});
-
-test('a glossary entry is refused with its id', () => {
-  expect(checkUnpathedKinds([entry('router')], [])).toEqual([
-    'glossary entry "router" has no fact-check path yet: the build refuses glossary entries until one is built (docs/direction.md, decision 2.16)',
-  ]);
+test('no objective mappings give no problem', () => {
+  expect(checkUnpathedKinds([])).toEqual([]);
+  expect(checkUnpathedKinds([networkingTrack, internetTrack])).toEqual([]);
 });
 
 test('an objective mapping is refused, naming its track, lesson and objective', () => {
-  const issues = checkUnpathedKinds([], [makeCertTrack()]);
+  const issues = checkUnpathedKinds([makeCertTrack()]);
   expect(issues).toEqual([
     expect.stringContaining('track "example-cert", lesson "lesson-a", objective EX-101 2.6 has no fact-check path yet'),
     expect.stringContaining('track "example-cert", lesson "lesson-b", objective EX-101 2.7 has no fact-check path yet'),

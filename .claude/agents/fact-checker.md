@@ -205,6 +205,21 @@ When your prompt says "re-check" and a slug, you judge only what changed since a
 5. **Check the quotes and the form.** Run `npm run fact-check -- <slug> --recheck --quotes <your temporary folder>` until it prints `Quotes OK`, then `npm run fact-check -- <slug> --recheck --check` until it prints `Report OK` naming both files. As in steps 5 and 6 above, a failing verdict or a source that is not current is expected whenever you found one, and you never change one to make a check pass.
 6. **Finish** by replying with the report's path, the verdict counts and one line for each item that is not ✅.
 
+## A glossary group
+
+When your prompt says `The glossary group: <id>. Work in the folder: <path>` (or `Re-check. The glossary group: <id>. ...`) and nothing else, you check a group of glossary entries, not a lesson. Every rule above and in the re-check section holds for it, read as follows. `cd` to the folder first, as for a lesson, and use the target `glossary/<id>` wherever a command or a path says `<slug>`: `npm run fact-check -- glossary/<id> > <tmp>/sheet.md`, `--quotes`, `--check`, and for a re-check `--recheck`, `--recheck --quotes`, `--recheck --check`. The report is written at the path the sheet gives (`docs/fact-checks/glossary/<id>.md`, or `<id>.recheck.md`). Its header is the lesson report's header with `"slug": "glossary/<id>"` and `"overrides": []`. The group's file, like a lesson's, is not to be read: the sheet holds everything, with every citation and source entry.
+
+The sheet's keys name ids: `entry "<id>": names`, `entry "<id>": statement "<sid>"`, `entry "<id>": lessons`, and for a word with senses `entry "<id>", sense "<sid>": label`, `...: statement "<sid>"` and `...: lessons`. Judge each kind of item as follows.
+
+- **A claim** (kind `claim`, one statement of a definition, with its place 1 to 3). Judge it as a lesson's claim, read alone: a definition stands on its own, so "unique", "any", "every", "always", "stands for" and the like pass only where the cited section says as much. A full name passes only where a cited section gives it. The two-source rule, the defining marker, currency and the quote form are as for a lesson, and a passing claim needs its quote.
+- **Names** (kind `unbacked`, `entry "<id>": names`): the term, then each other spelling. Every name shown is given, as a name of this thing, by one of this entry's own cited statements. A name none of them gives is ⚠️; a wrong name (a spelling that names another thing) is ❌. The term itself is a name too: a statement may give it by using it for the thing. A names item cites and quotes nothing; a `Note:` says what you checked.
+- **A label** (kind `unbacked`): it names where this sense applies, and the sense's statements are about that. A label cites and quotes nothing.
+- **A tie** (kind `tie`): the sheet lists each tied lesson term, one a line, as the lesson's `name` and `idea`. Each listed lesson term names the same thing, in the same sense, as this entry's (or sense's) definition, and its idea line does not contradict the definition. A line plainer or thinner than the definition passes. A term that names another thing or another sense, or an idea that says what the definition contradicts, is ❌. A tie cites and quotes nothing: its section has no quote, only a `Note:` if you wish.
+
+For a group, the absolute rule reads "something another entry of this group or a tied lesson term states" where it reads "another part of this lesson". A definition that rules out, by an absolute, something that another entry of the group, or a tied lesson term, states, is not passed.
+
+In a group's re-check the sheet lists the items you judge, and an entry any of whose items changed or was taken out is judged whole. It has no Learn context: an entry is judged whole, with its own statements as the context for its names, label and ties.
+
 ## Never
 
 - Change any file except the report.

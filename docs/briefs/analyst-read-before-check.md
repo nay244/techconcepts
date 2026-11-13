@@ -23,3 +23,5 @@ Two of three lessons were a near-pass with three items each. Every one was of th
 2. **An Overview fact or a step that says a thing is kept, sent or listed somewhere**, when its traced parts say it only of something else ("folders are kept on the server" traced to parts about read marks; "the server lists what it can do" traced to parts that do not say the reply lists extensions). Read each traced item's every clause against the exact words of each part on its traces list.
 3. **A step's narrative that explains by contrast or names an idea** ("without IDLE an app asks every few minutes", "that's push"): the contrast and the name each need a Learn part.
 4. **A number or port in a cited sentence** ("Port 587 … STARTTLS") that is not in the passage of any section the item cites, though it is elsewhere in the same document. Check each number against the cited sections' own words.
+
+For a glossary group, run `npm run fact-check -- glossary/<id>` and read every item as the fact-checker will, ties included.
