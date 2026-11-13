@@ -14,7 +14,7 @@ Written 2026-11-12 by the session that ran job 7, for the orchestrator that take
 ## 2. Where the project stands
 
 - Phase 4 (every lesson cited and fact-checked) is done (2026-11-12, job 8): all of How the Internet Works and Networking's DHCP, Subnetting and Firewalls are checked, and the legacy list (`src/content/legacy.ts`) is empty. Its path is dead code, to remove in a unit of its own (`plan.md`, "After this job").
-- Then Phase 5 (a simple Glossary page since 2026-11-13, direction 2.38; it was the Practice page, now held), then "After the revamp" in `docs/direction.md` §3: Networking Concepts' 15 lessons still to write, CompTIA A+, the glossary.
+- Then Phase 5 (a Glossary of written, fact-checked definitions since 2026-11-13, direction 2.39, begun as a pilot; `plan.md`. It was the Practice page, now held), then "After the revamp" in `docs/direction.md` §3: Networking Concepts' 15 lessons still to write, CompTIA A+, the glossary.
 - Everything is on branch `revamp`, local. **Nothing is pushed**; push, pull request, merge to `main` and deploy are the owner's.
 - `plan.md` holds the last plan (job 7, done) and is the form to follow. `team.md` is the ledger; each job ends with "What to do differently next time". Read job 7's.
 
