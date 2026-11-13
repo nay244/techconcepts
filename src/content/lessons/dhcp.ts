@@ -31,7 +31,7 @@ const RFC1122_ADDRESSES = cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-ed
 const RFC1122_BROADCAST = cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-30', defining: true });
 
 /** RFC 894 maps the broadcast Internet address to the broadcast Ethernet address, under "Address Mappings". */
-const ETHERNET_BROADCAST = cite('rfc-894', 'Address Mappings', { url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address' });
+const ETHERNET_BROADCAST = cite('rfc-894', 'Address Mappings', { url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address', defining: true });
 
 const abstractOf = (source: string, number: string, defining = false) =>
   cite(source, 'Abstract', { url: `https://www.rfc-editor.org/rfc/rfc${number}.html#abstract`, ...(defining ? { defining: true as const } : {}) });
@@ -171,7 +171,7 @@ export default defineLesson({
   summary:
     'Watch a laptop join a Wi-Fi network and get an address, plus the other settings it needs to go online, from the router in four short messages.',
   figure: 'dhcp',
-  backing: { traces: ['term-ip', 'fact-settings', 'fact-home', 'pattern', 'fact-ack'] },
+  backing: { traces: ['term-ip', 'fact-settings', 'fact-home', 'pattern', 'fact-ack', 'why-1'] },
   units: [
     {
       id: 'dhcp',
@@ -222,7 +222,7 @@ export default defineLesson({
           { place: 'phone', label: 'Phone', addr: PHONE_MAC },
         ],
         backing: {
-          traces: ['fact-home', 'term-lease-table', 'term-broadcast', 'fact-replies', 'deep-3', 'fact-first', 'fact-ack', 'fact-ignore', 'fact-mac'],
+          traces: ['fact-home', 'term-lease-table', 'term-broadcast', 'fact-replies', 'deep-3', 'fact-first', 'fact-ack', 'fact-ignore', 'fact-mac', 'term-ip', 'term-lease'],
         },
       },
       overview: {
@@ -273,7 +273,7 @@ export default defineLesson({
               traces: ['term-discover', 'term-broadcast', 'fact-first', 'fact-ports', 'fact-ignore', 'fact-defined'],
             }),
           ],
-          backing: { traces: ['term-discover', 'term-broadcast', 'fact-first', 'fact-ignore'] },
+          backing: { traces: ['term-discover', 'term-broadcast', 'fact-first', 'fact-ignore', 'deep-2'] },
         },
         {
           id: 'offer',
@@ -290,7 +290,7 @@ export default defineLesson({
           facts: [
             { label: 'Address offered', value: LAPTOP_IP, backing: { traces: ['term-offer', 'fact-settings'] } },
             { label: 'Subnet mask', value: '255.255.255.0', backing: { traces: ['fact-settings'] } },
-            { label: 'Gateway and DNS', value: '192.168.1.1 (the router, for both)', backing: { traces: ['fact-settings', 'fact-home'] } },
+            { label: 'Gateway', value: '192.168.1.1 (the router)', backing: { traces: ['fact-settings', 'fact-home'] } },
             { label: 'Lease', value: '86400 seconds (24 hours)', backing: { traces: ['term-lease', 'fact-settings'] } },
           ],
           events: [
@@ -325,7 +325,7 @@ export default defineLesson({
           facts: [
             { label: 'Address requested', value: LAPTOP_IP, backing: { traces: ['fact-request'] } },
             { label: 'Server chosen', value: '192.168.1.1 (server identifier)', backing: { traces: ['fact-request'] } },
-            { label: 'Sent from', value: '0.0.0.0, still no address', backing: { traces: ['fact-first', 'fact-request'] } },
+            { label: 'Sent from', value: '0.0.0.0, still no address', backing: { traces: ['fact-first', 'fact-request', 'deep-2'] } },
           ],
           events: [
             message({
@@ -425,7 +425,7 @@ export default defineLesson({
             }),
             leaseRenewed,
           ],
-          backing: { traces: ['term-lease', 'term-renew', 'deep-3', 'fact-t1'] },
+          backing: { traces: ['term-lease', 'term-renew', 'deep-3', 'fact-t1', 'term-broadcast', 'fact-home'] },
         },
       ],
       learn: {
@@ -444,14 +444,14 @@ export default defineLesson({
             cite: [RFC1122_BROADCAST, dhcp('4.4.4')],
           },
           { id: 'term-discover', idea: 'Asking: can anyone give me an address?', name: 'Discover', cite: [dhcp('3.1')] },
-          { id: 'term-offer', idea: 'The router suggesting a free address, with a time limit', name: 'Offer', cite: [dhcp('3.1'), opt('9.2')] },
-          { id: 'term-request', idea: 'Saying yes to that address, out loud, so every router knows', name: 'Request', cite: [dhcp('3.1'), opt('9.7')] },
-          { id: 'term-ack', idea: 'The router confirming the address is yours', name: 'Acknowledge (ACK)', cite: [dhcp('3.1')] },
+          { id: 'term-offer', idea: 'The router suggesting a free address, with a time limit', name: 'Offer', cite: [dhcp('3.1'), opt('9.2'), MS_NETSET, GOOGLE_LAN] },
+          { id: 'term-request', idea: 'Saying yes to that address, out loud, so every router knows', name: 'Request', cite: [dhcp('3.1'), opt('9.7'), MS_NETSET, GOOGLE_LAN] },
+          { id: 'term-ack', idea: 'The router confirming the address is yours', name: 'Acknowledge (ACK)', cite: [dhcp('3.1'), MS_NETSET, GOOGLE_LAN] },
           {
             id: 'term-lease-table',
             idea: 'The router’s list of which device has which address',
             name: 'Lease table',
-            cite: [dhcp('1.5'), dhcp('3.1'), CISCO_LEASE_DB, MS_DATABASE],
+            cite: [dhcp('1.5'), dhcp('3.1'), CISCO_LEASE_DB, MS_DATABASE, MS_NETSET, GOOGLE_LAN],
           },
           { id: 'term-lease', idea: 'Borrowing an address for a set time', name: 'Lease', cite: [dhcp('2.2')] },
           {
@@ -470,7 +470,7 @@ export default defineLesson({
         pattern: {
           id: 'pattern',
           names: ['Discover', 'Offer', 'Request', 'Acknowledge'],
-          note: 'Remember the first four in order: Discover, Offer, Request, Acknowledge.',
+          note: 'DORA: remember the first four in order: Discover, Offer, Request, Acknowledge.',
           cite: [dhcp('3.1'), MS_DORA, CANONICAL_DORA],
         },
         why: [
@@ -482,7 +482,7 @@ export default defineLesson({
           {
             id: 'why-2',
             text: 'The router keeps the list, so that never happens.',
-            cite: [dhcp('1.6'), dhcp('2.2'), CISCO_LEASE_DB],
+            cite: [dhcp('1.6'), dhcp('2.2'), CISCO_LEASE_DB, MS_NETSET, GOOGLE_LAN],
           },
         ],
         deep: [
@@ -529,14 +529,14 @@ export default defineLesson({
           {
             id: 'fact-settings',
             label: 'Hands out',
-            value: 'an IP address, the subnet mask, the default gateway and the DNS server, with a lease time',
+            value: 'an IP address, the subnet mask, the default gateway (the router) and the DNS server, with a lease time',
             cite: [dhcp('3.1'), opt('3.3'), opt('3.5'), opt('3.8'), opt('9.2'), CISCO_OFFER_OPTIONS],
           },
           {
             id: 'fact-mac',
             label: 'MAC address',
             value: 'every message names the laptop’s hardware address, so the server can tell clients apart and the laptop knows a reply is for it',
-            cite: [dhcp('4.4.1'), dhcp('2'), MS_BASICS_MAC, CISCO_OFFER_CHADDR],
+            cite: [dhcp('4.4.1'), dhcp('2'), dhcp('3.1'), MS_BASICS_MAC, CISCO_OFFER_CHADDR],
           },
           {
             id: 'fact-replies',
@@ -547,7 +547,7 @@ export default defineLesson({
           {
             id: 'fact-request',
             label: 'The Request',
-            value: 'is broadcast from 0.0.0.0 and names the chosen server (option 54) and the address (option 50); other servers take back their offers',
+            value: 'is broadcast from 0.0.0.0 and names the chosen server (option 54, server identifier) and the address (option 50); other servers take back their offers',
             cite: [dhcp('3.1'), dhcp('4.1'), opt('9.7'), opt('9.1'), MS_BASICS_ZERO],
           },
           {
@@ -585,7 +585,7 @@ export default defineLesson({
               text: 'It doesn’t know yet who hands out addresses.',
               feedback:
                 'Right. With no address and no idea which device is the router, shouting to everyone is the only way to reach it. That shout is the Discover.',
-              cite: [dhcp('4.4.4'), dhcp('3.1'), RFC1122_ADDRESSES],
+              cite: [dhcp('4.4.4'), dhcp('3.1'), RFC1122_ADDRESSES, MS_NETSET, GOOGLE_LAN],
             },
             {
               text: 'Shouting is faster than asking one device.',
@@ -609,17 +609,17 @@ export default defineLesson({
               text: 'It gives every device the same address, then changes it later.',
               feedback:
                 'Not quite. Two devices with the same address couldn’t both work properly. The router keeps a list and only offers addresses that are free.',
-              cite: [rfc('rfc-5227', '2.4', true), dhcp('3.1'), dhcp('1.5')],
+              cite: [rfc('rfc-5227', '2.4', true), dhcp('3.1'), dhcp('1.5'), MS_NETSET, GOOGLE_LAN],
             },
             {
               text: 'It writes each loan in its lease table, and only offers addresses that are free.',
               feedback: 'That’s it. The lease table is the router’s list of who has which address.',
-              cite: [dhcp('3.1'), dhcp('1.5'), CISCO_LEASE_DB],
+              cite: [dhcp('3.1'), dhcp('1.5'), CISCO_LEASE_DB, MS_NETSET, GOOGLE_LAN],
             },
             {
               text: 'It asks the phone which addresses are taken.',
               feedback: 'Not quite. The phone doesn’t keep track of addresses. The router does, in its lease table.',
-              cite: [dhcp('1.5'), dhcp('1'), CISCO_LEASE_DB],
+              cite: [dhcp('1.5'), dhcp('1'), CISCO_LEASE_DB, MS_NETSET, GOOGLE_LAN],
             },
           ],
           answer: 1,
@@ -631,7 +631,7 @@ export default defineLesson({
             {
               text: 'After about 12 hours, halfway through.',
               feedback: 'Yes. Asking halfway leaves plenty of time if the router doesn’t answer. That’s a Renew.',
-              cite: [dhcp('4.4.5'), MS_T1],
+              cite: [dhcp('4.4.5'), MS_T1, MS_NETSET, GOOGLE_LAN],
             },
             {
               text: 'Only once the 24 hours have run out.',
