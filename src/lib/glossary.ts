@@ -227,6 +227,8 @@ export function glossaryData({ groups, lessons, sources, dates }: GlossaryInput)
   for (const f of filed) {
     if (f.item.kind !== 'pointer') continue;
     const base = slugOf(f.item.name);
+    // `letter-…` is reserved whole, so no suffix could free it: the spelling must change, as an entry id must.
+    if (base.startsWith('letter-')) throw new Error(`The glossary spelling "${f.item.name}" makes the id "${base}", which the page reserves (letter-…); give the spelling another form.`);
     let id = base;
     for (let n = 2; taken.has(id) || isReserved(id); n++) id = `${base}-${n}`;
     taken.add(id);

@@ -66,7 +66,13 @@ test.describe('the Glossary page', () => {
   async function stickyFoot(page: Page): Promise<number> {
     const header = await box(page, '.site-head');
     const wide = (page.viewportSize()?.width ?? 0) >= 1280;
-    const second = await box(page, wide ? '.gl-az' : '.gl-bar');
+    // Below 1280px the bar that sticks is the one of the letter the target is in, not the first letter's.
+    const second = wide
+      ? await box(page, '.gl-az')
+      : (await page.evaluate(() => {
+          const r = (document.querySelector(location.hash || '#ttl')!.closest('section')!.querySelector('.gl-bar') as HTMLElement).getBoundingClientRect();
+          return { y: r.y, height: r.height };
+        }));
     return Math.max(header.y + header.height, second.y + second.height);
   }
 
@@ -475,10 +481,11 @@ test.describe('Learn with definitions', () => {
     test.use({ hasTouch: true, isMobile: true, viewport: { width: 375, height: 812 } });
     test('36: the row’s first 44px is the button’s target, the list’s width; the glossary link is 44px tall', async ({ page }) => {
       await learn(page);
-      // Ping's row is one line (45px), so the point 46px down belongs to the next row's own button, not to Ping's.
-      const row = terms(page).locator('> li').nth(2);
+      // Packet loss's row is 61px at 375, so the point 46px down is inside the row but past the button's 44px target.
+      const row = terms(page).locator('> li').nth(8);
+      await row.evaluate((e) => e.scrollIntoView({ block: 'center' }));
       const r = (await row.boundingBox())!;
-      const hits = (x: number, y: number) => page.evaluate(([px, py]) => { const el = document.elementFromPoint(px!, py!); return el?.closest('button.explain__term')?.textContent === 'Ping'; }, [x, y]);
+      const hits = (x: number, y: number) => page.evaluate(([px, py]) => { const el = document.elementFromPoint(px!, py!); return el?.closest('button.explain__term')?.textContent === 'Packet loss'; }, [x, y]);
       expect(await hits(r.x + 2, r.y + 43)).toBe(true);
       expect(await hits(r.x + r.width - 2, r.y + 1)).toBe(true);
       expect(await hits(r.x + 2, r.y + 46)).toBe(false);

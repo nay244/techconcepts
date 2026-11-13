@@ -2,7 +2,10 @@ import { describe, expect, test } from 'vitest';
 import { GLOSSARY, GLOSSARY_GROUPS } from '../content/glossary';
 import { makeGroup, statement } from '../content/glossary-fixtures';
 import { partsOf, type GlossaryGroupInput } from '../content/glossary-group';
+import { parseReport } from '../content/factcheck/report';
+import { glossaryCheckedOn } from '../content/registry';
 import { cite } from '../content/sources';
+import pilotReport from '../../docs/fact-checks/glossary/pilot.md?raw';
 import { FIXTURE_SOURCES, liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
 import { definitionsFor, glossaryData, stampLine, type GlossaryInput, type GlossaryLesson } from './glossary';
 import { siteGlossary } from './glossary-site';
@@ -72,6 +75,9 @@ describe('3. ids', () => {
   });
   test('letter and lettering are not reserved', () => {
     expect(items(run([group([entry('letter', 'One'), entry('lettering', 'Two')])])).map((i) => i.id)).toEqual(['letter', 'lettering']);
+  });
+  test('a spelling whose id would start letter- throws and is named (it could never be freed by a suffix)', () => {
+    expect(() => run([group([entry('a', 'Apple', { also: ['Letter box'] })])])).toThrow('"Letter box"');
   });
   test('a pointer id that is taken takes -2, then -3; an entry id that files later still wins', () => {
     const d = run([
@@ -184,6 +190,10 @@ describe('7. lessons', () => {
       { words: 'DHCP lesson in Networking Concepts', href: `/networking/dhcp?step=${learn}` },
       { words: 'DHCP lesson in How the Internet Works', href: `/how-the-internet-works/what-is-dhcp?step=${learn}` },
     ]);
+  });
+  test('a tie to dhcp alone still names its track, because another ready lesson shares the title', () => {
+    const d = run([group([entry('a', 'A', { lessons: ties(['dhcp', 'term-1']) })])], { lessons });
+    expect(items(d)[0]!.definitions[0]!.lessons.map((l) => l.words)).toEqual(['DHCP lesson in Networking Concepts']);
   });
   test('the step is the position of the unit that holds the term', () => {
     const two = { lesson: liftedFixture(makeTwoUnitLesson({ slug: 'two', title: 'Two' })), title: 'Two', canonical: '/t/two', trackTitle: 'T' };
@@ -305,6 +315,12 @@ describe('the real glossary (the pilot)', () => {
     expect(d.lessonMap['what-is-ip/term-ttl']!.label).toBe('In IP packets');
     expect(d.lessonMap['what-is-icmp/term-latency']).toMatchObject({ entryId: 'latency', entryTerm: 'Latency' });
     expect(Object.keys(d.lessonMap).some((k) => k.startsWith('osi-model/'))).toBe(false);
+  });
+  test('the stamp’s date is the pilot report’s own checked date, and an unknown group has none', () => {
+    const checked = parseReport(pilotReport).header!.checked;
+    expect(glossaryCheckedOn('pilot')).toBe(checked);
+    expect(d.stamp!.date).toBe(checked);
+    expect(glossaryCheckedOn('no-such-group')).toBeNull();
   });
   test('the stamp counts the entries and carries the groups’ latest date', () => {
     expect(d.stamp).toMatchObject({ count: GLOSSARY.length });
