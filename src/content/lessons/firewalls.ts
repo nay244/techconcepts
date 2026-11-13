@@ -58,6 +58,7 @@ const NIST_GLOSSARY = nist('Appendix A', 43);
 
 /** NISTIR 7966’s section 3 and NIST SP 800-123’s section 6.5, cited as What is SSH cites them. */
 const NIST_IR_BASICS = cite('nist-ir-7966', '3', { url: 'https://nvlpubs.nist.gov/nistpubs/ir/2015/NIST.IR.7966.pdf#page=9' });
+const NIST_SERVER_HARDENING = cite('nist-sp800-123', '4.2.1', { url: 'https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-123.pdf#page=27' });
 const NIST_SERVER_SECURITY = cite('nist-sp800-123', '6.5', {
   url: 'https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-123.pdf#page=48',
 });
@@ -65,6 +66,8 @@ const NIST_SERVER_SECURITY = cite('nist-sp800-123', '6.5', {
 /** A vendor’s page has no section numbers, so a section is cited by a text fragment that starts in it. None is the defining standard. */
 const vendor = (source: string, section: string, text: string) =>
   cite(source, section, { url: `${SOURCES[source]!.url}#:~:text=${encodeURIComponent(text).replaceAll('-', '%2D')}` });
+
+const CLOUDFLARE_TELNET = vendor('cloudflare-ssh', 'What is the Secure Shell (SSH) protocol?', 'Older remote management protocols like Telnet');
 
 // Cisco
 const CISCO_DEFINITION = vendor('cisco-firewall', 'What is a firewall?', 'A firewall is a network security device that separates');
@@ -94,6 +97,7 @@ const MS_WF_OPEN = vendor('microsoft-windows-firewall-rules', 'Applications rule
 const MS_NSG_ORDER = vendor('microsoft-azure-nsg', 'Security rules', 'Rules are processed in priority order');
 const MS_NSG_STATEFUL = vendor('microsoft-azure-nsg', 'Security rules', 'The flow record allows a network security group to be stateful');
 const MS_AZURE_NETWORK_RULES = vendor('microsoft-azure-firewall-rule-sets', 'Network rules', 'Network rules control inbound, outbound, and east-west traffic');
+const MS_ADDRESSES_CHANGE = vendor('microsoft-azure-network-best-practices', 'Logically segment subnets', 'Define an application security group for lists of IP addresses that you think might change');
 const MS_VPN = vendor('microsoft-azure-network-best-practices', 'Disable RDP and SSH access to virtual machines', 'Point-to-site VPN is more secure than direct RDP or SSH connections');
 
 // Palo Alto Networks
@@ -107,18 +111,18 @@ const PA_SPECIFIC_FIRST = vendor('paloalto-rulebase-best-practices', 'Security P
 const PA_SHADOWING = vendor('paloalto-rulebase-best-practices', 'Security Policy Rulebase Best Practices', 'Shadowing is when you place a broad rule');
 const PA_DENY_ACTION = vendor('paloalto-security-rules', 'Action', 'When you configure your environment to deny traffic');
 const PA_DEFAULT_RULES = vendor('paloalto-security-rules', 'Action', 'default rules apply');
+const PA_PERIMETER = vendor('paloalto-firewall', 'Perimeter firewall', 'Placed at the edge of a network to manage traffic entering or leaving');
 const PA_HOST = vendor('paloalto-firewall', 'Host-based firewall', 'Installed on a specific device to monitor traffic');
 const PA_NGFW = vendor('paloalto-ngfw', 'How does an NGFW work?', 'NGFWs operate at higher layers of the OSI model');
 
 // Google Cloud and Cloudflare
 const GOOGLE_SHADOWED = vendor('google-cloud-firewall-insights', 'Shadowed rules', 'Shadowed rules share attributes');
 const CLOUDFLARE_HISTORY = vendor('cloudflare-firewall', 'What is the history of firewalls?', 'They decided which packets to allow and which to block by inspecting their network layer and transport layer headers');
-const CLOUDFLARE_BLOCK = vendor('cloudflare-firewall', 'FAQs: What is deep packet inspection in a firewall?', 'While traditional firewalls can block packets based on');
 
 // ---------------------------------------------------------------- events
 
 /** A visit’s message and the table row that remembers it, each tracing to Learn parts. */
-const CONNECTION = { traces: ['term-stateful', 'fact-stateful', 'fact-ports'] };
+const CONNECTION = { traces: ['term-stateful', 'fact-stateful', 'fact-ports', 'fact-order'] };
 const RULE_LIST = { traces: ['term-rule', 'term-shadowed', 'fact-ports'] };
 const FORGOTTEN = { traces: ['term-stateful', 'fact-stateful'] };
 const RULE_CHANGED = { traces: ['term-rule', 'term-shadowed'] };
@@ -223,12 +227,12 @@ const firewalls = defineLesson({
           { place: 'web', label: 'Web server', addr: ADDR.web },
         ],
         backing: {
-          traces: ['term-firewall', 'term-rule', 'term-port', 'term-source', 'term-first-match', 'term-default-deny', 'term-stateful', 'term-shadowed', 'fact-ports'],
+          traces: ['term-firewall', 'term-rule', 'term-port', 'term-source', 'term-first-match', 'term-default-deny', 'term-stateful', 'term-shadowed', 'fact-ports', 'fact-logins', 'fact-reads'],
         },
       },
       overview: {
         hook: 'Picture a guard at the gate of an office. Before anyone comes in, the guard checks a list: visitors may come to the front desk, the IT team may use the back door, and everyone else stays outside. A firewall is that guard for a network. Every visit that tries to reach a computer is checked against a list of rules, then let in or turned away.',
-        hookBacking: { traces: ['term-firewall', 'term-rule', 'term-first-match', 'fact-order'] },
+        hookBacking: { traces: ['term-firewall', 'term-rule', 'term-first-match', 'fact-order', 'term-default-deny', 'term-source'] },
         description:
           'A firewall stands between a network and the outside world and decides what may pass. It reads its rules from the top, and the first rule that fits decides. The rules in this lesson look at where a visit comes from and which door, called a port, it asks for.',
         backing: { traces: ['term-firewall', 'term-first-match', 'fact-order', 'term-source', 'term-port'] },
@@ -338,7 +342,7 @@ const firewalls = defineLesson({
             },
             {
               text: 'A rule that names an address only works while that address stays the same.',
-              cite: [NIST_FILTER, MS_WF_CRITERIA],
+              cite: [NIST_FILTER, MS_WF_CRITERIA, MS_ADDRESSES_CHANGE],
             },
             {
               text: 'Admin logins from outside are safer through a VPN.',
@@ -367,7 +371,7 @@ const firewalls = defineLesson({
           title: 'Default Deny',
           sub: 'Whatever nothing allows is blocked',
           narrative:
-            'The visitor tries port 23, an old way to log in that sends everything as plain text. Nobody wrote a rule about port 23. It doesn’t fit rule 1 or rule 2, so it falls to the last rule, Block everything else, and it’s turned away. Allowing only what you need and blocking the rest is called **default deny**. If someone forgets to write a rule, a door stays shut instead of open.',
+            'The visitor tries port 23, an old way to log in that sends everything as plain text. Nobody wrote a rule about port 23. It doesn’t fit rule 1 or rule 2, so it falls to the last rule, Block everything else, and it’s turned away. Allowing only what you need and blocking the rest is called **default deny**. If someone forgets to write a rule, that door stays shut.',
           deep: [
             {
               text: 'Port 23 is Telnet.',
@@ -397,7 +401,7 @@ const firewalls = defineLesson({
             rules: 'base',
             plain: 'The visitor tries an old, unsafe door.',
           }),
-          backing: { traces: ['term-default-deny', 'fact-default', 'term-first-match', 'fact-ports', 'fact-logins'] },
+          backing: { traces: ['term-default-deny', 'fact-default', 'term-first-match', 'fact-ports', 'fact-logins', 'why-2'] },
         },
         {
           id: 'stateful',
@@ -471,7 +475,7 @@ const firewalls = defineLesson({
               plain: 'The visitor comes back to the website.',
             }),
           ],
-          backing: { traces: ['term-shadowed', 'term-first-match', 'fact-order', 'term-rule', 'fact-stateful', 'fact-ports'] },
+          backing: { traces: ['term-shadowed', 'term-first-match', 'fact-order', 'term-rule', 'fact-stateful', 'fact-ports', 'fact-catch-all'] },
         },
       ],
       learn: {
@@ -575,13 +579,13 @@ const firewalls = defineLesson({
           {
             id: 'deep-where',
             text: 'Network firewalls guard the edge of a network; host firewalls, like the one built into Windows, guard one computer.',
-            cite: [NIST_PERIMETER, NIST_HOST, MS_WF_HOST, PA_HOST],
+            cite: [NIST_PERIMETER, NIST_HOST, MS_WF_HOST, PA_HOST, PA_PERIMETER],
           },
         ],
         facts: [
           { id: 'fact-reads', label: 'Reads', value: 'Source, destination, protocol, port', cite: [NIST_FILTER, CISCO_PACKET_FILTER] },
           { id: 'fact-order', label: 'Order', value: 'Top to bottom, first match wins', cite: [NIST_CONFIG, CISCO_ASA_ORDER, CISCO_FMC_ORDER, PA_RULES_ORDER, PA_RULEBASE] },
-          { id: 'fact-default', label: 'Default', value: 'Deny anything not allowed', cite: [NIST_POLICY, PA_RULEBASE, CISCO_ASA_IMPLICIT] },
+          { id: 'fact-default', label: 'Recommended default', value: 'Deny anything not allowed', cite: [NIST_POLICY, PA_RULEBASE, CISCO_ASA_IMPLICIT, MS_WF_OPEN] },
           {
             id: 'fact-stateful',
             label: 'Stateful',
@@ -599,8 +603,9 @@ const firewalls = defineLesson({
             id: 'fact-logins',
             label: 'Remote logins',
             value: 'SSH is for logging in to and managing a computer from far away, and it is encrypted; Telnet, older and far less safe, sends plain text',
-            cite: [d('rfc-4251', '1'), cite('rfc-4251', '4.1'), NIST_IR_BASICS, NIST_SERVER_SECURITY],
+            cite: [d('rfc-4251', '1'), cite('rfc-4251', '4.1'), NIST_IR_BASICS, NIST_SERVER_SECURITY, NIST_SERVER_HARDENING, CLOUDFLARE_TELNET],
           },
+          { id: 'fact-catch-all', label: 'Catch-all rule', value: 'Last, below the more specific rules', cite: [PA_SPECIFIC_FIRST, PA_RULES_ORDER, CISCO_FMC_SPECIFIC] },
         ],
       },
       practice: [
