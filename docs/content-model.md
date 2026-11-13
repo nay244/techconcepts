@@ -170,9 +170,7 @@ One override per limit. An override the lesson does not need fails the build, so
 
 ## 4. The legacy list
 
-How the Internet Works, Subnetting, DHCP and Firewalls are still in the older shape, without citations. They use `defineLegacyLesson` from `src/content/legacy.ts`, and their slugs are on the closed `LEGACY_LESSONS` list. The list can only shrink. `defineLegacyLesson` refuses any slug not on it, so a new lesson cannot start there.
-
-To move a lesson across, rewrite its file with `defineLesson` and remove its slug from `LEGACY_LESSONS` in the same change. The registry fails the build when the list and the files disagree. `src/content/legacy.test.ts` pins the list too, so shrink the list in that test in the same change. Direction doc §10 task 6 deletes the legacy path.
+The list is empty since batch 5 (2026-11-12): every lesson is in the cited shape. The legacy path (`defineLegacyLesson` in `src/content/legacy.ts` and the closed `LEGACY_LESSONS` list) stays until a unit of its own removes it. `defineLegacyLesson` refuses any slug not on the list, so no lesson can start there, and `src/content/legacy.test.ts` pins the list as empty.
 
 ## 5. Tracks and objectives
 

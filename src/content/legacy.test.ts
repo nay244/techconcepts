@@ -6,8 +6,8 @@ import { liftedFixture, makeLesson, makeUnit } from './test-fixtures';
 // A slug still on the list, for the cases that need one; once the list is empty they are skipped (plan.md, job 8).
 const LISTED = (LEGACY_LESSONS as readonly string[])[0];
 
-test('the legacy list holds only Networking lessons not yet moved: every lesson of How the Internet Works has moved, and it may only shrink', () => {
-  expect(['dhcp', 'firewalls', 'subnetting']).toEqual(expect.arrayContaining([...LEGACY_LESSONS]));
+test('the legacy list is empty: every lesson has moved to the cited shape', () => {
+  expect([...LEGACY_LESSONS]).toEqual([]);
 });
 
 test('lifting keeps every word and adds empty citations', () => {

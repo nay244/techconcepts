@@ -22,9 +22,8 @@ import {
  */
 
 /**
- * The ready lessons written before citations. Closed: §10 tasks 4–6 remove each slug as it migrates; task 6 deletes
- * this file. A legacy lesson split into parts stays legacy until it is migrated: How the Internet Works' 14 lessons
- * keep their uncited words until each one's audit (owner, 2026-11-08: split now, audit later).
+ * The ready lessons written before citations. Closed, and empty since batch 5 (job 8, 2026-11-12): every lesson is in
+ * the cited shape. Removing the legacy path, this file with it, is a unit of its own (`plan.md`, "After this job").
  */
 export const LEGACY_LESSONS = [] as const;
 
