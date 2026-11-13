@@ -1,106 +1,89 @@
-import { expect, test } from 'vitest';
-import { defineGlossary, GLOSSARY, type GlossaryEntryInput } from './glossary';
-import { cite } from './sources';
-import { FIXTURE_SOURCES, OBJ_URL } from './test-fixtures';
+import { describe, expect, test } from 'vitest';
+import { GLOSSARY, GLOSSARY_GROUPS, checkGlossaryGroups, groupsFromModules } from './glossary';
+import { makeGroup, statement } from './glossary-fixtures';
+import { FIXTURE_SOURCES } from './test-fixtures';
 
-/** A valid entry: one statement, cited at RFC 9999 §2.1, marked as the defining standard (the two-source rule). */
-const lease = (over: Partial<GlossaryEntryInput> = {}): GlossaryEntryInput => ({
-  id: 'lease',
-  term: 'Lease',
-  definition: [{ id: 'd1', text: 'An address lent to a device for a set time.', cite: [cite('rfc-example', '2.1', { sources: FIXTURE_SOURCES, defining: true })] }],
-  ...over,
-});
-/** An analogy statement: it may leave out its citation list, which parses to empty. */
-const analogy = { id: 'd2', text: 'Like borrowing a book.', analogy: true as const };
+// Loading the group files, and the rules that span groups (docs/glossary-path-spec.md §2, 11 and 12; E11). The rules inside
+// a group are in glossary-group.test.ts, the ties to lessons in registry.glossary.test.ts.
 
-test('a definition statement with one source fails', () => {
-  const one = { id: 'd1', text: 'An address lent to a device for a set time.', cite: [cite('rfc-example', '2.1', { sources: FIXTURE_SOURCES })] };
-  expect(() => defineGlossary([lease({ definition: [one] })], FIXTURE_SOURCES)).toThrow(/definition\[0\] \("d1"\): rests on one source/);
-});
+const group = (id: string, entries: { id: string; term: string; also?: string[] }[]) =>
+  makeGroup((i) => {
+    i.id = id;
+    i.entries = entries.map((e) => ({ ...e, definition: [statement(`${id}-${e.id}-1`)] }));
+  });
 
-test('a cited entry is valid and comes back as written', () => {
-  expect(defineGlossary([lease()], FIXTURE_SOURCES)).toEqual([lease()]);
-});
+describe('loading', () => {
+  test('with no group file, the glossary and its groups are empty and valid', () => {
+    expect(groupsFromModules({})).toEqual([]);
+    expect(GLOSSARY_GROUPS).toEqual([]);
+    expect(GLOSSARY).toEqual([]);
+  });
 
-test('a definition needs a cited statement', () => {
-  expect(() =>
-    defineGlossary([{ id: 'lease', term: 'Lease', definition: [{ id: 'd1', text: 'Like borrowing a book.', cite: [], analogy: true }] }], FIXTURE_SOURCES),
-  ).toThrow(/entry "lease": the definition needs at least one cited statement; an analogy alone cannot define a term\./);
-});
+  test('every entry comes in group order, then file order', () => {
+    const a = group('a', [{ id: 'one', term: 'One' }, { id: 'two', term: 'Two' }]);
+    const b = group('b', [{ id: 'three', term: 'Three' }]);
+    const loaded = groupsFromModules({ './glossary-groups/b.ts': b, './glossary-groups/a.ts': a }, FIXTURE_SOURCES);
+    expect(loaded.map((g) => g.id)).toEqual(['b', 'a']);
+    expect(loaded.flatMap((g) => g.entries.map((e) => e.id))).toEqual(['three', 'one', 'two']);
+  });
 
-test('an analogy may help a cited definition, and comes back with an empty citation list', () => {
-  const [entry] = defineGlossary([lease({ definition: [...lease().definition, analogy] })], FIXTURE_SOURCES);
-  expect(entry!.definition[1]).toEqual({ ...analogy, cite: [] });
-});
+  test('E11: a file whose name is not its group id is refused, naming the file', () => {
+    expect(() => groupsFromModules({ './glossary-groups/pilot.ts': group('pilot-1', [{ id: 'one', term: 'One' }]) }, FIXTURE_SOURCES)).toThrow(
+      './glossary-groups/pilot.ts: the file name "pilot" must equal the group id "pilot-1".',
+    );
+  });
 
-test('every statement is cited or flagged as an analogy, never both', () => {
-  const none = lease({ definition: [...lease().definition, { id: 'd2', text: 'It ends unless renewed.', cite: [] }] });
-  expect(() => defineGlossary([none], FIXTURE_SOURCES)).toThrow(
-    /entry "lease": definition\[1\] \("d2"\): no citation; cite a source or flag it as an analogy\./,
-  );
-  const both = lease({ definition: [{ ...lease().definition[0]!, analogy: true }] });
-  expect(() => defineGlossary([both], FIXTURE_SOURCES)).toThrow(/entry "lease": definition\[0\] \("d1"\): both cited and flagged as an analogy/);
-});
+  test('E11: a default export that is a plain object, or not made with defineGlossaryGroup, is refused, naming the file', () => {
+    const plain = { id: 'pilot', entries: [] } as never;
+    expect(() => groupsFromModules({ './glossary-groups/pilot.ts': plain }, FIXTURE_SOURCES)).toThrow('./glossary-groups/pilot.ts: the group was not made with defineGlossaryGroup; wrap it so every rule runs.');
+    expect(() => groupsFromModules({ './glossary-groups/pilot.ts': undefined as never }, FIXTURE_SOURCES)).toThrow('./glossary-groups/pilot.ts must default-export defineGlossaryGroup({ ... }).');
+  });
 
-test('ids are unique', () => {
-  expect(() => defineGlossary([lease(), lease({ term: 'Address lease' })], FIXTURE_SOURCES)).toThrow(
-    /Duplicate glossary id "lease"; give each entry its own id\./,
-  );
-});
+  test('E11: a group defined against another source list is refused, naming the file; one against SOURCES is accepted', () => {
+    const fixture = group('pilot', [{ id: 'one', term: 'One' }]);
+    expect(() => groupsFromModules({ './glossary-groups/pilot.ts': fixture })).toThrow('./glossary-groups/pilot.ts: the group was checked against a different source list');
+    expect(() => groupsFromModules({ './glossary-groups/pilot.ts': fixture }, FIXTURE_SOURCES)).not.toThrow();
+  });
 
-test('terms are unique ignoring case', () => {
-  expect(() => defineGlossary([lease(), lease({ id: 'lease-2', term: 'lease' })], FIXTURE_SOURCES)).toThrow(
-    /entry "lease-2" defines "lease", which entry "lease" already defines as "Lease"; terms are unique ignoring case, so keep one entry per term\./,
-  );
+  test('a path that is not a file directly in glossary-groups/ is refused', () => {
+    expect(() => groupsFromModules({ './glossary-groups/old/x.ts': group('x', [{ id: 'one', term: 'One' }]) }, FIXTURE_SOURCES)).toThrow('Unexpected glossary group file path');
+  });
 });
 
-test('every citation is checked: content only, and as the registry builds it', () => {
-  const objectives = lease({ definition: [{ id: 'd1', text: 'Exam objective 2.6.', cite: [cite('example-objectives', '2.6', { sources: FIXTURE_SOURCES, url: OBJ_URL })] }] });
-  expect(() => defineGlossary([objectives], FIXTURE_SOURCES)).toThrow(/entry "lease": definition\[0\] \("d1"\), citation 1: .*objective mapping/);
-  const edited = lease();
-  edited.definition[0]!.cite![0]!.label = 'RFC 1 §1';
-  expect(() => defineGlossary([edited], FIXTURE_SOURCES)).toThrow(/citation 1: .*label should be "RFC 9999 §2\.1", not "RFC 1 §1"/);
-  const unknown = lease();
-  unknown.definition[0]!.cite![0]!.source = 'nowhere';
-  expect(() => defineGlossary([unknown], FIXTURE_SOURCES)).toThrow(
-    'entry "lease": definition[0] ("d1"), citation 1: Unknown source "nowhere" (section 2.1); add it to SOURCES in src/content/sources.ts, or fix the id.',
-  );
+describe('R11: group ids and entry ids are unique across groups', () => {
+  test('entry ttl in group a and in group b is refused, naming both groups', () => {
+    const issues = checkGlossaryGroups([group('a', [{ id: 'ttl', term: 'TTL' }]), group('b', [{ id: 'ttl', term: 'Hop limit' }])]);
+    expect(issues).toEqual(['Entry id "ttl" is in group "a" and in group "b"; entry ids are unique across the glossary.']);
+  });
+  test('entry ttl and entry ttl-dns are fine', () => {
+    expect(checkGlossaryGroups([group('a', [{ id: 'ttl', term: 'TTL' }]), group('b', [{ id: 'ttl-dns', term: 'TTL in DNS' }])])).toEqual([]);
+  });
+  test('two groups with one id are refused', () => {
+    expect(checkGlossaryGroups([group('a', [{ id: 'one', term: 'One' }]), group('a', [{ id: 'two', term: 'Two' }])])).toEqual(['Duplicate glossary group id "a" (2 groups); give each group its own id.']);
+  });
 });
 
-test('the shape is checked: a bad id, an empty term, no definition, an unknown key', () => {
-  const bad: GlossaryEntryInput = Object.assign(lease(), { id: 'Lease', term: ' ', definition: [] }, { note: 'x' });
-  let message = '';
-  try {
-    defineGlossary([bad], FIXTURE_SOURCES);
-  } catch (e) {
-    message = (e as Error).message;
-  }
-  expect(message).toMatch(/entry "Lease": id must be lowercase words joined by hyphens/);
-  expect(message).toMatch(/entry "Lease": term must not be empty/);
-  expect(message).toMatch(/entry "Lease": definition .*1/);
-  expect(message).toMatch(/entry "Lease": .*"note"/);
+describe('R12: every name is unique across the glossary, ignoring case and outer spaces', () => {
+  test('a term in one group and a spelling in another are refused', () => {
+    const issues = checkGlossaryGroups([group('a', [{ id: 'ttl', term: 'TTL' }]), group('b', [{ id: 'hop', term: 'Hop limit', also: [' ttl'] }])]);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('The name " ttl" (entry "hop" of group "b") is already the name "TTL" of entry "ttl" of group "a"');
+  });
+  test('one entry\'s term equal to another\'s spelling, ignoring case, is refused, in one group too', () => {
+    const issues = checkGlossaryGroups([group('a', [{ id: 'one', term: 'Alpha' }, { id: 'two', term: 'Beta', also: ['ALPHA'] }])]);
+    expect(issues).toHaveLength(1);
+  });
+  test('IP address and IP-address are different names', () => {
+    expect(checkGlossaryGroups([group('a', [{ id: 'one', term: 'IP address' }, { id: 'two', term: 'IP-address' }])])).toEqual([]);
+  });
+  test('the loader throws with every issue listed', () => {
+    const a = group('a', [{ id: 'ttl', term: 'TTL' }]);
+    const b = group('b', [{ id: 'ttl', term: 'ttl' }]);
+    expect(() => groupsFromModules({ './glossary-groups/a.ts': a, './glossary-groups/b.ts': b }, FIXTURE_SOURCES)).toThrow(/^Invalid glossary:\n- Entry id "ttl" is in group "a" and in group "b"[\s\S]*\n- The name "ttl"/);
+  });
 });
 
-test('every problem is reported in one error', () => {
-  const uncited = lease({ id: 'renewal', term: 'Renewal', definition: [{ id: 'd1', text: 'Keeping it longer.', cite: [] }] });
-  let caught: unknown;
-  try {
-    defineGlossary([lease(), lease({ id: 'lease-2', term: 'LEASE' }), lease({ term: 'Address lease' }), uncited], FIXTURE_SOURCES);
-  } catch (e) {
-    caught = e;
-  }
-  expect(caught).toBeInstanceOf(Error);
-  expect((caught as Error).message).toBe(
-    [
-      'Invalid glossary:',
-      '- entry "lease-2" defines "LEASE", which entry "lease" already defines as "Lease"; terms are unique ignoring case, so keep one entry per term.',
-      '- Duplicate glossary id "lease"; give each entry its own id.',
-      '- entry "renewal": definition[0] ("d1"): no citation; cite a source or flag it as an analogy.',
-      '- entry "renewal": the definition needs at least one cited statement; an analogy alone cannot define a term.',
-    ].join('\n'),
-  );
-});
-
-test('the glossary starts empty and valid', () => {
-  expect(GLOSSARY).toEqual([]);
+test('the old shape is gone: the old define function no longer exists', async () => {
+  const module = (await import('./glossary')) as Record<string, unknown>;
+  expect(module['define' + 'Glossary']).toBeUndefined();
 });

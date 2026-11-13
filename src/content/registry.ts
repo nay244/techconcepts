@@ -1,11 +1,12 @@
 import { slotsFor } from '../engine/timeline';
 import type { CertTag } from './certs';
 import { definedWith, defineTrack } from './define';
-import { checkedDate, checkFactChecks, checkUnpathedKinds, reportPath } from './factcheck/gate';
+import { checkedDate, checkFactChecks, checkGlossaryFactChecks, checkUnpathedKinds, reportPath } from './factcheck/gate';
 import { parseReport } from './factcheck/report';
 import { recheckPath } from './factcheck/recheck';
 import { claimSheet } from './factcheck/sheet';
-import { GLOSSARY, type GlossaryEntry } from './glossary';
+import { GLOSSARY_GROUPS } from './glossary';
+import { partsOf, type GlossaryGroup } from './glossary-group';
 import { checkLimits, unneededOverrides } from './limits';
 import type { Lesson, Track } from './schema';
 import { SOURCES, type SourceRegistry } from './sources';
@@ -245,19 +246,64 @@ export function checkFactCheckReports(
 }
 
 /**
- * Refuses the kinds of cited content that have no fact-check path yet: every glossary entry and every objective mapping
+ * Refuses the kinds of cited content that have no fact-check path yet: every objective mapping of a certification track
  * (`factcheck/gate.ts`). The same dev, build and test behaviour as `checkFactCheckReports`.
  */
-export function checkUnpathedContent(
-  glossary: readonly GlossaryEntry[],
-  trackList: readonly Track[],
+export function checkUnpathedContent(trackList: readonly Track[], mode: string = import.meta.env.MODE): void {
+  refuseOrWarn(
+    checkUnpathedKinds(trackList),
+    mode,
+    'astro dev goes on; npm run build and the tests refuse these mappings until a fact-check path is built for their kind (docs/direction.md, decision 2.16).',
+  );
+}
+
+/**
+ * Every issue with the ties of glossary groups to lessons' terms (docs/glossary-path-spec.md §2, rules 13 and 14, E14):
+ * each `{ lesson, term }` names a lesson and exactly one term of its Learn, and a lesson's term is tied by at most one
+ * entry or sense across the glossary.
+ */
+export function checkGlossaryTies(groups: readonly GlossaryGroup[], lessons: Record<string, Lesson>): string[] {
+  const issues: string[] = [];
+  const tiedBy = new Map<string, string>();
+  for (const g of groups) {
+    for (const e of g.entries) {
+      for (const part of partsOf(e)) {
+        const at = `glossary group "${g.id}", entry "${e.id}"${part.sense === undefined ? '' : `, sense "${part.sense.id}"`}`;
+        for (const t of part.lessons) {
+          const lesson = Object.hasOwn(lessons, t.lesson) ? lessons[t.lesson] : undefined;
+          const found = lesson?.units.flatMap((u) => u.learn.terms).filter((x) => x.id === t.term) ?? [];
+          if (lesson === undefined) issues.push(`${at}: ties term "${t.term}" of lesson "${t.lesson}", which no lesson has; fix the lesson's slug.`);
+          else if (found.length === 0) issues.push(`${at}: ties term "${t.term}" of lesson "${t.lesson}", which is not a term of that lesson's Learn; tie one of its terms by id.`);
+          else if (found.length > 1) issues.push(`${at}: ties term "${t.term}" of lesson "${t.lesson}", which names more than one term of that lesson; the tie must name one.`);
+          const key = `${t.lesson}\n${t.term}`;
+          const first = tiedBy.get(key);
+          if (first === undefined) tiedBy.set(key, at);
+          else issues.push(`${at}: ties term "${t.term}" of lesson "${t.lesson}", which ${first} already ties; a lesson's term is tied to one entry or sense.`);
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+/** Refuses the ties `checkGlossaryTies` finds, as `checkFactCheckReports` refuses a missing report. */
+export function checkGlossaryTiesOrWarn(groups: readonly GlossaryGroup[], lessons: Record<string, Lesson>, mode: string = import.meta.env.MODE): void {
+  refuseOrWarn(checkGlossaryTies(groups, lessons), mode, 'astro dev goes on; npm run build and the tests refuse these ties until they name a lesson term.');
+}
+
+/**
+ * Refuses a glossary group with no current fact-check report in which every item passes, or a report no group owns
+ * (`factcheck/gate.ts`). `reports` and `rechecks` are the globs of `docs/fact-checks/glossary/`, keyed by path.
+ */
+export function checkGlossaryReports(
+  groups: readonly GlossaryGroup[],
+  lessons: readonly Lesson[],
+  reports: Record<string, string>,
+  rechecks: Record<string, string> = {},
+  sources: SourceRegistry = SOURCES,
   mode: string = import.meta.env.MODE,
 ): void {
-  refuseOrWarn(
-    checkUnpathedKinds(glossary, trackList),
-    mode,
-    'astro dev goes on; npm run build and the tests refuse these entries until a fact-check path is built for their kind (docs/direction.md, decision 2.16).',
-  );
+  refuseOrWarn(checkGlossaryFactChecks(groups, lessons, reports, sources, rechecks), mode, 'astro dev shows these groups anyway; npm run build and the tests refuse them until the fact-checker passes them.');
 }
 
 function refuseOrWarn(issues: string[], mode: string, devNote: string): void {
@@ -272,7 +318,14 @@ function refuseOrWarn(issues: string[], mode: string, devNote: string): void {
 const reports = import.meta.glob<string>(['../../docs/fact-checks/*.md', '!../../docs/fact-checks/*.recheck.md'], { query: '?raw', import: 'default', eager: true });
 const rechecks = import.meta.glob<string>('../../docs/fact-checks/*.recheck.md', { query: '?raw', import: 'default', eager: true });
 checkFactCheckReports(Object.values(lessonsBySlug), reports, undefined, undefined, rechecks);
-checkUnpathedContent(GLOSSARY, tracks);
+checkUnpathedContent(tracks);
+
+// A glossary group's reports are in a folder of their own, `docs/fact-checks/glossary/`, so a lesson's globs above (depth 1)
+// never read them, and a group's id may equal a lesson's slug.
+const glossaryReports = import.meta.glob<string>(['../../docs/fact-checks/glossary/*.md', '!../../docs/fact-checks/glossary/*.recheck.md'], { query: '?raw', import: 'default', eager: true });
+const glossaryRechecks = import.meta.glob<string>('../../docs/fact-checks/glossary/*.recheck.md', { query: '?raw', import: 'default', eager: true });
+checkGlossaryTiesOrWarn(GLOSSARY_GROUPS, lessonsBySlug);
+checkGlossaryReports(GLOSSARY_GROUPS, Object.values(lessonsBySlug), glossaryReports, glossaryRechecks);
 
 /**
  * The day a lesson passed its fact-check, as its report gives it ('2026-11-08'), or the later of that and its re-check's

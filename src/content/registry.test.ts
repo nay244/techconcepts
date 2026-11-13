@@ -433,17 +433,15 @@ test('astro dev warns of a fact-check issue instead, so a draft lesson can be pr
   }
 });
 
-test('a glossary entry or an objective mapping stops the build and the tests, and astro dev warns', () => {
-  const entry = { id: 'router', term: 'Router', definition: [] };
+test('an objective mapping stops the build and the tests, and astro dev warns', () => {
   for (const mode of ['production', 'test']) {
-    expect(() => checkUnpathedContent([entry], [], mode), mode).toThrow(/^Fact checks:\n- glossary entry "router" has no fact-check path yet/);
-    expect(() => checkUnpathedContent([], [makeCertTrack()], mode), mode).toThrow(/^Fact checks:\n- track "example-cert", lesson "lesson-a"/);
+    expect(() => checkUnpathedContent([makeCertTrack()], mode), mode).toThrow(/^Fact checks:\n- track "example-cert", lesson "lesson-a"/);
   }
-  expect(() => checkUnpathedContent([], [], 'production')).not.toThrow();
+  expect(() => checkUnpathedContent([], 'production')).not.toThrow();
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   try {
-    expect(() => checkUnpathedContent([entry], [makeCertTrack()], 'development')).not.toThrow();
-    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/^Fact checks:\n- glossary entry "router"[\s\S]*example-cert[\s\S]*astro dev goes on; npm run build and the tests refuse these entries until a fact-check path is built for their kind \(docs\/direction\.md, decision 2\.16\)\.$/));
+    expect(() => checkUnpathedContent([makeCertTrack()], 'development')).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/^Fact checks:\n- track "example-cert"[\s\S]*astro dev goes on; npm run build and the tests refuse these mappings until a fact-check path is built for their kind \(docs\/direction\.md, decision 2\.16\)\.$/));
     expect(warn.mock.calls[0]![0]).not.toContain('until the fact-checker passes them');
   } finally {
     warn.mockRestore();

@@ -1,11 +1,12 @@
+import { partsOf, type GlossaryGroup } from '../glossary-group';
 import type { Lesson } from '../schema';
 import { SOURCES, type SourceRegistry } from '../sources';
-import { checkPair, checkReport, reportPath } from './gate';
+import { changedSinceChecked, checkPair, checkReport, reportPath } from './gate';
 import { pageText } from './pagetext';
 import { checkQuotes, stampItems, type SourceFile } from './quotecheck';
 import { parseReport } from './report';
 import { itemsToJudge, nearPass, recheckMessages, recheckPath, renderRecheck, RECHECK_MAX_ITEMS } from './recheck';
-import { claimSheet, itemHashes, limitsHash, renderSheet, type ClaimSheet } from './sheet';
+import { claimSheet, groupSheet, isGroupSlug, itemHashes, limitsHash, renderSheet, GLOSSARY_SLUG_PREFIX, type ClaimSheet } from './sheet';
 
 /**
  * `npm run fact-check -- <slug>` prints a lesson's claim sheet for the fact-checker, `-- <slug> --check` checks the
@@ -27,12 +28,21 @@ export const CANARY_SLUG = 'fact-check-canary';
 export const canaryReportPath = 'docs/fact-checks/canary/fact-check-canary.md';
 export const canaryRecheckPath = 'docs/fact-checks/canary/fact-check-canary.recheck.md';
 
+/** The canary glossary group (spec §7): real sources, planted faults, never on the site, and never read by the build gate. */
+export const CANARY_GROUP_ID = 'fact-check-canary';
+export const canaryGroupReportPath = 'docs/fact-checks/canary/glossary-fact-check-canary.md';
+export const canaryGroupRecheckPath = 'docs/fact-checks/canary/glossary-fact-check-canary.recheck.md';
+
 export interface FactCheckDeps {
   getLesson(slug: string): Promise<Lesson | undefined>;
   sources: SourceRegistry;
   /** A file's text, by its path from the repository root; `undefined` when there is no such file. */
   readFile(path: string): string | undefined;
   loadCanary(): Promise<{ lesson: Lesson; sources: SourceRegistry } | undefined>;
+  /** One glossary group's file, by its id; `undefined` when there is none. Only the asked-for file is loaded. */
+  getGlossaryGroup?(id: string): Promise<GlossaryGroup | undefined>;
+  /** The canary glossary group, the sources it is checked against, and the lessons its ties name. */
+  loadCanaryGroup?(): Promise<{ group: GlossaryGroup; sources: SourceRegistry; lessons: Lesson[] } | undefined>;
   /** The files in a folder, with their text; `undefined` when there is no such folder. Only the script can read one. */
   readFolder?(folder: string): SourceFile[] | undefined;
   /** Writes a file, by its path from the repository root. Only the script can write one. */
@@ -45,7 +55,10 @@ const USAGE = [
   'Usage: npm run fact-check -- <slug> [--check | --quotes <folder>]',
   '       npm run fact-check -- <slug> --stamp',
   '       npm run fact-check -- <slug> --recheck [--check | --quotes <folder>]',
+  '       <slug> is a lesson\'s slug, or glossary/<group> for a glossary group',
 ].join('\n');
+
+const noun = (slug: string): string => (isGroupSlug(slug) ? 'group' : 'lesson');
 
 const localDay = (): string => {
   const now = new Date();
@@ -59,6 +72,8 @@ const fromRoot = (globbed: Record<string, string>, prefix: string): Record<strin
 const lessonModules = import.meta.glob<Lesson>(['../lessons/*.ts', '!../lessons/*.test.ts'], { import: 'default' });
 const files = fromRoot(import.meta.glob<string>('../../../docs/fact-checks/**/*.md', { query: '?raw', import: 'default', eager: true }), '../../../');
 const canaryModule = import.meta.glob<{ CANARY_LESSON: Lesson; CANARY_SOURCES: SourceRegistry }>('./canary/lesson.ts');
+const groupModules = import.meta.glob<GlossaryGroup>(['../glossary-groups/*.ts', '!../glossary-groups/*.test.ts'], { import: 'default' });
+const canaryGroupModule = import.meta.glob<{ CANARY_GROUP: GlossaryGroup }>('./canary/glossary.ts');
 
 export const DEFAULT_DEPS: FactCheckDeps = {
   getLesson: async (slug) => {
@@ -73,7 +88,49 @@ export const DEFAULT_DEPS: FactCheckDeps = {
     const { CANARY_LESSON, CANARY_SOURCES } = await load();
     return { lesson: CANARY_LESSON, sources: CANARY_SOURCES };
   },
+  getGlossaryGroup: async (id) => {
+    const path = `../glossary-groups/${id}.ts`;
+    return Object.hasOwn(groupModules, path) ? groupModules[path]!() : undefined;
+  },
+  loadCanaryGroup: async () => {
+    const load = canaryGroupModule['./canary/glossary.ts'];
+    const loadLesson = canaryModule['./canary/lesson.ts'];
+    if (load === undefined || loadLesson === undefined) return undefined;
+    const { CANARY_GROUP } = await load();
+    const { CANARY_LESSON, CANARY_SOURCES } = await loadLesson();
+    return { group: CANARY_GROUP, sources: CANARY_SOURCES, lessons: [CANARY_LESSON] };
+  },
 };
+
+const GROUP_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** The claim sheet of a glossary group and where its reports live, or why there is none. */
+async function groupTarget(id: string, deps: FactCheckDeps): Promise<{ sheet: ClaimSheet; path: string; rePath: string } | { error: string }> {
+  const none = { error: `No glossary group "${id}".` };
+  if (!GROUP_ID.test(id)) return none;
+  let group: GlossaryGroup | undefined;
+  let sources = deps.sources;
+  let lessons: Lesson[] = [];
+  let path = reportPath(`${GLOSSARY_SLUG_PREFIX}${id}`);
+  let rePath = recheckPath(`${GLOSSARY_SLUG_PREFIX}${id}`);
+  if (id === CANARY_GROUP_ID) {
+    const canary = await deps.loadCanaryGroup?.();
+    if (canary === undefined) return { error: 'The canary glossary group does not exist yet.' };
+    ({ group, sources, lessons } = canary);
+    path = canaryGroupReportPath;
+    rePath = canaryGroupRecheckPath;
+  } else {
+    group = await deps.getGlossaryGroup?.(id);
+    if (group === undefined) return none;
+    const slugs = [...new Set(group.entries.flatMap((e) => partsOf(e).flatMap((p) => p.lessons.map((t) => t.lesson))))];
+    lessons = (await Promise.all(slugs.map((slug) => deps.getLesson(slug)))).flatMap((l) => l ?? []);
+  }
+  try {
+    return { sheet: groupSheet(group, sources, lessons), path, rePath };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
 
 export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT_DEPS): Promise<{ code: number; out: string }> {
   const check = args.includes('--check');
@@ -87,28 +144,30 @@ export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT
   const [slug] = rest;
   if (slug === undefined || rest.length !== 1 || slug.startsWith('-')) return { code: 1, out: USAGE };
 
-  let lesson: Lesson;
-  let sources = deps.sources;
+  let sheet: ClaimSheet;
   let path = reportPath(slug);
   let rePath = recheckPath(slug);
-  if (slug === CANARY_SLUG) {
+  if (isGroupSlug(slug)) {
+    const target = await groupTarget(slug.slice(GLOSSARY_SLUG_PREFIX.length), deps);
+    if ('error' in target) return { code: 1, out: target.error };
+    ({ sheet, path, rePath } = target);
+  } else if (slug === CANARY_SLUG) {
     const canary = await deps.loadCanary();
     if (canary === undefined) return { code: 1, out: 'The canary lesson does not exist yet.' };
-    ({ lesson, sources } = canary);
+    sheet = claimSheet(canary.lesson, canary.sources);
     path = canaryReportPath;
     rePath = canaryRecheckPath;
   } else {
     const found = await deps.getLesson(slug);
     if (found === undefined) return { code: 1, out: `No lesson "${slug}".` };
-    lesson = found;
+    sheet = claimSheet(found, deps.sources);
   }
 
-  const sheet = claimSheet(lesson, sources);
   if (stamp) return stampReport(deps, sheet, path);
   if (recheck && !check && folder === undefined) return printRecheck(deps, sheet, path, rePath);
   if (recheck && check) {
     const reRaw = deps.readFile(rePath);
-    if (reRaw === undefined) return { code: 1, out: `no re-check report at ${rePath}; run the fact-checker on the lesson as a re-check (docs/content-model.md §8).` };
+    if (reRaw === undefined) return { code: 1, out: `no re-check report at ${rePath}; run the fact-checker on the ${noun(sheet.slug)} as a re-check (docs/content-model.md §8).` };
     const issues = checkPair(sheet, deps.readFile(path), reRaw, path, rePath);
     return issues.length === 0 ? { code: 0, out: `Report OK: ${path} and ${rePath}` } : { code: 1, out: issues.join('\n') };
   }
@@ -127,7 +186,7 @@ export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT
     if (recheck) return { code: 0, out: done };
     return {
       code: 0,
-      out: result.items === undefined ? `${done}, but no items record: the report's hash is not the lesson's, so run --stamp at the commit it was checked on if a re-check may follow` : `${done}, with the items record (${Object.keys(result.items).length} items) and the limits hash`,
+      out: result.items === undefined ? `${done}, but no items record: the report's hash is not the ${noun(sheet.slug)}'s, so run --stamp at the commit it was checked on if a re-check may follow` : `${done}, with the items record (${Object.keys(result.items).length} items) and the limits hash`,
     };
   }
   if (!check) return { code: 0, out: `${renderSheet(sheet)}\nWrite your report to: ${path}` };
@@ -144,9 +203,10 @@ function stampReport(deps: FactCheckDeps, sheet: ClaimSheet, path: string): { co
   if (header === undefined) return { code: 1, out: issues.map((i) => `${path}: cannot be read: ${i}`).join('\n') };
   if (header.slug !== sheet.slug) return { code: 1, out: `${path}: is the report for "${header.slug}", not "${sheet.slug}"; fix its slug or its file name.` };
   if (header.hash !== sheet.hash) {
+    const thing = noun(sheet.slug);
     return {
       code: 1,
-      out: `${path}: the lesson has changed since it was checked (report ${header.hash.slice(0, 12)}…, lesson ${sheet.hash.slice(0, 12)}…); the items record describes the lesson as it was checked, so run --stamp at the commit it was checked on, or run a full check (docs/content-model.md §8).`,
+      out: `${changedSinceChecked(path, sheet, header.hash).replace(/; run the fact-checker on it again \(docs\/content-model\.md §8\)\.$/, '')}; the items record describes the ${thing} as it was checked, so run --stamp at the commit it was checked on, or run a full check (docs/content-model.md §8).`,
     };
   }
   const items = itemHashes(sheet);
@@ -158,17 +218,17 @@ function stampReport(deps: FactCheckDeps, sheet: ClaimSheet, path: string): { co
 function printRecheck(deps: FactCheckDeps, sheet: ClaimSheet, path: string, rePath: string): { code: number; out: string } {
   const refuse = (out: string) => ({ code: 1, out });
   const raw = deps.readFile(path);
-  if (raw === undefined) return refuse(`no full fact-check report at ${path}; a re-check is made against a full check, so run the fact-checker on the lesson first (docs/content-model.md §8).`);
+  if (raw === undefined) return refuse(`no full fact-check report at ${path}; a re-check is made against a full check, so run the fact-checker on the ${noun(sheet.slug)} first (docs/content-model.md §8).`);
   const { header, issues } = parseReport(raw);
   if (header === undefined) return refuse(issues.map((i) => `${path}: cannot be read: ${i}`).join('\n'));
   if (header.slug !== sheet.slug) return refuse(`${path}: is the report for "${header.slug}", not "${sheet.slug}"; fix its slug or its file name.`);
   if (header.items === undefined || header.limits === undefined) return refuse(recheckMessages.noItems(path, sheet.slug));
   const near = nearPass(header.verdicts);
-  if (!near.ok) return refuse(recheckMessages.notNearPass(path, near));
+  if (!near.ok) return refuse(recheckMessages.notNearPass(path, near, sheet.slug));
   if (header.hash === sheet.hash) {
-    return refuse(`Nothing changed since the full check (${path} has the lesson's hash); there is nothing to re-check. Check the report with npm run fact-check -- ${sheet.slug} --check.`);
+    return refuse(`Nothing changed since the full check (${path} has the ${noun(sheet.slug)}'s hash); there is nothing to re-check. Check the report with npm run fact-check -- ${sheet.slug} --check.`);
   }
-  if (header.limits !== limitsHash(sheet.overrides)) return refuse(recheckMessages.overrides(path, limitsHash(sheet.overrides), header.limits));
+  if (header.limits !== limitsHash(sheet.overrides)) return refuse(recheckMessages.overrides(path, limitsHash(sheet.overrides), header.limits, sheet.slug));
   const judging = itemsToJudge(header.items, sheet);
   if (judging.judge.length > RECHECK_MAX_ITEMS) return refuse(recheckMessages.tooMany(path, judging.judge.length));
   return { code: 0, out: renderRecheck(sheet, header.hash, judging, rePath) };
