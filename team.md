@@ -663,4 +663,4 @@ Planned on 2026-11-12 in a fresh session; direction 2.37, `plan.md`. The plan an
 | Unit | Agent | Model | Tries | Growth | Read in all | Result |
 |---|---|---|---|---|---|---|
 | S10 | scout | Haiku | 1 | 246,512 | 9,563,194 | Done before the go: `prototypes/s10-job-9-facts.md`, saved by the orchestrator from the scout's reply (the scout does not write files). 40 questions in 18 lessons; §6.6 word for word; four places that promise nothing is saved; the legacy lift is what 27 test files build fixtures with; "Not checked yet" still shows in `astro dev`. |
-| Plan | orchestrator | Fable 5.2 | 1 | not counted | not counted | `plan.md`: fifteen decisions, two design units (D6, D7), four build units (B7 to B10). Waiting for the owner's go. |
+| Plan | orchestrator | Fable 5.2 | 1 | not counted | not counted | `plan.md`: fifteen decisions, two design units (D6, D7), four build units (B7 to B10). The owner said "Go" on 2026-11-12 (`946d186`). |

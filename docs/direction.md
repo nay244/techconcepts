@@ -129,7 +129,7 @@ Status: What is UDP is cited and checked (2026-11-11), the first of the 17; `doc
 
 Design and build the standalone Practice page (option 3) over the 40 existing questions, with the private missed-questions list from the earlier direction doc §6.6.
 
-Status: planned as job 9 on 2026-11-12 (decision 2.37; `plan.md`), waiting for the owner's go. The plan and the design are made on Fable 5.2 by the owner's word for this job; the build runs on the usual models. Two design units (the page; what the rest of the site changes) come to the owner at the design gate before anything is built. The legacy path is removed in the same job, as a build unit of its own.
+Status: planned as job 9 on 2026-11-12 (decision 2.37; `plan.md`); the owner said go that day. The plan and the design are made on Fable 5.2 by the owner's word for this job; the build runs on the usual models. Two design units (the page; what the rest of the site changes) come to the owner at the design gate before anything is built. The legacy path is removed in the same job, as a build unit of its own.
 
 ### After the revamp
 
