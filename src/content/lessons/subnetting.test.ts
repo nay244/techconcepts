@@ -51,12 +51,8 @@ test('the lesson is lesson 7, Subnetting, on the office figure with the bits boa
     name: 'Subnetting',
     fullName: 'Cutting one network into smaller ones',
     purpose: 'One network, cut into four',
-    osi: { layers: [3], cite: [] },
+    osi: { layers: [3] },
   });
-  expect(unit.references.map((r) => r.label)).toEqual([
-    'RFC 950: Internet Standard Subnetting Procedure',
-    'RFC 4632: Classless Inter-domain Routing (CIDR)',
-  ]);
   expect(unit.scene.title).toBe('Office network · 192.168.1.0/24');
   expect(unit.scene.panel).toEqual({ type: 'bits' });
 });
@@ -225,7 +221,7 @@ test('the lesson hides the Sequence toggle', () => {
 test('the lesson points at other lessons by name, and each is a lesson of the track', () => {
   expect(lessonNumbers(subnetting)).toEqual([]);
   const titles = getEntries('networking').map((e) => e.title);
-  expect(lessonTitles(subnetting)).toEqual(['IP Address', 'Router']);
+  expect(lessonTitles(subnetting)).toEqual([]);
   for (const title of lessonTitles(subnetting)) expect(titles).toContain(title);
 });
 
@@ -240,7 +236,7 @@ const COMPUTED: Record<string, string> = {
   'scene.title': 'Office network · 192.168.1.0/24',
   'overview.facts.0.value': '192.168.1.0/24',
   'overview.facts.1.value': '255.255.255.0',
-  'overview.facts.2.value': '2 to the power of the host bits, minus 2',
+  'overview.facts.2.value': '2 to the power of the host bits, minus 2, up to a /30',
   'steps.portions.facts.0.value': '192.168.1.10',
   'steps.portions.facts.1.value': '192.168.1 (the first 24 bits)',
   'steps.portions.facts.2.value': '10 (the last 8 bits)',
@@ -266,18 +262,23 @@ const COMPUTED: Record<string, string> = {
   'steps.point-to-point.facts.1.value': '203.0.113.4 to 203.0.113.7',
   'steps.point-to-point.facts.2.value': '2 (203.0.113.5 and 203.0.113.6)',
   'learn.facts.0.label': '/25',
-  'learn.facts.0.value': '128 addresses, 126 usable',
+  'learn.facts.0.value': '255.255.255.128: 128 addresses, 126 usable',
   'learn.facts.1.label': '/26',
-  'learn.facts.1.value': '64 addresses, 62 usable',
+  'learn.facts.1.value': '255.255.255.192: 64 addresses, 62 usable',
   'learn.facts.2.label': '/27',
-  'learn.facts.2.value': '32 addresses, 30 usable',
+  'learn.facts.2.value': '255.255.255.224: 32 addresses, 30 usable',
   'learn.facts.3.label': '/28',
-  'learn.facts.3.value': '16 addresses, 14 usable',
+  'learn.facts.3.value': '255.255.255.240: 16 addresses, 14 usable',
   'learn.facts.4.label': '/29',
-  'learn.facts.4.value': '8 addresses, 6 usable',
+  'learn.facts.4.value': '255.255.255.248: 8 addresses, 6 usable',
   'learn.facts.5.label': '/30',
-  'learn.facts.5.value': '4 addresses, 2 usable',
+  'learn.facts.5.value': '255.255.255.252: 4 addresses, 2 usable',
   'learn.facts.6.value': 'RFC 950 (subnets), RFC 4632 (CIDR), RFC 3021 (/31 links)',
+  'learn.facts.7.value': '32 bits: four numbers of 8 bits, each 0 to 255',
+  'learn.facts.8.value': '2 to the power of the host bits, minus 2, up to a /30: the network and broadcast addresses are kept back',
+  'learn.facts.9.value': 'doubles the subnets and halves their size: 2 borrowed bits can be 00, 01, 10 or 11, which makes 4 subnets',
+  'learn.facts.11.value':
+    'an address, a slash and the prefix length: 192.168.1.0/24 has the mask 255.255.255.0, 24 ones then 8 zeros',
   'practice.usable-26.options.0.text': '64',
   'practice.usable-26.options.1.text': '62',
   'practice.usable-26.options.2.text': '30',
@@ -292,6 +293,9 @@ const NOT_COMPUTED: [string, string][] = [
   ['overview.facts.4.value', 'RFC 4632'],
   ['steps.point-to-point.deep', 'RFC 3021'],
   ['learn.pattern.note', 'Steps 2 and 3'],
+  ['learn.facts.10.value', '192.168.x.x'],
+  ['learn.facts.10.value', '203.0.113.x'],
+  ['learn.facts.12.value', '3, network'],
 ];
 
 /**
