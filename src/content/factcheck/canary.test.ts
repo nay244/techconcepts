@@ -30,7 +30,6 @@ const sheet = () => claimSheet(CANARY_LESSON, CANARY_SOURCES);
 
 test('the canary is a valid cited lesson outside the site', () => {
   expect(CANARY_LESSON.slug).toBe(CANARY_SLUG);
-  expect(CANARY_LESSON.origin).toBe('cited');
   expect(getLesson(CANARY_SLUG)).toBeUndefined();
 });
 

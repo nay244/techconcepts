@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
-import type { LegacyLessonInput, LegacyUnitInput } from '../content/legacy';
 import type { Board, Lesson, MessageEvent, SceneEvent } from '../content/schema';
-import { liftedFixture, makeLesson, makeTwoUnitLesson, makeUnit } from '../content/test-fixtures';
+import { liftedFixture, makeLesson, makeTwoUnitLesson, makeUnit, type TerseLessonInput, type TerseUnitInput } from '../content/test-fixtures';
 import { applyTableEvent, initialTables } from './tables';
 import {
   appliedEvents,
@@ -15,8 +14,12 @@ import {
   type Slot,
 } from './timeline';
 
-/** Goes through the legacy schema, so a typo in a test lesson fails loudly instead of testing nothing. */
-const build = (input: LegacyLessonInput): Lesson => liftedFixture(input);
+/** Goes through the fixtures' schema, so a typo in a test lesson fails loudly instead of testing nothing. */
+const build = (input: TerseLessonInput): Lesson => liftedFixture(input);
+
+test('the fixtures’ schema refuses a key it does not know, so a typo in a test lesson cannot pass', () => {
+  expect(() => liftedFixture({ ...makeLesson(), units: [{ ...makeUnit(), stepz: [] }] } as never)).toThrow();
+});
 
 /** The row the fixture's step 2 adds to the neighbor table. */
 const LAPTOP_ROW = { ip: '192.168.1.10', mac: '00:00:5E:00:53:0A' };
@@ -28,7 +31,7 @@ const PHONE_ROW = { ip: '192.168.1.20', mac: '00:00:5E:00:53:0B' };
  * m1 · m2, t-add · t-match, n1 · m3 (dropped) · m4.
  * Positions: alpha 0 Overview, 1–5 steps, 6 Learn, 7 Practice; beta 8 Overview, 9–13 steps, 14 Learn, 15 Practice.
  */
-function twoUnits(): LegacyLessonInput {
+function twoUnits(): TerseLessonInput {
   const input = makeTwoUnitLesson();
   const panel = input.units[1]!.scene.panel;
   if (panel?.type !== 'table') throw new Error('the fixture should have a table panel');
@@ -297,7 +300,7 @@ test('a unit’s tables are its panel’s: one for a table, rules and conns for 
     conns: { rows: [{ who: 'laptop' }], highlight: null, missed: [] },
   });
 
-  const withoutTables = (panel: LegacyUnitInput['scene']['panel']): Lesson => {
+  const withoutTables = (panel: TerseUnitInput['scene']['panel']): Lesson => {
     const input = makeLesson({ figure: 'subnet' });
     const u = input.units[0]!;
     u.scene.panel = panel;

@@ -19,9 +19,7 @@ export { slugSchema };
  * OSI layers cite primary sources (`sources.ts`). Watch and the scene cite
  * nothing of their own: each part carries a `backing` that traces it to cited
  * Learn statements, or flags it as an analogy or as example data. Citation
- * lists default to empty here; the cited lessons' rules require them. The four
- * ready lessons are still written in the older shape and lifted into this one
- * (`legacy.ts`).
+ * lists default to empty here; the cited lessons' rules require them.
  *
  * A lesson has one or more units. Most lessons have one; How the Internet
  * Works has one per protocol, each with its own Overview, Watch steps, Learn
@@ -484,8 +482,8 @@ export type Step = z.infer<typeof stepSchema>;
 export type Learn = z.infer<typeof learnSchema>;
 export type Question = z.infer<typeof questionSchema>;
 export type Unit = z.infer<typeof unitSchema>;
-/** A lesson as the site uses it: written in the cited shape, or lifted from the legacy one (`legacy.ts`). */
-export type Lesson = z.output<typeof lessonSchema> & { origin: 'cited' | 'legacy' };
+/** A lesson as the site uses it: written in the cited shape. */
+export type Lesson = z.output<typeof lessonSchema>;
 export type ConceptTrack = z.infer<typeof conceptTrackSchema>;
 export type CertificationTrack = z.infer<typeof certificationTrackSchema>;
 export type Objective = z.infer<typeof objectiveSchema>;

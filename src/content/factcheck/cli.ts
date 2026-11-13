@@ -100,9 +100,6 @@ export async function runFactCheck(args: string[], deps: FactCheckDeps = DEFAULT
   } else {
     const found = await deps.getLesson(slug);
     if (found === undefined) return { code: 1, out: `No lesson "${slug}".` };
-    if (found.origin === 'legacy') {
-      return { code: 1, out: `"${slug}" is still on the legacy list; move it to the cited shape before checking it (docs/content-model.md §4).` };
-    }
     lesson = found;
   }
 

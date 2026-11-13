@@ -17,8 +17,8 @@ export interface NumberedSources {
 }
 
 /**
- * A unit's sources numbered for the reader: 1 is the first source Learn cites, top to bottom. A legacy lesson's claims
- * carry no citations, so its list keeps its written order and gets no numbers.
+ * A unit's sources numbered for the reader: 1 is the first source Learn cites, top to bottom. A unit whose references are not
+ * all identified by a source id keeps its written order and gets no numbers.
  */
 export function numberedSources(unit: Unit): NumberedSources {
   const byId = new Map(unit.references.flatMap((r) => (r.source === undefined ? [] : [[r.source, r] as const])));

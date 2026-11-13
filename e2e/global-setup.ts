@@ -1,10 +1,10 @@
 import { chromium, type FullConfig } from '@playwright/test';
-import { isChecked, LESSONS_ENV, nodeEnv, type ReadyLesson } from './support';
+import { LESSONS_ENV, nodeEnv, type ReadyLesson } from './support';
 
 /**
  * Finds the ready lessons on the built site, so no spec keeps a list of its own: the Tracks page links to each track
- * with lessons, and each track page's route links to them from its ready stops. Which are checked comes from the closed legacy list, not from the page; the page's stamps
- * only have to agree with it. Playwright starts the web server (which builds the site) before this runs, and loads the specs after it, so they read the list from the environment
+ * with lessons, and each track page's route links to them from its ready stops. Every ready lesson has passed the fact-check, so each stop's stamp must say
+ * so. Playwright starts the web server (which builds the site) before this runs, and loads the specs after it, so they read the list from the environment
  * as they are collected.
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
@@ -21,7 +21,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     const lessons: ReadyLesson[] = [];
     for (const path of trackPaths) {
       await page.goto(path);
-      const found: (Omit<ReadyLesson, 'checked'> & { stamp: string })[] = await page.locator('main .route li.stop:not(.stop--soon)').evaluateAll((stops) =>
+      const found: (ReadyLesson & { stamp: string })[] = await page.locator('main .route li.stop:not(.stop--soon)').evaluateAll((stops) =>
         stops.map((stop) => {
           const link = stop.querySelector<HTMLAnchorElement>('h3 a');
           if (link === null) throw new Error('A ready lesson stop has no link.');
@@ -35,13 +35,10 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         }),
       );
       if (found.length === 0) throw new Error(`The track page at ${path} links to no ready lesson.`);
-      // The truth is the closed legacy list; the page only has to agree with it.
+      // A lesson builds only with a passing fact-check, so every ready stop's stamp says it was checked.
       for (const { stamp, ...lesson } of found) {
-        const checked = isChecked(lesson.slug);
-        if (/^Checked\b/.test(stamp) !== checked) {
-          throw new Error(`${lesson.path} is ${checked ? 'off' : 'on'} the legacy list but its stop says "${stamp}".`);
-        }
-        lessons.push({ ...lesson, checked });
+        if (!/^Checked\b/.test(stamp)) throw new Error(`${lesson.path}'s stop says "${stamp}", not that it was checked.`);
+        lessons.push(lesson);
       }
     }
     for (const lesson of lessons) {

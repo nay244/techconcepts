@@ -8,7 +8,7 @@ import { loadRenderers } from 'astro:container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
 import { expect, test, vi } from 'vitest';
-import { getEntries, getLesson, trackTotals } from '../content/registry';
+import { checkedOn, getEntries, trackTotals } from '../content/registry';
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence } from '../lib/about';
 import About from '../pages/about.astro';
@@ -50,7 +50,7 @@ test('the tracks still to come start with CompTIA A+, the one being written', as
 test('the facts section says how many lessons have passed the fact-check, and makes no claim about exam tags', async () => {
   const doc = await about();
   const slugs = [...new Set(tracks.flatMap((t) => getEntries(t.id)).flatMap((e) => (e.available ? [e.slug] : [])))];
-  const checked = slugs.filter((slug) => getLesson(slug)!.origin === 'cited').length;
+  const checked = slugs.filter((slug) => checkedOn(slug) !== null).length;
   const facts = words(doc.querySelector('#facts'));
   expect(facts).toContain('Each lesson lists the standards it draws on under Sources at the end of Learn.');
   expect(facts).toContain(factCheckSentence(checked, slugs.length));

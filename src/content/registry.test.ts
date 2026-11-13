@@ -1,11 +1,8 @@
 import { expect, test, vi } from 'vitest';
 import { CERT_TAGS } from './certs';
-import { defineTrack, validateLesson } from './define';
-import { LEGACY_LESSONS, validateLegacyLesson } from './legacy';
-import { checkLimits } from './limits';
+import { defineTrack, definedWith, validateLesson } from './define';
 import {
   buildEntries,
-  checkLegacyList,
   checkFactCheckReports,
   checkUnpathedContent,
   checkTracks,
@@ -20,7 +17,7 @@ import {
   trackTotals,
 } from './registry';
 import { lessonSchema, type Lesson, type Track } from './schema';
-import type { SourceRegistry } from './sources';
+import { SOURCES, type SourceRegistry } from './sources';
 import { FIXTURE_LIMITS, FIXTURE_SOURCES, liftedFixture, makeCertTrack, makeCitedLesson, makeLesson, makeTwoUnitLesson } from './test-fixtures';
 import { comingSoonTracks, internetTrack, networkingTrack, tracks } from './tracks';
 
@@ -35,8 +32,8 @@ function withoutCues<L extends { units: { steps: { events: { id: string; cues?: 
   return l;
 }
 
-/** A fixture as a lesson file makes it, through the legacy path's validator, so the registry accepts it. */
-const definedFor = (slug: string, title: string) => validateLegacyLesson(withoutCues(makeLesson({ slug, title })));
+/** The cited fixture as a lesson file makes it, through `validateLesson` against the fixture sources, so `lessonsFromModules` accepts it when it is given `FIXTURE_SOURCES`. */
+const definedFor = (slug: string, title: string) => validateLesson(withoutCues({ ...makeCitedLesson(), slug, title }), FIXTURE_SOURCES);
 
 /** A lone track is its own home. */
 const home = () => 'networking';
@@ -228,48 +225,22 @@ test('every lesson file that exists is available in the registry under its slug'
   }
 });
 
-// ------------------------------------------------------------ the closed legacy list
+// ------------------------------------------------------------ every ready lesson was defined
 
-test('the ready lessons are the legacy ones on the closed list and the cited ones, and every legacy lesson is listed', () => {
-  const legacy = LEGACY_LESSONS.map((s) => getLesson(s));
-  expect(legacy.map((l) => l?.origin)).toEqual(LEGACY_LESSONS.map(() => 'legacy'));
+test('every ready lesson is one `validateLesson` returned, checked against the real source list', () => {
   const ready = tracks.flatMap((t) => getEntries(t.id)).filter((e) => e.available).map((e) => getLesson(e.slug)!);
-  // One lesson may sit in two tracks, so a slug is counted once.
-  const slugs = [...new Set(ready.map((l) => l.slug))];
-  const readyLegacy = slugs.filter((slug) => getLesson(slug)!.origin === 'legacy');
-  const readyCited = slugs.filter((slug) => getLesson(slug)!.origin !== 'legacy');
-  // The ready legacy lessons are exactly the listed ones: none missing, none unlisted, none twice.
-  expect([...readyLegacy].sort()).toEqual([...LEGACY_LESSONS].sort());
-  expect(readyCited).toContain('osi-model');
-  for (const slug of readyCited) expect(getLesson(slug)!.origin, slug).toBe('cited');
-});
-
-test('the build stops on a legacy lesson off the list, and on a listed slug whose lesson is not legacy', () => {
-  const ready = LEGACY_LESSONS.map((slug) => liftedFixture(makeLesson({ slug })));
-  expect(() => checkLegacyList(ready)).not.toThrow();
-  // A new lesson cannot take the legacy path.
-  expect(() => checkLegacyList([...ready, liftedFixture(makeLesson({ slug: 'osi-model' }))])).toThrow(
-    /"osi-model" is a legacy lesson, but it is not on the legacy list/,
-  );
-  // A lesson that has moved to the cited shape leaves the list: the list only shrinks.
-  // The lesson to move is the first on the list, with its legacy fixture. `checkLegacyList` reads the list itself, so
-  // with the list empty there is no listed slug to move or lose, and the two checks below have nothing to say.
-  const moved = (LEGACY_LESSONS as readonly string[])[0];
-  if (moved === undefined) return;
-  const migrated = ready.map((l) => (l.slug === moved ? { ...l, origin: 'cited' as const } : l));
-  expect(() => checkLegacyList(migrated)).toThrow(new RegExp(`"${moved}" is on the legacy list, but its lesson is cited`));
-  // So does a slug no lesson has any more.
-  expect(() => checkLegacyList(ready.filter((l) => l.slug !== moved))).toThrow(new RegExp(`"${moved}" is on the legacy list, but no lesson has that slug`));
+  expect(ready.length).toBeGreaterThan(0);
+  for (const lesson of ready) expect(definedWith(lesson), lesson.slug).toBe(SOURCES);
 });
 
 test('lessonsFromModules keys lessons by file name (slug)', () => {
   const dhcp = definedFor('dhcp', 'DHCP');
   const router = definedFor('router', 'Router');
-  expect(lessonsFromModules({ './lessons/dhcp.ts': dhcp, './lessons/router.ts': router })).toEqual({ dhcp, router });
+  expect(lessonsFromModules({ './lessons/dhcp.ts': dhcp, './lessons/router.ts': router }, FIXTURE_SOURCES)).toEqual({ dhcp, router });
 });
 
 test('lessonsFromModules requires the file name to equal the slug', () => {
-  expect(() => lessonsFromModules({ './lessons/dhcp.ts': definedFor('router', 'Router') })).toThrow(/dhcp.*router/s);
+  expect(() => lessonsFromModules({ './lessons/dhcp.ts': definedFor('router', 'Router') }, FIXTURE_SOURCES)).toThrow(/dhcp.*router/s);
 });
 
 test('lessonsFromModules accepts a cited lesson checked against the source list it is given', () => {
@@ -301,27 +272,20 @@ test('a lesson checked against a hand-built source list that allows Wikipedia ne
   expect(() => lessonsFromModules({ './lessons/cited-lesson.ts': lesson })).toThrow(`./lessons/cited-lesson.ts: ${OTHER_LIST}`);
 });
 
-test('a legacy lesson passes, whichever source list the registry checks against', () => {
-  const dhcp = definedFor('dhcp', 'DHCP');
-  expect(lessonsFromModules({ './lessons/dhcp.ts': dhcp })).toEqual({ dhcp });
-  expect(lessonsFromModules({ './lessons/dhcp.ts': dhcp }, FIXTURE_SOURCES)).toEqual({ dhcp });
-});
-
-const NOT_DEFINED =
-  'the lesson was not made with defineLesson (or defineLegacyLesson for a lesson on the legacy list); wrap it so every rule runs.';
+const NOT_DEFINED = 'the lesson was not made with defineLesson; wrap it so every rule runs.';
 
 test('lessonsFromModules rejects a lesson object built by hand, which skipped every rule', () => {
   // A hand-built lesson in the cited shape with an uncited Learn statement: only the gate stops it.
-  const raw: Lesson = { ...lessonSchema.parse(makeCitedLesson()), origin: 'cited' };
+  const raw: Lesson = lessonSchema.parse(makeCitedLesson());
   raw.units[0]!.learn.lead[0]!.cite = [];
   expect(() => lessonsFromModules({ './lessons/cited-lesson.ts': raw })).toThrow(`./lessons/cited-lesson.ts: ${NOT_DEFINED}`);
-  // A legacy lesson lifted without its checks is stopped too.
+  // A fixture lifted without its checks is stopped too.
   expect(() => lessonsFromModules({ './lessons/dhcp.ts': lessonFor('dhcp', 'DHCP') })).toThrow(`./lessons/dhcp.ts: ${NOT_DEFINED}`);
 });
 
 test('lessonsFromModules rejects a copy of a defined lesson, since a copy can be changed after its checks', () => {
   const defined = definedFor('dhcp', 'DHCP');
-  expect(() => lessonsFromModules({ './lessons/dhcp.ts': { ...defined } })).toThrow(`./lessons/dhcp.ts: ${NOT_DEFINED}`);
+  expect(() => lessonsFromModules({ './lessons/dhcp.ts': { ...defined } }, FIXTURE_SOURCES)).toThrow(`./lessons/dhcp.ts: ${NOT_DEFINED}`);
 });
 
 test('lessonsFromModules rejects a default export that is not a lesson', () => {
@@ -331,7 +295,7 @@ test('lessonsFromModules rejects a default export that is not a lesson', () => {
 test('a file one folder deeper (a part of a lesson) is not a lesson path, nor is a track folder', () => {
   const http = lessonFor('http', 'HTTP');
   expect(() => lessonsFromModules({ './lessons/how-the-internet-works/http.ts': http })).toThrow(/Unexpected lesson file path/);
-  expect(() => lessonsFromModules({ './lessons/networking/dhcp.ts': definedFor('dhcp', 'DHCP') })).toThrow(/Unexpected lesson file path/);
+  expect(() => lessonsFromModules({ './lessons/networking/dhcp.ts': definedFor('dhcp', 'DHCP') }, FIXTURE_SOURCES)).toThrow(/Unexpected lesson file path/);
 });
 
 // ------------------------------------------------------------ shared lessons
@@ -431,18 +395,6 @@ test('Networking is a concept track with today’s limits', () => {
   expect(getTrack('networking')).toMatchObject({ type: 'concept', limits: FIXTURE_LIMITS });
 });
 
-test('none of the four real lessons carries a backing', () => {
-  for (const slug of LEGACY_LESSONS) expect(JSON.stringify(getLesson(slug)), slug).not.toContain('"backing"');
-});
-
-test('the four real lessons fit Networking’s limits with no overrides', () => {
-  for (const slug of LEGACY_LESSONS) {
-    const lesson = getLesson(slug)!;
-    expect(lesson.overrides, slug).toEqual([]);
-    expect(checkLimits(lesson, networkingTrack.limits), slug).toEqual([]);
-  }
-});
-
 test('the build stops on a lesson that does not fit its track’s limits, naming the lesson, the track and the limit', () => {
   const l = makeLesson({ slug: 'dhcp', title: 'DHCP' });
   l.units[0]!.steps[0]!.narrative = 'word '.repeat(130).trim();
@@ -498,8 +450,15 @@ test('a glossary entry or an objective mapping stops the build and the tests, an
   }
 });
 
-test('the real registry loads, with OSI Model cited and its report dated', async () => {
+test('the real registry loads, with OSI Model loaded and its report dated', async () => {
   const real = await import('./registry');
-  expect(real.getLesson('osi-model')?.origin).toBe('cited');
+  expect(real.getLesson('osi-model')?.slug).toBe('osi-model');
   expect(real.checkedOn('osi-model')).not.toBeNull();
+});
+
+test('checkedOn gives a lesson’s report date, and null for a slug no lesson has', async () => {
+  const real = await import('./registry');
+  expect(real.checkedOn('osi-model')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(real.checkedOn('no-such-lesson')).toBeNull();
+  expect(real.checkedOn('constructor')).toBeNull();
 });

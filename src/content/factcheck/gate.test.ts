@@ -88,8 +88,8 @@ test('an orphan report fails', () => {
   expect(issues).toEqual([expect.stringContaining('docs/fact-checks/gone.md')]);
 });
 
-test('legacy lessons need no report', () => {
-  expect(checkFactChecks([liftedFixture()], {}, FIXTURE_SOURCES)).toEqual([]);
+test('a lesson with no report fails, naming the report it needs', () => {
+  expect(checkFactChecks([liftedFixture()], {}, FIXTURE_SOURCES)).toEqual([expect.stringContaining('docs/fact-checks/fixture-lesson.md')]);
 });
 
 test('no reports and no cited lessons is clean', () => {

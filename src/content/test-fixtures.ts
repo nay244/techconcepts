@@ -1,12 +1,26 @@
 import type { FigureId, FigureParts } from '../art/scenes/types';
-import type { LessonInput } from './define';
-import { legacyLessonSchema, liftLegacy, type LegacyLessonInput, type LegacyUnitInput } from './legacy';
+import { z } from 'zod';
+import { checkStructure, LessonValidationError, parseLessonShape, type LessonInput } from './define';
 import type { Limits } from './limits';
-import type { CertificationTrack, Lesson } from './schema';
+import { text } from './primitives';
+import {
+  certTagSchema,
+  factSchema,
+  figureIdSchema,
+  lessonSchema,
+  sceneEventSchema,
+  slugSchema,
+  sourceSchema,
+  unitSceneSchema,
+  unitSchema,
+  type CertificationTrack,
+  type Lesson,
+  type Unit,
+} from './schema';
 import { cite, defineSources, type SourceRegistry } from './sources';
 
 /**
- * Valid lessons for tests, written in the legacy authoring shape. Every call
+ * Valid lessons for tests, written in the terse fixture shape (`terseLessonSchema`, below). Every call
  * builds a fresh object, so a test can change any part of it without affecting
  * the next test. A test that needs a runtime `Lesson` lifts one with
  * `liftedFixture` (below), which needs no figure mock.
@@ -49,8 +63,8 @@ function fixtureParts({ board, start }: { board: boolean; start: boolean }): Fig
 }
 
 /** One valid unit: an overview, five Watch steps, Learn and two questions. */
-export function makeUnit(id = 'neighbors', overrides: Partial<LegacyUnitInput> = {}): LegacyUnitInput {
-  const unit: LegacyUnitInput = {
+export function makeUnit(id = 'neighbors', overrides: Partial<TerseUnitInput> = {}): TerseUnitInput {
+  const unit: TerseUnitInput = {
     id,
     name: 'Neighbor table',
     fullName: 'Neighbor table (a demonstration)',
@@ -308,7 +322,7 @@ export function makeUnit(id = 'neighbors', overrides: Partial<LegacyUnitInput> =
  * The fixture unit with two table changes in a row in two of its steps. Neighbor Reply plays `m2`, `t-add`, then
  * `t-check`. Table Lookup plays `t-match`, `t-recheck`, then note `n1`. `t-check`'s summary has no full stop at its end.
  */
-export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial<LegacyUnitInput> = {}): LegacyUnitInput {
+export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial<TerseUnitInput> = {}): TerseUnitInput {
   const unit = makeUnit(id, overrides);
   const answer = unit.steps.find((s) => s.id === 'answer')!;
   const reuse = unit.steps.find((s) => s.id === 'reuse')!;
@@ -318,8 +332,8 @@ export function makeUnitWithTwoTableChanges(id = 'neighbors', overrides: Partial
 }
 
 /** A valid one-unit lesson on figure 'dhcp'. */
-export function makeLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLessonInput {
-  const lesson: LegacyLessonInput = {
+export function makeLesson(overrides: Partial<TerseLessonInput> = {}): TerseLessonInput {
+  const lesson: TerseLessonInput = {
     slug: 'fixture-lesson',
     title: 'Fixture lesson',
     subtitle: 'A small lesson used only by tests',
@@ -333,7 +347,7 @@ export function makeLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLe
 }
 
 /** A valid one-unit lesson at the top of every limit: six steps of 120-word narratives, three questions, and a very long description and feedback. */
-export function makeLongLesson(): LegacyLessonInput {
+export function makeLongLesson(): TerseLessonInput {
   const long = makeLesson();
   const u = long.units[0]!;
   const words = (n: number) => 'word '.repeat(n).trim();
@@ -346,16 +360,132 @@ export function makeLongLesson(): LegacyLessonInput {
 }
 
 /** A valid lesson of two units, `alpha` (core) and `beta` (app), each with five steps and two questions. */
-export function makeTwoUnitLesson(overrides: Partial<LegacyLessonInput> = {}): LegacyLessonInput {
+export function makeTwoUnitLesson(overrides: Partial<TerseLessonInput> = {}): TerseLessonInput {
   return makeLesson({
     units: [makeUnit('alpha', { name: 'Alpha', group: 'core' }), makeUnit('beta', { name: 'Beta', group: 'app' })],
     ...overrides,
   });
 }
 
-/** A fixture lifted into the runtime shape, as the legacy path lifts the ready lessons. Checks only the shape. */
-export function liftedFixture(input: LegacyLessonInput = makeLesson()): Lesson {
-  return liftLegacy(legacyLessonSchema.parse(input));
+// The fixtures' terse shape: the parts of a lesson that the runtime shape spells out longer. Everything else (the scene, its panels and log,
+// the events and packets) is the runtime schema's own.
+
+const terseStepSchema = z.strictObject({
+  id: text,
+  /** A Title Case technical term, such as 'DHCP Discover'. */
+  title: text,
+  /** The same step in plain words. */
+  sub: text,
+  narrative: text,
+  /** Go deeper: exam-level detail, closed by default. */
+  deep: text,
+  facts: z.array(factSchema),
+  events: z.array(sceneEventSchema),
+  status: text.optional(),
+  /** What the log says while it is empty at this step. */
+  idle: text.optional(),
+});
+
+const terseLearnSchema = z.strictObject({
+  lead: text,
+  /** Everyday idea first, then its name. */
+  terms: z.array(z.strictObject({ idea: text, name: text })),
+  /** The steps by their technical names, and a note on the pattern. */
+  pattern: z.strictObject({ names: z.array(text), note: text }),
+  why: text,
+  deep: text,
+  facts: z.array(factSchema),
+});
+
+const terseQuestionSchema = z.strictObject({
+  id: text,
+  prompt: text,
+  options: z.array(z.strictObject({ text, feedback: text })),
+  /** Index of the right option, from 0. */
+  answer: z.number().int(),
+});
+
+const terseUnitSchema = z.strictObject({
+  id: slugSchema,
+  name: text,
+  fullName: text,
+  /** One line on what the unit is for: a How the Internet Works lesson's subtitle. */
+  purpose: text,
+  /** Lesson 1's outline filters. */
+  group: unitSchema.shape.group,
+  /** OSI layers the unit touches, 1 (physical) to 7 (application). May be empty. */
+  osiLayers: z.array(z.number().int().min(1).max(7)),
+  references: z.array(sourceSchema),
+  scene: unitSceneSchema,
+  overview: z.strictObject({ hook: text, description: text, facts: z.array(factSchema) }),
+  steps: z.array(terseStepSchema),
+  learn: terseLearnSchema,
+  practice: z.array(terseQuestionSchema),
+});
+
+/** The fixtures' shape: Learn's lead, why and Go deeper and each step's Go deeper as one string, OSI layers as a list. */
+export const terseLessonSchema = z.strictObject({
+  slug: slugSchema,
+  title: text,
+  subtitle: text,
+  level: lessonSchema.shape.level,
+  certTags: z.array(certTagSchema),
+  summary: text,
+  figure: figureIdSchema,
+  units: z.array(terseUnitSchema).min(1),
+});
+
+/** What a fixture writes: a scene's `layers`, `labels` and `start` may be left out. */
+export type TerseLessonInput = z.input<typeof terseLessonSchema>;
+export type TerseUnitInput = TerseLessonInput['units'][number];
+
+type TerseLesson = z.output<typeof terseLessonSchema>;
+type TerseUnit = TerseLesson['units'][number];
+
+function liftUnit(u: TerseUnit): Unit {
+  const { osiLayers, overview, steps, learn, practice, ...rest } = u;
+  return {
+    ...rest,
+    osi: osiLayers.length === 0 ? 'spans' : { layers: osiLayers, cite: [] },
+    overview,
+    steps: steps.map(({ deep, ...step }) => ({ ...step, deep: [{ text: deep, cite: [] }] })),
+    learn: {
+      lead: [{ id: 'lead', text: learn.lead, cite: [] }],
+      terms: learn.terms.map((term, i) => ({ id: `term-${i + 1}`, ...term, cite: [] })),
+      pattern: { id: 'pattern', ...learn.pattern, cite: [] },
+      why: [{ id: 'why', text: learn.why, cite: [] }],
+      deep: [{ id: 'deep', text: learn.deep, cite: [] }],
+      facts: learn.facts.map((fact, i) => ({ ...fact, id: `fact-${i + 1}`, cite: [] })),
+    },
+    practice: practice.map((q) => ({ ...q, options: q.options.map((option) => ({ ...option, cite: [] })) })),
+  };
+}
+
+/**
+ * A parsed fixture in the runtime shape, every word as written: each string of Learn and each step's Go deeper
+ * becomes a one-item list, Learn's parts get ids, citation lists are empty, an empty OSI list becomes 'spans', and
+ * nothing gets a backing.
+ */
+export function liftTerse(parsed: TerseLesson): Lesson {
+  return { ...parsed, units: parsed.units.map(liftUnit), overrides: [] };
+}
+
+/** A fixture lifted into the runtime shape (`liftTerse`). Checks only the shape. */
+export function liftedFixture(input: TerseLessonInput = makeLesson()): Lesson {
+  return liftTerse(terseLessonSchema.parse(input));
+}
+
+/**
+ * A fixture checked as `validateLesson` checks a lesson file, minus the cited rules: its shape first (alone, as
+ * `parseLessonShape` reports it), then the structural rules every lesson keeps (`checkStructure`). Throws one
+ * LessonValidationError listing every problem. It never calls `markDefined`: a lesson file's registry check is not
+ * for a fixture, so a lesson for `lessonsFromModules` comes from `validateLesson` (`makeCitedLesson`).
+ */
+export function validateFixture(input: unknown): Lesson {
+  const lesson = liftTerse(parseLessonShape(terseLessonSchema, input));
+  const issues = checkStructure(lesson);
+  if (issues.length > 0) throw new LessonValidationError(issues, lesson.slug);
+  return lesson;
 }
 
 /** Networking's limits: what the ready lessons fit without overrides. */

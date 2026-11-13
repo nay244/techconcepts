@@ -168,9 +168,9 @@ overrides: [{ limit: 'steps', max: 7, reason: 'Shows all seven steps of the hand
 
 One override per limit. An override the lesson does not need fails the build, so remove it once it is not used. A lesson in several tracks keeps an override while any one listing track needs it. Each limit message names the limit, and most end with its key in parentheses, such as `(deepWords)`. That is the name to override.
 
-## 4. The legacy list
+## 4. Removed
 
-The list is empty since batch 5 (2026-11-12): every lesson is in the cited shape. The legacy path (`defineLegacyLesson` in `src/content/legacy.ts` and the closed `LEGACY_LESSONS` list) stays until a unit of its own removes it. `defineLegacyLesson` refuses any slug not on the list, so no lesson can start there, and `src/content/legacy.test.ts` pins the list as empty.
+The legacy path (the closed list of lessons not yet cited, `defineLegacyLesson` and the "Unchecked" exemption) was removed in job 9, B7: every lesson is in the cited shape and needs a passing fact-check report to build.
 
 ## 5. Tracks and objectives
 
@@ -216,7 +216,7 @@ exam: { title: 'Example exam', codes: ['EX-101'], version: 'V1', source: 'exampl
 
 - A lesson file is not directly in `src/content/lessons/`. A folder there may only hold the parts of the lesson it is named after, as `how-the-internet-works/` does.
 - The file name is not the slug.
-- The lesson was not made with `defineLesson` (or `defineLegacyLesson` while on the list). Anything else, such as a plain object, is rejected.
+- The lesson was not made with `defineLesson`. Anything else, such as a plain object, is rejected.
 - A cited lesson was checked against a source list other than `SOURCES`, such as the fixture's.
 - No track lists the lesson.
 - A track lists the lesson under another title, or the lesson does not fit that track's limits.
@@ -229,7 +229,7 @@ exam: { title: 'Example exam', codes: ['EX-101'], version: 'V1', source: 'exampl
 
 ## 8. Fact checks
 
-Every cited lesson is checked by the **fact-checker**, an independent agent defined in `.claude/agents/fact-checker.md` (owner, 2026-11-08). It runs in the build session with a fresh context, after the lesson is written and before its pull request opens. The owner does not read its reports: its all-pass verdict is the sign-off. Lessons on the legacy list (section 4) are exempt until they move across.
+Every cited lesson is checked by the **fact-checker**, an independent agent defined in `.claude/agents/fact-checker.md` (owner, 2026-11-08). It runs in the build session with a fresh context, after the lesson is written and before its pull request opens. The owner does not read its reports: its all-pass verdict is the sign-off.
 
 **The flow for one lesson:**
 

@@ -196,7 +196,7 @@ test('Learn joins its statements into one paragraph; Go deeper gives each paragr
   expect(within(stepDeep[1]!).getByText('paragraph', { selector: 'b' })).toBeInTheDocument();
 });
 
-test('a lifted lesson renders the same Learn words as its legacy text', () => {
+test('a lifted lesson renders the same Learn words as its terse fixture text', () => {
   const input = makeLesson({ slug: 'dhcp', title: 'DHCP' });
   const lesson = liftedFixture(input);
   const plain = (text: string) => text.replaceAll('**', '');
