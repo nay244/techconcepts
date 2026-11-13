@@ -277,15 +277,16 @@ test('the Overview’s first line holds the kicker and the stamp, which links to
   expect(step.querySelector('.stamp')).toBeNull();
 });
 
-// A term's definition in Learn (prototypes/d9-glossary.md §10, checks 26 to 28, 31, 32, 34; attack cases 26 to 28, 31, 32, 34).
+// A term's definition in Learn (prototypes/d9-glossary.md §10 as D9a §4 amends it; checks 26 to 28, 31 to 34; attack cases 26 to 28, 31 to 34).
 // The fixture lesson's Learn has three terms: Hello, Neighbor table, Retransmission.
 const learnAt = () => slotsFor(DHCP).findIndex((s) => s.kind === 'learn');
 const DEFS = {
-  'term-1': { entryId: 'hello', entryTerm: 'Hello', text: 'A hello is the first message.', sources: ['RFC 9999', 'Example vendor'] },
-  'term-3': { entryId: 'retry', entryTerm: 'Retry', label: 'In IP packets', text: 'A retry sends it again.', sources: ['RFC 9999'] },
+  'term-1': { text: 'A hello is the first message.', sources: ['RFC 9999', 'Example vendor'] },
+  'term-3': { label: 'In IP packets', text: 'A retry sends it again.', sources: ['RFC 9999'] },
 };
 const lis = () => [...document.querySelectorAll('ol.explain__terms > li')];
 const nameButton = (name: string) => screen.getByRole('button', { name });
+const FOCUSABLE = 'a, button, input, select, textarea, [tabindex], [contenteditable]';
 
 test('26: with a definition the hint stands right before the list; with none the list is today’s, no attribute, no button', () => {
   const { container } = show(learnAt(), DHCP, undefined, DEFS);
@@ -319,7 +320,7 @@ test('27: a term with an entry is a closed button whose definition is hidden; th
   expect(two!.querySelector('span.explain__term')).toHaveTextContent('Neighbor table');
   expect(two!.getAttributeNames()).toEqual([]);
 });
-test('28: pressing shows the definition, its sources named and not linked, and the glossary link; pressing again hides; each row is on its own', async () => {
+test('28: pressing shows the definition and its sources named, and nothing else; pressing again hides; each row is on its own', async () => {
   const user = userEvent.setup();
   show(learnAt(), DHCP, undefined, DEFS);
   const hello = nameButton('Hello');
@@ -331,9 +332,8 @@ test('28: pressing shows the definition, its sources named and not linked, and t
   expect(def.querySelector('.explain__def-src')).toHaveTextContent('Sources RFC 9999, Example vendor');
   expect(def.querySelector('.explain__def-src a')).toBeNull();
   expect(def.querySelector('.explain__def-sense')).toBeNull();
-  const link = within(def).getByRole('link', { name: 'Hello in the glossary' });
-  expect(link).toHaveAttribute('href', '/glossary#hello');
-  expect(link).not.toHaveAttribute('target');
+  expect([...def.children].map((c) => c.className)).toEqual(['explain__def-text', 'explain__def-src']);
+  expect(def.querySelector(FOCUSABLE)).toBeNull();
   expect(nameButton('Retransmission')).toHaveAttribute('aria-expanded', 'false');
   await user.click(nameButton('Retransmission'));
   expect(hello).toHaveAttribute('aria-expanded', 'true');
@@ -347,15 +347,33 @@ test('30: a sense’s label heads its definition', async () => {
   show(learnAt(), DHCP, undefined, DEFS);
   await userEvent.setup().click(nameButton('Retransmission'));
   const def = document.getElementById(nameButton('Retransmission').getAttribute('aria-controls')!)!;
-  expect([...def.children].map((c) => c.className)).toEqual(['explain__def-sense', 'explain__def-text', 'explain__def-src', 'explain__def-more']);
+  expect([...def.children].map((c) => c.className)).toEqual(['explain__def-sense', 'explain__def-text', 'explain__def-src']);
+  expect(def.querySelector(FOCUSABLE)).toBeNull();
   expect(def.querySelector('.explain__def-sense')).toHaveTextContent('In IP packets');
 });
-test('31: the tape keeps the lesson’s name; the link names the entry', async () => {
-  show(learnAt(), DHCP, undefined, { 'term-2': { entryId: 'latency', entryTerm: 'Latency', text: 'x', sources: ['RFC 9999'] } });
+test('31: the tape keeps the lesson’s name, and the definition is the entry’s text (E2: a value, no link)', async () => {
+  show(learnAt(), DHCP, undefined, { 'term-2': { text: 'Latency means round-trip time.', sources: ['RFC 9999'] } });
   await userEvent.setup().click(nameButton('Neighbor table'));
-  expect(screen.getByRole('link', { name: 'Latency in the glossary' })).toHaveAttribute('href', '/glossary#latency');
+  const def = document.getElementById(nameButton('Neighbor table').getAttribute('aria-controls')!)!;
+  expect(def.querySelector('.explain__def-text')).toHaveTextContent(/^Latency means round-trip time\.$/);
+  expect(within(def).queryByRole('link')).toBeNull();
 });
-test('34: Enter and Space open it and focus stays on the button; closed, the glossary link is out of the tab order', async () => {
+test('33: no lesson links to the glossary, with every term given a definition and every one opened (E4: hrefs resolved)', async () => {
+  const user = userEvent.setup();
+  const every = { 'term-1': { text: 'One.', sources: ['RFC 9999'] }, 'term-2': { text: 'Two.', sources: ['RFC 9999'] }, 'term-3': { label: 'In IP packets', text: 'Three.', sources: ['RFC 9999'] } };
+  const { container } = show(learnAt(), DHCP, undefined, every);
+  const buttons = [...container.querySelectorAll<HTMLButtonElement>('button.explain__term')];
+  expect(buttons).toHaveLength(3);
+  for (const b of buttons) await user.click(b);
+  for (const b of buttons) expect(b).toHaveAttribute('aria-expanded', 'true');
+  const origin = 'https://site.test';
+  for (const a of container.querySelectorAll('a')) {
+    const url = new URL(a.getAttribute('href')!, `${origin}/networking/dhcp`);
+    expect(url.origin === origin && (url.pathname === '/glossary' || url.pathname.startsWith('/glossary/')), a.outerHTML).toBe(false);
+  }
+  expect(container.textContent).not.toContain('in the glossary');
+});
+test('34: Enter and Space open it and focus stays on the button; the definition holds nothing to focus, so the next Tab leaves the row (E6)', async () => {
   const user = userEvent.setup();
   show(learnAt(), DHCP, undefined, DEFS);
   const hello = nameButton('Hello');
@@ -363,12 +381,17 @@ test('34: Enter and Space open it and focus stays on the button; closed, the glo
   await user.keyboard('{Enter}');
   expect(hello).toHaveAttribute('aria-expanded', 'true');
   expect(document.activeElement).toBe(hello);
+  // The first focusable element after Hello's row, from the DOM.
+  const row = hello.closest('li')!;
+  const after = [...document.querySelectorAll<HTMLElement>(FOCUSABLE)].find((el) => !row.contains(el) && (row.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
   await user.tab();
-  expect(document.activeElement).toBe(screen.getByRole('link', { name: 'Hello in the glossary' }));
+  expect(document.activeElement).not.toBeNull();
+  expect(row.contains(document.activeElement)).toBe(false);
+  expect(document.activeElement).toBe(after);
   await user.keyboard('{Shift>}{Tab}{/Shift}');
+  expect(document.activeElement).toBe(hello);
   await user.keyboard(' ');
   expect(hello).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.queryByRole('link', { name: 'Hello in the glossary' })).toBeNull();
 });
 test('28: what is open stays open when the reader goes to Practice and back', async () => {
   const user = userEvent.setup();

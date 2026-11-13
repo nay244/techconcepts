@@ -23,6 +23,8 @@ test.each(slugs)('%s: the HTML has no term list and no definition', async (slug)
   const html = await container.renderToString(LessonPage, { params: { track: track.id, lesson: slug }, props });
   const doc: Document = new JSDOM(html).window.document;
   expect(doc.querySelectorAll('.explain__terms, .explain__def, .explain__hint')).toHaveLength(0);
+  // D9a check 33's HTML half, a guard only: no lesson page links to the glossary.
+  expect(html).not.toContain('href="/glossary');
 });
 
 test('the ICMP lesson is given the definitions of its tied terms', () => {

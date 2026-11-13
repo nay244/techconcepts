@@ -349,9 +349,6 @@ export function Explanation(props: ExplanationProps) {
                   <p className="explain__def-src">
                     <span className="explain__def-label">Sources</span> {def.sources.join(', ')}
                   </p>
-                  <p className="explain__def-more">
-                    <a href={`/glossary#${def.entryId}`}>{def.entryTerm} in the glossary</a>
-                  </p>
                 </div>
               </li>
             );

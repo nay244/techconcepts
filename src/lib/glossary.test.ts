@@ -5,12 +5,14 @@ import { partsOf, type GlossaryGroupInput } from '../content/glossary-group';
 import { parseReport } from '../content/factcheck/report';
 import { glossaryCheckedOn } from '../content/registry';
 import { cite } from '../content/sources';
+import { tracks } from '../content/tracks';
 import pilotReport from '../../docs/fact-checks/glossary/pilot.md?raw';
-import { FIXTURE_SOURCES, liftedFixture, makeLesson, makeTwoUnitLesson } from '../content/test-fixtures';
-import { definitionsFor, glossaryData, stampLine, type GlossaryInput, type GlossaryLesson } from './glossary';
+import { FIXTURE_SOURCES, liftedFixture, makeLesson } from '../content/test-fixtures';
+import { definitionsFor, glossaryData, stampLine, type Definition, type GlossaryInput, type GlossaryLesson } from './glossary';
 import { siteGlossary } from './glossary-site';
 
-// The glossary page's data: D9 §9, the checks of §15 G, errata E7 to E11, and the attack cases of prototypes/d9-cases.md §3 G.
+// The glossary page's data: D9 §9 as D9a amends it (rule 6: a definition's tracks), the checks of §15 G, errata E7 to E11 and
+// E1 to E3 of B8a, and the attack cases of prototypes/d9-cases.md §3 G and prototypes/d9a-cases.md §3.
 
 type Entry = GlossaryGroupInput['entries'][number];
 let n = 0;
@@ -22,15 +24,12 @@ const group = (entries: Entry[], id = 'pilot') =>
     i.entries = entries;
   });
 
-const lesson = (slug: string, title: string, trackTitle = 'Track one', track = 'track-one'): GlossaryLesson => ({
-  lesson: liftedFixture(makeLesson({ slug, title })),
-  title,
-  canonical: `/${track}/${slug}`,
-  trackTitle,
-});
+/** A ready fixture lesson listed by the given tracks (titles). */
+const lesson = (slug: string, tracks: string[] = ['Track one']): GlossaryLesson => ({ lesson: liftedFixture(makeLesson({ slug })), tracks });
 
+const SITE_ORDER = ['Track one', 'Track two', 'Track three'];
 const run = (groups: ReturnType<typeof group>[], extra: Partial<GlossaryInput> = {}) =>
-  glossaryData({ groups, lessons: [], sources: FIXTURE_SOURCES, dates: Object.fromEntries(groups.map((g) => [g.id, '2026-11-13'])), ...extra });
+  glossaryData({ groups, lessons: [], trackTitles: SITE_ORDER, sources: FIXTURE_SOURCES, dates: Object.fromEntries(groups.map((g) => [g.id, '2026-11-13'])), ...extra });
 const names = (d: ReturnType<typeof run>) => d.letters.flatMap((l) => l.items.map((i) => i.name));
 const items = (d: ReturnType<typeof run>) => d.letters.flatMap((l) => l.items);
 
@@ -178,34 +177,51 @@ describe('6. sources', () => {
   });
 });
 
-describe('7. lessons', () => {
+describe('7. tracks of a definition (D9a rule 6; E1, E3, E7)', () => {
   const ties = (...t: string[][]) => t.map(([lesson, term]) => ({ lesson: lesson!, term: term! }));
-  const lessons = [lesson('what-is-ip', 'IP'), lesson('what-is-icmp', 'ICMP'), lesson('dhcp', 'DHCP', 'Networking Concepts', 'networking'), lesson('what-is-dhcp', 'DHCP', 'How the Internet Works', 'how-the-internet-works')];
-  test('site order whatever the written order, Learn’s address by position, a track only where a title is shared, one link for two ties', () => {
-    const d = run([group([entry('a', 'A', { lessons: ties(['what-is-icmp', 'term-1'], ['what-is-ip', 'term-2'], ['what-is-ip', 'term-3'], ['what-is-dhcp', 'term-1'], ['dhcp', 'term-2']) })])], { lessons });
-    const learn = lessons[0]!.lesson.units[0]!.steps.length + 1;
-    expect(items(d)[0]!.definitions[0]!.lessons).toEqual([
-      { words: 'IP lesson', href: `/track-one/what-is-ip?step=${learn}` },
-      { words: 'ICMP lesson', href: `/track-one/what-is-icmp?step=${learn}` },
-      { words: 'DHCP lesson in Networking Concepts', href: `/networking/dhcp?step=${learn}` },
-      { words: 'DHCP lesson in How the Internet Works', href: `/how-the-internet-works/what-is-dhcp?step=${learn}` },
-    ]);
+  const lessons = [lesson('x', ['Track one', 'Track three']), lesson('y', ['Track two']), lesson('z', ['Track two', 'Track one'])];
+  const tracksOf = (e: Entry, input: Partial<GlossaryInput> = { lessons }) => items(run([group([e])], input))[0]!.definitions[0]!.tracks;
+  test('site order whatever the written order or the order of first sight (E1)', () => {
+    // x is listed by tracks one and three, y by two only: first sight gives one, three, two; the site gives one, two, three.
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['x', 'term-1'], ['y', 'term-1']) }))).toEqual(['Track one', 'Track two', 'Track three']);
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['y', 'term-1'], ['x', 'term-1']) }))).toEqual(['Track one', 'Track two', 'Track three']);
   });
-  test('a tie to dhcp alone still names its track, because another ready lesson shares the title', () => {
-    const d = run([group([entry('a', 'A', { lessons: ties(['dhcp', 'term-1']) })])], { lessons });
-    expect(items(d)[0]!.definitions[0]!.lessons.map((l) => l.words)).toEqual(['DHCP lesson in Networking Concepts']);
+  test('every track that lists a tied lesson, not the home track only; the input order of a lesson’s tracks does not matter', () => {
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['z', 'term-1']) }))).toEqual(['Track one', 'Track two']);
   });
-  test('the step is the position of the unit that holds the term', () => {
-    const two = { lesson: liftedFixture(makeTwoUnitLesson({ slug: 'two', title: 'Two' })), title: 'Two', canonical: '/t/two', trackTitle: 'T' };
-    two.lesson.units[1]!.learn.terms[0]!.id = 'term-b';
-    const second = 'term-b';
-    const d = run([group([entry('a', 'A', { lessons: ties(['two', second]) })])], { lessons: [two] });
-    const first = two.lesson.units[0]!.steps.length + 3;
-    expect(items(d)[0]!.definitions[0]!.lessons[0]!.href).toBe(`/t/two?step=${first + two.lesson.units[1]!.steps.length + 1}`);
+  test('one name per track: two ties in one lesson, and two lessons in one track, name it once', () => {
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['y', 'term-1'], ['y', 'term-2']) }))).toEqual(['Track two']);
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['y', 'term-1'], ['z', 'term-1']) }))).toEqual(['Track one', 'Track two']);
   });
-  test('a tie to a lesson that is not ready, or a term it lacks, throws and is named', () => {
-    expect(() => run([group([entry('a', 'A', { lessons: ties(['nope', 'term-1']) })])], { lessons })).toThrow('"nope"');
-    expect(() => run([group([entry('a', 'A', { lessons: ties(['dhcp', 'term-99']) })])], { lessons })).toThrow('"term-99"');
+  test('two ready lessons with one title in one track no longer throw', () => {
+    const twin = [lesson('p', ['Track one']), lesson('q', ['Track one'])];
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['p', 'term-1'], ['q', 'term-1']) }), { lessons: twin })).toEqual(['Track one']);
+  });
+  test('a tie to a lesson that is not ready, or a term it lacks, throws and names the entry and the tie', () => {
+    const bad = (t: string[][]) => () => run([group([entry('a', 'A', { lessons: ties(...t) })])], { lessons });
+    expect(bad([['nope', 'term-1']])).toThrow(/glossary entry "a".*"nope"/);
+    expect(bad([['x', 'term-99']])).toThrow(/glossary entry "a".*"term-99".*"x"/);
+    const sense = () => run([group([{ id: 'a', term: 'A', senses: [{ id: 'one', label: 'One', definition: [statement('s1')], lessons: ties(['x', 'term-99']) }, { id: 'two', label: 'Two', definition: [statement('s2')] }] }])], { lessons });
+    expect(sense).toThrow(/glossary entry "a", sense "one".*"term-99"/);
+  });
+  test('a lesson’s track that is not among the site’s tracks throws and names it', () => {
+    expect(() => run([group([entry('a', 'A', { lessons: ties(['m', 'term-1']) })])], { lessons: [lesson('m', ['Elsewhere'])] })).toThrow('"Elsewhere"');
+  });
+  test('E7: a definition tied to nothing has no tracks', () => {
+    expect(tracksOf(entry('a', 'A'))).toEqual([]);
+    expect(tracksOf(entry('a', 'A', { lessons: ties(['y', 'term-1']) }), { lessons: [lesson('y', [])] })).toEqual([]);
+  });
+  const expectShape = (d: Definition, titles: readonly string[]) => {
+    expect(Object.keys(d).sort()).toEqual(['label', 'sources', 'text', 'tracks']);
+    expect(d.tracks.every((t) => titles.includes(t))).toBe(true);
+    const strings = [d.label, d.text, ...d.tracks, ...d.sources.flatMap((s) => [s.short, s.places])].filter((v): v is string => typeof v === 'string');
+    expect(strings.some((v) => /\?step=/.test(v) || v.startsWith('/'))).toBe(false);
+  };
+  test('E3: the shape — label, text, sources, tracks; no lesson field, title, address or step; on the fixture and on every pilot definition', () => {
+    expectShape(items(run([group([entry('a', 'A', { lessons: ties(['x', 'term-1']) })])], { lessons }))[0]!.definitions[0]!, SITE_ORDER);
+    const pilot = siteGlossary().letters.flatMap((l) => l.items.flatMap((i) => i.definitions));
+    expect(pilot).toHaveLength(11);
+    for (const d of pilot) expectShape(d, tracks.map((t) => t.title));
   });
 });
 
@@ -256,9 +272,9 @@ describe('9. keys', () => {
   });
 });
 
-describe('10. the lesson map', () => {
-  test('keyed by lesson and term id; the sense the tie names; no key for an untied term', () => {
-    const lessons = [lesson('what-is-dns', 'DNS'), lesson('what-is-icmp', 'ICMP'), lesson('what-is-ip', 'IP')];
+describe('10. the lesson map (E2: values, not entryId)', () => {
+  test('keyed by lesson and term id; the sense the tie names; no key for an untied term; only text, sources and a sense’s label', () => {
+    const lessons = [lesson('what-is-dns'), lesson('what-is-icmp'), lesson('what-is-ip')];
     const d = run([
       group([
         {
@@ -272,10 +288,10 @@ describe('10. the lesson map', () => {
         entry('latency', 'Latency', { lessons: [{ lesson: 'what-is-icmp', term: 'term-2' }] }),
       ]),
     ], { lessons });
-    expect(d.lessonMap['what-is-dns/term-1']).toEqual({ entryId: 'ttl', entryTerm: 'TTL', label: 'In DNS', text: 'DNS text.', sources: ['RFC 9999'] });
-    expect(d.lessonMap['what-is-icmp/term-1']!.label).toBe('In IP packets');
-    expect(d.lessonMap['what-is-ip/term-1']!.label).toBe('In IP packets');
-    expect(d.lessonMap['what-is-icmp/term-2']).toMatchObject({ entryId: 'latency', entryTerm: 'Latency' });
+    expect(d.lessonMap['what-is-dns/term-1']).toEqual({ label: 'In DNS', text: 'DNS text.', sources: ['RFC 9999'] });
+    expect(d.lessonMap['what-is-icmp/term-1']).toEqual({ label: 'In IP packets', text: 'IP text.', sources: ['RFC 9999'] });
+    expect(d.lessonMap['what-is-ip/term-1']).toEqual(d.lessonMap['what-is-icmp/term-1']);
+    expect(d.lessonMap['what-is-icmp/term-2']).toEqual({ text: 'Latency means something.', sources: ['RFC 9999'] });
     expect('label' in d.lessonMap['what-is-icmp/term-2']!).toBe(false);
     expect(d.lessonMap['what-is-icmp/term-3']).toBeUndefined();
     expect(Object.keys(definitionsFor(d.lessonMap, 'what-is-icmp')).sort()).toEqual(['term-1', 'term-2']);
@@ -301,19 +317,28 @@ describe('the real glossary (the pilot)', () => {
   test('TTL, Echo request and IP address as the spec names them', () => {
     const ttl = all.find((i) => i.id === 'ttl')!;
     expect(ttl.definitions.map((x) => x.label)).toEqual(['In IP packets', 'In DNS']);
-    expect(ttl.definitions[0]!.lessons.map((l) => l.href)).toEqual(['/how-the-internet-works/what-is-ip?step=6', '/how-the-internet-works/what-is-icmp?step=7']);
-    expect(ttl.definitions[1]!.lessons.map((l) => l.words)).toEqual(['DNS lesson']);
+    expect(ttl.definitions.map((x) => x.tracks)).toEqual([['How the Internet Works'], ['How the Internet Works']]);
     const echo = all.find((i) => i.id === 'echo-request')!.definitions[0]!;
     expect(echo.sources.map((s) => s.short)).toEqual(['RFC 792', 'RFC 1122', 'RFC 2151', 'Microsoft ping']);
     expect(echo.sources[0]!.places).toBe('RFC 792, Echo or Echo Reply Message, page 14; RFC 792, Echo or Echo Reply Message, page 15');
     expect(echo.sources[0]!.url).toBe('https://www.rfc-editor.org/rfc/rfc792.html#page-14');
-    expect(all.find((i) => i.id === 'ip-address')!.definitions[0]!.lessons.map((l) => l.words)).toEqual(['HTTP lesson', 'IP lesson', 'DHCP lesson in How the Internet Works', 'DHCP lesson in Networking Concepts']);
+    expect(all.find((i) => i.id === 'ip-address')!.definitions[0]!.tracks).toEqual(['How the Internet Works', 'Networking Concepts']);
   });
-  test('the lesson map: the ICMP lesson’s TTL is the IP sense, the DNS lesson’s the DNS sense, Latency is its entry', () => {
-    expect(d.lessonMap['what-is-icmp/term-ttl']!.label).toBe('In IP packets');
-    expect(d.lessonMap['what-is-dns/term-ttl']!.label).toBe('In DNS');
-    expect(d.lessonMap['what-is-ip/term-ttl']!.label).toBe('In IP packets');
-    expect(d.lessonMap['what-is-icmp/term-latency']).toMatchObject({ entryId: 'latency', entryTerm: 'Latency' });
+  test('every other pilot definition reads one track, How the Internet Works; each tracks list is in the order of `tracks`', () => {
+    const titles = tracks.map((t) => t.title);
+    const defs = all.flatMap((i) => i.definitions.map((x) => [i.id, x.tracks] as const));
+    expect(defs.filter(([id]) => id !== 'ip-address').every(([, t]) => t.length === 1 && t[0] === 'How the Internet Works')).toBe(true);
+    for (const [, t] of defs) expect(t).toEqual(titles.filter((x) => t.includes(x)));
+    expect(defs.filter(([, t]) => t.length > 0)).toHaveLength(defs.length);
+  });
+  test('the lesson map: the ICMP lesson’s TTL is the IP sense, the DNS lesson’s the DNS sense, Latency is its entry’s text (E2)', () => {
+    const def = (id: string, label?: string) => all.find((i) => i.id === id)!.definitions.find((x) => x.label === label)!;
+    const value = (id: string, label?: string) => ({ ...(label === undefined ? {} : { label }), text: def(id, label).text, sources: def(id, label).sources.map((s) => s.short) });
+    expect(d.lessonMap['what-is-icmp/term-ttl']).toEqual(value('ttl', 'In IP packets'));
+    expect(d.lessonMap['what-is-dns/term-ttl']).toEqual(value('ttl', 'In DNS'));
+    expect(d.lessonMap['what-is-ip/term-ttl']).toEqual(value('ttl', 'In IP packets'));
+    expect(d.lessonMap['what-is-icmp/term-latency']).toEqual(value('latency'));
+    expect(d.lessonMap['what-is-http/term-ip']).toEqual(value('ip-address'));
     expect(Object.keys(d.lessonMap).some((k) => k.startsWith('osi-model/'))).toBe(false);
   });
   test('the stamp’s date is the pilot report’s own checked date, and an unknown group has none', () => {

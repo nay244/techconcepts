@@ -1,5 +1,5 @@
 // The Glossary page rendered with Astro's container and parsed with jsdom, as `no-script.test.ts` renders the lesson page
-// (E2: the data-exact parts of D9's checks 3, 11, 12, 13, 15, 16, 18, 19 and 20 run here, from the glossary itself).
+// (E2: the data-exact parts of D9's checks 3, 11, 12, 13, 15, 16, 18, 19 and 20, as D9a changes them, run here, from the glossary itself).
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
@@ -10,6 +10,7 @@ import GlossaryStamp from '../components/GlossaryStamp.astro';
 import { GLOSSARY } from '../content/glossary';
 import { partsOf } from '../content/glossary-group';
 import { SOURCES } from '../content/sources';
+import { tracks } from '../content/tracks';
 import { siteGlossary } from './glossary-site';
 import { stampLine } from './glossary';
 import GlossaryPage from '../pages/glossary.astro';
@@ -25,7 +26,7 @@ beforeAll(async () => {
 
 const LEAD = 'Definitions written for this site, each one checked against its sources.';
 const NOTE =
-  'Under each definition are the sources it was checked against and the lessons that teach the term. A term with two meanings has a definition for each. New definitions are added once they pass the same check.';
+  'Under each definition are the sources it was checked against and the tracks whose lessons describe the term. A term with two meanings has a definition for each. New definitions are added once they pass the same check.';
 
 describe('11. the head', () => {
   test('title, description, one h1, the lead and note word for word', () => {
@@ -76,16 +77,19 @@ describe('12. entries', () => {
     expect(order).toEqual(['gl-also', 'gl-sense', 'gl-def', 'gl-sense', 'gl-def']);
     expect(words(ttl.querySelector('.gl-also'))).toBe('Also called Time to Live');
     expect([...ttl.querySelectorAll('.gl-sense')].map((e) => e.textContent)).toEqual(['In IP packets', 'In DNS']);
-    const [ip, dns] = [...ttl.querySelectorAll('dd')];
-    expect([...ip!.querySelectorAll('.gl-lesson')].map((a) => a.textContent)).toEqual(['IP lesson', 'ICMP lesson']);
-    expect([...dns!.querySelectorAll('.gl-lesson')].map((a) => a.textContent)).toEqual(['DNS lesson']);
+    const dds = [...ttl.querySelectorAll('dd')];
+    expect(dds).toHaveLength(2);
+    for (const dd of dds) expect(dd.querySelectorAll('.gl-row--tracks')).toHaveLength(1);
+    expect(ttl.querySelectorAll('.gl-row--tracks')).toHaveLength(2);
+    expect(dds.map((dd) => words(dd.querySelector('.gl-row--tracks')))).toEqual(['Described in How the Internet Works', 'Described in How the Internet Works']);
     const pointer = doc.getElementById('time-to-live')!;
     expect(pointer.classList.contains('gl-entry--see')).toBe(true);
     expect(pointer.querySelectorAll('dd')).toHaveLength(1);
     expect(pointer.querySelector('.gl-def')).toBeNull();
     expect(words(pointer.querySelector('dd'))).toBe('See TTL');
     expect(pointer.querySelector('dd a')!.getAttribute('href')).toBe('#ttl');
-    expect(pointer.textContent).not.toMatch(/Sources|Taught in/);
+    expect(pointer.textContent).not.toMatch(/Sources|Described in/);
+    expect(pointer.querySelector('.gl-row--tracks')).toBeNull();
   });
   test('a definition is plain text: no element inside a .gl-def', () => {
     for (const def of doc.querySelectorAll('.gl-def')) expect(def.children).toHaveLength(0);
@@ -128,15 +132,41 @@ describe('13. source links', () => {
   });
 });
 
-describe('14 and 16. lesson links', () => {
-  test('"ICMP lesson" under Ping opens Learn at its address, in the same tab', () => {
-    const a = [...doc.querySelectorAll('#ping .gl-lesson')].find((x) => x.textContent === 'ICMP lesson')!;
-    expect(a.getAttribute('href')).toBe('/how-the-internet-works/what-is-icmp?step=7');
-    expect(a.hasAttribute('target')).toBe(false);
+describe('14 and 16. no link to a lesson or a track; the "Described in" row (E4, E5, E7)', () => {
+  const rows = (): Element[] => [...doc.querySelectorAll('.gl-row--tracks')];
+  const expectedRows = siteGlossary().letters.flatMap((l) => l.items.flatMap((i) => i.definitions)).filter((d) => d.tracks.length > 0);
+  test('no `a` in main reaches /tracks or any track, whatever the href is written as (resolved, not read)', () => {
+    const origin = 'https://site.test';
+    const ids = tracks.map((t) => t.id);
+    expect(ids.length).toBeGreaterThan(1);
+    const links = [...doc.querySelectorAll('main a')];
+    expect(links.length).toBeGreaterThan(40);
+    for (const a of links) {
+      const url = new URL(a.getAttribute('href')!, `${origin}/glossary`);
+      if (url.origin !== origin) continue;
+      const path = url.pathname.replace(/\/+$/, '');
+      expect(path === '/tracks' || path.startsWith('/tracks/') || ids.some((id) => path === `/${id}` || path.startsWith(`/${id}/`)), a.outerHTML).toBe(false);
+    }
   });
-  test('IP address: four lessons, two of them naming their track; no other link does', () => {
-    expect([...doc.querySelectorAll('#ip-address .gl-lesson')].map((a) => a.textContent)).toEqual(['HTTP lesson', 'IP lesson', 'DHCP lesson in How the Internet Works', 'DHCP lesson in Networking Concepts']);
-    for (const a of doc.querySelectorAll('.gl-lesson')) if (!/^DHCP/.test(a.textContent!)) expect(a.textContent).not.toMatch(/ in /);
+  test('no link of a lesson in any form: no .gl-lesson, no ?step= href', () => {
+    expect(doc.querySelectorAll('a.gl-lesson')).toHaveLength(0);
+    for (const a of doc.querySelectorAll('main a')) expect(a.getAttribute('href')).not.toMatch(/\?step=/);
+  });
+  test('every definition with tracks has one row of plain text: one label, one .gl-tracks, no link, title, href or tabindex', () => {
+    expect(expectedRows).toHaveLength(11);
+    expect(rows()).toHaveLength(expectedRows.length);
+    for (const row of rows()) {
+      expect(row.querySelector('a, [href], [title], [tabindex]'), row.outerHTML).toBeNull();
+      expect(row.querySelectorAll('span.gl-label')).toHaveLength(1);
+      expect(row.querySelectorAll('span.gl-tracks')).toHaveLength(1);
+      expect(row.classList.contains('gl-row')).toBe(true);
+      expect(row.querySelector('.gl-label')!.textContent).toBe('Described in');
+    }
+  });
+  test('the row’s raw text has one space between the label and the names; the names are the tracks joined by ", "', () => {
+    expect(doc.querySelector('#ping .gl-row--tracks')!.textContent).toBe('Described in How the Internet Works');
+    expect(doc.querySelector('#ip-address .gl-row--tracks')!.textContent).toBe('Described in How the Internet Works, Networking Concepts');
+    expect(doc.querySelector('#ip-address .gl-tracks')!.textContent).toBe('How the Internet Works, Networking Concepts');
   });
 });
 
@@ -171,16 +201,18 @@ describe('18. keys', () => {
 describe('the parts, given fixtures', () => {
   const render = async (component: Parameters<AstroContainer['renderToString']>[0], props: Record<string, unknown>): Promise<Document> =>
     new JSDOM(await (await AstroContainer.create()).renderToString(component, { props })).window.document;
-  const item = { kind: 'entry' as const, id: 'a', name: 'A', also: [], entryId: 'a', entryTerm: 'A', definitions: [{ label: undefined, text: 'a < b & c', sources: [{ short: 'S', url: 'https://x.test/#p', places: 'p' }], lessons: [] }] };
-  test('a definition with no tie has no "Taught in" line; its text shows as text', async () => {
+  const item = { kind: 'entry' as const, id: 'a', name: 'A', also: [], entryId: 'a', entryTerm: 'A', definitions: [{ label: undefined, text: 'a < b & c', sources: [{ short: 'S', url: 'https://x.test/#p', places: 'p' }], tracks: [] as string[] }] };
+  test('a definition with no tracks has no "Described in" row (E7); its text shows as text', async () => {
     const d = await render(GlossaryEntry, { item });
     expect(d.querySelector('.gl-def')!.textContent).toBe('a < b & c');
     expect(d.querySelector('.gl-def')!.children).toHaveLength(0);
-    expect(d.body.textContent).not.toContain('Taught in');
+    expect(d.body.textContent).not.toContain('Described in');
+    expect(d.querySelector('.gl-row--tracks')).toBeNull();
     expect(d.querySelector('.gl-sense')).toBeNull();
     expect(d.querySelector('.gl-also')).toBeNull();
-    const tied = await render(GlossaryEntry, { item: { ...item, definitions: [{ ...item.definitions[0]!, lessons: [{ words: 'X lesson', href: '/x?step=2' }] }] } });
-    expect(words(tied.querySelectorAll('.gl-row')[1])).toBe('Taught in X lesson');
+    const tied = await render(GlossaryEntry, { item: { ...item, definitions: [{ ...item.definitions[0]!, tracks: ['One', 'Two'] }] } });
+    expect(words(tied.querySelectorAll('.gl-row')[1])).toBe('Described in One, Two');
+    expect(tied.querySelector('.gl-row--tracks a')).toBeNull();
   });
   test('no date, no stamp; the stamp with one term reads "1 term checked on …"', async () => {
     expect((await render(GlossaryStamp, { stamp: null })).querySelector('.gl-stamp')).toBeNull();
@@ -189,6 +221,10 @@ describe('the parts, given fixtures', () => {
 });
 
 describe('19 and 20. words, and the page without JavaScript', () => {
+  test('"Taught in" is nowhere in main, and no .gl-row speaks of a lesson (check 19)', () => {
+    expect(doc.querySelector('main')!.textContent).not.toMatch(/Taught in/);
+    for (const row of doc.querySelectorAll('.gl-row')) expect(row.textContent).not.toMatch(/lesson/i);
+  });
   test('no time figure anywhere on the page', () => {
     expect(doc.body.textContent).not.toMatch(/\b\d+ ?min\b|\bminutes\b|one sitting|Short guided/i);
   });

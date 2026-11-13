@@ -1,25 +1,23 @@
-// The glossary page's data (prototypes/d9-glossary.md §9, with errata E7 to E11 in plan.md), worked out when the site is
+// The glossary page's data (prototypes/d9-glossary.md §9, as prototypes/d9a-glossary-independent.md §3 amends it), worked out when the site is
 // built. A pure function: its inputs are arguments, so tests give it fixtures and the pages give it the real ones
 // (`glossary-site.ts`). It keeps no copy of any word of an entry.
 import { partsOf, type GlossaryEntry, type GlossaryGroup, type GlossaryPart } from '../content/glossary-group';
 import type { Lesson } from '../content/schema';
 import type { SourceRegistry } from '../content/sources';
-import { positionOf } from '../engine/timeline';
 import { stampDate } from './stamp';
 
-/** A ready lesson, as the glossary needs it. `lessons` are given in site order, each once, under its home track. */
+/** A ready lesson, as the glossary needs it. */
 export interface GlossaryLesson {
   lesson: Lesson;
-  title: string;
-  /** The lesson's canonical address, `/<home track>/<slug>`. */
-  canonical: string;
-  /** The home track's title. */
-  trackTitle: string;
+  /** The titles of the tracks that list the lesson. */
+  tracks: string[];
 }
 
 export interface GlossaryInput {
   groups: readonly GlossaryGroup[];
   lessons: readonly GlossaryLesson[];
+  /** Every track's title, in the order of `tracks` (the site's order). */
+  trackTitles: readonly string[];
   sources: SourceRegistry;
   /** Each group's check date ('YYYY-MM-DD'), or null when it has none (`astro dev` with a missing report). */
   dates: Readonly<Record<string, string | null>>;
@@ -34,18 +32,14 @@ export interface SourceLink {
   places: string;
 }
 
-export interface LessonLink {
-  words: string;
-  href: string;
-}
-
 /** One definition: an entry's own, or one sense's. */
 export interface Definition {
   /** The sense's label as written; `undefined` for an entry with one definition. */
   label: string | undefined;
   text: string;
   sources: SourceLink[];
-  lessons: LessonLink[];
+  /** The tracks whose lessons describe the term, in site order; empty when no lesson is tied. */
+  tracks: string[];
 }
 
 export interface GlossaryItem {
@@ -78,8 +72,6 @@ export interface GlossaryKey {
 
 /** What Learn shows of an entry's definition under a lesson's term (`Explanation`'s `definitions` prop). */
 export interface LessonDefinition {
-  entryId: string;
-  entryTerm: string;
   label?: string;
   text: string;
   /** Short names, in the order of the page's Sources line. */
@@ -155,34 +147,24 @@ function sourcesOf(part: GlossaryPart, sources: SourceRegistry, where: string): 
   return links;
 }
 
-/** The lessons of one definition (rule 6), in site order, each lesson once. */
-function lessonsOf(part: GlossaryPart, lessons: readonly GlossaryLesson[], wording: (l: GlossaryLesson) => string, where: string): LessonLink[] {
-  const found = new Map<number, LessonLink>();
+/** The tracks of one definition (rule 6): every track that lists a tied lesson, each once, in the order of `trackTitles`. */
+function tracksOf(part: GlossaryPart, lessons: readonly GlossaryLesson[], trackTitles: readonly string[], where: string): string[] {
+  const found = new Set<string>();
   for (const tie of part.lessons) {
-    const at = lessons.findIndex((l) => l.lesson.slug === tie.lesson);
-    const ready = lessons[at];
+    const ready = lessons.find((l) => l.lesson.slug === tie.lesson);
     if (ready === undefined) throw new Error(`${where}: ties lesson "${tie.lesson}", which is not a ready lesson; fix the tie.`);
-    const unit = ready.lesson.units.findIndex((u) => u.learn.terms.some((t) => t.id === tie.term));
-    if (unit < 0) throw new Error(`${where}: ties term "${tie.term}" of lesson "${tie.lesson}", which is not a term of its Learn; fix the tie.`);
-    if (!found.has(at)) found.set(at, { words: wording(ready), href: `${ready.canonical}?step=${positionOf(ready.lesson, unit, 'learn')}` });
+    if (!ready.lesson.units.some((u) => u.learn.terms.some((t) => t.id === tie.term))) throw new Error(`${where}: ties term "${tie.term}" of lesson "${tie.lesson}", which is not a term of its Learn; fix the tie.`);
+    for (const title of ready.tracks) {
+      if (!trackTitles.includes(title)) throw new Error(`${where}: lesson "${tie.lesson}" is listed by the track "${title}", which is not one of the site's tracks.`);
+      found.add(title);
+    }
   }
-  return [...found.entries()].sort(([a], [b]) => a - b).map(([, link]) => link);
+  return trackTitles.filter((title) => found.has(title));
 }
 
 /** The glossary as the page and the lessons draw it. */
-export function glossaryData({ groups, lessons, sources, dates }: GlossaryInput): GlossaryData {
+export function glossaryData({ groups, lessons, trackTitles, sources, dates }: GlossaryInput): GlossaryData {
   const entries: GlossaryEntry[] = groups.flatMap((g) => g.entries);
-
-  // A lesson's name (rule 6 of D8 §9): "{title} lesson", with its track where another ready lesson has the same title.
-  const titles = new Map<string, number>();
-  for (const l of lessons) titles.set(l.title.toLowerCase(), (titles.get(l.title.toLowerCase()) ?? 0) + 1);
-  const wording = (l: GlossaryLesson): string => (titles.get(l.title.toLowerCase())! > 1 ? `${l.title} lesson in ${l.trackTitle}` : `${l.title} lesson`);
-  const named = new Set<string>();
-  for (const l of lessons) {
-    const key = `${l.title.toLowerCase()}\n${l.trackTitle}`;
-    if (named.has(key)) throw new Error(`Two ready lessons are titled "${l.title}" in "${l.trackTitle}"; the glossary could not name them apart.`);
-    named.add(key);
-  }
 
   // Entry ids are their own; a reserved one cannot be an anchor.
   for (const e of entries) {
@@ -202,11 +184,9 @@ export function glossaryData({ groups, lessons, sources, dates }: GlossaryInput)
       const where = `glossary entry "${e.id}"${part.sense === undefined ? '' : `, sense "${part.sense.id}"`}`;
       const text = part.definition.map((s) => s.text).join(' ');
       const links = sourcesOf(part, sources, where);
-      definitions.push({ label: part.sense?.label, text, sources: links, lessons: lessonsOf(part, lessons, wording, where) });
+      definitions.push({ label: part.sense?.label, text, sources: links, tracks: tracksOf(part, lessons, trackTitles, where) });
       for (const tie of part.lessons) {
         lessonMap[`${tie.lesson}/${tie.term}`] = {
-          entryId: e.id,
-          entryTerm: e.term,
           ...(part.sense === undefined ? {} : { label: part.sense.label }),
           text,
           sources: links.map((l) => l.short),

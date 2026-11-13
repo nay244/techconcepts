@@ -1,5 +1,5 @@
 ---
-// One item of the Glossary page (prototypes/d9-glossary.md §3): an entry with a definition for each meaning, or a pointer
+// One item of the Glossary page (prototypes/d9-glossary.md §3, prototypes/d9a-glossary-independent.md §3): an entry with a definition for each meaning, or a pointer
 // from another spelling to its entry. Styled by the page.
 import type { GlossaryItem } from '../lib/glossary';
 
@@ -44,12 +44,9 @@ const { item } = Astro.props;
                 <Fragment>{i > 0 ? ', ' : ''}<a class="gl-src" href={s.url} target="_blank" rel="noopener" title={s.places} aria-label={`${s.short}: ${s.places} (opens in a new tab)`}>{s.short}</a></Fragment>
               ))}
             </p>
-            {d.lessons.length > 0 && (
-              <p class="gl-row">
-                <span class="gl-label">Taught in</span>{' '}
-                {d.lessons.map((x, i) => (
-                  <Fragment>{i > 0 ? ', ' : ''}<a class="gl-lesson" href={x.href}>{x.words}</a></Fragment>
-                ))}
+            {d.tracks.length > 0 && (
+              <p class="gl-row gl-row--tracks">
+                <span class="gl-label">Described in</span> <span class="gl-tracks">{d.tracks.join(', ')}</span>
               </p>
             )}
           </div>

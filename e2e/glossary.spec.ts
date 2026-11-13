@@ -1,7 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { hydrated, kicker, open, pageOverflow, settledFrame } from './support';
+import { tracks } from '../src/content/tracks';
 
-// The Glossary page and a term's definition in Learn (prototypes/d9-glossary.md; errata E1 to E11 in plan.md). The
+// The Glossary page and a term's definition in Learn (prototypes/d9-glossary.md as prototypes/d9a-glossary-independent.md amends it;
+// errata E1 to E11 and B8a's E1 to E8 in plan.md). The
 // data-exact parts of the page's checks (counts, every entry's words, every source link) run in Vitest
 // (`src/lib/glossary-page.test.ts`), since the specs cannot load the glossary (E2); this file keeps what needs a browser,
 // on the entries the spec names: ping, ttl, time-to-live, ip-address, packet-loss.
@@ -42,13 +44,24 @@ test.describe('the Glossary page', () => {
     await expect(stamp).toHaveText(new RegExp(`^${entries} terms checked, the latest on \\d{1,2} [A-Z][a-z]{2} 20\\d\\d$`));
   });
 
-  test('"ICMP lesson" under Ping opens the lesson at Learn, with the term Ping', async ({ page }) => {
+  test('14 and 16: the page links to no lesson and no track; "Described in" rows are plain text (E5: hrefs resolved)', async ({ page }) => {
     await page.goto('/glossary');
-    await page.locator('#ping').getByRole('link', { name: 'ICMP lesson' }).click();
-    await expect(page).toHaveURL(new RegExp(`${ICMP}\\?step=7$`));
-    await hydrated(page);
-    await expect(kicker(page)).toHaveText(/Learn$/);
-    await expect(page.getByRole('list', { name: 'Terms' }).getByRole('button', { name: 'Ping' })).toBeVisible();
+    const ids = tracks.map((t) => t.id);
+    const refused = await page.locator('main a').evaluateAll((as, ids) => as.filter((a) => {
+      const u = new URL(a.getAttribute('href')!, location.href);
+      if (u.origin !== location.origin) return false;
+      const p = u.pathname.replace(/\/+$/, '');
+      return p === '/tracks' || p.startsWith('/tracks/') || ids.some((id) => p === `/${id}` || p.startsWith(`/${id}/`));
+    }).map((a) => a.outerHTML), ids);
+    expect(refused).toEqual([]);
+    expect(await page.locator('main a').count()).toBeGreaterThan(40);
+    await expect(page.locator('#ping .gl-row--tracks')).toHaveText('Described in How the Internet Works');
+    await expect(page.locator('#ping .gl-row--tracks a')).toHaveCount(0);
+    await expect(page.locator('.gl-row--tracks a, .gl-row--tracks [href], .gl-row--tracks [title]')).toHaveCount(0);
+    await expect(page.locator('#ip-address .gl-row--tracks')).toHaveText('Described in How the Internet Works, Networking Concepts');
+    await expect(page.locator('#ttl .gl-row--tracks')).toHaveText(['Described in How the Internet Works', 'Described in How the Internet Works']);
+    await expect(page.locator('main')).not.toContainText('Taught in');
+    expect(await page.locator('.gl-row').evaluateAll((rows) => rows.filter((r) => /lesson/i.test(r.textContent ?? '')).length)).toBe(0);
   });
 
   test('"See TTL" puts #ttl in the address and the entry under every sticky foot', async ({ page }) => {
@@ -149,14 +162,14 @@ test.describe('the Glossary page', () => {
   test('layout: stacked at 375, beside the name at 768, a ledger of three columns at 1440', async ({ page }) => {
     const parts = async () => {
       const at = async (sel: string) => box(page, `#ping ${sel}`);
-      return { name: await at('.gl-name'), def: await at('.gl-def'), src: await at('.gl-foot .gl-row:nth-child(1)'), taught: await at('.gl-foot .gl-row:nth-child(2)') };
+      return { name: await at('.gl-name'), def: await at('.gl-def'), src: await at('.gl-foot .gl-row:nth-child(1)'), tracks: await at('.gl-foot .gl-row--tracks') };
     };
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/glossary');
     let p = await parts();
     expect(p.name.y).toBeLessThan(p.def.y);
     expect(p.def.y).toBeLessThan(p.src.y);
-    expect(p.src.y).toBeLessThan(p.taught.y);
+    expect(p.src.y).toBeLessThan(p.tracks.y);
     await page.setViewportSize({ width: 768, height: 900 });
     p = await parts();
     expect(p.name.x).toBeLessThan(p.def.x);
@@ -185,7 +198,9 @@ test.describe('the Glossary page', () => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto('/glossary');
         const boxes = await page.locator('.gl-row a, .gl-stamp a, .gl-up').evaluateAll((as) => as.map((a) => [...a.getClientRects()].map((r) => ({ x: r.x, y: r.y + scrollY, w: r.width, h: r.height }))));
-        expect(boxes.length).toBeGreaterThan(60);
+        // The pilot: 43 row links, the stamp and "All letters" (one for each letter); the page's own count, not a typed one.
+        expect(boxes.length).toBe(await page.locator('.gl-row a').count() + 1 + (await page.locator('.gl-up').count()));
+        expect(await page.locator('.gl-row a').count()).toBeGreaterThan(40);
         for (const rects of boxes) for (const r of rects) expect(r.h).toBeGreaterThanOrEqual(43.9);
         const flat = boxes.flat();
         for (let i = 0; i < flat.length; i++) {
@@ -196,6 +211,29 @@ test.describe('the Glossary page', () => {
             expect(overlap, `${i} and ${j}`).toBe(false);
           }
         }
+      });
+    }
+    for (const width of [375, 768]) {
+      test(`at ${width}: each "Described in" row holds no link and is 26px on one line, 20px more for each line it wraps to`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto('/glossary');
+        const rows = await page.locator('.gl-row--tracks').evaluateAll((els) =>
+          els.map((el) => {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            const lines = new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+            return { h: el.getBoundingClientRect().height, lines, links: el.querySelectorAll('a').length, id: el.closest('.gl-entry')!.id };
+          }),
+        );
+        expect(rows).toHaveLength(11);
+        for (const r of rows) {
+          expect(r.links).toBe(0);
+          expect(Math.abs(r.h - (26 + 20 * (r.lines - 1))), JSON.stringify(r)).toBeLessThanOrEqual(1);
+        }
+        const ping = rows.find((r) => r.id === 'ping')!;
+        expect(ping.h).toBeCloseTo(26, 0);
+        // The "(±1)" of the spec: IP address's row wraps to two lines at 375 (46px).
+        if (width === 375) expect(rows.find((r) => r.id === 'ip-address')!.h).toBeCloseTo(46, 0);
       });
     }
     test('at 1024 a touch screen keeps 44px', async ({ page }) => {
@@ -218,6 +256,24 @@ test.describe('the Glossary page', () => {
     await page.goto('/glossary');
     for (const h of await page.locator('#ping .gl-row a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(h).toBeCloseTo(26, 0);
     expect((await box(page, '#time-to-live .gl-row a')).height).toBeCloseTo(34, 0);
+  });
+
+  test('with a mouse at 1440 a "Described in" row is 26px (46px for IP address, two lines), 4px under the Sources row, its names --ink, 600, no underline', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/glossary');
+    expect((await box(page, '#ping .gl-row--tracks')).height).toBeCloseTo(26, 0);
+    expect((await box(page, '#ip-address .gl-row--tracks')).height).toBeCloseTo(46, 0);
+    const sources = await box(page, '#ping .gl-foot .gl-row:nth-child(1)');
+    expect((await box(page, '#ping .gl-row--tracks')).y).toBeCloseTo(sources.y + sources.height + 4, 0);
+    const style = await page.locator('#ping .gl-tracks').evaluate((e) => {
+      const c = getComputedStyle(e);
+      const also = getComputedStyle(document.querySelector('#ttl .gl-also b')!);
+      return { color: c.color, ink: also.color, weight: c.fontWeight, decoration: c.textDecorationLine, label: getComputedStyle(e.previousElementSibling!).color, muted: getComputedStyle(e.closest('.gl-row')!).color };
+    });
+    expect(style.color).toBe(style.ink);
+    expect(style.weight).toBe('600');
+    expect(style.decoration).toBe('none');
+    expect(style.label).toBe(style.muted);
   });
 
   test('without JavaScript the page is the same page: main’s HTML is equal, a key, #ttl and "See TTL" work, storage is untouched', async ({ browser, baseURL }) => {
@@ -318,7 +374,7 @@ test.describe('Learn with definitions', () => {
     }
   });
 
-  test('28: Ping opens to its definition, the sources named, a link to the glossary; again closes; Ping and Traceroute can both be open', async ({ page }) => {
+  test('28: Ping opens to its definition and the sources named, and nothing else; again closes; Ping and Traceroute can both be open', async ({ page }) => {
     await learn(page);
     const ping = termButton(page, 'Ping');
     await ping.click();
@@ -327,9 +383,9 @@ test.describe('Learn with definitions', () => {
     await expect(def.locator('.explain__def-text')).toHaveText(PING_TEXT);
     await expect(def.locator('.explain__def-src')).toHaveText('Sources Microsoft ping, RFC 2151, Cisco ping and traceroute, Microsoft Azure TCP/IP tuning');
     await expect(def.locator('.explain__def-src a')).toHaveCount(0);
-    const link = def.getByRole('link', { name: 'Ping in the glossary' });
-    await expect(link).toHaveAttribute('href', '/glossary#ping');
-    expect(await link.getAttribute('target')).toBeNull();
+    expect(await def.evaluate((e) => [...e.children].map((c) => c.className))).toEqual(['explain__def-text', 'explain__def-src']);
+    await expect(def.locator('a, button, input, select, textarea, [tabindex], [contenteditable]')).toHaveCount(0);
+    await expect(def).not.toContainText('glossary');
     await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(1);
     await termButton(page, 'Traceroute').click();
     await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(2);
@@ -383,10 +439,15 @@ test.describe('Learn with definitions', () => {
     await expect(page.locator('body')).not.toContainText('every IPv4 packet’s header');
   });
 
-  test('31: Latency keeps the lesson’s name on the tape and the entry’s name in the link', async ({ page }) => {
+  test('31: Latency keeps the lesson’s name on the tape, and its definition is the entry Latency’s text (E2: read from /glossary)', async ({ page }) => {
+    await page.goto('/glossary');
+    const entryText = await page.locator('#latency .gl-def').textContent();
+    expect(entryText).toBeTruthy();
     await learn(page);
     await termButton(page, 'Latency (round-trip time)').click();
-    await expect(definition(page, 'Latency (round-trip time)').getByRole('link', { name: 'Latency in the glossary' })).toHaveAttribute('href', '/glossary#latency');
+    const def = definition(page, 'Latency (round-trip time)');
+    await expect(def.locator('.explain__def-text')).toHaveText(entryText!);
+    await expect(def.getByRole('link')).toHaveCount(0);
   });
 
   test('32: in the DNS lesson only TTL is tied; the other rows have no data-def, no button, no min-height, and one is 42.2px at 1440', async ({ page }) => {
@@ -404,27 +465,22 @@ test.describe('Learn with definitions', () => {
     expect((await cache.boundingBox())!.height).toBeLessThan(42.7);
   });
 
-  test('33: "Ping in the glossary" lands on #ping, marked; "ICMP lesson" goes back to Learn; Back from the glossary returns to Learn', async ({ page }) => {
+  test('33: no lesson links to the glossary: with all nine open no link reaches /glossary, and "in the glossary" is nowhere (E4: hrefs resolved)', async ({ page }) => {
     await learn(page);
-    await termButton(page, 'Ping').click();
-    await definition(page, 'Ping').getByRole('link', { name: 'Ping in the glossary' }).click();
-    await expect(page).toHaveURL(/\/glossary#ping$/);
-    await expect(page.locator('#ping')).toHaveCSS('box-shadow', /inset/);
-    expect(await page.evaluate(() => document.querySelector('#ping')?.matches(':target'))).toBe(true);
-    await page.goBack();
-    await hydrated(page);
-    await expect(kicker(page)).toHaveText(/Learn$/);
-    await page.goto('/glossary#ping');
-    await page.locator('#ping').getByRole('link', { name: 'ICMP lesson' }).click();
-    await hydrated(page);
-    await expect(kicker(page)).toHaveText(/Learn$/);
-    await page.goBack();
-    await page.goBack();
-    await hydrated(page);
-    await expect(kicker(page)).toHaveText(/Learn$/);
+    for (const b of await terms(page).getByRole('button').all()) await b.click();
+    await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(9);
+    const links = await page.locator('a').evaluateAll((as) => as.map((a) => {
+      const u = new URL(a.getAttribute('href') ?? '', location.href);
+      return { href: a.getAttribute('href'), origin: u.origin === location.origin, path: u.pathname };
+    }));
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.filter((l) => l.origin && (l.path === '/glossary' || l.path.startsWith('/glossary/'))).map((l) => l.href)).toEqual([]);
+    await expect(page.locator('body')).not.toContainText('in the glossary');
+    // The Cloudflare sources whose address holds "glossary" are not this site's pages, and stay.
+    expect(links.some((l) => !l.origin && /glossary/.test(l.href ?? ''))).toBe(true);
   });
 
-  test('34: Tab reaches the button, Enter opens it and focus stays, the next Tab is the glossary link, Space toggles, closed skips the link', async ({ page }) => {
+  test('34: Tab reaches the button, Enter opens it and focus stays, the next Tab leaves the row (Latency’s first source number), Space toggles (E6)', async ({ page }) => {
     await learn(page);
     const ping = termButton(page, 'Ping');
     await ping.focus();
@@ -432,12 +488,15 @@ test.describe('Learn with definitions', () => {
     await expect(ping).toHaveAttribute('aria-expanded', 'true');
     expect(await page.evaluate(() => document.activeElement?.textContent)).toBe('Ping');
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('link', { name: 'Ping in the glossary' })).toBeFocused();
+    expect(await page.evaluate(() => {
+      const row = document.activeElement!.closest('li');
+      const ping = [...document.querySelectorAll('button.explain__term')].find((b) => b.textContent === 'Ping')!.closest('li')!;
+      return { sameRow: row === ping, text: document.activeElement!.textContent, inLatency: row === ping.nextElementSibling };
+    })).toEqual({ sameRow: false, text: '4', inLatency: true });
     await page.keyboard.press('Shift+Tab');
+    await expect(ping).toBeFocused();
     await page.keyboard.press('Space');
     await expect(ping).toHaveAttribute('aria-expanded', 'false');
-    await page.keyboard.press('Tab');
-    expect(await page.evaluate(() => document.activeElement?.textContent)).not.toBe('Ping in the glossary');
     // Tab from the last mark of Ping's row reaches Ping's button.
     await page.locator('.explain__terms > li').nth(2).locator('.explain__marks a').last().focus();
     await page.keyboard.press('Tab');
@@ -470,16 +529,16 @@ test.describe('Learn with definitions', () => {
     }
   });
 
-  test('35: with a mouse the glossary link is 26px tall', async ({ page }) => {
+  test('28: an open definition ends 9px above the next row, at 1440 with a mouse', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await learn(page);
     await termButton(page, 'Ping').click();
-    expect((await definition(page, 'Ping').getByRole('link').boundingBox())!.height).toBeCloseTo(26, 0);
+    await expect(definition(page, 'Ping')).toHaveCSS('margin-bottom', '9px');
   });
 
   test.describe('as a touch screen at 375', () => {
     test.use({ hasTouch: true, isMobile: true, viewport: { width: 375, height: 812 } });
-    test('36: the row’s first 44px is the button’s target, the list’s width; the glossary link is 44px tall', async ({ page }) => {
+    test('36: the row’s first 44px is the button’s target, the list’s width', async ({ page }) => {
       await learn(page);
       // Packet loss's row is 61px at 375, so the point 46px down is inside the row but past the button's 44px target.
       const row = terms(page).locator('> li').nth(8);
@@ -489,8 +548,11 @@ test.describe('Learn with definitions', () => {
       expect(await hits(r.x + 2, r.y + 43)).toBe(true);
       expect(await hits(r.x + r.width - 2, r.y + 1)).toBe(true);
       expect(await hits(r.x + 2, r.y + 46)).toBe(false);
+    });
+    test('28: an open definition ends 9px above the next row on a touch screen', async ({ page }) => {
+      await learn(page);
       await termButton(page, 'Ping').click();
-      expect((await definition(page, 'Ping').getByRole('link').boundingBox())!.height).toBeGreaterThanOrEqual(43.9);
+      await expect(definition(page, 'Ping')).toHaveCSS('margin-bottom', '9px');
     });
   });
 });
