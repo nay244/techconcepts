@@ -130,7 +130,7 @@ Design and build the standalone Practice page (option 3) over the 40 existing qu
 
 ### After the revamp
 
-Finish Networking Concepts (15 lessons to write), CompTIA A+, the glossary and concept links, exporting saved progress, and the multi-unit dead code the audit listed.
+The owner confirmed the order on 2026-11-12 ("Practice page first"): Phase 5, then the revamp goes live, then Networking Concepts, starting with a pilot of one new lesson (handbook §7). Finish Networking Concepts (15 lessons to write), CompTIA A+, the glossary and concept links, exporting saved progress, and the multi-unit dead code the audit listed.
 
 ## 4. Evidence the lesson redesign starts from
 
