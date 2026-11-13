@@ -623,3 +623,7 @@ Planned on 2026-11-12 in a fresh session, the first run by Opus 5.5 as orchestra
 | Unit | Agent | Model | Tries | Growth | Read in all | Result |
 |---|---|---|---|---|---|---|
 | S9 | scout | Haiku | 1 | 350,290 | 17,258,925 | Done before the go: `prototypes/s9-batch-5-facts.md`. Sizes, documents (RFC 950, RFC 3021, RFC 5737 and NIST SP 800-41 not registered), DHCP's four differences from What is DHCP, pointers to unwritten lessons, three tests that use `dhcp` as the legacy sample, About reading DHCP's references. |
+| L15-a | analyst | Opus | 1 | 268,376 | 13,126,622 | DHCP: 76 stated, 27 stay, 10 change, 2 no source, 8 example, 1 analogy; 87 passages found. No new document. Badge spans; sizes dashes, so the packets go. |
+| L16-a | analyst | Opus | 1 | 254,927 | 9,784,029 | Subnetting: 192 rows (140 stated, 17 stay, 14 change, 4 no source); 91 passages found; of 70 `STATED` numbers 42 facts, 27 worked examples. Eight new documents. Badge 3. |
+| L17-a | analyst | Opus | 1 | 287,102 | 18,063,824 | Firewalls: 146 rows (102 stated, 17 stay, 17 change, 1 no source); 85 passages found. Nineteen new documents and one host. Badge 3 and 4. |
+| R5 | orchestrator | Opus 5.5 | 1 | not counted | not counted | Rulings written into each report (direction 2.35); Cloudflare's firewall and subnet pages read in a browser. `batch/5` in its own worktree: the legacy-sample tests take a stand-in (`1164cbe`); 28 documents and one host registered (`a213b80`). `npm test`: 1,704 passed. |
