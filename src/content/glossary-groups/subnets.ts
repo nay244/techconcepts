@@ -36,6 +36,8 @@ const x200 = (section: string, page: number) => cite('itu-x200', section, { url:
 
 const RFC4949_BIT = cite('rfc-4949', '4', { url: 'https://www.rfc-editor.org/rfc/rfc4949.html#page-36' });
 const FIPS197_BIT = cite('nist-fips-197', '2.1', { url: 'https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf#page=10' });
+const X200_LAYERS = x200('6.1.2', 32);
+const CISCO_ADDRESSES = cite('cisco-ip-subnets', 'Understand IP Addresses', { url: `${CISCO_SUBNETS}#:~:text=The%20address%20is%20made%20up%20of%2032%20binary%20bits` });
 const MS_OSI_PHYSICAL = cite('microsoft-osi', 'Physical layer', {
   url: 'https://learn.microsoft.com/en-us/windows-hardware/drivers/network/windows-network-architecture-and-the-osi-model#physical-layer',
 });
@@ -52,12 +54,12 @@ export default defineGlossaryGroup({
         {
           id: 'bit-2',
           text: 'An IPv4 address is 32 bits long, usually written as four numbers of 8 bits each, from 0 to 255.',
-          cite: [rfc('rfc-791', '2.3', true), MS_HOSTS, MS_GLOSSARY],
+          cite: [rfc('rfc-791', '2.3', true), MS_HOSTS, MS_GLOSSARY, rfc('rfc-4632', '3.1'), CISCO_ADDRESSES],
         },
         {
           id: 'bit-3',
           text: 'The Physical Layer, layer 1 of the OSI model, sends data as bits over a physical medium.',
-          cite: [x200('7.7.2', 53), MS_OSI_PHYSICAL],
+          cite: [x200('7.7.2', 53), X200_LAYERS, MS_OSI_PHYSICAL],
         },
       ],
     },
@@ -175,7 +177,7 @@ export default defineGlossaryGroup({
             {
               id: 'network-address-subnetting-2',
               text: 'It stands for the network itself, so it is normally not given to any device.',
-              cite: [MS_SUBNETTING, cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-31', defining: true }), rfc('rfc-3021', '2.1', true)],
+              cite: [MS_SUBNETTING, cite('rfc-1122', '3.2.1.3', { url: 'https://www.rfc-editor.org/rfc/rfc1122.html#page-31', defining: true }), rfc('rfc-3021', '2.1', true), rfc('rfc-3021', '1'), CISCO_EXAMPLE],
             },
           ],
           lessons: [{ lesson: 'subnetting', term: 'term-netaddr' }],
@@ -187,12 +189,12 @@ export default defineGlossaryGroup({
             {
               id: 'network-address-osi-1',
               text: 'In the OSI model, a network address is the address the Network Layer, layer 3, uses to identify each end system.',
-              cite: [x200('7.5.3.2', 46)],
+              cite: [x200('7.5.3.2', 46), X200_LAYERS],
             },
             {
               id: 'network-address-osi-2',
               text: 'Layer 3 finds a route between network addresses, so data can cross several networks on the way.',
-              cite: [x200('7.5.4.2.1', 48), x200('7.5.2.3', 45)],
+              cite: [x200('7.5.4.2.1', 48), x200('7.5.2.3', 45), X200_LAYERS],
             },
           ],
         },
