@@ -135,7 +135,7 @@ export default defineGlossaryGroup({
         {
           id: 'certificate-authority-1',
           text: 'A certificate authority (CA) is an organisation that issues and signs certificates, vouching that each public key belongs to the owner named.',
-          cite: [r4949(55), d('rfc-5280', '3.1'), rfc('rfc-5280', '3'), PA_CA],
+          cite: [r4949(55), rfc('rfc-5280', '3.1'), rfc('rfc-5280', '3'), PA_CA],
         },
         {
           id: 'certificate-authority-2',
@@ -183,7 +183,7 @@ export default defineGlossaryGroup({
         {
           id: 'shared-secret-1',
           text: 'A shared secret is a value that both ends of a connection hold and no one else knows.',
-          cite: [rfc('rfc-7748', '6.1'), nist77('2.3', 23), r4949(281)],
+          cite: [rfc('rfc-7748', '6.1'), nist77('2.2', 23), r4949(281)],
         },
         {
           id: 'shared-secret-2',
@@ -247,12 +247,12 @@ export default defineGlossaryGroup({
         {
           id: 'encryption-1',
           text: 'Encryption turns readable data into a scrambled form that hides its meaning, using a key.',
-          cite: [r4949(119), nist77('2.3', 23)],
+          cite: [r4949(119), nist77('2.2', 23)],
         },
         {
           id: 'encryption-2',
           text: 'Decryption, with the right key, turns encrypted data back into its original form.',
-          cite: [r4949(119), nist77('2.3', 23)],
+          cite: [r4949(119), nist77('2.2', 23)],
         },
         {
           id: 'encryption-3',
