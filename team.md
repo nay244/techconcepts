@@ -716,4 +716,6 @@ Planned on 2026-11-13 in a fresh session on Opus 5.5; direction 2.44, `plan.md`.
 | Unit | Agent | Model | Tries | Growth | Read in all | Result |
 |---|---|---|---|---|---|---|
 | S12 | scout | Haiku | 1 | 246,828 | not measured | `prototypes/s12-job-10-facts.md`: 82 of 110 entries tie to 102 Learn terms, no double tie; 28 tie to nothing (the protocols, the layers, TCP, UDP, IP, TLS and others); every defining standard registered but none for Frame, Bit, Public address, Plain text's second sense; three tests count the pilot's 11 rows; four draft group ids were lesson slugs; `/glossary/` about 27 KB at 120 entries against 250 KB. |
-| Plan | orchestrator | Opus 5.5 | 1 | not counted | not counted | `plan.md`: ten decisions, eleven groups in four batches, B10 first; the protocols recommended (+7). Estimate 6.4 to 7.1 million. **Waits for the owner's go.** |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | not counted | `plan.md`: ten decisions, eleven groups in four batches, B10 first; the protocols recommended (+7). Estimate 6.4 to 7.1 million. |
+| Go | the owner | | | | | 2026-11-13: "Go, with protocols". The plan approved, decision 1 accepted: 110 entries in this job, 120 in the glossary. |
+| Start | orchestrator | Opus 5.5 | | not counted | not counted | 2026-11-13: batch 1 (B10, `packets`, `transport`, `leases`) in a session of its own, started by the planning session. |
