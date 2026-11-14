@@ -291,6 +291,8 @@ describe('the OSI Model lesson’s sources', () => {
       'microsoft-azure-network-best-practices', 'paloalto-firewall-types', 'paloalto-stateful-firewall', 'paloalto-firewall-rules', 'paloalto-firewall', 'paloalto-ngfw', 'paloalto-rulebase-best-practices', 'paloalto-security-rules', 'google-cloud-firewall-insights', 'cloudflare-firewall',
       // Job 9: the glossary pilot's.
       'rfc-7680',
+      // Job 10, batch 1: the glossary group `leases`.
+      'rfc-9542', 'microsoft-wifi-connect',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

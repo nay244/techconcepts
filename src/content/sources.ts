@@ -2688,6 +2688,24 @@ export const SOURCES: SourceRegistry = defineSources([
     url: 'https://www.rfc-editor.org/rfc/rfc7680.html',
     anchor: 'https://www.rfc-editor.org/rfc/rfc7680.html#section-{n}',
   },
+  // Job 10, batch 1: the glossary group `leases` (MAC address).
+  {
+    id: 'rfc-9542',
+    kind: 'rfc',
+    short: 'RFC 9542',
+    title: 'IANA Considerations and IETF Protocol and Documentation Usage for IEEE 802 Parameters',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc9542.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc9542.html#section-{n}',
+  },
+  {
+    id: 'microsoft-wifi-connect',
+    kind: 'vendor',
+    short: 'Microsoft Windows Wi-Fi help',
+    title: 'Connect to a Wi-Fi network in Windows',
+    publisher: 'Microsoft',
+    url: 'https://support.microsoft.com/en-us/windows/experience/connectivity-networking/connect-to-a-wi-fi-network-in-windows',
+  },
 ]);
 
 /**
