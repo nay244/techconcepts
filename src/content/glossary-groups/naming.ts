@@ -48,7 +48,7 @@ export default defineGlossaryGroup({
         {
           id: 'dns-1',
           text: 'DNS, the Domain Name System, looks up the information stored under a name, such as the IP address of example.com.',
-          cite: [d('rfc-1034', '2.4'), rfc('rfc-9499', '1')],
+          cite: [d('rfc-1034', '2.4'), d('rfc-1034', '1'), rfc('rfc-9499', '1')],
         },
         {
           id: 'dns-2',
@@ -96,7 +96,7 @@ export default defineGlossaryGroup({
         {
           id: 'root-server-2',
           text: 'The root zone mainly lists each top-level domain’s name servers, so a root server points a resolver to a TLD’s servers.',
-          cite: [IANA_ROOT_ZONE, rfc('rfc-9499', '7'), ROOT_ZONE_APP, d('rfc-1034', '5.3.3')],
+          cite: [IANA_ROOT_ZONE, rfc('rfc-9499', '7'), ROOT_ZONE_APP, d('rfc-1034', '5.3.3'), d('rfc-1034', '4.3.2')],
         },
         {
           id: 'root-server-3',
@@ -186,11 +186,11 @@ export default defineGlossaryGroup({
         {
           id: 'name-server-2',
           text: 'Root, TLD and authoritative servers are all name servers; each answers from its zones or with a referral.',
-          cite: [d('rfc-1034', '4.1'), rfc('rfc-7720', '1'), IANA_ROOT_SERVERS, ROOT_ZONE_APP, d('rfc-1035', '3.2.2'), rfc('rfc-9499', '6')],
+          cite: [d('rfc-1034', '4.1'), rfc('rfc-7720', '1'), IANA_ROOT_SERVERS, ROOT_ZONE_APP, d('rfc-1035', '3.2.2'), rfc('rfc-9499', '6'), rfc('rfc-9499', '2')],
         },
         {
           id: 'name-server-3',
-          text: 'Both words are also used for recursive resolvers, so which is meant depends on context.',
+          text: 'These names are also used for recursive resolvers, so which is meant depends on context.',
           cite: [rfc('rfc-9499', '6'), d('rfc-1034', '5.3.1'), MS_IPCONFIG],
         },
       ],
