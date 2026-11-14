@@ -220,7 +220,7 @@ test('the end row names the next ready lesson, or says the last ready one for no
 
   show(7, FIREWALLS);
   expect(screen.getByText(/last ready one/)).toHaveTextContent(
-    'That’s the whole lesson, and the last ready one for now. Lessons 17 to 19 are coming soon.',
+    'That’s the whole lesson, and the last ready one for now. Lessons 18 to 20 are coming soon.',
   );
   expect(screen.getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
 });

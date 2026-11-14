@@ -4,7 +4,7 @@ import type { Backing, SceneEvent } from '../schema';
 import { cite, SOURCES } from '../sources';
 
 /**
- * Firewalls, lesson 16 of 19. A visitor and an admin out on the internet reach
+ * Firewalls, lesson 17 of 20. A visitor and an admin out on the internet reach
  * an office web server through a firewall whose rule list is read from the
  * top: the first rule that fits decides, and whatever no rule allows is
  * blocked (NIST SP 800-41 Rev. 1). The firewall is stateful: it remembers the

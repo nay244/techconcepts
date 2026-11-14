@@ -57,7 +57,7 @@ const parts = trackParts(track, entries, lessonOf, lessonStamp);
 // each figure once and not twice.
 const figures = entries
   .filter((e): e is AvailableSummary => e.available)
-  .map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(track.id, entry) }));
+  .map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(entry) }));
 
 // The title with its last word in the accent: 'Networking <em>Concepts</em>'.
 const cut = track.title.lastIndexOf(' ');

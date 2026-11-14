@@ -287,7 +287,7 @@ test('every address is a documentation or private one', () => {
 /** The words a sentence uses for each lesson it may point at. */
 const TOPIC: Record<string, string> = {
   'tcp-udp': 'SYN',
-  'http-https': 'HTTPS',
+  'what-is-https': 'HTTPS',
   nat: 'NAT',
   subnetting: 'slash',
   vpn: 'VPN',

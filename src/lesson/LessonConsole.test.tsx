@@ -159,7 +159,7 @@ test('the top bar says Step 2 of 5, never the step title', async () => {
   // Breadcrumb, lesson number and the unit's OSI layer.
   expect(within(topBar()).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
   expect(within(topBar()).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
-  expect(within(topBar()).getByText('Lesson 9 of 19')).toBeInTheDocument();
+  expect(within(topBar()).getByText('Lesson 9 of 20')).toBeInTheDocument();
   expect(within(topBar()).getByText('OSI layer 2, Data link')).toBeInTheDocument();
 });
 
@@ -321,7 +321,7 @@ test('the end row names the next ready lesson, or says the last ready one for no
   window.history.replaceState({}, '', '/networking/firewalls?step=7');
   renderConsole(FIREWALLS);
   expect(within(explanation()).getByText(/last ready one/)).toHaveTextContent(
-    'That’s the whole lesson, and the last ready one for now. Lessons 17 to 19 are coming soon.',
+    'That’s the whole lesson, and the last ready one for now. Lessons 18 to 20 are coming soon.',
   );
   expect(within(explanation()).getByRole('link', { name: 'Back to the track' })).toHaveAttribute('href', '/networking');
 });
@@ -441,18 +441,18 @@ test('the breadcrumb is Tracks / <track> / <lesson>', () => {
   expect(within(topBar()).queryByText('See how technology works')).toBeNull();
 });
 
-test('the outline moves the lesson, and All 19 lessons opens the track list in a dialog', async () => {
+test('the outline moves the lesson, and All 20 lessons opens the track list in a dialog', async () => {
   renderConsole();
   const outline = screen.getByRole('navigation', { name: 'This lesson' });
   await user.click(within(outline).getByRole('button', { name: /^Table Lookup/ }));
   expect(heading()).toHaveTextContent('Table Lookup');
   expect(within(outline).getByRole('button', { name: /^Table Lookup/ })).toHaveAttribute('aria-current', 'step');
 
-  await user.click(within(outline).getByRole('button', { name: 'All 19 lessons' }));
-  const dialog = screen.getByRole('dialog', { name: 'All 19 lessons' });
+  await user.click(within(outline).getByRole('button', { name: 'All 20 lessons' }));
+  const dialog = screen.getByRole('dialog', { name: 'All 20 lessons' });
   expect(within(dialog).getByRole('link', { name: /Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   expect(within(dialog).getByRole('link', { name: /DHCP/ })).toHaveAttribute('aria-current', 'page');
-  expect(within(dialog).getAllByText('Not ready yet')).toHaveLength(17);
+  expect(within(dialog).getAllByText('Not ready yet')).toHaveLength(18);
   await user.click(within(dialog).getByRole('button', { name: 'Close' }));
   expect(dialog).not.toHaveAttribute('open');
 });

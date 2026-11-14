@@ -19,14 +19,14 @@ test('the six parts in order, each with its number, its title, its lessons and h
     [1, 'The big picture', 1, 2],
     [2, 'Addresses & the local network', 0, 4],
     [3, 'Getting between networks', 2, 3],
-    [4, 'Talking across the internet', 0, 4],
-    [5, 'The web', 0, 2],
+    [4, 'Talking across the internet', 1, 4],
+    [5, 'The web', 3, 3],
     [6, 'Protecting & scaling traffic', 1, 4],
   ]);
   // Every planned lesson once, numbered across the track with two digits.
   const all = parts.flatMap((p) => p.lessons);
-  expect(all.map((l) => l.n)).toEqual(Array.from({ length: 19 }, (_, i) => String(i + 1).padStart(2, '0')));
-  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Subnetting', 'DHCP', 'Firewalls']);
+  expect(all.map((l) => l.n)).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0')));
+  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Subnetting', 'DHCP', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
   expect(all[1]).toEqual({ ready: false, key: 'packets', n: '02', title: 'Packets' });
 });
 

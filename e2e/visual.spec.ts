@@ -96,11 +96,13 @@ test.describe('screenshots', { tag: '@visual' }, () => {
         }
 
         for (const lesson of LESSONS) {
+          // Named by path, not slug: a lesson two tracks list is on both track pages, and runs under each.
+          const key = lesson.path.slice(1).replaceAll('/', '-');
           for (const place of PLACES) {
-            test(`${lesson.slug} ${place}`, async ({ page }, testInfo) => {
+            test(`${key} ${place}`, async ({ page }, testInfo) => {
               const errors = collectErrors(page);
               await openLessonAt(page, lesson.path, place);
-              await shoot(page, `${lesson.slug}-${place}`, testInfo.project.outputDir);
+              await shoot(page, `${key}-${place}`, testInfo.project.outputDir);
               expect(errors).toEqual([]);
             });
           }
