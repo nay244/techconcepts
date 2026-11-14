@@ -7,7 +7,7 @@ import { tracks } from '../content/tracks';
 import { glossaryData, type GlossaryData, type GlossaryLesson } from './glossary';
 
 /** Every ready lesson once, with the titles of the tracks that list it. */
-function readyLessons(): GlossaryLesson[] {
+export function readyLessons(): GlossaryLesson[] {
   return tracks.flatMap((track) =>
     getEntries(track.id).flatMap((e) => {
       const lesson = e.available && e.canonical === e.url ? getLesson(e.slug) : undefined;

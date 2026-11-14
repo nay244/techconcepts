@@ -1,7 +1,7 @@
 import { defineTrack } from '../define';
 
 /**
- * Titles and order follow the launch catalog (launch spec §8): 19 lessons. How
+ * Titles and order follow the launch catalog (launch spec §8): 20 lessons; DNS, HTTP, HTTPS and TLS/SSL are shared with the tour. How
  * the Internet Works, lesson 1 for a while (redesign spec §3), is its own track
  * now (direction doc §4.5).
  */
@@ -58,15 +58,16 @@ export const networkingTrack = defineTrack({
         { slug: 'ports', title: 'Ports' },
         { slug: 'tcp-udp', title: 'TCP/UDP' },
         { slug: 'nat', title: 'NAT' },
-        { slug: 'dns', title: 'DNS' },
+        { slug: 'what-is-dns', title: 'DNS' },
       ],
     },
     {
       id: 'web',
       title: 'The web',
       lessons: [
-        { slug: 'http-https', title: 'HTTP/HTTPS' },
-        { slug: 'tls', title: 'TLS' },
+        { slug: 'what-is-http', title: 'HTTP' },
+        { slug: 'what-is-https', title: 'HTTPS' },
+        { slug: 'what-is-tls', title: 'TLS/SSL' },
       ],
     },
     {

@@ -38,7 +38,7 @@ const drawn = drawFigure(lesson.figure);
 const data = drawn.data;
 const svg = fillLabels(drawn.svg, lesson.units[0]!.scene.labels);
 // The next lesson's own art for the Up next card at the end of Practice (null on a track's last ready lesson).
-const nextFigure = next === null ? null : lessonFigure(track.id, next);
+const nextFigure = next === null ? null : lessonFigure(next);
 // The console has its own top bar and <main id="main">, so the layout adds no header, main or footer.
 ---
 

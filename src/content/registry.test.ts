@@ -42,22 +42,22 @@ const SLUGS = [
   'osi-model', 'packets',
   'ip-address', 'mac-address', 'switch', 'arp',
   'subnetting', 'router', 'dhcp',
-  'ports', 'tcp-udp', 'nat', 'dns',
-  'http-https', 'tls',
+  'ports', 'tcp-udp', 'nat', 'what-is-dns',
+  'what-is-http', 'what-is-https', 'what-is-tls',
   'firewalls', 'proxies', 'load-balancers', 'vpn',
 ];
 
-test('the networking track has 19 lessons in order, OSI Model first', () => {
+test('the networking track has 20 lessons in order, OSI Model first', () => {
   const e = buildEntries(networkingTrack, {}, home);
   expect(e.map((x) => x.slug)).toEqual(SLUGS);
-  expect(e.map((x) => x.number)).toEqual(Array.from({ length: 19 }, (_, i) => i + 1));
+  expect(e.map((x) => x.number)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
   expect(e[0]).toMatchObject({ title: 'OSI Model', partTitle: 'The big picture' });
   expect(e.every((x) => !x.available)).toBe(true);
 });
 
-test('lesson numbers: subnetting 7, dhcp 9, firewalls 16', () => {
+test('lesson numbers: subnetting 7, dhcp 9, DNS 13, HTTP 14, HTTPS 15, TLS/SSL 16, firewalls 17', () => {
   const number = (slug: string) => buildEntries(networkingTrack, {}, home).find((x) => x.slug === slug)?.number;
-  expect([number('subnetting'), number('dhcp'), number('firewalls')]).toEqual([7, 9, 16]);
+  expect(['subnetting', 'dhcp', 'what-is-dns', 'what-is-http', 'what-is-https', 'what-is-tls', 'firewalls'].map(number)).toEqual([7, 9, 13, 14, 15, 16, 17]);
 });
 
 test('networking track metadata, parts and titles', () => {
@@ -67,16 +67,16 @@ test('networking track metadata, parts and titles', () => {
     ['local-network', 'Addresses & the local network', 4],
     ['between-networks', 'Getting between networks', 3],
     ['across-internet', 'Talking across the internet', 4],
-    ['web', 'The web', 2],
+    ['web', 'The web', 3],
     ['protect-scale', 'Protecting & scaling traffic', 4],
   ]);
   expect(networkingTrack.parts.flatMap((p) => p.lessons.map((l) => l.title))).toEqual([
     'OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router',
-    'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP/HTTPS', 'TLS', 'Firewalls', 'Proxies', 'Load Balancers', 'VPN',
+    'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls', 'Proxies', 'Load Balancers', 'VPN',
   ]);
   const e = buildEntries(networkingTrack, {}, home);
   expect(e.find((x) => x.slug === 'arp')).toMatchObject({ partTitle: 'Addresses & the local network' });
-  expect(e.find((x) => x.slug === 'vpn')).toMatchObject({ partTitle: 'Protecting & scaling traffic', number: 19 });
+  expect(e.find((x) => x.slug === 'vpn')).toMatchObject({ partTitle: 'Protecting & scaling traffic', number: 20 });
 });
 
 test('tracks and coming-soon tracks', () => {
@@ -164,12 +164,12 @@ test('neighbors: prev and next are the nearest available lessons', () => {
   const lessons = {
     packets: lessonFor('packets', 'Packets'),
     dhcp: lessonFor('dhcp', 'DHCP'),
-    dns: lessonFor('dns', 'DNS'),
+    'what-is-dns': lessonFor('what-is-dns', 'DNS'),
   };
   const e = buildEntries(networkingTrack, lessons, home);
-  expect(neighbors(e, 'dhcp')).toMatchObject({ prev: { slug: 'packets' }, next: { slug: 'dns' }, nextPlanned: true });
+  expect(neighbors(e, 'dhcp')).toMatchObject({ prev: { slug: 'packets' }, next: { slug: 'what-is-dns' }, nextPlanned: true });
   expect(neighbors(e, 'packets')).toMatchObject({ prev: null, next: { slug: 'dhcp' }, nextPlanned: true });
-  expect(neighbors(e, 'dns')).toMatchObject({ prev: { slug: 'dhcp' }, next: null, nextPlanned: true });
+  expect(neighbors(e, 'what-is-dns')).toMatchObject({ prev: { slug: 'dhcp' }, next: null, nextPlanned: true });
 });
 
 test('neighbors: nextPlanned is false when the next entry is available, or there is none', () => {
@@ -194,10 +194,10 @@ test('a title that differs from the track, or a mismatched slug, throws; another
 test('trackTotals counts planned (all entries), and available', () => {
   const dhcp = lessonFor('dhcp', 'DHCP');
   const fw = lessonFor('firewalls', 'Firewalls');
-  expect(trackTotals(buildEntries(networkingTrack, {}, home))).toEqual({ available: 0, planned: 19 });
+  expect(trackTotals(buildEntries(networkingTrack, {}, home))).toEqual({ available: 0, planned: 20 });
   expect(trackTotals(buildEntries(networkingTrack, { dhcp, firewalls: fw }, home))).toEqual({
     available: 2,
-    planned: 19,
+    planned: 20,
   });
 });
 
@@ -210,7 +210,7 @@ test('entries carry no minutes', () => {
 test('getTrack, getEntries and getLesson answer from the registry', () => {
   expect(getTrack('networking')).toBe(networkingTrack);
   expect(getTrack('nope')).toBeUndefined();
-  expect(getEntries('networking')).toHaveLength(19);
+  expect(getEntries('networking')).toHaveLength(20);
   expect(getTrack('how-the-internet-works')).toBe(internetTrack);
   expect(getEntries('how-the-internet-works')).toHaveLength(14);
   expect(getEntries('nope')).toEqual([]);
@@ -382,6 +382,31 @@ test('every track passes the re-check against the real sources', () => {
 test('tracksOf lists the tracks that list a slug, in tracks order', () => {
   expect(tracksOf('dhcp').map((t) => t.id)).toEqual(['networking']);
   expect(tracksOf('not-a-lesson')).toEqual([]);
+});
+
+test('a shared lesson: tracksOf keeps tracks order, and its neighbors differ by track', () => {
+  expect(tracksOf('what-is-dns').map((t) => t.id)).toEqual(['how-the-internet-works', 'networking']);
+  expect(tracksOf('what-is-tls').map((t) => t.id)).toEqual(['how-the-internet-works', 'networking']);
+  const net = getEntries('networking');
+  const tour = getEntries('how-the-internet-works');
+  expect(neighbors(net, 'dhcp').next?.url).toBe('/networking/what-is-dns');
+  expect(neighbors(net, 'what-is-tls').next?.url).toBe('/networking/firewalls');
+  expect(neighbors(tour, 'what-is-tls').next).toBeNull();
+  expect(net.filter((e) => e.available).map((e) => [e.slug, e.number])).toEqual([
+    ['osi-model', 1], ['subnetting', 7], ['dhcp', 9], ['what-is-dns', 13], ['what-is-http', 14], ['what-is-https', 15], ['what-is-tls', 16], ['firewalls', 17],
+  ]);
+  const dns = net.find((e) => e.slug === 'what-is-dns')!;
+  expect(dns.available && dns).toMatchObject({ url: '/networking/what-is-dns', canonical: '/how-the-internet-works/what-is-dns' });
+});
+
+test('the old networking slugs are gone: dns, tls and http-https are not listed', () => {
+  for (const slug of ['dns', 'tls', 'http-https']) expect(tracksOf(slug)).toEqual([]);
+});
+
+test('an override neither listing track needs fails, naming both tracks', () => {
+  const loose = concept('beta', part(['shared', 'Shared']));
+  const reasoned = { ...shared, overrides: [{ limit: 'steps' as const, max: 5, reason: 'Needs a fifth step.' }] };
+  expect(() => checkListings({ shared: reasoned }, [alpha, loose])).toThrow(/alpha, beta tracks do not need/);
 });
 
 test('the real lessons load from one folder', () => {

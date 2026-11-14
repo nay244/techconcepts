@@ -280,6 +280,19 @@ test.describe('lesson specifics', () => {
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonical);
   });
 
+  test('a lesson two tracks list names its canonical URL in the tour, on both pages, with the site\'s own share image', async ({ page }) => {
+    const canonical = new URL('/how-the-internet-works/what-is-dns', 'https://techconcepts.app').href;
+    for (const path of ['/networking/what-is-dns', '/how-the-internet-works/what-is-dns']) {
+      await page.goto(path);
+      await expect(page.locator('link[rel="canonical"]'), path).toHaveAttribute('href', canonical);
+      await expect(page.locator('meta[property="og:url"]'), path).toHaveAttribute('content', canonical);
+      await expect(page.locator('meta[property="og:image"]'), path).toHaveAttribute('content', /\/og-default\.png$/);
+    }
+    // DHCP keeps its own address.
+    await page.goto('/networking/dhcp');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new URL('/networking/dhcp', 'https://techconcepts.app').href);
+  });
+
   /** A lesson the brief names, found among the ready ones. */
   function lessonNamed(slug: string): ReadyLesson {
     const lesson = LESSONS.find((l) => l.slug === slug);

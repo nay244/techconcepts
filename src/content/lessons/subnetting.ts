@@ -6,7 +6,7 @@ import type { Backing, Board, Cue, NoteEvent } from '../schema';
 import { cite } from '../sources';
 
 /**
- * Subnetting, lesson 7 of 19. An office cuts its one /24 into four /26s, one
+ * Subnetting, lesson 7 of 20. An office cuts its one /24 into four /26s, one
  * per team: the learner sees an address split
  * into its network and host parts, works out the mask, the network and
  * broadcast addresses and the usable addresses, borrows 2 bits to cut the

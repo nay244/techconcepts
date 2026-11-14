@@ -207,7 +207,7 @@ export interface HomeStop {
   /** Its panel on the Tracks page. */
   href: string;
   cover: CoverId;
-  /** "14 lessons", or "4 of 19 lessons ready". */
+  /** "14 lessons", or "8 of 20 lessons ready". */
   count: string;
   lessons: { ready: number; planned: number };
 }

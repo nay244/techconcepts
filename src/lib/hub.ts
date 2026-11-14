@@ -74,7 +74,7 @@ export function stripStates(entries: LessonSummary[], data: ProgressData, curren
   });
 }
 
-/** The strip caption, such as `1 of 19 lessons done · 4 ready`; the ready count appears only when some lessons are not ready. */
+/** The strip caption, such as `1 of 20 lessons done · 8 ready`; the ready count appears only when some lessons are not ready. */
 export function stripWords(entries: LessonSummary[], data: ProgressData): string {
   const total = entries.length;
   const done = entries.filter((e) => lessonStatus(e, data) === 'done').length;

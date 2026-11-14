@@ -52,7 +52,7 @@ export function trackCards(): TrackCard[] {
       known: knownFrom(entries),
       figures: entries
         .filter((e): e is AvailableSummary => e.available)
-        .map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(track.id, entry) })),
+        .map((entry) => ({ slot: `art${entry.number}`, svg: lessonFigure(entry) })),
     };
   });
   const later = plannedTracks.map(
