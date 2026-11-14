@@ -59,7 +59,10 @@ const MS_WF_PRECEDENCE = vendor('microsoft-windows-firewall-rules', 'Rule preced
 const MS_WF_OPEN = vendor('microsoft-windows-firewall-rules', 'Applications rules', 'Allowing all inbound connections by default introduces');
 const MS_NSG_ORDER = vendor('microsoft-azure-nsg', 'Security rules', 'Rules are processed in priority order');
 const MS_NSG_STATEFUL = vendor('microsoft-azure-nsg', 'Security rules', 'The flow record allows a network security group to be stateful');
-const MS_NSG_DEFAULT = vendor('microsoft-azure-nsg', 'Default security rules', 'Azure default security rules are given the lowest priority');
+const MS_NSG_DEFAULT = vendor('microsoft-azure-nsg', 'Security rules', 'Azure default security rules are given the lowest priority');
+const MS_NSG_DENYALL = vendor('microsoft-azure-nsg', 'Default security rules', 'DenyAllInbound');
+const PA_BEST_DEFAULT_DENY = vendor('paloalto-firewall-best-practices', '2. Enforce a default-deny policy with least privilege', 'The safest firewall policy starts with one principle');
+const PA_RULES_FIRST_MATCH = vendor('paloalto-firewall-rules', 'Firewall Rules FAQs', 'with the first match applied');
 const MS_AZURE_DENIED = vendor('microsoft-azure-firewall-rule-sets', 'Rules', 'If no rule allows the traffic');
 
 const GOOGLE_SHADOWED = vendor('google-cloud-firewall-insights', 'Shadowed rules', 'Shadowed rules share attributes');
@@ -127,7 +130,7 @@ export default defineGlossaryGroup({
         {
           id: 'first-match-1',
           text: 'First match is how many firewalls read their rules: from the top down, stopping at the first rule that fits the traffic and taking its action.',
-          cite: [NIST_CONFIG, PA_RULEBASE, MS_NSG_ORDER],
+          cite: [NIST_CONFIG, PA_RULEBASE, MS_NSG_ORDER, PA_RULES_FIRST_MATCH],
         },
         {
           id: 'first-match-2',
@@ -150,13 +153,13 @@ export default defineGlossaryGroup({
         {
           id: 'default-deny-1',
           text: 'Default deny, or deny by default, is a firewall policy of blocking all traffic that no rule expressly allows.',
-          cite: [NIST_POLICY, MS_AZURE_DENIED, PA_RULEBASE],
+          cite: [NIST_POLICY, MS_AZURE_DENIED, PA_RULEBASE, PA_BEST_DEFAULT_DENY],
         },
         { id: 'default-deny-2', text: 'It is safer than allowing everything that is not forbidden.', cite: [NIST_POLICY, MS_WF_OPEN] },
         {
           id: 'default-deny-3',
           text: 'Many firewalls do it with a last rule, at the bottom of the list, that denies all remaining traffic.',
-          cite: [PA_RULES_CATCHALL, MS_NSG_DEFAULT],
+          cite: [PA_RULES_CATCHALL, MS_NSG_DEFAULT, MS_NSG_DENYALL],
         },
       ],
       lessons: [{ lesson: 'firewalls', term: 'term-default-deny' }],
@@ -308,7 +311,7 @@ export default defineGlossaryGroup({
         {
           id: 'public-address-1',
           text: 'A public address is an IP address that is unique across the internet, assigned through an internet registry.',
-          cite: [rfc('rfc-1918', '3'), R3022_PUBLIC],
+          cite: [rfc('rfc-1918', '3'), R3022_PUBLIC, rfc('rfc-3022', '2.1')],
         },
         {
           id: 'public-address-2',
