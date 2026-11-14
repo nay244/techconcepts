@@ -2733,6 +2733,15 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Palo Alto Networks',
     url: 'https://www.paloaltonetworks.com/cyberpedia/firewall-best-practices',
   },
+  // Job 10, batch 3: the glossary group `naming` (Top-level domain's two types).
+  {
+    id: 'iana-root-db',
+    kind: 'iana',
+    short: 'IANA Root Zone Database',
+    title: 'Top-Level Domains',
+    publisher: 'IANA',
+    url: 'https://www.iana.org/domains/root/db',
+  },
 ]);
 
 /**
