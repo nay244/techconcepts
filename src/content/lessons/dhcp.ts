@@ -4,7 +4,7 @@ import type { MessageEvent, MessageKind, TableEvent } from '../schema';
 import { cite } from '../sources';
 
 /**
- * DHCP, lesson 9 of 19. A laptop joins a home Wi-Fi network and gets its
+ * DHCP, lesson 9 of 20. A laptop joins a home Wi-Fi network and gets its
  * settings from the router in four messages (RFC 2131), keeps them for a lease
  * and renews at half-time (section 4.4.5). The phone on the same Wi-Fi hears
  * the broadcasts and ignores them.

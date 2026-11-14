@@ -865,7 +865,7 @@ test.describe('desktop', () => {
     await expect(sideButton(page)).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
     await expect(lessonCard(page, 'what-is-udp')).toHaveClass(/\bstop--now\b/);
 
-    // Tracks goes on where they were too: How the Internet Works' panel continues UDP; Networking reads as a first visit.
+    // Tracks goes on where they were too: How the Internet Works' panel continues UDP; Networking counts HTTP and HTTPS done, as they are its lessons too.
     await open(page, '/tracks');
     const internet = panelOf(page, 'how-the-internet-works');
     await expect(internet.locator('.strip__w')).toHaveText('3 of 14 lessons done');
