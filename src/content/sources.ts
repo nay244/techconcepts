@@ -2724,6 +2724,15 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'NIST',
     url: 'https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf',
   },
+  // Job 10, batch 2: the glossary group `filtering` (Default deny).
+  {
+    id: 'paloalto-firewall-best-practices',
+    kind: 'vendor',
+    short: 'Palo Alto firewall practices',
+    title: 'Top 13 Firewall Best Practices [+ Pitfalls to Avoid]',
+    publisher: 'Palo Alto Networks',
+    url: 'https://www.paloaltonetworks.com/cyberpedia/firewall-best-practices',
+  },
 ]);
 
 /**
