@@ -129,3 +129,145 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 - Entries beyond G1's list and the seven protocols.
 - Copying another site's text; a source host that is not a publisher's own.
 - Anything that leaves this machine.
+
+## B10: the spec review's cases and errata (batch 1, 2026-11-13)
+
+Errata (the orchestrator, one right answer each): H1 to H6, H8 and H9 are closed as the reviewer answers them below; H7 holds as written (a red last-letter test stops B10 and goes to the designer; it is not loosened). **The builder is Sonnet, not Haiku** (decision 8 changed): the review found twelve places in three files and three end-to-end specs to run, past what job 9 called a Haiku-sized list. The scratch group's report (H1) is written by hand from its sheet, and leaves with the group.
+
+### Holes, worst first (with the answer I would pick)
+
+H1. The check cannot pass as written. A group file with no report makes the registry throw in test and build mode
+(src/content/registry.ts:327-328, gate.ts:247-266: "no fact-check report at docs/fact-checks/glossary/<id>.md"), so
+every test that imports the registry goes red before any count is reached. "No other edit" must allow the report.
+Answer: the scratch commit holds exactly two files, `src/content/glossary-groups/<id>.ts` and
+`docs/fact-checks/glossary/<id>.md`, the report written from `npm run fact-check -- glossary/<id>` (its hash, every key
+"✅", `checked` a day later than the pilot's); nothing else.
+
+H2. The made-up group's shape is unstated; a one-entry group under an existing letter passes the check and proves
+nothing. Answer: the shape in case S below.
+
+H3. The three counts are not all the pilot assumptions. Also broken by the real groups:
+- src/lib/glossary.test.ts:308-310 (letters "DEILPT", the exact list of eleven names);
+- src/lib/glossary.test.ts:330 and :332 (every definition one track, and every definition has tracks: the 28 untied
+  entries and every Networking Concepts tie break it);
+- src/lib/glossary.test.ts:342 (no lessonMap key starts "osi-model/": `packets` ties osi-model:term-header in batch 1);
+- src/lib/glossary.test.ts:347 (the stamp's date is the pilot report's date: false once a later group passes);
+- src/lib/glossary-page.test.ts:174-178 (six keys, none dashed: 13 letters or more gives 26 keys with dashes);
+- e2e/glossary.spec.ts:111 (no `.gl-key--none`);
+- e2e/glossary.spec.ts:363-375 (check 26 on osi-model as "a lesson with no tied term": false in batch 1);
+- e2e/glossary.spec.ts:453-466 (check 32: in the DNS lesson only TTL is tied, and the untied "Answers kept for next
+  time" row is 42.2px: `naming` ties what-is-dns:term-cache in batch 3);
+- e2e/glossary.spec.ts:201 (comment "The pilot: 43 row links").
+Answer: all are in B10 (decision 8's "any other"). Not pilot assumptions, leave as they are: glossary.test.ts:305-307,
+:351-353; glossary-page.test.ts:54, :125, :143, :12 entries loop; e2e:43-44, :110, :203; definitions.no-script.test.ts:31.
+
+H4. The e2e cannot load the glossary (e2e/glossary.spec.ts:7-9, E2), so ":228 counts the pilot group's rows" has no data.
+Answer: filter the rows by `closest('.gl-entry').id` in the pilot's ten entry ids, taken from
+`src/content/glossary-groups/pilot.ts` if it imports under Playwright (it uses no import.meta.glob), else a typed list
+that a Vitest test pins to pilot.ts's ids.
+
+H5. After batch 4 every ready lesson has a tie (S12 §A totals: 17 lessons plus ICMP, all 18), so check 26's e2e has no
+lesson "with no tied term" left. Answer: the no-hint, no-tie half stays in src/lesson/Explanation.test.tsx:298 (fixture);
+the e2e keeps only "an untied row has no attribute and no button", on rows no approved entry ties (S12 §A.3, e.g.
+what-is-tcp term-dupack, term-sack, term-fin), and asserts no hint only if it can name such a lesson (it cannot): drop it.
+
+H6. Check 32's row (DNS cache) will be tied. Answer: the "tied rows are exactly the rows with data-def" half is
+computed, not "['TTL']"; the untied-row half (no button, no min-height, one row's height) moves to a row no approved
+entry ties (S12 §A.3, e.g. what-is-tcp term-dupack at its Learn step), its height measured on revamp at 1440 before
+the change, since an untied row is unchanged by design.
+
+H7. The 375 last-letter tests (e2e:113-118 bar 68-80px; :134-142 bar at 68px from the middle of the last letter)
+hold only if the last letter is tall enough to scroll to the top. The approved list's last letter is likely short
+(U: UDP, URL). That is the page's behaviour, not a count. Answer: the scratch group gives a one-entry last letter; if
+these go red, B10 does not loosen them: it stops and the orchestrator takes it to the designer.
+
+H8. The check runs only e2e/glossary.spec.ts, yet a tie changes Learn rows (a button, a min-height) in lessons that
+e2e/lesson.spec.ts and e2e/reading.spec.ts measure (reading.spec opens dhcp and osi-model at Learn), and M-N runs
+lesson.spec. Answer: with the scratch group, run glossary, lesson and reading specs; a red outside glossary.spec that is
+not a pilot assumption is reported, not fixed in B10.
+
+H9. "The made-up group removed" names no proof. Answer: case R.
+
+### Case S: the made-up group (the scratch commit)
+
+One group, id `b10-scratch` (not a lesson slug, not `pilot`), statements copied in shape from pilot.ts (real registered
+sources, defining citations), and its report per H1. It must hold:
+- S1 terms under at least seven letters the pilot lacks (A, B, C, F, M, R, U, say), so the page has 13+ letters;
+- S2 one term starting with a digit ("802.1X", say), for the 0–9 key;
+- S3 one entry with no tie (no "Described in" row);
+- S4 one entry tied only to a Networking Concepts term no approved entry ties: dhcp:term-lease-table (the dhcp lesson
+  is listed by Networking Concepts only, src/content/tracks/networking.ts:51);
+- S5 a tie to osi-model:term-header (as `packets` will);
+- S6 a tie to what-is-dns:term-cache (as `naming` will);
+- S7 an entry with two senses and one pointer ("also");
+- S8 the last letter holds a single one-line entry (as U may);
+- S9 its report's `checked` date later than the pilot's (2026-11-14).
+
+### Attack cases
+
+### Check 1: with the made-up group added, `npm test` and `e2e/glossary.spec.ts` pass with no other edit
+
+1. Scratch commit = group file + report only. Proof: `git show --stat HEAD` lists exactly those two paths; then
+   `npm test` exits 0. A build that edits a test inside the scratch commit fails this.
+2. Pilot definitions count (glossary.test.ts:223): pilot's definitions are 11 with S in. Proof: `npm test` green with S;
+   the test reads `GLOSSARY_GROUPS.find((g) => g.id === 'pilot')`, not all letters.
+3. Shape check (glossary.test.ts:224) still runs on every real definition, S's too, not on the pilot's only. Proof: give
+   one S definition a track title not in `tracks` by hand (impossible through data, so: assert the loop's length equals
+   the total definitions, `GLOSSARY.reduce(partsOf)`), and it is greater than 11 with S in.
+4. glossary-page.test.ts:156: pilot rows 11 with S in; and `rows()` still equals every definition with tracks (all
+   groups). Proof: `npm test` green with S; with S3's entry given a tie the total moves and the test stays green.
+5. e2e:228: pilot rows 11 at 375 and 768 with S in, and the per-row height rule still runs over every row, S's too.
+   Proof: `npx playwright test e2e/glossary.spec.ts` green with S; the rows array length > 11.
+6. Letters and names (glossary.test.ts:308-310): the pilot's eleven items in order are a subsequence of the page's items,
+   and the page's letters are the first letters of every item. Proof: green with S1, S2 (letters include "0–9").
+7. Tracks (glossary.test.ts:330, :332): "one track, How the Internet Works" applies to pilot definitions only; "every
+   definition has tracks" applies to the pilot only. Proof: green with S3 and S4.
+8. Lesson map (glossary.test.ts:342): replaced by "the map's keys are exactly the ties of the glossary" (every
+   `lesson/term` of every part's `lessons`). Proof: green with S5, S6.
+9. Stamp date (glossary.test.ts:347): the stamp's date is the latest of `glossaryCheckedOn(g.id)` over the groups.
+   Proof: green with S9; and `glossaryCheckedOn('pilot')` still equals the pilot report's date.
+10. Keys (glossary-page.test.ts:174-178): live keys equal the letter sections; dashed keys are 26 minus live when the
+    letters are 13 or more, none when fewer. Proof: green with S (26 keys) and green without S (6 keys).
+11. e2e:111: the same rule from the DOM. Proof: green with S, where `.gl-key--none` count is 26 − live.
+12. Check 26 (e2e:363): per H5; osi-model:term-relay (stays untied) or what-is-tcp term-dupack serves as the untied
+    row. Proof: green with S5 in (osi-model now tied); the Vitest half
+    (Explanation.test.tsx:298) unchanged.
+13. Check 32 (e2e:453): per H6. Proof: green with S6 in (DNS cache now tied); the tied rows of the DNS lesson read
+    ['TTL', 'DNS cache'] or whatever S ties, computed from data-def.
+14. Last letter (e2e:113-118, :134-142): green with S8. If red, see H7: report, do not loosen.
+15. 0–9 key at 320 and 375 (e2e:147-155, :244-251): no sideways scroll and keys 44px with 27 keys. Proof: green with S2.
+16. Learn elsewhere (H8): `npx playwright test e2e/lesson.spec.ts e2e/reading.spec.ts` green with S5, S6 in.
+17. `npm run build` with S in: exits 0 (astro check, budgets).
+18. Nearest wrong build, refused: replacing `toHaveLength(11)` by `toBeGreaterThanOrEqual(11)` or deleting the line
+    passes check 1 but fails case 21 (it cannot go red when a pilot row goes). Proof: case 21.
+19. Nearest wrong build, refused: counting "rows whose entry is in the first six letters" or by name list typed in the
+    test without tying it to pilot.ts. Proof: rename a pilot entry's id in a scratch edit; a typed list not pinned to
+    pilot.ts stays green (wrong); the pinned one goes red.
+
+### Check 2: the made-up group removed
+
+20. After the run the scratch commit is gone: `git diff revamp...<branch> --stat` names only test files (src/**/*.test.ts,
+    e2e/*.spec.ts, and a Vitest pin per H4 if any); nothing under src/content/glossary-groups/ or docs/fact-checks/.
+    And on the branch head without S: `npm test`, `npm run build` and `npx playwright test e2e/glossary.spec.ts` green.
+    A build that leaves the report behind fails: the gate refuses an orphan report (gate.ts:268-270).
+
+### Check 3: each changed test (every data break below runs under `npx vitest run --mode development`, since a
+### changed pilot no longer matches pilot.md's hash and the gate would throw first in test mode) turns red when the count it guards is broken (the builder names the break)
+
+21. Pilot definitions (glossary.test.ts:223) and pilot rows (glossary-page.test.ts:156): delete the `lessons` tie of one
+    pilot entry (e.g. `packet-loss`) in a scratch edit and run `npx vitest run --mode development` (the gate warns
+    there instead of throwing, as the G-b check uses it): glossary-page.test.ts:156 goes red (10 rows). For :223 drop
+    TTL's DNS sense (and its tie): red (10 definitions). For e2e:228: render no
+    `.gl-row--tracks` for `#packet-loss` in a scratch edit of GlossaryEntry.astro (or drop one id from the e2e's pilot id
+    source if it is a typed list): red. Run each with S in and without.
+22. Add a third sense to the pilot's TTL in a scratch edit: glossary.test.ts:223 goes red (12).
+23. Pilot names (glossary.test.ts:310): change one pilot term's case ("Echo Reply"): red.
+24. Keys (glossary-page.test.ts:174, e2e:111): with S in, drop GlossaryKeys' dashed spans (render only live keys): red.
+    Without S, render one dashed key: red.
+25. Lesson map (case 8): add a stray key to lessonMap in glossary.ts, or drop S5's: red.
+26. Stamp date (case 9): make the stamp take the first group's date instead of the latest: red with S9.
+27. Tracks (case 7): give a pilot definition a second track by tying a Networking Concepts term to a pilot entry: red.
+28. Check 32 (case 13): give the untied row's li a min-height of 44px in console.css: red. Tie it: red (it is no longer
+    untied), so the test's chosen row must be one no approved entry ties.
+29. Check 26 (case 12): give untied rows a `data-def` attribute: red.
+30. Every break is undone and named in the builder's report with the red test's name and the command.
