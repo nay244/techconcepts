@@ -299,6 +299,8 @@ describe('the OSI Model lesson’s sources', () => {
       'paloalto-firewall-best-practices',
       // Job 10, batch 3: the glossary group `naming`.
       'iana-root-db',
+      // Job 11: the new lesson Router.
+      'cisco-route-selection', 'cisco-gateway-last-resort', 'cisco-how-router-works', 'cisco-what-is-routing', 'paloalto-layer-3-vs-7', 'rfc-5508',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
