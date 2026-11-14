@@ -120,7 +120,7 @@ export default defineGlossaryGroup({
         {
           id: 'dhcp-server-2',
           text: 'It keeps a record of which address it has lent to which client, and for how long.',
-          cite: [dhcp('1.5'), dhcp('3.1'), MS_SERVER_DATABASE],
+          cite: [dhcp('1.5'), dhcp('3.1'), dhcp('4.3.1'), MS_SERVER_DATABASE],
         },
         { id: 'dhcp-server-3', text: 'In a home, the Wi-Fi router usually does this job.', cite: [MS_NETSET_ROUTER, GOOGLE_LAN] },
       ],
@@ -153,7 +153,7 @@ export default defineGlossaryGroup({
           text: 'A DHCP Offer (DHCPOFFER) is the message a DHCP server sends in reply to a Discover, offering the device an available IP address and other settings.',
           cite: [dhcp('3.1'), MS_OFFER],
         },
-        { id: 'offer-2', text: 'The Offer also says how long the address may be kept.', cite: [rfc('rfc-2132', '9.2', true), dhcp('4.3')] },
+        { id: 'offer-2', text: 'The Offer also says how long the address may be kept.', cite: [rfc('rfc-2132', '9.2', true), dhcp('4.3.1')] },
         { id: 'offer-3', text: 'A device may receive several Offers and picks one.', cite: [dhcp('3.1'), MS_TRAINING_FIRST] },
       ],
       lessons: [
@@ -262,12 +262,12 @@ export default defineGlossaryGroup({
         {
           id: 'mac-address-1',
           text: 'A MAC address (Media Access Control address) identifies a network interface, such as an Ethernet or Wi-Fi adapter, on its local network.',
-          cite: [rfc('rfc-9724', '2.1'), rfc('rfc-9542', '1'), rfc('rfc-9542', '2.1')],
+          cite: [rfc('rfc-9724', '2.1'), rfc('rfc-9724', '2.2'), rfc('rfc-9542', '1'), rfc('rfc-9542', '2.1')],
         },
         {
           id: 'mac-address-2',
           text: 'Frames on that network carry MAC addresses to say which interface they are for.',
-          cite: [rfc('rfc-9724', '2.2'), rfc('rfc-9542', '2.1')],
+          cite: [rfc('rfc-9724', '2.2'), rfc('rfc-9542', '3')],
         },
         {
           id: 'mac-address-3',
@@ -285,7 +285,7 @@ export default defineGlossaryGroup({
         {
           id: 'arp-1',
           text: 'ARP, the Address Resolution Protocol, finds the MAC address that goes with an IPv4 address on the local network.',
-          cite: [ARP_ABSTRACT, R1122_ARP, rfc('rfc-4861', '3.1'), MS_ARP],
+          cite: [ARP_ABSTRACT, R1122_ARP, rfc('rfc-4861', '3.1'), rfc('rfc-9724', '2.1'), MS_ARP],
         },
         {
           id: 'arp-2',
