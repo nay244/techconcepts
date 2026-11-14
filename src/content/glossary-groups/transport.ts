@@ -28,7 +28,7 @@ const NIST_2_1 = cite('nist-sp800-77r1', '2.1', { url: 'https://nvlpubs.nist.gov
 
 const X200 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-X.200-199407-I!!PDF-E&type=items';
 /** X.200 section 5.3.3.3 is on PDF page 15. */
-const X200_CONNECTIONLESS = cite('itu-x200', '5.3.3.3', { url: `${X200}#page=15` });
+const X200_CONNECTIONLESS = cite('itu-x200', '5.3.3.3', { url: `${X200}#page=15`, defining: true });
 
 const G114 = 'https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-G.114-200305-I!!PDF-E&type=items';
 /** G.114's Annex A.3, "Delay due to IP delay variation buffer", is on PDF page 13. */
@@ -50,7 +50,7 @@ export default defineGlossaryGroup({
           text: 'TCP (Transmission Control Protocol) is a transport protocol that gives programs a reliable, in-order stream of bytes, sent over IP.',
           cite: [tcp('2.2'), R9293_1, R1122_113],
         },
-        { id: 'tcp-2', text: 'It opens a connection before data flows, numbers every byte and sends again whatever is lost.', cite: [tcp('2.2'), tcp('3.4')] },
+        { id: 'tcp-2', text: 'It opens a connection before data flows, numbers every byte and sends again whatever is lost.', cite: [tcp('2.2'), tcp('3.4'), tcp('3.8')] },
         { id: 'tcp-3', text: 'Port numbers tell apart the programs using it.', cite: [tcp('2.2')] },
       ],
     },
@@ -62,12 +62,12 @@ export default defineGlossaryGroup({
         {
           id: 'udp-1',
           text: 'UDP (User Datagram Protocol) is a transport protocol that lets a program send a message, a datagram, to another program over IP with a minimum of machinery.',
-          cite: [R768_DEFINED],
+          cite: [R768_DEFINED, rfc8085('1')],
         },
         {
           id: 'udp-2',
           text: 'It sets up no connection, and delivery, order and protection from duplicates are not guaranteed.',
-          cite: [R768_NOT_GUARANTEED, rfc8085('1'), rfc8085('3.3')],
+          cite: [R768_NOT_GUARANTEED, rfc8085('1'), rfc8085('3.3'), R1122_113],
         },
         { id: 'udp-3', text: 'Programs that need those use TCP, or provide them themselves.', cite: [R768_USE_TCP, rfc8085('3.3'), R1122_411] },
       ],
@@ -120,7 +120,7 @@ export default defineGlossaryGroup({
         {
           id: 'sequence-number-2',
           text: 'The numbers let the receiver acknowledge what arrived, notice what is missing and put the bytes in order.',
-          cite: [tcp('3.4'), cite('rfc-9293', '2.2'), cite('rfc-9293', '3.10.7.4'), R1122_113],
+          cite: [tcp('3.4'), tcp('2.2'), tcp('3.10.7.4'), R1122_113],
         },
         { id: 'sequence-number-3', text: 'Each side chooses its own starting number when the connection opens.', cite: [tcp('3.4.1')] },
       ],
@@ -198,10 +198,10 @@ export default defineGlossaryGroup({
           text: 'Connectionless describes sending data without first setting up a connection: each message carries everything needed to deliver it and is handled on its own.',
           cite: [X200_CONNECTIONLESS, rfc8085('1')],
         },
-        { id: 'connectionless-2', text: 'UDP and IP work this way; TCP is connection-oriented.', cite: [R1122_113, NIST_2_1] },
+        { id: 'connectionless-2', text: 'UDP and IP work this way; TCP is connection-oriented.', cite: [R1122_113, NIST_2_1, cite('rfc-791', '1.4')] },
         {
           id: 'connectionless-3',
-          text: 'With no setup or teardown, there is less overhead and little to keep track of.',
+          text: 'With no connection to set up or tear down, there is little to keep track of.',
           cite: [rfc8085('1'), X200_CONNECTIONLESS],
         },
       ],
@@ -213,13 +213,13 @@ export default defineGlossaryGroup({
       definition: [
         {
           id: 'jitter-1',
-          text: 'Jitter is variation in delay: packets of the same stream take different times to arrive, because they meet queues of different lengths or take different routes.',
+          text: 'Jitter is variation in delay: packets of the same stream take different times to arrive.',
           cite: [G114_A3, cite('rfc-3550', '6.4.1')],
         },
         {
           id: 'jitter-2',
-          text: 'Voice calls smooth it out with a jitter buffer at the receiver, and a packet that arrives too late to be played is thrown away.',
-          cite: [G114_A3, cite('rfc-3611', '4.7')],
+          text: 'Voice calls hold packets briefly in a jitter buffer at the receiver, and a packet that arrives too late is thrown away.',
+          cite: [G114_A3, cite('rfc-3611', '4.7'), cite('rfc-3611', '4.7.1'), cite('rfc-3611', '4.7.7')],
         },
       ],
       lessons: [{ lesson: 'what-is-udp', term: 'term-jitter' }],
