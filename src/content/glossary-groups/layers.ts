@@ -57,7 +57,6 @@ const PALO_UP_NETWORK = palo('De-Encapsulation Process (Data Flow Upwards)', 'Th
 
 const rfc791 = (section: string) => cite('rfc-791', section, { defining: true });
 const rfc1812 = (section: string) => cite('rfc-1812', section, { defining: true });
-const rfc2003 = (section: string) => cite('rfc-2003', section, { defining: true });
 const R8085_TUNNEL = cite('rfc-8085', '3.1.11');
 
 export default defineGlossaryGroup({
@@ -97,7 +96,7 @@ export default defineGlossaryGroup({
         {
           id: 'layer-2',
           text: 'Each layer except the top offers services to the layer above, which uses them without needing the details of how they are done.',
-          cite: [x200('5.2.2.3'), x200('5.2.2.5'), MS_INTRO_SHIELD],
+          cite: [x200('5.2.2.3'), x200('5.2.2.5'), x200('7.4.2.1'), x200('7.5.2.3'), MS_INTRO_SHIELD],
         },
       ],
       lessons: [{ lesson: 'osi-model', term: 'term-layer' }],
@@ -125,7 +124,7 @@ export default defineGlossaryGroup({
         {
           id: 'data-link-layer-2',
           text: 'It carries data from one machine to the next, in units called frames, over the connections the Physical Layer provides.',
-          cite: [x200('7.6.2.1'), MS_DATA_LINK, MS_LLC, R1122_FRAME],
+          cite: [x200('7.6.2.1'), MS_DATA_LINK, MS_LLC, R1122_FRAME, rfc1122('1.1.3', 10)],
         },
         {
           id: 'data-link-layer-3',
@@ -161,7 +160,7 @@ export default defineGlossaryGroup({
         {
           id: 'transport-layer-2',
           text: 'It carries data between the two end machines for the layers above, so they need not deal with how the transfer is done.',
-          cite: [x200('7.4.2.1'), MS_TRANSPORT, R1122_LAYERS_9],
+          cite: [x200('7.4.2.1'), MS_TRANSPORT, rfc1122('1.1.3', 9)],
         },
         {
           id: 'transport-layer-3',
@@ -257,7 +256,7 @@ export default defineGlossaryGroup({
         {
           id: 'encapsulation-2',
           text: 'For example, a TCP segment travels inside an IP datagram, and on each link the IP packet travels inside a frame.',
-          cite: [R1122_SEGMENT, R1122_FRAME, rfc791('2.2'), rfc1812('2.3')],
+          cite: [R1122_SEGMENT, R1122_FRAME, cite('rfc-9293', '3.1', { defining: true }), rfc791('2.2'), cite('rfc-1812', '2.3')],
         },
       ],
       lessons: [
@@ -273,17 +272,17 @@ export default defineGlossaryGroup({
         {
           id: 'decapsulation-1',
           text: 'Decapsulation, or de-encapsulation, is the reverse of encapsulation: taking off an outer header to reach the data inside.',
-          cite: [cite('rfc-2003', '1'), R8085_TUNNEL, PALO_UP],
+          cite: [cite('rfc-2003', '1'), cite('rfc-2003', '3'), R8085_TUNNEL, PALO_UP],
         },
         {
           id: 'decapsulation-2',
           text: 'A receiving machine does it on the way up the layers, handing what was inside each unit to the layer above.',
-          cite: [rfc791('2.2'), R1122_IP_UP, PALO_UP_NETWORK, NIST_2_1],
+          cite: [cite('rfc-791', '2.2'), R1122_IP_UP, PALO_UP_NETWORK, NIST_2_1],
         },
         {
           id: 'decapsulation-3',
           text: 'A router does it to the frames it receives; a tunnel’s far end, to recover the original packet.',
-          cite: [rfc1812('1'), rfc1812('2.3'), rfc791('2.2'), rfc2003('1'), R8085_TUNNEL],
+          cite: [rfc1812('1'), rfc1812('2.3'), rfc791('2.2'), cite('rfc-2003', '1'), R8085_TUNNEL],
         },
       ],
       lessons: [{ lesson: 'osi-model', term: 'term-decap' }],
