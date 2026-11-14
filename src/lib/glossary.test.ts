@@ -303,7 +303,7 @@ describe('10. the lesson map (E2: values, not entryId)', () => {
   });
 });
 
-describe('the real glossary (the pilot)', () => {
+describe('the real glossary', () => {
   const d = siteGlossary();
   const all = d.letters.flatMap((l) => l.items);
   test('item counts follow the groups; the letters are the items’ first letters; the pilot’s names in check 2’s order', () => {
