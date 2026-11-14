@@ -107,3 +107,43 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 - A new layout for the Lesson page or the track page: only Router's scene and card art are new.
 - Copying another site's text or art; a source host that is not a publisher's own.
 - Anything that leaves this machine.
+
+## B11: the spec review's holes, errata and cases (2026-11-14)
+
+The reviewer (Opus) found nine holes; each has one right answer, ruled by the orchestrator as errata:
+
+- **E1 (hole 1, card art).** A shared lesson's card shows the same art on every track: `lessonFigure` chooses by the lesson's home track (`homeOf`, How the Internet Works for the four), not the page's, as `src/lib/figures.ts:1` already states ("every page that shows a lesson shows the same figure"). So Networking's route shows the tour's name tiles for DNS, HTTP, HTTPS and TLS/SSL beside its spot art. Nothing new is drawn; D10 looks at the route at 375 and 1440, and if the mix reads badly that goes into D10 for the owner.
+- **E2 (hole 2).** `e2e/visual.spec.ts:100` and `:103` name tests and screenshots by `lesson.path`, not the slug, so a lesson found on two track pages runs under each without "duplicate test title". `lesson.spec.ts` already names by path and runs the 4 more lessons (22).
+- **E3 (hole 3).** Numbers and order: DNS 13 (in "Talking across the internet", where `dns` was), HTTP 14, HTTPS 15, TLS/SSL 16 (in "The web"), Firewalls 17 … VPN 20. Ready: 1, 7, 9, 13, 14, 15, 16, 17.
+- **E4 (hole 4).** About's "lessons ready" counts distinct slugs, as `lessonCheckCounts` does (`src/lib/checked.ts:12`): 18. Its test asserts the distinct count, never the old sum.
+- **E5 (hole 5).** The Glossary's "Described in" line is derived from `tracksOf`, so entries tied to the four lessons will name both tracks. True and derived; no report goes stale (group sheets hold no tracks). Accepted, tested, and reported to the owner (the glossary is paused, but nothing in it is edited).
+- **E6 (hole 6).** Progress is keyed by slug, so a shared lesson finished in one track is done in both (the existing design, `registry.test.ts:319`). Stated and tested.
+- **E7 (hole 7).** `what-is-http.ts:233` "The TCP lesson looks at it closely." shows under `/networking/` too; it is true site-wide (the tour's TCP lesson) and checked words do not change. Accepted, reported to the owner.
+- **E8 (hole 8).** `/networking/dns`, `/networking/tls`, `/networking/http-https` return 404; no redirect is added (they were never built).
+- **E9 (hole 9).** The stale comments go: `networking.ts:4` ("19 lessons"), `src/lib/home.ts:210`, `src/lib/hub.ts:77`.
+
+### Attack cases (each a test)
+
+*Unit tests and the build*
+- `registry.test.ts:41-77`: 20 slugs in order; titles exactly `DNS`, `HTTP`, `HTTPS`, `TLS/SSL`.
+- Networking's ready slugs and numbers: osi-model 1, subnetting 7, dhcp 9, what-is-dns 13, what-is-http 14, what-is-https 15, what-is-tls 16, firewalls 17.
+- `tracksOf('what-is-dns')` is `['how-the-internet-works', 'networking']` (red if the track order flips).
+- `neighbors(getEntries('networking'), 'dhcp').next.url` is `/networking/what-is-dns`; Networking's `what-is-tls` has next `firewalls`; the tour's `what-is-tls` has next `null`.
+- `lessonFigure('networking', <DNS entry>)` does not throw and equals the tour's tile.
+- `checkListings` fixture: a lesson listed by two tracks keeps an override only one of them needs; an override neither needs throws, naming both tracks (`registry.ts:204`).
+- `lessonCheckCounts()` is `{ checked: 18, total: 18 }`; the glossary's `readyLessons()` has 18 entries.
+- `reports.unchanged.test.ts:21` stays at 18 (no report added).
+- `check-budgets` passes with the 4 more pages; `/networking` HTML stays under 250 KB.
+- `tracks-page.test.ts:26-28`: 20 entries, 8 known. `LessonConsole.test.tsx:162`, `:444`: 20.
+- `about-page.test.ts:52`: the distinct count (18).
+
+*End to end*
+- `lesson.spec.ts:275`: on `/networking/what-is-dns`, `link[rel=canonical]` and `og:url` are `https://techconcepts.app/how-the-internet-works/what-is-dns`; the tour's copy the same; `/networking/dhcp` keeps its own; `og:image` the default on both.
+- `site.spec.ts:580-594`: 20 stops, 8 ready, 12 not ready; ready titles in order OSI Model, Subnetting, DHCP, DNS, HTTP, HTTPS, TLS/SSL, Firewalls; DNS's `h3 a` links to `/networking/what-is-dns`.
+- Strip "0 of 20 lessons done · 8 ready" at `:522`, `:609`, `:729`, `:742`; 20 squares at `:529`; 20 stops at `:695`, `:924`.
+- Home (`:263`, `:736`, `:765`): `['14 lessons', '8 of 20 lessons ready']`, 20 `.leg__run i`, 8 with `[data-ready]`.
+- About: the `.stats` "lessons ready" value is `18` (a new check in `site.spec.ts`).
+- A shared lesson under `/networking/`: "Lesson 13 of 20" (the tour's copy "6 of 14"), the console's "All 20 lessons", the track link to `/networking`; Networking's TLS/SSL's Up next is Firewalls at `/networking/firewalls`, the tour's TLS/SSL ends "the last lesson of this track"; `/networking/dhcp`'s Up next is DNS at `/networking/what-is-dns`, with art; `/networking/firewalls` ends "Lessons 18 to 20 are coming soon."; `/networking/{dns,tls,http-https}` return 404.
+- Progress (near `site.spec.ts:720`): finish `/how-the-internet-works/what-is-dns`, then `/networking` reads "1 of 20 lessons done · 8 ready" and DNS's stop shows Done; opening `/networking/what-is-dns` stores `lastTrack: 'networking'`.
+- `npx playwright test --list` reports no "duplicate test title"; `global-setup.ts` finds 22 lessons.
+- `e2e/glossary.spec.ts:65` area: `#root-server .gl-row--tracks` reads "Described in How the Internet Works, Networking Concepts"; `#ping` stays tour-only.
