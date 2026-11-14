@@ -1,6 +1,6 @@
 # S12: job 10 facts for the draft glossary groups (read-only scout report, 2026-11-13)
 
-Scope: the draft groups in the job 10 brief (110 entries: G1's 103 plus 7 protocols marked (p)); the pilot's 10 entries are counted where they affect a question. No repo file was changed. Evidence paths are repo-relative from `/Users/naaay/Developer/WebProjects/TechConcept`. Lesson Learn terms were read by loading every `src/content/lessons/*.ts` through `defineLesson`'s output (units[].learn.terms), so the names, ideas and citations below are the lessons' own. Where "row N" is given, it is G1's table row in `docs/glossary-terms.md` (Part 1 rows at line N+18; Part 2 rows at line N+160).
+Scope: the draft groups in the job 10 brief (110 entries: G1's 103 plus 7 protocols marked (p)); the pilot's 10 entries are counted where they affect a question. No repo file was changed. Evidence paths are repo-relative. Lesson Learn terms were read by loading every `src/content/lessons/*.ts` through `defineLesson`'s output (units[].learn.terms), so the names, ideas and citations below are the lessons' own. Where "row N" is given, it is G1's table row in `docs/glossary-terms.md` (Part 1 rows at line N+18; Part 2 rows at line N+160).
 
 ## A. Ties
 
