@@ -36,7 +36,11 @@ test('the stats count the tracks planned and the lessons ready from the content'
     words([...doc.querySelectorAll('.stats > div')].find((d) => words(d.querySelector('dt')) === label)?.querySelector('dd'));
 
   expect(stat('tracks planned')).toBe(String(tracks.length + plannedTracks.length + comingSoonTracks.length));
-  expect(stat('lessons ready')).toBe(String(trackTotals(tracks.flatMap((t) => getEntries(t.id))).available));
+  // A lesson two tracks list counts once: 8 ready in Networking, 14 in the tour, 4 shared.
+  const distinct = new Set(tracks.flatMap((t) => getEntries(t.id)).flatMap((e) => (e.available ? [e.slug] : [])));
+  expect(stat('lessons ready')).toBe(String(distinct.size));
+  expect(stat('lessons ready')).toBe('18');
+  expect(stat('lessons ready')).not.toBe(String(trackTotals(tracks.flatMap((t) => getEntries(t.id))).available));
   expect(stat('accounts needed')).toBe('0');
 });
 

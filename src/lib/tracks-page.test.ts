@@ -23,9 +23,11 @@ test('a track with some lessons ready lists every lesson, and a figure for each 
   expect(card.blurb).toBe(
     'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
   );
-  expect(card.entries).toHaveLength(19);
+  expect(card.entries).toHaveLength(20);
   // The progress island reads the ready lessons' last positions, as the track page does.
-  expect(Object.keys(card.known)).toHaveLength(4);
+  expect(Object.keys(card.known)).toHaveLength(8);
+  // The shared lessons wear the tour's name tiles (the home track decides), at numbers 13 to 16.
+  expect(card.figures.map((f) => f.slot)).toEqual(['art1', 'art7', 'art9', 'art13', 'art14', 'art15', 'art16', 'art17']);
   const readyNumbers = card.entries.filter((e) => e.available).map((e) => `art${e.number}`);
   expect(card.figures.map((f) => f.slot)).toEqual(readyNumbers);
   for (const { svg } of card.figures) expect(svg).toMatch(/^<svg/);

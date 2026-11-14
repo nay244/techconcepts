@@ -5,7 +5,7 @@
 // is plain links; a small module script marks the section being read.
 import { pageFigure } from '../art/figures/pages';
 import { spot } from '../art/figures/spots';
-import { getEntries, getLesson, trackTotals } from '../content/registry';
+import { getLesson } from '../content/registry';
 import type { Lesson } from '../content/schema';
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
@@ -28,7 +28,6 @@ function readyLesson(slug: string): Lesson {
 // ---------- Hero ----------
 // The tracks with lessons, the one being written (CompTIA A+), and the ones further out.
 const tracksPlanned = tracks.length + plannedTracks.length + comingSoonTracks.length;
-const lessonsReady = trackTotals(tracks.flatMap((t) => getEntries(t.id))).available;
 
 // ---------- Body ----------
 // The tracks with no lessons yet, the nearest first: CompTIA A+, then the ones further out.
@@ -37,6 +36,8 @@ const dhcp = readyLesson('dhcp');
 const sources = sourceRows(dhcp.units.flatMap((u) => u.references));
 // How many ready lessons have passed the fact-checker (src/lib/checked.ts); Home says the same sentence.
 const checks = lessonCheckCounts();
+// A lesson two tracks list is one lesson, so the ready count is the distinct count, not a sum over tracks.
+const lessonsReady = checks.total;
 const factCheck = factCheckSentence(checks.checked, checks.total);
 ---
 

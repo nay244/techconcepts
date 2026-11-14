@@ -324,7 +324,7 @@ describe('the real glossary', () => {
   test('TTL, Echo request and IP address as the spec names them', () => {
     const ttl = all.find((i) => i.id === 'ttl')!;
     expect(ttl.definitions.map((x) => x.label)).toEqual(['In IP packets', 'In DNS']);
-    expect(ttl.definitions.map((x) => x.tracks)).toEqual([['How the Internet Works'], ['How the Internet Works']]);
+    expect(ttl.definitions.map((x) => x.tracks)).toEqual([['How the Internet Works'], ['How the Internet Works', 'Networking Concepts']]);
     const echo = all.find((i) => i.id === 'echo-request')!.definitions[0]!;
     expect(echo.sources.map((s) => s.short)).toEqual(['RFC 792', 'RFC 1122', 'RFC 2151', 'Microsoft ping']);
     expect(echo.sources[0]!.places).toBe('RFC 792, Echo or Echo Reply Message, page 14; RFC 792, Echo or Echo Reply Message, page 15');
@@ -337,7 +337,10 @@ describe('the real glossary', () => {
     for (const [, t] of defs) expect(t).toEqual(titles.filter((x) => t.includes(x)));
     // The pilot's own rule; a later group's definitions may have other tracks, or none.
     const pilot = pilotItems(d).flatMap((i) => i.definitions.map((x) => [i.id, x.tracks] as const));
-    expect(pilot.filter(([id]) => id !== 'ip-address').every(([, t]) => t.length === 1 && t[0] === 'How the Internet Works')).toBe(true);
+    // ip-address (the DHCP lesson) and ttl's DNS sense (the shared DNS lesson, listed by Networking too) read both tracks (E5).
+    const both = pilot.filter(([, t]) => t.length === 2).map(([id]) => id);
+    expect(both).toEqual(['ip-address', 'ttl']);
+    expect(pilot.filter(([id]) => !both.includes(id)).every(([, t]) => t.length === 1 && t[0] === 'How the Internet Works')).toBe(true);
     expect(pilot.filter(([, t]) => t.length > 0)).toHaveLength(pilot.length);
   });
   test('the lesson map: the ICMP lesson’s TTL is the IP sense, the DNS lesson’s the DNS sense, Latency is its entry’s text (E2)', () => {

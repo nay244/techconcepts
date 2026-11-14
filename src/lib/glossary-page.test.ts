@@ -81,7 +81,7 @@ describe('12. entries', () => {
     expect(dds).toHaveLength(2);
     for (const dd of dds) expect(dd.querySelectorAll('.gl-row--tracks')).toHaveLength(1);
     expect(ttl.querySelectorAll('.gl-row--tracks')).toHaveLength(2);
-    expect(dds.map((dd) => words(dd.querySelector('.gl-row--tracks')))).toEqual(['Described in How the Internet Works', 'Described in How the Internet Works']);
+    expect(dds.map((dd) => words(dd.querySelector('.gl-row--tracks')))).toEqual(['Described in How the Internet Works', 'Described in How the Internet Works, Networking Concepts']);
     const pointer = doc.getElementById('time-to-live')!;
     expect(pointer.classList.contains('gl-entry--see')).toBe(true);
     expect(pointer.querySelectorAll('dd')).toHaveLength(1);
