@@ -7,7 +7,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import GlossaryEntry from '../components/GlossaryEntry.astro';
 import GlossaryKeys from '../components/GlossaryKeys.astro';
 import GlossaryStamp from '../components/GlossaryStamp.astro';
-import { GLOSSARY } from '../content/glossary';
+import { GLOSSARY, GLOSSARY_GROUPS } from '../content/glossary';
 import { partsOf } from '../content/glossary-group';
 import { SOURCES } from '../content/sources';
 import { tracks } from '../content/tracks';
@@ -153,8 +153,10 @@ describe('14 and 16. no link to a lesson or a track; the "Described in" row (E4,
     for (const a of doc.querySelectorAll('main a')) expect(a.getAttribute('href')).not.toMatch(/\?step=/);
   });
   test('every definition with tracks has one row of plain text: one label, one .gl-tracks, no link, title, href or tabindex', () => {
-    expect(expectedRows).toHaveLength(11);
+    // Every definition with tracks has its row; the pilot group's rows are 11 (B10: a count of the pilot, not of the glossary).
     expect(rows()).toHaveLength(expectedRows.length);
+    const pilot = new Set(GLOSSARY_GROUPS.find((g) => g.id === 'pilot')!.entries.map((e) => e.id));
+    expect(rows().filter((r) => pilot.has(r.closest('.gl-entry')!.id))).toHaveLength(11);
     for (const row of rows()) {
       expect(row.querySelector('a, [href], [title], [tabindex]'), row.outerHTML).toBeNull();
       expect(row.querySelectorAll('span.gl-label')).toHaveLength(1);
@@ -171,10 +173,14 @@ describe('14 and 16. no link to a lesson or a track; the "Described in" row (E4,
 });
 
 describe('18. keys', () => {
-  test('the pilot: six links to the letters that have a term, none dashed', () => {
+  test('the keys are the letters that have a term; with 13 or more letters the rest of A to Z is dashed, with fewer none is', () => {
+    const letters = siteGlossary().letters;
     const keys = [...doc.querySelectorAll('a.gl-key')];
-    expect(keys.map((k) => k.getAttribute('href'))).toEqual(['#letter-d', '#letter-e', '#letter-i', '#letter-l', '#letter-p', '#letter-t']);
-    expect(doc.querySelectorAll('.gl-key--none')).toHaveLength(0);
+    expect(keys.map((k) => k.getAttribute('href'))).toEqual(letters.map((l) => `#${l.id}`));
+    expect(keys.map((k) => k.textContent!.trim())).toEqual(letters.map((l) => l.letter));
+    // 0–9 counts as one of the 13 but is not one of A to Z.
+    const alphabet = letters.filter((l) => l.letter !== '0–9').length;
+    expect(doc.querySelectorAll('.gl-key--none')).toHaveLength(letters.length >= 13 ? 26 - alphabet : 0);
     for (const k of keys) expect(doc.querySelector(k.getAttribute('href')!)).not.toBeNull();
   });
   test('with 13 letters the markup is A to Z, a span with "{letter}, no terms" where empty', async () => {
@@ -191,7 +197,7 @@ describe('18. keys', () => {
   });
   test('each letter has an h2, "All letters", and a dl', () => {
     for (const s of doc.querySelectorAll('section.gl-letter')) {
-      expect(s.querySelector('h2')!.textContent).toBe(s.id.slice(-1).toUpperCase());
+      expect(s.querySelector('h2')!.textContent).toBe(siteGlossary().letters.find((l) => l.id === s.id)!.letter);
       expect(s.querySelector('a.gl-up')!.getAttribute('href')).toBe('#letters');
       expect(s.querySelector('dl.gl-list')).not.toBeNull();
     }

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { hydrated, kicker, open, pageOverflow, settledFrame } from './support';
 import { tracks } from '../src/content/tracks';
+import pilot from '../src/content/glossary-groups/pilot';
 
 // The Glossary page and a term's definition in Learn (prototypes/d9-glossary.md as prototypes/d9a-glossary-independent.md amends it;
 // errata E1 to E11 and B8a's E1 to E8 in plan.md). The
@@ -10,6 +11,7 @@ import { tracks } from '../src/content/tracks';
 
 const ICMP = '/how-the-internet-works/what-is-icmp';
 const ICMP_LEARN = `${ICMP}?step=7`;
+const TCP_LEARN = '/how-the-internet-works/what-is-tcp?step=7';
 const NINE = [
   ['“Are you there?”', 'Echo request'],
   ['“Yes, I’m here”', 'Echo reply'],
@@ -21,6 +23,8 @@ const NINE = [
   ['“I can’t deliver this”', 'Destination unreachable'],
   ['Pings that never come back', 'Packet loss'],
 ] as const;
+/** The pilot group's entry ids, from the group itself; the checks that mean the pilot filter by them, since the page holds every group's rows. */
+const PILOT_IDS = pilot.entries.map((e) => e.id);
 const PING_TEXT = /^Ping is a tool that sends .* were lost\.$/;
 
 test.beforeEach(async ({}, testInfo) => {
@@ -108,7 +112,10 @@ test.describe('the Glossary page', () => {
     await page.goto('/glossary');
     const keys = await page.locator('a.gl-key').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
     expect(keys).toEqual(await page.locator('section.gl-letter').evaluateAll((s) => s.map((x) => `#${x.id}`)));
-    await expect(page.locator('.gl-key--none')).toHaveCount(0);
+    // 13 or more letters: the rest of A to Z is dashed (0–9 counts as one of the 13 but is not one of A to Z); fewer: none is.
+    const sections = await page.locator('section.gl-letter').evaluateAll((s) => s.map((x) => x.id));
+    const alphabet = sections.filter((id) => id !== 'letter-0-9').length;
+    await expect(page.locator('.gl-key--none')).toHaveCount(sections.length >= 13 ? 26 - alphabet : 0);
     const last = keys[keys.length - 1]!;
     // 375: the bar of the last letter is 68 to 80px from the top; Tab then focuses "All letters" in it.
     await page.locator(`a.gl-key[href="${last}"]`).click();
@@ -198,7 +205,7 @@ test.describe('the Glossary page', () => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto('/glossary');
         const boxes = await page.locator('.gl-row a, .gl-stamp a, .gl-up').evaluateAll((as) => as.map((a) => [...a.getClientRects()].map((r) => ({ x: r.x, y: r.y + scrollY, w: r.width, h: r.height }))));
-        // The pilot: 43 row links, the stamp and "All letters" (one for each letter); the page's own count, not a typed one.
+        // Every row link, the stamp and "All letters" (one for each letter); the page's own count, not a typed one.
         expect(boxes.length).toBe(await page.locator('.gl-row a').count() + 1 + (await page.locator('.gl-up').count()));
         expect(await page.locator('.gl-row a').count()).toBeGreaterThan(40);
         for (const rects of boxes) for (const r of rects) expect(r.h).toBeGreaterThanOrEqual(43.9);
@@ -225,7 +232,8 @@ test.describe('the Glossary page', () => {
             return { h: el.getBoundingClientRect().height, lines, links: el.querySelectorAll('a').length, id: el.closest('.gl-entry')!.id };
           }),
         );
-        expect(rows).toHaveLength(11);
+        // The pilot's rows are 11; the page holds every group's, and the height rule is for each of them.
+        expect(rows.filter((r) => PILOT_IDS.includes(r.id))).toHaveLength(11);
         for (const r of rows) {
           expect(r.links).toBe(0);
           expect(Math.abs(r.h - (26 + 20 * (r.lines - 1))), JSON.stringify(r)).toBeLessThanOrEqual(1);
@@ -360,17 +368,15 @@ test.describe('Learn with definitions', () => {
     await expect(page.locator('.explain__def-text:visible')).toHaveCount(0);
   });
 
-  test('26: a lesson with no tied term has no hint, no attribute and no button on its terms', async ({ page }) => {
-    await page.goto('/networking/osi-model?step=1');
-    await hydrated(page);
-    for (let step = 1; step < 14 && !/Learn$/.test((await kicker(page).textContent()) ?? ''); step++) await page.goto(`/networking/osi-model?step=${step}`);
-    await expect(kicker(page)).toHaveText(/Learn$/);
-    await expect(page.locator('.explain__hint')).toHaveCount(0);
-    const rows = await terms(page).locator('> li').evaluateAll((lis) => lis.map((li) => ({ attrs: li.getAttributeNames(), kids: [...li.children].map((c) => c.className) })));
-    expect(rows.length).toBeGreaterThan(0);
-    for (const r of rows) {
-      expect(r.attrs).toEqual([]);
-      expect(r.kids).toEqual(['explain__idea', 'explain__term']);
+  // Rows no approved entry ties (S12 §A.3): TCP's Duplicate ACK, SACK and FIN. The half about a lesson with no tied term at all is
+  // `Explanation.test.tsx`'s (a fixture), since every ready lesson is to have a tie once the glossary is done.
+  test('26: a row no entry ties has no attribute and no button, and its markup is today’s: an idea and a name', async ({ page }) => {
+    await learn(page, TCP_LEARN);
+    for (const name of ['Duplicate ACK', 'SACK', 'FIN']) {
+      const row = terms(page).locator('> li', { has: page.locator('.explain__term', { hasText: new RegExp(`^${name}$`) }) });
+      await expect(row).toHaveCount(1);
+      const shape = await row.evaluate((li) => ({ attrs: li.getAttributeNames(), kids: [...li.children].map((c) => c.className), buttons: li.querySelectorAll('button').length }));
+      expect(shape, name).toEqual({ attrs: [], kids: ['explain__idea', 'explain__term'], buttons: 0 });
     }
   });
 
@@ -450,19 +456,22 @@ test.describe('Learn with definitions', () => {
     await expect(def.getByRole('link')).toHaveCount(0);
   });
 
-  test('32: in the DNS lesson only TTL is tied; the other rows have no data-def, no button, no min-height, and one is 42.2px at 1440', async ({ page }) => {
+  test('32: a tied row has data-def and a button, a row no entry ties has neither and no min-height and keeps its 42.2px at 1440', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
+    // The DNS lesson: TTL is tied by the pilot; whatever else is tied, a row has a button exactly when it has data-def.
     await learn(page, '/how-the-internet-works/what-is-dns?step=6');
     const rows = await terms(page).locator('> li').evaluateAll((lis) => lis.map((li) => ({ def: li.getAttribute('data-def'), button: li.querySelector('button') !== null, min: getComputedStyle(li).minHeight, text: li.querySelector('.explain__term')?.textContent })));
     const tied = rows.filter((r) => r.def !== null);
-    expect(tied.map((r) => r.text)).toEqual(['TTL']);
-    for (const r of rows.filter((x) => x.def === null)) {
-      expect(r.button).toBe(false);
-      expect(['0px', 'auto']).toContain(r.min);
-    }
-    const cache = terms(page).locator('> li', { hasText: 'Answers kept for next time' });
-    expect((await cache.boundingBox())!.height).toBeGreaterThan(41.7);
-    expect((await cache.boundingBox())!.height).toBeLessThan(42.7);
+    expect(tied.map((r) => r.text)).toContain('TTL');
+    for (const r of rows) expect(r.button, r.text ?? '').toBe(r.def !== null);
+    for (const r of rows.filter((x) => x.def === null)) expect(['0px', 'auto'], r.text ?? '').toContain(r.min);
+    // A row no entry ties (TCP's Duplicate ACK): one line, 42.2px, as before any definition existed.
+    await learn(page, TCP_LEARN);
+    const untied = terms(page).locator('> li', { has: page.locator('.explain__term', { hasText: /^Duplicate ACK$/ }) });
+    expect(await untied.getAttribute('data-def')).toBeNull();
+    expect(await untied.evaluate((li) => getComputedStyle(li).minHeight)).toBe('0px');
+    expect((await untied.boundingBox())!.height).toBeGreaterThan(41.7);
+    expect((await untied.boundingBox())!.height).toBeLessThan(42.7);
   });
 
   test('33: no lesson links to the glossary: with all nine open no link reaches /glossary, and "in the glossary" is nowhere (E4: hrefs resolved)', async ({ page }) => {

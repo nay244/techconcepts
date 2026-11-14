@@ -32,6 +32,9 @@ const run = (groups: ReturnType<typeof group>[], extra: Partial<GlossaryInput> =
   glossaryData({ groups, lessons: [], trackTitles: SITE_ORDER, sources: FIXTURE_SOURCES, dates: Object.fromEntries(groups.map((g) => [g.id, '2026-11-13'])), ...extra });
 const names = (d: ReturnType<typeof run>) => d.letters.flatMap((l) => l.items.map((i) => i.name));
 const items = (d: ReturnType<typeof run>) => d.letters.flatMap((l) => l.items);
+/** The pilot group's entry ids, from the group itself: the tests that mean the pilot count its items, not the whole glossary's (B10). */
+const pilotIds = (): Set<string> => new Set(GLOSSARY_GROUPS.find((g) => g.id === 'pilot')!.entries.map((e) => e.id));
+const pilotItems = (d: ReturnType<typeof run>) => items(d).filter((i) => pilotIds().has(i.entryId));
 
 describe('1. items', () => {
   test('an entry is one item; each spelling is one more, a pointer to its entry; two groups give both', () => {
@@ -217,11 +220,13 @@ describe('7. tracks of a definition (D9a rule 6; E1, E3, E7)', () => {
     const strings = [d.label, d.text, ...d.tracks, ...d.sources.flatMap((s) => [s.short, s.places])].filter((v): v is string => typeof v === 'string');
     expect(strings.some((v) => /\?step=/.test(v) || v.startsWith('/'))).toBe(false);
   };
-  test('E3: the shape — label, text, sources, tracks; no lesson field, title, address or step; on the fixture and on every pilot definition', () => {
+  test('E3: the shape — label, text, sources, tracks; no lesson field, title, address or step; on the fixture and on every definition of the glossary', () => {
     expectShape(items(run([group([entry('a', 'A', { lessons: ties(['x', 'term-1']) })])], { lessons }))[0]!.definitions[0]!, SITE_ORDER);
-    const pilot = siteGlossary().letters.flatMap((l) => l.items.flatMap((i) => i.definitions));
-    expect(pilot).toHaveLength(11);
-    for (const d of pilot) expectShape(d, tracks.map((t) => t.title));
+    const site = siteGlossary();
+    const every = items(site).flatMap((i) => i.definitions);
+    expect(every).toHaveLength(GLOSSARY.reduce((sum, e) => sum + partsOf(e).length, 0));
+    expect(pilotItems(site).flatMap((i) => i.definitions)).toHaveLength(11);
+    for (const d of every) expectShape(d, tracks.map((t) => t.title));
   });
 });
 
@@ -298,16 +303,18 @@ describe('10. the lesson map (E2: values, not entryId)', () => {
   });
 });
 
-describe('the real glossary (the pilot)', () => {
+describe('the real glossary', () => {
   const d = siteGlossary();
   const all = d.letters.flatMap((l) => l.items);
-  test('item counts follow the groups; 6 letters D E I L P T; check 2’s order', () => {
+  test('item counts follow the groups; the letters are the items’ first letters; the pilot’s names in check 2’s order', () => {
     expect(all.filter((i) => i.kind === 'entry')).toHaveLength(GLOSSARY.length);
     expect(all.filter((i) => i.kind === 'pointer')).toHaveLength(GLOSSARY.reduce((s, e) => s + (e.also?.length ?? 0), 0));
     expect(all.flatMap((i) => i.definitions)).toHaveLength(GLOSSARY.reduce((s, e) => s + partsOf(e).length, 0));
-    expect(d.letters.map((l) => l.letter).join('')).toBe('DEILPT');
-    expect(d.keys.map((k) => k.letter).join('')).toBe('DEILPT');
-    expect(all.map((i) => i.name)).toEqual(['Destination unreachable', 'Echo reply', 'Echo request', 'IP address', 'Latency', 'Packet loss', 'Ping', 'Time exceeded', 'Time to Live', 'Traceroute', 'TTL']);
+    // The letters are the first letters of every item, whatever the groups; the live keys are those letters.
+    const initial = (name: string) => (/^[0-9]/.test(name) ? '0–9' : name[0]!.toUpperCase());
+    expect(d.letters.map((l) => l.letter)).toEqual([...new Set(all.map((i) => initial(i.name)))]);
+    expect(d.keys.filter((k) => k.live).map((k) => k.letter)).toEqual(d.letters.map((l) => l.letter));
+    expect(pilotItems(d).map((i) => i.name)).toEqual(['Destination unreachable', 'Echo reply', 'Echo request', 'IP address', 'Latency', 'Packet loss', 'Ping', 'Time exceeded', 'Time to Live', 'Traceroute', 'TTL']);
   });
   test('every id on the list is used once, and the pointer is time-to-live', () => {
     const ids = all.map((i) => i.id);
@@ -324,12 +331,14 @@ describe('the real glossary (the pilot)', () => {
     expect(echo.sources[0]!.url).toBe('https://www.rfc-editor.org/rfc/rfc792.html#page-14');
     expect(all.find((i) => i.id === 'ip-address')!.definitions[0]!.tracks).toEqual(['How the Internet Works', 'Networking Concepts']);
   });
-  test('every other pilot definition reads one track, How the Internet Works; each tracks list is in the order of `tracks`', () => {
+  test('every other pilot definition reads one track, How the Internet Works; each tracks list, of any definition, is in the order of `tracks`', () => {
     const titles = tracks.map((t) => t.title);
     const defs = all.flatMap((i) => i.definitions.map((x) => [i.id, x.tracks] as const));
-    expect(defs.filter(([id]) => id !== 'ip-address').every(([, t]) => t.length === 1 && t[0] === 'How the Internet Works')).toBe(true);
     for (const [, t] of defs) expect(t).toEqual(titles.filter((x) => t.includes(x)));
-    expect(defs.filter(([, t]) => t.length > 0)).toHaveLength(defs.length);
+    // The pilot's own rule; a later group's definitions may have other tracks, or none.
+    const pilot = pilotItems(d).flatMap((i) => i.definitions.map((x) => [i.id, x.tracks] as const));
+    expect(pilot.filter(([id]) => id !== 'ip-address').every(([, t]) => t.length === 1 && t[0] === 'How the Internet Works')).toBe(true);
+    expect(pilot.filter(([, t]) => t.length > 0)).toHaveLength(pilot.length);
   });
   test('the lesson map: the ICMP lesson’s TTL is the IP sense, the DNS lesson’s the DNS sense, Latency is its entry’s text (E2)', () => {
     const def = (id: string, label?: string) => all.find((i) => i.id === id)!.definitions.find((x) => x.label === label)!;
@@ -339,12 +348,13 @@ describe('the real glossary (the pilot)', () => {
     expect(d.lessonMap['what-is-ip/term-ttl']).toEqual(value('ttl', 'In IP packets'));
     expect(d.lessonMap['what-is-icmp/term-latency']).toEqual(value('latency'));
     expect(d.lessonMap['what-is-http/term-ip']).toEqual(value('ip-address'));
-    expect(Object.keys(d.lessonMap).some((k) => k.startsWith('osi-model/'))).toBe(false);
+    // The map's keys are exactly the ties of the glossary: no tie without a key, no key without a tie.
+    const ties = GLOSSARY.flatMap((e) => partsOf(e).flatMap((p) => p.lessons.map((t) => `${t.lesson}/${t.term}`)));
+    expect(Object.keys(d.lessonMap).sort()).toEqual([...new Set(ties)].sort());
   });
-  test('the stamp’s date is the pilot report’s own checked date, and an unknown group has none', () => {
-    const checked = parseReport(pilotReport).header!.checked;
-    expect(glossaryCheckedOn('pilot')).toBe(checked);
-    expect(d.stamp!.date).toBe(checked);
+  test('the pilot’s check date is its report’s own; the stamp’s date is the latest of the groups’; an unknown group has none', () => {
+    expect(glossaryCheckedOn('pilot')).toBe(parseReport(pilotReport).header!.checked);
+    expect(d.stamp!.date).toBe(GLOSSARY_GROUPS.map((g) => glossaryCheckedOn(g.id)!).sort().at(-1));
     expect(glossaryCheckedOn('no-such-group')).toBeNull();
   });
   test('the stamp counts the entries and carries the groups’ latest date', () => {
