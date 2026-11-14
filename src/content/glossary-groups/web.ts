@@ -97,7 +97,7 @@ export default defineGlossaryGroup({
         {
           id: 'url-2',
           text: 'It has parts: a scheme such as https, a host with an optional port, a path, and sometimes a query and a fragment.',
-          cite: [d('rfc-3986', '3'), d('rfc-3986', '3.2'), URL_REPRESENTATION],
+          cite: [d('rfc-3986', '3'), d('rfc-3986', '3.2'), URL_REPRESENTATION, d('rfc-9110', '4.2')],
         },
       ],
       lessons: [{ lesson: 'what-is-http', term: 'term-url' }],
@@ -197,7 +197,7 @@ export default defineGlossaryGroup({
         {
           id: 'rendering-1',
           text: 'Rendering is how a browser presents a web page: it draws each element of the page’s HTML so that it shows the reader what that element means.',
-          cite: [html('15', 'rendering'), html('15.1', 'introduction-17')],
+          cite: [html('15', 'rendering'), html('15.1', 'introduction-17'), html('1.10', 'a-quick-introduction-to-html')],
         },
         {
           id: 'rendering-2',
