@@ -124,7 +124,11 @@ export default defineGlossaryGroup({
         {
           id: 'top-level-domain-3',
           text: 'TLDs are often grouped into country-code TLDs (ccTLDs) and generic TLDs (gTLDs), such as .app.',
-          cite: [rfc('rfc-9499', '2'), IANA_APP],
+          cite: [
+            rfc('rfc-9499', '2'),
+            IANA_APP,
+            cite('iana-root-db', 'Top-Level Domains', { url: 'https://www.iana.org/domains/root/db#:~:text=Country%20Code' }),
+          ],
         },
       ],
       lessons: [{ lesson: 'what-is-dns', term: 'term-tld' }],
