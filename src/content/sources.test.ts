@@ -297,6 +297,8 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-4949', 'nist-fips-197',
       // Job 10, batch 2: the glossary group `filtering`.
       'paloalto-firewall-best-practices',
+      // Job 10, batch 3: the glossary group `naming`.
+      'iana-root-db',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
