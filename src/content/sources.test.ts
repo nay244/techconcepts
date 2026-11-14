@@ -293,6 +293,10 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-7680',
       // Job 10, batch 1: the glossary group `leases`.
       'rfc-9542', 'microsoft-wifi-connect',
+      // Job 10, batch 2: the glossary group `subnets`.
+      'rfc-4949', 'nist-fips-197',
+      // Job 10, batch 2: the glossary group `filtering`.
+      'paloalto-firewall-best-practices',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

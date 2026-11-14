@@ -2706,6 +2706,33 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'Microsoft',
     url: 'https://support.microsoft.com/en-us/windows/experience/connectivity-networking/connect-to-a-wi-fi-network-in-windows',
   },
+  // Job 10, batch 2: the glossary group `subnets` (Bit).
+  {
+    id: 'rfc-4949',
+    kind: 'rfc',
+    short: 'RFC 4949',
+    title: 'Internet Security Glossary, Version 2',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc4949.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc4949.html#section-{n}',
+  },
+  {
+    id: 'nist-fips-197',
+    kind: 'nist',
+    short: 'NIST FIPS 197',
+    title: 'Advanced Encryption Standard (AES)',
+    publisher: 'NIST',
+    url: 'https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf',
+  },
+  // Job 10, batch 2: the glossary group `filtering` (Default deny).
+  {
+    id: 'paloalto-firewall-best-practices',
+    kind: 'vendor',
+    short: 'Palo Alto firewall practices',
+    title: 'Top 13 Firewall Best Practices [+ Pitfalls to Avoid]',
+    publisher: 'Palo Alto Networks',
+    url: 'https://www.paloaltonetworks.com/cyberpedia/firewall-best-practices',
+  },
 ]);
 
 /**
