@@ -746,3 +746,4 @@ Planned on 2026-11-14 in a fresh session on Opus 5.5, after the owner paused the
 |---|---|---|---|---|---|---|
 | S13 | scout | Haiku | 1 | 336,994 | not measured | `prototypes/s13-networking-facts.md`: 19 planned, 4 live, 15 with no file or draft; four catalogue rows tell checked tour lessons' stories (DNS, TLS, HTTP, HTTPS); a lesson listed by two tracks is already supported; five figures built, none a "Device table" or "Playground"; IEEE 802 not registered; the count tests and e2e specs listed. |
 | Plan | orchestrator | Opus 5.5 | 1 | not counted | not counted | `plan.md`: nine decisions, Router the pilot, four tour lessons shared (decision 2, for the owner). Estimate 2.0 to 3.4 million. Waiting for the go. |
+| Go | the owner | | | | | 2026-11-14: "Go, share them". The plan approved, decision 2 accepted: Networking lists What is DNS, What is TLS, What is HTTP and What is HTTPS; 20 stops. |
