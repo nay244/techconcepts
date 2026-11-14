@@ -99,7 +99,7 @@ export default defineGlossaryGroup({
             {
               id: 'header-http-1',
               text: 'In HTTP, header fields (headers, for short) are name and value pairs sent before the content of a request or a response.',
-              cite: [rfc9110('6.3'), rfc9110('5')],
+              cite: [rfc9110('6.3'), rfc9110('5'), rfc9110('3.4')],
             },
             { id: 'header-http-2', text: 'They can describe the sender or the content, change what the message means, or add context.', cite: [rfc9110('6.3')] },
           ],
@@ -204,7 +204,7 @@ export default defineGlossaryGroup({
         {
           id: 'ip-header-1',
           text: 'The IP header is the control information at the front of an IP packet, before the data it carries.',
-          cite: [rfc791('2.2'), R1122_PACKET],
+          cite: [rfc791('2.2'), R1122_PACKET, rfc9293('4')],
         },
         {
           id: 'ip-header-2',
@@ -229,7 +229,7 @@ export default defineGlossaryGroup({
           text: 'It reads each packet’s IP header, then sends the packet on in a new frame for the next link.',
           cite: [rfc1812('1', true), rfc1812('5.2.1.2', true), rfc791('2.2')],
         },
-        { id: 'router-3', text: 'Older documents call routers gateways.', cite: [rfc1812('2.2.3'), R792_INTRO_GATEWAY] },
+        { id: 'router-3', text: 'Older documents call routers gateways.', cite: [rfc1812('2.2.3'), R792_INTRO_GATEWAY, r1122('1.1.1', 6)] },
       ],
     },
     {
@@ -275,7 +275,7 @@ export default defineGlossaryGroup({
         {
           id: 'icmp-1',
           text: 'ICMP, the Internet Control Message Protocol, lets a router or the destination host send messages back to the source, for example to report an error in handling a datagram.',
-          cite: [R792_INTRO_ERR, rfc1812('2.2.1')],
+          cite: [R792_INTRO_ERR, rfc1812('2.2.1'), rfc1812('2.2.3')],
         },
         {
           id: 'icmp-2',
