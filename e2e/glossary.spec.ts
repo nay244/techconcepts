@@ -63,7 +63,9 @@ test.describe('the Glossary page', () => {
     await expect(page.locator('#ping .gl-row--tracks a')).toHaveCount(0);
     await expect(page.locator('.gl-row--tracks a, .gl-row--tracks [href], .gl-row--tracks [title]')).toHaveCount(0);
     await expect(page.locator('#ip-address .gl-row--tracks')).toHaveText('Described in How the Internet Works, Networking Concepts');
-    await expect(page.locator('#ttl .gl-row--tracks')).toHaveText(['Described in How the Internet Works', 'Described in How the Internet Works']);
+    await expect(page.locator('#ttl .gl-row--tracks')).toHaveText(['Described in How the Internet Works', 'Described in How the Internet Works, Networking Concepts']);
+    // The shared DNS lesson is in both tracks, so what it describes names both (E5).
+    await expect(page.locator('#root-server .gl-row--tracks')).toHaveText('Described in How the Internet Works, Networking Concepts');
     await expect(page.locator('main')).not.toContainText('Taught in');
     expect(await page.locator('.gl-row').evaluateAll((rows) => rows.filter((r) => /lesson/i.test(r.textContent ?? '')).length)).toBe(0);
   });
