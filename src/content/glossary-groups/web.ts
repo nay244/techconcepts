@@ -172,7 +172,11 @@ export default defineGlossaryGroup({
         {
           id: 'html-1',
           text: 'HTML, the Hypertext Markup Language, is the web’s core markup language: the text that describes the structure of a web page.',
-          cite: [html('1.3', 'background'), r4949(145)],
+          cite: [
+            html('1.3', 'background'),
+            r4949(145),
+            cite('nist-sp800-41r1', 'Appendix B', { url: 'https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-41r1.pdf#page=45' }),
+          ],
         },
         {
           id: 'html-2',
