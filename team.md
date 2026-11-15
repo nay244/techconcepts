@@ -898,5 +898,5 @@ Planned on 2026-11-15 in a fresh session on Opus 5.5, under the owner's go on ba
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
 | S16 | scout | Haiku | 1 | 272,572 | `prototypes/s16-batch-3-facts.md` (saved by the orchestrator from the transcript): stops 2, 5, 19, no files; no switching standard or MAC-learning source registered (IEEE: only job 13's RA pages and the 802-2024 page); no load-balancer host beyond Microsoft and Cloudflare; net-map moves one tag at a time; no switch, hub or pool drawn; about 30 count places; agreement with the glossary's Packet, Frame, Segment and Datagram. |
-| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: thirteen decisions; D13 in three parts; the prototype's words read before the gate; Haiku for the counts and named fixes. Estimate 4.3 to 6.0 million. Waits for the owner's go. |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: thirteen decisions; D13 in three parts; the prototype's words read before the gate; Haiku for the counts and named fixes. Estimate 4.3 to 6.0 million. The owner said go ("Go"). |
 

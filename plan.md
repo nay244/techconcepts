@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 14: Networking Concepts' batch 3, Packets, Switch and Load Balancers
 
-**Status: waiting for the owner's go on this plan.** The owner said "Start batch 3" on 2026-11-15 in job 13's session (direction 2.63). That covers batch 3 as job 11's plan proposed it (at 84cef62, "Proposed next": two new figures, a switch and a balancer with its pool, and a new `net-map` ability, several packets out of order). **The design gate stays**: the three scenes and card arts come to the owner as clickable prototypes with their spec, and nothing is built until the owner approves them. Once the owner says go, the outlines and the design go ahead without another go.
+**Status: the owner's go is given** (2026-11-15, direction 2.63 and 2.64): "Start batch 3" in job 13's session, then "Go" on this plan. The design gate stays: the three scenes and card arts come to the owner as clickable prototypes with their spec, and nothing is built until the owner approves them. The outlines and the design go ahead without another go.
 
 ## Inputs
 
