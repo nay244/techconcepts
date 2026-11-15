@@ -1,8 +1,11 @@
 import { expect, test } from 'vitest';
 import { batch3Fixtures } from './batch3-fixtures';
+import { deriveState, positionOf } from '../engine/timeline';
 import { checkStructure } from './define';
+import { claimSheet, DISPLAY_ONLY, itemHashes } from './factcheck/sheet';
 import type { Cue, Lesson, MessageEvent, NoteEvent, SceneEvent } from './schema';
 import { lessonSchema } from './schema';
+import { SOURCES } from './sources';
 
 // D13 / B15a's validator rules (prototypes/d13-packets-cases.md, attack cases 20a to 20u; E2, E3, E4, E11, E12), with the real figure parts.
 
@@ -153,4 +156,43 @@ test('every event of the Packets fixture is as the spec lists it (§3)', () => {
   expect(e.map((x) => x.id)).toEqual(['s1-req', 's1-cut', 's2-p1', 's2-t1', 's3-p2', 's4-p3', 's4-t3', 's4-p4', 's4-t4', 's4-p2', 's4-t2', 's5-order', 's5-done']);
   const via = e.filter((x): x is MessageEvent => x.type === 'message' && x.via !== undefined);
   expect(via.map((x) => [x.tag, x.via])).toEqual([['PIECE 3', 'd'], ['PIECE 4', 'd']]);
+});
+
+// ---------------------------------------------------------------- the claim sheet (beyond the checks)
+
+test('the way a piece went and the bay it parks in are part of what a reader sees: they are in the claim sheet and change its hash', () => {
+  const sheetOf = (mutate: (l: Lesson) => void = () => {}) => {
+    const lesson = batch3Fixtures.packets();
+    mutate(lesson);
+    return claimSheet(lesson, SOURCES);
+  };
+  const base = sheetOf();
+  const text = JSON.stringify(base.items);
+  expect(text).toContain('"via":"d"');
+  expect(text).toContain('"cue":"park","arg":"laptop 3 PIECE 3"');
+  expect(DISPLAY_ONLY).not.toContain('via');
+  const piece3 = (l: Lesson): MessageEvent => events(l).find((e) => e.id === 's4-p3') as MessageEvent;
+  expect(sheetOf((l) => (piece3(l).via = 'c')).hash).not.toBe(base.hash);
+  expect(sheetOf((l) => (piece3(l).cues = piece3(l).cues!.map((q) => (q.cue === 'park' ? { ...q, arg: 'laptop 2 PIECE 3' } : q)))).hash).not.toBe(base.hash);
+  expect(Object.keys(itemHashes(base)).length).toBeGreaterThan(0);
+});
+
+test('18a: the log has eight rows by the end, every one TCP, every time and size a dash, and PIECE 3 is one row', () => {
+  const lesson = batch3Fixtures.packets();
+  const log = deriveState(lesson, positionOf(lesson, 0, 'step', 5), 2).log;
+  expect(log.map((r) => [r.type, r.tag, r.from, r.to])).toEqual([
+    ['message', 'REQUEST', 'laptop', 'web'],
+    ['note', null, null, null],
+    ['message', 'PIECE 1', 'web', 'laptop'],
+    ['message', 'PIECE 2', 'web', 'b'],
+    ['message', 'PIECE 3', 'web', 'laptop'],
+    ['message', 'PIECE 4', 'web', 'laptop'],
+    ['message', 'PIECE 2', 'b', 'laptop'],
+    ['note', null, null, null],
+  ]);
+  for (const r of log) {
+    expect(r.cells.protocol).toBe('TCP');
+    expect(r.cells.time).toBe('—');
+    expect(r.cells.size).toBe('—');
+  }
 });
