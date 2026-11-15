@@ -834,3 +834,13 @@ Planned on 2026-11-14 in a fresh session on Opus 5.5, under the owner's go on ba
 - Before ruling a citation form, check the helper accepts it: `cite()` refuses a `url` whose query differs from the document's, which undid Ports' ruling 5 at the author.
 - The scout's own rules forbid writing files: ask it for the text and save it, as this job did.
 - Run the full e2e with a port of its own: an `astro preview` left on 4471 stopped the first run.
+
+# Job 13: Networking Concepts' batch 2, IP Address, MAC Address and TCP/UDP
+
+Planned on 2026-11-15 in a fresh session on Opus 5.5, under the owner's go on batch 2 with the design gate (direction 2.57, 2.58); `plan.md`. Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S15 | scout | Haiku | 1 | 218,411 | `prototypes/s15-batch-2-facts.md` (saved by the orchestrator): stops 3, 4, 11, no files; no IEEE document registered (`standards.ieee.org`, `ieeexplore.ieee.org` allowed; `regauth.standards.ieee.org` not); RFC 6890 and 4291 unregistered; no compare mode; about 25 count places; agreement lines in What is IP, DHCP, ARP, NAT, What is TCP, What is UDP. |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: ten decisions, one designer with a clickable prototype and the gate, one builder for the three scenes. Estimate 3.2 to 4.6 million. |
+
