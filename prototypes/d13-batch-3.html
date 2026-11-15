@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>D13: batch 3 scenes</title>
+<style>
+  :root { --bg: #f6f1e7; --ink: #1d1a16; --muted: #6b6357; --line: #d8cfbf; --accent: #c2410c; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #17140f; --ink: #efe8db; --muted: #a59b8b; --line: #3a342b; --accent: #f08a4b; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+  header { padding: 16px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { margin: 0; color: var(--muted); max-width: 70ch; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  nav a { color: var(--ink); text-decoration: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; }
+  nav a[aria-current="page"] { border-color: var(--accent); color: var(--accent); }
+  iframe { display: block; width: 100%; height: calc(100vh - 120px); border: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>D13: Packets, Switch and Load Balancers</h1>
+  <p>The three scenes of job 14's batch, for the owner's design gate. Each opens its own clickable prototype; the spec beside it is <code>d13-&lt;lesson&gt;.md</code>.</p>
+  <nav>
+    <a href="#packets" data-src="d13-packets.html">Packets</a>
+    <a href="#switch" data-src="d13-switch.html">Switch</a>
+    <a href="#load-balancers" data-src="d13-load-balancers.html">Load Balancers</a>
+  </nav>
+</header>
+<iframe title="Prototype"></iframe>
+<script>
+  const links = [...document.querySelectorAll('nav a')];
+  const frame = document.querySelector('iframe');
+  function show() {
+    const id = location.hash.slice(1) || 'packets';
+    const a = links.find(l => l.hash === '#' + id) || links[0];
+    links.forEach(l => l.toggleAttribute('aria-current', l === a));
+    if (a.hasAttribute('aria-current')) a.setAttribute('aria-current', 'page');
+    frame.src = a.dataset.src;
+  }
+  addEventListener('hashchange', show);
+  show();
+</script>
+</body>
+</html>
