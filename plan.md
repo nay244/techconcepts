@@ -98,7 +98,7 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 
 Router is live on `revamp` at `/networking/router`, passed by a fresh fact-checker (all 100 items, on its second full check); Networking Concepts lists 20 stops, 9 ready. After the go the job used **2.11 million** subagent tokens (estimate 2.0 to 3.4): Router's content 0.84, its design and build 0.90, the four shared lessons 0.36. `team.md` (job 11) has the units, the totals and what to do differently. Errata for the owner: B11's E1–E9 (above) and D10's E1–E11 (`prototypes/d10-cases.md`).
 
-## Proposed next: the other eleven lessons (for the owner's go; not approved)
+## Proposed next: the other eleven lessons (batch 1 approved by the owner on 2026-11-14, without a design gate: direction 2.52; batches 2 to 4 not approved)
 
 From the pilot's numbers and D10's scene map (`prototypes/d10-scene-map.md`). A batch of three lessons a job, a fresh session a job, one design gate a batch (the three scenes together), the pilot's path for each lesson. Batches go by what their scenes reuse, cheapest first, so each batch's new figure work is built once and used by the next:
 
