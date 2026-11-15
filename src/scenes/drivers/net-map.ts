@@ -402,6 +402,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       const copy = tagFor(p.tag).cloneNode(true) as SVGElement;
       copy.removeAttribute('id');
       copy.removeAttribute('style');
+      copy.removeAttribute('transform');
       copy.setAttribute('class', 'nm-park');
       copy.querySelector('[data-lit]')?.removeAttribute('data-lit');
       copy.querySelector('.nm-tag-t')!.textContent = p.tag;
@@ -543,8 +544,9 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     const ms = PARK_NOTE_MS / o.speed;
     await animate(ms, (k) => fresh.forEach((el, i) => fade(el, k >= (i + 1) / (fresh.length + 1) ? 1 : 0)), o);
     if (o.signal.aborted) return;
-    for (const el of fresh) fade(el, 1);
     if (o.reducedMotion) await wait(ms, o.signal);
+    if (o.signal.aborted) return;
+    paintParks(landed.parks);
   }
 
   /** A note that unparks the laptop's tags: they glide into its screen over 700 ms, shrinking and fading, and then the map is painted without them. Under reduced motion they stay still for the 700 ms. */
