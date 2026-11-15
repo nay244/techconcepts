@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { NET_MAP_LAYERS, plateSites } from '../art/scenes/net-map-layers';
+import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from '../art/scenes/net-map-layers';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
@@ -171,6 +171,7 @@ function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext, atSta
   // `hide` is for a scene's start alone; `drop` is for an event alone, and one to an event.
   if (!atStart && (cues ?? []).some((q) => q.cue === 'hide')) c.issues.push(`${where}: cue "hide" is for a scene's start; an event cannot hide a part.`);
   if (!atStart && (cues ?? []).some((q) => q.cue === 'show')) c.issues.push(`${where}: cue "show" is for a scene's start; an event cannot show a part.`);
+  if (!atStart && (cues ?? []).some((q) => q.cue === 'frames')) c.issues.push(`${where}: cue "frames" is for a scene's start; an event cannot change the setup.`);
   if (atStart && (cues ?? []).some((q) => q.cue === 'drop')) c.issues.push(`${where}: cue "drop" is for an event; the start cannot drop a packet.`);
   if ((cues ?? []).filter((q) => q.cue === 'drop').length > 1) c.issues.push(`${where}: an event has at most one "drop" cue.`);
   for (const { cue, arg } of cues ?? []) {
@@ -262,16 +263,17 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   for (const { cue, arg } of c.unit.scene.start) {
     if (cue === 'hide' && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which the scene's start hides.`);
   }
-  // On the network map, the phone is drawn only once the start shows it, and a server or the stranger only with its layer.
+  // On the network map, the phone is drawn only once the start shows it, and any other server only with a layer that draws it.
   if (figure === 'net-map') {
     const shown = c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'phone');
     for (const [role, id] of [['sent from', e.from], ['sent to', e.to]] as const) {
       if (id === 'phone' && !shown) issues.push(`${where} is ${role} "phone", which the scene's start does not show (cue "show phone").`);
-      for (const site of ['server', 'stranger']) {
-        const layer = Object.entries(NET_MAP_LAYERS).find(([, plate]) => plateSites(plate).includes(site))?.[0];
-        if (id === site && layer !== undefined && !c.unit.scene.layers.includes(layer)) {
-          issues.push(`${where} is ${role} "${site}", which needs the layer "${layer}" in the scene.`);
-        }
+      if (NET_MAP_BASE_PLACES.includes(id)) continue;
+      // A site several layers draw (the web server, the mail server) is on the map when any one of them is in the scene.
+      const drawn = Object.entries(NET_MAP_LAYERS).filter(([, plate]) => plateSites(plate).includes(id)).map(([layer]) => layer);
+      if (drawn.length > 0 && !drawn.some((layer) => c.unit.scene.layers.includes(layer))) {
+        const named = drawn.map((layer) => `"${layer}"`);
+        issues.push(`${where} is ${role} "${id}", which needs ${named.length === 1 ? `the layer ${named[0]}` : `one of the layers ${named.join(', ')}`} in the scene.`);
       }
     }
   }
