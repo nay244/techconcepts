@@ -417,7 +417,7 @@ export default defineLesson({
         pattern: {
           id: 'pattern',
           names: ['Private', 'Public', 'Loopback', 'Limited broadcast', 'Link-local', 'Documentation'],
-          note: 'Six kinds of IPv4 address this lesson meets. IANA’s list of special-purpose blocks has more.',
+          note: 'Six of the kinds of IPv4 address this lesson meets. IANA’s list of special-purpose blocks has more.',
           cite: [rfc1918('3'), rfc2663('2.7'), LOOPBACK, THIS_HOST, rfc919('7'), rfc3927('1'), rfc5737('3'), rfc6890('1'), iana('203.0.113.0/24 Documentation (TEST-NET-3)')],
         },
         why: [
