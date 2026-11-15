@@ -71,7 +71,7 @@ The owner set the redesign's scope on 2026-11-10: the look and the layouts of th
 
 ## Done means verified
 
-Run `npm test` and `npm run build` before calling work done. For anything a reader can see, a unit runs the end-to-end specs it touches, and the full `npm run e2e` (about 18 minutes, lid open) runs once per job on `revamp` before the job is called done. Report failures as they are.
+Run `npm test` and `npm run build` before calling work done. For anything a reader can see, a unit runs the end-to-end specs it touches, and each job ends on `revamp` with CI's end-to-end pass (`npx playwright test --grep-invert @visual --project=d1440-dark --project=phone`). The full `npm run e2e` (about 30 minutes, lid open) runs once when a track's last lesson is merged, and before `revamp` is deployed (the owner, 2026-11-15). Report failures as they are.
 
 ## How to work
 
