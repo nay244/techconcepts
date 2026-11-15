@@ -487,7 +487,7 @@ export default defineLesson({
           {
             id: 'fact-ports',
             label: 'The ports',
-            value: 'your device picks a temporary port for each connection, from the range set aside for that, 49152 to 65535; web servers listen on TCP port 80',
+            value: 'your device picks a temporary port for each connection, often from the range set aside for that, 49152 to 65535 (some systems use other ranges); web servers listen on TCP port 80',
             cite: [rfc('rfc-6335', '6', true), rfc('rfc-6335', '8.1.2', true), MS_DYNAMIC, rfc('rfc-9110', '4.2.1', true), cite('nist-sp800-41r1', '4.1.3', { url: `${NIST_PDF}#page=31` })],
           },
           {
