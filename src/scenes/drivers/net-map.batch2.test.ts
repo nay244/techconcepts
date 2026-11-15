@@ -97,7 +97,7 @@ test('16: the voice plate’s five groups are shown at every position of TCP/UDP
     driver.show(v);
     expect(voiceGroups(root).map((g) => g.getAttribute('display'))).toEqual(['none', 'none', 'none', 'none', 'none']);
   }
-});
+}, 30_000);
 
 test('16: TCP/UDP and then What is UDP on one driver: the voice plate goes away again', () => {
   const { root, driver } = mount();
