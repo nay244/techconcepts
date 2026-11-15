@@ -174,3 +174,17 @@ test('the lit-face number ink is the Packets spot’s alone: no other spot engra
   for (const kind of SPOTS) if (kind !== 'packets') expect(spot(kind), kind).not.toMatch(/iso-face-text lm-on-lit/);
   expect(spot('packets')).toMatch(/iso-face-text lm-on-lit/);
 });
+
+// D13b / B15b, attack cases 5 and H5: the Switch spot is the approved file, byte for byte, with one lit part and one light on.
+test('the switch spot is prototypes/d13-switch-spot.svg, with one lit part, one light on, its plate label and its words', () => {
+  const file: string = readFileSync('prototypes/d13-switch-spot.svg', 'utf8');
+  expect(`${spot('switch')}\n`).toBe(file);
+  const svg = spot('switch');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(1);
+  expect(svg).toContain('FIVE PORTS · MAC TABLE');
+  expect(svg).toContain(
+    'aria-label="A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on."',
+  );
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});

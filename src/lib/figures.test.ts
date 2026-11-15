@@ -40,3 +40,7 @@ test.each(['arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packe
   expect(() => lessonFigure(entry)).not.toThrow();
   expect(lessonFigure(entry)).toBe(spot(slug));
 });
+
+test('5b: the Switch lesson’s card is the switch spot', () => {
+  expect(lessonFigure({ available: true, key: 'switch', slug: 'switch' } as unknown as AvailableSummary)).toBe(spot('switch'));
+});
