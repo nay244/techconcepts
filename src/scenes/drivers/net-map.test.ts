@@ -958,7 +958,9 @@ function everyView(lesson: Lesson): SceneView[] {
   return views;
 }
 const lessonModules = import.meta.glob<Lesson>(['../../content/lessons/*.ts', '!../../content/lessons/*.test.ts'], { import: 'default', eager: true });
-const otherNetMapLessons = (): Lesson[] => [...Object.values(lessonModules).filter((l) => l.figure === 'net-map'), routerFixture()];
+/** The lessons that existed before D11 (the real ARP, Ports and NAT are checked on their own), with Router's fixture. */
+const D11_LESSONS = ['arp', 'ports', 'nat'];
+const otherNetMapLessons = (): Lesson[] => [...Object.values(lessonModules).filter((l) => l.figure === 'net-map' && !D11_LESSONS.includes(l.slug)), routerFixture()];
 
 test('the phone is hidden at every position of What is IP, Router and every tour unit, and shown at every position of NAT’s', () => {
   const others = otherNetMapLessons();
@@ -970,10 +972,21 @@ test('the phone is hidden at every position of What is IP, Router and every tour
       expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden')), lesson.slug).toEqual([true, true]);
     }
   }
+  // NAT's fixture and the real lesson: both show the phone at every position.
   const nat = natFixture();
-  for (const v of everyView(nat)) {
-    driver.show(v);
-    expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden'))).toEqual([false, false]);
+  const real = Object.values(lessonModules).find((l) => l.slug === 'nat')!;
+  for (const lesson of [nat, real]) {
+    for (const v of everyView(lesson)) {
+      driver.show(v);
+      expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden')), lesson.slug).toEqual([false, false]);
+    }
+  }
+  // ARP and Ports, real, never show it.
+  for (const slug of ['arp', 'ports']) {
+    for (const v of everyView(Object.values(lessonModules).find((l) => l.slug === slug)!)) {
+      driver.show(v);
+      expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden')), slug).toEqual([true, true]);
+    }
   }
   // NAT and then What is IP on one driver: the phone is hidden again.
   driver.show(everyView(nat)[0]!);
