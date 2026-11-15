@@ -199,7 +199,7 @@ export default defineLesson({
   level: 'beginner',
   certTags: [],
   summary:
-    'Watch your laptop ask everyone on your home network, “Who has 192.168.1.1?” Only the router answers, and your laptop keeps the answer, so it doesn’t have to ask again.',
+    'Watch your laptop ask everyone on your home network, “Who has 192.168.1.1?” Only the router answers, and your laptop keeps the answer, so it doesn’t have to ask every time.',
   figure: 'net-map',
   backing: { traces: ['term-arp', 'term-mac', 'fact-arp', 'fact-cache-first', 'why-1'] },
   units: [
@@ -209,7 +209,7 @@ export default defineLesson({
       fullName: 'Address Resolution Protocol',
       purpose: 'Finding the MAC address for an IP address',
       osi: { layers: [3], cite: [CISCO_L3, CLOUDFLARE_L3] },
-      backing: { traces: ['term-arp', 'fact-defined', 'fact-job'] },
+      backing: { traces: ['term-arp', 'fact-defined', 'fact-job', 'fact-name'] },
       scene: {
         title: 'Finding the router’s hardware address',
         views: ['network'],
@@ -229,7 +229,7 @@ export default defineLesson({
         backing: { traces: ['term-arp', 'term-cache', 'term-mac', 'term-broadcast', 'term-reply', 'term-gateway', 'fact-frame'] },
       },
       overview: {
-        hook: 'Your laptop knows your router’s IP address, but on your home network, frames go to a MAC address, a card’s hardware number. ARP finds it. Your laptop asks everyone at once, “Who has 192.168.1.1?”, only the router answers, and your laptop keeps the answer so it doesn’t have to ask again.',
+        hook: 'Your laptop knows your router’s IP address, but on your home network, frames go to a MAC address, a card’s hardware number. ARP finds it. Your laptop asks everyone at once, “Who has 192.168.1.1?”, only the router answers, and your laptop keeps the answer so it doesn’t have to ask every time.',
         hookBacking: { traces: ['why-2', 'term-mac', 'term-arp', 'fact-arp', 'fact-cache-first', 'why-1'] },
         description:
           'ARP turns an IP address into a MAC address on your own network. It asks only when the answer isn’t already in its cache, and the cache forgets after a while.',
@@ -252,7 +252,7 @@ export default defineLesson({
             'Your laptop has a packet for example.net, 203.0.113.80. That’s outside its network, so the packet’s next stop is the **default gateway**, your router, 192.168.1.1. To put the packet in a frame, the laptop needs the router’s **MAC address**. It looks in its **ARP cache**: empty. So it asks everyone on the network at once, at the **broadcast** address ff:ff:ff:ff:ff:ff: “Who has 192.168.1.1? Tell 192.168.1.100.” That question is an **ARP request**. The packet waits.',
           deep: [
             {
-              text: 'A request names the asker’s own MAC address and IP address, and the IP address it wants. It leaves the MAC address it wants blank, because that is what it is looking for.',
+              text: 'A request names the asker’s own MAC address and IP address, and the IP address it wants. It doesn’t fill in the MAC address it wants, because that is what it is looking for.',
               cite: [ARP_GENERATION, CISCO_OVERVIEW],
             },
           ],
@@ -314,8 +314,8 @@ export default defineLesson({
             'A moment later the laptop has another packet for example.net. It looks in its ARP cache and finds 192.168.1.1 there, so it sends the frame straight to the router’s MAC address. No question, no broadcast. Keeping the answer saves a broadcast for every packet.',
           deep: [
             {
-              text: 'ARP doesn’t broadcast on a timer. It asks only when a device needs an address it doesn’t have.',
-              cite: [ARP_WHY, CISCO_CACHING],
+              text: 'ARP doesn’t broadcast on a timer: a device asks when it needs an address it doesn’t have.',
+              cite: [ARP_WHY, CISCO_CACHING, rfc('rfc-5227', '2.1', true)],
             },
           ],
           facts: [
@@ -335,7 +335,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Many devices let you change how long entries are kept, for example on a network where entries come and go a lot.',
-              cite: [host('2.3.2.1', 22), CISCO_TIME],
+              cite: [host('2.3.2.1', 22), CISCO_TIME, MS_CACHING],
             },
           ],
           facts: [
@@ -442,7 +442,7 @@ export default defineLesson({
           {
             id: 'deep-probe',
             text: 'Many devices that have just got an address first check that nobody else has it, with an ARP probe.',
-            cite: [rfc('rfc-5227', '2.1.1', true), rfc('rfc-5227', '1.2')],
+            cite: [rfc('rfc-5227', '2.1', true), rfc('rfc-5227', '2.1.1', true), rfc('rfc-5227', '1.2')],
           },
         ],
         facts: [
@@ -465,7 +465,7 @@ export default defineLesson({
             id: 'fact-broadcast',
             label: 'Sent to',
             value: 'ff:ff:ff:ff:ff:ff, the broadcast address: every device on the network reads it',
-            cite: [ETHERNET_BROADCAST, rfc('rfc-9542', '2.1.1'), CISCO_DAI, rfc('rfc-5227', '1.2')],
+            cite: [ARP_GENERATION, ETHERNET_BROADCAST, rfc('rfc-9542', '2.1.1'), CISCO_DAI, rfc('rfc-5227', '1.2')],
           },
           {
             id: 'fact-cache-first',
@@ -509,6 +509,7 @@ export default defineLesson({
             value: 'the device keeps the packet, at least the latest one, and sends it once the answer comes',
             cite: [host('2.3.2.2', 24), OPENBSD_4],
           },
+          { id: 'fact-name', label: 'Stands for', value: 'Address Resolution Protocol', cite: [ARP_TITLE, CISCO_INTRO, MS_ARP] },
         ],
       },
       practice: [
@@ -523,7 +524,7 @@ export default defineLesson({
             },
             {
               text: 'Asks everyone “Who has 192.168.1.1?” again.',
-              feedback: 'Not quite. It asks only when the cache has no answer, as after the entry runs out.',
+              feedback: 'Not quite. It asks everyone when the cache has no answer, as after the entry runs out. Here the answer is there.',
               cite: [ARP_GENERATION, CISCO_CACHING],
             },
             {
