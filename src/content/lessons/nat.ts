@@ -474,7 +474,7 @@ export default defineLesson({
             id: 'fact-defined',
             label: 'Defined in',
             value: 'RFC 3022, Traditional NAT; its terms are in RFC 2663',
-            cite: [NAT_ABSTRACT, rfc4787('3')],
+            cite: [NAT_ABSTRACT, rfc4787('3'), rfc3022('1')],
           },
           { id: 'fact-behaviour', label: 'How a NAT should behave', value: 'RFC 4787 for UDP and RFC 5382 for TCP', cite: [UDP_BEHAVIOUR, TCP_BEHAVIOUR] },
           { id: 'fact-private', label: 'Private ranges', value: '10/8, 172.16/12, 192.168/16', cite: [rfc1918('3')] },
