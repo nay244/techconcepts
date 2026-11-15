@@ -389,11 +389,11 @@ test('a shared lesson: tracksOf keeps tracks order, and its neighbors differ by 
   expect(tracksOf('what-is-tls').map((t) => t.id)).toEqual(['how-the-internet-works', 'networking']);
   const net = getEntries('networking');
   const tour = getEntries('how-the-internet-works');
-  expect(neighbors(net, 'dhcp').next?.url).toBe('/networking/what-is-dns');
+  expect(neighbors(net, 'dhcp').next?.url).toBe('/networking/ports');
   expect(neighbors(net, 'what-is-tls').next?.url).toBe('/networking/firewalls');
   expect(neighbors(tour, 'what-is-tls').next).toBeNull();
   expect(net.filter((e) => e.available).map((e) => [e.slug, e.number])).toEqual([
-    ['osi-model', 1], ['subnetting', 7], ['router', 8], ['dhcp', 9], ['what-is-dns', 13], ['what-is-http', 14], ['what-is-https', 15], ['what-is-tls', 16], ['firewalls', 17],
+    ['osi-model', 1], ['arp', 6], ['subnetting', 7], ['router', 8], ['dhcp', 9], ['ports', 10], ['nat', 12], ['what-is-dns', 13], ['what-is-http', 14], ['what-is-https', 15], ['what-is-tls', 16], ['firewalls', 17],
   ]);
   const dns = net.find((e) => e.slug === 'what-is-dns')!;
   expect(dns.available && dns).toMatchObject({ url: '/networking/what-is-dns', canonical: '/how-the-internet-works/what-is-dns' });

@@ -125,8 +125,8 @@ test('Home’s stops are the tracks that have lessons, in the site’s order, an
   expect(stops.map((s) => s.order)).toEqual(['Start here', 'Then go deeper']);
 });
 
-test('Home says 14 lessons and 9 of 20 lessons ready', () => {
-  expect(homeStops().map((s) => s.count)).toEqual(['14 lessons', '9 of 20 lessons ready']);
+test('Home says 14 lessons and 12 of 20 lessons ready', () => {
+  expect(homeStops().map((s) => s.count)).toEqual(['14 lessons', '12 of 20 lessons ready']);
 });
 
 test('a stop counts its lessons from the content', () => {
