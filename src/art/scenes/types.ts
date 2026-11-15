@@ -13,9 +13,9 @@ export interface FigureParts {
   board: boolean;
   /** True when the figure's driver shows a scene's `start`, the cues in place as a unit starts (net-map only). */
   start: boolean;
-  /** For a text cue listed here, the only args it takes (osi and pool); a cue not listed takes any text. */
+  /** For a text cue listed here, the only args it takes (osi, switch and pool); a cue not listed takes any text. */
   args?: Readonly<Record<string, readonly string[]>>;
-  /** The only ways a message may ride, as `'from>to'` (dhcp, osi and pool); absent means between any two places. */
+  /** The only ways a message may ride, as `'from>to'` (dhcp, osi, switch and pool); absent means between any two places. */
   routes?: readonly string[];
   /** The `scene.labels` keys a unit on this figure must give, and the only ones it may (osi only). */
   words?: readonly string[];

@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import { NET_MAP_BASE_PLACES, NET_MAP_BAY_COUNTS, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_ROUTERS, NET_MAP_TAG_MAX, plateSites } from '../art/scenes/net-map-layers';
 import { FIGURE_PARTS } from '../art/scenes/parts';
+import { POOL_READERS } from '../art/scenes/pool-parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
 import { checkCitedRules, citationsOf } from './cited';
@@ -256,6 +257,9 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
       issues.push(`${where} is a note; the switch figure draws frames only, so say it in the step's words.`);
       for (const { cue } of e.cues ?? []) if (cue === 'flood' || cue === 'plug') issues.push(`${where}: cue "${cue}" is for a message; a note sends no frame.`);
     }
+    if (figure === 'pool') {
+      for (const { cue } of e.cues ?? []) if (cue === 'skip') issues.push(`${where}: cue "skip" is for a reader's request; a note sends none.`);
+    }
     if (e.board !== undefined && !c.parts.board) issues.push(`${where} has a board, but the ${figure} figure has none.`);
     // A glyph's colour and shape never say what it is alone: the legend says it in words.
     if (e.glyph !== undefined && !c.unit.scene.log.legend.some((entry) => entry.kind === e.glyph)) {
@@ -303,6 +307,19 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
       if (c.laptopMoved === true) issues.push(`${where}: cue "plug" moves the laptop to port 5, where it already is.`);
       c.laptopMoved = true;
     }
+  }
+
+  // On the pool, a skip is a reader's request passed over a server that is not the one it goes to, a no-answer is what a
+  // note says, and every message arrives: the figure draws nothing else (E27).
+  if (figure === 'pool') {
+    for (const { cue, arg } of e.cues ?? []) {
+      if (cue === 'skip') {
+        if (!POOL_READERS.some((r) => r === e.from)) issues.push(`${where}: cue "skip" is for a reader's request; a message from "${e.from}" passes over no server.`);
+        else if (arg === e.to) issues.push(`${where}: cue "skip" passes over "${arg}", the server the request goes to.`);
+      }
+      if (cue === 'no-answer') issues.push(`${where}: cue "no-answer" is for a note; a message sends something.`);
+    }
+    if (e.outcome !== undefined && e.outcome !== 'delivered') issues.push(`${where} is ${e.outcome}, but the pool figure draws every message arriving; say it in words.`);
   }
 
   if (e.outcome === 'dropped' && e.dropAt === undefined) issues.push(`${where} is dropped, so it needs "dropAt".`);
