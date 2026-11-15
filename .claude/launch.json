@@ -4,20 +4,47 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 4321
     },
     {
       "name": "built-site",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview", "--", "--port", "4471"],
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--port",
+        "4471"
+      ],
       "port": 4471
     },
     {
       "name": "look-prototypes",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4480", "--directory", ".superpowers/revamp/look"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4480",
+        "--directory",
+        ".superpowers/revamp/look"
+      ],
       "port": 4480
+    },
+    {
+      "name": "prototypes",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4479",
+        "--directory",
+        "prototypes"
+      ],
+      "port": 4479
     }
   ]
 }
