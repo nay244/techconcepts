@@ -373,3 +373,14 @@ test.each(['dark', 'light'] as const)('the no-match row keeps its words at 4.5:1
   // The bar is a mark: 3:1 against the card.
   expect(contrastRatio(t.blocked, t.card)).toBeGreaterThanOrEqual(3);
 });
+
+test('table.css paints the no-match row as the 10% blocked mix the contrast test checks, and the candidate bar dashed', () => {
+  // Vitest drops stylesheet contents, so the numbers above are checked against the file itself.
+  const css = readFileSync('src/lesson/panels/table.css', 'utf8');
+  expect(/\.tpanel tr\.tpanel__nomatch > td \{[^}]*background-color: color-mix\(in srgb, var\(--blocked\) 10%, transparent\)/.test(css)).toBe(true);
+  expect(/\.tpanel__nomatch \.tpanel__miss \{[^}]*color: var\(--blocked\)/.test(css)).toBe(true);
+  expect(/tr\[data-candidate\] > td:first-child \{[^}]*repeating-linear-gradient\(var\(--selected\) 0 4px, transparent 4px 7px\)/.test(css)).toBe(true);
+  // Under reduced motion no candidate row animates: the pulse is only declared for the no-preference query.
+  const motion = /@media \(prefers-reduced-motion: no-preference\) \{\s*\.tpanel tr\[data-candidate\] > td \{\s*animation: tpanel-pulse 900ms/.test(css);
+  expect(motion).toBe(true);
+});
