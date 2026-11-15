@@ -8,7 +8,7 @@
 // the parts. Its ids carry an `nm-` prefix, so they stay unique on the page.
 import type { DrawnFigure } from './types';
 import { k, G, S, L, D, n1, tubePieces, tubeSvg } from '../common.ts';
-import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_PHONE_ADDR, NET_MAP_TAG_MAX } from './net-map-layers';
+import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_PHONE_ADDR, NET_MAP_TAG_MAX } from './net-map-layers';
 import './net-map.css';
 
 /** What the driver reads: the figure's camera, where the broadcast ring spreads, and every route along the cables. */
@@ -48,7 +48,7 @@ const PUCK_R = 7, PUCK_H = 4.6;
 // The phone, lying on the table at home in front of the router: on the home Wi-Fi, so no cable.
 const PH = { x: -60, y: 84, w: 9, d: 18, r: 1.8 }, PH_Z = 2.2;
 const N = { isp: [-30, 26], a: [-28, -20], b: [6, 4], c: [32, -24], d: [28, 26] };
-const LINKS = [["isp", "a"], ["isp", "b"], ["isp", "d"], ["a", "b"], ["b", "c"], ["b", "d"], ["c", "d"]];
+const LINKS = NET_MAP_LINKS;
 const CB = { x: -104, y: -106, w: 34, d: 26, r: 2 }, CB_H = 28, DRAWERS = [2.4, 10.4, 18.4], DRW_H = 6.8, DRW_OUT = 11;
 
 // One camera for every scene, the same scale as the DHCP lesson.

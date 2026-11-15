@@ -152,6 +152,8 @@ export const messageEventSchema = z.strictObject({
   dropAt: z.number().min(0.1).max(0.9).optional(),
   /** The carrier shown on the tag, such as 'UDP'. */
   over: text.optional(),
+  /** An internet router the ride must pass through, on the network map: the tag rides from → via → to as one ride. */
+  via: text.optional(),
   fast: z.boolean().optional(),
   /** A firewall reading its rules: how many it read, which one matched (null: none), and what it did. */
   check: z

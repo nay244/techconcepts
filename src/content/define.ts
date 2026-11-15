@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from '../art/scenes/net-map-layers';
+import { NET_MAP_BASE_PLACES, NET_MAP_BAY_COUNTS, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_ROUTERS, NET_MAP_TAG_MAX, plateSites } from '../art/scenes/net-map-layers';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
@@ -12,6 +12,7 @@ import {
   type CertificationTrack,
   type Cue,
   type Lesson,
+  type MessageEvent,
   type Row,
   type SceneEvent,
   type TableDef,
@@ -173,6 +174,7 @@ function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext, atSta
   if (!atStart && (cues ?? []).some((q) => q.cue === 'show')) c.issues.push(`${where}: cue "show" is for a scene's start; an event cannot show a part.`);
   if (!atStart && (cues ?? []).some((q) => q.cue === 'frames')) c.issues.push(`${where}: cue "frames" is for a scene's start; an event cannot change the setup.`);
   if (atStart && (cues ?? []).some((q) => q.cue === 'drop')) c.issues.push(`${where}: cue "drop" is for an event; the start cannot drop a packet.`);
+  if (atStart && (cues ?? []).some((q) => q.cue === 'park' || q.cue === 'unpark')) c.issues.push(`${where}: cues "park" and "unpark" are for an event; the start cannot park a tag.`);
   if ((cues ?? []).filter((q) => q.cue === 'drop').length > 1) c.issues.push(`${where}: an event has at most one "drop" cue.`);
   for (const { cue, arg } of cues ?? []) {
     const type = Object.hasOwn(c.parts.cues, cue) ? c.parts.cues[cue] : undefined;
@@ -259,6 +261,7 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   };
   place('is sent from', e.from);
   place('is sent to', e.to);
+  if (e.via !== undefined) checkVia(e, where, c);
   // A part the scene's start hides is not on the map, so no message can start or end there.
   for (const { cue, arg } of c.unit.scene.start) {
     if (cue === 'hide' && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which the scene's start hides.`);
@@ -308,6 +311,160 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   }
 }
 
+// ---------------------------------------------------------------- the network map's parked tags and `via`
+
+/** The first internet router a place's cable reaches, as the map draws it (src/art/scenes/net-map.ts, BASE_SITES and the plates' `puck`). */
+function entryRouter(place: string): string | undefined {
+  if (NET_MAP_ROUTERS.includes(place)) return place;
+  if (place === 'resolver') return 'a';
+  if (place === 'laptop' || place === 'router' || place === 'phone') return 'isp';
+  for (const plate of Object.values(NET_MAP_LAYERS)) if (plateSites(plate).includes(place)) return 'puck' in plate ? plate.puck : 'c';
+  return undefined;
+}
+
+/** The routers on the shortest way from one to another, both ends included. */
+function hopsOf(a: string, b: string): string[] {
+  const prev = new Map<string, string | null>([[a, null]]);
+  const queue = [a];
+  for (let n = queue.shift(); n !== undefined && n !== b; n = queue.shift()) {
+    for (const [x, y] of NET_MAP_LINKS) {
+      for (const [u, v] of [[x, y], [y, x]] as const) {
+        if (u === n && !prev.has(v)) {
+          prev.set(v, n);
+          queue.push(v);
+        }
+      }
+    }
+  }
+  const path: string[] = [];
+  for (let n: string | null | undefined = b; n !== null && n !== undefined; n = prev.get(n)) path.unshift(n);
+  return path;
+}
+
+/** A message's `via` (net-map): an internet router the ride passes through, neither end of it, on a delivered message, and not doubling back. */
+function checkVia(e: MessageEvent, where: string, c: UnitContext): void {
+  const via = e.via!;
+  if (c.figure !== 'net-map') {
+    c.issues.push(`${where}: "via" is for the network map; the ${c.figure} figure has no router to ride through.`);
+    return;
+  }
+  if (!NET_MAP_ROUTERS.includes(via)) c.issues.push(`${where}: "via" is "${via}", which is not an internet router (${NET_MAP_ROUTERS.join(', ')}).`);
+  if (via === e.from || via === e.to) c.issues.push(`${where}: "via" is "${via}", which is where the message is ${via === e.from ? 'sent from' : 'sent to'}; it must be another router.`);
+  if (e.outcome === 'dropped') c.issues.push(`${where}: a dropped message cannot go "via" a router; a drop on a joined route is not designed.`);
+  const [from, to] = [entryRouter(e.from), entryRouter(e.to)];
+  if (!NET_MAP_ROUTERS.includes(via) || from === undefined || to === undefined) return;
+  const way = [...hopsOf(from, via), ...hopsOf(via, to).slice(1)];
+  if (new Set(way).size !== way.length) c.issues.push(`${where}: riding "via" ${via} passes router ${way.find((r, i) => way.indexOf(r) !== i)} twice, which the map does not draw.`);
+}
+
+/** Where a tag waits: its place, and its bay (from 1). */
+interface Parked {
+  place: string;
+  bay: number;
+}
+
+/** `park <place> <bay> <TAG>`, read; the rules about the place, the bay and the tag are told in one issue each. */
+function readPark(arg: string | undefined, where: string, c: UnitContext): { place: string; bay: number; tag: string } | null {
+  const m = /^([a-z0-9-]+) ([1-9]) (.+)$/.exec(arg ?? '');
+  if (m === null) {
+    c.issues.push(`${where}: cue "park" needs "<place> <bay> <TAG>", not "${arg ?? ''}".`);
+    return null;
+  }
+  const [place, bay, tag] = [m[1]!, Number(m[2]), m[3]!];
+  const at = `${where}: cue "park ${arg}"`;
+  let ok = true;
+  const bays = Object.hasOwn(NET_MAP_BAY_COUNTS, place) ? NET_MAP_BAY_COUNTS[place]! : 0;
+  if (bays === 0) {
+    c.issues.push(`${at} names "${place}", which has no bays (${Object.keys(NET_MAP_BAY_COUNTS).join(', ')} do).`);
+    ok = false;
+  } else if (bay > bays) {
+    c.issues.push(`${at} names bay ${bay}, but ${place} has ${bays === 1 ? 'one bay' : `${bays} bays`}.`);
+    ok = false;
+  }
+  if (tag.startsWith(' ') || tag.endsWith(' ')) {
+    c.issues.push(`${at} has a tag with a space at its start or end.`);
+    ok = false;
+  } else if ([...tag].length > NET_MAP_TAG_MAX) {
+    c.issues.push(`${at} has a tag of ${[...tag].length} characters; the limit is ${NET_MAP_TAG_MAX}.`);
+    ok = false;
+  }
+  if (!ok) return null;
+  if (place === 'web') {
+    const drawn = Object.entries(NET_MAP_LAYERS).filter(([, plate]) => plateSites(plate).includes('web')).map(([layer]) => layer);
+    if (!drawn.some((layer) => c.unit.scene.layers.includes(layer))) c.issues.push(`${at} needs a layer that draws the web server in the scene (${drawn.map((layer) => `"${layer}"`).join(', ')}).`);
+  }
+  if (place === 'laptop') {
+    if (c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'phone')) c.issues.push(`${at}: the laptop's column lies where the phone does, and the scene's start shows the phone.`);
+    if (Object.hasOwn(c.unit.scene.labels, 'router')) c.issues.push(`${at}: the laptop's column lies under the home router's callout, and the scene's labels give "router".`);
+  }
+  return { place, bay, tag };
+}
+
+/**
+ * The parked tags (net-map): `park` leaves a copy of a tag in a bay, and only a message with that tag takes it again
+ * (it must park it where it lands), or `unpark laptop` sends the laptop's into its screen. Walks the unit's events in
+ * step order, so the bays follow the story across steps.
+ */
+function checkParks(c: UnitContext, at: string): void {
+  const parked = new Map<string, Parked>();
+  const taken = (place: string, bay: number): string | undefined => [...parked].find(([, p]) => p.place === place && p.bay === bay)?.[0];
+  for (const e of c.unit.steps.flatMap((s) => s.events)) {
+    if (e.type === 'table') continue;
+    const where = `${at}: ${e.type} "${e.id}"`;
+    const cues = e.cues ?? [];
+    const parks = cues.filter((q) => q.cue === 'park');
+    const unparks = cues.filter((q) => q.cue === 'unpark');
+    const drops = cues.filter((q) => q.cue === 'drop');
+    if (e.type === 'note') {
+      if (parks.length > 0 && unparks.length > 0) c.issues.push(`${where} carries both "park" and "unpark"; a note carries one of them.`);
+      if ((parks.length > 0 || unparks.length > 0) && drops.length > 0) c.issues.push(`${where} carries "drop" with "park" or "unpark"; a note carries one of them.`);
+      if (unparks.length > 1) c.issues.push(`${where} has more than one "unpark" cue.`);
+    } else {
+      if (unparks.length > 0) c.issues.push(`${where}: cue "unpark" is for a note; a message cannot send tags into the laptop's screen.`);
+      if (parks.length > 0 && (e.outcome ?? 'delivered') !== 'delivered') c.issues.push(`${where}: cue "park" is for a message that is delivered; a ${e.outcome} one never reaches "${e.to}".`);
+      if (parks.length > 0 && cues.some((q) => q.cue === 'page')) c.issues.push(`${where}: a message that parks its own tag takes no "page" cue; the page would draw in over the tag's slide.`);
+    }
+    // A parked tag only moves by riding: the message with its tag leaves from where it waits, and parks it again where it lands.
+    if (e.type === 'message') {
+      const from = parked.get(e.tag);
+      if (from !== undefined) {
+        if (from.place !== e.from) c.issues.push(`${where}: "${e.tag}" is parked at ${from.place}; a parked tag only moves by riding from there, not from "${e.from}".`);
+        parked.delete(e.tag);
+        if (!parks.some((q) => readParkTag(q.arg) === e.tag)) c.issues.push(`${where} is sent from ${from.place} with the parked tag "${e.tag}", and must park it again where it lands (park ${e.to} <bay> ${e.tag}).`);
+      }
+    }
+    for (const q of parks) {
+      const p = readPark(q.arg, where, c);
+      if (p === null) continue;
+      if (e.type === 'message') {
+        if (p.tag !== e.tag) c.issues.push(`${where}: a message parks only its own tag ("${e.tag}"), not "${p.tag}".`);
+        if (p.place !== e.to) c.issues.push(`${where}: a message parks its own tag at where it lands ("${e.to}"), not at "${p.place}".`);
+      } else if (parked.has(p.tag)) {
+        c.issues.push(`${where}: "${p.tag}" is already parked at ${parked.get(p.tag)!.place}; one tag is never parked twice.`);
+        continue;
+      }
+      const other = taken(p.place, p.bay);
+      if (other !== undefined) {
+        c.issues.push(`${where}: bay ${p.bay} at ${p.place} already holds "${other}"; two tags never share a bay.`);
+        continue;
+      }
+      parked.set(p.tag, { place: p.place, bay: p.bay });
+    }
+    for (const q of unparks) {
+      if (q.arg !== 'laptop') {
+        c.issues.push(`${where}: cue "unpark" takes "laptop", not "${q.arg ?? ''}"; only the laptop's tags go into its screen.`);
+        continue;
+      }
+      const here = [...parked].filter(([, p]) => p.place === q.arg).map(([tag]) => tag);
+      if (here.length === 0) c.issues.push(`${where}: cue "unpark laptop" has nothing to take; no tag is parked at the laptop.`);
+      for (const tag of here) parked.delete(tag);
+    }
+  }
+}
+
+/** The tag of a `park` cue's arg, or undefined when the arg is not one. */
+const readParkTag = (arg: string | undefined): string | undefined => /^[a-z0-9-]+ [1-9] (.+)$/.exec(arg ?? '')?.[1];
+
 function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
   const at = `Unit "${u.id}"`;
   for (const id of duplicates(u.steps.map((s) => s.id))) issues.push(`${at}: Duplicate step id "${id}".`);
@@ -342,6 +499,7 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
       checkEvent(e, `${at}, step "${step.id}"`, c);
     }
   }
+  if (l.figure === 'net-map') checkParks(c, at);
 }
 
 // ---------------------------------------------------------------- public API

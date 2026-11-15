@@ -57,6 +57,9 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
       hide: 'text',
       // A part the map leaves off until a unit's start shows it: the phone.
       show: 'text',
+      // A copy of the tag waits in a bay (`park <place> <bay> <TAG>`) until a message with its tag takes it, or `unpark laptop` sends the laptop's into its screen.
+      park: 'text',
+      unpark: 'text',
     },
     args: { drop: NET_MAP_ROUTERS, hide: ['resolver'], show: NET_MAP_OPTIONAL },
     layers: Object.keys(NET_MAP_LAYERS),
