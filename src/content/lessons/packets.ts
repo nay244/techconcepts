@@ -546,7 +546,7 @@ export default defineLesson({
             id: 'fact-ports',
             label: 'Ports here',
             value: 'the web server’s TCP port 80; your laptop’s side uses a port of its own',
-            cite: [rfc('rfc-9110', '4.2.1', true), NIST_IP_LAYER],
+            cite: [rfc('rfc-9110', '4.2.1', true), NIST_IP_LAYER, tcp('2.2')],
           },
           {
             id: 'fact-defined',
