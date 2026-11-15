@@ -29,9 +29,9 @@ requireLessons(LESSONS);
 
 /**
  * Subnetting's Watch is about the address itself, the OSI Model's scene has the Network view only (its figure is
- * the layers, not a message between machines), and Router's has it only (five lifelines would not fit a phone: D10 §2), so none has a Network / Sequence switch (spec §6.3, §12).
+ * the layers, not a message between machines), and Router's, ARP's, Ports' and NAT's have it only (D10 §2, D11 §2.10), so none has a Network / Sequence switch (spec §6.3, §12).
  */
-const NO_SEQUENCE = new Set(['subnetting', 'osi-model', 'router']);
+const NO_SEQUENCE = new Set(['subnetting', 'osi-model', 'router', 'arp', 'ports', 'nat']);
 
 /** How long a Play run may take: the longest first unit runs about 46 s at 1× and 23 s at 2×. */
 const RUN_TIMEOUT = 120_000;
