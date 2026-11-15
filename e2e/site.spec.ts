@@ -264,7 +264,7 @@ test.describe('desktop', () => {
       // One segment per planned lesson, the ready ones filled.
       await expect(trackCards(page).nth(0).locator('.leg__run i[data-ready]')).toHaveCount(14);
       await expect(trackCards(page).nth(1).locator('.leg__run i')).toHaveCount(20);
-      await expect(trackCards(page).nth(1).locator('.leg__run i[data-ready]')).toHaveCount(8);
+      await expect(trackCards(page).nth(1).locator('.leg__run i[data-ready]')).toHaveCount(9);
       // Nothing on Home shows progress or an exam to filter by.
       await expect(page.locator('main a[href*="?for="]')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/Network\+|Security\+|CCNA|lessons done|in progress/i);
@@ -577,7 +577,7 @@ test.describe('desktop', () => {
   });
 
   test.describe('Track page', () => {
-    test('Track page: Networking lists 20 stops in its parts, 12 Not ready yet, OSI Model first ready with Start', async ({ page }) => {
+    test('Track page: Networking lists 20 stops in its parts, 11 Not ready yet, OSI Model first ready with Start', async ({ page }) => {
       await open(page, '/networking');
       await expect(page).toHaveTitle('Networking Concepts · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Networking Concepts');
@@ -590,8 +590,8 @@ test.describe('desktop', () => {
         const n = await stage.locator('li.stop').count();
         await expect(stage.locator('.route-stage__head p')).toHaveText(`${n} ${n === 1 ? 'lesson' : 'lessons'}`);
       }
-      await expect(readyStops(page)).toHaveCount(8);
-      await expect(readyStops(page).locator('h3')).toHaveText(['OSI Model', 'Subnetting', 'DHCP', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
+      await expect(readyStops(page)).toHaveCount(9);
+      await expect(readyStops(page).locator('h3')).toHaveText(['OSI Model', 'Subnetting', 'Router', 'DHCP', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
       // The four lessons Networking shares with the tour link to Networking's own pages.
       await expect(lessonCard(page, 'what-is-dns').locator('h3 a')).toHaveAttribute('href', '/networking/what-is-dns');
       await expect(soonStops(page)).toHaveCount(11);
