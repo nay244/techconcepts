@@ -405,6 +405,163 @@ Each can be turned into a test.
 6. **IP's office keeps Subnetting's words** ("the way out of each network", four "192.168.1.0/24" lines) as drawn, by the ruling. They are true in this lesson too. Recommendation: as drawn.
 7. **Subnetting's marigold line under variant B** is not in the prototype (IP draws no line). If the owner picks B, Subnetting's phone board changes too; the line's top and height under 640px are a builder's measurement against check 22. Recommendation: pick B, and have the build's reviewer look at Subnetting at 375 before merge.
 
+## 11. After the spec review
+
+These answer holes H1, H8 and H10 of the spec review (`prototypes/d12-cases.md`). Where they differ from §3 to §8, this section wins. The prototype has the H1 change; H8 and H10 do not change what the prototype shows (IP draws no marigold line, and the prototype has no build step). The SVGs and the patch (Appendix A) are unchanged.
+
+### 11.1 H1: what the figure shows while a step's updates land
+
+**Decision.** Each frame is followed at once by one `replace` of the frames table. It sets the sender's row to "Sent it" and every other row to "Hears it", which is exactly what the ride leaves on the figure. Then the step's updates change only the rows that move on to "Keeps it" or "Ignores it". So the figure never shows an earlier step's words: everyone hears the frame, then each device decides in turn. The review's option (c), but filled with the ride's words instead of "—", and placed after the frame instead of before it. Neither blanks the verdicts the ride has just shown, and no engine change is needed.
+
+**MAC's table events, replacing §3.2's** (a `replace` row lists This frame as Router · Laptop · Phone · TV; every replace keeps the four rows, their order, `device` and `mac`):
+
+| Step | Events in order |
+|---|---|
+| 1 | message laptop → router (`FRAME`); **replace** Hears it · Sent it · Hears it · Hears it |
+| 2 | update Router "Keeps it"; update Phone "Ignores it"; update TV "Ignores it" (as before) |
+| 3 | match 00:00:5E:00:53:10 (as before) |
+| 4 | message router → laptop (`TO ALL`); **replace** Sent it · Hears it · Hears it · Hears it; update Laptop "Keeps it"; update Phone "Keeps it"; update TV "Keeps it" |
+| 5 | message router → laptop (`FRAME`); **replace** Sent it · Hears it · Hears it · Hears it; update Laptop "Keeps it"; update Phone "Ignores it"; update TV "Ignores it" |
+
+- Each step ends as §3.2's table says. Step 1 now has no updates.
+- Each replace's `summary` (spoken; placeholder words for the author):
+  - step 1: "Every device hears the frame: the router, the phone and the TV."
+  - steps 4 and 5: "Every device hears the router’s frame: the laptop, the phone and the TV."
+- A replace carries no `by`. The table's by-line stays "each device decides for itself".
+
+**Code** (adds to §5 item 3, dhcp driver):
+- `play` of a `frames` table `replace` paints as `show` does, from the rows after it (as an update).
+- `duration`: a `frames` table `replace` is 400, the same as an update. Updates stay 400 and a match 900.
+- Nothing else changes: no engine change, and no change to `SceneView`.
+
+**Measured in the prototype at 1×** (verdicts as data-v; router · laptop · phone · TV):
+
+| Step | Sequence | Final |
+|---|---|---|
+| 4 | sent · – · – · – → the ride adds hears (TV 479 ms, laptop 541, phone 670) → the replace at 1667 changes nothing on the figure → then one row at a time, 400 ms apart | sent · keeps · keeps · keeps |
+| 5 | the same up to the replace → laptop keeps, then phone ignores, then TV ignores | sent · keeps · ignores · ignores |
+| 1 | laptop sent, then router, phone and TV hears as the ring reaches them; nothing vanishes | — |
+
+A state from the step before never shows.
+
+**What the table panel does.** During the ride, the table panel still shows the last frame's words. It changes when the replace lands, at the end of the ride.
+
+**Acceptance check 15c** (adds to §8):
+- While any MAC step plays, at every sample after the ride starts, `#dh-v-<place>` is one of:
+  - `sent` on the sender;
+  - `hears` or none on the others, until their update;
+  - that update's verdict, after it.
+- No device ever shows a verdict that is not one of these three for the playing step.
+- Step 5's phone and TV are never `keeps`.
+- Step 4's laptop is never `sent`.
+
+### 11.2 H8: the marigold line under 640px
+
+**Decision.** The line becomes **a segment in each shown row's bits**, not one line through the board. At full height it would cut through the Mask row's decimal (255.255.255.192, 255.255.255.252), and that number is the thing Subnetting asks the reader to compare. On a phone each row's label and address sit between the bit rows, so the line breaks there, and shows only where it marks a boundary: across the bits.
+
+**How.** Each row's first line gets a fixed height of 16px, so the pitch is a fixed 51px:
+
+| Part | Height |
+|---|---|
+| first line | 16px (label: 13px × 1.2 = 15.6) |
+| row gap | 5px |
+| cells | 18px |
+| margin | 12px |
+
+The line element stays as it is: one element, in row 1's `.bits__cells`. Under 640px:
+- it is 24px tall, row 1's segment (the cells plus 3px above and below);
+- rows 2 and 3 get copies drawn with `box-shadow`, 51px and 102px down;
+- a copy for a row past `--rows` has a −20px spread, so it draws nothing;
+- when a row comes in, its copy grows from its centre in 300ms (as the desktop line's height does).
+
+The pick animation gets a phone version that keeps the copies and puts the glow on each one.
+
+**Code.** This replaces all of §5 item 6, in `src/lesson/panels/bits.css`. It also takes in H9's answer: `thead` is collapsed to 0, not `display: none`, so the column headers stay for a screen reader.
+
+```css
+.bits { --bit-w: 10px; }
+.bits__cell { width: var(--bit-w); }
+.bits__line { transform: translateX(calc(var(--octets) * (8 * var(--bit-w) + 13px) + var(--bits) * (var(--bit-w) + 1px) - 3px + 2.5px * min(var(--bits), 1))); }
+@media (max-width: 639px) {
+  .bits { --bit-w: 8px; }
+  .bits__table, .bits tbody, .bits caption { display: block; }
+  .bits colgroup { display: none; }
+  .bits thead { display: block; height: 0; overflow: hidden; }
+  .bits tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 16px auto; column-gap: 10px; row-gap: 5px; align-items: baseline; }
+  .bits tbody tr + tr { margin-top: 12px; }
+  .bits tbody tr + tr > * { padding-top: 0; }
+  .bits tbody th { grid-column: 1; grid-row: 1; padding: 0; }
+  .bits__dec { grid-column: 2; grid-row: 1; }
+  .bits__bits { grid-column: 1 / -1; grid-row: 2; padding: 0; }
+  .bits__line {
+    --pitch: 51px;
+    --seg-2: 0 var(--pitch) 0 calc((min(var(--rows), 2) - 2) * 20px) var(--here);
+    --seg-3: 0 calc(2 * var(--pitch)) 0 calc((min(var(--rows), 3) - 3) * 20px) var(--here);
+    height: 24px;
+    box-shadow: var(--seg-2), var(--seg-3);
+    transition: transform 550ms var(--ease-out), box-shadow 300ms var(--ease-out);
+  }
+  .bits__line[data-picked] { animation-name: bits-line-pick-fit; }
+  .bits__line[data-fresh][data-picked] { animation-name: bits-line-in, bits-line-pick-fit; }
+  @keyframes bits-line-pick-fit {
+    0%, 100% { box-shadow: var(--seg-2), var(--seg-3), 0 0 0 0 transparent, 0 var(--pitch) 0 0 transparent, 0 calc(2 * var(--pitch)) 0 0 transparent; }
+    35% { box-shadow: var(--seg-2), var(--seg-3), 0 0 0 3px var(--here-soft), 0 var(--pitch) 0 calc(3px + (min(var(--rows), 2) - 2) * 20px) var(--here-soft), 0 calc(2 * var(--pitch)) 0 calc(3px + (min(var(--rows), 3) - 3) * 20px) var(--here-soft); }
+  }
+}
+```
+
+- The base rule's `top: -3px`, its width and its colour stay.
+- Reduced motion keeps `transition: none` and `animation: none`, as today.
+- At 640px and over nothing moves.
+- **A row with `data-off` between shown rows** gets a segment over its empty cells, as the desktop line runs through it today. Subnetting never shows one.
+
+**Measured.** The CSS was put into the built Subnetting page (dev server) at 375 × 812, light and dark, steps 1 to 6:
+- Pitch: cells' tops at 445.7, 496.7 and 547.7 (51 apart).
+- Segments: 442.7 to 466.7, 493.7 to 517.7 and 544.7 to 568.7. Each covers its row's cells, 3px over at each end.
+- The line misses the decimals at /26 (x 261.5 to 263.5) and /30 (297.5 to 299.5).
+- `--rows` 1: both copies have negative spread and draw nothing. `--rows` 2: one copy.
+- The step 2 pick glows on each segment.
+- The Bits tab is 375 wide at every step, with no sideways scroll.
+
+**Acceptance check 22b** (adds to §8; with H7's centre rule for check 22). Subnetting at 375, at every step:
+- the line's top + 3 + k × 51 is row k's `.bits__cells` top (±0.5px);
+- no segment overlaps a `th` or `.bits__dec` box;
+- the computed `box-shadow` has a non-negative spread exactly for the rows 2 to `--rows`.
+
+### 11.3 H10: MAC Address before hydration and with JavaScript off
+
+**Decision.** Yes, the build applies `frames`. Without it, the MAC Address page first draws another lesson's scene: DHCP's lease board, "No IP address yet" and DHCP's description. Then it swaps to the TV on every load. With it, the static figure is MAC's own position 0, and hydration changes nothing anyone sees.
+
+**What the build sets.** A new export in `src/art/scenes/dhcp.ts`, `framesSetup(svg: string): string`. It makes four string changes to the drawn SVG, each one present exactly as many times as stated:
+1. each `<g data-setup="frames" display="none">` (2) becomes `<g data-setup="frames">`;
+2. each `<g data-setup="addresses">` (3) becomes `<g data-setup="addresses" display="none">`;
+3. on `id="dh-lap-ip"`, `style="opacity:0"` becomes `style="opacity:1"`, and `#dh-lap-noip` gains `style="opacity:0"`;
+4. the root `<svg>`'s `aria-label` becomes the frames description of §5 item 3: "A home Wi-Fi network on one plate: a laptop, a phone and a TV, and the router at the back. Beside each, its name and its MAC address."
+
+It throws if any of them finds a different count, so a redrawn figure cannot silently skip one. The verdict lines need nothing: with every This frame cell "—" at position 0 they carry no `data-v`, as drawn.
+
+`src/pages/[track]/[lesson].astro`, where `svg` is made:
+
+```ts
+const start = lesson.units[0]!.scene.start ?? [];
+const setUp = lesson.figure === 'dhcp' && start.some((c) => c.cue === 'frames') ? framesSetup(drawn.svg) : drawn.svg;
+const svg = fillLabels(setUp, lesson.units[0]!.scene.labels);
+```
+
+The driver's `show` still applies the frames setup, unchanged. On a page built this way it rewrites the same values, so nothing moves.
+
+**Acceptance check 9b** (adds to §8):
+1. In `dist/networking/mac-address/index.html`:
+   - no `data-setup="frames" display="none"`;
+   - three `data-setup="addresses" display="none"`;
+   - `id="dh-lap-ip"` with `opacity:1`, and `id="dh-lap-noip"` with `opacity:0`;
+   - the figure's `aria-label` is the frames description.
+2. `dist/networking/dhcp/index.html`'s figure is byte for byte what it is without this change.
+3. End-to-end on MAC Address: those four attributes read the same before the island loads and after it.
+4. `framesSetup` on a string with one `data-setup="frames"` group throws.
+
+**Outside D12, noted.** Every net-map lesson has the same gap today. Its layers and `hide` cues are applied by the driver only, so before hydration NAT's built page has `nat:stranger` at `display="none"` (looked at on the dev server). TCP/UDP will likewise show no voice plate and a visible resolver until the island loads. The same build-time step for `layers` and `hide` would close it for all of them. Recommendation: its own small unit after job 13, not part of B14.
+
 ## Appendix A. The patch
 
 Applies to `job13/batch` at `7a679eb` with `git apply`. It changes five files under `src/art/`, and its output is the five SVG files above. Items 2 to 9 of §5 are not in it.
