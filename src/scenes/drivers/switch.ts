@@ -171,6 +171,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   function paintPlugs(plugs: Record<SwitchDevice, number>): void {
     for (const port of [2, 5]) for (const el of laptopAt(port)) {
       el.removeAttribute('data-ghost');
+      // A re-plug stopped part-way leaves its fade on the cable and plug (E14).
+      el.style.removeProperty('opacity');
       if (plugs.laptop === port) el.removeAttribute('display');
       else el.setAttribute('display', 'none');
     }

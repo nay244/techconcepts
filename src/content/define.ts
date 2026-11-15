@@ -84,6 +84,8 @@ interface UnitContext {
   logKeys: Set<string>;
   tables: TableDef[];
   issues: string[];
+  /** The Switch figure only: the laptop has been moved to port 5 by an earlier frame of the unit. */
+  laptopMoved?: boolean;
 }
 
 // ---------------------------------------------------------------- unit rules
@@ -248,8 +250,10 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   }
 
   if (e.type === 'note') {
-    // On the switch, a flood and a re-plug happen to a frame: only a message carries them.
+    // On the switch, a flood and a re-plug happen to a frame: only a message carries them. And the figure draws what a
+    // frame did, never what a note says, so a note there would show nothing, or hide the frame before it.
     if (figure === 'switch') {
+      issues.push(`${where} is a note; the switch figure draws frames only, so say it in the step's words.`);
       for (const { cue } of e.cues ?? []) if (cue === 'flood' || cue === 'plug') issues.push(`${where}: cue "${cue}" is for a message; a note sends no frame.`);
     }
     if (e.board !== undefined && !c.parts.board) issues.push(`${where} has a board, but the ${figure} figure has none.`);
@@ -292,6 +296,13 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
     if (e.kind === 'broadcast' && e.to !== 'all') issues.push(`${where} is a broadcast, so it is sent to "all".`);
     if (e.kind !== 'broadcast' && e.to === 'all') issues.push(`${where} is sent to "all", so its kind is "broadcast".`);
     if (e.kind === 'broadcast' && (e.cues ?? []).some((q) => q.cue === 'flood')) issues.push(`${where} is a broadcast, which floods by itself; leave out "flood".`);
+    // The figure has no case for a frame that never arrives, so it would draw it as delivered.
+    if (e.outcome === 'dropped') issues.push(`${where} is dropped, but the switch figure draws no drop; say it in words.`);
+    // The laptop moves once; a second move to the port it is on would fade its cable out and back for nothing.
+    if ((e.cues ?? []).some((q) => q.cue === 'plug' && q.arg === 'laptop 5')) {
+      if (c.laptopMoved === true) issues.push(`${where}: cue "plug" moves the laptop to port 5, where it already is.`);
+      c.laptopMoved = true;
+    }
   }
 
   if (e.outcome === 'dropped' && e.dropAt === undefined) issues.push(`${where} is dropped, so it needs "dropAt".`);

@@ -27,4 +27,4 @@ export const SWITCH_ROUTES = [...DEVICES.flatMap((a) => DEVICES.filter((b) => b 
 
 /** The figure's description, for screen readers. */
 export const SWITCH_DESCRIPTION =
-  'A wired home network on one plate: a switch with five numbered ports along its front, and a router, a laptop, a TV and a printer, each plugged into one port by its own cable. Port 5 is free. Beside each device, its name, its port and its MAC address.';
+  'A wired home network on one plate: a switch with five numbered ports along its front, and a router, a laptop, a TV and a printer, each plugged into one port by its own cable. Beside each device, its name, its port and its MAC address.';
