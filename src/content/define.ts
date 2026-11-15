@@ -419,8 +419,8 @@ function readPark(arg: string | undefined, where: string, c: UnitContext): { pla
     c.issues.push(`${at} names bay ${bay}, but ${place} has ${bays === 1 ? 'one bay' : `${bays} bays`}.`);
     ok = false;
   }
-  if (tag.startsWith(' ') || tag.endsWith(' ')) {
-    c.issues.push(`${at} has a tag with a space at its start or end.`);
+  if (tag !== tag.trim()) {
+    c.issues.push(`${at} has a tag with a space or other whitespace at its start or end.`);
     ok = false;
   } else if ([...tag].length > NET_MAP_TAG_MAX) {
     c.issues.push(`${at} has a tag of ${[...tag].length} characters; the limit is ${NET_MAP_TAG_MAX}.`);
@@ -460,6 +460,7 @@ function checkParks(c: UnitContext, at: string): void {
     } else {
       if (unparks.length > 0) c.issues.push(`${where}: cue "unpark" is for a note; a message cannot send tags into the laptop's screen.`);
       if (parks.length > 0 && (e.outcome ?? 'delivered') !== 'delivered') c.issues.push(`${where}: cue "park" is for a message that is delivered; a ${e.outcome} one never reaches "${e.to}".`);
+      if (parks.length > 1) c.issues.push(`${where}: a message parks its own tag once; it has ${parks.length} park cues.`);
       if (parks.length > 0 && cues.some((q) => q.cue === 'page')) c.issues.push(`${where}: a message that parks its own tag takes no "page" cue; the page would draw in over the tag's slide.`);
     }
     // A parked tag only moves by riding: the message with its tag leaves from where it waits, and parks it again where it lands.

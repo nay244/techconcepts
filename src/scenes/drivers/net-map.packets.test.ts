@@ -242,8 +242,14 @@ test('10c to 10e: gaps need a filled bay before and after, anywhere; each takes 
   expect(gaps(root).map((g) => [g.dataset.place, g.dataset.bay])).toEqual([['web', '2']]);
 });
 
+/** The net-map lessons that do not park a tag: the ones that existed before Packets (the lessons that park are checked on their own). */
+const existing = (): Lesson[] =>
+  Object.values(import.meta.glob<Lesson>(['../../content/lessons/*.ts', '!../../content/lessons/*.test.ts'], { import: 'default', eager: true })).filter(
+    (l) => l.figure === 'net-map' && !l.units.some((u) => u.steps.some((st) => st.events.some((e) => e.type !== 'table' && (e.cues ?? []).some((q) => q.cue === 'park' || q.cue === 'unpark')))),
+  );
+
 test('2c, 5a: no parked tag and no gap in any existing net-map lesson, at any position', () => {
-  const lessons = Object.values(import.meta.glob<Lesson>(['../../content/lessons/*.ts', '!../../content/lessons/*.test.ts'], { import: 'default', eager: true })).filter((l) => l.figure === 'net-map');
+  const lessons = existing();
   expect(lessons.length).toBeGreaterThanOrEqual(15);
   expect(drawn.svg).not.toMatch(/nm-park|nm-gap/);
   const { root, driver } = mount();
@@ -259,7 +265,7 @@ test('2c, 5a: no parked tag and no gap in any existing net-map lesson, at any po
 }, 30_000);
 
 test('5a: a message of an existing lesson plays to its end with no parked tag or gap', async () => {
-  const lessons = Object.values(import.meta.glob<Lesson>(['../../content/lessons/*.ts', '!../../content/lessons/*.test.ts'], { import: 'default', eager: true })).filter((l) => l.figure === 'net-map');
+  const lessons = existing();
   const { root, driver } = mount();
   for (const l of lessons) {
     const slot = slotsFor(l).findIndex((s) => s.kind === 'step');
@@ -652,7 +658,7 @@ test('E7: a tag scaled 1 keeps today’s translate form; a scaled one scales abo
 
 test('the driver’s comment lists park, unpark and via', () => {
   expect(driverSource).toContain('`park <place> <bay> <TAG>`');
-  expect(driverSource).toContain('`unpark <place>`');
+  expect(driverSource).toContain("`unpark laptop`");
   expect(driverSource).toContain('A message `via` a router');
 });
 

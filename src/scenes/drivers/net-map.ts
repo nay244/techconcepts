@@ -27,7 +27,7 @@ import { animate, easeInOut, wait } from '../motion';
  * - `hide resolver` (a unit's start only): the DNS resolver, its cable and its callout are left off the map;
  * - `show phone` (a unit's start only): the phone, which every other map leaves off, lies on the home plate;
  * - `park <place> <bay> <TAG>`: a copy of the tag waits, unlit, in that bay (the laptop's four, the web server's four, a
- *   router's top) until a message with its tag takes it or `unpark <place>` sends that place's tags into the laptop's
+ *   router's top) until a message with its tag takes it or `unpark laptop` (the only place that unparks) sends the laptop's tags into the laptop's
  *   screen; a gap (a dashed outline) marks an empty bay with a parked tag before and after it. A note that parks takes
  *   600 ms, one that unparks 700; a message that parks its own tag slides it into its bay as it rests.
  *

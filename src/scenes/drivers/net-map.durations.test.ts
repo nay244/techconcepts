@@ -25,5 +25,8 @@ function durations(): Record<string, number> {
 test('every event of every existing net-map lesson takes exactly the time it took before park, unpark and via', () => {
   const before = JSON.parse(readFileSync('src/scenes/drivers/net-map.durations.json', 'utf8')) as Record<string, number>;
   expect(Object.keys(before).length).toBeGreaterThan(200);
-  expect(durations()).toEqual(before);
+  // Only the events the snapshot knew: a lesson merged since (Packets) is new, not changed. Every recorded event must still be there.
+  const now = durations();
+  for (const key of Object.keys(before)) expect(now, key).toHaveProperty([key]);
+  expect(Object.fromEntries(Object.keys(before).map((k) => [k, now[k]]))).toEqual(before);
 });

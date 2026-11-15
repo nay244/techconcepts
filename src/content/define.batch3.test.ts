@@ -58,8 +58,8 @@ test('20a to 20d: the place, the bay and the tag of a park cue', () => {
   expect(ok('b 1 X')).toEqual([]);
   refused(only(note('n', park('laptop 10 X'))), /needs "<place> <bay> <TAG>"/);
   refused(only(note('n', park('laptop 1'))), /needs "<place> <bay> <TAG>"/);
-  refused(only(note('n', park('laptop 1  X'))), /a space at its start or end/);
-  refused(only(note('n', park('laptop 1 X '))), /a space at its start or end/);
+  refused(only(note('n', park('laptop 1  X'))), /whitespace at its start or end/);
+  refused(only(note('n', park('laptop 1 X '))), /whitespace at its start or end/);
   refused(only(note('n', park(`laptop 1 ${'x'.repeat(17)}`))), /a tag of 17 characters; the limit is 16/);
   expect(ok(`laptop 1 ${'x'.repeat(16)}`)).toEqual([]);
   // Counted by code points, as the map's tag is: sixteen letters with an accent are sixteen.
@@ -93,6 +93,12 @@ test('a send frees its bay even when the message is refused, and unpark empties 
   // After the unpark the laptop's bays and the tag are free again.
   expect(packets(only(note('a', park('laptop 1 A')), note('u', unparkLaptop), note('b', park('laptop 1 B')), note('c', park('web 2 A'))))).toEqual([]);
   refused(only(note('a', park('laptop 1 A')), note('u', unparkLaptop), note('b', park('laptop 1 B')), note('c', park('laptop 1 C'))), /bay 1 at laptop already holds "B"/);
+});
+
+test('a message parks its own tag once, and a tag may not end in a tab or other whitespace', () => {
+  refused(only(msg({ id: 'm', tag: 'A', cues: [park('laptop 1 A'), park('laptop 2 A')] })), /parks its own tag once; it has 2 park cues/);
+  refused(only(note('n', park('laptop 1 X\t'))), /whitespace at its start or end/);
+  refused(only(note('n', park('laptop 1 \tX'))), /whitespace at its start or end/);
 });
 
 test('20k to 20n: via', () => {
@@ -203,4 +209,17 @@ test('18a: the log has eight rows by the end, every one TCP, every time and size
     expect(r.cells.time).toBe('—');
     expect(r.cells.size).toBe('—');
   }
+});
+
+test('7a, 8a, 11a, 12a: the table’s rows after step 2, step 4’s three adds and step 5’s replace', () => {
+  const lesson = batch3Fixtures.packets();
+  const rows = (step: number, played: number): string[] => {
+    const t = deriveState(lesson, positionOf(lesson, 0, 'step', step), played).tables.pieces;
+    return (t?.rows ?? []).map((r) => `${r.piece} ${r.status}`);
+  };
+  expect(rows(2, 2)).toEqual(['1 Arrived']);
+  expect(rows(3, 1)).toEqual(['1 Arrived']);
+  expect(rows(4, 2)).toEqual(['1 Arrived', '3 Arrived early, waiting']);
+  expect(rows(4, 6)).toEqual(['1 Arrived', '3 Arrived early, waiting', '4 Arrived early, waiting', '2 Arrived last']);
+  expect(rows(5, 1)).toEqual(['1 In order', '2 In order', '3 In order', '4 In order']);
 });
