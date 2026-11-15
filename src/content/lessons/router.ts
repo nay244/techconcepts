@@ -174,9 +174,9 @@ const step3: SceneEvent[] = [
   replace(
     's3-table',
     'kept by your provider’s router',
-    [row('198.51.100.0/24', 'directly (customers)'), row('203.0.113.0/24', 'router b'), row('0.0.0.0/0', 'router a')],
+    [row('198.51.100.0/24', 'directly (link to your router)'), row('203.0.113.0/24', 'router b'), row('0.0.0.0/0', 'router a')],
     'The provider’s router has its own routing table.',
-    traced('term-routing-table', 'term-route', 'term-connected', 'term-default-route'),
+    traced('term-routing-table', 'term-route', 'term-connected', 'term-default-route', 'fact-home'),
   ),
   match(
     's3-candidates',
@@ -195,7 +195,7 @@ const step3: SceneEvent[] = [
     destination: WEB,
     info: 'Longest match: 203.0.113.0/24, to router b, TTL 62',
     plain: 'The provider’s router passes the packet to router b.',
-    backing: traced('term-longest-match', 'fact-match', 'term-next-hop', 'fact-ttl', 'term-ttl', 'fact-defined'),
+    backing: traced('term-longest-match', 'fact-match', 'term-next-hop', 'fact-ttl', 'term-ttl', 'deep-nat', 'fact-defined'),
   }),
 ];
 
@@ -212,7 +212,7 @@ const step4: SceneEvent[] = [
     destination: WEB,
     info: 'To router c, TTL 61',
     plain: 'Router b looks the destination up in its own table and passes the packet to router c.',
-    backing: traced('fact-hop', 'term-next-hop', 'fact-ttl', 'term-ttl', 'fact-defined'),
+    backing: traced('fact-hop', 'term-next-hop', 'fact-ttl', 'term-ttl', 'deep-nat', 'fact-defined'),
   }),
   match('s4-match', '203.0.113.0/24 matches: example.net’s network, connected directly.', { key: '203.0.113.0/24' }, traced('term-connected', 'term-next-hop')),
   packet('s4-delivered', 'c', 'web', {
@@ -221,7 +221,7 @@ const step4: SceneEvent[] = [
     info: 'Delivered to 203.0.113.80, TTL 60',
     plain: 'Router c is plugged into example.net’s network, so the next hop is the server itself.',
     cues: [{ cue: 'status', arg: 'Delivered' }, { cue: 'status-done' }],
-    backing: traced('term-connected', 'term-next-hop', 'fact-ttl', 'term-ttl', 'fact-defined'),
+    backing: traced('term-connected', 'term-next-hop', 'fact-ttl', 'term-ttl', 'deep-nat', 'fact-defined'),
   }),
 ];
 
@@ -246,7 +246,7 @@ const step5: SceneEvent[] = [
     destination: LOST,
     info: 'Default route: to router a, TTL 62',
     plain: 'The provider’s router has no more specific route for 192.0.2.77, so its default route sends the packet to router a.',
-    backing: traced('term-default-route', 'fact-default', 'fact-ttl', 'term-ttl', 'fact-defined'),
+    backing: traced('term-default-route', 'fact-default', 'fact-ttl', 'term-ttl', 'deep-nat', 'fact-defined'),
   }),
   match('s5-nomatch', 'No route in router a’s table covers 192.0.2.77.', { key: '' }, traced('fact-no-route', 'term-routing-table')),
   droppedAtA,
@@ -300,7 +300,7 @@ export default defineLesson({
         },
         parties: [],
         backing: {
-          traces: ['term-router', 'term-routing-table', 'term-gateway', 'term-default-route', 'term-connected', 'term-next-hop', 'fact-home', 'fact-defined'],
+          traces: ['term-router', 'term-routing-table', 'term-gateway', 'term-default-route', 'term-connected', 'term-next-hop', 'fact-home', 'fact-defined', 'fact-no-route', 'term-unreachable', 'deep-nat'],
         },
       },
       overview: {
@@ -359,7 +359,7 @@ export default defineLesson({
             { label: 'Source now', value: '198.51.100.23, your router’s public address', backing: { traces: ['deep-nat'] } },
           ],
           events: step2,
-          backing: { traces: ['term-routing-table', 'term-connected', 'term-default-route', 'fact-home', 'fact-ttl', 'deep-nat', 'term-next-hop'] },
+          backing: { traces: ['fact-hop', 'term-routing-table', 'term-connected', 'term-default-route', 'fact-home', 'fact-ttl', 'deep-nat', 'term-next-hop'] },
         },
         {
           id: 'most-specific',
@@ -497,7 +497,7 @@ export default defineLesson({
           id: 'pattern',
           names: ['Read the destination', 'Find the route', 'Lower the TTL', 'Pass it on'],
           note: 'What every router does with each packet, in outline: the longest matching route picks the next hop.',
-          cite: [router('5.2.1'), router('5.2.1.1'), router('5.2.1.2')],
+          cite: [router('5.2.1'), router('5.2.1.1'), router('5.2.1.2'), router('5.2.4.3')],
         },
         why: [
           {
@@ -508,7 +508,7 @@ export default defineLesson({
           {
             id: 'why-2',
             text: 'A default route means a router doesn’t need to list every network in the world. Your home has one way out, so your router needs only one route for everything outside.',
-            cite: [CISCO_STUB, router('2.3'), rfc('rfc-3022', '2.2')],
+            cite: [CISCO_STUB, rfc('rfc-1812', '2.3'), rfc('rfc-3022', '2.2')],
           },
         ],
         deep: [
@@ -534,8 +534,8 @@ export default defineLesson({
           {
             id: 'fact-host-table',
             label: 'On your laptop',
-            value: 'a tiny routing table: its own network, and a default route to the gateway; route print shows it on Windows',
-            cite: [MS_ROUTE_PARAMS, ...ROUTE_PRINT, cidr('3.1')],
+            value: 'a tiny routing table: its own network, reached directly, and a default route to the gateway; route print shows it on Windows',
+            cite: [MS_ROUTE_PARAMS, ...ROUTE_PRINT, host('3.3.1', 47), rfc('rfc-4632', '3.1')],
           },
           {
             id: 'fact-default',
@@ -560,7 +560,7 @@ export default defineLesson({
             id: 'fact-home',
             label: 'Your home router',
             value: 'has one way out, its link to your provider, so one default route covers everything outside',
-            cite: [CISCO_STUB, router('2.3'), rfc('rfc-3022', '2.2')],
+            cite: [CISCO_STUB, rfc('rfc-1812', '2.3'), rfc('rfc-3022', '2.2')],
           },
           {
             id: 'fact-no-route',
@@ -580,7 +580,7 @@ export default defineLesson({
             {
               text: 'To its default gateway, your router.',
               feedback: 'Right. 203.0.113.80 isn’t on the laptop’s own network, so only its default route matches, and that points at the gateway.',
-              cite: [host('3.3.1', 47), host('3.3.1.2', 48), MS_GATEWAY],
+              cite: [host('3.3.1', 47), host('3.3.1.2', 48), MS_GATEWAY, cite('microsoft-route', 'Examples', { url: 'https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/route_ws2008#examples' })],
             },
             {
               text: 'Straight to 203.0.113.80.',
@@ -589,7 +589,7 @@ export default defineLesson({
             },
             {
               text: 'To every device on the network at once.',
-              feedback: 'Not quite. A broadcast is for when you don’t know who to ask. The laptop knows its gateway and sends it there.',
+              feedback: 'Not quite. The laptop knows its default gateway, so it sends the packet to that one router.',
               cite: [host('3.3.1.2', 48), MS_GATEWAY],
             },
           ],
