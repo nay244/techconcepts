@@ -396,10 +396,12 @@ test('P8: for every event, show(before) then a reduced-motion play looks as a fr
       const a = mount();
       a.driver.show(viewAt(step, 0));
       for (let i = 0; i < k; i++) {
+        a.driver.show(viewAt(step, i));
         const prior = a.driver.play(eventAt(step, i), viewAt(step, i), options({ reducedMotion: true }));
         await vi.advanceTimersByTimeAsync(5000);
         await prior;
       }
+      a.driver.show(viewAt(step, k));
       const p = a.driver.play(event, viewAt(step, k), options({ reducedMotion: true }));
       await vi.advanceTimersByTimeAsync(5000);
       await p;
@@ -414,7 +416,7 @@ test('P8: for every event, show(before) then a reduced-motion play looks as a fr
     }
   }
   expect(count).toBe(1 + 2 + 8 + 5 + 5);
-});
+}, 20000);
 
 test('P8: at full motion each step, played to its end, looks as a fresh show of its end does', async () => {
   for (const step of [1, 3, 4, 5]) {

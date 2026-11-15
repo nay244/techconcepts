@@ -108,7 +108,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     for (const s of POOL_SERVERS) {
       const row = rows.find((r) => r[POOL_KEY]?.toLowerCase() === s);
       const word = row?.[POOL_HEALTH];
-      // A word that is a key of Object.prototype (`constructor`) is not one of the figure's four (E31).
+      // A word that is a key of Object.prototype (`constructor`) is not one of the figure's four (E28).
       const shown = word !== undefined && Object.hasOwn(POOL_HEALTH_WORDS, word) ? POOL_HEALTH_WORDS[word] : undefined;
       lamps[s].forEach((lamp, n) => (shown === undefined ? lamp.removeAttribute('data-check') : lamp.setAttribute('data-check', shown.lamps[n]!)));
       if (shown === undefined) health[s].removeAttribute('data-health');
