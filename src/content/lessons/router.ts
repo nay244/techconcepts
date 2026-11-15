@@ -508,7 +508,7 @@ export default defineLesson({
           {
             id: 'why-2',
             text: 'A default route means a router doesn’t need to list every network in the world. Your home has one way out, so your router needs only one route for everything outside.',
-            cite: [CISCO_STUB, rfc('rfc-1812', '2.3'), rfc('rfc-3022', '2.2')],
+            cite: [CISCO_STUB, rfc('rfc-1812', '5.2.4.3'), rfc('rfc-1812', '7.5.2'), rfc('rfc-1812', '2.3'), rfc('rfc-3022', '2.2')],
           },
         ],
         deep: [
@@ -560,7 +560,7 @@ export default defineLesson({
             id: 'fact-home',
             label: 'Your home router',
             value: 'has one way out, its link to your provider, so one default route covers everything outside',
-            cite: [CISCO_STUB, rfc('rfc-1812', '2.3'), rfc('rfc-3022', '2.2')],
+            cite: [CISCO_STUB, rfc('rfc-1812', '7.5.2'), rfc('rfc-1812', '2.3'), rfc('rfc-3022', '2.2')],
           },
           {
             id: 'fact-no-route',
