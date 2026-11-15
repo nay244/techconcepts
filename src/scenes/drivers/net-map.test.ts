@@ -901,5 +901,35 @@ test('played at 1×, step 3 waits 600 ms before its table, then shows the candid
   wait(1);
   expect(where()).toBe('3:3');
   hook.unmount();
+
+  // At 2× each wait is half: 300 for the replace, 450 for each match.
+  const fast = renderHook(() => usePlayback(lesson, (event) => netMapDriver.duration(event, data)));
+  const at2 = () => `${fast.result.current[0].position}:${fast.result.current[0].eventIndex}`;
+  act(() => fast.result.current[1]({ type: 'go', position: 3 } as never));
+  act(() => fast.result.current[1]({ type: 'cycleSpeed' } as never));
+  act(() => fast.result.current[1]({ type: 'cycleSpeed' } as never));
+  expect(fast.result.current[0].speed).toBe(2);
+  act(() => fast.result.current[1]({ type: 'toggle' } as never));
+  expect(at2()).toBe('3:0');
+  wait(299);
+  expect(at2()).toBe('3:0');
+  wait(1);
+  expect(at2()).toBe('3:1');
+  wait(449);
+  expect(at2()).toBe('3:1');
+  wait(1);
+  expect(at2()).toBe('3:2');
+  wait(449);
+  expect(at2()).toBe('3:2');
+  wait(1);
+  expect(at2()).toBe('3:3');
+  fast.unmount();
   vi.useRealTimers();
+});
+
+test('the figure drawn for Router’s lesson is the approved prototype’s, tag for tag, where it stands in its page', () => {
+  const proto: string = readFileSync('prototypes/d10-router.html', 'utf8');
+  const theirs = /<svg data-figure="net-map"[\s\S]*?<\/svg>(?=<\/div>)/.exec(proto)![0];
+  const lines = (svg: string): string[] => svg.split('><');
+  expect(lines(drawNetMap(['ip:web']).svg)).toEqual(lines(theirs));
 });

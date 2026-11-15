@@ -1,3 +1,5 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { sha256, withoutGrain } from '../../test/figure-hash';
 import { COVER_IDS, cover, coverStill } from './covers.ts';
@@ -68,8 +70,8 @@ const EXPECTED: Record<string, string> = {
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
   'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
-  // Drawn for Lesson 08, Router (D10), on 2026-11-14; pinned from its own first render.
-  'spot:router': '64bf5855aa793074f9ecaf08a4416569c05ab8e50dc7b0e8e361a07721ed5ad9',
+  // Drawn for Lesson 08, Router (D10), on 2026-11-14; pinned from its own render, which equals the approved prototype's (the next test).
+  'spot:router': 'ca8cae37e086a144dc1c5b49badfdd3f8c6a175297b456f08e098eb112a9dce8',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -102,4 +104,12 @@ test('the Router spot is one round router with a lit packet and a three-row tabl
   expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(2);
   expect(svg.match(/<text class="lm-rule"[^>]*>[^<]*</g)!.map((t) => t.replace(/.*>([^<]*)</, '$1'))).toEqual(['198.51.100.0/24', '203.0.113.0/24', '0.0.0.0/0']);
   expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+test('the Router spot is the approved prototype’s art, tag for tag', () => {
+  const proto: string = readFileSync('prototypes/d10-router.html', 'utf8');
+  const theirs = /<svg xmlns="http:\/\/www.w3.org\/2000\/svg" class="iso-svg lm-svg lm-router"[\s\S]*?<\/svg>/.exec(proto)![0];
+  // The prototype's copy carries the xmlns attribute a page needs and an inline figure does not; nothing else differs.
+  const lines = (svg: string): string[] => svg.replace(' xmlns="http://www.w3.org/2000/svg"', '').replace(' iso-svg', '').split('><');
+  expect(lines(spot('router'))).toEqual(lines(theirs));
 });

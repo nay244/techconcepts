@@ -38,7 +38,7 @@ const TRAIL_EDGE = '<polyline class="nm-trail-edge" id="nm-trail-edge" points=""
  * (hidden parts at the end of the figure), the groups that let a unit hide the resolver (each holds the parts the
  * mockup drew, in the same order), and the routers' tops in the data.
  */
-const STRIPS = /<g class="nm-strip" id="nm-name-[a-z]+"[^>]*>.*?<\/text><\/g>/g;
+const STRIPS = /<g id="nm-names">.*?<\/text><\/g><\/g>/;
 const DISCARD = /<g class="nm-drop nm-discard" id="nm-discard".*?<\/text><\/g>/;
 function withoutRouterParts(svg: string): string {
   let out = svg.replace(TRAIL_EDGE, '').replace(STRIPS, '').replace(DISCARD, '');

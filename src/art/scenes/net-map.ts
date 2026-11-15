@@ -326,11 +326,12 @@ const DISCARD = `<g class="nm-drop nm-discard" id="${ID}-discard" style="opacity
 // corner is from the router's top. The driver sets the words and the width, which are 11 + 7.4 a character.
 const NAME_AT = { isp: [-50, -24], a: [-34, -30], b: [12, -22], c: [12, -28], d: [12, 4] };
 const NAME_H = 17;
-const tops = () => Object.fromEntries(Object.entries(N).map(([name, [x, y]]) => [name, at([x, y, PUCK_H]).map((v) => +v.toFixed(2))]));
-const strips = () => Object.entries(tops()).map(([name, [x, y]]) => {
-  const [dx, dy] = NAME_AT[name], sx = x + dx, sy = y + dy;
+const topOf = ([x, y]) => at([x, y, PUCK_H]);
+const tops = () => Object.fromEntries(Object.entries(N).map(([name, xy]) => [name, topOf(xy).map((v) => +v.toFixed(2))]));
+const strips = () => `<g id="${ID}-names">` + Object.entries(N).map(([name, xy]) => {
+  const [x, y] = topOf(xy), [dx, dy] = NAME_AT[name], sx = x + dx, sy = y + dy;
   return `<g class="nm-strip" id="${ID}-name-${name}" data-x="${n1(sx)}" data-y="${n1(sy)}" display="none"><rect x="${n1(sx)}" y="${n1(sy)}" width="19" height="${NAME_H}" rx="2"/><text x="${n1(sx + 9.5)}" y="${n1(sy + 12.6)}" text-anchor="middle"></text></g>`;
-}).join("");
+}).join("") + `</g>`;
 // The resolver is left off the map for a unit that starts with `hide resolver`: each of its parts sits in a group the driver can hide.
 const resolverPart = (svg) => `<g data-base="resolver">${svg}</g>`;
 
