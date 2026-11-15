@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 // @ts-expect-error - no @types/node in this project; vitest runs under node
 import { readFileSync } from 'node:fs';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawNetMap, type NetMapData } from '../../art/scenes/net-map';
 import { NET_MAP_LAYERS } from '../../art/scenes/net-map-layers';
+import { routerFixture } from '../../content/router-fixture';
 import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
+import { usePlayback } from '../../engine/playback';
 import type { AppliedCue } from '../../engine/timeline';
 import type { PlayOptions, SceneDriver, SceneView } from '../driver';
 import { DRIVERS } from './index';
@@ -535,7 +538,20 @@ function scenarios(): { event: SceneEvent; before: SceneView }[] {
       return at;
     });
   };
+  // Router's unit: the resolver hidden from the start, a strip on each internet router, a table event or two, a router
+  // dropping a packet (the DROPPED mark stays) and the note that comes back over it.
+  const router = routerFixture().units[0]!;
+  const routerEvents = router.steps.flatMap((step) => step.events);
+  const routerRun = (() => {
+    let before = view({ layers: router.scene.layers, labels: router.scene.labels, start: router.scene.start });
+    return routerEvents.map((event) => {
+      const at = { event, before };
+      before = after(before, event);
+      return at;
+    });
+  })();
   return [
+    ...routerRun,
     ...run(['http:web'], web),
     ...run(['smtp:out', 'smtp:in'], mail),
     ...run(['ftp:files'], files),
@@ -695,4 +711,195 @@ test('an aborted play stops touching the figure, and show then settles it', asyn
   const fresh = mount();
   fresh.driver.show(after(before, event));
   expect(looks(root)).toBe(looks(fresh.root));
+});
+
+// ---------------------------------------------------------------- D10 / B12: Router's strips, DROPPED mark and hidden resolver
+
+const router = routerFixture().units[0]!;
+const routerView = (cues: CueOf[] = []) => view({ layers: router.scene.layers, labels: router.scene.labels, start: router.scene.start, cues });
+const strip = (root: SVGSVGElement, place: string) => part(root, `nm-name-${place}`);
+const stripWords = (root: SVGSVGElement) => [...root.querySelectorAll('.nm-strip')].map((g) => (g.getAttribute('display') === 'none' ? null : g.querySelector('text')!.textContent));
+const hiddenBases = (root: SVGSVGElement) => [...root.querySelectorAll('[data-base="resolver"]')].map((el) => el.hasAttribute('data-hidden'));
+
+test('Router’s scene shows the five strips with their words and hides every part of the resolver, at every position', () => {
+  const { root, driver } = mount();
+  driver.show(routerView());
+  expect(stripWords(root)).toEqual(['provider', 'a', 'b', 'c', 'd']);
+  const hidden = hiddenBases(root);
+  expect(hidden.length).toBeGreaterThanOrEqual(5);
+  expect(hidden.every(Boolean)).toBe(true);
+  // The figure says it draws no resolver.
+  expect(root.getAttribute('aria-label')).not.toMatch(/resolver/i);
+  // A strip is as wide as its letters: 11 + 7.4 a character, and its words are centred on it.
+  expect(strip(root, 'isp').querySelector('rect')!.getAttribute('width')).toBe('70.2');
+  expect(strip(root, 'a').querySelector('rect')!.getAttribute('width')).toBe('18.4');
+  const x = Number(strip(root, 'isp').dataset.x);
+  expect(Number(strip(root, 'isp').querySelector('text')!.getAttribute('x'))).toBeCloseTo(x + 35.1, 5);
+  // The cue plays on from there, and every position of the unit keeps the resolver off the map.
+  driver.show(routerView([{ cue: 'drop', arg: 'a', eventId: 's5-drop' }, { cue: 'status', arg: 'No route: dropped', eventId: 's5-icmp' }]));
+  expect(hiddenBases(root).every(Boolean)).toBe(true);
+});
+
+test('What is IP’s scene, with no strip labels and no hide, shows no strip and hides nothing', () => {
+  const { root, driver } = mount();
+  driver.show(view({ layers: ['ip:web'], labels: { laptop: 'Sending a packet', url: 'example.net', router: '192.168.1.1 inside\n198.51.100.23 outside' } }));
+  expect(stripWords(root)).toEqual([null, null, null, null, null]);
+  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
+  expect(part(root, 'nm-discard').style.opacity).toBe('0');
+});
+
+test('a hidden-resolver start and then a start without it brings the resolver back; labels none hide the strips again', () => {
+  const { root, driver } = mount();
+  driver.show(routerView());
+  expect(hiddenBases(root).every(Boolean)).toBe(true);
+  driver.show(view({ layers: ['ip:web'] }));
+  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
+  expect(stripWords(root)).toEqual([null, null, null, null, null]);
+  driver.show(routerView());
+  expect(stripWords(root)).toEqual(['provider', 'a', 'b', 'c', 'd']);
+});
+
+test('`hide` takes only the resolver and `drop` only a router: anything else throws before the figure changes', () => {
+  const { root, driver } = mount();
+  expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'laptop' }] }))).toThrow(/cannot hide "laptop"/);
+  expect(() => driver.show(view({ cues: [{ cue: 'drop', arg: 'zz' }] }))).toThrow(/no router "zz"/);
+  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+});
+
+/** A box in the figure's units: from the attributes, as the figure draws it. */
+type Box = [number, number, number, number];
+const overlap = (a: Box, b: Box): boolean => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+const stripBox = (g: SVGElement): Box => {
+  const r = g.querySelector('rect')!;
+  const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((n) => Number(r.getAttribute(n)));
+  return [x!, y!, x! + w!, y! + h!];
+};
+
+test('no two strips overlap, and none overlaps the DROPPED mark at router a; the mark sits on router a’s top', () => {
+  const { root, driver } = mount();
+  driver.show(routerView([{ cue: 'drop', arg: 'a', eventId: 's5-drop' }]));
+  const discard = part(root, 'nm-discard');
+  const [mx, my] = moved(discard);
+  // Router a's puck top, as the spec measures it.
+  expect(mx).toBeCloseTo(214.7, 1);
+  expect(my).toBeCloseTo(108.3, 1);
+  expect(opacity(discard)).toBe('1');
+  // The mark: its ring, and its pill from x 11 to 61 (net-map.ts).
+  const mark: Box = [mx - 8, my - 8, mx + 61, my + 8];
+  const boxes = ['isp', 'a', 'b', 'c', 'd'].map((place) => stripBox(strip(root, place)));
+  boxes.forEach((a, i) => {
+    expect(overlap(a, mark), `strip ${i} and the mark`).toBe(false);
+    boxes.slice(i + 1).forEach((b, j) => expect(overlap(a, b), `strips ${i} and ${i + j + 1}`).toBe(false));
+  });
+  // Strips sit where the spec puts them: the router's top plus its offset (isp [-50, -24]).
+  const [ix, iy] = data.tops.isp!;
+  // (drawn to a tenth)
+  expect(Math.abs(boxes[0]![0] - (ix - 50))).toBeLessThan(0.1);
+  expect(Math.abs(boxes[0]![1] - (iy - 24))).toBeLessThan(0.1);
+});
+
+test('the DROPPED mark shows only once its cue has played, and clears when the cue is not in the view', () => {
+  const { root, driver } = mount();
+  driver.show(routerView());
+  expect(opacity(part(root, 'nm-discard'))).toBe('0');
+  driver.show(routerView([{ cue: 'drop', arg: 'a', eventId: 's5-drop' }]));
+  expect(opacity(part(root, 'nm-discard'))).toBe('1');
+  driver.show(routerView());
+  expect(opacity(part(root, 'nm-discard'))).toBe('0');
+});
+
+test('the DROPPED mark stays while the ICMP message rides back over it, and no LOST mark shows in step 5', async () => {
+  const { root, driver } = mount();
+  const before = routerView([{ cue: 'drop', arg: 'a', eventId: 's5-drop' }]);
+  driver.show(before);
+  const icmp = router.steps[4]!.events.find((e) => e.id === 's5-icmp')!;
+  let done = false;
+  const p = driver.play(icmp, before, options()).then(() => (done = true));
+  let seenDuringRide = 0;
+  for (let step = 0, t = now; !done && step < 200; step++, t += 50) {
+    frameAt(t);
+    await vi.advanceTimersByTimeAsync(50);
+    if (!done) seenDuringRide += opacity(part(root, 'nm-discard')) === '1' ? 1 : 0;
+    expect(opacity(part(root, 'nm-drop')), 'no LOST mark').toBe('0');
+  }
+  await p;
+  expect(seenDuringRide).toBeGreaterThan(3);
+  expect(opacity(part(root, 'nm-discard'))).toBe('1');
+});
+
+test('the isp to a message is delivered: it rides to router a and leaves no LOST mark and no red trail', async () => {
+  const { root, driver } = mount();
+  const before = routerView();
+  driver.show(before);
+  const toA = router.steps[4]!.events.find((e) => e.id === 's5-to-a')!;
+  let done = false;
+  const p = driver.play(toA, before, options()).then(() => (done = true));
+  for (let step = 0, t = now; !done && step < 200; step++, t += 50) {
+    frameAt(t);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(opacity(part(root, 'nm-drop'))).toBe('0');
+    expect(part(root, 'nm-trail').classList.contains('lost')).toBe(false);
+  }
+  await p;
+});
+
+test('step 4’s last message leaves “Delivered” in the done style; step 5’s last, “No route: dropped” without it', () => {
+  const { root, driver } = mount();
+  const cues = (steps: number): CueOf[] =>
+    router.steps.slice(0, steps).flatMap((step) => step.events.flatMap((e) => (e.type === 'table' ? [] : (e.cues ?? []).map((c) => ({ ...c, eventId: e.id })))));
+  driver.show(routerView(cues(4)));
+  expect(part(root, 'nm-lapState').textContent).toBe('Delivered');
+  expect(part(root, 'nm-lapState').getAttribute('class')).toContain('done');
+  driver.show(routerView(cues(5)));
+  expect(part(root, 'nm-lapState').textContent).toBe('No route: dropped');
+  expect(part(root, 'nm-lapState').getAttribute('class')).not.toContain('done');
+});
+
+test('the colour and look of the strips and the mark live in net-map.css', () => {
+  expect(mapCss).toMatch(/\.nm \.nm-strip rect \{[^}]*fill: var\(--fig-bg\)[^}]*stroke: var\(--line-strong\)/);
+  expect(mapCss).toMatch(/\.nm \.nm-strip text \{[^}]*700 12px/);
+  expect(mapCss).toMatch(/\.nm \.nm-discard \.nm-drop-t \{ font-size: 8px/);
+  expect(mapCss).toMatch(/\.nm \[data-base\]\[data-hidden\] \{ display: none/);
+});
+
+// ---------------------------------------------------------------- timing
+
+test('on the map a replace takes 600 ms, a match 900, a note that drops a packet 900, and every other event but a ride 0', () => {
+  const table = (op: 'replace' | 'match' | 'add' | 'update' | 'remove' | 'clear'): SceneEvent => ({ type: 'table', id: 't', table: 'routes', op, summary: 's' });
+  expect(netMapDriver.duration(table('replace'), data)).toBe(600);
+  expect(netMapDriver.duration(table('match'), data)).toBe(900);
+  for (const op of ['add', 'update', 'remove', 'clear'] as const) expect(netMapDriver.duration(table(op), data), op).toBe(0);
+  const note = (cues?: Cue[]): SceneEvent => ({ type: 'note', id: 'n', log: {}, plain: 'p', ...(cues === undefined ? {} : { cues }) });
+  expect(netMapDriver.duration(note([{ cue: 'drop', arg: 'a' }]), data)).toBe(900);
+  expect(netMapDriver.duration(note(), data)).toBe(0);
+  expect(netMapDriver.duration(note([{ cue: 'status', arg: 'Waiting' }]), data)).toBe(0);
+});
+
+test('played at 1×, step 3 waits 600 ms before its table, then shows the candidates for 900 ms before the winner; at 2× half as long', () => {
+  vi.useFakeTimers();
+  const lesson = routerFixture();
+  const hook = renderHook(() => usePlayback(lesson, (event) => netMapDriver.duration(event, data)));
+  const where = () => `${hook.result.current[0].position}:${hook.result.current[0].eventIndex}`;
+  const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+  // Step 3 is position 3. Playing it from its start, with the table events' own waits.
+  act(() => hook.result.current[1]({ type: 'go', position: 3 } as never));
+  act(() => hook.result.current[1]({ type: 'toggle' } as never));
+  expect(where()).toBe('3:0');
+  wait(599);
+  expect(where()).toBe('3:0');
+  wait(1);
+  expect(where()).toBe('3:1');
+  wait(899);
+  expect(where()).toBe('3:1');
+  wait(1);
+  // The candidates are applied now, and stay for the winner's wait.
+  expect(where()).toBe('3:2');
+  wait(899);
+  expect(where()).toBe('3:2');
+  wait(1);
+  expect(where()).toBe('3:3');
+  hook.unmount();
+  vi.useRealTimers();
 });

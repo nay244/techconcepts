@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { getEntries, type AvailableSummary } from '../content/registry';
 import { tracks } from '../content/tracks';
+import { spot } from '../art/figures/spots';
 import { lessonFigure } from './figures';
 
 test('every ready lesson of every track has a card figure', () => {
@@ -25,4 +26,11 @@ test('a shared lesson wears the same figure on every track that lists it', () =>
 test('a ready Networking lesson with no figure throws, naming it', () => {
   const entry = { available: true, key: 'mystery', slug: 'mystery' } as unknown as AvailableSummary;
   expect(() => lessonFigure(entry)).toThrow('The mystery lesson is ready and has no figure for its card.');
+});
+
+test('Router’s card is its spot, drawn for a lesson that has no home track yet, and does not throw', () => {
+  const entry = { available: true, key: 'router', slug: 'router' } as unknown as AvailableSummary;
+  expect(() => lessonFigure(entry)).not.toThrow();
+  expect(lessonFigure(entry)).toContain('lm-router');
+  expect(lessonFigure(entry)).toBe(spot('router'));
 });

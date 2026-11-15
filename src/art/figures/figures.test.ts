@@ -68,6 +68,8 @@ const EXPECTED: Record<string, string> = {
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
   'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
+  // Drawn for Lesson 08, Router (D10), on 2026-11-14; pinned from its own first render.
+  'spot:router': '64bf5855aa793074f9ecaf08a4416569c05ab8e50dc7b0e8e361a07721ed5ad9',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -88,4 +90,16 @@ test('the OSI spot is seven numbered blocks with block 4 lit', () => {
   blocks.forEach((b, i) => expect(b).toContain(`>${i + 1}</text>`));
   expect(svg).toContain('OSI · SEVEN LAYERS');
   expect(svg).toContain('aria-label="A stack of seven solid blocks, one for each layer, numbered 1 at the bottom to 7 at the top. Block 4 is lit."');
+});
+
+test('the Router spot is one round router with a lit packet and a three-row table with one light on', () => {
+  const svg = spot('router');
+  expect(svg).toContain('aria-label="A round router where three cables meet, one coming in and two going out. A lit packet travels down one of the ways out. In front stands its routing table, three routes long, with the route it chose marked."');
+  expect(svg).toContain('ROUTING TABLE · NEXT HOP');
+  // One lit part: the packet slab.
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  // One light on at the router's front and one in the table's rows: the chosen route's.
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(2);
+  expect(svg.match(/<text class="lm-rule"[^>]*>[^<]*</g)!.map((t) => t.replace(/.*>([^<]*)</, '$1'))).toEqual(['198.51.100.0/24', '203.0.113.0/24', '0.0.0.0/0']);
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
 });
