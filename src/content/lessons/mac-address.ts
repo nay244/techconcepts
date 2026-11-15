@@ -314,7 +314,7 @@ export default defineLesson({
           deep: [
             {
               text: 'One bit in the first byte marks a group address, such as the broadcast address.',
-              cite: [rfc('rfc-9542', '2.1.1'), EUI_BITS, MS_FILTER],
+              cite: [rfc('rfc-9542', '2.1.1'), EUI_BITS],
             },
           ],
           facts: [
