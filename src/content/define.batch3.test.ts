@@ -87,6 +87,14 @@ test('20g to 20j: a parked tag only moves by riding, and a message parks only it
   refused(only(msg({ id: 'm', tag: 'A', cues: [park('laptop 1 A')] }), note('n', park('web 1 A'))), /"A" is already parked at laptop/);
 });
 
+test('a send frees its bay even when the message is refused, and unpark empties the laptop: later parks are judged on what is left', () => {
+  // The message has no park cue: one issue, and the bay it left is free for B.
+  expect(packets(only(note('a', park('web 1 A')), msg({ id: 'm', tag: 'A' }), note('b', park('web 1 B'))))).toHaveLength(1);
+  // After the unpark the laptop's bays and the tag are free again.
+  expect(packets(only(note('a', park('laptop 1 A')), note('u', unparkLaptop), note('b', park('laptop 1 B')), note('c', park('web 2 A'))))).toEqual([]);
+  refused(only(note('a', park('laptop 1 A')), note('u', unparkLaptop), note('b', park('laptop 1 B')), note('c', park('laptop 1 C'))), /bay 1 at laptop already holds "B"/);
+});
+
 test('20k to 20n: via', () => {
   const via = (id: string, o: Partial<MessageEvent>) => only(msg({ id, ...o }));
   expect(packets(via('m', { via: 'd' }))).toEqual([]);
