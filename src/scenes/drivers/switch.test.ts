@@ -33,7 +33,12 @@ const options = (o: Partial<PlayOptions> = {}): PlayOptions => ({ speed: 1, redu
 const $ = (root: Element, id: string) => root.querySelector(`#${id}`)!;
 const verdictOf = (root: Element, d: string) => $(root, `sw-v-${d}`).getAttribute('data-v');
 const traced = (root: Element) => [...root.querySelectorAll('.sw-trace[data-on]')].map((e) => e.id.replace('sw-trace-', '')).sort();
-const keeping = (root: Element) => ['laptop', 'tv', 'printer', 'rt'].filter((d) => $(root, d === 'rt' ? 'sw-rt-led-1' : `sw-led-${d}`).classList.contains('on'));
+// A device keeps a frame when its status light is on; the router has two, and both must agree.
+const on = (root: Element, id: string) => $(root, id).classList.contains('on');
+const keeping = (root: Element) => ['laptop', 'tv', 'printer'].filter((d) => on(root, `sw-led-${d}`)).concat(on(root, 'sw-rt-led-1') && on(root, 'sw-rt-led-2') ? ['rt'] : []);
+const routerLights = (root: Element) => [on(root, 'sw-rt-led-1'), on(root, 'sw-rt-led-2')];
+/** The words each device's verdict says, router, laptop, TV, printer. */
+const words = (root: Element) => ['router', 'laptop', 'tv', 'printer'].map((d) => $(root, `sw-v-${d}`).querySelector('.sw-v-t')!.textContent);
 const lit = (root: Element) => [1, 2, 3, 4, 5].filter((n) => $(root, `sw-led-${n}`).classList.contains('on'));
 
 test('step 1 settled: the flood went out of ports 1, 3 and 4, not back to the laptop and not to empty port 5', () => {
@@ -42,8 +47,10 @@ test('step 1 settled: the flood went out of ports 1, 3 and 4, not back to the la
   expect(traced(root)).toEqual(['laptop-2', 'printer-4', 'router-1', 'tv-3']);
   expect(lit(root)).toEqual([1, 2, 3, 4]);
   expect([verdictOf(root, 'laptop'), verdictOf(root, 'printer'), verdictOf(root, 'router'), verdictOf(root, 'tv')]).toEqual(['sent', 'keeps', 'ignores', 'ignores']);
+  expect(words(root)).toEqual(['Ignores it', 'Sent it', 'Ignores it', 'Keeps it']);
   // Only the keeper's status light is on.
   expect(keeping(root)).toEqual(['printer']);
+  expect(routerLights(root)).toEqual([false, false]);
 });
 
 test('step 2 settled: no frame; the learned row lights port 2 and the laptop’s cable, and no device has a verdict', () => {
@@ -52,6 +59,7 @@ test('step 2 settled: no frame; the learned row lights port 2 and the laptop’s
   expect(traced(root)).toEqual(['laptop-2']);
   expect(lit(root)).toEqual([2]);
   for (const d of ['router', 'laptop', 'tv', 'printer']) expect(verdictOf(root, d)).toBeNull();
+  expect(words(root)).toEqual(['', '', '', '']);
 });
 
 test('step 3 settled: straight to port 2; the router and the TV get no copy, so no verdict, not “Ignores it”', () => {
@@ -63,6 +71,7 @@ test('step 3 settled: straight to port 2; the router and the TV get no copy, so 
   expect(verdictOf(root, 'laptop')).toBe('keeps');
   expect(verdictOf(root, 'router')).toBeNull();
   expect(verdictOf(root, 'tv')).toBeNull();
+  expect(words(root)).toEqual(['', 'Keeps it', '', 'Sent it']);
 });
 
 test('step 4 settled: a broadcast reaches every other device, and each keeps it', () => {
@@ -71,6 +80,8 @@ test('step 4 settled: a broadcast reaches every other device, and each keeps it'
   expect(traced(root)).toEqual(['laptop-2', 'printer-4', 'router-1', 'tv-3']);
   expect([verdictOf(root, 'router'), verdictOf(root, 'laptop'), verdictOf(root, 'tv'), verdictOf(root, 'printer')]).toEqual(['sent', 'keeps', 'keeps', 'keeps']);
   expect(keeping(root)).toEqual(['laptop', 'tv', 'printer']);
+  expect(words(root)).toEqual(['Sent it', 'Keeps it', 'Keeps it', 'Keeps it']);
+  expect(routerLights(root)).toEqual([false, false]);
 });
 
 test('step 5 settled: the laptop is on port 5; its old cable is gone and its chip says PORT 5', () => {
@@ -82,6 +93,8 @@ test('step 5 settled: the laptop is on port 5; its old cable is gone and its chi
   expect($(root, 'sw-port-laptop').classList.contains('moved')).toBe(true);
   expect(traced(root)).toEqual(['laptop-5', 'router-1']);
   expect(lit(root)).toEqual([1, 5]);
+  expect(words(root)).toEqual(['Keeps it', 'Sent it', '', '']);
+  expect(routerLights(root)).toEqual([true, true]);
   // Going back a step puts the cable back in port 2.
   driver.show(viewAt(4));
   expect($(root, 'sw-cable-laptop-2').getAttribute('display')).toBeNull();
@@ -113,4 +126,30 @@ test('durations at 1×: 2.95 s for a frame, 4.15 s with a re-plug, 0.9 s for eac
   expect(switchDriver.duration(at(5, 0), data)).toBe(4150);
   expect(switchDriver.duration(at(2, 0), data)).toBe(900);
   expect(switchDriver.duration(at(1, 1), data)).toBe(900);
+});
+
+// A step whose only event is a MAC table `update` lights that row's port and the cable plugged into it, as an `add` does.
+function updateOnly(): Lesson {
+  const l = switchFixture();
+  const steps = l.units[0]!.steps;
+  steps[2]!.events = [{ type: 'table', id: 'u3', table: 'mac-table', op: 'update', key: '00:00:5E:00:53:10', row: { port: '4' }, summary: 'The switch moves the laptop to port 4.' }];
+  return l;
+}
+function updateView(played: number): SceneView {
+  const l = updateOnly();
+  const position = positionOf(l, 0, 'step', 3);
+  return sceneViewOf(l.units[0]!, deriveState(l, position, played));
+}
+
+test('an update-only step lights its port and traces the cable plugged into it, settled and played', async () => {
+  const { root, driver } = mount();
+  driver.show(updateView(1));
+  expect(lit(root)).toEqual([4]);
+  expect(traced(root)).toEqual(['printer-4']);
+  const a = mount();
+  a.driver.show(updateView(0));
+  expect(lit(a.root)).toEqual([]);
+  await a.driver.play(stepEvents(updateOnly(), positionOf(updateOnly(), 0, 'step', 3))[0]!, updateView(0), options());
+  expect(lit(a.root)).toEqual([4]);
+  expect(traced(a.root)).toEqual(['printer-4']);
 });

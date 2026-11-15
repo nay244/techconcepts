@@ -338,19 +338,53 @@ test('17b: the driver imports the drawing as a type only, and nothing from commo
 test('2: a driver made on a figure missing any one of its parts throws, naming the part', () => {
   const { svg, data } = drawSwitch();
   const ids = [...svg.matchAll(/id="(sw-[^"]+)"/g)].map((m) => m[1]!);
-  const needed = ids.filter((id) => !/^sw-(call|name|addr|sub)/.test(id));
-  let threw = 0;
+  const needed = ids;
+  const quiet: string[] = [];
   for (const id of needed) {
     const host = document.createElement('div');
     host.innerHTML = svg.replace(new RegExp(` id="${id}"`), '');
     const root = host.querySelector<SVGSVGElement>('svg')!;
     try {
       switchDriver.create(root, data);
+      quiet.push(id);
     } catch (e) {
-      threw++;
       expect((e as Error).message).toContain(`#${id}`);
     }
   }
-  // Every part the driver reaches for is looked up on create: at least the 5 + 5 + 8 + 5 + 8 + 2 it names.
-  expect(threw).toBeGreaterThanOrEqual(30);
+  // Every part the driver reaches for is looked up when it is made, bar the laptop's cable and plug at ports 2 and 5
+  // (found as each play needs them) and the two groups the driver never names.
+  expect(quiet.sort()).toEqual(['sw-cable-laptop-2', 'sw-cable-laptop-5', 'sw-plug-laptop-2', 'sw-plug-laptop-5', 'sw-tags', 'sw-traces']);
+});
+
+// ---- direction: a frame rides in from its device to the port, and out from the port to the receiver
+
+const pointOf = (el: Element): [number, number] => {
+  const m = /translate\((-?[\d.]+) (-?[\d.]+)\)/.exec(el.getAttribute('transform') ?? '')!;
+  return [Number(m[1]), Number(m[2])];
+};
+const firstPoint = (el: Element): [number, number] => {
+  const [x, y] = el.getAttribute('points')!.split(' ')[0]!.split(',').map(Number);
+  return [x!, y!];
+};
+const dist = (a: [number, number], b: [number, number]) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+test('a tag rides in from the sender’s device to its port, and out from the port to the receiver; the trace grows from the same end', async () => {
+  const { cables } = drawSwitch().data as { cables: Record<string, [number, number][]> };
+  const [laptopEnd, laptopPort] = [cables['laptop:2']![0]!, cables['laptop:2']!.at(-1)!];
+  const [printerEnd, printerPort] = [cables['printer:4']![0]!, cables['printer:4']!.at(-1)!];
+  // Step 3: the printer sends, the laptop receives. In: printer device to printer port. Out: laptop port to laptop.
+  const s = start(3, 0);
+  await s.advance(100);
+  const tag = $(s.root, 'sw-tag-frame');
+  expect(dist(pointOf(tag), printerEnd)).toBeLessThan(dist(pointOf(tag), printerPort));
+  expect(dist(firstPoint($(s.root, 'sw-trace-printer-4')), printerEnd)).toBeLessThan(1);
+  await s.advance(800);
+  expect(dist(pointOf(tag), printerPort)).toBeLessThan(dist(pointOf(tag), printerEnd));
+  await s.advance(550); // 1,450: just out of the switch
+  expect(dist(pointOf(tag), laptopPort)).toBeLessThan(dist(pointOf(tag), laptopEnd));
+  expect(dist(firstPoint($(s.root, 'sw-trace-laptop-2')), laptopPort)).toBeLessThan(1);
+  await s.advance(750); // 2,200: nearly there
+  expect(dist(pointOf(tag), laptopEnd)).toBeLessThan(dist(pointOf(tag), laptopPort));
+  await s.advance(1000);
+  await s.p;
 });
