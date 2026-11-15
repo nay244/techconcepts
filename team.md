@@ -890,3 +890,13 @@ Planned on 2026-11-15 in a fresh session on Opus 5.5, under the owner's go on ba
 - A cell of the design's copy that states a fact ("Arrived, played at once") is a claim: send the prototype's words to the analysts before the freeze, not after (E12).
 - Builders do not number errata: an erratum is the orchestrator's, and the builder's own E12 had to be replaced.
 - The spec review paid for itself again: E3 (the widened plate rule as written broke 8 checked lessons) would have reached the build.
+
+# Job 14: Networking Concepts' batch 3, Packets, Switch and Load Balancers
+
+Planned on 2026-11-15 in a fresh session on Opus 5.5, under the owner's go on batch 3 with the design gate (direction 2.63, 2.64); `plan.md`. Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S16 | scout | Haiku | 1 | 272,572 | `prototypes/s16-batch-3-facts.md` (saved by the orchestrator from the transcript): stops 2, 5, 19, no files; no switching standard or MAC-learning source registered (IEEE: only job 13's RA pages and the 802-2024 page); no load-balancer host beyond Microsoft and Cloudflare; net-map moves one tag at a time; no switch, hub or pool drawn; about 30 count places; agreement with the glossary's Packet, Frame, Segment and Datagram. |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: thirteen decisions; D13 in three parts; the prototype's words read before the gate; Haiku for the counts and named fixes. Estimate 4.3 to 6.0 million. Waits for the owner's go. |
+

@@ -24,4 +24,10 @@ Two of three lessons were a near-pass with three items each. Every one was of th
 3. **A step's narrative that explains by contrast or names an idea** ("without IDLE an app asks every few minutes", "that's push"): the contrast and the name each need a Learn part.
 4. **A number or port in a cited sentence** ("Port 587 … STARTTLS") that is not in the passage of any section the item cites, though it is elsewhere in the same document. Check each number against the cited sections' own words.
 
+## Since job 13 (check these too)
+
+5. **Every `defining: true`.** Read what the document actually defines. A document that maps or uses a thing (RFC 894 maps IP's broadcast onto Ethernet's) does not define it: rule the marker off and name a second publisher.
+6. **Every Go deeper sentence and every clause the author added** rests on a defining document or on two publishers. A clause on one publisher is ruled: a second publisher, or the clause cut.
+7. **The absolutes in the facts most items trace to:** "every", "only", one range, one number. Rule "often", "usually" or the second range where the sources say so.
+
 For a glossary group, run `npm run fact-check -- glossary/<id>` and read every item as the fact-checker will, ties included.
