@@ -94,6 +94,23 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 - **The known glossary failure hides a new one.** F11 compares the e2e failures by name with decision 8's one.
 - **The orchestrator's context grows.** One session for this job; little read; hand-backs of 150 words or fewer.
 
+## Result (2026-11-14)
+
+Router is live on `revamp` at `/networking/router`, passed by a fresh fact-checker (all 100 items, on its second full check); Networking Concepts lists 20 stops, 9 ready. After the go the job used **2.11 million** subagent tokens (estimate 2.0 to 3.4): Router's content 0.84, its design and build 0.90, the four shared lessons 0.36. `team.md` (job 11) has the units, the totals and what to do differently. Errata for the owner: B11's E1–E9 (above) and D10's E1–E11 (`prototypes/d10-cases.md`).
+
+## Proposed next: the other eleven lessons (for the owner's go; not approved)
+
+From the pilot's numbers and D10's scene map (`prototypes/d10-scene-map.md`). A batch of three lessons a job, a fresh session a job, one design gate a batch (the three scenes together), the pilot's path for each lesson. Batches go by what their scenes reuse, cheapest first, so each batch's new figure work is built once and used by the next:
+
+| Batch | Lessons | Scenes | Rough growth |
+|---|---|---|---|
+| 1 | ARP, NAT, Ports | `net-map` and the table panel with D10's abilities (whose table, candidates, no match); ARP's "sent to all" may need the `dhcp` figure's ring | 3.5 to 4.2 million |
+| 2 | IP Address, MAC Address, TCP/UDP | Subnetting's bits board and a new address-kind panel; the `dhcp` figure with more home devices; TCP and UDP in turn on `net-map` | 4.5 to 5.5 million |
+| 3 | Switch, Load Balancers, Packets | Two new figures (a switch, a balancer and its pool) and a new `net-map` ability (several packets, out of order) | 5.5 to 7.0 million |
+| 4 | Proxies, VPN | A proxy on the way and a tunnel: new parts on `net-map` or a new figure; a compare mode if Proxies needs one | 4.0 to 5.0 million |
+
+About 17.5 to 21.5 million in all, roughly half of it scenes and card art. Known risk: MAC Address and Switch rest on IEEE 802 standards, which no registered source covers; the first of them proposes `standards.ieee.org` as the publisher's own host, and if a standard can be read only after a sign-in, that comes to the owner.
+
 ## After this job
 
 - The other eleven lessons, three a batch, a session a batch, each batch's scenes through the design gate together (the next plan, from the pilot's numbers and D10's scene map).

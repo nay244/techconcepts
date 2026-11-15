@@ -764,3 +764,20 @@ Planned on 2026-11-14 in a fresh session on Opus 5.5, after the owner paused the
 | L18-f | analyst (continued) | Opus | 1 | 11,017 (whole analyst 319,064) | not measured | The fix after the check: RFC 1812 §5.2.4.3 and §7.5.2 as the second publisher for both held items, words unchanged; no new document. |
 | L18-b fix | author (continued) | Sonnet | 1 | 3,084 (whole author 201,364) | not measured | `2a5ee78`: the two citations added. `--recheck` refused (15 items, more than 12): a full check. |
 | L18-c2 | fact-checker (fresh) | Opus | full check 2 | 164,462 | not measured | **Passed: all 100 items** (`4f6dee9`): 41 claims, 1 badge, 52 traced, 1 example, 5 unbacked; 109 quotes in 16 sources; Cisco read in the browser. `--check`: Report OK. Six simplifications passed with notes. Merged into `job11/router` (`f0593ce`). **Router's content: about 0.84 million growth** (analyst 319,064, author 201,364, checks 156,690 and 164,462), under the 1.6 million stop. |
+| B12b | builder (continued) | Sonnet | 1 | 446,994 (whole builder, B12 and its fix included) | not measured | `c0bf1e9`..`278b775`: counts for a ninth ready lesson in 8 unit specs and `site.spec`; `router.spec.ts` 5 of 5 against the real page, unedited; a screen-reader separator in the no-match cell; Router looked at beside the prototype (1440 light, 375 dark). The prototype's Network/Sequence switch is not built: the approved spec says `['network']` only (D10 §3), which wins. |
+| M11 | orchestrator | Opus 5.5 | 1 | not counted | not counted | `job11/router` into `revamp` (`8585aef`): `npm test` 1,886 passed; build 31 pages in budget; `fact-check -- router --check` Report OK. |
+
+| F11 | orchestrator | Opus 5.5 | 1 | not counted | not counted | Full `npm run e2e` on `revamp` (`8585aef`): **1,470 passed, 2 failed, 461 skipped** (29.0 minutes). The two failures are the one known test, `e2e/glossary.spec.ts:143` (the Glossary page's end at 375, held by the owner, 2.48), in d1440-dark and d1440-light; nothing else failed. Worktrees removed; branches kept. |
+
+**Totals** (growth): scout 336,994; reviewers 504,234 (B11 spec 121,826, B11 build 72,725, B12 spec 171,614, B12 build 138,069); builders 614,242 (B11 167,248, B12 with its fix and B12b 446,994); designer 147,871; analyst 319,064; author 201,364; fact-checkers 321,152. **Subagents 2,444,921; after the go 2,107,927**, inside the 2.0 to 3.4 million estimate and under the 3.8 million stop. Router's content (analyst, author, two full checks) 841,580; its design and build (D10, B12 spec, build, fix, review, B12b) 904,548; the four shared lessons (B11) 361,799.
+
+**What the pilot measured, for the other eleven.** A new lesson's content cost what a moved lesson's did (0.84 million against Phase 4's 0.74 to 1.23): the outline replaced the old words, and the read before the check found 13 things. Its scene cost as much again (0.90 million) though it used a built figure: a new panel ability, two cues and card art. The card art was redrawn by the builder instead of copied and failed review; the fix compares the build with the prototype's SVG tag for tag, which every later spot should do from the start.
+
+**Could go one model lower next time.** B12b's count updates are mechanical once the lesson exists and could be a scout's script plus a Haiku builder.
+
+**What to do differently next time**
+
+- A builder copies a prototype's SVG for card art and figure parts and pins a test that reads the prototype; it never redraws.
+- A Learn part many items trace to must have two publishers before the check: when one such part was held, the re-check grew past 12 items and a second full check was needed (about 0.16 million).
+- Start the author on its own branch while the scene's build is reviewed: it saved a round of waiting and nothing collided.
+- Ask the scout to list, for a new lesson, the tests that count ready lessons; B12b found them late.
