@@ -25,7 +25,13 @@ import { animate, easeInOut, wait } from '../motion';
  * - `addr <text>`, `url <text>`: the laptop's address and its address bar;
  * - `drop <router>`: a DROPPED mark on that router's top, which stays, for a packet a router threw away;
  * - `hide resolver` (a unit's start only): the DNS resolver, its cable and its callout are left off the map;
- * - `show phone` (a unit's start only): the phone, which every other map leaves off, lies on the home plate.
+ * - `show phone` (a unit's start only): the phone, which every other map leaves off, lies on the home plate;
+ * - `park <place> <bay> <TAG>`: a copy of the tag waits, unlit, in that bay (the laptop's four, the web server's four, a
+ *   router's top) until a message with its tag takes it or `unpark <place>` sends that place's tags into the laptop's
+ *   screen; a gap (a dashed outline) marks an empty bay with a parked tag before and after it. A note that parks takes
+ *   600 ms, one that unparks 700; a message that parks its own tag slides it into its bay as it rests.
+ *
+ * A message `via` a router rides through it: from → via → to is one ride, over two routes the map already has.
  *
  * A unit's labels give the words before any cue: `laptop` (the status line), `laptopAddr`, `url`, and `router`,
  * the home router's callout in one or two lines (a line with a number is an address, a line of words a note), and
@@ -60,6 +66,18 @@ const DATA_LINE_LIFT = 'translate(0 -6)';
 /** A table event takes this long on the map, so the learner sees the table before the next thing happens; a drop note too. */
 const TABLE_MS = { replace: 600, match: 900, remove: 600 } as const;
 const DROP_NOTE_MS = 900;
+/** A note that parks tags lands them one after another over this long; one that unparks sends them into the laptop's screen. */
+const PARK_NOTE_MS = 600;
+const UNPARK_NOTE_MS = 700;
+/** A message that parks its own tag: the tag slides into its bay over the first part of its rest, shrinking to a parked tag's size. */
+const SLIDE_MS = 250;
+/** A parked tag is this size, unlit; an empty bay between two of them is outlined at the same size. */
+const PARK_SCALE = 0.9;
+/** The unpark's glide: the tags shrink to this much of a parked tag's size, and end 6 across, 14 back and 16 up from the end of the route into the laptop. */
+const GLIDE = { shrink: 0.6, at: [-6, -14, 16] as const };
+/** A tag's top face is this high, and its footprint this deep, in plate units (net-map.ts `tag`). */
+const TAG_TOP = 3.2;
+const TAG_DEPTH = 10;
 /** A name strip's width: its letters, and the room round them. */
 const stripWidth = (text: string): number => 11 + 7.4 * [...text].length;
 
@@ -85,16 +103,36 @@ export function parseConn(arg: string): ConnCue {
   return { action: m[1] as ConnCue['action'], from: m[2]!, to: m[3]!, data: m[4] !== undefined };
 }
 
+/** A `park` cue, read: where a copy of the tag waits. */
+export interface ParkCue {
+  place: string;
+  bay: number;
+  tag: string;
+}
+
+/** Reads a `park` cue's argument, `"<place> <bay> <TAG>"`, or throws: anything else is a mistake in the lesson. */
+export function parsePark(arg: string): ParkCue {
+  const m = /^([a-z0-9-]+) ([1-9]) (.+)$/.exec(arg);
+  if (m === null) throw new Error(`The network map's park cue needs "<place> <bay> <TAG>", not "${arg}".`);
+  return { place: m[1]!, bay: Number(m[2]), tag: m[3]! };
+}
+
 function parseTray(arg: string): { site: string; on: boolean } {
   const m = /^([a-z0-9-]+) (on|off)$/.exec(arg);
   if (m === null) throw new Error(`The network map's tray cue needs "<site> <on|off>", not "${arg}".`);
   return { site: m[1]!, on: m[2] === 'on' };
 }
 
-function routeOf(data: NetMapData, from: string, to: string): Point[] {
+function routeBetween(data: NetMapData, from: string, to: string): Point[] {
   const key = `${from}>${to}`;
   if (!Object.hasOwn(data.routes, key)) throw new Error(`The network map has no route ${key}.`);
   return data.routes[key]!;
+}
+
+/** A message's way: the route from one place to the other, or, `via` a router, the two routes joined at that router's top (shared, so once). */
+export function routeOf(data: NetMapData, e: { from: string; to: string; via?: string }): Point[] {
+  if (e.via === undefined) return routeBetween(data, e.from, e.to);
+  return [...routeBetween(data, e.from, e.via), ...routeBetween(data, e.via, e.to).slice(1)];
 }
 
 /** A route's length on the plates, as the mockup measures it: across and along, not up. */
@@ -114,8 +152,11 @@ function duration(event: SceneEvent, data: unknown): number {
   // A table event takes the time to be seen (an add, an update or a clear lands at once), and
   // so does a note that drops a packet; every other note lands at once.
   if (event.type === 'table') return event.op === 'replace' || event.op === 'match' || event.op === 'remove' ? TABLE_MS[event.op] : 0;
-  if (event.type === 'note') return event.cues?.some((c) => c.cue === 'drop') === true ? DROP_NOTE_MS : 0;
-  const travel = travelOf(event, lengthOf(routeOf(data as NetMapData, event.from, event.to)));
+  if (event.type === 'note') {
+    const has = (cue: string): boolean => event.cues?.some((c) => c.cue === cue) === true;
+    return has('drop') ? DROP_NOTE_MS : has('park') ? PARK_NOTE_MS : has('unpark') ? UNPARK_NOTE_MS : 0;
+  }
+  const travel = travelOf(event, lengthOf(routeOf(data as NetMapData, event)));
   if (event.outcome === 'dropped') return travel * dropAtOf(event) + LOST_FADE_MS + LOST_REST_MS;
   return travel + paceOf(event).rest;
 }
@@ -175,6 +216,8 @@ interface MapState {
   page: '' | 'text' | 'full';
   lock: boolean;
   trays: Map<string, boolean>;
+  /** The tags that wait in a bay, by tag, in the order they were parked. */
+  parks: Map<string, { place: string; bay: number }>;
   /** The router a packet was dropped at, and the parts left off the map. */
   drop: string | null;
   hidden: Set<string>;
@@ -238,13 +281,20 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     const [sx, sy] = onScreen([x, y, map.TZ]);
     return [map.O[0] + sx, map.O[1] + sy];
   };
-  const rideOf = (from: string, to: string): Ride => {
-    const points = routeOf(map, from, to);
+  const rideOf = (from: string, to: string, via?: string): Ride => {
+    const points = routeOf(map, { from, to, via });
     const cum = [0];
     for (let i = 1; i < points.length; i++) cum.push(cum[i - 1]! + Math.hypot(points[i]![0] - points[i - 1]![0], points[i]![1] - points[i - 1]![1]));
     return { points, cum, total: cum.at(-1)!, flat: points.map(onCable) };
   };
-  const moveTo = (el: SVGElement, [x, y]: Flat): void => el.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+  /** Moves a part to a point on screen. A tag is drawn at the figure's origin, so a scaled one is scaled about that point. */
+  const moveTo = (el: SVGElement, [x, y]: Flat, scale = 1): void =>
+    el.setAttribute(
+      'transform',
+      scale === 1
+        ? `translate(${x.toFixed(1)} ${y.toFixed(1)})`
+        : `translate(${(x + map.O[0]).toFixed(1)} ${(y + map.O[1]).toFixed(1)}) scale(${scale.toFixed(3)}) translate(${-map.O[0]} ${-map.O[1]})`,
+    );
   const fade = (el: SVGElement, opacity: number): void => {
     el.style.opacity = String(opacity);
   };
@@ -271,6 +321,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       page: '',
       lock: false,
       trays: new Map(),
+      parks: new Map(),
       drop: null,
       hidden: new Set(),
       shown: new Set(),
@@ -307,6 +358,13 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
           const { site, on } = parseTray(arg);
           if (!holds.has(site) || site === 'lock') throw new Error(`The network map has no tray "${site}".`);
           s.trays.set(site, on);
+        } else if (cue === 'park') {
+          const { place, bay, tag } = parsePark(arg);
+          if (bayOf(place, bay) === undefined) throw new Error(`The network map has no bay ${bay} at "${place}" to park a tag in.`);
+          s.parks.set(tag, { place, bay });
+        } else if (cue === 'unpark') {
+          if (!Object.hasOwn(map.bays, arg)) throw new Error(`The network map has no bays at "${arg}" to unpark.`);
+          for (const [tag, at] of s.parks) if (at.place === arg) s.parks.delete(tag);
         } else if (cue === 'conn') connect(s, parseConn(arg));
       }
       if (own.some((c) => c.cue === 'status-done')) s.style = 'done';
@@ -317,13 +375,64 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
 
   function connect(s: MapState, c: ConnCue): void {
     const route = `${c.from}>${c.to}`;
-    routeOf(map, c.from, c.to);
+    routeBetween(map, c.from, c.to);
     const id = c.data ? `${route} data` : route;
     const line = s.conns.get(id);
     if (c.action === 'open') s.conns.set(id, { route, data: c.data, sealed: false });
     else if (line === undefined) throw new Error(`The conn cue ${c.action === 'seal' ? 'seals' : 'closes'} ${id}, which is not open.`);
     else if (c.action === 'seal') line.sealed = true;
     else s.conns.delete(id);
+  }
+
+  const bayOf = (place: string, bay: number): Point | undefined => (Object.hasOwn(map.bays, place) ? map.bays[place]![bay - 1] : undefined);
+  const layer = part('nm-l-tags');
+
+  /**
+   * The parked tags: copies of the tag their words fit, unlit, at a parked tag's size, in their bays, back to front and
+   * behind the moving tags; and a dashed outline at each empty bay that has a parked tag before it and one after it.
+   */
+  function paintParks(parks: ReadonlyMap<string, { place: string; bay: number }>): void {
+    const old = layer.querySelectorAll('.nm-park, .nm-gap');
+    if (old.length === 0 && parks.size === 0) return;
+    for (const el of old) el.remove();
+    const list = [...parks].map(([tag, { place, bay }]) => ({ tag, place, bay, at: bayOf(place, bay)! }));
+    list.sort((a, b) => a.at[0] + a.at[1] - (b.at[0] + b.at[1]));
+    const behind = tags[0]!;
+    for (const p of list) {
+      const copy = tagFor(p.tag).cloneNode(true) as SVGElement;
+      copy.removeAttribute('id');
+      copy.removeAttribute('style');
+      copy.setAttribute('class', 'nm-park');
+      copy.querySelector('[data-lit]')?.removeAttribute('data-lit');
+      copy.querySelector('.nm-tag-t')!.textContent = p.tag;
+      copy.dataset.tag = p.tag;
+      copy.dataset.place = p.place;
+      copy.dataset.bay = String(p.bay);
+      moveTo(copy, onScreen(p.at), PARK_SCALE);
+      layer.insertBefore(copy, behind);
+    }
+    const places = new Set(list.map((p) => p.place));
+    for (const place of places) {
+      const here = list.filter((p) => p.place === place);
+      const filled = here.map((p) => p.bay);
+      for (let bay = 2; bay < Math.max(...filled); bay++) {
+        if (filled.includes(bay) || !filled.some((b) => b < bay)) continue;
+        // As wide as the nearest tag before it: the filled bay below it with the highest number.
+        const near = here.filter((p) => p.bay < bay).reduce((a, b) => (b.bay > a.bay ? b : a));
+        const w = Math.min(Math.max([...near.tag].length, 1), NET_MAP_TAG_MAX) * 2.9 + 8;
+        const [x, y, z] = bayOf(place, bay)!;
+        const corners = ([[-w / 2, -TAG_DEPTH / 2], [w / 2, -TAG_DEPTH / 2], [w / 2, TAG_DEPTH / 2], [-w / 2, TAG_DEPTH / 2]] as const).map(([u, v]) => {
+          const [sx, sy] = onScreen([x + u * PARK_SCALE, y + v * PARK_SCALE, z + TAG_TOP * PARK_SCALE]);
+          return [map.O[0] + sx, map.O[1] + sy] as Flat;
+        });
+        const gap = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        gap.setAttribute('class', 'nm-gap');
+        gap.setAttribute('points', pointsOf(corners));
+        gap.dataset.place = place;
+        gap.dataset.bay = String(bay);
+        layer.insertBefore(gap, behind);
+      }
+    }
   }
 
   /** What stays once played: the laptop's lines, the lit connections, the trays, the padlock and the page. */
@@ -349,6 +458,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       moveTo(discard, map.tops[s.drop]!);
       fade(discard, 1);
     }
+    paintParks(s.parks);
     for (const el of root.querySelectorAll<SVGElement>('[data-base]')) {
       const base = el.dataset.base!;
       el.toggleAttribute('data-hidden', s.hidden.has(base) || (NET_MAP_OPTIONAL.includes(base) && !s.shown.has(base)));
@@ -420,6 +530,50 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     });
   }
 
+  /** A note that parks tags: they land one after another over 600 ms, in the order of the note's cues. Under reduced motion they land together, and the time still passes. */
+  async function parkNote(event: SceneEvent, view: SceneView, landed: MapState, o: PlayOptions): Promise<void> {
+    const before = settle(view, view.cues).parks;
+    paint(landed);
+    const fresh = (event.type === 'table' ? [] : (event.cues ?? []))
+      .filter((c) => c.cue === 'park')
+      .map((c) => parsePark(c.arg ?? '').tag)
+      .filter((tag) => !before.has(tag))
+      .flatMap((tag) => [...layer.querySelectorAll<SVGElement>('.nm-park')].filter((el) => el.dataset.tag === tag));
+    if (!o.reducedMotion) for (const el of fresh) fade(el, 0);
+    const ms = PARK_NOTE_MS / o.speed;
+    await animate(ms, (k) => fresh.forEach((el, i) => fade(el, k >= (i + 1) / (fresh.length + 1) ? 1 : 0)), o);
+    if (o.signal.aborted) return;
+    for (const el of fresh) fade(el, 1);
+    if (o.reducedMotion) await wait(ms, o.signal);
+  }
+
+  /** A note that unparks the laptop's tags: they glide into its screen over 700 ms, shrinking and fading, and then the map is painted without them. Under reduced motion they stay still for the 700 ms. */
+  async function unparkNote(own: readonly PlayedCue[], landed: MapState, o: PlayOptions): Promise<void> {
+    const place = own.find((c) => c.cue === 'unpark')!.arg!;
+    const going = [...layer.querySelectorAll<SVGElement>('.nm-park')].filter((el) => el.dataset.place === place);
+    for (const gap of layer.querySelectorAll('.nm-gap')) gap.remove();
+    const end = routeBetween(map, 'router', 'laptop').at(-1)!;
+    const goal: Point = [end[0] + GLIDE.at[0], end[1] + GLIDE.at[1], end[2] + GLIDE.at[2]];
+    const ms = UNPARK_NOTE_MS / o.speed;
+    if (o.reducedMotion) await wait(ms, o.signal);
+    else {
+      await animate(
+        ms,
+        (k) => {
+          const f = easeInOut(k);
+          for (const el of going) {
+            const from = bayOf(place, Number(el.dataset.bay))!;
+            moveTo(el, onScreen([0, 1, 2].map((i) => from[i]! + (goal[i]! - from[i]!) * f) as Point), PARK_SCALE * (1 - GLIDE.shrink * f));
+            fade(el, 1 - k * k);
+          }
+        },
+        o,
+      );
+    }
+    if (o.signal.aborted) return;
+    paint(landed);
+  }
+
   async function play(event: SceneEvent, view: SceneView, o: PlayOptions): Promise<void> {
     // Aborted before it starts: the panel's show has settled the figure already, and has the last word.
     if (o.signal.aborted) return;
@@ -427,10 +581,12 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     // Worked out first, so a cue the map cannot show fails before anything moves.
     const landed = settle(view, [...view.cues, ...own]);
     if (event.type !== 'message') {
-      paint(landed);
+      if (own.some((c) => c.cue === 'park')) await parkNote(event, view, landed, o);
+      else if (own.some((c) => c.cue === 'unpark')) await unparkNote(own, landed, o);
+      else paint(landed);
       return;
     }
-    const r = rideOf(event.from, event.to);
+    const r = rideOf(event.from, event.to, event.via);
     const pace = paceOf(event);
     const broadcast = event.kind === 'broadcast';
     const tag = tagFor(event.tag);
@@ -447,6 +603,9 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       ring.setAttribute('transform', ringAt(RING.start));
       fade(ring, RING.opacity);
     }
+    // A parked tag leaves its bay as its message is sent: the copy goes, and the gaps are drawn without it.
+    const waiting = view.cues.some((c) => c.cue === 'park' || c.cue === 'unpark') ? settle(view, view.cues).parks : undefined;
+    if (waiting?.get(event.tag)?.place === event.from) paintParks(new Map([...waiting].filter(([tag]) => tag !== event.tag)));
     // A letter leaves its tray as it is sent, not when it lands.
     for (const { cue, arg = '' } of own) {
       if (cue !== 'tray') continue;
@@ -454,6 +613,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       if (t.site === event.from && !t.on) light(holds.get(t.site), false);
     }
     const travel = travelOf(event, r.total) / o.speed;
+    const rest = pace.rest / o.speed;
     const ride = (f: number, k: number): void => {
       const at = onScreen(pointAt(r, f));
       moveTo(tag, at);
@@ -504,10 +664,33 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       fade(ring, RING.stillOpacity);
     }
     if (event.to !== 'laptop') light(busies.get(event.to), true);
+    // A tag that parks itself where it lands slides into its bay over the first part of the rest, and the map then
+    // shows it parked: the moving tag, its trail and its lights are taken away as it does.
+    const mine = own.find((c) => c.cue === 'park' && parsePark(c.arg ?? '').tag === event.tag);
+    if (mine !== undefined) {
+      const bay = parsePark(mine.arg!);
+      const [from, to] = [r.points.at(-1)!, bayOf(bay.place, bay.bay)!];
+      const slide = Math.min(SLIDE_MS / o.speed, rest);
+      if (!o.reducedMotion) {
+        fade(trail, TRAIL_OPACITY / 2);
+        await animate(
+          slide,
+          (k) => {
+            const f = easeInOut(k);
+            moveTo(tag, onScreen([0, 1, 2].map((i) => from[i]! + (to[i]! - from[i]!) * f) as Point), 1 - (1 - PARK_SCALE) * f);
+          },
+          o,
+        );
+        if (o.signal.aborted) return;
+      }
+      clear();
+      paint(landed);
+      await wait(o.reducedMotion ? rest : rest - slide, o.signal);
+      return;
+    }
     // A page that lands draws itself in, top to bottom, over the rest at the laptop: the parts it did not show before.
     const fresh = own.some((c) => c.cue === 'page') ? page.filter((el) => wants(landed, el) && el.style.opacity !== '1') : [];
     paint(landed);
-    const rest = pace.rest / o.speed;
     if (fresh.length > 0 && !o.reducedMotion) {
       for (const el of fresh) fade(el, 0);
       await animate(rest, (k) => fresh.forEach((el, i) => fade(el, k >= (i + 1) / (fresh.length + 1) ? 1 : 0)), o);

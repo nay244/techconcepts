@@ -86,6 +86,8 @@ test('FIGURE_PARTS["net-map"] lists home, the internet, the resolver and every s
       drop: 'text',
       hide: 'text',
       show: 'text',
+      park: 'text',
+      unpark: 'text',
     },
     // Router's: a packet dropped at one of the internet's routers, and the resolver left off the map; D11's: the phone shown.
     args: { drop: ['isp', 'a', 'b', 'c', 'd'], hide: ['resolver'], show: ['phone'] },
