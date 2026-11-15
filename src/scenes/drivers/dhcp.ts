@@ -54,7 +54,10 @@ function duration(event: SceneEvent): number {
   return event.type === 'message' ? RIDE_MS + REST_MS + GAP_MS : 0;
 }
 
-/** The lease rows once `event` has landed. The figure has no table definition, only the key it knows the lease table by. */
+/**
+ * A table's rows once `event` has landed: the lease table's (keyed on `ip`, the default) or the frames table's (pass
+ * `mac`). The figure has no table definition, only the key column it knows each table by.
+ */
 function rowsAfter(rows: Row[], event: TableEvent, keyColumn = IP): Row[] {
   const state = { rows: rows.map((row) => ({ ...row })), highlight: null, missed: [] };
   applyTableEvent(state, { keyColumn }, event);
