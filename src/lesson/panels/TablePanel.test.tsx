@@ -342,7 +342,7 @@ test('a match that found nothing adds a last row across every column, with the t
   expect(last.className).toBe('tpanel__nomatch');
   expect(last.querySelectorAll('td')).toHaveLength(1);
   expect(last.querySelector('td')!.getAttribute('colspan')).toBe(String(routes.columns.length));
-  expect(last.textContent).toBe('no matchNo route in router a’s table covers 192.0.2.77.');
+  expect(last.textContent).toBe('no match: No route in router a’s table covers 192.0.2.77.');
   expect(container.querySelectorAll('[data-highlight]')).toHaveLength(0);
   expect(render(<TablePanel def={routes} state={routing()} />).container.querySelector('.tpanel__nomatch')).toBeNull();
 });

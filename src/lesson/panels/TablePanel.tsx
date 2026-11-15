@@ -97,6 +97,7 @@ export function TablePanel({ def, state }: TablePanelProps) {
             <tr className="tpanel__nomatch">
               <td colSpan={def.columns.length}>
                 <span className="tpanel__miss">no match</span>
+                <span className="sr-only">: </span>
                 {state.noMatch}
               </td>
             </tr>
