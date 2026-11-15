@@ -307,6 +307,12 @@ describe('the OSI Model lesson’s sources', () => {
       'rfc-6056', 'paloalto-port-scan', 'microsoft-netstat', 'microsoft-dynamic-ports', 'microsoft-winsock-errors', 'microsoft-rdp-port', 'microsoft-rdp-enable', 'cloudflare-rdp-browser', 'cloudflare-network-ports', 'openbsd-man-connect', 'openbsd-man-netstat',
       // Job 12: the new lesson NAT.
       'rfc-2663', 'rfc-5382', 'cisco-nat-faq', 'cisco-nat-configure', 'microsoft-azure-snat', 'microsoft-azure-inbound-nat',
+      // Job 13: the new lesson IP Address.
+      'rfc-6890', 'iana-ipv4-special',
+      // Job 13: the new lesson MAC Address.
+      'ieee-eui-guidelines', 'ieee-ra-faq', 'ieee-802-2024', 'microsoft-ndis-packet-filter', 'openbsd-man-bpf-4', 'openbsd-man-ifconfig-8',
+      // Job 13: the new lesson TCP/UDP.
+      'microsoft-winsock-socket', 'openbsd-man-socket', 'microsoft-teams-network',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
