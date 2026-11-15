@@ -369,7 +369,7 @@ export default defineLesson({
           {
             id: 'lead-1',
             text: 'A switch connects the devices of one wired network. From each frame that comes in, it learns which MAC address is on which port. A frame for an address it has learned goes out of that one port; a frame for an address it hasn’t learned, or for everyone, goes out of every port except the one it came in on.',
-            cite: [C9300_LEARN, C9300_ONLY, BRIDGE, CISCO_FLOOD, CF_FLOOD, rfc('rfc-4762', '4.1'), CISCO_HOW_DEVICES, CISCO_HOW_WIRED],
+            cite: [C9300_LEARN, C9300_ONLY, BRIDGE, CISCO_FLOOD, CF_FLOOD, rfc('rfc-4762', '4.1'), CISCO_HOW_DEVICES, CISCO_HOW_WIRED, CISCO_ARP_FLOOD, IFC_DISCOVER],
           },
           {
             id: 'lead-2',
@@ -431,7 +431,7 @@ export default defineLesson({
           id: 'pattern',
           names: ['Note the sender’s port', 'Look up the destination', 'Found it: out of that one port', 'No match, or for everyone: out of every other port'],
           note: 'What a switch does with each frame that comes in.',
-          cite: [C9300_LEARN, C9300_ONLY, BRIDGE, CISCO_FLOOD, CF_FLOOD, rfc('rfc-4762', '4.1')],
+          cite: [C9300_LEARN, C9300_ONLY, BRIDGE, CISCO_FLOOD, CF_FLOOD, rfc('rfc-4762', '4.1'), CISCO_ARP_FLOOD, IFC_DISCOVER],
         },
         why: [
           {
@@ -567,7 +567,7 @@ export default defineLesson({
             {
               text: 'None: no device has that address.',
               feedback: 'No device has it, but it means everyone: the switch sends it out of every other port, and every device keeps it.',
-              cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-4762', '4.1'), MS_FILTER],
+              cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-4762', '4.1'), MS_FILTER, CISCO_ARP_FLOOD, IFC_DISCOVER],
             },
           ],
           answer: 0,
