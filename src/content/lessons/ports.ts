@@ -243,12 +243,12 @@ export default defineLesson({
         hook: 'One computer can run a web server, an SSH server and Remote Desktop at the same address. How does each message reach the right one? By its port number. Watch your laptop try four of one server’s ports: three answer, one refuses, until the server opens it.',
         hookBacking: { traces: ['why-1', 'term-port', 'fact-common', 'term-listen', 'term-closed', 'term-open'] },
         description:
-          'A port number in a message says which program it is for. A server listens on its own ports, and a message to a port with nothing listening is answered with a reset.',
+          'A port number in a message says which program it is for. A server listens on its own ports, and a TCP connection request to a port with nothing listening is answered with a reset.',
         backing: { traces: ['lead-1', 'term-port', 'term-listen', 'fact-closed'] },
         facts: [
           { label: 'Port numbers', value: '0 to 65535', backing: { traces: ['fact-numbers'] } },
           { label: 'Common ports', value: '22 SSH, 80 HTTP, 443 HTTPS, 3389 Remote Desktop', backing: { traces: ['fact-common'] } },
-          { label: 'Nothing listening', value: 'the server answers with a reset (RST)', backing: { traces: ['fact-closed'] } },
+          { label: 'Nothing listening (TCP)', value: 'the server answers with a reset (RST)', backing: { traces: ['fact-closed'] } },
           { label: 'OSI layer', value: '4, transport', backing: { traces: ['fact-osi'] } },
           { label: 'Defined in', value: 'RFC 9293 and RFC 768', backing: { traces: ['fact-defined'] } },
         ],
