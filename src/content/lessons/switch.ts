@@ -72,7 +72,6 @@ const CISCO_SW_L3 = vendor(ARP, 'Devices That Do Not Use ARP', 'Layer 3 switches
 
 const PALO = 'paloalto-l2-interface';
 const PALO_SECTION = 'Configure a Layer 2 Interface';
-const PALO_SWITCH = vendor(PALO, PALO_SECTION, 'so it can act as a switch');
 const PALO_OSI = vendor(PALO, PALO_SECTION, 'at Layer 2 of the OSI model');
 const PALO_EMPTY = vendor(PALO, PALO_SECTION, 'The firewall begins with an empty MAC table');
 const PALO_FLOOD = vendor(PALO, PALO_SECTION, 'it broadcasts the frame to all of its Layer 2');
@@ -88,10 +87,17 @@ const CF_L2 = vendor(CF, 'What is a layer 2 switch? What is a layer 3 switch?', 
 const CF_L3 = vendor(CF, 'What is a layer 2 switch? What is a layer 3 switch?', 'layer 3 switches forward data based on the destination IP address');
 const CF_ROUTER = vendor(CF, 'What is the difference between a switch and a router?', 'Routers do this by connecting with different networks');
 
+const CF_NAME = vendor(CF, 'What is a network switch?', 'A network switch connects devices within a network');
+const CF_TABLE = vendor(CF, CF_FLOOD_SECTION, 'Layer 2 network switches maintain a table in memory');
+const CF_CABLE = vendor(CF, CF_FLOOD_SECTION, 'connected to an Ethernet cable that plugs into the switch');
+const CISCO_NAME = vendor(ARP, 'Address Resolution Protocol', 'also known as Media Access Control (MAC) address');
+const CISCO_HUBS = vendor(HOW, 'Network hubs and switches', 'limitations of network hubs');
+
 const BRIDGE = man('openbsd-man-bridge-4', 'DESCRIPTION');
 const IFC_LEARN = man('openbsd-man-ifconfig-8', 'learn');
 const IFC_DISCOVER = man('openbsd-man-ifconfig-8', 'discover');
 const IFC_TIMEOUT = man('openbsd-man-ifconfig-8', 'timeout');
+const IFC_STATIC = man('openbsd-man-ifconfig-8', 'static');
 
 const ARP_EXAMPLE = cite('rfc-826', 'An Example', { url: 'https://www.rfc-editor.org/rfc/rfc826.html#:~:text=and%20broadcasts%20this%20packet%20to%20everybody' });
 
@@ -238,11 +244,11 @@ export default defineLesson({
           ],
         },
         parties: [],
-        backing: { traces: ['term-switch', 'term-port', 'term-table', 'term-learn', 'term-flood'] },
+        backing: { traces: ['term-switch', 'term-port', 'term-table', 'term-learn', 'term-flood', 'fact-start'] },
       },
       overview: {
         hook: 'On Wi-Fi, every device in range hears each frame. Plug a laptop, a TV and a printer into a switch, and at first it has no idea which is where. So a frame for a device it doesn’t know goes out of every other port. But every frame also says who sent it, and from that the switch learns who is on which port. Soon a frame for one device goes down that device’s cable only.',
-        hookBacking: { traces: ['fact-wifi', 'term-switch', 'fact-start', 'fact-unknown', 'fact-learn', 'fact-known'] },
+        hookBacking: { traces: ['fact-wifi', 'term-switch', 'fact-start', 'fact-unknown', 'fact-learn', 'fact-known', 'why-1'] },
         description:
           'A switch connects the devices of one wired network. It learns which MAC address is on which port, and floods a frame when it doesn’t know.',
         backing: { traces: ['term-switch', 'term-table', 'term-learn', 'term-flood'] },
@@ -285,7 +291,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Entries a switch learns like this are called dynamic; some switches also let you add static ones.',
-              cite: [C9300_TYPE, C9300_AGES, IFC_DISCOVER],
+              cite: [C9300_TYPE, C9300_AGES, IFC_DISCOVER, IFC_STATIC],
             },
           ],
           facts: [
@@ -304,7 +310,7 @@ export default defineLesson({
             'The printer replies to the laptop. Its frame comes in on port 4, so the switch learns that too: 00:00:5E:00:53:13 is on port 4. Then it looks up the destination, the laptop’s 00:00:5E:00:53:10, and finds it: port 2. It sends the frame out of port 2 only. The router and the TV don’t get a copy.',
           deep: [
             {
-              text: 'If a frame’s destination is on the port it came in on, the switch drops it: that device has had its chance to see it already.',
+              text: 'If a frame’s destination is on the same port it came in on, the switch drops it instead of sending it back.',
               cite: [C9300_SAME, BRIDGE],
             },
           ],
@@ -325,7 +331,7 @@ export default defineLesson({
           deep: [
             {
               text: 'ARP, which finds a device’s MAC address, sends its question as a broadcast, so a switch floods it out of every other port.',
-              cite: [ARP_EXAMPLE, CISCO_ARP_FLOOD],
+              cite: [ARP_EXAMPLE, CISCO_ARP_FLOOD, CISCO_NAME, rfc('rfc-4762', '4.1')],
             },
           ],
           facts: [
@@ -346,7 +352,7 @@ export default defineLesson({
           deep: [
             {
               text: 'The table forgets quietly too: an entry the switch hasn’t heard from for a while is dropped, and the device’s next frame puts it back.',
-              cite: [C9300_AGES, IFC_TIMEOUT],
+              cite: [C9300_AGES, IFC_TIMEOUT, C9300_LEARN, IFC_LEARN],
             },
           ],
           facts: [
@@ -374,15 +380,15 @@ export default defineLesson({
         terms: [
           {
             id: 'term-switch',
-            idea: 'A box that connects the devices of one network: each plugs into a port with a cable, and the switch passes Ethernet frames between them',
+            idea: 'A box, also called a network switch, that connects the devices of one network: each plugs into a port with a cable, and the switch passes Ethernet frames between them',
             name: 'Switch',
-            cite: [CISCO_HOW_DEVICES, CISCO_HOW_WIRED, BRIDGE, rfc('rfc-5556', '2')],
+            cite: [CISCO_HOW_DEVICES, CISCO_HOW_WIRED, BRIDGE, rfc('rfc-5556', '2'), CF_NAME, CF_TABLE],
           },
           {
             id: 'term-port',
             idea: 'A socket on the switch where a device’s cable plugs in',
             name: 'Port',
-            cite: [C9300_MANY, rfc('rfc-5556', '3.1'), PALO_SWITCH],
+            cite: [C9300_MANY, rfc('rfc-5556', '3.1'), CF_CABLE],
           },
           {
             id: 'term-frame',
@@ -435,7 +441,7 @@ export default defineLesson({
           },
           {
             id: 'why-2',
-            text: 'Nobody fills the table in: you plug the devices in, and the switch learns the rest from the frames they send.',
+            text: 'You don’t have to fill the table in: plug the devices in, and the switch learns the rest from the frames they send.',
             cite: [CISCO_HOW_PLUG, C9300_DEFAULTS, rfc('rfc-5556', '3.2'), PALO_EMPTY],
           },
         ],
@@ -443,7 +449,7 @@ export default defineLesson({
           {
             id: 'deep-hub',
             text: 'A hub, the box switches replaced, keeps no table and learns nothing.',
-            cite: [CISCO_HUB, BRIDGE, rfc('rfc-5556', '2')],
+            cite: [CISCO_HUB, BRIDGE, rfc('rfc-5556', '2'), CISCO_HUBS],
           },
           {
             id: 'deep-many',
@@ -492,7 +498,7 @@ export default defineLesson({
             id: 'fact-age',
             label: 'Old entries',
             value: 'an entry the switch hasn’t heard from for a while ages out; the device’s next frame puts it back',
-            cite: [C9300_AGES, IFC_TIMEOUT, CISCO_AGE_OUT],
+            cite: [C9300_AGES, IFC_TIMEOUT, CISCO_AGE_OUT, IFC_LEARN],
           },
           {
             id: 'fact-move',
@@ -529,7 +535,7 @@ export default defineLesson({
             {
               text: 'It floods it: a copy out of every port except the laptop’s.',
               feedback: 'Right. The TV’s address isn’t in the table, so the switch can’t tell which port leads to it. The TV keeps its copy; the others ignore theirs.',
-              cite: [CISCO_FLOOD, CF_FLOOD, BRIDGE, PALO_DROPS],
+              cite: [CISCO_FLOOD, CF_FLOOD, BRIDGE, PALO_DROPS, MS_FILTER],
             },
             {
               text: 'It drops it, because the TV isn’t in its table.',
@@ -551,7 +557,7 @@ export default defineLesson({
             {
               text: 'Ports 2, 3, 4 and 5.',
               feedback: 'Right. A broadcast goes out of every port except the one it came in on, and every device keeps it.',
-              cite: [rfc('rfc-4762', '4.1'), CISCO_ARP_FLOOD, IFC_DISCOVER],
+              cite: [rfc('rfc-4762', '4.1'), CISCO_ARP_FLOOD, IFC_DISCOVER, MS_FILTER, EUI_ALL],
             },
             {
               text: 'Only the ports whose devices are in its table.',
@@ -561,7 +567,7 @@ export default defineLesson({
             {
               text: 'None: no device has that address.',
               feedback: 'No device has it, but it means everyone: the switch sends it out of every other port, and every device keeps it.',
-              cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-4762', '4.1')],
+              cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-4762', '4.1'), MS_FILTER],
             },
           ],
           answer: 0,
