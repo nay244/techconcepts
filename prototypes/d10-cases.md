@@ -50,3 +50,7 @@ The reviewer (Opus) read `prototypes/d10-router.md` (approved by the owner, 2026
 **Card (24–25):** `spot('router')` pinned in `figures.test.ts:62` with its aria text from §6; exactly two `lm-led on` and one `data-lit`; `lessonFigure({ slug: 'router' })` does not throw. The track page, Tracks page and next-lesson card are checked in B12b.
 
 **Unchanged:** `reports.unchanged.test.ts` passes with no edit (no new optional field gets a `.default()`, so no checked lesson's claim-sheet hash moves); `e2e/site.spec.ts:1218-1299` passes; `npm run build` passes `check-budgets`, each net-map page's growth reported.
+
+## Erratum after the read before the check (L18-p)
+
+- **E11 (a table cell's words).** Step 3's provider-router row reads "directly (link to your router)", not the spec's "directly (customers)": no Learn part states "customers", and the cell traces to `fact-home`. The spec's words were the outline's placeholders (§7 says the author writes the lesson's own); the row, its place and its look are unchanged. Ruled by the orchestrator, 2026-11-14 (L18-p ruling 6).
