@@ -376,6 +376,18 @@ test('P7: stopped anywhere in a request, a skipped request or a note, show(befor
   }
 });
 
+test('P7: stopped during the skip wait, the play does not go on to light C or ride on', async () => {
+  const s = start(4, 2);
+  await s.advance(1300);
+  s.abort.abort();
+  await s.p;
+  expect(on(s.root, 'pl-pick-')).toEqual([]);
+  const at = $(s.root, 'pl-tag-request').getAttribute('transform');
+  await s.advance(3000);
+  expect($(s.root, 'pl-tag-request').getAttribute('transform')).toBe(at);
+  expect(on(s.root, 'pl-pick-')).toEqual([]);
+});
+
 test('P8: for every event, show(before) then a reduced-motion play looks as a fresh show(after) does', async () => {
   let count = 0;
   for (const step of [1, 2, 3, 4, 5]) {
