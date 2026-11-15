@@ -195,4 +195,151 @@ const switchLesson: Fixture = {
 };
 
 export const switchFixture = (): Lesson => lessonOf(switchLesson);
-export const batch3Fixtures = { packets: packetsFixture, switch: switchFixture };
+
+// ---------------------------------------------------------------- Load Balancers (d13-load-balancers.md section 3)
+
+/** The balancer's address with the port, every request's Destination; the servers' addresses, by letter. */
+export const POOL_BALANCER = '203.0.113.80:80';
+export const POOL_ADDRESSES = { A: '10.0.0.11', B: '10.0.0.12', C: '10.0.0.13' } as const;
+type PoolServer = keyof typeof POOL_ADDRESSES;
+
+const poolRequest = (id: string, from: string, to: string, src: string, info: string, cues?: Cue[]): MessageEvent => ({
+  type: 'message',
+  id,
+  from,
+  to,
+  tag: 'REQUEST',
+  kind: 'request',
+  ...(cues === undefined ? {} : { cues }),
+  log: { time: DASH, source: src, destination: POOL_BALANCER, protocol: 'HTTP', info, size: DASH },
+  plain: info,
+});
+const poolCheck = (id: string, s: PoolServer, fast = false): MessageEvent => ({
+  type: 'message',
+  id,
+  from: 'balancer',
+  to: s.toLowerCase(),
+  tag: 'CHECK',
+  kind: 'control',
+  ...(fast ? { fast: true } : {}),
+  log: { time: DASH, source: DASH, destination: `${POOL_ADDRESSES[s]}:80`, protocol: 'HTTP', info: 'Health check: answer OK, in time', size: DASH },
+  plain: `The balancer checks server ${s}.`,
+});
+const poolOk = (id: string, s: PoolServer): MessageEvent => ({
+  type: 'message',
+  id,
+  from: s.toLowerCase(),
+  to: 'balancer',
+  tag: 'OK',
+  kind: 'response',
+  log: { time: DASH, source: `${POOL_ADDRESSES[s]}:80`, destination: DASH, protocol: 'HTTP', info: `Server ${s}: OK`, size: DASH },
+  plain: `Server ${s} answers OK, in time.`,
+});
+const poolSilent = (id: string, s: PoolServer, info: string): NoteEvent => ({
+  type: 'note',
+  id,
+  cues: [{ cue: 'no-answer', arg: s.toLowerCase() }],
+  log: { time: DASH, source: DASH, destination: DASH, protocol: DASH, info, size: DASH },
+  plain: `${info}.`,
+});
+const poolRow = (id: string, s: PoolServer, health: string, requests: number, miss = false): TableEvent => ({
+  type: 'table',
+  id,
+  table: 'pool',
+  op: 'update',
+  key: s,
+  row: { server: s, address: POOL_ADDRESSES[s], health, requests: String(requests) },
+  ...(miss ? { miss: true } : {}),
+  summary: `Server ${s}: ${health}, ${requests}.`,
+});
+
+export const poolTable: TableDef = {
+  id: 'pool',
+  title: 'The pool',
+  by: 'kept by the balancer',
+  keyColumn: 'server',
+  markLabel: 'unhealthy',
+  empty: 'No servers yet.',
+  columns: [{ key: 'server', label: 'Server' }, { key: 'address', label: 'Address' }, { key: 'health', label: 'Health', prose: true }, { key: 'requests', label: 'Requests' }],
+  initialRows: (['A', 'B', 'C'] as const).map((s) => ({ server: s, address: POOL_ADDRESSES[s], health: 'Healthy', requests: '0' })),
+};
+
+/** The five steps, as the spec's section 3.1 and the prototype write them (the outline's words are placeholders). */
+export const poolSteps: Fixture['steps'] = [
+  { title: 'Step 1', events: [poolRequest('s1-req', 'laptop', 'a', '198.51.100.23:61023', 'Your request, passed to server A'), poolRow('s1-a', 'A', 'Healthy', 1)] },
+  {
+    title: 'Step 2',
+    events: [
+      poolRequest('s2-req-b', 'reader2', 'b', '198.51.100.41:50100', 'Reader 2’s request, passed to server B'),
+      poolRow('s2-b', 'B', 'Healthy', 1),
+      poolRequest('s2-req-c', 'reader3', 'c', '192.0.2.25:52317', 'Reader 3’s request, passed to server C'),
+      poolRow('s2-c', 'C', 'Healthy', 1),
+    ],
+  },
+  {
+    title: 'Step 3',
+    events: [
+      poolCheck('s3-chk-a', 'A'),
+      poolOk('s3-ok-a', 'A'),
+      poolCheck('s3-chk-b', 'B'),
+      poolSilent('s3-quiet-1', 'B', 'No answer from B in time'),
+      poolRow('s3-b1', 'B', '1 check missed', 1),
+      poolCheck('s3-chk-b2', 'B', true),
+      poolSilent('s3-quiet-2', 'B', 'No answer from B again: two in a row'),
+      poolRow('s3-b2', 'B', 'Unhealthy', 1, true),
+    ],
+  },
+  {
+    title: 'Step 4',
+    events: [
+      poolRequest('s4-req-a', 'laptop', 'a', '198.51.100.23:61024', 'Your next request, passed to server A'),
+      poolRow('s4-a2', 'A', 'Healthy', 2),
+      poolRequest('s4-req-c', 'reader2', 'c', '198.51.100.41:50101', 'B’s turn: B is unhealthy, so to server C', [{ cue: 'skip', arg: 'b' }]),
+      poolRow('s4-c2', 'C', 'Healthy', 2),
+      poolRequest('s4-req-a3', 'reader3', 'a', '192.0.2.25:52318', 'Reader 3’s request, passed to server A'),
+      poolRow('s4-a3', 'A', 'Healthy', 3),
+      poolCheck('s4-chk-b', 'B', true),
+      poolSilent('s4-quiet', 'B', 'No answer from B'),
+    ],
+  },
+  {
+    title: 'Step 5',
+    events: [
+      poolCheck('s5-chk-1', 'B'),
+      poolOk('s5-ok-1', 'B'),
+      poolRow('s5-b1', 'B', '1 check passed', 1, true),
+      poolCheck('s5-chk-2', 'B'),
+      poolOk('s5-ok-2', 'B'),
+      poolRow('s5-b2', 'B', 'Healthy', 1),
+      poolRequest('s5-req-b', 'reader2', 'b', '198.51.100.41:50102', 'B’s turn: passed to server B'),
+      poolRow('s5-b3', 'B', 'Healthy', 2),
+    ],
+  },
+];
+
+const poolLesson: Fixture = {
+  slug: 'load-balancers-fixture',
+  figure: 'pool',
+  scene: {
+    title: 'example.net’s three servers',
+    views: ['network'],
+    layers: [],
+    labels: {},
+    start: [],
+    panel: { type: 'table', table: structuredClone(poolTable) },
+    log: {
+      ...eventLog(),
+      legend: [
+        { kind: 'request', label: 'A reader’s request' },
+        { kind: 'control', label: 'Health check' },
+        { kind: 'response', label: 'Answer to a check' },
+        { kind: 'note', label: 'No answer in time' },
+      ],
+    },
+    parties: [],
+  },
+  steps: poolSteps,
+};
+
+export const poolFixture = (): Lesson => lessonOf(poolLesson);
+export const batch3Fixtures = { packets: packetsFixture, switch: switchFixture, pool: poolFixture };
