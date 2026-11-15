@@ -97,3 +97,7 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 - Batches 3 and 4 (Switch, Load Balancers, Packets; Proxies, VPN), each through the design gate unless the owner says otherwise; compare mode is designed with Proxies.
 - The glossary when the owner resumes it, with the new lessons' ties.
 - Deploying `revamp` (the owner's): `main` is at `3eab7e6`, before job 12.
+
+## Result (2026-11-15)
+
+Done. IP Address, MAC Address and TCP/UDP are cited, checked and merged into `revamp` (`04adb3a`); Networking lists 15 of 20 ready. `npm test` 2,042 passed; build 37 pages in budget; full `npm run e2e` 1,697 passed, only the known `glossary.spec.ts:143` failed (d1440-dark and d1440-light). Cost 4,520,985 tokens of subagent growth with the scout, inside the estimate, near its top: content 2.74 million (IP 0.73, MAC 1.19, TCP/UDP 0.82), the three scenes with the prototype 1.56 million (the designer 0.72 against 0.2 to 0.4). Errata E1 to E12 in `prototypes/d12-cases.md`. Ledger in `team.md`, direction 2.62.
