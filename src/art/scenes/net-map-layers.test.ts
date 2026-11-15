@@ -80,7 +80,11 @@ test('FIGURE_PARTS["net-map"] lists home, the internet, the resolver and every s
       'status-done': 'flag',
       addr: 'text',
       url: 'text',
+      drop: 'text',
+      hide: 'text',
     },
+    // Router's: a packet dropped at one of the internet's routers, and the resolver left off the map.
+    args: { drop: ['isp', 'a', 'b', 'c', 'd'], hide: ['resolver'] },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
     start: true,

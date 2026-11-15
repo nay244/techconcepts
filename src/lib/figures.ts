@@ -9,6 +9,7 @@ const FIGURES: Record<string, () => string> = {
   subnetting: () => spot('subnet'),
   dhcp: () => spot('dhcp'),
   firewalls: () => spot('firewall'),
+  router: () => spot('router'),
 };
 
 /**

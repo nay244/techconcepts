@@ -1,5 +1,5 @@
 import type { Board, Lesson, MessageKind, MessageLabels, Row, SceneEvent } from '../content/schema';
-import { applyTableEvent, highlightFor, initialTables, tablesOf, type TableState } from './tables';
+import { applyTableEvent, highlightFor, initialTables, markFor, tablesOf, type TableState } from './tables';
 
 /**
  * Where a learner is in a lesson: a flat index over every unit's slots. Each
@@ -113,8 +113,8 @@ export interface LogRow {
   /** The event's `log` row as written, by column key. The console adds `#`; the `plain` column reads `plain`. */
   cells: Row;
   plain: string;
-  /** A note's own glyph, a message kind's (Subnetting's); without it a note takes the legend's note entry. */
-  glyph?: MessageKind;
+  /** A note's own glyph, a message kind's (Subnetting's) or `dropped` (Router's); without it a note takes the legend's note entry. */
+  glyph?: MessageKind | 'dropped';
 }
 
 /** A cue that has played, in order. `current` marks the cues of the step being shown. */
@@ -230,7 +230,10 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number): De
       if (def === undefined || state === undefined) continue;
       applyTableEvent(state, def, event);
       // Only the current step's changes glow: earlier steps are history.
-      if (current) state.highlight = highlightFor(def, event);
+      if (current) {
+        state.highlight = highlightFor(def, event);
+        markFor(state, event);
+      }
       continue;
     }
 

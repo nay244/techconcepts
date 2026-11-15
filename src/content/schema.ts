@@ -187,9 +187,10 @@ export const noteEventSchema = z.strictObject({
   /**
    * The log's glyph for the note, a message kind's, when the note stands for something the figure sends: Subnetting
    * draws what it works out as a request, a route as a response and a ring as a broadcast. The unit's legend must
-   * explain it. Without it the note takes the legend's note entry.
+   * explain it. A note may also take the `dropped` glyph, for a packet a router threw away (Router). Without it the
+   * note takes the legend's note entry.
    */
-  glyph: messageKindSchema.optional(),
+  glyph: z.union([messageKindSchema, z.literal('dropped')]).optional(),
   backing: backingSchema.optional(),
 });
 
@@ -202,6 +203,13 @@ export const tableEventSchema = z.strictObject({
   rows: z.array(rowSchema).optional(),
   /** May be '' for a `match` that found nothing. */
   key: z.string().optional(),
+  /**
+   * A `match` only: the rows that all match, when several do (Router's longest match). Alone, it marks every one as a
+   * candidate; with `key`, the winner, which must be one of them, is highlighted and the rest keep a "match" tag.
+   */
+  keys: z.array(z.string()).min(2).optional(),
+  /** A `replace` only: whose table this is now ("kept by your router"), which the panel's by-line shows in place of the table's own. */
+  by: text.optional(),
   /**
    * An `add` or `update` only: the row it leaves is marked. The mark is a miss,
    * something looked for and not there, such as a piece of data that never

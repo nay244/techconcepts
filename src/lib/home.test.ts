@@ -124,8 +124,8 @@ test('Home’s stops are the tracks that have lessons, in the site’s order, an
   expect(stops.map((s) => s.order)).toEqual(['Start here', 'Then go deeper']);
 });
 
-test('Home says 14 lessons and 8 of 20 lessons ready', () => {
-  expect(homeStops().map((s) => s.count)).toEqual(['14 lessons', '8 of 20 lessons ready']);
+test('Home says 14 lessons and 9 of 20 lessons ready', () => {
+  expect(homeStops().map((s) => s.count)).toEqual(['14 lessons', '9 of 20 lessons ready']);
 });
 
 test('a stop counts its lessons from the content', () => {
@@ -286,4 +286,12 @@ test('D5’s rules on Home hold no colour value other than a token', () => {
   const rules = page.slice(open, close);
   expect(rules).toContain('var(--link)');
   expect(rules).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
+});
+
+test('Home’s still map shows no name strip, no DROPPED mark and every part of the resolver (Router’s additions stay off other lessons)', () => {
+  const { scene } = homeDemo();
+  expect([...scene.matchAll(/<g class="nm-strip"[^>]*>/g)].every((m) => m[0].includes('display="none"'))).toBe(true);
+  expect(scene).toMatch(/id="nm-discard" style="opacity:0"/);
+  expect(scene).not.toContain('data-hidden');
+  expect(scene).toContain('<g data-base="resolver">');
 });

@@ -1,3 +1,5 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { sha256, withoutGrain } from '../../test/figure-hash';
 import { COVER_IDS, cover, coverStill } from './covers.ts';
@@ -68,6 +70,8 @@ const EXPECTED: Record<string, string> = {
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
   'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
+  // Drawn for Lesson 08, Router (D10), on 2026-11-14; pinned from its own render, which equals the approved prototype's (the next test).
+  'spot:router': 'ca8cae37e086a144dc1c5b49badfdd3f8c6a175297b456f08e098eb112a9dce8',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -88,4 +92,24 @@ test('the OSI spot is seven numbered blocks with block 4 lit', () => {
   blocks.forEach((b, i) => expect(b).toContain(`>${i + 1}</text>`));
   expect(svg).toContain('OSI · SEVEN LAYERS');
   expect(svg).toContain('aria-label="A stack of seven solid blocks, one for each layer, numbered 1 at the bottom to 7 at the top. Block 4 is lit."');
+});
+
+test('the Router spot is one round router with a lit packet and a three-row table with one light on', () => {
+  const svg = spot('router');
+  expect(svg).toContain('aria-label="A round router where three cables meet, one coming in and two going out. A lit packet travels down one of the ways out. In front stands its routing table, three routes long, with the route it chose marked."');
+  expect(svg).toContain('ROUTING TABLE · NEXT HOP');
+  // One lit part: the packet slab.
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  // One light on at the router's front and one in the table's rows: the chosen route's.
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(2);
+  expect(svg.match(/<text class="lm-rule"[^>]*>[^<]*</g)!.map((t) => t.replace(/.*>([^<]*)</, '$1'))).toEqual(['198.51.100.0/24', '203.0.113.0/24', '0.0.0.0/0']);
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+test('the Router spot is the approved prototype’s art, tag for tag', () => {
+  const proto: string = readFileSync('prototypes/d10-router.html', 'utf8');
+  const theirs = /<svg xmlns="http:\/\/www.w3.org\/2000\/svg" class="iso-svg lm-svg lm-router"[\s\S]*?<\/svg>/.exec(proto)![0];
+  // The prototype's copy carries the xmlns attribute a page needs and an inline figure does not; nothing else differs.
+  const lines = (svg: string): string[] => svg.replace(' xmlns="http://www.w3.org/2000/svg"', '').replace(' iso-svg', '').split('><');
+  expect(lines(spot('router'))).toEqual(lines(theirs));
 });

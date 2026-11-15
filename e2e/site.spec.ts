@@ -260,11 +260,11 @@ test.describe('desktop', () => {
         '/tracks#how-the-internet-works',
         '/tracks#networking',
       ]);
-      await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '8 of 20 lessons ready']);
+      await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '9 of 20 lessons ready']);
       // One segment per planned lesson, the ready ones filled.
       await expect(trackCards(page).nth(0).locator('.leg__run i[data-ready]')).toHaveCount(14);
       await expect(trackCards(page).nth(1).locator('.leg__run i')).toHaveCount(20);
-      await expect(trackCards(page).nth(1).locator('.leg__run i[data-ready]')).toHaveCount(8);
+      await expect(trackCards(page).nth(1).locator('.leg__run i[data-ready]')).toHaveCount(9);
       // Nothing on Home shows progress or an exam to filter by.
       await expect(page.locator('main a[href*="?for="]')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText(/Network\+|Security\+|CCNA|lessons done|in progress/i);
@@ -519,12 +519,12 @@ test.describe('desktop', () => {
       await expect(page).toHaveURL(/\/networking$/);
     });
 
-    test('Tracks: first visit says Start and Start here, the strip reads "0 of 20 lessons done · 8 ready"', async ({ page }) => {
+    test('Tracks: first visit says Start and Start here, the strip reads "0 of 20 lessons done · 9 ready"', async ({ page }) => {
       await open(page, '/tracks');
       const internet = panelOf(page, 'how-the-internet-works');
       const networking = panelOf(page, 'networking');
       await expect(internet.locator('.strip__w')).toHaveText('0 of 14 lessons done');
-      await expect(networking.locator('.strip__w')).toHaveText('0 of 20 lessons done · 8 ready');
+      await expect(networking.locator('.strip__w')).toHaveText('0 of 20 lessons done · 9 ready');
       await expect(internet.locator('.strip__sq i')).toHaveCount(14);
       await expect(networking.locator('.strip__sq i')).toHaveCount(20);
       // A first visit has no square marked current.
@@ -577,7 +577,7 @@ test.describe('desktop', () => {
   });
 
   test.describe('Track page', () => {
-    test('Track page: Networking lists 20 stops in its parts, 12 Not ready yet, OSI Model first ready with Start', async ({ page }) => {
+    test('Track page: Networking lists 20 stops in its parts, 11 Not ready yet, OSI Model first ready with Start', async ({ page }) => {
       await open(page, '/networking');
       await expect(page).toHaveTitle('Networking Concepts · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Networking Concepts');
@@ -590,11 +590,11 @@ test.describe('desktop', () => {
         const n = await stage.locator('li.stop').count();
         await expect(stage.locator('.route-stage__head p')).toHaveText(`${n} ${n === 1 ? 'lesson' : 'lessons'}`);
       }
-      await expect(readyStops(page)).toHaveCount(8);
-      await expect(readyStops(page).locator('h3')).toHaveText(['OSI Model', 'Subnetting', 'DHCP', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
+      await expect(readyStops(page)).toHaveCount(9);
+      await expect(readyStops(page).locator('h3')).toHaveText(['OSI Model', 'Subnetting', 'Router', 'DHCP', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
       // The four lessons Networking shares with the tour link to Networking's own pages.
       await expect(lessonCard(page, 'what-is-dns').locator('h3 a')).toHaveAttribute('href', '/networking/what-is-dns');
-      await expect(soonStops(page)).toHaveCount(12);
+      await expect(soonStops(page)).toHaveCount(11);
       await expect(soonStops(page).locator('a')).toHaveCount(0);
       for (const stop of await soonStops(page).all()) await expect(stateOf(stop)).toHaveText('Not ready yet');
 
@@ -609,7 +609,7 @@ test.describe('desktop', () => {
       await expect(page.locator('main .side .side-now__k')).toHaveText('Start here');
       await expect(sideButton(page)).toHaveText('Start');
       await expect(sideButton(page)).toHaveAttribute('href', OSI_PATH);
-      await expect(stripWords(page)).toHaveText('0 of 20 lessons done · 8 ready');
+      await expect(stripWords(page)).toHaveText('0 of 20 lessons done · 9 ready');
 
       // Gone: the cover, the counts, the exam chips and Clear my progress. Nothing on the page is a button.
       await expect(page.locator('main .cover, main .stats, main .toolbar')).toHaveCount(0);
@@ -720,9 +720,9 @@ test.describe('desktop', () => {
     });
   });
 
-  test('About counts a lesson two tracks list once: 18 lessons ready', async ({ page }) => {
+  test('About counts a lesson two tracks list once: 19 lessons ready', async ({ page }) => {
     await open(page, '/about');
-    await expect(page.locator('.stats > div', { has: page.locator('dt', { hasText: 'lessons ready' }) }).locator('dd')).toHaveText('18');
+    await expect(page.locator('.stats > div', { has: page.locator('dt', { hasText: 'lessons ready' }) }).locator('dd')).toHaveText('19');
   });
 
   test.describe('lessons Networking shares with the tour', () => {
@@ -736,6 +736,8 @@ test.describe('desktop', () => {
     });
 
     test('Up next follows the track the lesson is read in', async ({ page }) => {
+      await open(page, '/networking/subnetting?step=99');
+      await expect(page.getByRole('link', { name: /Router/ }).filter({ has: page.locator('svg') }).first()).toHaveAttribute('href', '/networking/router');
       await open(page, '/networking/dhcp?step=99');
       await expect(page.getByRole('link', { name: /DNS/ }).filter({ has: page.locator('svg') }).first()).toHaveAttribute('href', '/networking/what-is-dns');
       await open(page, '/networking/what-is-tls?step=99');
@@ -757,7 +759,7 @@ test.describe('desktop', () => {
     test('progress is by lesson: finishing DNS in the tour counts it in Networking, and opening it there makes Networking the last track', async ({ page }) => {
       await finishLesson(page, '/how-the-internet-works/what-is-dns');
       await open(page, '/networking');
-      await expect(stripWords(page)).toHaveText('1 of 20 lessons done · 8 ready');
+      await expect(stripWords(page)).toHaveText('1 of 20 lessons done · 9 ready');
       await expect(stateOf(lessonCard(page, 'what-is-dns'))).toHaveText('✓ Done');
       await open(page, '/networking/what-is-dns');
       const stored = await page.evaluate(() => Object.entries(window.localStorage).map(([k, v]) => `${k}=${v}`).join('\n'));
@@ -774,20 +776,20 @@ test.describe('desktop', () => {
     const card = lessonCard(page, 'dhcp');
     await expect(stateOf(card)).toHaveText('✓ Done');
     await expect(card.locator('.stop__acts .btn')).toHaveText('Watch again');
-    await expect(stripWords(page)).toHaveText('1 of 20 lessons done · 8 ready');
+    await expect(stripWords(page)).toHaveText('1 of 20 lessons done · 9 ready');
 
     await open(page, '/');
     // Home shows no progress: a returning visitor sees the same hero and the same track cards as a first visit.
     await expect(homeFacts(page)).toHaveText(HOME_FACTS);
     await expect(heroStart(page)).toHaveText(HERO_START);
     await expect(heroStart(page)).toHaveAttribute('href', START_PATH);
-    await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '8 of 20 lessons ready']);
+    await expect(trackCards(page).locator('.leg__count')).toHaveText(['14 lessons', '9 of 20 lessons ready']);
 
     // On Tracks, Networking's strip counts DHCP done, and its panel moves on to the next lesson not done; How the
     // Internet Works still reads as a first visit.
     await open(page, '/tracks');
     const networking = panelOf(page, 'networking');
-    await expect(networking.locator('.strip__w')).toHaveText('1 of 20 lessons done · 8 ready');
+    await expect(networking.locator('.strip__w')).toHaveText('1 of 20 lessons done · 9 ready');
     await expect(networking.locator('.strip__sq i[data-state="done"]')).toHaveCount(1);
     await expect(networking.locator('a.next .next__k')).toHaveText('Up next');
     // The next lesson is the first ready one in the track's order that is not done: here, the first that is not DHCP.
@@ -806,13 +808,13 @@ test.describe('desktop', () => {
     await expect(page.locator('.a-reset [role="status"]')).toHaveText('Progress cleared');
     await open(page, '/networking');
     await expect(stateOf(card)).toHaveText('Not started');
-    await expect(stripWords(page)).toHaveText('0 of 20 lessons done · 8 ready');
+    await expect(stripWords(page)).toHaveText('0 of 20 lessons done · 9 ready');
 
     await open(page, '/');
     await expect(homeFacts(page)).toHaveText(HOME_FACTS);
-    await expect(trackCards(page).nth(1).locator('.leg__count')).toHaveText('8 of 20 lessons ready');
+    await expect(trackCards(page).nth(1).locator('.leg__count')).toHaveText('9 of 20 lessons ready');
     await open(page, '/tracks');
-    await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('0 of 20 lessons done · 8 ready');
+    await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('0 of 20 lessons done · 9 ready');
     await expect(panelOf(page, 'networking').locator('a.next .next__k')).toHaveText('Start here');
   });
 
@@ -877,7 +879,7 @@ test.describe('desktop', () => {
     await expect(internet.locator('a.next .next__art svg.name-tile')).toHaveAttribute('aria-label', 'User Datagram Protocol');
     await expect(internet.locator('.strip__sq i[data-state="current"]')).toHaveCount(1);
     // HTTP and HTTPS are also Networking's lessons, and progress is by lesson, so Networking counts them done (E6).
-    await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('2 of 20 lessons done · 8 ready');
+    await expect(panelOf(page, 'networking').locator('.strip__w')).toHaveText('2 of 20 lessons done · 9 ready');
     await expect(panelOf(page, 'networking').locator('.panel__cta .btn')).toHaveText('Start');
 
     // Home says nothing of where they are: its first track card reads as on a first visit.

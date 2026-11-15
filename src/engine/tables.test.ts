@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Row, TableDef, TableEvent } from '../content/schema';
-import { applyTableEvent, highlightFor, initialTables, tablesOf, type TableState } from './tables';
+import { applyTableEvent, highlightFor, initialTables, markFor, tablesOf, type TableState } from './tables';
 
 const def: TableDef = {
   id: 't',
@@ -156,4 +156,65 @@ test('a mark goes with its row: removed, cleared or replaced rows keep none, and
 
 test('a miss is a mark of its own, not a highlight: the row it adds is still highlighted as added', () => {
   expect(highlightFor(def, missing)).toEqual({ key: '10.0.0.3', type: 'added' });
+});
+
+// ---------------------------------------------------------------- D10: whose table, and several rows that match
+
+test('a replace with `by` sets whose table it is; one without leaves it; a table starts with none', () => {
+  const [state] = Object.values(initialTables([def]));
+  expect(state!.by).toBeUndefined();
+  applyTableEvent(state!, def, event('replace', { rows: [], by: 'kept by your laptop' }));
+  expect(state!.by).toBe('kept by your laptop');
+  applyTableEvent(state!, def, event('replace', { rows: [] }));
+  expect(state!.by).toBe('kept by your laptop');
+  applyTableEvent(state!, def, event('replace', { rows: [], by: 'kept by router a' }));
+  expect(state!.by).toBe('kept by router a');
+});
+
+test('an event that is not a replace never changes whose table it is', () => {
+  const [state] = Object.values(initialTables([def]));
+  state!.by = 'kept by router c';
+  for (const op of ['add', 'update', 'remove', 'match', 'clear'] as const) {
+    applyTableEvent(state!, def, event(op, { key: '10.0.0.1', row: { ip: '10.0.0.9', mac: 'ZZ' } }));
+  }
+  expect(state!.by).toBe('kept by router c');
+});
+
+test('a match with keys and no key marks every one a candidate and a match, and highlights none', () => {
+  const [state] = Object.values(initialTables([def]));
+  const e = event('match', { keys: ['a', 'b'] });
+  expect(highlightFor(def, e)).toBeNull();
+  markFor(state!, e);
+  expect(state).toMatchObject({ candidates: ['a', 'b'], matches: ['a', 'b'] });
+  expect(state!.noMatch).toBeUndefined();
+});
+
+test('a match with a key and keys has no candidates, its keys keep the tag, and the winner is the highlight', () => {
+  const [state] = Object.values(initialTables([def]));
+  const e = event('match', { key: 'a', keys: ['a', 'b'] });
+  expect(highlightFor(def, e)).toEqual({ key: 'a', type: 'matched' });
+  markFor(state!, event('match', { keys: ['a', 'b'] }));
+  markFor(state!, e);
+  expect(state!.candidates).toBeUndefined();
+  expect(state!.matches).toEqual(['a', 'b']);
+});
+
+test('a match with only a key marks no rows, and a replace clears every mark', () => {
+  const [state] = Object.values(initialTables([def]));
+  markFor(state!, event('match', { keys: ['a', 'b'] }));
+  markFor(state!, event('match', { key: 'a' }));
+  expect(state).not.toHaveProperty('matches');
+  markFor(state!, event('match', { key: '', summary: 'Nothing covers it.' }));
+  expect(state!.noMatch).toBe('Nothing covers it.');
+  markFor(state!, event('match', { keys: ['a', 'b'] }));
+  expect(state!.noMatch).toBeUndefined();
+  markFor(state!, event('match', { key: '', summary: 'again' }));
+  markFor(state!, event('replace', { rows: [] }));
+  expect(state).not.toHaveProperty('candidates');
+  expect(state).not.toHaveProperty('matches');
+  expect(state).not.toHaveProperty('noMatch');
+  // An add or an update leaves marks as they were.
+  markFor(state!, event('match', { keys: ['a', 'b'] }));
+  markFor(state!, event('add', { row: { ip: 'x', mac: 'y' } }));
+  expect(state!.candidates).toEqual(['a', 'b']);
 });

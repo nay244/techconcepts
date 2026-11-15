@@ -2742,6 +2742,56 @@ export const SOURCES: SourceRegistry = defineSources([
     publisher: 'IANA',
     url: 'https://www.iana.org/domains/root/db',
   },
+  // Job 11: the new lesson Router (route selection, the default route, routers at layer 3, ICMP through NAT).
+  {
+    id: 'cisco-route-selection',
+    kind: 'vendor',
+    short: 'Cisco route selection',
+    title: 'Configure Route Selection for Routers',
+    publisher: 'Cisco',
+    url: 'https://www.cisco.com/c/en/us/support/docs/ip/enhanced-interior-gateway-routing-protocol-eigrp/8651-21.html',
+  },
+  {
+    id: 'cisco-gateway-last-resort',
+    kind: 'vendor',
+    short: 'Cisco gateway of last resort',
+    title: 'Configure a Gateway of Last Resort that Uses IP Commands',
+    publisher: 'Cisco',
+    url: 'https://www.cisco.com/c/en/us/support/docs/ip/routing-information-protocol-rip/16448-default.html',
+  },
+  {
+    id: 'cisco-how-router-works',
+    kind: 'vendor',
+    short: 'Cisco How Does a Router Work?',
+    title: 'How Does a Router Work?',
+    publisher: 'Cisco',
+    url: 'https://www.cisco.com/site/us/en/learn/topics/small-business/how-does-a-router-work.html',
+  },
+  {
+    id: 'cisco-what-is-routing',
+    kind: 'vendor',
+    short: 'Cisco What is Routing?',
+    title: 'What is Routing?',
+    publisher: 'Cisco',
+    url: 'https://www.cisco.com/site/us/en/learn/topics/networking/what-is-routing.html',
+  },
+  {
+    id: 'paloalto-layer-3-vs-7',
+    kind: 'vendor',
+    short: 'Palo Alto Layer 3 vs Layer 7',
+    title: 'Layer 3 vs Layer 7 Firewall: What Are the Differences?',
+    publisher: 'Palo Alto Networks',
+    url: 'https://www.paloaltonetworks.com/cyberpedia/layer-3-vs-layer-7-firewall',
+  },
+  {
+    id: 'rfc-5508',
+    kind: 'rfc',
+    short: 'RFC 5508',
+    title: 'NAT Behavioral Requirements for ICMP',
+    publisher: 'IETF',
+    url: 'https://www.rfc-editor.org/rfc/rfc5508.html',
+    anchor: 'https://www.rfc-editor.org/rfc/rfc5508.html#section-{n}',
+  },
 ]);
 
 /**

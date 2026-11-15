@@ -227,3 +227,29 @@ test('a column the lesson gives 100px or less is a short value, which a phone se
   expect(cells[4]).toHaveClass('log__prose');
   expect(cells[4]).not.toHaveClass('log__short');
 });
+
+test('a note with the dropped glyph draws the dropped glyph, and its legend entry explains it (Router)', () => {
+  const log: LogDef = {
+    title: 'Event log',
+    columns: [{ key: 'info', label: 'Info', prose: true }],
+    legend: [
+      { kind: 'request', label: 'Packet' },
+      { kind: 'dropped', label: 'Dropped' },
+    ],
+  };
+  const row: LogRow = {
+    n: 1,
+    eventId: 's5-drop',
+    type: 'note',
+    kind: null,
+    outcome: null,
+    from: null,
+    to: null,
+    tag: null,
+    cells: { info: 'No route for 192.0.2.77: packet dropped' },
+    plain: 'Router a drops the packet.',
+    glyph: 'dropped',
+  };
+  const { container } = render(<LogPanel log={log} rows={[row]} idle="Nothing yet." />);
+  expect(container.querySelector('tbody [data-glyph]')).toHaveAttribute('data-glyph', 'dropped');
+});

@@ -17,8 +17,8 @@ const reBySlug = Object.fromEntries(Object.entries(rechecks).map(([p, raw]) => [
 const slugs = Object.keys(fullBySlug).sort();
 const sheet = (slug: string) => claimSheet(getLesson(slug)!, SOURCES);
 
-test('there are eighteen lesson reports and six re-checks', () => {
-  expect(slugs).toHaveLength(18);
+test('there are nineteen lesson reports and six re-checks', () => {
+  expect(slugs).toHaveLength(19);
   expect(Object.keys(reBySlug)).toHaveLength(6);
 });
 
