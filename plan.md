@@ -6,6 +6,10 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 **Status: the owner's go is given** (2026-11-14, direction 2.52): "For this batch skip the mockup and request for my approval to start build. Based on router your proposal and build out was good enough we can skip if possible." The job goes on without another go; the owner sees the three lessons built and checked.
 
+## Result (2026-11-14)
+
+ARP (`/networking/arp`), Ports (`/networking/ports`) and NAT (`/networking/nat`) are live on `revamp` (`7bf4377`), each passed by a fresh fact-checker: ARP all 91 on its first full check; Ports 92 of 94, then a re-check of the 2 Overview lines that dropped "TCP"; NAT 90 of 91 twice (a different item each time, each a citation or a qualifier), then a re-check of 7. Networking Concepts lists 20 stops, 12 ready. The batch used **3.36 million** subagent tokens of growth with the scout (estimate 3.3 to 4.7; stop 5.0): content 2.41 (ARP 0.66, Ports 0.77, NAT 0.97), the three scenes and card arts 0.70 (designer, two reviews, one builder), the scout 0.24. `team.md` (job 12) has the units, the totals and what to do differently. Errata for the owner: D11's E1–E9 (`prototypes/d11-cases.md`) and the rulings in §11 of `prototypes/d11-batch-1.md`; Ports' ruling 5 changed (`cite()` refuses a per-number IANA search address, so port numbers rest on RFC 9110, RFC 4253, Microsoft and Cloudflare).
+
 ## Inputs
 
 | | |

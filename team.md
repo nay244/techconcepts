@@ -818,3 +818,19 @@ Planned on 2026-11-14 in a fresh session on Opus 5.5, under the owner's go on ba
 | L21-b fix 3 | author (continued) | Sonnet | 1 | 1,132 (whole author 222,974) | `14cef20`: RFC 3022 §1 added to `fact-defined`; `--recheck` printed 7 items. |
 | L21-c3 | fact-checker (fresh) | Opus | re-check | 39,802 | **Passed: 7 of 7** (`0e53cc2`); `--recheck --check` Report OK for both reports. Merged into `job12/batch` (`513edb7`). **NAT's content: 973,513** (analyst 342,233, author 222,974, checks 188,609, 179,895 and 39,802), under the 1.6 million stop. |
 | B13b | builder (continued) | Sonnet | 1 | 305,301 (whole builder, B13 included) | `738ebf0`..`0ffd37a`, tests only: the net-map sweeps compare only lessons before D11 and check the real NAT's phone; counts to 12 of 20 ready (22 lessons ready in all); `e2e/{arp,ports,nat}.spec.ts` with a shared `e2e/batch1.ts` (check 19, case 24, the browser cases); `NO_SEQUENCE`, `site.spec` counts and Up next. Orchestrator's check: `npm test` 1,936 passed; build 34 pages in budget; d1440-dark six specs 271 passed, 1 skipped; phone 96. Seen at 1440 light and 375 dark beside the SVGs. Found: the internet and router callouts already overlap by 1px on every net-map page (before this job). |
+| M12 | orchestrator | Opus 5.5 | 1 | not counted | `job12/batch` into `revamp` (`7bf4377`): `npm test` 1,936 passed; build 34 pages in budget; the three reports Report OK (Ports and NAT with `--recheck --check`). Worktrees `arp`, `ports`, `nat` removed; branches kept. |
+
+| F12 | orchestrator | Opus 5.5 | 1 | not counted | Full `npm run e2e` on `revamp` (`7bf4377`, `E2E_PORT=4485`): **1,586 passed, 2 failed, 558 skipped** (31.7 minutes). The two failures are the one known test, `e2e/glossary.spec.ts:143` (held by the owner, 2.48), in d1440-dark and d1440-light; nothing else failed. |
+
+**Totals** (growth): scout 240,824; analysts 972,543 (ARP 290,611, Ports 339,699, NAT 342,233); designer 107,419; reviewers 292,224 (B13 spec 176,057, build 116,167); builder 305,301 (B13 and B13b); authors 678,795 (ARP 222,196, Ports 233,625, NAT 222,974); fact-checkers 760,818 (ARP 151,330; Ports 173,633 and 27,549; NAT 188,609, 179,895 and 39,802). **Subagents 3,357,924**, inside the 3.3 to 4.7 million estimate and under the 5.0 million stop. Content 2,412,156 (ARP 664,137, Ports 774,506, NAT 973,513, each under 1.6 million); the three scenes and card arts 704,944, against Router's 904,548 for one.
+
+**Could go one model lower next time.** B13b's counts are mechanical once the lessons exist (a script plus a Haiku builder); the authors' fixes of a citation or a few words could be a Haiku edit from the checker's named fix.
+
+**What to do differently next time**
+
+- One designer, one spec review and one builder for a batch's scenes worked: the designer's patch whose output is the SVG files let the build pass its first review with no fixes. Keep it.
+- Two publishers was not enough for a Learn fact many items trace to: NAT's `fact-ports` was held for a scope word ("from the range" read as every device), the re-check grew to 27 items and NAT needed a second full check (0.18 million). The read before the check should look for absolutes ("every", a single range, "only") in the facts most items trace to.
+- Give each analyst a private scratch folder: two analysts overwrote each other's sheet and script in the shared scratchpad.
+- Before ruling a citation form, check the helper accepts it: `cite()` refuses a `url` whose query differs from the document's, which undid Ports' ruling 5 at the author.
+- The scout's own rules forbid writing files: ask it for the text and save it, as this job did.
+- Run the full e2e with a port of its own: an `astro preview` left on 4471 stopped the first run.
