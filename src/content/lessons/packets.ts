@@ -35,13 +35,12 @@ const RFC8900_TCP = rfc('rfc-8900', '4.1');
 /** RFC 1122 has no ids below its top-level sections, so a section is cited by the page the passage is on. */
 const R1122 = 'https://www.rfc-editor.org/rfc/rfc1122.html';
 const RFC1122_INDEPENDENT = cite('rfc-1122', '1.1.2', { url: `${R1122}#page-7` });
-const RFC1122_DELIVERY = cite('rfc-1122', '1.1.3', { url: `${R1122}#page-10`, defining: true });
+const RFC1122_DELIVERY = cite('rfc-1122', '1.1.3', { url: `${R1122}#page-10` });
 const RFC1122_PACKET = cite('rfc-1122', '1.3.3', { url: `${R1122}#page-18` });
 /** "Path" and "MTU" are both on page 19. */
 const RFC1122_PATH_MTU = cite('rfc-1122', '1.3.3', { url: `${R1122}#page-19` });
 const RFC894_MAX = cite('rfc-894', 'Frame Format', {
   url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=the%20maximum%20length%20of%20an%20IP%20datagram',
-  defining: true,
 });
 
 /** NIST's PDFs have no section anchors, so a section is cited by the PDF page its passage is on. */
@@ -346,7 +345,7 @@ export default defineLesson({
             'Piece 2 sets off after it. Each packet travels on its own: there’s no connection inside the network. Every router on the way reads the packet’s destination address and sends it on toward it, deciding again for every packet. Packets of one download usually all go the same way, and so far they do, through router b.',
           deep: [
             {
-              text: 'Where a router has two equally good ways, it picks one for each conversation, using the packet’s addresses and ports, and keeps to it, so its pieces stay in order.',
+              text: 'Where a router has two equally good ways, it picks one for each conversation, using the packets’ addresses, and keeps to it, so its pieces stay in order.',
               cite: [rfc('rfc-8900', '3.5'), rfc('rfc-2991', '3'), CISCO_PER_DEST],
             },
           ],
@@ -367,7 +366,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Routes change when a link or a router fails, and routers keep their routes up to date by themselves. While a route changes, the internet can hold up some packets more than others.',
-              cite: [rfc('rfc-8900', '2.1'), ROUTERS_EACH, CISCO_DYNAMIC, rfc('rfc-8085', '3.3')],
+              cite: [rfc('rfc-8900', '2.1'), ROUTERS_EACH, CISCO_DYNAMIC, rfc('rfc-8085', '3.3'), rfc('rfc-1812', '2.2.3', true), rfc('rfc-2991', '3')],
             },
           ],
           facts: [
@@ -465,14 +464,14 @@ export default defineLesson({
           },
           {
             id: 'why-2',
-            text: 'Small pieces also make a loss cheap: if one piece goes missing, TCP sends just that piece again, not the whole file.',
+            text: 'If one piece goes missing, TCP sends just that piece again, not the whole file.',
             cite: [tcp('3.8'), rfc('rfc-6298', '5', true)],
           },
         ],
         deep: [
           {
             id: 'deep-fragments',
-            text: 'IP can also split a packet that’s too big for the next link into fragments, which only the destination puts back together. That’s fragile, so TCP picks piece sizes that avoid it. In IPv6, routers never split packets; only the sender can.',
+            text: 'IP can also split a packet that’s too big for the next link into fragments, which the destination puts back together. That’s fragile, so TCP picks piece sizes that avoid it. In IPv6, routers never split packets; only the sender can.',
             cite: [ip4('2.3'), ip4('3.2'), ip6('4.5'), rfc('rfc-8900', '1'), tcp('3.7.2'), AZURE_FRAG],
           },
         ],
@@ -504,8 +503,8 @@ export default defineLesson({
           {
             id: 'fact-tcp-header',
             label: 'TCP header',
-            value: 'the two ports, and the number of the piece’s first byte',
-            cite: [tcp('3.1'), tcp('3.4')],
+            value: 'the two ports, and the number of the piece’s first byte, which tells the receiver where the piece fits',
+            cite: [tcp('3.1'), tcp('3.4'), tcp('3.10')],
           },
           {
             id: 'fact-on-its-own',
@@ -528,8 +527,8 @@ export default defineLesson({
           {
             id: 'fact-out-of-order',
             label: 'Out of order',
-            value: 'when packets of one download take different ways, as when a route changes, a later one can arrive first',
-            cite: [rfc('rfc-8085', '3.3'), rfc('rfc-2991', '2'), CISCO_PER_PACKET],
+            value: 'when packets of one download take different ways, as when a route changes, some can be held up and a later one can arrive first',
+            cite: [rfc('rfc-8085', '3.3'), rfc('rfc-2991', '2'), rfc('rfc-2991', '3'), CISCO_PER_PACKET],
           },
           {
             id: 'fact-ip-promises',
