@@ -301,6 +301,12 @@ describe('the OSI Model lesson’s sources', () => {
       'iana-root-db',
       // Job 11: the new lesson Router.
       'cisco-route-selection', 'cisco-gateway-last-resort', 'cisco-how-router-works', 'cisco-what-is-routing', 'paloalto-layer-3-vs-7', 'rfc-5508',
+      // Job 12: the new lesson ARP.
+      'cisco-arp-config', 'microsoft-arp-caching', 'openbsd-man-arp-4', 'openbsd-man-arp-8', 'cloudflare-network-layer',
+      // Job 12: the new lesson Ports.
+      'rfc-6056', 'paloalto-port-scan', 'microsoft-netstat', 'microsoft-dynamic-ports', 'microsoft-winsock-errors', 'microsoft-rdp-port', 'microsoft-rdp-enable', 'cloudflare-rdp-browser', 'cloudflare-network-ports', 'openbsd-man-connect', 'openbsd-man-netstat',
+      // Job 12: the new lesson NAT.
+      'rfc-2663', 'rfc-5382', 'cisco-nat-faq', 'cisco-nat-configure', 'microsoft-azure-snat', 'microsoft-azure-inbound-nat',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

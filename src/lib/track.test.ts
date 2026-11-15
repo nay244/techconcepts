@@ -17,16 +17,16 @@ test('the six parts in order, each with its number, its title, its lessons and h
   const parts = trackParts(networkingTrack, entries, lessonOf, lessonStamp);
   expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
     [1, 'The big picture', 1, 2],
-    [2, 'Addresses & the local network', 0, 4],
+    [2, 'Addresses & the local network', 1, 4],
     [3, 'Getting between networks', 3, 3],
-    [4, 'Talking across the internet', 1, 4],
+    [4, 'Talking across the internet', 3, 4],
     [5, 'The web', 3, 3],
     [6, 'Protecting & scaling traffic', 1, 4],
   ]);
   // Every planned lesson once, numbered across the track with two digits.
   const all = parts.flatMap((p) => p.lessons);
   expect(all.map((l) => l.n)).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0')));
-  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Subnetting', 'Router', 'DHCP', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
+  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'ARP', 'Subnetting', 'Router', 'DHCP', 'Ports', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
   expect(all[1]).toEqual({ ready: false, key: 'packets', n: '02', title: 'Packets' });
 });
 

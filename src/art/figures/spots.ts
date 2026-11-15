@@ -208,10 +208,90 @@ function routerSpot() {
   return figure("router", "ROUTING TABLE · NEXT HOP", out.join(""), "A round router where three cables meet, one coming in and two going out. A lit packet travels down one of the ways out. In front stands its routing table, three routes long, with the route it chose marked.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router'] as const;
+// ---------- Lesson 06, ARP: the laptop asks everyone, and only the router answers ----------
+function arpSpot() {
+  const out = [], C = [-50, 4];
+  // The question, spreading over the plate from the laptop: three dotted waves, towards the devices at the back.
+  for (const r of [36, 62, 88]) {
+    const pts = [];
+    for (let i = 0; i <= 32; i++) {
+      const a = ((-80 + (110 * i) / 32) * Math.PI) / 180, x = C[0] + r * Math.cos(a), y = C[1] + r * Math.sin(a);
+      if (Math.abs(x) < 104 && Math.abs(y) < 66) pts.push(at([x, y, 0.4]));
+    }
+    out.push(L(k.pathOf(pts), { tone: "hi", dotted: true }));
+  }
+  // Three devices hear it: a phone on its dock and a printer, which stay dark, and the router, which answers.
+  const things = [];
+  const DK = { x: 74, y: -28, w: 28, d: 16, r: 3 }, PH = { x: 78, y: -25, w: 20, d: 3.4, r: 1.4 };
+  let ph = S(k.slabOf(DK, 0, 3, P, 4, 0.5), { tone: "mid", inner: L(k.sideSeam(DK, 1.2, P, 4), { tone: "faint" }) }) + S(k.slabOf(PH, 3, 38, P, 3, 0.5), { tone: "hi" });
+  ph += onFaceY(PH.y + PH.d, rect("lm-void", PH.x + 1.6, 6.4, PH.w - 3.2, 31, 1.2) + rect("lm-slot", PH.x + PH.w / 2 - 3, 38.6, 6, 1.2, 0.6));
+  things.push([DK.x + DK.w / 2, DK.y + DK.d / 2, ph]);
+  const PR = { x: 44, y: 20, w: 52, d: 38, r: 3 }, PZ = 18;
+  let pr = S(k.slabOf(PR, 0, PZ, P, 4, 0.6), { tone: "hi", inner: L(k.sideSeam(PR, 5, P, 4), { tone: "faint" }) });
+  pr += S(k.slabOf({ x: PR.x + 8, y: PR.y + 5, w: PR.w - 16, d: 16, r: 0.8 }, PZ, 1.6, P, 3, 0.3), { tone: "mid" }) + lines([[[PR.x + 12, PR.y + 28], [PR.x + PR.w - 12, PR.y + 28]]], PZ);
+  pr += onFaceY(PR.y + PR.d, rect("lm-slot", PR.x + 8, 9, PR.w - 16, 2.2, 1.1) + `<circle class="lm-led" cx="${n1(PR.x + PR.w - 7)}" cy="-4" r="1.2"/>`);
+  things.push([PR.x + PR.w / 2, PR.y + PR.d / 2, pr]);
+  things.push([16, -55, router({ x: -14, y: -70, w: 60, d: 30, r: 5 }, { lit: [0, 1] })]);
+  for (const [, , svg] of byDepth(things)) out.push(svg);
+  // The answer, lifted off the router on its way back to the laptop: the lit part.
+  const TG = { x: -6, y: -42, w: 34, d: 13, r: 2 }, TZ = 40;
+  out.push(`<path class="lm-shadow" d="${k.planOutline({ x: TG.x + 3, y: TG.y + 2, w: TG.w - 4, d: TG.d - 2, r: 3 }, 0, P, 4)}"/>`);
+  out.push(S(k.slabOf(TG, TZ, 2.4, P, 3, 0.5), { tone: "hi", lit: true }));
+  out.push(onTopAt(TZ + 2.4, `<text class="lm-tagt" x="${TG.x + 4}" y="${TG.y + 8.2}">IS AT</text>`));
+  // The laptop that asked, in front: its screen still waiting.
+  const lap = laptop({ x: -106, y: 2, w: 58, d: 38, r: 4 }, 34);
+  out.push(lap.svg, onFaceY(lap.face, rect("lm-void", lap.x0, lap.z0, lap.w, lap.h, 0.8) + `<text class="lm-addr" x="${n1(lap.x0 + 4)}" y="${n1(-(lap.z0 + lap.h - 6))}">WHO HAS?</text>`));
+  return figure("arp", "WHO HAS 192.168.1.1?", out.join(""), "A laptop at the front sends dotted waves across the plate to three devices: a phone, a printer and a router. Only the router answers: a lit card rises from it, marked IS AT.");
+}
+
+// ---------- Lesson 10, Ports: one server, a door for each program, a packet at one of them ----------
+function portsSpot() {
+  const out = [];
+  // The cable in from the left edge, along the floor to the server's foot.
+  out.push(tubeOf(tubePieces([[-112, 24, 1.6], [-28, 24, 1.6], [-28, -4, 1.6]], 1.9, P, { maxLength: 16 })));
+  // The server: one tall box, its front a column of numbered doors, a light beside each. A program listens behind
+  // every lit one; 3389’s is dark.
+  const B = { x: -40, y: -52, w: 84, d: 42, r: 2.4 }, BH = 78, F = B.y + B.d;
+  out.push(S(k.slabOf({ x: B.x - 3, y: B.y - 3, w: B.w + 6, d: B.d + 6, r: 3 }, 0, 2, P, 3, 0.4), { tone: "lo" }));
+  out.push(S(k.slabOf(B, 2, BH, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(B, BH - 3, P, 3), { tone: "faint" }) }));
+  out.push(lines([0, 1, 2, 3, 4].map((i) => [[B.x + 10, B.y + 8 + i * 6], [B.x + B.w - 10, B.y + 8 + i * 6]]), BH + 2));
+  let face = "";
+  ["22", "80", "443", "3389"].forEach((n, i) => {
+    const z = 64 - i * 15;
+    face += rect("lm-inlay", B.x + 5, z - 5, B.w - 10, 12, 1.6) + `<text class="lm-rule" x="${n1(B.x + 10)}" y="${n1(-(z - 0.2))}">${n}</text>` + rect("lm-slot", B.x + 30, z - 1.4, 36, 3.8, 1.4) + `<circle class="lm-led${i < 3 ? " on" : ""}" cx="${n1(B.x + B.w - 10)}" cy="${n1(-(z + 0.5))}" r="1.6"/>`;
+  });
+  out.push(onFaceY(F, face));
+  // A packet, half through the door marked 80: the lit part.
+  out.push(S(k.slabOf({ x: B.x + 34, y: F - 5, w: 28, d: 14, r: 1 }, 48, 3, P, 3, 0.4), { tone: "hi", lit: true }));
+  return figure("ports", "ONE ADDRESS · MANY PORTS", out.join(""), "A tall server with four numbered doors down its front: 22, 80, 443 and 3389. A light beside the first three is on; 3389’s is dark. A lit packet is halfway through door 80.");
+}
+
+// ---------- Lesson 12, NAT: the router swaps the inside address for its own on the way out ----------
+function natSpot() {
+  const out = [];
+  // The home side's cable from the laptop to the router's front, and the one way out, to the right edge.
+  out.push(tubeOf([[[-58, 24], [-4, 24], [-4, -4]], [[44, -22], [112, -22]]].flatMap((list) => tubePieces(list.map(([x, y]) => [x, y, 1.4]), 1.5, P, { maxLength: 16 }))));
+  // Two at home share it: a phone on its dock at the back, and the laptop.
+  const DK = { x: -96, y: -62, w: 22, d: 13, r: 3 }, PH = { x: -92.5, y: -59.4, w: 15, d: 2.8, r: 1.1 };
+  out.push(S(k.slabOf(DK, 0, 2.6, P, 4, 0.5), { tone: "mid" }), S(k.slabOf(PH, 2.6, 30, P, 3, 0.5), { tone: "hi" }), onFaceY(PH.y + PH.d, rect("lm-void", PH.x + 1.2, 5.4, PH.w - 2.4, 24.4, 1) + rect("lm-slot", PH.x + PH.w / 2 - 2, 30.6, 4, 1, 0.5)));
+  out.push(router({ x: -20, y: -40, w: 62, d: 34, r: 5 }, { lit: [0, 1, 2] }));
+  const lap = laptop({ x: -108, y: 6, w: 50, d: 34, r: 4 }, 30, { keysX: 7 });
+  out.push(lap.svg, onFaceY(lap.face, rect("lm-void", lap.x0, lap.z0, lap.w, lap.h, 0.8) + rect("lm-slot", lap.x0 + 3, lap.z0 + lap.h - 5, 18, 1.4, 0.7) + rect("lm-slot", lap.x0 + 3, lap.z0 + lap.h - 8.4, 26, 1.4, 0.7)));
+  // The swap, as a dotted arc over the router, from the inside address to the outside one.
+  const arc = []; for (let i = 0; i <= 24; i++) { const s = i / 24; arc.push([-20 + 78 * s, 11.5 - 40 * s, 27.4 + 16 * Math.sin(Math.PI * s)]); }
+  out.push(L(k.pathOf(arc.map(at)), { tone: "hi", dotted: true }));
+  const tag = (T, z, text, lit) => S(k.slabOf(T, z, 2.4, P, 3, 0.5), { tone: "hi", lit }) + onTopAt(z + 2.4, `<text class="${lit ? "lm-tagt" : "lm-pkt-t"}" x="${T.x + 3}" y="${T.y + 7.4}">${text}</text>`);
+  // Inside, over the laptop's cable: its private address. Outside, over the cable out: the router's public one, lit.
+  out.push(tag({ x: -56, y: 6, w: 36, d: 11, r: 2 }, 25, "192.168.1.100", false));
+  out.push(`<path class="lm-shadow" d="${k.planOutline({ x: 62, y: -30, w: 32, d: 9, r: 3 }, 0, P, 4)}"/>`);
+  out.push(tag({ x: 58, y: -34, w: 38, d: 11, r: 2 }, 25, "198.51.100.23", true));
+  return figure("nat", "PRIVATE IN · PUBLIC OUT", out.join(""), "A home router in the middle, with a laptop and a phone behind it and one cable out to the right. Over the laptop’s cable floats a tag with its private address, 192.168.1.100; over the cable out, a lit tag with the router’s public address, 198.51.100.23. A dotted arc joins them over the router.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

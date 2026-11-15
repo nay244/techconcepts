@@ -6,10 +6,14 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawNetMap, type NetMapData } from '../../art/scenes/net-map';
 import { NET_MAP_LAYERS } from '../../art/scenes/net-map-layers';
 import { routerFixture } from '../../content/router-fixture';
-import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
+import { arpFixture, natFixture, portsFixture } from '../../content/batch1-fixtures';
+import type { Cue, Lesson, MessageEvent, SceneEvent, Unit } from '../../content/schema';
 import { usePlayback } from '../../engine/playback';
-import type { AppliedCue } from '../../engine/timeline';
-import type { PlayOptions, SceneDriver, SceneView } from '../driver';
+import { deriveState, slotsFor, stepEvents, type AppliedCue } from '../../engine/timeline';
+import { showSweep } from '../../test/show-sweep';
+import { sha256 } from '../../test/figure-hash';
+import { sceneViewOf, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
+import { withoutD11 } from '../../test/svg-groups';
 import { DRIVERS } from './index';
 import { netMapDriver, parseConn } from './net-map';
 
@@ -540,18 +544,20 @@ function scenarios(): { event: SceneEvent; before: SceneView }[] {
   };
   // Router's unit: the resolver hidden from the start, a strip on each internet router, a table event or two, a router
   // dropping a packet (the DROPPED mark stays) and the note that comes back over it.
-  const router = routerFixture().units[0]!;
-  const routerEvents = router.steps.flatMap((step) => step.events);
-  const routerRun = (() => {
-    let before = view({ layers: router.scene.layers, labels: router.scene.labels, start: router.scene.start });
-    return routerEvents.map((event) => {
+  const unitRun = (unit: Unit) => {
+    let before = view({ layers: unit.scene.layers, labels: unit.scene.labels, start: unit.scene.start });
+    return unit.steps.flatMap((step) => step.events).map((event) => {
       const at = { event, before };
       before = after(before, event);
       return at;
     });
-  })();
+  };
+  // D11's three units: ARP's broadcast and row that leaves, Ports' closed port, NAT's phone, stranger and fast replies.
   return [
-    ...routerRun,
+    ...unitRun(routerFixture().units[0]!),
+    ...unitRun(arpFixture().units[0]!),
+    ...unitRun(portsFixture().units[0]!),
+    ...unitRun(natFixture().units[0]!),
     ...run(['http:web'], web),
     ...run(['smtp:out', 'smtp:in'], mail),
     ...run(['ftp:files'], files),
@@ -575,7 +581,7 @@ test('under reduced motion, play leaves the figure exactly as show would after e
     shown.driver.show(after(before, event));
     expect(looks(played.root), event.id).toBe(looks(shown.root));
   }
-});
+}, 30_000);
 
 test('played in full, each event leaves the figure as show would after it', async () => {
   // One map plays every event in turn, as the console's does: its show must clear whatever the last play left.
@@ -596,7 +602,7 @@ test('played in full, each event leaves the figure as show would after it', asyn
     shown.driver.show(after(before, event));
     expect(looks(played.root), event.id).toBe(looks(shown.root));
   }
-});
+}, 30_000);
 
 test('a letter leaves its tray as it is sent, not when it lands', () => {
   const { root, driver } = mount();
@@ -744,7 +750,7 @@ test('What is IP’s scene, with no strip labels and no hide, shows no strip and
   const { root, driver } = mount();
   driver.show(view({ layers: ['ip:web'], labels: { laptop: 'Sending a packet', url: 'example.net', router: '192.168.1.1 inside\n198.51.100.23 outside' } }));
   expect(stripWords(root)).toEqual([null, null, null, null, null]);
-  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
   expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
   expect(part(root, 'nm-discard').style.opacity).toBe('0');
 });
@@ -754,7 +760,7 @@ test('a hidden-resolver start and then a start without it brings the resolver ba
   driver.show(routerView());
   expect(hiddenBases(root).every(Boolean)).toBe(true);
   driver.show(view({ layers: ['ip:web'] }));
-  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
   expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
   expect(stripWords(root)).toEqual([null, null, null, null, null]);
   driver.show(routerView());
@@ -764,8 +770,9 @@ test('a hidden-resolver start and then a start without it brings the resolver ba
 test('`hide` takes only the resolver and `drop` only a router: anything else throws before the figure changes', () => {
   const { root, driver } = mount();
   expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'laptop' }] }))).toThrow(/cannot hide "laptop"/);
+  expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'phone' }] }))).toThrow(/cannot hide "phone"/);
   expect(() => driver.show(view({ cues: [{ cue: 'drop', arg: 'zz' }] }))).toThrow(/no router "zz"/);
-  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
 });
 
 /** A box in the figure's units: from the attributes, as the figure draws it. */
@@ -870,7 +877,9 @@ test('on the map a replace takes 600 ms, a match 900, a note that drops a packet
   const table = (op: 'replace' | 'match' | 'add' | 'update' | 'remove' | 'clear'): SceneEvent => ({ type: 'table', id: 't', table: 'routes', op, summary: 's' });
   expect(netMapDriver.duration(table('replace'), data)).toBe(600);
   expect(netMapDriver.duration(table('match'), data)).toBe(900);
-  for (const op of ['add', 'update', 'remove', 'clear'] as const) expect(netMapDriver.duration(table(op), data), op).toBe(0);
+  // A remove takes 600 too, so ARP's row is seen before it goes (D11); an add, an update and a clear land at once.
+  expect(netMapDriver.duration(table('remove'), data)).toBe(600);
+  for (const op of ['add', 'update', 'clear'] as const) expect(netMapDriver.duration(table(op), data), op).toBe(0);
   const note = (cues?: Cue[]): SceneEvent => ({ type: 'note', id: 'n', log: {}, plain: 'p', ...(cues === undefined ? {} : { cues }) });
   expect(netMapDriver.duration(note([{ cue: 'drop', arg: 'a' }]), data)).toBe(900);
   expect(netMapDriver.duration(note(), data)).toBe(0);
@@ -931,5 +940,199 @@ test('the figure drawn for Router’s lesson is the approved prototype’s, tag 
   const proto: string = readFileSync('prototypes/d10-router.html', 'utf8');
   const theirs = /<svg data-figure="net-map"[\s\S]*?<\/svg>(?=<\/div>)/.exec(proto)![0];
   const lines = (svg: string): string[] => svg.split('><');
-  expect(lines(drawNetMap(['ip:web']).svg)).toEqual(lines(theirs));
+  // D11's phone is drawn hidden on every map; the prototype was drawn before it, so its groups come out whole first.
+  expect(lines(withoutD11(drawNetMap(['ip:web']).svg))).toEqual(lines(theirs));
+});
+
+// ---------------------------------------------------------------- D11 / B13: the phone, the stranger, Ports' server, ARP's row that leaves
+
+const phoneGroups = (root: SVGSVGElement): SVGElement[] => [...root.querySelectorAll<SVGElement>('[data-base="phone"]')];
+const flatLength = (route: number[][]): number => route.slice(1).reduce((sum, p, i) => sum + Math.hypot(p[0]! - route[i]![0]!, p[1]! - route[i]![1]!), 0);
+/** The views of a lesson at every position, before its step's events and after all of them. */
+function everyView(lesson: Lesson): SceneView[] {
+  const views: SceneView[] = [];
+  for (let p = 0; p < slotsFor(lesson).length; p++) {
+    const count = stepEvents(lesson, p).length;
+    for (const n of new Set([0, count])) views.push(sceneViewOf(lesson.units[slotsFor(lesson)[p]!.unit]!, deriveState(lesson, p, n)));
+  }
+  return views;
+}
+const lessonModules = import.meta.glob<Lesson>(['../../content/lessons/*.ts', '!../../content/lessons/*.test.ts'], { import: 'default', eager: true });
+/** The lessons that existed before D11 (the real ARP, Ports and NAT are checked on their own), with Router's fixture. */
+const D11_LESSONS = ['arp', 'ports', 'nat'];
+const otherNetMapLessons = (): Lesson[] => [...Object.values(lessonModules).filter((l) => l.figure === 'net-map' && !D11_LESSONS.includes(l.slug)), routerFixture()];
+
+test('the phone is hidden at every position of What is IP, Router and every tour unit, and shown at every position of NAT’s', () => {
+  const others = otherNetMapLessons();
+  expect(others.length).toBeGreaterThanOrEqual(15);
+  const { root, driver } = mount();
+  for (const lesson of others) {
+    for (const v of everyView(lesson)) {
+      driver.show(v);
+      expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden')), lesson.slug).toEqual([true, true]);
+    }
+  }
+  // NAT's fixture and the real lesson: both show the phone at every position.
+  const nat = natFixture();
+  const real = Object.values(lessonModules).find((l) => l.slug === 'nat')!;
+  for (const lesson of [nat, real]) {
+    for (const v of everyView(lesson)) {
+      driver.show(v);
+      expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden')), lesson.slug).toEqual([false, false]);
+    }
+  }
+  // ARP and Ports, real, never show it.
+  for (const slug of ['arp', 'ports']) {
+    for (const v of everyView(Object.values(lessonModules).find((l) => l.slug === slug)!)) {
+      driver.show(v);
+      expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden')), slug).toEqual([true, true]);
+    }
+  }
+  // NAT and then What is IP on one driver: the phone is hidden again.
+  driver.show(everyView(nat)[0]!);
+  driver.show(everyView(whatIpLesson())[0]!);
+  expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden'))).toEqual([true, true]);
+});
+
+const whatIpLesson = (): Lesson => Object.values(lessonModules).find((l) => l.slug === 'what-is-ip')!;
+
+test('the figure’s description names the phone and the stranger only while they are shown', async () => {
+  const label = (root: SVGSVGElement) => root.getAttribute('aria-label');
+  const drawnLabel = /aria-label="([^"]+)"/.exec(drawn.svg)![1]!.replaceAll('&#39;', '’');
+  const { root, driver } = mount();
+  // What is IP's is today's, Router's is today's with no resolver sentence.
+  driver.show(everyView(whatIpLesson())[0]!);
+  expect(label(root)).toBe(drawnLabel);
+  driver.show(everyView(routerFixture())[0]!);
+  expect(label(root)).toBe(drawnLabel.replace(' Behind it, the DNS resolver, a card-index cabinet.', ''));
+  // Ports shows a server and no phone.
+  driver.show(everyView(portsFixture())[0]!);
+  expect(label(root)).not.toMatch(/phone|someone else/i);
+  // NAT's, exactly, at the Overview and after a play of step 5's first event.
+  const NAT = 'A network map. On the left, your home: a laptop, a phone and their router. In the middle, the internet: five routers joined by cables. On the right, the servers this protocol talks to. Behind the internet, someone else’s computer, on another network.';
+  const nat = natFixture();
+  const views = everyView(nat);
+  driver.show(views[0]!);
+  expect(label(root)).toBe(NAT);
+  const lastStep = slotsFor(nat).length - 3;
+  const step5 = sceneViewOf(nat.units[0]!, deriveState(nat, lastStep, 0));
+  driver.show(step5);
+  const event = stepEvents(nat, lastStep)[0]!;
+  const p = driver.play(event, step5, options({ reducedMotion: true }));
+  await vi.runAllTimersAsync();
+  await p;
+  expect(label(root)).toBe(NAT);
+});
+
+test('the home lights flash for the phone’s messages, and its screen lights when a message lands on it', async () => {
+  const { root, driver } = mount();
+  const before = view({ layers: ['tcp:web'], start: [{ cue: 'show', arg: 'phone' }] });
+  driver.show(before);
+  void driver.play(msg({ from: 'phone', to: 'router', tag: 'PACKET' }), before, options());
+  for (const i of [1, 2, 3]) expect(lit(root, `nm-home-led-${i}`), `led ${i}`).toBe(true);
+  expect(lit(root, 'nm-busy-phone')).toBe(true);
+  driver.show(before);
+
+  const reply = msg({ from: 'router', to: 'phone', tag: 'REPLY', kind: 'response' });
+  let done = false;
+  const p = driver.play(reply, before, options()).then(() => (done = true));
+  const travel = 500 + 4 * flatLength(data.routes['router>phone']!);
+  frameAt(0);
+  expect(lit(root, 'nm-busy-phone')).toBe(false);
+  frameAt(travel);
+  await flush();
+  expect(lit(root, 'nm-busy-phone')).toBe(true);
+  await vi.runAllTimersAsync();
+  await p;
+  expect([lit(root, 'nm-busy-phone'), done]).toEqual([false, true]);
+});
+
+test('a message between the phone and a place that is not home’s router still flashes the home lights', () => {
+  const { root, driver } = mount();
+  const before = view({ layers: ['tcp:web'], start: [{ cue: 'show', arg: 'phone' }] });
+  driver.show(before);
+  void driver.play(msg({ from: 'phone', to: 'web', tag: 'PACKET' }), before, options());
+  expect(lit(root, 'nm-home-led-1')).toBe(true);
+});
+
+test('the stranger’s screen lights as it sends and goes off a quarter of the way along; the home lights flash', () => {
+  const { root, driver } = mount();
+  const before = view({ layers: ['tcp:web', 'nat:stranger'] });
+  driver.show(before);
+  void driver.play(msg({ from: 'stranger', to: 'router', tag: 'PACKET' }), before, options());
+  expect(lit(root, 'nm-nat-busy-stranger')).toBe(true);
+  expect(lit(root, 'nm-home-led-2')).toBe(true);
+  frameAt(0);
+  frameAt((500 + 4 * flatLength(data.routes['stranger>router']!)) * 0.5);
+  expect(lit(root, 'nm-nat-busy-stranger')).toBe(false);
+});
+
+test('`show` takes only a part the map leaves off: anything else throws before the figure changes', () => {
+  const { root, driver } = mount();
+  expect(() => driver.show(view({ start: [{ cue: 'show', arg: 'resolver' }] }))).toThrow(/cannot show "resolver"/);
+  expect(() => driver.show(view({ start: [{ cue: 'show', arg: 'laptop' }] }))).toThrow(/cannot show "laptop"/);
+  expect(phoneGroups(root).every((g) => g.hasAttribute('data-hidden'))).toBe(true);
+});
+
+test('the table waits: a remove takes 600 ms at 1× and 300 at 2×, so the row is seen before it goes', () => {
+  vi.useFakeTimers();
+  const lesson = arpFixture();
+  const at = (hook: ReturnType<typeof renderHook<ReturnType<typeof usePlayback>, unknown>>) => `${hook.result.current[0].position}:${hook.result.current[0].eventIndex}`;
+  for (const [cycles, ms] of [[0, 600], [2, 300]] as const) {
+    const hook = renderHook(() => usePlayback(lesson, (event) => netMapDriver.duration(event, data)));
+    act(() => hook.result.current[1]({ type: 'go', position: 5 } as never));
+    for (let i = 0; i < cycles; i++) act(() => hook.result.current[1]({ type: 'cycleSpeed' } as never));
+    act(() => hook.result.current[1]({ type: 'toggle' } as never));
+    expect(at(hook)).toBe('5:0');
+    act(() => vi.advanceTimersByTime(ms - 1));
+    expect(at(hook), `${ms - 1} ms`).toBe('5:0');
+    act(() => vi.advanceTimersByTime(1));
+    expect(at(hook), `${ms} ms`).toBe('5:1');
+    hook.unmount();
+  }
+  vi.useRealTimers();
+});
+
+test('every existing net-map unit takes as long as it did before D11: no step’s events changed their wait, and none removes a row', async () => {
+  const sums: Record<string, number> = {};
+  for (const lesson of otherNetMapLessons()) {
+    for (const unit of lesson.units) {
+      for (const step of unit.steps) {
+        for (const e of step.events) if (e.type === 'table') expect(e.op, `${lesson.slug} ${step.id}`).not.toBe('remove');
+        sums[`${lesson.slug}/${unit.id}/${step.id}`] = step.events.reduce((total, e) => total + netMapDriver.duration(e, data), 0);
+      }
+    }
+  }
+  expect(await sha256(JSON.stringify(sums))).toBe('db8eecdec25bfa9331ea863ed0c7c4f91f320796ffe5cbc7191f0f04fffb287b');
+});
+
+test('under full and reduced motion, a broadcast’s ring is left still at ARP’s steps 1 and 5, and Ports’ RST leaves no lost trail', async () => {
+  const arp = arpFixture();
+  for (const step of [1, 5]) {
+    const { root, driver } = mount();
+    const before = sceneViewOf(arp.units[0]!, deriveState(arp, step, stepEvents(arp, step).length - (step === 1 ? 1 : 3)));
+    driver.show(before);
+    const event = stepEvents(arp, step).find((e) => e.type === 'message' && e.kind === 'broadcast')!;
+    const p = driver.play(event, before, options({ reducedMotion: true }));
+    await flush();
+    expect(opacity(part(root, 'nm-ring')), `step ${step}`).toBe('0.6');
+    await vi.runAllTimersAsync();
+    await p;
+  }
+  const ports = portsFixture();
+  const { root, driver } = mount();
+  const rst = stepEvents(ports, 4).find((e) => e.id === 's4-rst')!;
+  const before = sceneViewOf(ports.units[0]!, deriveState(ports, 4, 2));
+  driver.show(before);
+  const p = driver.play(rst, before, options({ reducedMotion: true }));
+  await vi.runAllTimersAsync();
+  await p;
+  expect(part(root, 'nm-trail').classList.contains('lost')).toBe(false);
+  expect(opacity(part(root, 'nm-drop'))).toBe('0');
+});
+
+test.each([['arp', arpFixture], ['ports', portsFixture], ['nat', natFixture]] as const)('the show sweep leaves %s’s figure as a fresh driver draws it, at every moment', (_name, fixture) => {
+  vi.useRealTimers();
+  const lesson = fixture();
+  expect(showSweep(lesson)).toBeGreaterThanOrEqual(20);
 });

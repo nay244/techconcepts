@@ -11,10 +11,12 @@ export interface CalloutLine {
 }
 
 interface PlateBase {
-  /** Where the plate stands: E for one big plate right of the internet, SE for a smaller one in front of it. */
-  slot: 'E' | 'SE';
+  /** Where the plate stands: E for one big plate right of the internet, SE for a smaller one in front of it, N for a small one behind the internet. */
+  slot: 'E' | 'SE' | 'N';
   /** The words engraved on the plate's front edge. */
   label: string;
+  /** A sentence the figure's description adds while the layer is shown. It draws nothing. */
+  describe?: string;
   /** The callout under the plate, or where `at` puts it. */
   lines: CalloutLine[];
   /** Where the callout's first line starts, on the figure, when it is not under the right-hand plate. */
@@ -35,6 +37,12 @@ export type ServerPlate =
       /** The callout points at the top of its rack, not the plate's front corner. */
       anchorTop?: boolean;
     })
+  | (PlateBase & {
+      kind: 'pc';
+      site: string;
+      /** The internet router its cable runs to. */
+      puck: 'a';
+    })
   | (PlateBase & { kind: 'names' });
 
 /** The root servers, the servers for .app, and the site's own name server, as the names plate draws them. */
@@ -46,8 +54,14 @@ export const NET_MAP_TAG_MAX = 16;
 /** The laptop's address as the map draws it, before a unit's labels or an `addr` cue change it. */
 export const NET_MAP_LAPTOP_ADDR = '192.168.1.100';
 
-/** The places every protocol's map has: home (the laptop and its router), the resolver, and the internet's five routers. */
-export const NET_MAP_BASE_PLACES = ['laptop', 'router', 'resolver', 'isp', 'a', 'b', 'c', 'd'];
+/** The places every protocol's map has: home (the laptop, its router and the phone, which a unit shows), the resolver, and the internet's five routers. */
+export const NET_MAP_BASE_PLACES = ['laptop', 'router', 'resolver', 'isp', 'a', 'b', 'c', 'd', 'phone'];
+
+/** The parts of home the map leaves off until a unit's start shows them (`show phone`). */
+export const NET_MAP_OPTIONAL = ['phone'];
+
+/** The phone's address as the map draws it. */
+export const NET_MAP_PHONE_ADDR = '192.168.1.101';
 
 /** The internet's five routers, which a unit's labels may name on a strip and a `drop` cue may mark. */
 export const NET_MAP_ROUTERS = ['isp', 'a', 'b', 'c', 'd'];
@@ -125,4 +139,15 @@ export const NET_MAP_LAYERS: Record<string, ServerPlate> = {
   'ftp:files': host('files', 'FILES.EXAMPLE.NET', 'File server', '203.0.113.21 · port 21'),
   'ssh:host': host('host', 'SRV.EXAMPLE.NET', 'A server', '203.0.113.22 · port 22'),
   'tls:web': web('TECHCONCEPTS.APP', '198.51.100.7 · port 443'),
+  'ports:server': host('server', 'EXAMPLE.NET', 'A server', '203.0.113.80'),
+  'nat:stranger': {
+    kind: 'pc',
+    slot: 'N',
+    site: 'stranger',
+    puck: 'a',
+    label: 'ANOTHER NETWORK',
+    describe: 'Behind the internet, someone else’s computer, on another network.',
+    at: [420, -24],
+    lines: [line('nm-name', 'Someone else'), line('nm-addr', '192.0.2.66')],
+  },
 };

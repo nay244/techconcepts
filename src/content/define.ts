@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { NET_MAP_LAYERS, plateSites } from '../art/scenes/net-map-layers';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import type { FigureParts } from '../art/scenes/types';
 import { tablesOf } from '../engine/tables';
@@ -169,6 +170,7 @@ function checkStart(c: UnitContext, at: string): void {
 function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext, atStart = false): void {
   // `hide` is for a scene's start alone; `drop` is for an event alone, and one to an event.
   if (!atStart && (cues ?? []).some((q) => q.cue === 'hide')) c.issues.push(`${where}: cue "hide" is for a scene's start; an event cannot hide a part.`);
+  if (!atStart && (cues ?? []).some((q) => q.cue === 'show')) c.issues.push(`${where}: cue "show" is for a scene's start; an event cannot show a part.`);
   if (atStart && (cues ?? []).some((q) => q.cue === 'drop')) c.issues.push(`${where}: cue "drop" is for an event; the start cannot drop a packet.`);
   if ((cues ?? []).filter((q) => q.cue === 'drop').length > 1) c.issues.push(`${where}: an event has at most one "drop" cue.`);
   for (const { cue, arg } of cues ?? []) {
@@ -259,6 +261,19 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   // A part the scene's start hides is not on the map, so no message can start or end there.
   for (const { cue, arg } of c.unit.scene.start) {
     if (cue === 'hide' && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which the scene's start hides.`);
+  }
+  // On the network map, the phone is drawn only once the start shows it, and a server or the stranger only with its layer.
+  if (figure === 'net-map') {
+    const shown = c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'phone');
+    for (const [role, id] of [['sent from', e.from], ['sent to', e.to]] as const) {
+      if (id === 'phone' && !shown) issues.push(`${where} is ${role} "phone", which the scene's start does not show (cue "show phone").`);
+      for (const site of ['server', 'stranger']) {
+        const layer = Object.entries(NET_MAP_LAYERS).find(([, plate]) => plateSites(plate).includes(site))?.[0];
+        if (id === site && layer !== undefined && !c.unit.scene.layers.includes(layer)) {
+          issues.push(`${where} is ${role} "${site}", which needs the layer "${layer}" in the scene.`);
+        }
+      }
+    }
   }
   if (c.parts.routes !== undefined && !c.parts.routes.includes(`${e.from}>${e.to}`)) {
     issues.push(`${where} rides from "${e.from}" to "${e.to}", a way the ${figure} figure does not have.`);

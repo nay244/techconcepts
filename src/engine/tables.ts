@@ -33,7 +33,7 @@ export interface TableState {
    * What the latest event of the current step found, for a `match` with `keys`; each lasts one step, as `highlight`
    * does, and is absent otherwise. `candidates` are the rows that all match, before one wins; `matches` are the rows
    * that matched, which keep a "match" tag while the winner is highlighted; `noMatch` is the words of a match that
-   * found nothing.
+   * found nothing; an `add` clears `noMatch` alone.
    */
   candidates?: string[];
   matches?: string[];
@@ -111,6 +111,8 @@ export function highlightFor(def: TableDef, e: TableEvent): TableState['highligh
  * earlier step's events, so each lasts one step.
  */
 export function markFor(state: TableState, e: TableEvent): void {
+  // An add answers a miss earlier in the step, so the no-match row goes; the other marks stay.
+  if (e.op === 'add') delete state.noMatch;
   if (e.op !== 'match' && e.op !== 'replace') return;
   delete state.candidates;
   delete state.matches;

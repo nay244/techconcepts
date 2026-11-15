@@ -10,6 +10,9 @@ const FIGURES: Record<string, () => string> = {
   dhcp: () => spot('dhcp'),
   firewalls: () => spot('firewall'),
   router: () => spot('router'),
+  arp: () => spot('arp'),
+  ports: () => spot('ports'),
+  nat: () => spot('nat'),
 };
 
 /**

@@ -218,3 +218,24 @@ test('a match with only a key marks no rows, and a replace clears every mark', (
   markFor(state!, event('add', { row: { ip: 'x', mac: 'y' } }));
   expect(state!.candidates).toEqual(['a', 'b']);
 });
+
+// D11 / B13, attack case 15: an add answers the miss before it, in the same step, and touches nothing else.
+test('an add clears the no-match words and the highlight is the new row; candidates and matches stay; an update keeps no-match', () => {
+  const add = event('add', { row: { ip: '10.0.0.1', mac: 'AA' } });
+  const [state] = Object.values(initialTables([def]));
+  markFor(state!, event('match', { key: '', summary: 'Nothing for 10.0.0.1.' }));
+  expect(state!.noMatch).toBe('Nothing for 10.0.0.1.');
+  markFor(state!, add);
+  expect(state).not.toHaveProperty('noMatch');
+  expect(highlightFor(def, add)).toEqual({ key: '10.0.0.1', type: 'added' });
+
+  const [listed] = Object.values(initialTables([def]));
+  markFor(listed!, event('match', { keys: ['x', 'y'] }));
+  markFor(listed!, add);
+  expect(listed).toMatchObject({ candidates: ['x', 'y'], matches: ['x', 'y'] });
+
+  const [kept] = Object.values(initialTables([def]));
+  markFor(kept!, event('match', { key: '', summary: 'still nothing' }));
+  markFor(kept!, event('update', { key: '10.0.0.1', row: { mac: 'BB' } }));
+  expect(kept!.noMatch).toBe('still nothing');
+});

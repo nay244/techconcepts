@@ -34,3 +34,9 @@ test('Router’s card is its spot, drawn for a lesson that has no home track yet
   expect(lessonFigure(entry)).toContain('lm-router');
   expect(lessonFigure(entry)).toBe(spot('router'));
 });
+
+test.each(['arp', 'ports', 'nat'] as const)('%s’s card is its spot, drawn for a lesson that has no home track yet, and does not throw', (slug) => {
+  const entry = { available: true, key: slug, slug } as unknown as AvailableSummary;
+  expect(() => lessonFigure(entry)).not.toThrow();
+  expect(lessonFigure(entry)).toBe(spot(slug));
+});

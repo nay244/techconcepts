@@ -5,6 +5,7 @@ import { getEntries, getLesson, trackTotals } from '../content/registry';
 import { SOURCES } from '../content/sources';
 import { tracks } from '../content/tracks';
 import type { Lesson } from '../content/schema';
+import { groupsOf, PHONE_OPEN } from '../test/svg-groups';
 import { numberedSources } from '../lesson/sourceNumbers';
 import { lessonStamp } from './checked';
 import { foldSources, homeDemo, homeStops, leadText, litSteps, sourceName } from './home';
@@ -124,8 +125,8 @@ test('Home’s stops are the tracks that have lessons, in the site’s order, an
   expect(stops.map((s) => s.order)).toEqual(['Start here', 'Then go deeper']);
 });
 
-test('Home says 14 lessons and 9 of 20 lessons ready', () => {
-  expect(homeStops().map((s) => s.count)).toEqual(['14 lessons', '9 of 20 lessons ready']);
+test('Home says 14 lessons and 12 of 20 lessons ready', () => {
+  expect(homeStops().map((s) => s.count)).toEqual(['14 lessons', '12 of 20 lessons ready']);
 });
 
 test('a stop counts its lessons from the content', () => {
@@ -292,6 +293,9 @@ test('Home’s still map shows no name strip, no DROPPED mark and every part of 
   const { scene } = homeDemo();
   expect([...scene.matchAll(/<g class="nm-strip"[^>]*>/g)].every((m) => m[0].includes('display="none"'))).toBe(true);
   expect(scene).toMatch(/id="nm-discard" style="opacity:0"/);
-  expect(scene).not.toContain('data-hidden');
+  // The phone is the one part drawn hidden (D11): both its groups, and nothing else.
+  const { groups, rest } = groupsOf(scene, PHONE_OPEN);
+  expect(groups).toHaveLength(2);
+  expect(rest).not.toContain('data-hidden');
   expect(scene).toContain('<g data-base="resolver">');
 });
