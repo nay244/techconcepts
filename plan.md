@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 14: Networking Concepts' batch 3, Packets, Switch and Load Balancers
 
-**Status: the owner's go is given** (2026-11-15, direction 2.63 and 2.64): "Start batch 3" in job 13's session, then "Go" on this plan. The design gate stays: the three scenes and card arts come to the owner as clickable prototypes with their spec, and nothing is built until the owner approves them. The outlines and the design go ahead without another go.
+**Status: D13 approved by the owner (2026-11-15, "Approve D13", direction 2.66); the build is under way.** **The owner's go is given** (2026-11-15, direction 2.63 and 2.64): "Start batch 3" in job 13's session, then "Go" on this plan. The design gate stays: the three scenes and card arts come to the owner as clickable prototypes with their spec, and nothing is built until the owner approves them. The outlines and the design go ahead without another go.
 
 ## Inputs
 
@@ -44,8 +44,8 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 8. **The read before the check, widened** (job 13): it tests every `defining: true` against what the document actually defines, every Go deeper sentence for two publishers, and the absolutes ("every", "only", one range, one number) in the facts most items trace to. Added to `docs/briefs/analyst-read-before-check.md` in this plan's commit.
 9. **Analysts get private scratch folders** (`.superpowers/analysis/<slug>/scratch/`) and check that `cite()` accepts a citation form before proposing it.
 10. **Agreement with checked words.** No checked lesson's or glossary entry's words change. A line at odds that changing the new lesson cannot settle stops the work.
-11. **One model lower where job 13 said so.** An author's fix that is exactly what the checker named (a citation added, a marker removed, a few words) goes to a Haiku `author`. The counts (B15b) go to a Haiku `builder`, with the `e2e` specs following `e2e/batch2.ts`; if it fails, Sonnet.
-12. **The counts move once.** After the three lessons are merged into `job14/batch`, B15b moves every count S16 §5 lists to 18 ready, 28 lessons and 28 reports, adds `e2e/{packets,switch,load-balancers}.spec.ts`, and sets `NO_SEQUENCE`.
+11. **One model lower where job 13 said so.** An author's fix that is exactly what the checker named (a citation added, a marker removed, a few words) goes to a Haiku `author`. The counts (B16) go to a Haiku `builder`, with the `e2e` specs following `e2e/batch2.ts`; if it fails, Sonnet.
+12. **The counts move once.** After the three lessons are merged into `job14/batch`, B16 moves every count S16 §5 lists to 18 ready, 28 lessons and 28 reports, adds `e2e/{packets,switch,load-balancers}.spec.ts`, and sets `NO_SEQUENCE`.
 13. **No glossary ties** (2.48). **Held for the owner from job 13, untouched:** Subnetting's bits board scrolling at 1440, DHCP's RFC 3927 `#abstract` citation, the net-map lessons' no-JavaScript fallback.
 
 ## Units
@@ -58,16 +58,16 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | D13a, D13b, D13c | design | designer (Opus 5.5), one a scene | Decision 3. | Each scene's steps traced to the outline; each SVG and prototype looked at in both themes at 375 and 1440. |
 | L25-w, L26-w, L27-w | content | the lesson's analyst, continued | Decision 5: the prototype's words. | Rulings applied by the designer. |
 | **Gate** | design | **the owner** | Approves D13 (or sends it back). | The owner's words, recorded. |
-| B15 spec | build | reviewer (Opus) | Holes and attack cases for D13; `prototypes/d13-cases.md`. | Holes with one right answer closed as errata. |
-| B15 | build | builder (Sonnet) | What the three scenes need on `job14/batch`: the net-map ability, the new figure or figures and drivers, panels, spots, `figures.ts`, fixtures. | Each case a test; spots equal to their `.svg`; `npm test`; build in budget. |
+| B15a spec, B15b spec, B15c spec | build | reviewer (Opus), one a spec, side by side | Holes and attack cases for `d13-packets.md`, `d13-switch.md`, `d13-load-balancers.md`; `prototypes/d13-<slug>-cases.md`. | Holes with one right answer closed as errata, numbered by the orchestrator. |
+| B15a, B15b, B15c | build | builder (Sonnet), one a scene, **one after another** on `job14/batch` | B15a Packets (the net-map `park`/`unpark` and `via`), B15b Switch (the `switch` figure), B15c Load Balancers (the `pool` figure): each applies its spec's Appendix A in order a, b, c, adds its cues, validator rules, spot, `figures.ts` line and a fixture. One builder at a time, so one writer for each shared file; three fresh builders so none compacts (as D13). | Each case a test; the spot equal to its `.svg`; `npm test`; build in budget. |
 | B15 review | build | reviewer (Opus) | The build against the specs, the prototypes, the SVGs and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
 | L25-b, L26-b, L27-b | content | author (Sonnet), one a lesson | `src/content/lessons/<slug>.ts` on `lesson/<slug>`, from the outline and the fixture. | The sheet prints; `astro check` clean; development tests fail only on the missing report and the counts. |
 | L25-p, L26-p, L27-p | content | the lesson's analyst, continued | The read before the check (decision 8). | Numbered rulings, applied. |
 | L25-c, L26-c, L27-c | content | a fresh fact-checker (Opus) a lesson | The check; a targeted re-check after a near-pass. | `--check` prints `Report OK`. |
-| B15b | build | builder (Haiku) | Decision 12. | `npm test`; the three new specs, `site.spec.ts`, `lesson.spec.ts` at d1440-dark and phone. |
+| B16 | build | builder (Haiku) | Decision 12. | `npm test`; the three new specs, `site.spec.ts`, `lesson.spec.ts` at d1440-dark and phone. |
 | F14 | end | orchestrator | `job14/batch` into `revamp`; CI's end-to-end pass; ledger, direction row, the owner's result. | `npm test`, `npm run build`, CI's e2e pass on `revamp`. |
 
-Order: the three outlines together; rulings and the registry commit; D13's three parts together; the prototype words read; **the gate**; B15's spec review; B15; the authors while B15 is reviewed; the reads; the checks; each lesson merged into `job14/batch` as it passes; B15b; F14. At most three heavy agents at once. Worktrees under `.superpowers/wt/` (`job14`, `packets`, `switch`, `load-balancers`), E2E ports 4481 to 4484.
+Order: the three outlines together; rulings and the registry commit; D13's three parts together; the prototype words read; **the gate**; the three spec reviews; B15a, B15b, B15c in turn, each lesson's author starting once its scene is built; one build review of the three; the reads; the checks; each lesson merged into `job14/batch` as it passes; B16; F14. At most three heavy agents at once. Worktrees under `.superpowers/wt/` (`job14`, `packets`, `switch`, `load-balancers`), E2E ports 4481 to 4484.
 
 ## Estimate
 
@@ -80,7 +80,7 @@ From job 13: a new lesson's content 0.73 to 1.19 million; three scenes with a cl
 | Three checks, and a re-check allowance | 0.5 to 0.9 million |
 | D13: three designers | 0.75 to 1.05 million |
 | B15: spec review, build, build review | 1.05 to 1.5 million |
-| B15b: counts and lesson specs | 0.05 to 0.15 million |
+| B16: counts and lesson specs | 0.05 to 0.15 million |
 | **After S16** | **4.0 to 5.8 million** |
 
 S16 spent 272,572. With it, **4.3 to 6.0 million**, under job 11's proposal of 5.5 to 7.0. The top meets the 6.0 million stop: if the batch nears it, the work stops for the owner as below.
