@@ -68,7 +68,7 @@ const TABLE_OP_FIELDS: Record<TableEvent['op'], ('row' | 'rows' | 'key')[]> = {
   add: ['row'],
   update: ['key', 'row'],
   remove: ['key'],
-  match: ['key'],
+  match: [],
   replace: ['rows'],
   clear: [],
 };
@@ -160,13 +160,17 @@ function checkStart(c: UnitContext, at: string): void {
     return;
   }
   const where = `${at}: the scene's start`;
-  checkCues(start, where, c);
+  checkCues(start, where, c, true);
   for (const { cue } of start) {
     if (STATUS_CUES.includes(cue)) c.issues.push(`${where}: cue "${cue}" sets the status, and a start may not; each step sets its own.`);
   }
 }
 
-function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext): void {
+function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext, atStart = false): void {
+  // `hide` is for a scene's start alone; `drop` is for an event alone, and one to an event.
+  if (!atStart && (cues ?? []).some((q) => q.cue === 'hide')) c.issues.push(`${where}: cue "hide" is for a scene's start; an event cannot hide a part.`);
+  if (atStart && (cues ?? []).some((q) => q.cue === 'drop')) c.issues.push(`${where}: cue "drop" is for an event; the start cannot drop a packet.`);
+  if ((cues ?? []).filter((q) => q.cue === 'drop').length > 1) c.issues.push(`${where}: an event has at most one "drop" cue.`);
   for (const { cue, arg } of cues ?? []) {
     const type = Object.hasOwn(c.parts.cues, cue) ? c.parts.cues[cue] : undefined;
     if (type === undefined) c.issues.push(`${where}: cue "${cue}" is not one the ${c.figure} figure has.`);
@@ -209,6 +213,19 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
     for (const field of TABLE_OP_FIELDS[e.op]) {
       if (e[field] === undefined) issues.push(`${where} (${e.op}) needs "${field}".`);
     }
+    // A match names the row it found (`key`, '' for none), or the rows that all match (`keys`), and the winner is one of them.
+    if (e.op === 'match') {
+      if (e.key === undefined && e.keys === undefined) issues.push(`${where} (match) needs "key" or "keys".`);
+      if (e.keys !== undefined && e.key !== undefined && !e.keys.includes(e.key)) {
+        issues.push(`${where} (match) has key "${e.key}", which is not one of its "keys".`);
+      }
+    }
+    if (e.keys !== undefined) {
+      if (e.op !== 'match') issues.push(`${where} (${e.op}) has "keys"; only a match names the rows that match.`);
+      for (const key of duplicates(e.keys)) issues.push(`${where} lists "${key}" twice in "keys".`);
+    }
+    // Whose table it is now changes with a replace, which brings the new rows.
+    if (e.by !== undefined && e.op !== 'replace') issues.push(`${where} (${e.op}) has "by"; only a replace says whose table it is.`);
     // Only a row an event adds or changes can be marked as a miss.
     if (e.miss !== undefined && e.op !== 'add' && e.op !== 'update') {
       issues.push(`${where} (${e.op}) has "miss"; only an add or an update marks its row as a miss.`);
@@ -239,6 +256,10 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   };
   place('is sent from', e.from);
   place('is sent to', e.to);
+  // A part the scene's start hides is not on the map, so no message can start or end there.
+  for (const { cue, arg } of c.unit.scene.start) {
+    if (cue === 'hide' && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which the scene's start hides.`);
+  }
   if (c.parts.routes !== undefined && !c.parts.routes.includes(`${e.from}>${e.to}`)) {
     issues.push(`${where} rides from "${e.from}" to "${e.to}", a way the ${figure} figure does not have.`);
   }

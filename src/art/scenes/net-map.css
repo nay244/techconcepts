@@ -46,6 +46,14 @@
 .nm .nm-conn { fill: none; stroke: var(--lit-b); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .5; }
 .nm .nm-conn.sealed { stroke: var(--lit-a); opacity: .8; stroke-width: 3.5px; filter: drop-shadow(0 0 2px var(--lit-b)); }
 .nm .nm-conn.alt { stroke: var(--lit-a); stroke-width: 2px; stroke-dasharray: 5 4; opacity: .85; }
+/* A router's name on a strip of label tape (a unit's labels isp, a, b, c and d), over the cables and pucks. */
+.nm .nm-strip rect { fill: var(--fig-bg); stroke: var(--line-strong); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.nm .nm-strip text { font: 700 12px / 1 var(--mono); fill: var(--ink-strong); }
+/* A packet a router threw away (the cue `drop <place>`): it takes the lost mark's ring, cross and pill, and stays on the router. */
+.nm .nm-discard { pointer-events: none; }
+.nm .nm-discard .nm-drop-t { font-size: 8px; }
+/* The resolver, left off the map by a unit that starts with `hide resolver`. */
+.nm [data-base][data-hidden] { display: none; }
 /* Reduced motion keeps every light, and only drops the fades. */
 @media (prefers-reduced-motion: reduce) {
   .nm .nm-glow, .nm .nm-busy, .nm .nm-hold, .nm [data-part], .nm .lm-led { transition: none; }

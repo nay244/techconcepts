@@ -24,6 +24,20 @@ export interface TableState {
   rows: Row[];
   highlight: { key: string; type: 'added' | 'updated' | 'matched' } | null;
   missed: string[];
+  /**
+   * Whose table this is now, from the latest `replace` that says (it carries over from step to step). Absent until
+   * one does, and the panel shows the table's own `by` then.
+   */
+  by?: string;
+  /**
+   * What the latest event of the current step found, for a `match` with `keys`; each lasts one step, as `highlight`
+   * does, and is absent otherwise. `candidates` are the rows that all match, before one wins; `matches` are the rows
+   * that matched, which keep a "match" tag while the winner is highlighted; `noMatch` is the words of a match that
+   * found nothing.
+   */
+  candidates?: string[];
+  matches?: string[];
+  noMatch?: string;
 }
 
 /** Every table at its starting rows, keyed by table id, with no highlight and no miss. The rows are copies. */
@@ -65,6 +79,7 @@ export function applyTableEvent(state: TableState, def: Pick<TableDef, 'keyColum
       // New rows, even under an old key: no mark carries over.
       state.rows = (e.rows ?? []).map((row) => ({ ...row }));
       state.missed = [];
+      if (e.by !== undefined) state.by = e.by;
       break;
     case 'match':
       break;
@@ -82,8 +97,26 @@ export function highlightFor(def: TableDef, e: TableEvent): TableState['highligh
       // If the update renames the row, point at the new key: the old one is gone.
       return { key: e.row?.[def.keyColumn] ?? e.key ?? '', type: 'updated' };
     case 'match':
-      return { key: e.key ?? '', type: 'matched' };
+      // A match that lists the rows that all match and picks none points at no row.
+      return e.key === undefined ? null : { key: e.key, type: 'matched' };
     default:
       return null;
   }
+}
+
+/**
+ * Marks the rows an event of the current step points at besides `highlight`: a `match` sets `candidates`, `matches`
+ * and `noMatch` afresh (a `match` with `keys` and no `key` makes every one a candidate, and `key: ''` shows what it
+ * found as `noMatch`); a `replace` clears them; other events leave them as they were. Marks are never set for an
+ * earlier step's events, so each lasts one step.
+ */
+export function markFor(state: TableState, e: TableEvent): void {
+  if (e.op !== 'match' && e.op !== 'replace') return;
+  delete state.candidates;
+  delete state.matches;
+  delete state.noMatch;
+  if (e.op === 'replace') return;
+  if (e.keys !== undefined) state.matches = [...e.keys];
+  if (e.key === undefined && e.keys !== undefined) state.candidates = [...e.keys];
+  if (e.key === '') state.noMatch = e.summary;
 }

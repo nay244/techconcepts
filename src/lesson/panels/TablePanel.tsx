@@ -27,6 +27,10 @@ const HIGHLIGHT_TEXT = { added: '(new)', updated: '(changed)', matched: '(matche
 export function TablePanel({ def, state }: TablePanelProps) {
   const { rows, highlight } = state;
   const missed = new Set(state.missed);
+  const candidates = new Set(state.candidates);
+  const matches = new Set(state.matches);
+  // Whose table it is: the latest replace says, else the table's own.
+  const by = state.by ?? def.by;
   const markLabel = def.markLabel ?? 'miss';
   const region = useRef<HTMLDivElement>(null);
   // A match that found nothing carries an empty key. It points at no row, even one whose key cell is empty.
@@ -34,11 +38,11 @@ export function TablePanel({ def, state }: TablePanelProps) {
   useFocusAcrossRemounts(region, def.id);
 
   return (
-    <div ref={region} className="tpanel" data-table={def.id} role="region" aria-label={def.title} tabIndex={0}>
+    <div ref={region} className="tpanel" data-table={def.id} role="region" aria-label={state.by === undefined ? def.title : `${def.title}, ${state.by}`} tabIndex={0}>
       <table className="tpanel__table">
         <caption>
           <span className="tpanel__title">{def.title}</span>
-          {def.by === undefined ? null : <span className="tpanel__by"> {def.by}</span>}
+          {by === undefined ? null : <span className="tpanel__by"> {by}</span>}
         </caption>
         <thead>
           <tr>
@@ -61,8 +65,11 @@ export function TablePanel({ def, state }: TablePanelProps) {
               const mark = target !== null && row[def.keyColumn] === target.key ? target.type : null;
               const key = row[def.keyColumn];
               const miss = key !== undefined && missed.has(key);
+              // Several rows match: all are candidates until one wins, and the rest keep a tag once it does.
+              const candidate = key !== undefined && candidates.has(key);
+              const matched = key !== undefined && matches.has(key) && mark === null;
               return (
-                <tr key={key ?? i} data-highlight={mark ?? undefined} data-miss={miss ? '' : undefined}>
+                <tr key={key ?? i} data-highlight={mark ?? undefined} data-miss={miss ? '' : undefined} data-candidate={candidate ? '' : undefined}>
                   {def.columns.map((column, c) => (
                     <td key={column.key} className={column.prose === true ? 'tpanel__prose' : undefined} data-label={column.label}>
                       {row[column.key] ?? ''}
@@ -72,12 +79,27 @@ export function TablePanel({ def, state }: TablePanelProps) {
                           <span className="tpanel__miss">{markLabel}</span>
                         </>
                       ) : null}
+                      {matched && c === 0 ? (
+                        <>
+                          {' '}
+                          <span className="tpanel__miss">match</span>
+                        </>
+                      ) : null}
                       {mark !== null && c === 0 ? <span className="sr-only"> {HIGHLIGHT_TEXT[mark]}</span> : null}
+                      {candidate && c === 0 ? <span className="sr-only"> (a match)</span> : null}
                     </td>
                   ))}
                 </tr>
               );
             })
+          )}
+          {state.noMatch === undefined ? null : (
+            <tr className="tpanel__nomatch">
+              <td colSpan={def.columns.length}>
+                <span className="tpanel__miss">no match</span>
+                {state.noMatch}
+              </td>
+            </tr>
           )}
         </tbody>
       </table>

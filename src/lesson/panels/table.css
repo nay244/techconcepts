@@ -120,6 +120,40 @@
   vertical-align: 1px;
 }
 
+/* Several rows match (Router's longest match): each candidate has the tint, a dashed bar in place of the matched
+   row's solid one, and a "match" tag, which the winner then drops while the others keep it. */
+.tpanel tr[data-candidate] > td {
+  background-color: var(--tint);
+  color: var(--ink-strong);
+}
+.tpanel tr[data-candidate] > td:first-child {
+  background-image: repeating-linear-gradient(var(--selected) 0 4px, transparent 4px 7px);
+  background-repeat: no-repeat;
+  background-size: 3px 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tpanel tr[data-candidate] > td {
+    animation: tpanel-pulse 900ms var(--ease-out) 1;
+  }
+}
+
+/* A match that found nothing: the event's words as the table's last row, on the blocked colour's bar. */
+.tpanel tr.tpanel__nomatch > td {
+  padding: 6px 10px;
+  border-bottom: 0;
+  background-color: color-mix(in srgb, var(--blocked) 10%, transparent);
+  background-image: linear-gradient(var(--blocked), var(--blocked));
+  background-repeat: no-repeat;
+  background-size: 3px 100%;
+  color: var(--ink-strong);
+  font: 400 13.5px/1.4 var(--sans);
+}
+.tpanel__nomatch .tpanel__miss {
+  margin: 0 8px 0 0;
+  border-color: var(--blocked);
+  color: var(--blocked);
+}
+
 /* Its focus outline sits inside the panel, which the stage's edge would clip.
    [data-table] makes this beat the console's own focus offset, which loads after this file. */
 .tpanel[data-table]:focus-visible {

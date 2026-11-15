@@ -1,4 +1,4 @@
-import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, plateSites } from './net-map-layers';
+import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_ROUTERS, plateSites } from './net-map-layers';
 import { OSI_CUE_ARGS, OSI_ROUTES, OSI_WORDS } from './osi-stacks';
 import type { FigureId, FigureParts } from './types';
 
@@ -51,7 +51,11 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
       'status-done': 'flag',
       addr: 'text',
       url: 'text',
+      // A router that threw a packet away keeps a DROPPED mark; a unit may start with the resolver left off the map.
+      drop: 'text',
+      hide: 'text',
     },
+    args: { drop: NET_MAP_ROUTERS, hide: ['resolver'] },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
     // Its driver settles a unit's start under the cues that have played.

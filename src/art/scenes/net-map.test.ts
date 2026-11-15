@@ -33,11 +33,38 @@ const SLOTS = ['nm-l-under', 'nm-l-plates', 'nm-l-cables', 'nm-l-things', 'nm-l-
 /** The figure's background under a lost trail, so the red always has its own edge: a plain stroke, hidden at first. */
 const TRAIL_EDGE = '<polyline class="nm-trail-edge" id="nm-trail-edge" points="" style="opacity:0"/>';
 
+/**
+ * What Router added to the map, as the hash of the mockup's map leaves it out: the name strips and the DROPPED mark
+ * (hidden parts at the end of the figure), the groups that let a unit hide the resolver (each holds the parts the
+ * mockup drew, in the same order), and the routers' tops in the data.
+ */
+const STRIPS = /<g class="nm-strip" id="nm-name-[a-z]+"[^>]*>.*?<\/text><\/g>/g;
+const DISCARD = /<g class="nm-drop nm-discard" id="nm-discard".*?<\/text><\/g>/;
+function withoutRouterParts(svg: string): string {
+  let out = svg.replace(TRAIL_EDGE, '').replace(STRIPS, '').replace(DISCARD, '');
+  // Unwrap each `<g data-base="…">`: drop its opening tag and the `</g>` that closes it.
+  for (let at = out.indexOf('<g data-base="'); at !== -1; at = out.indexOf('<g data-base="')) {
+    const open = out.indexOf('>', at) + 1;
+    let depth = 1;
+    let i = open;
+    while (depth > 0) {
+      const next = out.slice(i).search(/<g[\s>]|<\/g>/);
+      i += next;
+      depth += out.startsWith('</g>', i) ? -1 : 1;
+      i += out.startsWith('</g>', i) ? 4 : 2;
+    }
+    out = out.slice(0, at) + out.slice(open, i - 4) + out.slice(i);
+  }
+  return out;
+}
+
 test('drawNetMap matches the mockup map', async () => {
   const { svg, data } = drawNetMap();
   expect(svg.split(TRAIL_EDGE)).toHaveLength(2);
-  expect(await sha256(normaliseFigure(svg.replace(TRAIL_EDGE, '')))).toBe(EXPECTED.svg);
-  expect(await sha256(JSON.stringify(data))).toBe(EXPECTED.data);
+  expect(await sha256(normaliseFigure(withoutRouterParts(svg)))).toBe(EXPECTED.svg);
+  const { tops, ...mockup } = data as NetMapData;
+  expect(Object.keys(tops)).toEqual(['isp', 'a', 'b', 'c', 'd']);
+  expect(await sha256(JSON.stringify(mockup))).toBe(EXPECTED.data);
 });
 
 test('the lost trail’s edge is drawn just under the trail, so the red sits on the figure’s background', () => {

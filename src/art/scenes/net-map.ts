@@ -26,6 +26,8 @@ export interface NetMapData {
    * over each router it passes. Every ordered pair of places a protocol uses has one.
    */
   routes: Record<string, [number, number, number][]>;
+  /** Where each internet router's top is on screen, from the figure's origin: the DROPPED mark and the name strip stand there. */
+  tops: Record<string, [number, number]>;
 }
 
 const PLATE_H = 7, FOOT_H = 3, FLOOR = -PLATE_H - FOOT_H;
@@ -317,6 +319,20 @@ function tag(n) {
 const OVER = `<g id="${ID}-over" style="opacity:0">${onTopAt(0, `<text class="nm-over-t" x="0" y="9" text-anchor="middle"></text>`)}</g>`;
 // Where a lost message stops: a ring with a cross, and the word LOST on it (a site addition), so colour is never the only sign.
 const DROP = `<g class="nm-drop" id="${ID}-drop" style="opacity:0"><circle r="7"/><path d="M-3.2 -3.2L3.2 3.2M3.2 -3.2L-3.2 3.2"/><rect class="nm-drop-pill" x="9" y="-5.5" width="27" height="11" rx="5.5"/><text class="nm-drop-t" x="22.5" y="2.8" text-anchor="middle">LOST</text></g>`;
+// A packet a router threw away (the `drop <place>` cue): a ring with a cross, and the word DROPPED beside it. It sits on
+// the router's top and stays; the driver moves it there. It takes the lost mark's colours (net-map.css).
+const DISCARD = `<g class="nm-drop nm-discard" id="${ID}-discard" style="opacity:0"><circle r="8"/><path d="M-3.6 -3.6L3.6 3.6M3.6 -3.6L-3.6 3.6"/><rect class="nm-drop-pill" x="11" y="-6.5" width="50" height="13" rx="6.5"/><text class="nm-drop-t" x="36" y="3" text-anchor="middle">DROPPED</text></g>`;
+// Each internet router's name on a strip of label tape, hidden until a unit's labels give it words: where its top-left
+// corner is from the router's top. The driver sets the words and the width, which are 11 + 7.4 a character.
+const NAME_AT = { isp: [-50, -24], a: [-34, -30], b: [12, -22], c: [12, -28], d: [12, 4] };
+const NAME_H = 17;
+const tops = () => Object.fromEntries(Object.entries(N).map(([name, [x, y]]) => [name, at([x, y, PUCK_H]).map((v) => +v.toFixed(2))]));
+const strips = () => Object.entries(tops()).map(([name, [x, y]]) => {
+  const [dx, dy] = NAME_AT[name], sx = x + dx, sy = y + dy;
+  return `<g class="nm-strip" id="${ID}-name-${name}" data-x="${n1(sx)}" data-y="${n1(sy)}" display="none"><rect x="${n1(sx)}" y="${n1(sy)}" width="19" height="${NAME_H}" rx="2"/><text x="${n1(sx + 9.5)}" y="${n1(sy + 12.6)}" text-anchor="middle"></text></g>`;
+}).join("");
+// The resolver is left off the map for a unit that starts with `hide resolver`: each of its parts sits in a group the driver can hide.
+const resolverPart = (svg) => `<g data-base="resolver">${svg}</g>`;
 
 // ---------- The parts every protocol shares: home, the internet, the resolver ----------
 function buildBase() {
@@ -324,12 +340,12 @@ function buildBase() {
   const cables = [cable([LAP_OUT, HR_IN]), cable([HR_OUT, N.isp]), cable([N.a, DNS_IN]), ...LINKS.map(([a, b]) => cable([N[a], N[b]]))];
   const things = [
     { xy: [LB.x + LB.w / 2, LB.y + LB.d / 2], svg: laptop(ID, "") }, { xy: [HR.x + HR.w / 2, HR.y + HR.d / 2], svg: homeRouter(ID) },
-    ...Object.entries(N).map(([n, xy]) => ({ xy, svg: puck(xy, n) })), { xy: [CB.x + CB.w / 2, CB.y + CB.d / 2], svg: cabinet(ID) },
+    ...Object.entries(N).map(([n, xy]) => ({ xy, svg: puck(xy, n) })), { xy: [CB.x + CB.w / 2, CB.y + CB.d / 2], svg: resolverPart(cabinet(ID)) },
   ].sort((a, b) => depth([...a.xy, 0]) - depth([...b.xy, 0]));
   const pts = [RP, HP, IP].flatMap((p) => k.boxCorners(p, FLOOR, 0)).concat([[CB.x, CB.y, CB_H], [HR.x + 5, HR.y + 4, RT + 22]]).map(at);
   return {
-    under: `<path class="lm-pool" d="${k.ring(-6, -10, 250, FLOOR, P, 120)}"/>` + plates.map((p) => p.under).join(""),
-    plates: plates.map((p) => p.over).join(""), cables: cables.join(""), things: things.map((t) => t.svg).join(""), pts,
+    under: `<path class="lm-pool" d="${k.ring(-6, -10, 250, FLOOR, P, 120)}"/>` + plates.map((p, i) => (i === 0 ? resolverPart(p.under) : p.under)).join(""),
+    plates: plates.map((p, i) => (i === 0 ? resolverPart(p.over) : p.over)).join(""), cables: cables.map((c, i) => (i === 2 ? resolverPart(c) : c)).join(""), things: things.map((t) => t.svg).join(""), pts,
   };
 }
 
@@ -365,7 +381,7 @@ function mapSvg(only) {
   const base = buildBase();
   const layers = Object.entries(NET_MAP_LAYERS).map(([key, s]) => serverLayer(key, s));
   const boxes = [], calls = baseCallouts().map((c) => calloutSvg(c, boxes));
-  const shared = `${calls.slice(0, 3).join("")}<g id="${ID}-router" display="none">${calls[3]}</g>`;
+  const shared = `${calls[0]}${resolverPart(calls[1])}${calls[2]}<g id="${ID}-router" display="none">${calls[3]}</g>`;
   // One frame for every protocol, so the map never jumps in size between them: everything any of them shows.
   const pts = [...base.pts, ...boxes.flatMap(([x0, y0, x1, y1]) => [[x0, y0], [x1, y1]]), ...layers.flatMap((l) => l.pts), ...[SLOT.E, SLOT.SE].flatMap((p) => k.boxCorners(p, FLOOR, 0)).map(at)];
   const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), PAD = 18;
@@ -376,7 +392,7 @@ function mapSvg(only) {
   const tags = Array.from({ length: NET_MAP_TAG_MAX }, (_, i) => `<g class="nm-tag" id="${ID}-tag-${i + 1}" style="opacity:0">${tag(i + 1)}</g>`).join("");
   const svg = `<svg data-figure="net-map" class="lm-svg nm" viewBox="${vb.join(" ")}" role="img" aria-label="${ARIA}">${base.under}<g id="${ID}-l-under">${slot("under")}</g>` +
     `<g class="lm-body"><g id="${ID}-l-plates">${slot("plates")}</g>${base.plates}<g id="${ID}-ring" style="opacity:0"><path class="nm-ring" d="${k.ring(0, 0, RING_R, 0, P, 72)}"/></g>${base.cables}<g id="${ID}-l-cables">${slot("cables")}</g><g id="${ID}-conns"></g>` +
-    `<polyline class="nm-trail-edge" id="${ID}-trail-edge" points="" style="opacity:0"/><polyline class="nm-trail" id="${ID}-trail" points="" style="opacity:0"/>${base.things}<g id="${ID}-l-things">${slot("things")}</g><g id="${ID}-l-tags">${tags}${OVER}</g>${DROP}</g><g id="${ID}-l-calls">${shared}${slot("calls")}</g></svg>`;
+    `<polyline class="nm-trail-edge" id="${ID}-trail-edge" points="" style="opacity:0"/><polyline class="nm-trail" id="${ID}-trail" points="" style="opacity:0"/>${base.things}<g id="${ID}-l-things">${slot("things")}</g><g id="${ID}-l-tags">${tags}${OVER}</g>${DROP}${DISCARD}</g><g id="${ID}-l-calls">${shared}${slot("calls")}${strips()}</g></svg>`;
   return { svg, layers };
 }
 
@@ -411,6 +427,6 @@ function camera() {
  */
 export function drawNetMap(only?: readonly string[]): DrawnFigure {
   const { svg, layers } = mapSvg(only);
-  const data: NetMapData = { ...camera(), routes: routesOf(layers) };
+  const data: NetMapData = { ...camera(), routes: routesOf(layers), tops: tops() };
   return { svg, data };
 }

@@ -179,10 +179,40 @@ function osi() {
   return figure("osi", "OSI · SEVEN LAYERS", out.join(""), "A stack of seven solid blocks, one for each layer, numbered 1 at the bottom to 7 at the top. Block 4 is lit.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi'] as const;
+// ---------- Lesson 08, Router: a packet takes one of two ways out, and the table says which ----------
+function routerSpot() {
+  const out = [], C = [14, -22], R = 25, RH = 12, CZ = 1.9;
+  // Three cables where they meet: one in from the left edge, two out, to the back edge and the right edge.
+  out.push(tubeOf([[[-112, C[1]], [C[0] - R, C[1]]], [[C[0], C[1] - R], [C[0], -74]], [[C[0] + R, C[1]], [112, C[1]]]].flatMap(([a, b]) => tubePieces([[...a, CZ], [...b, CZ]], CZ, P, { maxLength: 14 }))));
+  // The router: a round body, a ring and four arrows pointing out on its top, three lights on its front, the middle one on.
+  out.push(S(k.cylinder(C[0], C[1], R + 1.5, 0, 1.6, P, 48), { tone: "lo" }), S(k.cylinder(C[0], C[1], R, 1.6, RH - 1.6, P, 48, 0.6), { tone: "hi" }));
+  const arrows = [];
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const tip = [C[0] + dx * 18, C[1] + dy * 18], base = [C[0] + dx * 8, C[1] + dy * 8], px = -dy, py = dx, hd = 4;
+    arrows.push(k.lineOnTop(base, tip, RH, P), k.lineOnTop(tip, [tip[0] - dx * hd + px * hd, tip[1] - dy * hd + py * hd], RH, P), k.lineOnTop(tip, [tip[0] - dx * hd - px * hd, tip[1] - dy * hd - py * hd], RH, P));
+  }
+  out.push(L(k.ring(C[0], C[1], 5, RH, P, 24) + arrows.join(""), { tone: "mid" }));
+  out.push(`<g class="lm-leds">${[22, 45, 68].map((deg) => { const t = (deg * Math.PI) / 180; return dot(at([C[0] + R * Math.cos(t), C[1] + R * Math.sin(t), 6]), "lm-led" + (deg === 45 ? " on" : ""), 1.2); }).join("")}</g>`);
+  // The packet on the way out to the right: the lit part.
+  out.push(S(k.slabOf({ x: 64, y: -30, w: 22, d: 16, r: 2 }, 3.4, 7, P, 3, 0.5), { tone: "hi", lit: true }));
+  out.push(lines([[[68, -22], [82, -22]], [[78, -26], [82, -22]], [[78, -18], [82, -22]]], 10.4, "lo", "lm-sym-lit"));
+  // The routing table, standing in front on two feet: three routes, the chosen one's light on.
+  const B = { x: -96, y: 26, w: 92, d: 7, r: 1 }, BH = 40, FT = 3;
+  for (const x of [B.x + 6, B.x + B.w - 16]) out.push(S(k.slabOf({ x, y: B.y, w: 10, d: B.d, r: 1 }, 0, FT, P, 3, 0.4), { tone: "mid" }));
+  out.push(S(k.slabOf(B, FT, BH, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(B, FT + BH - 3, P, 3), { tone: "faint" }) }));
+  let face = rect("lm-inlay", B.x + 4, FT + 4, B.w - 8, 32, 1.6) + rect("lm-slot", B.x + 9, FT + 34.6, 34, 1.6, 0.8);
+  ["198.51.100.0/24", "203.0.113.0/24", "0.0.0.0/0"].forEach((name, i) => {
+    const z = FT + 28.3 - i * 8.4;
+    face += `<circle class="lm-led${i === 1 ? " on" : ""}" cx="${n1(B.x + 11)}" cy="${n1(-z)}" r="1.7"/><text class="lm-rule" x="${n1(B.x + 16)}" y="${n1(-(z - 1.3))}">${name}</text>` + rect("lm-slot", B.x + 64, z - 1.3, 20, 1.8, 0.9);
+  });
+  out.push(onFaceY(B.y + B.d, face));
+  return figure("router", "ROUTING TABLE · NEXT HOP", out.join(""), "A round router where three cables meet, one coming in and two going out. A lit packet travels down one of the ways out. In front stands its routing table, three routes long, with the route it chose marked.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

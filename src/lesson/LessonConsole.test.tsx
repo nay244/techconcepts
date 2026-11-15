@@ -620,6 +620,28 @@ test('the Table tab is marked when the step has changed the table and the reader
   expect(consoleEl).toHaveAttribute('data-tab', 'table');
 });
 
+test.each([
+  ['a match that lists the rows that match', { keys: ['10.0.0.1', '10.0.0.2'] }],
+  ['a match that found nothing', { key: '' }],
+])('the Table tab is marked by %s, as by any change of the table', async (_name, fields) => {
+  window.history.replaceState({}, '', '/networking/dhcp?step=2');
+  const lesson = structuredClone(DHCP);
+  const step = lesson.units[0]!.steps[1]!;
+  const table = lesson.units[0]!.scene.panel!.type === 'table' ? lesson.units[0]!.scene.panel.table.id : '';
+  step.events = [step.events[0]!, { type: 'table', id: 'router-match', table, op: 'match', summary: 'A match.', ...fields }];
+  const { container } = renderConsole(lesson);
+  const tab = () => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: /^Table/ });
+  await wait(0);
+  expect(tab()).toHaveAccessibleName('Table');
+  await user.click(playButton());
+  await wait(EVENT_MS);
+  expect(tab()).toHaveAccessibleName('Table');
+  await wait(EVENT_MS);
+  expect(tab()).toHaveAccessibleName('Table, changed');
+  await user.click(tab());
+  expect(container.querySelector('.tab__mark')).toBeNull();
+});
+
 test('choosing a tab marks it and the console; choosing a place in Steps goes there and returns to Explain', async () => {
   const { container } = renderConsole();
   const consoleEl = container.querySelector('.console')!;

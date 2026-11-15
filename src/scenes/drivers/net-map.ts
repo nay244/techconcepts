@@ -1,6 +1,6 @@
 // Only types from the drawing module: its code is for the build, and stays out of the page.
 import type { NetMapData } from '../../art/scenes/net-map';
-import { NET_MAP_LAPTOP_ADDR, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
+import { NET_MAP_LAPTOP_ADDR, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
 import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
 import { animate, easeInOut, wait } from '../motion';
@@ -22,10 +22,13 @@ import { animate, easeInOut, wait } from '../motion';
  * - `page text|full`: the page on the laptop's screen, its text first, then all of it;
  * - `lock`: the padlock in the laptop's address bar;
  * - `tray <site> <on|off>`: a letter waiting on a mail server's tray, or gone from it (it leaves as it is sent);
- * - `addr <text>`, `url <text>`: the laptop's address and its address bar.
+ * - `addr <text>`, `url <text>`: the laptop's address and its address bar;
+ * - `drop <router>`: a DROPPED mark on that router's top, which stays, for a packet a router threw away;
+ * - `hide resolver` (a unit's start only): the DNS resolver, its cable and its callout are left off the map.
  *
  * A unit's labels give the words before any cue: `laptop` (the status line), `laptopAddr`, `url`, and `router`,
- * the home router's callout in one or two lines (a line with a number is an address, a line of words a note).
+ * the home router's callout in one or two lines (a line with a number is an address, a line of words a note), and
+ * `isp`, `a`, `b`, `c` and `d`, the name on a strip at each internet router; a router without a label has no strip.
  * A unit's start (`view.start`) is cues already in place before any has played, at every position of the unit:
  * TLS's line, already open (`conn open laptop>web`), and the letters waiting in POP3's and IMAP's mailbox
  * (`tray mail on`). The cues that play go on from there, so TLS's handshake seals the line its start opened.
@@ -53,6 +56,14 @@ const TRAIL_OPACITY = 0.95;
 const HOME = new Set(['laptop', 'router']);
 /** FTP's data line is drawn this far above its control line. */
 const DATA_LINE_LIFT = 'translate(0 -6)';
+/** A table event takes this long on the map, so the learner sees the table before the next thing happens; a drop note too. */
+const TABLE_MS = { replace: 600, match: 900 } as const;
+const DROP_NOTE_MS = 900;
+/** A name strip's width: its letters, and the room round them. */
+const stripWidth = (text: string): number => 11 + 7.4 * [...text].length;
+
+/** The figure's description names its resolver; a map that hides it does not. */
+const RESOLVER_SENTENCE = ' Behind it, the DNS resolver, a card-index cabinet.';
 
 /** A `conn` cue, read. */
 export interface ConnCue {
@@ -96,8 +107,10 @@ function dropAtOf(e: MessageEvent): number {
 }
 
 function duration(event: SceneEvent, data: unknown): number {
-  // A table event or a note has nothing to move, so it lands at once.
-  if (event.type !== 'message') return 0;
+  // A table event takes the time to be seen (an add or an update, only subnetting's own figure's, lands at once), and
+  // so does a note that drops a packet; every other note lands at once.
+  if (event.type === 'table') return event.op === 'replace' || event.op === 'match' ? TABLE_MS[event.op] : 0;
+  if (event.type === 'note') return event.cues?.some((c) => c.cue === 'drop') === true ? DROP_NOTE_MS : 0;
   const travel = travelOf(event, lengthOf(routeOf(data as NetMapData, event.from, event.to)));
   if (event.outcome === 'dropped') return travel * dropAtOf(event) + LOST_FADE_MS + LOST_REST_MS;
   return travel + paceOf(event).rest;
@@ -158,6 +171,9 @@ interface MapState {
   page: '' | 'text' | 'full';
   lock: boolean;
   trays: Map<string, boolean>;
+  /** The router a packet was dropped at, and the parts left off the map. */
+  drop: string | null;
+  hidden: Set<string>;
 }
 
 /** A cue and the event that played it. */
@@ -200,6 +216,11 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   /** The figure's background under a lost trail, so the red always has its own edge (net-map.css). */
   const edge = part('nm-trail-edge');
   const drop = part('nm-drop');
+  const discard = part('nm-discard');
+  /** What the map can leave off, by name (`hide`), and the figure's own words for it, which the hidden resolver is left out of. */
+  const bases = new Set([...root.querySelectorAll<SVGElement>('[data-base]')].map((el) => el.dataset.base!));
+  const strips = new Map(NET_MAP_ROUTERS.map((name) => [name, part<SVGGElement>(`nm-name-${name}`)] as const));
+  const described = root.getAttribute('aria-label') ?? '';
   const ring = part('nm-ring');
 
   const [ax, bx, cx, ay, by, cy] = map.M as [number, number, number, number, number, number];
@@ -243,6 +264,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       page: '',
       lock: false,
       trays: new Map(),
+      drop: null,
+      hidden: new Set(),
     };
     // The start first, as though it had played before the first event; then one event's cues at a time, so a status
     // and its style go together whatever their order.
@@ -259,6 +282,13 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
         else if (cue === 'addr') s.addr = arg;
         else if (cue === 'url') s.url = arg;
         else if (cue === 'lock') s.lock = true;
+        else if (cue === 'drop') {
+          if (!Object.hasOwn(map.tops, arg)) throw new Error(`The network map has no router "${arg}" to drop a packet at.`);
+          s.drop = arg;
+        } else if (cue === 'hide') {
+          if (!bases.has(arg)) throw new Error(`The network map cannot hide "${arg}".`);
+          s.hidden.add(arg);
+        }
         else if (cue === 'page') {
           if (arg !== 'text' && arg !== 'full') throw new Error(`The network map's page cue needs "text" or "full", not "${arg}".`);
           s.page = arg;
@@ -303,6 +333,31 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     for (const [site, els] of holds) if (site !== 'lock') light(els, s.trays.get(site) ?? false);
     light(lock, s.lock);
     for (const el of page) fade(el, wants(s, el) ? 1 : 0);
+    if (s.drop === null) fade(discard, 0);
+    else {
+      moveTo(discard, map.tops[s.drop]!);
+      fade(discard, 1);
+    }
+    for (const el of root.querySelectorAll<SVGElement>('[data-base]')) el.toggleAttribute('data-hidden', s.hidden.has(el.dataset.base!));
+    // What the figure says it draws is what it draws: no resolver, no sentence about it.
+    root.setAttribute('aria-label', s.hidden.has('resolver') ? described.replace(RESOLVER_SENTENCE, '') : described);
+  }
+
+  /** Each router's name on its strip, from the unit's labels: a router without one has none. */
+  function paintNames(labels: Record<string, string>): void {
+    for (const [name, strip] of strips) {
+      const text = Object.hasOwn(labels, name) ? labels[name]! : null;
+      if (text === null) {
+        strip.setAttribute('display', 'none');
+        continue;
+      }
+      strip.removeAttribute('display');
+      const width = stripWidth(text);
+      strip.querySelector('rect')!.setAttribute('width', width.toFixed(1));
+      const label = strip.querySelector('text')!;
+      label.setAttribute('x', (Number(strip.dataset.x) + width / 2).toFixed(1));
+      label.textContent = text;
+    }
   }
 
   /** Nothing in flight: every tag, trail, mark, ring and light back as the figure drew it. */
@@ -459,6 +514,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
           else g.setAttribute('display', 'none');
         }
         paintRouter(routerLabel);
+        paintNames(view.labels);
         clear();
         paint(settled);
         void root.getBoundingClientRect();

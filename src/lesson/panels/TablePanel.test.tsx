@@ -218,7 +218,8 @@ test('the panel is the positioned box its hidden "(new)" words sit in, so they s
 test('the miss mark is neutral: never marigold, which means “current”, nor the blocked red of a lost message', () => {
   // Vitest drops stylesheet contents, so the rules are read from the file itself.
   const css = readFileSync('src/lesson/panels/table.css', 'utf8');
-  const rules = [...css.matchAll(/([^{}]*tpanel__miss[^{}]*|[^{}]*data-miss[^{}]*)\{([^}]*)\}/g)].map((m) => m[2]!);
+  // Except the "no match" tag on a match that found nothing, which D10 sets in the blocked colour on purpose.
+  const rules = [...css.matchAll(/([^{}]*tpanel__miss[^{}]*|[^{}]*data-miss[^{}]*)\{([^}]*)\}/g)].filter((m) => !m[1]!.includes('tpanel__nomatch')).map((m) => m[2]!);
   expect(rules.length).toBeGreaterThan(0);
   for (const body of rules) expect(body).not.toMatch(/--here|--blocked/);
 });
@@ -259,4 +260,116 @@ test('each cell carries its column’s name, for a phone to show beside the valu
   const { container } = render(<TablePanel def={def} state={stateOf()} />);
   const first = container.querySelector('tbody tr')!;
   expect([...first.querySelectorAll('td')].map((td) => td.getAttribute('data-label'))).toEqual(def.columns.map((c) => c.label));
+});
+
+// ---------------------------------------------------------------- Router's panel (D10)
+
+const routes: TableDef = {
+  id: 'routes',
+  title: 'Routing table',
+  columns: [
+    { key: 'network', label: 'Network' },
+    { key: 'hop', label: 'Next hop' },
+  ],
+  keyColumn: 'network',
+  initialRows: [],
+  empty: 'Each device on the way shows its routing table here, in turn.',
+};
+const table = [
+  { network: '198.51.100.0/24', hop: 'directly (customers)' },
+  { network: '203.0.113.0/24', hop: 'router b' },
+  { network: '0.0.0.0/0', hop: 'router a' },
+];
+const routing = (more: Partial<TableState> = {}): TableState => ({ rows: table, highlight: null, missed: [], ...more });
+const row = (container: HTMLElement, network: string) => bodyRows(container).find((tr) => tr.querySelector('td')!.textContent!.startsWith(network))!;
+const tagsOf = (tr: HTMLElement) => [...tr.querySelectorAll('.tpanel__miss')].map((t) => t.textContent);
+
+test('before any replace the panel shows its empty text, no by-line and the table’s own name', () => {
+  const { container } = render(<TablePanel def={routes} state={routing({ rows: [] })} />);
+  expect(container.querySelector('.tpanel__by')).toBeNull();
+  expect(container.querySelector('.tpanel')!.getAttribute('aria-label')).toBe('Routing table');
+  expect(container.querySelector('.tpanel__empty')!.textContent).toBe(routes.empty);
+});
+
+test('the by-line and the label name whose table it is once a replace says', () => {
+  const { container } = render(<TablePanel def={routes} state={routing({ by: 'kept by your provider’s router' })} />);
+  expect(container.querySelector('.tpanel__by')!.textContent).toBe(' kept by your provider’s router');
+  expect(container.querySelector('.tpanel')!.getAttribute('aria-label')).toBe('Routing table, kept by your provider’s router');
+});
+
+test('a state’s by beats the table’s own by-line, and a table’s own shows without one', () => {
+  const own = { ...routes, by: 'kept by the lesson' };
+  expect(render(<TablePanel def={own} state={routing()} />).container.querySelector('.tpanel__by')!.textContent).toBe(' kept by the lesson');
+  const { container } = render(<TablePanel def={own} state={routing({ by: 'kept by router c' })} />);
+  expect(container.querySelector('.tpanel__by')!.textContent).toBe(' kept by router c');
+});
+
+test('candidates: exactly the two rows that match carry data-candidate, “match” and the screen-reader words', () => {
+  const both = ['203.0.113.0/24', '0.0.0.0/0'];
+  const { container } = render(<TablePanel def={routes} state={routing({ candidates: both, matches: both })} />);
+  expect(bodyRows(container).filter((tr) => tr.hasAttribute('data-candidate')).map((tr) => tr.querySelector('td')!.textContent)).toEqual([
+    '203.0.113.0/24 match (a match)',
+    '0.0.0.0/0 match (a match)',
+  ]);
+  const plain = row(container, '198.51.100.0/24');
+  expect(plain.hasAttribute('data-candidate')).toBe(false);
+  expect(tagsOf(plain)).toEqual([]);
+  expect(plain.textContent).not.toContain('(a match)');
+});
+
+test('the winner is the matched row with no tag; the loser keeps its tag with no candidate mark', () => {
+  const both = ['203.0.113.0/24', '0.0.0.0/0'];
+  const { container } = render(<TablePanel def={routes} state={routing({ highlight: { key: '203.0.113.0/24', type: 'matched' }, matches: both })} />);
+  const winner = row(container, '203.0.113.0/24');
+  expect(winner.getAttribute('data-highlight')).toBe('matched');
+  expect(tagsOf(winner)).toEqual([]);
+  const loser = row(container, '0.0.0.0/0');
+  expect(loser.hasAttribute('data-candidate')).toBe(false);
+  expect(loser.hasAttribute('data-highlight')).toBe(false);
+  expect(tagsOf(loser)).toEqual(['match']);
+});
+
+test('with no marks no row carries a candidate mark, a match tag or the highlight', () => {
+  const { container } = render(<TablePanel def={routes} state={routing()} />);
+  expect(container.querySelectorAll('[data-candidate], [data-highlight], .tpanel__miss')).toHaveLength(0);
+});
+
+test('a match that found nothing adds a last row across every column, with the tag and the words', () => {
+  const { container } = render(<TablePanel def={routes} state={routing({ highlight: { key: '', type: 'matched' }, noMatch: 'No route in router a’s table covers 192.0.2.77.' })} />);
+  const rows = bodyRows(container);
+  const last = rows.at(-1)!;
+  expect(rows).toHaveLength(table.length + 1);
+  expect(last.className).toBe('tpanel__nomatch');
+  expect(last.querySelectorAll('td')).toHaveLength(1);
+  expect(last.querySelector('td')!.getAttribute('colspan')).toBe(String(routes.columns.length));
+  expect(last.textContent).toBe('no matchNo route in router a’s table covers 192.0.2.77.');
+  expect(container.querySelectorAll('[data-highlight]')).toHaveLength(0);
+  expect(render(<TablePanel def={routes} state={routing()} />).container.querySelector('.tpanel__nomatch')).toBeNull();
+});
+
+test('a panel with none of the new fields renders as it did before them (DHCP’s and What is IP’s tables)', () => {
+  const leases: TableDef = {
+    id: 'leases',
+    title: 'Leases',
+    by: 'kept by the router',
+    columns: [{ key: 'mac', label: 'MAC' }, { key: 'ip', label: 'IP', prose: true }],
+    keyColumn: 'mac',
+    initialRows: [],
+    empty: 'None.',
+  };
+  const rows = [{ mac: 'aa', ip: '1' }, { mac: 'bb', ip: '2' }, { mac: 'cc', ip: '3' }];
+  // Recorded from the panel as it was before D10.
+  const before =
+    '<div class="tpanel" data-table="leases" role="region" aria-label="Leases" tabindex="0"><table class="tpanel__table"><caption><span class="tpanel__title">Leases</span><span class="tpanel__by"> kept by the router</span></caption><thead><tr><th scope="col">MAC</th><th scope="col">IP</th></tr></thead><tbody><tr><td data-label="MAC">aa</td><td class="tpanel__prose" data-label="IP">1</td></tr><tr data-highlight="matched"><td data-label="MAC">bb<span class="sr-only"> (matched)</span></td><td class="tpanel__prose" data-label="IP">2</td></tr><tr data-miss=""><td data-label="MAC">cc <span class="tpanel__miss">miss</span></td><td class="tpanel__prose" data-label="IP">3</td></tr></tbody></table></div>';
+  const { container } = render(<TablePanel def={leases} state={{ rows, highlight: { key: 'bb', type: 'matched' }, missed: ['cc'] }} />);
+  expect(container.innerHTML).toBe(before);
+});
+
+// table.css's no-match row is a 10% mix of --blocked over the panel's card; its tag is --blocked on --card.
+test.each(['dark', 'light'] as const)('the no-match row keeps its words at 4.5:1 and its tag at 4.5:1 in the %s theme', (theme) => {
+  const t = tokens[theme];
+  expect(contrastRatio(t['ink-strong'], mix(t.blocked, t.card, 10))).toBeGreaterThanOrEqual(4.5);
+  expect(contrastRatio(t.blocked, t.card)).toBeGreaterThanOrEqual(4.5);
+  // The bar is a mark: 3:1 against the card.
+  expect(contrastRatio(t.blocked, t.card)).toBeGreaterThanOrEqual(3);
 });

@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { routerFixture } from '../content/router-fixture';
 import type { Board, Lesson, MessageEvent, SceneEvent } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson, makeUnit, type TerseLessonInput, type TerseUnitInput } from '../content/test-fixtures';
 import { applyTableEvent, initialTables } from './tables';
@@ -475,4 +476,67 @@ test('the latest labels carry across steps, and none before any', () => {
   expect(deriveState(L, 4, 0).labels).toEqual(L1); // a later step, none of its events played
   expect(deriveState(L, 4, 1).labels).toEqual(L1); // an event without labels leaves them
   expect(deriveState(L, 7, 0).labels).toEqual(L1);
+});
+
+// ---------------------------------------------------------------- D10: Router's unit, on the fixture the spec's §3 describes
+
+const ROUTER = routerFixture();
+const routes = (p: number, i: number) => deriveState(ROUTER, p, i).tables.routes!;
+/** The marks a table shows at a position: its candidates, its tagged rows, its highlight and its no-match words. */
+const marks = (p: number, i: number) => {
+  const { candidates, matches, noMatch, highlight } = routes(p, i);
+  return { candidates, matches, noMatch, highlight };
+};
+
+test('the by-line follows the latest replace, and carries into the next step’s start', () => {
+  expect(routes(0, 0).by).toBeUndefined();
+  expect(routes(1, 0).by).toBeUndefined();
+  expect(routes(1, 1).by).toBe('kept by your laptop');
+  expect(routes(2, 0).by).toBe('kept by your laptop');
+  expect(routes(2, 1).by).toBe('kept by your router');
+  expect(routes(3, 1).by).toBe('kept by your provider’s router');
+  expect(routes(4, 0).by).toBe('kept by your provider’s router');
+  expect(routes(5, 1).by).toBe('kept by router a');
+});
+
+test('step 3: two candidates after the first match, then the winner highlighted with the loser still tagged', () => {
+  const both = ['203.0.113.0/24', '0.0.0.0/0'];
+  expect(marks(3, 2)).toEqual({ candidates: both, matches: both, noMatch: undefined, highlight: null });
+  expect(marks(3, 3)).toEqual({ candidates: undefined, matches: both, noMatch: undefined, highlight: { key: '203.0.113.0/24', type: 'matched' } });
+  // The message after it leaves the table as the match did.
+  expect(routes(3, 4).highlight).toEqual({ key: '203.0.113.0/24', type: 'matched' });
+});
+
+test('marks last one step: step 4 starts, and later steps start, with no candidate, tag or highlight', () => {
+  for (const [p, i] of [[4, 0], [5, 0], [6, 0], [7, 0]] as const) {
+    expect(marks(p, i)).toEqual({ candidates: undefined, matches: undefined, noMatch: undefined, highlight: null });
+  }
+  // A replace in the step also clears what the step's earlier match showed.
+  expect(marks(4, 1).matches).toBeUndefined();
+});
+
+test('the no-match row: set by step 5’s match with an empty key, never by a keys-only match, gone at the overview and at the step’s start', () => {
+  expect(marks(5, 4).noMatch).toBe('No route in router a’s table covers 192.0.2.77.');
+  expect(marks(5, 4).highlight).toEqual({ key: '', type: 'matched' });
+  expect(marks(5, 6).noMatch).toBe('No route in router a’s table covers 192.0.2.77.');
+  expect(marks(3, 2).noMatch).toBeUndefined();
+  expect(marks(5, 0).noMatch).toBeUndefined();
+  expect(marks(0, 0).noMatch).toBeUndefined();
+});
+
+test('Learn and Practice apply every step in full and mark nothing', () => {
+  expect(routes(6, 0).by).toBe('kept by router a');
+  expect(marks(6, 0)).toEqual({ candidates: undefined, matches: undefined, noMatch: undefined, highlight: null });
+});
+
+test('a note with the dropped glyph gives its row the glyph, and step 5 logs its four rows in order', () => {
+  const log = deriveState(ROUTER, 5, 6).log.filter((r) => r.eventId.startsWith('s5-'));
+  expect(log.map((r) => [r.eventId, r.kind ?? r.glyph, r.cells.source, r.cells.destination, r.cells.protocol])).toEqual([
+    ['s5-to-isp', 'request', '198.51.100.23', '192.0.2.77', 'IPv4'],
+    ['s5-to-a', 'request', '198.51.100.23', '192.0.2.77', 'IPv4'],
+    ['s5-drop', 'dropped', 'router a', '—', '—'],
+    ['s5-icmp', 'control', 'router a', '198.51.100.23', 'ICMP'],
+  ]);
+  expect(log.find((r) => r.eventId === 's5-drop')!.glyph).toBe('dropped');
+  expect(deriveState(ROUTER, 5, 6).cues.filter((c) => c.eventId.startsWith('s5-')).map((c) => `${c.cue} ${c.arg ?? ''}`.trim())).toEqual(['drop a', 'status No route: dropped']);
 });

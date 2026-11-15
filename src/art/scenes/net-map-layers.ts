@@ -49,6 +49,9 @@ export const NET_MAP_LAPTOP_ADDR = '192.168.1.100';
 /** The places every protocol's map has: home (the laptop and its router), the resolver, and the internet's five routers. */
 export const NET_MAP_BASE_PLACES = ['laptop', 'router', 'resolver', 'isp', 'a', 'b', 'c', 'd'];
 
+/** The internet's five routers, which a unit's labels may name on a strip and a `drop` cue may mark. */
+export const NET_MAP_ROUTERS = ['isp', 'a', 'b', 'c', 'd'];
+
 /** The places a message can stop on a plate. */
 export function plateSites(plate: ServerPlate): string[] {
   return plate.kind === 'names' ? NAME_SERVER_SITES : [plate.site];
