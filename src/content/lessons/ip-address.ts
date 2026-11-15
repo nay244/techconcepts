@@ -183,7 +183,7 @@ export default defineLesson({
   certTags: [],
   summary: 'Read an IP address in decimal and in bits, then tell private, public and special addresses apart.',
   figure: 'subnet',
-  backing: traced('term-ip', 'lead-1', 'lead-2'),
+  backing: traced('term-ip', 'lead-1', 'lead-2', 'term-dotted', 'term-binary'),
   units: [
     {
       id: 'ip-address',
@@ -214,7 +214,7 @@ export default defineLesson({
           ],
         },
         parties: [],
-        backing: traced('fact-network-part', 'fact-documentation', 'term-private', 'lead-1'),
+        backing: traced('fact-network-part', 'fact-documentation', 'term-private', 'lead-1', 'term-broadcast'),
       },
       overview: {
         hook: 'The Sales laptop’s address is 192.168.1.10: four numbers from 0 to 255, which can also be written as 32 ones and zeros. Some addresses are private and reused by many networks, some are public and unique on the internet, and a few are set aside for one special job, like 127.0.0.1, which never leaves the device.',
@@ -225,7 +225,7 @@ export default defineLesson({
           { label: 'Size', value: '32 bits (IPv4)', backing: traced('fact-ipv4') },
           { label: 'Written as', value: 'four numbers, each 0 to 255', backing: traced('fact-ipv4', 'term-dotted') },
           { label: 'Private ranges', value: '10/8, 172.16/12, 192.168/16', backing: traced('fact-private') },
-          { label: 'Special, for example', value: '127.0.0.1, 255.255.255.255', backing: traced('fact-loopback', 'fact-broadcast') },
+          { label: 'Special, for example', value: '127.0.0.1, 255.255.255.255', backing: traced('fact-loopback', 'fact-broadcast', 'term-special') },
           { label: 'OSI layer', value: '3, network', backing: traced('fact-osi') },
           { label: 'Defined in', value: 'RFC 791', backing: traced('fact-defined') },
         ],
@@ -286,12 +286,12 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Inside', value: '192.168.1.1, private', backing: traced('fact-several', 'term-private') },
-            { label: 'On the link', value: '203.0.113.6, public here', backing: traced('term-public', 'fact-several') },
+            { label: 'Inside', value: '192.168.1.1, private', backing: traced('fact-several', 'term-private', 'fact-private') },
+            { label: 'On the link', value: '203.0.113.6, public here', backing: traced('term-public', 'fact-several', 'fact-documentation') },
             { label: 'Really from', value: '203.0.113.0/24, set aside for examples', backing: traced('fact-documentation') },
           ],
           events: step3,
-          backing: traced('fact-several', 'term-public', 'term-private', 'fact-documentation'),
+          backing: traced('fact-several', 'term-public', 'term-private', 'fact-private', 'fact-documentation'),
         },
         {
           id: 'loopback',
@@ -385,15 +385,15 @@ export default defineLesson({
           },
           {
             id: 'term-public',
-            idea: 'An address that is unique on the whole internet and handed out through a registry; a router has one, on its outside',
+            idea: 'An address that is unique on the whole internet, handed out through registries and providers; a home or office router usually has one, on its outside',
             name: 'Public address',
-            cite: [rfc2663('2.7'), rfc1918('3'), rfc4632('3.1'), NIST_PUBLIC],
+            cite: [rfc2663('2.7'), rfc('rfc-1918', '3'), rfc('rfc-4632', '3.1'), NIST_PUBLIC],
           },
           {
             id: 'term-special',
-            idea: 'A block set aside for one job, which IANA lists',
+            idea: 'A block set aside for one job, which IANA lists: 127.0.0.0/8, 0.0.0.0 and 255.255.255.255 among them',
             name: 'Special-purpose address',
-            cite: [rfc6890('1'), IANA_HEADER],
+            cite: [rfc6890('1'), IANA_HEADER, iana('0.0.0.0/32, 127.0.0.0/8, 255.255.255.255/32')],
           },
           {
             id: 'term-loopback',
@@ -461,13 +461,13 @@ export default defineLesson({
           {
             id: 'fact-network-part',
             label: 'Network part',
-            value: 'a prefix such as 192.168.1.0/24 names a whole network: here, its first 24 bits',
+            value: 'a prefix such as 192.168.1.0/24 names a whole network; the addresses on it share those first 24 bits',
             cite: [rfc4632('3.1'), MS_ADDRESSES],
           },
           {
             id: 'fact-several',
             label: 'Addresses per device',
-            value: 'one per connection, so a device can have several',
+            value: 'a device can have several: an address is given to a connection, so two connections mean two addresses',
             cite: [ip4('2.3'), MULTIHOMED, MS_IPCONFIG, MS_IPCONFIG_ALL],
           },
           { id: 'fact-private', label: 'Private ranges', value: '10/8, 172.16/12, 192.168/16', cite: [rfc1918('3'), NIST_RANGES] },
@@ -509,7 +509,7 @@ export default defineLesson({
             cite: [ip4('2.3'), rfc1918('3'), rfc6890('1'), IANA_HEADER],
           },
           { id: 'fact-osi', label: 'OSI layer', value: '3, network', cite: OSI_L3 },
-          { id: 'fact-stands-for', label: 'Stands for', value: 'Internet Protocol address', cite: [ip4('1.1'), ip4('2.3')] },
+          { id: 'fact-stands-for', label: 'Stands for', value: 'Internet Protocol address', cite: [ip4('1.1'), ip4('2.3'), MS_IPCONFIG] },
         ],
       },
       practice: [
