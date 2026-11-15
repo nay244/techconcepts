@@ -49,7 +49,6 @@ const ETHERNET_FRAME = cite('rfc-894', 'Frame Format', {
 });
 const ETHERNET_BROADCAST = cite('rfc-894', 'Address Mappings', {
   url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address',
-  defining: true,
 });
 /** The same section, cited where the claim is about which frames a device keeps, not about the broadcast mapping: no marker. */
 const ETHERNET_BROADCAST_CITED = cite('rfc-894', 'Address Mappings', { url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address' });
@@ -314,7 +313,7 @@ export default defineLesson({
             'Sometimes a device has something for everyone on the network. It sends one frame to the **broadcast address**, ff:ff:ff:ff:ff:ff, which means everyone. Here your router does. Every device hears it, and this time every device keeps it and reads it. What each one does next depends on what’s inside: a device can read it and find nothing for it.',
           deep: [
             {
-              text: 'One bit in the first byte marks a group address, such as the broadcast address; a device keeps a frame for any other group if that group is on its list.',
+              text: 'One bit in the first byte marks a group address, such as the broadcast address.',
               cite: [rfc('rfc-9542', '2.1.1'), EUI_BITS, MS_FILTER],
             },
           ],
