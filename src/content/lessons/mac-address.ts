@@ -46,12 +46,14 @@ const IEEE_802 = vendor('ieee-802-2024', 'IEEE 802-2024', 'specifies the structu
 
 const ETHERNET_FRAME = cite('rfc-894', 'Frame Format', {
   url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=IP%20datagrams%20are%20transmitted%20in%20standard%20Ethernet%20frames',
-  defining: true,
 });
 const ETHERNET_BROADCAST = cite('rfc-894', 'Address Mappings', {
   url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address',
   defining: true,
 });
+/** The same section, cited where the claim is about which frames a device keeps, not about the broadcast mapping: no marker. */
+const ETHERNET_BROADCAST_CITED = cite('rfc-894', 'Address Mappings', { url: 'https://www.rfc-editor.org/rfc/rfc894.html#:~:text=The%20broadcast%20Internet%20address' });
+const CANONICAL_IGNORE = vendor('canonical-dhcp-concepts', 'The network version of DORA', 'Every machine on the network will see the packet');
 /** RFC 1122 has no ids below its top-level sections, so a section is cited by the page it starts on. */
 const host = (section: string, page: number) =>
   cite('rfc-1122', section, { url: `https://www.rfc-editor.org/rfc/rfc1122.html#page-${page}`, defining: true });
@@ -124,7 +126,7 @@ const table = (id: string, op: TableEvent['op'], summary: string, backing: Backi
 });
 /** One word in one device's "This frame" cell. */
 const keeps = (id: string, who: Device, word: 'Keeps it' | 'Ignores it', backing: Backing): TableEvent =>
-  table(id, 'update', `The ${who} says: ${word}.`, backing, { key: MAC[who], row: { frame: word } });
+  table(id, 'update', `The ${who === 'tv' ? 'TV' : who} says: ${word}.`, backing, { key: MAC[who], row: { frame: word } });
 /** After each frame, one replace: the sender "Sent it", every other row "Hears it". */
 const heard = (id: string, sender: Device, summary: string): TableEvent =>
   table(id, 'replace', summary, traced('fact-hear', 'fact-frame'), {
@@ -272,7 +274,7 @@ export default defineLesson({
             'Each device reads the frame’s destination and compares it with its own MAC address. The router’s matches, so the router keeps the frame and reads the packet inside. The phone’s and the TV’s don’t match, so they ignore it. A frame sent to one device’s address is kept by that device alone.',
           deep: [
             {
-              text: 'A card can be set to keep every frame it hears, not just its own, as a capture tool does.',
+              text: 'A card can be set to keep every frame it hears, not just those for it.',
               cite: [BPF, MS_FILTER],
             },
           ],
@@ -312,7 +314,7 @@ export default defineLesson({
             'Sometimes a device has something for everyone on the network. It sends one frame to the **broadcast address**, ff:ff:ff:ff:ff:ff, which means everyone. Here your router does. Every device hears it, and this time every device keeps it and reads it. What each one does next depends on what’s inside: a device can read it and find nothing for it.',
           deep: [
             {
-              text: 'Another bit marks a group address; a device keeps a group frame only for groups it has joined.',
+              text: 'One bit in the first byte marks a group address, such as the broadcast address; a device keeps a frame for any other group if that group is on its list.',
               cite: [rfc('rfc-9542', '2.1.1'), EUI_BITS, MS_FILTER],
             },
           ],
@@ -329,11 +331,11 @@ export default defineLesson({
           title: 'A new frame from the router',
           sub: 'MAC addresses stay home',
           narrative:
-            'example.net’s reply reaches your router. The router puts it in a new frame for your laptop: to 00:00:5E:00:53:10, from the router’s own 00:00:5E:00:53:01. example.net’s MAC address isn’t on it: each network a packet crosses puts it in a new frame, with that network’s MAC addresses. The phone and the TV hear this frame too, and ignore it. The laptop keeps it.',
+            'example.net’s reply reaches your router. The router puts it in a new frame for your laptop: to 00:00:5E:00:53:10, from the router’s own 00:00:5E:00:53:01. example.net’s MAC address isn’t on it: each router on the way puts the packet in a new frame, addressed to the next device’s MAC address. The phone and the TV hear this frame too, and ignore it. The laptop keeps it.',
           deep: [
             {
               text: 'At each hop, a router finds the link-layer address of the next hop and puts the packet in a new frame for that link.',
-              cite: [rfc('rfc-1812', '5.2.1.2', true), ETHERNET_FRAME],
+              cite: [rfc('rfc-1812', '5.2.1.2', true), CISCO_HOP],
             },
           ],
           facts: [
@@ -350,7 +352,7 @@ export default defineLesson({
           {
             id: 'lead-1',
             text: 'On your home network, every frame names the MAC address it’s for. Every device in range hears it. The device with that address keeps it, every device keeps it when it’s sent to the broadcast address, and the rest ignore it.',
-            cite: [rfc('rfc-9542', '3'), rfc('rfc-9724', '2.1'), MS_FILTER, BPF, ETHERNET_BROADCAST],
+            cite: [rfc('rfc-9542', '3'), rfc('rfc-9724', '2.1'), MS_FILTER, BPF, ETHERNET_BROADCAST_CITED],
           },
           {
             id: 'lead-2',
@@ -406,7 +408,7 @@ export default defineLesson({
           id: 'pattern',
           names: ['Hear the frame', 'Read the destination', 'Mine or everyone’s? Keep it', 'Not mine? Ignore it'],
           note: 'What every device on the Wi-Fi does with each frame it hears.',
-          cite: [rfc('rfc-9724', '2.1'), MS_FILTER, BPF, ETHERNET_BROADCAST, EUI_ALL],
+          cite: [rfc('rfc-9724', '2.1'), MS_FILTER, BPF, ETHERNET_BROADCAST_CITED, EUI_ALL],
         },
         why: [
           {
@@ -475,14 +477,14 @@ export default defineLesson({
           {
             id: 'fact-broadcast',
             label: 'Sent to everyone',
-            value: 'ff:ff:ff:ff:ff:ff, the broadcast address: every device on the network keeps it and reads it, and acts on it only if what’s inside is for it',
-            cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-919', '1')],
+            value: 'ff:ff:ff:ff:ff:ff, the broadcast address: every device on the network keeps it and reads it, and what it does next depends on what’s inside',
+            cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-919', '1'), rfc('rfc-919', '4'), CANONICAL_IGNORE],
           },
           {
             id: 'fact-local',
             label: 'Reaches',
             value:
-              'only your own network: a packet for anywhere farther goes to your router in a frame for the router’s MAC address, and the router sends it on in a new frame',
+              'only your own network: a packet for anywhere farther goes to your router in a frame for the router’s MAC address, and each router on the way sends it on in a new frame',
             cite: [host('3.3.1', 47), rfc('rfc-1812', '5.2.1.2', true), CISCO_REMOTE, CISCO_HOP, PALO_REMOVES],
           },
           {
@@ -512,7 +514,7 @@ export default defineLesson({
             {
               text: 'Keeps it and reads it.',
               feedback: 'Not quite. A device keeps a frame sent to its own MAC address or to the broadcast address. This one is the phone’s.',
-              cite: [MS_FILTER, BPF, ETHERNET_BROADCAST],
+              cite: [MS_FILTER, BPF, ETHERNET_BROADCAST_CITED],
             },
             {
               text: 'Never hears it: the frame goes only to the phone.',
@@ -534,7 +536,7 @@ export default defineLesson({
             {
               text: 'Only the device that answers it.',
               feedback: 'Not quite. Every device keeps a broadcast and reads it. Whether any of them answers depends on what’s inside.',
-              cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-919', '1')],
+              cite: [ETHERNET_BROADCAST, EUI_ALL, rfc('rfc-919', '1'), rfc('rfc-919', '4'), CANONICAL_IGNORE],
             },
             {
               text: 'None: no device has that address.',
