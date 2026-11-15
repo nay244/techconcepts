@@ -304,6 +304,23 @@ test('12: under reduced motion every hearer hears at once, and the ring group st
   expect(verdicts(root)).toEqual(['hears', 'sent', 'hears', 'hears']);
 });
 
+test('12: when a frame’s ride has ended, its tag, trail and ring are gone and the ring is back at the laptop; what the ride left stays: every verdict and every light', async () => {
+  const { root, driver } = mount();
+  const before = viewAt(mac, 1);
+  driver.show(before);
+  await playOut(driver, eventById(mac, 's1-frame'), before);
+  expect(part(root, 'dh-tag-frame').style.opacity).toBe('0');
+  expect(part(root, 'dh-arc').style.opacity).toBe('0');
+  expect(part(root, 'dh-ring-g').style.opacity).toBe('0');
+  for (const id of ['dh-ring', 'dh-ring2']) {
+    expect(part(root, id).getAttribute('r')).toBe('1');
+    expect(part(root, id).getAttribute('cx')).toBe('-67');
+    expect(part(root, id).getAttribute('cy')).toBe('23');
+  }
+  expect(verdicts(root)).toEqual(['hears', 'sent', 'hears', 'hears']);
+  for (const place of PLACES) expect(lightsOf(root, place).every(Boolean), `${place}'s light`).toBe(true);
+});
+
 test('12: a ride that starts after step 4 begins with none of step 4’s lights: every light is put out first', async () => {
   const { root, driver } = mount();
   driver.show(viewAt(mac, 4, eventsOfStep(mac, 4).length));
