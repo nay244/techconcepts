@@ -17,7 +17,7 @@ Holes with one right answer, closed as the review answers them; each is part of 
 - **E9 (H11).** dhcp's `clear()` puts both ring circles back at `ringAt.laptop` and removes `on` from `#dh-tv-glow`.
 - **E10 (H12).** B14 builds with unit tests on a test-only `src/content/batch2-fixtures.ts` (checks 1–20, 23, 24, 26, 27, 29, check 28's `lessonFigure`) and runs Subnetting's end-to-end spec at 375 and 1440 with `E2E_PORT=4481` (check 22, H8, H9, the Subnetting part of 21 and 25). B14b takes check 21 for IP, 25, 28's track page, §4.2's sizes, H10's result, `NO_SEQUENCE` gaining `ip-address` and `mac-address`, and `e2e/{ip-address,mac-address,tcp-udp}.spec.ts`.
 - **E11 (H13).** The fixtures copy the prototype's scene data (steps, events, cells, logs, legends, update order); no test pins a placeholder word, only §7's design copy, the MACs, the addresses and the cell words.
-- **E12 (the author's, 2026-11-15).** The `tcp-udp` fixture's and the lesson's cell "Arrived, played at once" is "Arrived, straight to the app" (§7's cell list and §3.3's step 5 table cell). The cell is a design word; the build's test pins the new one.
+- **E12 (after L24-p, the orchestrator).** TCP/UDP's cell "Arrived, played at once" (§7, §3.3) is false: a call app holds packets in a de-jitter buffer before playing them (ITU-T G.114 Annex A.3). It becomes **"Arrived, straight to the app"** (`fact-lost`'s words), with the matching step summary; the table's shape is unchanged. The `tcp-udp` fixture and its test follow in B14b; the 375 table is checked there (case 25).
 
 **Verdict: HOLES.** A builder would have to guess in five places (H1, H3, H5, H8, H10), and three acceptance checks cannot pass as written (10, 13 read naïvely, 22).
 
