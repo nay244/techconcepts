@@ -1,7 +1,7 @@
 ```json fact-check
 {
   "slug": "mac-address",
-  "hash": "de0140d5ba5b4b6616d54619c137eed2060bc5c95c4e127246cf6409c861d85d",
+  "hash": "7d5139870ace289a9c46bda91abddbf810637c6ef7a6bcb1e9b282558992fc92",
   "checked": "2026-11-15",
   "checker": "claude-opus-5-5",
   "verdicts": {
@@ -57,8 +57,8 @@
     "units[0].steps[4].events[4] (event \"s5-tv\")": "✅",
     "units[0].steps[0].deep[0] (step \"everyone-hears\", Go deeper)": "✅",
     "units[0].steps[1].deep[0] (step \"only-the-match\", Go deeper)": "✅",
-    "units[0].steps[2].deep[0] (step \"two-halves\", Go deeper)": "⚠️",
-    "units[0].steps[3].deep[0] (step \"to-everyone\", Go deeper)": "⚠️",
+    "units[0].steps[2].deep[0] (step \"two-halves\", Go deeper)": "✅",
+    "units[0].steps[3].deep[0] (step \"to-everyone\", Go deeper)": "✅",
     "units[0].steps[4].deep[0] (step \"new-frame\", Go deeper)": "✅",
     "units[0].learn.lead[0] (\"lead-1\")": "✅",
     "units[0].learn.lead[1] (\"lead-2\")": "✅",
@@ -70,10 +70,10 @@
     "units[0].learn.terms[5] (\"term-random\")": "✅",
     "units[0].learn.terms[6] (\"term-local\")": "✅",
     "units[0].learn.pattern (\"pattern\")": "✅",
-    "units[0].learn.why[0] (\"why-1\")": "✅",
+    "units[0].learn.why[0] (\"why-1\")": "⚠️",
     "units[0].learn.why[1] (\"why-2\")": "✅",
     "units[0].learn.deep[0] (\"deep-random\", Learn's Go deeper)": "✅",
-    "units[0].learn.deep[1] (\"deep-blocks\", Learn's Go deeper)": "⚠️",
+    "units[0].learn.deep[1] (\"deep-blocks\", Learn's Go deeper)": "✅",
     "units[0].learn.deep[2] (\"deep-spoof\", Learn's Go deeper)": "✅",
     "units[0].learn.facts[0] (\"fact-defined\")": "✅",
     "units[0].learn.facts[1] (\"fact-osi\")": "✅",
@@ -93,9 +93,9 @@
     "units[0].practice[1].options[0] (question \"everyone\")": "✅",
     "units[0].practice[1].options[1] (question \"everyone\")": "✅",
     "units[0].practice[1].options[2] (question \"everyone\")": "✅",
-    "units[0].practice[2].options[0] (question \"first-half\")": "⚠️",
+    "units[0].practice[2].options[0] (question \"first-half\")": "✅",
     "units[0].practice[2].options[1] (question \"first-half\")": "✅",
-    "units[0].practice[2].options[2] (question \"first-half\")": "✅",
+    "units[0].practice[2].options[2] (question \"first-half\")": "⚠️",
     "units[0].practice[0].prompt (question \"one-device\")": "✅",
     "units[0].practice[1].prompt (question \"everyone\")": "✅",
     "units[0].practice[2].prompt (question \"first-half\")": "✅"
@@ -185,17 +185,17 @@
   "overrides": [],
   "quotes": {
     "checked": "2026-11-15",
-    "count": 153,
-    "digest": "17d8e9f955b79668fa9e0954737e05734f9347ae414e7ea159205dc130a368fa",
+    "count": 134,
+    "digest": "85384e2b8f1608134becf7b24fe225247c920ac89980405f13a679895db84f74",
     "files": {
-      "cisco-arp-config": "5c535183075153b9ec3d6f34b89a19bc883b343c0450cad774d8fca09e9d93b1",
-      "paloalto-layer-7": "598d72000fe15e9bd7929ba42142dfc183220e02c286a26ea6501ce2d02f1df8",
+      "cisco-arp-config": "1d488b11849079a31214035ccfcac76225e83f548b5772c8c6d499bae3041b5d",
+      "paloalto-layer-7": "d8d249582cf58b630e0f6ee273dfc9fc0d1a852c3102696d10170754e0de8597",
       "rfc-9724": "b0ad27b88fe2c18981558885cff56b523539a5d69784a5188887ab0fbb06095e",
-      "microsoft-wifi-connect": "503fea1a4da1704a624716730506a2bdd01569c2cf68e1852f2d781b8cc04bad",
+      "microsoft-wifi-connect": "0ffce9638e7457627fa7be9013a81e84aa67d31f3a32b96013720c003857d66f",
       "openbsd-man-bpf-4": "dd3de46dfe24267579feb2f1d9968c4b444ac36f4c19aaa1ecf341d53cb1d209",
       "microsoft-ndis-packet-filter": "aa5a72fd08c543643b6f9b62e7214dff13e82374d841ca85c153ff0e0e76dff4",
       "rfc-9542": "5c52f6cb6aacb1dea947a206bc8775ec8aaed52d74b92c600f1b1166d5c3c0f1",
-      "ieee-ra-faq": "ee7860a49a850d3f9485197126feb865a42c73a650af55062415486f19a6a1b8",
+      "ieee-ra-faq": "2949c345225c64e2ed8fe59be2b90e1d497fe5f1790d1f48bdab06583984cb30",
       "ieee-eui-guidelines": "2f0e6101d18f1e8bdaef5ccba8dd7f764843e4a9f275ecb93853a0d3f7f76da1",
       "rfc-1812": "72c2c27fecd3eef085f978a8c0ee5f364877708bfc0251af1c8437b56ad2f56d",
       "rfc-894": "be88b9301e53f986aca3a0e55e488d1d79bae3f88fe3f257640397bc089e7035",
@@ -259,8 +259,8 @@
     "units[0].steps[4].events[4] (event \"s5-tv\")": "147712c637c85bec7919d195143cbbf00f01e35ecdd1a7e3bdb6c7d7cf9f625f",
     "units[0].steps[0].deep[0] (step \"everyone-hears\", Go deeper)": "cdd87340d4e8fd7036275774f10aaee4946e311bc2c36d5297cc9d2545c495ac",
     "units[0].steps[1].deep[0] (step \"only-the-match\", Go deeper)": "998bc49349d364807e955a86655ebd0bdb561b96a8d0419eafc8b38fa88db57b",
-    "units[0].steps[2].deep[0] (step \"two-halves\", Go deeper)": "3a6e99439c897e81e781f125fa24d02eeb253a0b05bb2b736425c57c52f32628",
-    "units[0].steps[3].deep[0] (step \"to-everyone\", Go deeper)": "b1032f2caf589f21e8f4880443db2cd4390f743158bad3663e6e5c0f728a7389",
+    "units[0].steps[2].deep[0] (step \"two-halves\", Go deeper)": "a8c43189a7b8b7349f836d7108c80e5f95730eb59d29e5e7ddd6d604d69d469e",
+    "units[0].steps[3].deep[0] (step \"to-everyone\", Go deeper)": "2d9a83ea543cf359b492624a5beb770610abde16725dde4caaa2325763ac1757",
     "units[0].steps[4].deep[0] (step \"new-frame\", Go deeper)": "e17b56c9f3394b892f890827bff70281184fb77028d6473a3d8d92ceac2e86bb",
     "units[0].learn.lead[0] (\"lead-1\")": "c87e5a10bdd6999e3e11c25061f91e04f42c7ab1b6b9e691247aab60ef74401a",
     "units[0].learn.lead[1] (\"lead-2\")": "d37974e718af05f3e71783dfc47f277679dd8642a9b5ba81cf089ec7e3c32d4b",
@@ -275,7 +275,7 @@
     "units[0].learn.why[0] (\"why-1\")": "3c7d5178677c80ca172588c47dcdb55f92f3a6e75ba5d6ca75372327c902e1e2",
     "units[0].learn.why[1] (\"why-2\")": "de1cfc7671b143ba47438e0e152cb3b067930414a0d785a1a52ea6fe0936f3bd",
     "units[0].learn.deep[0] (\"deep-random\", Learn's Go deeper)": "e331ce6c2ced3f3e9ee4301946a2e1a505328079c5818bd47f46fb60294928d3",
-    "units[0].learn.deep[1] (\"deep-blocks\", Learn's Go deeper)": "3a6e99439c897e81e781f125fa24d02eeb253a0b05bb2b736425c57c52f32628",
+    "units[0].learn.deep[1] (\"deep-blocks\", Learn's Go deeper)": "a8c43189a7b8b7349f836d7108c80e5f95730eb59d29e5e7ddd6d604d69d469e",
     "units[0].learn.deep[2] (\"deep-spoof\", Learn's Go deeper)": "7371ca1b54d6e8fcf314aa12ef672799448db9fd467a7fd33d5552ee27a7d37b",
     "units[0].learn.facts[0] (\"fact-defined\")": "c994a3f43fbee727679985ac0be079bf21222eba4d5bfdd2852c5eb70b2fbc7c",
     "units[0].learn.facts[1] (\"fact-osi\")": "bc3c17a0042916c9252d6419db8136f70c64e8f00b3bf1c02d5d1d7722a10eea",
@@ -295,7 +295,7 @@
     "units[0].practice[1].options[0] (question \"everyone\")": "ce1969bdb4e77c03c98537ec20355b4940cb1c65a21413287211b801542b1186",
     "units[0].practice[1].options[1] (question \"everyone\")": "59dd0705677fd942e345c485c1d7442181d09edbf5649cd3bf91586cbeb36b02",
     "units[0].practice[1].options[2] (question \"everyone\")": "95ed984345491374094b0869d3c4d471dd4b9b2910e00483bb0d5b90748fcf84",
-    "units[0].practice[2].options[0] (question \"first-half\")": "843d030172dd2e0e073f83d2e0576dda146f7059f196f8125930c0b583d72b7c",
+    "units[0].practice[2].options[0] (question \"first-half\")": "14c918b56f2838a9e36f56fb8ce2645082a54b1ff8b7c80851e0b96d9b16bba1",
     "units[0].practice[2].options[1] (question \"first-half\")": "2fd75b2eecf8a0905496df446ba879e5df8aaf9f64722b68ae27b4675571017f",
     "units[0].practice[2].options[2] (question \"first-half\")": "2757e4d3e55bbadd3638e67f2c5979442c1effa49f08ccce16825d5d4e4182e6",
     "units[0].practice[0].prompt (question \"one-device\")": "6def7c566f20d5fea6943c9f6610a2f8ae833c0432011d6c700bb7ddb23b3876",
@@ -306,26 +306,20 @@
 }
 ```
 
-# Fact-check: MAC Address
+# Fact-check: mac-address
 
-Checked 2026-11-15 against the claim sheet with the hash in the header. Every source was fetched from its publisher in this run; RFCs as plain text from the RFC Editor, the IEEE EUI tutorial as a PDF (text saved with `pdftotext -raw`), and the web pages saved as HTML.
+A full check of every item on the claim sheet, against the sources fetched on 2026-11-15 from their publishers' own sites. 92 items pass; 2 are ⚠️, both for a claim that only one of the part's citations states (the two-source rule), not for anything false.
 
-Result: 90 ✅, 4 ⚠️, 0 ❌.
-
-## 1. Claims
+## Claims
 
 ### units[0].osi — ✅
 
 - `cisco-arp-config` §Layer 2 and Layer 3 Addressing
-  > IP addressing occurs at Layer 2 (data link) and Layer 3 (network) of the Open System Interconnection (OSI) reference model.
-- `cisco-arp-config` §Layer 2 and Layer 3 Addressing
   > Layer 2 addresses are used for local transmissions between devices that are directly connected.
-- `cisco-arp-config` §Layer 2 and Layer 3 Addressing
-  > Token Ring, and Fiber Distributed Data Interface (FDDI) use media access control (MAC) addresses that are “burned in” to the
-  > network interface card (NIC).
+  > … use media access control (MAC) addresses that are “burned in” to the network interface card (NIC).
 - `paloalto-layer-7` §Meet the Layers of the OSI Model
   > Layer 2 - The Data Link Layer: This layer structures raw bits from the physical layer into data frames and manages node-to-node communication through physical addresses (MAC addresses).
-- Note: No standard places the MAC address at an OSI layer; the badge rests on two vendors' pages from different publishers (Cisco and Palo Alto Networks), as the owner's settled rule allows. Both put MAC addresses at Layer 2, data link. Both pages are live and describe current products and practice (checked 2026-11-15).
+- Note: No standard places the MAC address at an OSI layer; two independent vendors (Cisco and Palo Alto Networks) each put MAC addresses at Layer 2, the data link layer. Both pages are live and describe current practice (checked 2026-11-15).
 
 ### units[0].steps[0].deep[0] (step "everyone-hears", Go deeper) — ✅
 
@@ -334,100 +328,93 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
 - `rfc-9724` §2.2
   > when a device uses this MAC address over a shared medium to transmit data -- especially over the air -- it is relatively easy to track this device by simple medium observation.
 - `microsoft-wifi-connect` §Random hardware addresses
+  > The signal contains the unique physical hardware (MAC) address for your device.
   > Some places, for example shopping malls, stores, or other public areas, might use this unique address to track your movement in that area.
-- Note: Two independent sources (an IETF RFC and Microsoft's help page) each state both halves. RFC 9724 is a current Informational RFC, not obsoleted; the Microsoft page is live (2026-11-15).
+- Note: RFC 9724 (Informational, March 2025) is not obsoleted. The Microsoft page is live and describes current Windows settings. Two independent sources state both halves of the claim.
 
 ### units[0].steps[1].deep[0] (step "only-the-match", Go deeper) — ✅
 
 - `openbsd-man-bpf-4` §BIOCPROMISC
   > Forces the interface into promiscuous mode. All packets, not just those destined for the local host, are processed.
 - `microsoft-ndis-packet-filter` §Remarks
-  > If promiscuous mode is enabled with the NDIS_PACKET_TYPE_PROMISCUOUS bit, the protocol driver continues to receive packets even if the sending network node does not direct them to it. NDIS then sends the protocol driver all packets the NIC receives.
-- Note: Two vendors' current documentation (OpenBSD and Microsoft) state it. The claim says "frame" where both pages say "packets"; for a beginner the meaning is the same. Both pages are live (2026-11-15).
+  > If promiscuous mode is enabled with the NDIS_PACKET_TYPE_PROMISCUOUS bit, the protocol driver continues to receive packets even if the sending network node does not direct them to it.
+  > NDIS then sends the protocol driver all packets the NIC receives.
+- Note: The claim leaves out that on Wi-Fi a card may need a separate monitor mode to pass every frame up; "can be set to" is true in the ordinary sense. Both pages are live, current documentation.
 
-### units[0].steps[2].deep[0] (step "two-halves", Go deeper) — ⚠️
+### units[0].steps[2].deep[0] (step "two-halves", Go deeper) — ✅
 
 - `rfc-9542` §2.1
-  > An EUI-48 is structured into an initial prefix assigned by the IEEE Registration Authority and additional bits assigned by the prefix owner.
-- `rfc-9542` §2.1
-  > the IEEE assigns MAC Address Block Small (MA-S), where the first four and a half octets (36 bits) are assigned, giving the holder of the MA-S one and a half octets (12 bits) they can control in constructing 48-bit MAC addresses
+  > For example, the IEEE assigns MAC Address Block Small (MA-S), where the first four and a half octets (36 bits) are assigned, giving the holder of the MA-S one and a half octets (12 bits) they can control in constructing 48-bit MAC addresses
 - `ieee-ra-faq` §How can I obtain a universally unique MAC/Ethernet address?
   > The RA makes these assignments to customers in three (3) block sizes: (MA-L = ~16 Million addresses, MA-M = ~1 Million addresses, MA-S = 4,096 addresses).
-- Note: RFC 9542 is a current BCP (obsoletes RFC 7042, not itself obsoleted); the FAQ page is live (2026-11-15).
-- Note: What is wrong: only RFC 9542 states the second half of the claim, that a smaller block comes with a longer first part and a shorter second one. The cited FAQ answer gives only the three block sizes, not how the address is split, so that part is not confirmed by a second independent source. The claim itself is true; citing the IEEE RA EUI tutorial's page on block structure (its section on EUI structure, PDF page 10, or on IEEE RA assignment of identifiers, PDF page 7) would confirm it.
+- `ieee-eui-guidelines` §EUI Structure and Representation
+  > MA-S assignment with the OUI-36 AC-DE-48-23-4, and an entity assignment of the extension identifier of 5-67.
+- Note: RFC 9542 (BCP 141) and the IEEE RA tutorial are independent and each state the longer prefix and shorter remainder; the FAQ gives the smaller block sizes.
 
-### units[0].steps[3].deep[0] (step "to-everyone", Go deeper) — ⚠️
+### units[0].steps[3].deep[0] (step "to-everyone", Go deeper) — ✅
 
 - `rfc-9542` §2.1.1
-  > M bit - This bit is frequently referred to as the "group" or "multicast" bit. If it is zero, the MAC address is unicast. If it is a one, the address is groupcast (multicast or broadcast).
+  > There are bits within the initial octet of an IEEE MAC address that have special significance
+  > … This bit is frequently referred to as the "group" or "multicast" bit. If it is zero, the MAC address is unicast. If it is a one, the address is groupcast (multicast or broadcast).
 - `ieee-eui-guidelines` §Extended Unique Identifiers
-  > The least significant bit of Octet 0 (the I/G bit) indicates
-  > either an individual address (I/G=0) or group address (I/G=1)
-- Note: RFC 9542 is current; the IEEE RA tutorial is live and linked from the IEEE RA's current FAQ (2026-11-15).
-- Note: What is wrong: both sources state that one bit of the first byte marks a group address, but only RFC 9542 says the broadcast address is one of them. The cited EUI tutorial section (PDF page 6) does not mention the broadcast address, so the example "such as the broadcast address" rests on one publisher. The same tutorial's section on unassigned and null EUI values (PDF page 11) calls the all-ones address a group address and would confirm it.
+  > The least significant bit of Octet 0 (the I/G bit) indicates either an individual address (I/G=0) or group address (I/G=1)
+- `ieee-eui-guidelines` §Unassigned and NULL EUI values
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network.
+- Note: Two independent sources (an IETF BCP and the IEEE RA tutorial) state the group bit in the first byte and that the broadcast address is a group address.
 
 ### units[0].steps[4].deep[0] (step "new-frame", Go deeper) — ✅
 
 - `rfc-1812` §5.2.1.2
   > (10) The forwarder determines the Link Layer address of the packet's next hop.
-- `rfc-1812` §5.2.1.2
-  > (11) The forwarder encapsulates the IP datagram (or each of the fragments thereof) in an appropriate Link Layer frame and queues it for output on the interface selected in step 5.
-- Note: Defining standard: RFC 1812 defines how an IPv4 router forwards a unicast packet, step by step, including finding the next hop's link-layer address and putting the datagram in a new link-layer frame. It is a Proposed Standard, not obsoleted; its updates (RFC 2644 on directed broadcasts, RFC 6633 on Source Quench) do not touch these steps.
+  > … (11) The forwarder encapsulates the IP datagram (or each of the fragments thereof) in an appropriate Link Layer frame and queues it for output on the interface selected in step 5.
 - `cisco-arp-config` §ARP Caching
-  > Because the mapping of IP addresses to media access control (MAC) addresses occurs at each hop (Layer 3 device) on the network
-  > for every datagram sent over an internetwork
-- Note: RFC 1812 covers IPv4; IPv6 routers do the same with Neighbor Discovery, which the claim does not contradict.
+  > Because the mapping of IP addresses to media access control (MAC) addresses occurs at each hop (Layer 3 device) on the network for every datagram sent over an internetwork
+- Note: RFC 1812 is the defining standard for how an IPv4 router forwards a packet, step by step. It is a Proposed Standard and not obsoleted; its updates (RFC 2644, RFC 6633) concern directed broadcasts and Source Quench and leave this procedure as it is. IPv6 routers work the same way, which the claim, in saying "a router", loosely covers.
 
 ### units[0].learn.lead[0] ("lead-1") — ✅
 
 - `rfc-9542` §3
-  > the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
+  > Figure 2 shows the simplest case where the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
 - `rfc-9724` §2.1
   > Wi-Fi interfaces have an L2 address (also referred to as a MAC address) that can be seen by anybody who can receive the radio signal transmitted by the network interface.
 - `microsoft-ndis-packet-filter` §Remarks
   > Directed packets contain a destination address equal to the station address of the NIC.
-- `microsoft-ndis-packet-filter` §Remarks
-  > Broadcast packets.
-- `microsoft-ndis-packet-filter` §Remarks
-  > If promiscuous mode is enabled with the NDIS_PACKET_TYPE_PROMISCUOUS bit, the protocol driver continues to receive packets even if the sending network node does not direct them to it.
+  > … NDIS_PACKET_TYPE_BROADCAST Broadcast packets.
+  > … the protocol driver continues to receive packets even if the sending network node does not direct them to it.
 - `openbsd-man-bpf-4` §BIOCPROMISC
   > All packets, not just those destined for the local host, are processed.
 - `rfc-894` §Address Mappings
-  > The broadcast Internet address (the address on that network with a host part of all binary ones) should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
-- Note: Each part is stated by two publishers: frames carry the destination address (RFC 9542, and Microsoft's directed-packet filter); a card hears frames not meant for it (RFC 9724 for radio, Microsoft and OpenBSD that a card receives such frames and passes them up only when set to); it keeps frames to its own address and broadcast frames (Microsoft's filter types, RFC 894's broadcast mapping). All sources current (2026-11-15).
-- Note: True for a beginner. "In range" ties the hearing to Wi-Fi; on a wired, switched home network a unicast frame reaches only its port. It leaves out multicast (group) frames, which group members keep, and promiscuous mode, which the lesson teaches in a Go deeper.
+  > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
+- Note: "Every device in range hears it" is scoped by "in range" to the lesson's Wi-Fi; on a switched wired network a frame for one device does not reach every port, which the lesson does not teach. The claim also leaves out multicast frames, which a device keeps if it has joined the group; for a beginner the ordinary cases are a frame for one device and a broadcast.
+- Note: Hearing rests on RFC 9724 and on Microsoft's and OpenBSD's pages, which say a card receives frames not directed to it; keeping one's own frames and broadcasts rests on Microsoft and OpenBSD, with RFC 894 naming the all-ones broadcast address.
 
 ### units[0].learn.terms[0] ("term-mac") — ✅
 
 - `rfc-9724` §2.1
-  > A universally administered address is uniquely assigned to a device by its manufacturer. Most physical devices are provided with a universally administered address
+  > A universally administered address is uniquely assigned to a device by its manufacturer.
 - `cisco-arp-config` §Address Resolution Protocol
-  > ARP finds the hardware address,
-  > also known as Media Access Control (MAC) address, of a host from its known IP address.
+  > ARP finds the hardware address, also known as Media Access Control (MAC) address, of a host from its known IP address.
 - `ieee-ra-faq` §What is an Organizationally Unique Identifier (OUI)?
   > For example, the Ethernet MAC Address is an EUI-48, unique to one particular Ethernet interface.
-- Note: True for a beginner: a device can use another address instead, which the lesson teaches (fact-random). All three sources live and current (2026-11-15).
+- Note: "Network card" is the everyday word for a network interface, including one built into a phone or laptop.
 
 ### units[0].learn.terms[1] ("term-frame") — ✅
 
 - `rfc-9542` §3
-  > Ethernet protocol parameters provide a means of indicating, near the beginning of a frame, the contents of that frame -- for example, that it contains IPv4 or IPv6.
-- `rfc-9542` §3
-  > the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
+  > Figure 2 shows the simplest case where the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
 - `rfc-894` §Frame Format
   > IP datagrams are transmitted in standard Ethernet frames.
 - `paloalto-layer-7` §Encapsulation Process (Data Flow Downwards)
-  > The data link layer (Layer 2) encapsulates this packet in a frame, adding MAC addresses in its header and a Frame Check Sequence (FCS) in its trailer.
-- Note: "At the front" is the header. RFC 894 (Internet Standard, STD 41) and RFC 9542 are current; the Palo Alto page is live (2026-11-15).
+  > The data link layer (Layer 2) encapsulates this packet in a frame, adding MAC addresses in its header
+- Note: A Wi-Fi frame has a few control fields before its addresses and can hold more than two; "at the front" is true loosely.
 
 ### units[0].learn.terms[2] ("term-broadcast") — ✅
 
 - `rfc-894` §Address Mappings
   > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
 - `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > The all-ones 48-bit value (FF-FF-FF-FF-FF-FF) and 64-bit value (FF-FF-FF-FF-FF-FF-FF-FF) are IEEE 802 multicast (group)
-  > MAC addresses indicating all stations on a network.
-- Note: Two independent sources (IETF and the IEEE RA). The lesson writes the digits in lower case, which is the same value.
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network.
+- Note: RFC 894 (STD 41) is an Internet Standard and not obsoleted.
 
 ### units[0].learn.terms[3] ("term-oui") — ✅
 
@@ -437,44 +424,42 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > An EUI-48 is structured into an initial prefix assigned by the IEEE Registration Authority and additional bits assigned by the prefix owner.
 - `ieee-ra-faq` §What is an Organizationally Unique Identifier (OUI)?
   > An OUI is a 24-bit globally unique assigned number referenced by various standards.
+  > … It can be used to identify an organization/company where a globally unique identifier is needed.
 - `ieee-eui-guidelines` §IEEE-Administered organizational identifiers: OUI and CID
-  > The IEEE Registration Authority (IEEE RA) assigns globally unique identifiers to
-  > organizations.
-- `ieee-eui-guidelines` §IEEE-Administered organizational identifiers: OUI and CID
-  > An OUI or a CID may be used for identification of a company, organization,
-  > entity, manufacturer, vendor, etc.
-- Note: The full name is given by RFC 9724. "First half" is true of the 24-bit OUI in a 48-bit address. All sources current (2026-11-15).
+  > The IEEE Registration Authority (IEEE RA) assigns globally unique identifiers to organizations.
+  > … An OUI or a CID may be used for identification of a company, organization, entity, manufacturer, vendor, etc.
+- Note: The full name is given by RFC 9724 and the IEEE RA tutorial.
 
 ### units[0].learn.terms[4] ("term-ra") — ✅
 
 - `rfc-9542` §1.2
   > the registration authority for Ethernet parameters since 1986 has been the IEEE Registration Authority
+  > … Anyone may apply to that authority for parameter assignments.
 - `ieee-ra-faq` §How can I obtain a universally unique MAC/Ethernet address?
   > Blocks of universally unique MAC addresses/Ethernet addresses are assigned by the IEEE Registration Authority (RA).
-- Note: Both name the IEEE RA as the body that assigns; the FAQ says it does so in blocks, each block being the addresses that share its first part. "First halves" is the beginner's word for the assigned prefix (24 bits for the largest block).
+- Note: The FAQ states the blocks; RFC 9542 states that this authority makes Ethernet parameter assignments. A block is given as its prefix, the "first half" of the lesson's words.
 
 ### units[0].learn.terms[5] ("term-random") — ✅
 
 - `rfc-9724` §2.2
-  > This feature can be used to generate random addresses, which decouple the globally unique identifier from the device and therefore make it more difficult to track a user device from its MAC/L2 address
+  > One way to address this privacy concern is by using randomly generated MAC addresses.
+  > … This feature can be used to generate random addresses, which decouple the globally unique identifier from the device and therefore make it more difficult to track a user device from its MAC/L2 address
 - `microsoft-wifi-connect` §Random hardware addresses
   > If your Wi-Fi hardware supports it, you can turn on random hardware addresses to make it harder for people to track you when your device scans for networks and connects.
 - `openbsd-man-ifconfig-8` §lladdr
   > Change the link layer address (MAC address) of the interface. This should be specified as six colon-separated hex values, or can be chosen randomly.
-- Note: Current practice (RFC 9724, March 2025; Microsoft and OpenBSD pages live, 2026-11-15).
 
 ### units[0].learn.terms[6] ("term-local") — ✅
 
 - `rfc-9724` §2.1
-  > Locally administered addresses override the burned-in address, and they can be set up by either the network administrator or the Operating System (OS) of the device to which the address pertains.
-- `rfc-9724` §2.1
   > Universally and locally administered addresses are distinguished by setting the second least significant bit of the most significant byte of the address (the U/L bit).
+  > … Locally administered addresses override the burned-in address, and they can be set up by either the network administrator or the Operating System (OS) of the device to which the address pertains.
 - `rfc-9542` §2.1.1
-  > X bit - This bit is also called the "universal/local" bit (formerly called the Local/Global bit).
+  > This bit is also called the "universal/local" bit (formerly called the Local/Global bit).
+  > … Previously, if it was a one, the MAC address was considered "local" and under the assignment and control of the local network operator
 - `ieee-eui-guidelines` §Extended Unique Identifiers
-  > the second least significant bit of Octet 0 (the U/L bit) indicates universal (U/L=0)
-  > or local (U/L=1) administration of the address.
-- Note: True for a beginner: it leaves out the rarer local addresses built from an IEEE-assigned Company ID under the optional local address plan. RFC 9724 and the IEEE RA tutorial are independent publishers.
+  > the second least significant bit of Octet 0 (the U/L bit) indicates universal (U/L=0) or local (U/L=1) administration of the address.
+- Note: The claim leaves out the optional IEEE local address plan (SLAP), under which one quadrant of local addresses goes to organizations holding a CID; the ordinary local address is set by the device or the network.
 
 ### units[0].learn.pattern ("pattern") — ✅
 
@@ -482,30 +467,29 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > Wi-Fi interfaces have an L2 address (also referred to as a MAC address) that can be seen by anybody who can receive the radio signal transmitted by the network interface.
 - `microsoft-ndis-packet-filter` §Remarks
   > Directed packets contain a destination address equal to the station address of the NIC.
-- `microsoft-ndis-packet-filter` §Remarks
-  > Broadcast packets.
+  > … NDIS_PACKET_TYPE_BROADCAST Broadcast packets.
 - `openbsd-man-bpf-4` §BIOCPROMISC
   > All packets, not just those destined for the local host, are processed.
 - `rfc-894` §Address Mappings
   > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
 - `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > MAC addresses indicating all stations on a network.
-- Note: Hear (RFC 9724, and Microsoft/OpenBSD that a card receives frames not meant for it), read the destination and keep what is directed to it (Microsoft, OpenBSD), keep the broadcast (Microsoft's broadcast filter type, RFC 894, IEEE RA).
-- Note: True for a beginner: "every device" is the ordinary case. It leaves out multicast (group) frames and promiscuous mode; the lesson's own Go deeper says a card "can be set to" keep every frame, so the pattern is plainly the default.
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network.
+- Note: "Every device" describes the default; the lesson's own Go deeper says a card can be set to keep every frame, and multicast frames for a joined group are kept too. Both are options or rarer cases left out, not contradicted.
 
-### units[0].learn.why[0] ("why-1") — ✅
+### units[0].learn.why[0] ("why-1") — ⚠️
 
 - `rfc-9724` §2.1
   > Wi-Fi interfaces have an L2 address (also referred to as a MAC address) that can be seen by anybody who can receive the radio signal transmitted by the network interface.
 - `rfc-9724` §2.2
   > MAC addresses can be easily observed by a third party, such as a passive device listening to communications in the same L2 network.
 - `rfc-9542` §3
-  > the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
+  > Figure 2 shows the simplest case where the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
 - `paloalto-layer-7` §Meet the Layers of the OSI Model
-  > This layer structures raw bits from the physical layer into data frames and manages node-to-node communication through physical addresses (MAC addresses).
+  > manages node-to-node communication through physical addresses (MAC addresses).
 - `cisco-arp-config` §Layer 2 and Layer 3 Addressing
-  > Each network uses addressing to identify and group devices so that transmissions can be sent and received.
-- Note: The shared hearing is stated by RFC 9724; the reason (addressing names which device a transmission is for) by Cisco and Palo Alto, with RFC 9542 showing the destination address in each frame.
+  > Layer 2 addresses are used for local transmissions between devices that are directly connected.
+- Note: The claim is true, and "each frame has to say which device it is for" is confirmed by RFC 9542, Palo Alto and Cisco.
+- Note: What is wrong: "many devices share one Wi-Fi and hear every frame" is stated only by RFC 9724 (its §2.1 and §2.2 are one document); none of the other four citations says that devices hear frames not meant for them. It needs a second independent source, such as the NDIS page's Remarks that this lesson already cites elsewhere.
 
 ### units[0].learn.why[1] ("why-2") — ✅
 
@@ -514,35 +498,33 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
 - `ieee-ra-faq` §What is an Organizationally Unique Identifier (OUI)?
   > The OUI is usually concatenated with other bits that are assigned by that organization in order to make a globally unique EUI-48 or EUI-64.
 - `ieee-eui-guidelines` §Extended Unique Identifiers
-  > each EUI is intended to be globally unique and bound to a hardware device instance or
-  > other object that requires unique identification.
-- Note: "Should" matches the IEEE RA's own caution that uniqueness is intended, not guaranteed.
+  > each EUI is intended to be globally unique and bound to a hardware device instance or other object that requires unique identification.
+- Note: "Should" matches the sources, which aim at uniqueness rather than guarantee it.
 
 ### units[0].learn.deep[0] ("deep-random", Learn's Go deeper) — ✅
 
-- `rfc-9724` §7
-  > By default, most modern OSes (especially mobile ones) do implement some MAC address randomization policies.
-- `microsoft-wifi-connect` §Random hardware addresses
-  > When it's turned on for a specific network you choose, random hardware addresses are used the next time you connect to that network.
-- `rfc-9724` §2.2
-  > This feature can be used to generate random addresses, which decouple the globally unique identifier from the device and therefore make it more difficult to track a user device from its MAC/L2 address
-- `microsoft-wifi-connect` §Random hardware addresses
-  > you can turn on random hardware addresses to make it harder for people to track you
 - `rfc-9724` §2.1
   > Universally and locally administered addresses are distinguished by setting the second least significant bit of the most significant byte of the address (the U/L bit).
+- `rfc-9724` §2.2
+  > IEEE 802 addressing includes one bit to specify if the hardware address is locally or globally administered.
+  > … This feature can be used to generate random addresses, which decouple the globally unique identifier from the device and therefore make it more difficult to track a user device from its MAC/L2 address
+- `rfc-9724` §7
+  > By default, most modern OSes (especially mobile ones) do implement some MAC address randomization policies.
 - `rfc-9542` §2.1.1
-  > This is intended for arbitrary local assignment, such as random assignment
-- `rfc-9542` §2.1.1
-  > X bit - This bit is also called the "universal/local" bit (formerly called the Local/Global bit).
-- Note: RFC 9724 §7's table shows randomization per network on Android, iOS, Windows and Linux. The local bit and its place are stated by two RFCs (9724 and 9542, two separate standards documents); RFC 9542's address figure puts the X bit second from the bottom of the first octet. Current practice (2026-11-15).
+  > This bit is also called the "universal/local" bit (formerly called the Local/Global bit).
+  > … This is intended for arbitrary local assignment, such as random assignment
+- `microsoft-wifi-connect` §Random hardware addresses
+  > If your Wi-Fi hardware supports it, you can turn on random hardware addresses to make it harder for people to track you when your device scans for networks and connects.
+- Note: How common randomization is comes from RFC 9724's survey; Microsoft independently states that Windows laptops use random addresses, per network or for all networks, to be harder to track. The local bit's position is given by RFC 9724 and by RFC 9542's figure of the first octet.
 
-### units[0].learn.deep[1] ("deep-blocks", Learn's Go deeper) — ⚠️
+### units[0].learn.deep[1] ("deep-blocks", Learn's Go deeper) — ✅
 
 - `rfc-9542` §2.1
-  > the IEEE assigns MAC Address Block Small (MA-S), where the first four and a half octets (36 bits) are assigned, giving the holder of the MA-S one and a half octets (12 bits) they can control in constructing 48-bit MAC addresses
+  > For example, the IEEE assigns MAC Address Block Small (MA-S), where the first four and a half octets (36 bits) are assigned, giving the holder of the MA-S one and a half octets (12 bits) they can control in constructing 48-bit MAC addresses
 - `ieee-ra-faq` §How can I obtain a universally unique MAC/Ethernet address?
   > The RA makes these assignments to customers in three (3) block sizes: (MA-L = ~16 Million addresses, MA-M = ~1 Million addresses, MA-S = 4,096 addresses).
-- Note: What is wrong: as for the same sentence in step "two-halves", only RFC 9542 states that a smaller block has a longer first part and a shorter second one; the cited FAQ answer gives block sizes only. The claim is true but rests on one publisher. The IEEE RA EUI tutorial (PDF page 10, or page 7) states the split and would confirm it.
+- `ieee-eui-guidelines` §EUI Structure and Representation
+  > MA-S assignment with the OUI-36 AC-DE-48-23-4, and an entity assignment of the extension identifier of 5-67.
 
 ### units[0].learn.deep[2] ("deep-spoof", Learn's Go deeper) — ✅
 
@@ -550,7 +532,6 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > On certain devices, MAC addresses are not static and can be configured. The network should exercise caution when using these addresses to enforce policy because addresses can be spoofed
 - `openbsd-man-ifconfig-8` §lladdr
   > Change the link layer address (MAC address) of the interface.
-- Note: Both state that the address can be changed by configuration; RFC 9542 draws the same conclusion the lesson does, that it can be spoofed, which follows directly from OpenBSD's setting.
 
 ### units[0].learn.facts[0] ("fact-defined") — ✅
 
@@ -560,73 +541,64 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > This section includes information summarized from [IEEE802_OandA] that is being provided for context. The definitive information, which prevails in case of any discrepancy, is in [IEEE802_OandA].
 - `ieee-ra-faq` §What standards are involved with EUI-48, EUI-64, OUI and CID assignments?
   > IEEE Std 802® provides general descriptions on use of EUI-48 and EUI-64 for universally unique MAC addresses
-- Note: RFC 9542's reference IEEE802_OandA is IEEE Std 802 (the 2014 edition). The IEEE SA page lists IEEE 802-2024 as the Active Standard, superseding 802-2014 (checked 2026-11-15), so "now IEEE 802-2024" is current.
+- Note: The IEEE SA page lists IEEE 802-2024 as an Active Standard (board approval 2024-12-11). RFC 9542 refers to the 2014 edition of the same standard, which 802-2024 replaces.
 
 ### units[0].learn.facts[1] ("fact-osi") — ✅
 
 - `cisco-arp-config` §Layer 2 and Layer 3 Addressing
-  > IP addressing occurs at Layer 2 (data link) and Layer 3 (network) of the Open System Interconnection (OSI) reference model.
-- `cisco-arp-config` §Layer 2 and Layer 3 Addressing
   > Layer 2 addresses are used for local transmissions between devices that are directly connected.
+  > … use media access control (MAC) addresses that are “burned in” to the network interface card (NIC).
 - `paloalto-layer-7` §Meet the Layers of the OSI Model
   > Layer 2 - The Data Link Layer: This layer structures raw bits from the physical layer into data frames and manages node-to-node communication through physical addresses (MAC addresses).
-- Note: Two vendors from different publishers, as for the OSI badge.
+- Note: The same two vendors as the OSI badge, each placing MAC addresses at layer 2.
 
 ### units[0].learn.facts[2] ("fact-name") — ✅
 
 - `rfc-9542` §1.1
-  > "MAC" Media Access Control, not Message Authentication Code.
+  > Media Access Control, not Message Authentication Code.
 - `cisco-arp-config` §Address Resolution Protocol
-  > also known as Media Access Control (MAC) address
-- Note: Two independent publishers give the full name.
+  > ARP finds the hardware address, also known as Media Access Control (MAC) address, of a host from its known IP address.
+- Note: IEEE documents also write "Medium Access Control"; both expansions are in use, and the lesson's is the one both sources give.
 
 ### units[0].learn.facts[3] ("fact-size") — ✅
 
-- `rfc-9542` §2.1
-  > 48-bit MAC "addresses" are the most commonly used Ethernet interface identifiers.
 - `rfc-9542` §1.1
   > Each octet (that is, 8-bit byte) is represented by two hexadecimal digits giving the value of the octet as an unsigned integer. Successive octets are separated by a hyphen.
+- `rfc-9542` §2.1
+  > 48-bit MAC "addresses" are the most commonly used Ethernet interface identifiers.
 - `ieee-eui-guidelines` §EUI Structure and Representation
   > An EUI-48 is a string of six octets
-- `ieee-eui-guidelines` §EUI Structure and Representation
-  > an EUI-48 can be represented in the IEEE RA hexadecimal (hex) form with the
-  > octets separated by hyphens
 - `openbsd-man-ifconfig-8` §lladdr
   > This should be specified as six colon-separated hex values
 - `ieee-ra-faq` §What is an Individual Address Block (IAB)?
   > between 2007 and September 2012, the OUI value 00:50:C2 was used for IAB assignments.
-- Note: 48 bits and six hex pairs: RFC 9542 and the IEEE RA tutorial. Hyphens: RFC 9542 and the IEEE RA. Colons: OpenBSD and the IEEE RA FAQ, which writes an OUI with colons. True for a beginner: it leaves out 64-bit identifiers and other notations.
+- Note: The claim leaves out 64-bit identifiers and other ways of writing the address (no separators, or dots); it does not say colons and hyphens are the only forms.
 
 ### units[0].learn.facts[4] ("fact-halves") — ✅
 
 - `rfc-9724` §2.1
   > Organizationally Unique Identifier (OUI): The first three octets in transmission order, which identify the organization that issued the identifier.
-- `rfc-9724` §2.1
-  > Network Interface Controller (NIC) Specific: The following three octets, which are assigned by the organization that manufactured the NIC
+  > Network Interface Controller (NIC) Specific: The following three octets, which are assigned by the organization that manufactured the NIC, in such a way that the resulting MAC address is globally unique.
 - `ieee-ra-faq` §What is an Organizationally Unique Identifier (OUI)?
   > The OUI is usually concatenated with other bits that are assigned by that organization in order to make a globally unique EUI-48 or EUI-64.
 - `ieee-eui-guidelines` §IEEE-Administered organizational identifiers: OUI and CID
-  > The IEEE Registration Authority (IEEE RA) assigns globally unique identifiers to
-  > organizations.
+  > The IEEE Registration Authority (IEEE RA) assigns globally unique identifiers to organizations.
 - `ieee-eui-guidelines` §Extended Unique Identifiers
-  > In an EUI created by extending an OUI, the OUI is the initial (most significant)
-  > three octets.
+  > In an EUI created by extending an OUI, the OUI is the initial (most significant) three octets.
 - `cisco-arp-config` §Layer 2 and Layer 3 Addressing
-  > use media access control (MAC) addresses that are “burned in” to the
-  > network interface card (NIC).
-- Note: "Usually its maker's": RFC 9724 says the NIC part is assigned by the organization that made the card, and the IEEE RA lists manufacturer among the organizations an OUI identifies. True for a beginner: smaller blocks split the address differently, which the lesson's Go deeper covers.
+  > use media access control (MAC) addresses that are “burned in” to the network interface card (NIC).
+- Note: The claim leaves out the smaller MA-M and MA-S blocks with longer prefixes, which the lesson's Go deeper covers; "usually its maker's" is hedged as the sources allow.
 
 ### units[0].learn.facts[5] ("fact-frame") — ✅
 
 - `rfc-9542` §3
-  > the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
+  > Figure 2 shows the simplest case where the EtherType of the protocol data in the frame appears immediately after the destination and source MAC addresses.
 - `rfc-894` §Frame Format
   > IP datagrams are transmitted in standard Ethernet frames.
 - `rfc-9724` §2.2
   > Once associated to a given Access Point (AP), the MAC address is used in frame transmission and reception, as one of the addresses used in the unicast address fields of an IEEE 802.11 frame.
 - `paloalto-layer-7` §Encapsulation Process (Data Flow Downwards)
   > The data link layer (Layer 2) encapsulates this packet in a frame, adding MAC addresses in its header
-- Note: Ethernet frames (RFC 894, RFC 9542) and Wi-Fi frames (RFC 9724) both carry the addresses; Palo Alto confirms independently.
 
 ### units[0].learn.facts[6] ("fact-hear") — ✅
 
@@ -635,68 +607,62 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
 - `rfc-9724` §2.2
   > MAC addresses can be easily observed by a third party, such as a passive device listening to communications in the same L2 network.
 - `microsoft-ndis-packet-filter` §Remarks
-  > If promiscuous mode is enabled with the NDIS_PACKET_TYPE_PROMISCUOUS bit, the protocol driver continues to receive packets even if the sending network node does not direct them to it. NDIS then sends the protocol driver all packets the NIC receives.
-- `microsoft-ndis-packet-filter` §Remarks
   > Directed packets contain a destination address equal to the station address of the NIC.
-- Note: Microsoft confirms independently that a card receives frames not directed to it and reads their destination address to filter them.
+  > … the protocol driver continues to receive packets even if the sending network node does not direct them to it.
+- Note: Microsoft's page independently states that a card receives frames not directed to it and checks each one's destination address; RFC 9724 states it for Wi-Fi radio. "Every device in range" leaves out devices on another channel.
 
 ### units[0].learn.facts[7] ("fact-keep") — ✅
 
 - `microsoft-ndis-packet-filter` §Remarks
   > Directed packets contain a destination address equal to the station address of the NIC.
-- `microsoft-ndis-packet-filter` §Remarks
-  > the protocol driver continues to receive packets even if the sending network node does not direct them to it.
+  > … If promiscuous mode is enabled with the NDIS_PACKET_TYPE_PROMISCUOUS bit, the protocol driver continues to receive packets even if the sending network node does not direct them to it.
 - `openbsd-man-bpf-4` §BIOCPROMISC
-  > Forces the interface into promiscuous mode. All packets, not just those destined for the local host, are processed.
+  > All packets, not just those destined for the local host, are processed.
 - `rfc-919` §3
   > packets are broadcast at the hardware level, but filtering software in the receiving hosts gives the effect of multicasting.
-- Note: Two vendors state that, outside promiscuous mode, a card passes up only frames for its own address (plus the types it is set for). True for a beginner: broadcast and multicast are left out here; the broadcast case is the next fact.
+- Note: The two vendor pages state the default (only frames for the card's own address are passed up) and the exception. The claim leaves out multicast and the promiscuous setting, which the lesson teaches as an option.
 
 ### units[0].learn.facts[8] ("fact-broadcast") — ✅
 
 - `rfc-894` §Address Mappings
-  > The broadcast Internet address (the address on that network with a host part of all binary ones) should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
+  > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
 - `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > MAC addresses indicating all stations on a network.
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network.
 - `rfc-919` §1
   > since every host on the network devotes at least some effort to every broadcast, they are costly.
-- `rfc-919` §1
-  > When a datagram is broadcast, it imposes a cost on every host that hears it.
 - `rfc-919` §4
-  > Since this is not an IP broadcast, the IP layer is not involved, except that a host should discard datagrams not meant for it without becoming flustered (i.e., printing an error message).
+  > a host should discard datagrams not meant for it without becoming flustered
 - `canonical-dhcp-concepts` §The network version of DORA
   > Every machine on the network will see the packet, but they will ignore it when they look at the payload.
-- Note: RFC 919 (Internet Standard, STD 5, not obsoleted) and Canonical's blog (community source) independently state that every host takes in a broadcast and then acts on what is inside. RFC 894 and the IEEE RA give the all-ones address.
+- Note: RFC 919 (STD 5) is an Internet Standard and not obsoleted. The Canonical post (2021) is live and still describes DHCP's broadcasts. The hex case (ff vs FF) is the same value.
 
 ### units[0].learn.facts[9] ("fact-local") — ✅
 
 - `rfc-1122` §3.3.1
   > If the destination is on a connected network, the datagram is sent directly to the destination host; otherwise, it has to be routed to a gateway on a connected network.
-- Note: Defining standard: RFC 1122 §3.3.1 defines how a host chooses the next hop for an outgoing datagram (directly, or to a gateway). It is an Internet Standard (STD 3), not obsoleted; its updates concern TCP, the type-of-service field, Source Quench, MPLS and the IPv4 ID field, not this section.
 - `rfc-1812` §5.2.1.2
   > (10) The forwarder determines the Link Layer address of the packet's next hop.
-- `rfc-1812` §5.2.1.2
-  > (11) The forwarder encapsulates the IP datagram (or each of the fragments thereof) in an appropriate Link Layer frame
-- Note: Defining standard: RFC 1812 §5.2.1.2 defines a router's unicast forwarding steps, including the new link-layer frame at each hop.
+  > … (11) The forwarder encapsulates the IP datagram (or each of the fragments thereof) in an appropriate Link Layer frame and queues it for output on the interface selected in step 5.
 - `cisco-arp-config` §Overview of the Address Resolution Protocol
-  > When the destination device lies on a remote network, one beyond another Layer 3 device, the process is the same except that
-  > the sending device sends an ARP request for the MAC address of the default gateway.
+  > When the destination device lies on a remote network, one beyond another Layer 3 device, the process is the same except that the sending device sends an ARP request for the MAC address of the default gateway.
 - `cisco-arp-config` §ARP Caching
-  > Because the mapping of IP addresses to media access control (MAC) addresses occurs at each hop (Layer 3 device) on the network
+  > Because the mapping of IP addresses to media access control (MAC) addresses occurs at each hop (Layer 3 device) on the network for every datagram sent over an internetwork
 - `paloalto-layer-7` §De-Encapsulation Process (Data Flow Upwards)
   > The data link layer checks the FCS for errors, removes the MAC addresses and passes the packet to the network layer.
+- Note: RFC 1122 (STD 3) is the defining standard for a host's choice of next hop (send direct on the local network, otherwise to a gateway); it is not obsoleted, and its updates (RFC 1349, 4379, 5884, 6093, 6298, 6633, 6864, 8029, 9293) leave §3.3.1 as it is. RFC 1812 defines the router's forwarding step, as above. Cisco independently names the router's MAC address as the frame's destination.
 
 ### units[0].learn.facts[10] ("fact-random") — ✅
 
 - `rfc-9724` §2.1
-  > Locally administered addresses override the burned-in address
+  > Locally administered addresses override the burned-in address, and they can be set up by either the network administrator or the Operating System (OS) of the device to which the address pertains.
+- `rfc-9724` §2.2
+  > One way to address this privacy concern is by using randomly generated MAC addresses.
 - `rfc-9724` §7
   > By default, most modern OSes (especially mobile ones) do implement some MAC address randomization policies.
 - `microsoft-wifi-connect` §Random hardware addresses
-  > When it's turned on for a specific network you choose, random hardware addresses are used the next time you connect to that network.
+  > When you turn it on for all networks, random hardware addresses are used while your PC scans for networks and connects to any network.
 - `openbsd-man-ifconfig-8` §lladdr
   > Change the link layer address (MAC address) of the interface. This should be specified as six colon-separated hex values, or can be chosen randomly.
-- Note: Current practice (2026-11-15).
 
 ### units[0].learn.facts[11] ("fact-example") — ✅
 
@@ -704,31 +670,30 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > The Organizationally Unique Identifier (OUI) 00-00-5E has been assigned to IANA by the IEEE Registration Authority.
 - `rfc-9542` §2.1.4
   > The following values have been assigned for use in documentation:
-- `rfc-9542` §2.1.4
-  > 00-00-5E-00-53-00 through 00-00-5E-00-53-FF for unicast
-- Note: Defining standard: RFC 9542 is the document that assigns the documentation MAC addresses under IANA's OUI and records that OUI's assignment to IANA. It is the current BCP 141 (it obsoletes RFC 7042 and is not obsoleted).
+  > … 00-00-5E-00-53-00 through 00-00-5E-00-53-FF for unicast and
+- Note: RFC 9542 (BCP 141, April 2024, not obsoleted) is the defining standard for the MAC address values set aside for documentation under IANA's OUI; it assigns them itself.
 
 ### units[0].practice[0].options[0] (question "one-device") — ✅
 
 - `rfc-9724` §2.1
-  > that can be seen by anybody who can receive the radio signal transmitted by the network interface.
+  > Wi-Fi interfaces have an L2 address (also referred to as a MAC address) that can be seen by anybody who can receive the radio signal transmitted by the network interface.
 - `microsoft-ndis-packet-filter` §Remarks
   > Directed packets contain a destination address equal to the station address of the NIC.
+  > … the protocol driver continues to receive packets even if the sending network node does not direct them to it.
 - `openbsd-man-bpf-4` §BIOCPROMISC
   > All packets, not just those destined for the local host, are processed.
-- Note: The right answer, and its feedback is correct for it.
+- Note: The right answer, with feedback that matches the sources.
 
 ### units[0].practice[0].options[1] (question "one-device") — ✅
 
 - `microsoft-ndis-packet-filter` §Remarks
   > Directed packets contain a destination address equal to the station address of the NIC.
-- `microsoft-ndis-packet-filter` §Remarks
-  > Broadcast packets.
+  > … NDIS_PACKET_TYPE_BROADCAST Broadcast packets.
 - `openbsd-man-bpf-4` §BIOCPROMISC
   > All packets, not just those destined for the local host, are processed.
 - `rfc-894` §Address Mappings
   > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
-- Note: A wrong option, and its feedback says why. True for a beginner: it leaves out multicast frames.
+- Note: A wrong option, and the feedback correctly says why. It does not say "only", so leaving out multicast misleads no one.
 
 ### units[0].practice[0].options[2] (question "one-device") — ✅
 
@@ -738,24 +703,24 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > MAC addresses can be easily observed by a third party, such as a passive device listening to communications in the same L2 network.
 - `microsoft-ndis-packet-filter` §Remarks
   > the protocol driver continues to receive packets even if the sending network node does not direct them to it.
-- Note: A wrong option; the feedback is correct.
+- Note: A wrong option; the feedback is correct. The feedback's reason, that Wi-Fi travels by radio, is what RFC 9724 says in plainer words.
 
 ### units[0].practice[1].options[0] (question "everyone") — ✅
 
 - `rfc-894` §Address Mappings
   > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
 - `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > MAC addresses indicating all stations on a network.
-- Note: The right answer; feedback correct.
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network.
+- Note: The right answer.
 
 ### units[0].practice[1].options[1] (question "everyone") — ✅
 
 - `rfc-894` §Address Mappings
   > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
 - `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > MAC addresses indicating all stations on a network.
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network.
 - `rfc-919` §1
-  > When a datagram is broadcast, it imposes a cost on every host that hears it.
+  > since every host on the network devotes at least some effort to every broadcast, they are costly.
 - `rfc-919` §4
   > a host should discard datagrams not meant for it without becoming flustered
 - `canonical-dhcp-concepts` §The network version of DORA
@@ -765,28 +730,24 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
 ### units[0].practice[1].options[2] (question "everyone") — ✅
 
 - `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > These all-ones values are
-  > not valid EUIs.
-- `ieee-eui-guidelines` §Unassigned and NULL EUI values
-  > MAC addresses indicating all stations on a network.
+  > are IEEE 802 multicast (group) MAC addresses indicating all stations on a network. These all-ones values are not valid EUIs.
 - `rfc-894` §Address Mappings
   > should be mapped to the broadcast Ethernet address (of all binary ones, FF-FF-FF-FF-FF-FF hex).
 - `microsoft-ndis-packet-filter` §Remarks
-  > Broadcast packets.
-- Note: A wrong option; the feedback is correct: the all-ones value is not any card's identifier, yet it addresses all stations, and a card's receive filter takes broadcast frames as a type of their own.
+  > NDIS_PACKET_TYPE_BROADCAST Broadcast packets.
+- Note: A wrong option; the feedback is correct. The IEEE tutorial says the all-ones value is no device's identifier; RFC 894 and Microsoft treat it as the broadcast address, apart from a card's own.
 
-### units[0].practice[2].options[0] (question "first-half") — ⚠️
+### units[0].practice[2].options[0] (question "first-half") — ✅
 
 - `rfc-9724` §2.1
-  > Organizationally Unique Identifier (OUI): The first three octets in transmission order, which identify the organization that issued the identifier.
+  > A universally administered address is uniquely assigned to a device by its manufacturer.
+  > … Organizationally Unique Identifier (OUI): The first three octets in transmission order, which identify the organization that issued the identifier.
 - `ieee-ra-faq` §What is an Organizationally Unique Identifier (OUI)?
-  > It can be used to identify an organization/company where a globally unique identifier is needed.
+  > (An OUI is assigned with a MA-L identifier block.) It can be used to identify an organization/company where a globally unique identifier is needed.
 - `rfc-9542` §1.3
   > The Organizationally Unique Identifier (OUI) 00-00-5E has been assigned to IANA by the IEEE Registration Authority.
-- `rfc-9542` §1.3
-  > There is no OUI value reserved at this time for documentation, but there are documentation code points under the IANA OUI specified below.
-- Note: The option is the right answer and its first two sentences hold. RFC 9542 is the defining document for IANA's OUI and its documentation values.
-- Note: What is wrong: the feedback's last clause, "this one is IANA's, set aside for examples", follows "It's an OUI", so it reads as saying the OUI 00:00:5E itself is set aside for examples. The cited defining section says no OUI is reserved for documentation; only a small range of addresses under IANA's OUI (00:00:5E:00:53:00 to FF) is. Wording as the lesson's step does ("this one is IANA's, which sets some of its addresses aside for examples") would fix it.
+  > … there are documentation code points under the IANA OUI specified below.
+- Note: RFC 9542 is the defining standard for IANA's use of the OUI 00-00-5E and its documentation values. The right answer.
 
 ### units[0].practice[2].options[1] (question "first-half") — ✅
 
@@ -796,157 +757,252 @@ Result: 90 ✅, 4 ⚠️, 0 ❌.
   > An OUI is a 24-bit globally unique assigned number referenced by various standards.
 - Note: A wrong option; the feedback is correct.
 
-### units[0].practice[2].options[2] (question "first-half") — ✅
+### units[0].practice[2].options[2] (question "first-half") — ⚠️
 
 - `rfc-9724` §2.1
   > Most physical devices are provided with a universally administered address, which is composed of two parts:
 - `rfc-9724` §2.2
   > One way to address this privacy concern is by using randomly generated MAC addresses.
 - `microsoft-wifi-connect` §Random hardware addresses
-  > you can turn on random hardware addresses to make it harder for people to track you
-- Note: A wrong option; the feedback is correct. The example address has the local bit clear, so it is a universally administered (card's own) address, as the feedback says.
+  > If your Wi-Fi hardware supports it, you can turn on random hardware addresses to make it harder for people to track you when your device scans for networks and connects.
+- Note: A wrong option, and the feedback is true: 00:00:5E has its local bit clear, so it is an assigned address, not a randomized one, and the randomized-address part is confirmed by RFC 9724 and Microsoft.
+- Note: What is wrong: "a card's own address has two halves, the organization's and the card's" is stated only by RFC 9724 (§2.1 and §2.2 are one document); the Microsoft page says nothing of halves. It needs a second independent source, such as the IEEE RA FAQ's OUI answer that the next-door options already cite.
 
-## 2. Traced, example, analogy and unbacked parts
+## Traced, example and analogy parts, and unbacked items
 
 ### title — ✅
 
+- Note: "MAC Address" names the lesson's topic and claims nothing beyond it.
+
 ### units[0].name — ✅
 
-### backing (the lesson's subtitle and summary) — ✅
-
-- Note: The summary describes the one unicast frame the Watch follows; it adds nothing beyond lead-1, fact-hear, fact-keep and fact-halves.
-
-### units[0].backing (the unit's full name and purpose) — ✅
-
-### units[0].scene.backing (the scene) — ✅
-
-- Note: Example addresses are all in the RFC 9542 documentation range; the labels repeat fact-keep and the pattern.
-
-### units[0].overview.hookBacking (the Overview hook) — ✅
-
-### units[0].overview.backing (the Overview description) — ✅
-
-### units[0].overview.facts[0] (Overview fact "Length") — ✅
-
-### units[0].overview.facts[1] (Overview fact "First half") — ✅
-
-### units[0].overview.facts[2] (Overview fact "Everyone") — ✅
-
-### units[0].overview.facts[3] (Overview fact "Reaches") — ✅
-
-### units[0].overview.facts[4] (Overview fact "OSI layer") — ✅
-
-### units[0].overview.facts[5] (Overview fact "Defined in") — ✅
-
-### units[0].steps[0] (step "everyone-hears") — ✅
-
-- Note: "Wi-Fi is radio" restates the "in range" of fact-hear; the rest traces to fact-local, term-frame and fact-frame. example.net is an example name.
-
-### units[0].steps[0].facts[0] (step "everyone-hears", fact "To") — ✅
-
-### units[0].steps[0].facts[1] (step "everyone-hears", fact "From") — ✅
-
-### units[0].steps[0].facts[2] (step "everyone-hears", fact "Heard by") — ✅
-
-### units[0].steps[0].events[0] (event "s1-frame") — ✅
-
-### units[0].steps[0].events[1] (event "s1-heard") — ✅
-
-### units[0].steps[1] (step "only-the-match") — ✅
-
-- Note: "Reads the packet inside" is what keeping a frame that carries a packet means (term-frame, fact-keep); no new outcome.
-
-### units[0].steps[1].facts[0] (step "only-the-match", fact "Router") — ✅
-
-### units[0].steps[1].facts[1] (step "only-the-match", fact "Phone and TV") — ✅
-
-### units[0].steps[1].facts[2] (step "only-the-match", fact "Kept by") — ✅
-
-### units[0].steps[1].events[0] (event "s2-router") — ✅
-
-### units[0].steps[1].events[1] (event "s2-phone") — ✅
-
-### units[0].steps[1].events[2] (event "s2-tv") — ✅
-
-### units[0].steps[2] (step "two-halves") — ✅
-
-- Note: "00:00:5E is IANA's, which sets some aside for examples" matches fact-example.
-
-### units[0].steps[2].facts[0] (step "two-halves", fact "First half") — ✅
-
-### units[0].steps[2].facts[1] (step "two-halves", fact "Second half") — ✅
-
-### units[0].steps[2].facts[2] (step "two-halves", fact "Length") — ✅
-
-### units[0].steps[2].events[0] (event "s3-match") — ✅
-
-### units[0].steps[3] (step "to-everyone") — ✅
-
-### units[0].steps[3].facts[0] (step "to-everyone", fact "Sent to") — ✅
-
-### units[0].steps[3].facts[1] (step "to-everyone", fact "Kept by") — ✅
-
-### units[0].steps[3].facts[2] (step "to-everyone", fact "Then") — ✅
-
-### units[0].steps[3].events[0] (event "s4-frame") — ✅
-
-### units[0].steps[3].events[1] (event "s4-heard") — ✅
-
-### units[0].steps[3].events[2] (event "s4-laptop") — ✅
-
-### units[0].steps[3].events[3] (event "s4-phone") — ✅
-
-### units[0].steps[3].events[4] (event "s4-tv") — ✅
-
-### units[0].steps[4] (step "new-frame") — ✅
-
-- Note: "Addressed to the next device's MAC address" combines fact-local (a new frame at each router) with fact-frame (each frame names the address it is for).
-
-### units[0].steps[4].facts[0] (step "new-frame", fact "From") — ✅
-
-### units[0].steps[4].facts[1] (step "new-frame", fact "To") — ✅
-
-### units[0].steps[4].facts[2] (step "new-frame", fact "example.net’s MAC address") — ✅
-
-### units[0].steps[4].events[0] (event "s5-frame") — ✅
-
-### units[0].steps[4].events[1] (event "s5-heard") — ✅
-
-### units[0].steps[4].events[2] (event "s5-laptop") — ✅
-
-### units[0].steps[4].events[3] (event "s5-phone") — ✅
-
-### units[0].steps[4].events[4] (event "s5-tv") — ✅
-
-### units[0].learn.lead[1] ("lead-2") — ✅
-
-- Note: The shared-hallway post analogy matches the lesson: all hear, the named one keeps it, a letter to all residents is kept by all. It does not mislead.
+- Note: Names the topic only.
 
 ### units[0].practice[0].prompt (question "one-device") — ✅
 
+- Note: No false premise; the addresses are documentation values, and the TV on the same Wi-Fi is the lesson's own scene.
+
 ### units[0].practice[1].prompt (question "everyone") — ✅
+
+- Note: No false premise.
 
 ### units[0].practice[2].prompt (question "first-half") — ✅
 
-## 3. Sources
+- Note: No false premise; 00:00:5E:00:53:10 is a documentation value with the local bit clear, so it has an OUI half.
 
-- `canonical-dhcp-concepts`: Canonical's blog, a community source (a vendor's blog), readable without signing in. Live; DHCP's broadcast exchange is still current practice. Checked 2026-11-15.
-- `cisco-arp-config`: Cisco IOS XE 17.x configuration guide, live, a current product. Checked 2026-11-15.
-- `ieee-802-2024`: the IEEE SA page lists IEEE 802-2024 as Active Standard, superseding 802-2014. Checked 2026-11-15.
-- `ieee-eui-guidelines`: the IEEE RA tutorial (dated 2017-08-03, figure corrected 2019-08-16), live, and the IEEE RA's current FAQ links to it as its EUI tutorial. Checked 2026-11-15.
-- `ieee-ra-faq`: the IEEE RA's FAQ page, live. Checked 2026-11-15.
-- `microsoft-ndis-packet-filter`: Microsoft Learn driver documentation, live, last updated 2023-02-18, for current Windows drivers. Checked 2026-11-15.
-- `microsoft-wifi-connect`: Microsoft Support page for Windows, live. Checked 2026-11-15.
-- `openbsd-man-bpf-4`: OpenBSD's current manual page, live. Checked 2026-11-15.
-- `openbsd-man-ifconfig-8`: OpenBSD's current manual page, live. Checked 2026-11-15.
-- `paloalto-layer-7`: Palo Alto Networks Cyberpedia explainer, live, describes current practice. Checked 2026-11-15.
-- `rfc-1122`: Internet Standard (STD 3), not obsoleted; updated by RFCs 1349, 4379, 5884, 6093, 6298, 6633, 6864, 8029 and 9293, none of which touch §3.3.1. Checked 2026-11-15.
-- `rfc-1812`: Proposed Standard, not obsoleted; updated by RFCs 2644 and 6633, neither touching §5.2.1.2. Checked 2026-11-15.
-- `rfc-894`: Internet Standard (STD 41), not obsoleted or updated. Checked 2026-11-15.
-- `rfc-919`: Internet Standard (STD 5), not obsoleted or updated. Checked 2026-11-15.
-- `rfc-9542`: Best Current Practice (BCP 141), obsoletes RFC 7042, not obsoleted. Checked 2026-11-15.
-- `rfc-9724`: Informational, March 2025, not obsoleted. Checked 2026-11-15.
+### units[0].learn.lead[1] ("lead-2") — ✅
 
-## 4. Limit overrides
+- Note: Analogy. The shared hallway matches hearing every frame, the named envelope matches keeping only one's own, and the letter to all residents matches the broadcast. It does not mislead.
+
+### backing (the lesson's subtitle and summary) — ✅
+
+- Note: Repeats lead-1, fact-hear, fact-keep and fact-halves.
+
+### units[0].backing (the unit's full name and purpose) — ✅
+
+- Note: The full name is fact-name's; the purpose restates why-1.
+
+### units[0].scene.backing (the scene) — ✅
+
+- Note: The scene's table, legend and labels repeat fact-hear, fact-keep and term-broadcast; every MAC address in it is in the documentation range 00:00:5E:00:53:00 to 00:00:5E:00:53:FF.
+
+### units[0].overview.hookBacking (the Overview hook) — ✅
+
+- Note: Repeats fact-hear, fact-keep, term-mac, term-broadcast and why-1.
+
+### units[0].overview.backing (the Overview description) — ✅
+
+- Note: Repeats fact-size, fact-halves and fact-local ("only matters on your own network" is fact-local's "reaches only your own network").
+
+### units[0].overview.facts[0] (Overview fact "Length") — ✅
+
+- Note: fact-size.
+
+### units[0].overview.facts[1] (Overview fact "First half") — ✅
+
+- Note: term-oui and fact-halves.
+
+### units[0].overview.facts[2] (Overview fact "Everyone") — ✅
+
+- Note: term-broadcast.
+
+### units[0].overview.facts[3] (Overview fact "Reaches") — ✅
+
+- Note: fact-local.
+
+### units[0].overview.facts[4] (Overview fact "OSI layer") — ✅
+
+- Note: fact-osi.
+
+### units[0].overview.facts[5] (Overview fact "Defined in") — ✅
+
+- Note: fact-defined.
+
+### units[0].steps[0] (step "everyone-hears") — ✅
+
+- Note: Repeats fact-local (beyond the home network, so to the router), term-frame and fact-frame (both addresses at the front) and fact-hear. "Wi-Fi is radio" is the everyday reason behind fact-hear's "in range", not a new claim.
+
+### units[0].steps[0].facts[0] (step "everyone-hears", fact "To") — ✅
+
+- Note: fact-frame, with documentation addresses.
+
+### units[0].steps[0].facts[1] (step "everyone-hears", fact "From") — ✅
+
+- Note: fact-frame, with documentation addresses.
+
+### units[0].steps[0].facts[2] (step "everyone-hears", fact "Heard by") — ✅
+
+- Note: fact-hear.
+
+### units[0].steps[0].events[0] (event "s1-frame") — ✅
+
+- Note: A frame from the laptop's address to the router's, carrying a packet for example.net; fact-frame and fact-local.
+
+### units[0].steps[0].events[1] (event "s1-heard") — ✅
+
+- Note: fact-hear.
+
+### units[0].steps[1] (step "only-the-match") — ✅
+
+- Note: Repeats the pattern and fact-keep. The router reading the packet inside is what keeping the frame means in lead-1.
+
+### units[0].steps[1].facts[0] (step "only-the-match", fact "Router") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[1].facts[1] (step "only-the-match", fact "Phone and TV") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[1].facts[2] (step "only-the-match", fact "Kept by") — ✅
+
+- Note: fact-keep, word for word.
+
+### units[0].steps[1].events[0] (event "s2-router") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[1].events[1] (event "s2-phone") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[1].events[2] (event "s2-tv") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[2] (step "two-halves") — ✅
+
+- Note: Repeats fact-size, term-oui, term-ra, fact-halves, why-2 ("meant to be unique") and fact-example.
+
+### units[0].steps[2].facts[0] (step "two-halves", fact "First half") — ✅
+
+- Note: term-oui and fact-example.
+
+### units[0].steps[2].facts[1] (step "two-halves", fact "Second half") — ✅
+
+- Note: fact-halves.
+
+### units[0].steps[2].facts[2] (step "two-halves", fact "Length") — ✅
+
+- Note: fact-size.
+
+### units[0].steps[2].events[0] (event "s3-match") — ✅
+
+- Note: fact-halves.
+
+### units[0].steps[3] (step "to-everyone") — ✅
+
+- Note: Repeats term-broadcast and fact-broadcast; "a device can read it and find nothing for it" is fact-broadcast's "what it does next depends on what's inside".
+
+### units[0].steps[3].facts[0] (step "to-everyone", fact "Sent to") — ✅
+
+- Note: term-broadcast.
+
+### units[0].steps[3].facts[1] (step "to-everyone", fact "Kept by") — ✅
+
+- Note: fact-broadcast.
+
+### units[0].steps[3].facts[2] (step "to-everyone", fact "Then") — ✅
+
+- Note: fact-broadcast.
+
+### units[0].steps[3].events[0] (event "s4-frame") — ✅
+
+- Note: A frame to ff:ff:ff:ff:ff:ff; term-broadcast and fact-frame. The log row and the table that follows show every device hearing it.
+
+### units[0].steps[3].events[1] (event "s4-heard") — ✅
+
+- Note: fact-hear.
+
+### units[0].steps[3].events[2] (event "s4-laptop") — ✅
+
+- Note: fact-broadcast.
+
+### units[0].steps[3].events[3] (event "s4-phone") — ✅
+
+- Note: fact-broadcast.
+
+### units[0].steps[3].events[4] (event "s4-tv") — ✅
+
+- Note: fact-broadcast.
+
+### units[0].steps[4] (step "new-frame") — ✅
+
+- Note: Repeats fact-local (each router sends the packet on in a new frame, so example.net's address is not on it), fact-frame (the frame names the address it is for), fact-hear and fact-keep.
+
+### units[0].steps[4].facts[0] (step "new-frame", fact "From") — ✅
+
+- Note: fact-frame.
+
+### units[0].steps[4].facts[1] (step "new-frame", fact "To") — ✅
+
+- Note: fact-frame.
+
+### units[0].steps[4].facts[2] (step "new-frame", fact "example.net’s MAC address") — ✅
+
+- Note: fact-local.
+
+### units[0].steps[4].events[0] (event "s5-frame") — ✅
+
+- Note: fact-frame and fact-local.
+
+### units[0].steps[4].events[1] (event "s5-heard") — ✅
+
+- Note: fact-hear.
+
+### units[0].steps[4].events[2] (event "s5-laptop") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[4].events[3] (event "s5-phone") — ✅
+
+- Note: fact-keep.
+
+### units[0].steps[4].events[4] (event "s5-tv") — ✅
+
+- Note: fact-keep.
+
+## Sources
+
+All checked on 2026-11-15.
+
+- `canonical-dhcp-concepts`: Canonical's blog post (Bill Wear, 17 June 2021), a community source; live, and DHCP still works this way.
+- `cisco-arp-config`: Cisco IOS XE 17.x IP Addressing Configuration Guide, ARP chapter (updated 2022-11-15); live, current product line.
+- `ieee-802-2024`: IEEE SA page; lists IEEE 802-2024 as an Active Standard.
+- `ieee-eui-guidelines`: IEEE RA tutorial (2017-08-03, figure corrected 2019); live, and still linked from the IEEE RA FAQ.
+- `ieee-ra-faq`: IEEE RA FAQs; live.
+- `microsoft-ndis-packet-filter`: Microsoft Learn (last updated 2023-02-18); live, current Windows driver documentation.
+- `microsoft-wifi-connect`: Microsoft Support page for Windows Wi-Fi; live, current.
+- `openbsd-man-bpf-4`: OpenBSD-current manual (November 21, 2025); live.
+- `openbsd-man-ifconfig-8`: OpenBSD-current manual (May 28, 2026); live.
+- `paloalto-layer-7`: Palo Alto Networks Cyberpedia explainer; live, current practice.
+- `rfc-1122`: RFC Editor info page: Internet Standard (STD 3), not obsoleted; updated by RFCs that leave §3.3.1 as it is.
+- `rfc-1812`: Proposed Standard, not obsoleted; updated by RFC 2644 and RFC 6633, which leave §5.2.1.2 as it is.
+- `rfc-894`: Internet Standard (STD 41), not obsoleted or updated.
+- `rfc-919`: Internet Standard (STD 5), not obsoleted or updated.
+- `rfc-9542`: Best Current Practice (BCP 141), April 2024, not obsoleted.
+- `rfc-9724`: Informational, March 2025, not obsoleted.
+
+## Limit overrides
 
 None.
