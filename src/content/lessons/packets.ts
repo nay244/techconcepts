@@ -597,7 +597,7 @@ export default defineLesson({
             {
               text: 'IP puts them back in order on the way.',
               feedback: 'Not quite. IP promises no order: each packet travels on its own. Putting the pieces back in order is TCP’s job, at your end.',
-              cite: [RFC1122_DELIVERY, ip4('1.2'), tcp('3.10')],
+              cite: [RFC1122_DELIVERY, ip4('1.2'), ip4('1.4'), tcp('3.10')],
             },
           ],
           answer: 0,
