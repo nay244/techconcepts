@@ -76,6 +76,10 @@ const EXPECTED: Record<string, string> = {
   'spot:arp': 'e09f1f5e2492d4cfdbe20c21bf1916fea07eddb7ad37fcfcd796a8bea16cfafd',
   'spot:ports': '25309fc97cf788731f193bc04a9a0a8ee04f7bf6b10f602d178452d497ccc7ab',
   'spot:nat': '1bac1fc6ef5f054d4797175939a21cde2428349def83216f046f37099fa4d5a0',
+  // Drawn for IP Address, MAC Address and TCP/UDP (D12), on 2026-11-15; pinned from their own renders, which equal prototypes/d12-*-spot.svg (the last test).
+  'spot:ip-address': 'ae81fd3287d6d09e4ebfe178cd104ce7144a2ea73f3abd48950584c1aa4b7c04',
+  'spot:mac-address': '9461b5d34cf6ed4fa1c9aae8ed313544e10d187db0df080e5742b5a036484a35',
+  'spot:tcp-udp': '486e78bbae5a044469392f3e4f94cf0ef43d5b1ed566c73aade52acb9cfe9e0c',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -130,5 +134,21 @@ test.each([
   expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
   expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(leds);
   expect(svg).toContain(`aria-label="${aria}"`);
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+// D12 / B14, attack cases 1 and 29: the three spots are the approved files, byte for byte, with one lit part each.
+test.each([
+  ['ip-address', 0, 'An address laid out as four tiles on a plate, 192, 168, 1 and 10, with a dot between each. Under each number its 8 bits are engraved. The first tile, 192 over 11000000, is lit.', 'FOUR OCTETS · 32 BITS'],
+  ['mac-address', 1, 'A network card on short legs: a chip, contacts along its edge, a bracket with a socket and a light. Its address is on two labels side by side: the first half, 00:00:5E, is lit; the second, 00:53:10, is not.', 'OUI · THIS CARD'],
+  ['tcp-udp', 0, 'Two lanes on one plate. On the lane marked TCP, pieces 1, 2 and 3 head out and a lit acknowledgement comes back. On the lane marked UDP, pieces 1 and 3 head out with an empty place between them where 2 was lost, and nothing comes back.', 'TCP · UDP'],
+] as const)('the %s spot is prototypes/d12-%s-spot.svg, with one lit part, its lights and its words', (kind, leds, aria, plate) => {
+  const file: string = readFileSync(`prototypes/d12-${kind}-spot.svg`, 'utf8');
+  expect(`${spot(kind)}\n`).toBe(file);
+  const svg = spot(kind);
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(leds);
+  expect(svg).toContain(`aria-label="${aria}"`);
+  expect(svg).toContain(plate);
   expect(svg).toMatch(/viewBox="36 44 528 372"/);
 });

@@ -22,6 +22,24 @@
 .dh .dh-tag-t { font: 700 4.6px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .03em; }
 .dh .dh-ring { fill: none; stroke: var(--lit-a); stroke-width: 2.6px; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px var(--lit-b)); }
 .dh .dh-ring.soft { stroke-width: 1.2px; opacity: .55; filter: none; }
+/* The frames setup (MAC Address): each device's verdict on the frame in the air, a square and words. Heard is an
+   outline, kept a filled square in the done green with the words in it, ignored a muted outline with a slash, sent the ink. */
+.dh .dh-v-t { font: 500 13px/1 var(--sans); fill: var(--muted); }
+.dh .dh-v-mark { fill: none; stroke: var(--muted); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.dh .dh-v:not([data-v]) { display: none; }
+.dh .dh-v[data-v="keeps"] .dh-v-mark { fill: var(--allowed); stroke: var(--allowed); }
+.dh .dh-v[data-v="keeps"] .dh-v-t { fill: var(--allowed-text); font-weight: 700; }
+.dh .dh-v[data-v="sent"] .dh-v-mark { fill: var(--ink-strong); stroke: var(--ink-strong); }
+.dh .dh-v[data-v="sent"] .dh-v-t { fill: var(--ink); }
+.dh .dh-v[data-v="hears"] .dh-v-mark { stroke-dasharray: 2 1.5; }
+.dh .dh-v-slash { display: none; fill: none; stroke: var(--muted); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.dh .dh-v[data-v="ignores"] .dh-v-slash { display: inline; }
+.dh .dh-split { display: none; }
+.dh[data-split] .dh-split { display: inline; }
+.dh[data-split] #dh-v-laptop { display: none; }
+.dh[data-split] .dh-oui { fill: var(--accent); font-weight: 700; }
+.dh .dh-bracket { fill: none; stroke: var(--muted); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.dh .dh-half { font: 400 13px/1 var(--sans); fill: var(--muted); }
 /* While the driver's show settles the figure, the lights and the note change at once (src/scenes/drivers/dhcp.ts). */
 .dh[data-settling] .dh-glow, .dh[data-settling] .dh-ignore { transition: none; }
 /* Reduced motion keeps every light and note, and only drops the fades. */

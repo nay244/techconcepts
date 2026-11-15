@@ -13,6 +13,9 @@ const FIGURES: Record<string, () => string> = {
   arp: () => spot('arp'),
   ports: () => spot('ports'),
   nat: () => spot('nat'),
+  'ip-address': () => spot('ip-address'),
+  'mac-address': () => spot('mac-address'),
+  'tcp-udp': () => spot('tcp-udp'),
 };
 
 /**

@@ -325,6 +325,22 @@ const KINDS = {
       tall: [[SCR.x, SCR.y, SZ + SH], [BOX.x, BOX.y, BH]],
     };
   },
+  // A voice server, on the small plate behind the internet: one rack at the back, and a pad at the front that lights
+  // while it passes the call's sound on. Its cable leaves by the plate's right-hand edge, clear of the engraved words.
+  call(p, id, o) {
+    const R = rel(p, { x: p.w - 25, y: 5, w: 19, d: 17, r: 2, h: 26 }), PD = rel(p, { x: 7, y: p.d - 17, w: 20, d: 11, r: 2 });
+    const F = [PD.x + PD.w + 2, PD.y + PD.d / 2], IN = [p.x + p.w + 3, F[1]];
+    let pad = S(k.slabOf(PD, 0, 2.4, P, 3, 0.4), { tone: "mid", inner: L(k.sideSeam(PD, 1, P, 3), { tone: "faint" }) });
+    pad += L([0, 1, 2].map((i) => k.lineOnTop([PD.x + 4 + i * 4, PD.y + 3], [PD.x + 4 + i * 4, PD.y + PD.d - 3], 2.4, P)).join(""), { tone: "lo" });
+    pad += `<g class="nm-busy" id="${id}-busy-${o.site}">${S(k.slabOf(PD, 0, 2.4, P, 3, 0.4), { tone: "hi", lit: true })}</g>`;
+    return {
+      things: [{ xy: [R.x + R.w / 2, R.y + R.d / 2], svg: rack(R, 2) }, { xy: [PD.x + PD.w / 2, PD.y + PD.d / 2], svg: pad }],
+      cables: [[N[o.puck], IN, F]],
+      sites: { [o.site]: { end: [PD.x + PD.w / 2, PD.y + PD.d / 2, 3], leg: [[...F, RIDE], [...IN, RIDE]], puck: o.puck } },
+      callouts: [callTo(o, [PD.x, PD.y + PD.d, 2.4])],
+      tall: [[R.x, R.y, R.h]],
+    };
+  },
   // Any other server: two racks, and a pad at the front that lights while it works.
   host(p, id, o) {
     const racks = [rel(p, { x: p.w - 58, y: 6, w: 24, d: 26, r: 2, h: 40 }), rel(p, { x: p.w - 30, y: 4, w: 24, d: 30, r: 2, h: 46 })];

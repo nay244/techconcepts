@@ -288,10 +288,79 @@ function natSpot() {
   return figure("nat", "PRIVATE IN · PUBLIC OUT", out.join(""), "A home router in the middle, with a laptop and a phone behind it and one cable out to the right. Over the laptop’s cable floats a tag with its private address, 192.168.1.100; over the cable out, a lit tag with the router’s public address, 198.51.100.23. A dotted arc joins them over the router.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat'] as const;
+// IP Address: the address as a plate of four octet tiles, a dot between each, its bits engraved under each number.
+function ipSpot() {
+  const out = [], TZ = 3, TH = 24, TW = 40, TD = 26, Y = -16;
+  const BASE = { x: -102, y: Y - 6, w: 204, d: TD + 16, r: 3 };
+  out.push(S(k.slabOf(BASE, 0, TZ, P, 3, 0.5), { tone: "mid", inner: L(k.sideSeam(BASE, 1.2, P, 3), { tone: "faint" }) }));
+  const tiles = [["192", "11000000"], ["168", "10101000"], ["1", "00000001"], ["10", "00001010"]];
+  tiles.forEach(([dec, bits], i) => {
+    const x = -96 + i * 50, T = { x, y: Y, w: TW, d: TD, r: 1.6 }, F = Y + TD, lit = i === 0;
+    out.push(S(k.slabOf(T, TZ, TH, P, 3, 0.6), { tone: "hi", lit }));
+    out.push(k.faceTextSvg(k.sideMatrix([x + TW / 2, F], TZ + 11.6, P, "left"), dec, { size: 10, anchor: "middle" }));
+    out.push(onFaceY(F, (lit ? "" : rect("lm-inlay", x + 3, TZ + 1.6, TW - 6, 5, 1)) + `<text class="${lit ? "lm-tagt" : "lm-rule"}" x="${n1(x + TW / 2)}" y="${n1(-(TZ + 2.8))}" text-anchor="middle">${bits}</text>`));
+    // The dot after each of the first three numbers: dotted decimal.
+    if (i < 3) out.push(S(k.cylinder(x + TW + 5, F + 6, 2.2, TZ, 3, P, 20), { tone: "mid" }));
+  });
+  return figure("ip-address", "FOUR OCTETS · 32 BITS", out.join(""), "An address laid out as four tiles on a plate, 192, 168, 1 and 10, with a dot between each. Under each number its 8 bits are engraved. The first tile, 192 over 11000000, is lit.");
+}
+
+// MAC Address: a network card, its address on two labels side by side: the organization's half, lit, and the card's own.
+function macSpot() {
+  const out = [], B = { x: -72, y: -46, w: 160, d: 70, r: 2.4 }, BZ = 6, BH = 3;
+  for (const [x, y] of [[B.x + 20, B.y + 14], [B.x + B.w - 20, B.y + 14], [B.x + 20, B.y + B.d - 12], [B.x + B.w - 20, B.y + B.d - 12]]) out.push(S(k.cylinder(x, y, 2.6, 0, BZ, P, 20), { tone: "lo" }));
+  // The bracket at the left end, behind the board: a socket for the cable, and two lights, the link light on.
+  const K = { x: B.x - 7, y: B.y + 4, w: 4, d: B.d - 8, r: 0.6 }, KH = 30;
+  out.push(S(k.slabOf(K, 0, KH, P, 3, 0.4), { tone: "hi", inner: L(k.sideSeam(K, KH - 3, P, 3), { tone: "faint" }) }));
+  const KF = K.x + K.w, J = { y: K.y + 30, z: 13, w: 16, h: 12 };
+  out.push(onFaceX(KF, rect("lm-inlay", -(J.y + J.w), J.z, J.w, J.h, 1.2) + rect("lm-void", -(J.y + J.w - 3), J.z + 2, J.w - 6, J.h - 5, 0.6) + rect("lm-slot", -(J.y + J.w / 2 + 2.5), J.z + J.h - 3.2, 5, 1.6, 0.4)));
+  out.push(`<g class="lm-leds">${dot(at([KF, J.y + 3, 18]), "lm-led on", 1.3)}${dot(at([KF, J.y + 3, 13.5]), "lm-led", 1.3)}</g>`);
+  out.push(S(k.slabOf(B, BZ, BH, P, 3, 0.5), { tone: "mid", inner: L(k.sideSeam(B, BZ + 1, P, 3), { tone: "faint" }) }));
+  const T = BZ + BH;
+  // The contacts along its front edge, where it plugs in.
+  let edge = "";
+  for (let i = 0; i < 24; i++) edge += rect("lm-slot", B.x + 40 + i * 4.4, BZ + 0.6, 2.6, 1.8, 0.3);
+  out.push(onFaceY(B.y + B.d, edge));
+  // The chip at the back, its traces to the contacts.
+  const C = { x: B.x + 20, y: B.y + 8, w: 30, d: 26, r: 1.4 };
+  out.push(lines([0, 1, 2, 3].map((i) => [[C.x + C.w + 2, C.y + 5 + i * 5.4], [C.x + C.w + 14, C.y + 5 + i * 5.4]]).concat([0, 1, 2, 3, 4].map((i) => [[C.x + 5 + i * 5, C.y + C.d + 2], [C.x + 5 + i * 5, B.y + B.d - 4]])), T));
+  out.push(S(k.slabOf(C, T, 4, P, 3, 0.5), { tone: "lo" }));
+  out.push(L(k.planOutline(k.insetPlan(C, 4), T + 4, P, 3), { tone: "mid" }));
+  // The address, on two labels with a gap between: the organization's number (lit), then this card's.
+  const tag = (L0, text, lit) => S(k.slabOf(L0, T, 2.4, P, 3, 0.4), { tone: "hi", lit }) + onTopAt(T + 2.4, `<text class="${lit ? "lm-tagt" : "lm-pkt-t"}" x="${n1(L0.x + 4.6)}" y="${n1(L0.y + 9.4)}">${text}</text>`);
+  out.push(tag({ x: B.x + 70, y: B.y + 34, w: 31, d: 15, r: 1.4 }, "00:00:5E", true));
+  out.push(tag({ x: B.x + 106, y: B.y + 34, w: 31, d: 15, r: 1.4 }, "00:53:10", false));
+  return figure("mac-address", "OUI · THIS CARD", out.join(""), "A network card on short legs: a chip, contacts along its edge, a bracket with a socket and a light. Its address is on two labels side by side: the first half, 00:00:5E, is lit; the second, 00:53:10, is not.");
+}
+
+// TCP/UDP: two lanes. TCP's three pieces go out and a lit acknowledgement comes back; UDP's go out with piece 2
+// missing, and nothing comes back.
+function tcpUdpSpot() {
+  const out = [], LW = 200, LD = 38, LZ = 3, PZ = LZ, PH = 7;
+  const lanes = [{ y: -50, name: "TCP" }, { y: 6, name: "UDP" }];
+  const pkt = (x, y, text, lit = false) => S(k.slabOf({ x, y, w: 22, d: 15, r: 1.6 }, PZ, PH, P, 3, 0.5), { tone: "hi", lit }) + onTopAt(PZ + PH, `<text class="${lit ? "lm-tagt" : "lm-pkt-t"}" x="${n1(x + 11)}" y="${n1(y + 9.6)}" text-anchor="middle">${text}</text>`);
+  for (const { y, name } of lanes) {
+    const R = { x: -100, y, w: LW, d: LD, r: 3 };
+    out.push(S(k.slabOf(R, 0, LZ, P, 3, 0.5), { tone: "mid", inner: L(k.sideSeam(R, 1.2, P, 3), { tone: "faint" }) }));
+    out.push(L(k.planOutline(k.insetPlan(R, 3), LZ, P, 3), { tone: "lo" }));
+    out.push(k.faceTextSvg(k.sideMatrix([R.x + 5, y + LD], 0.6, P, "left"), name, { size: 3.4, tone: "mid" }));
+    // The way out, along the lane's front half.
+    out.push(lines([-90, 76].flatMap((x) => [[[x, y + 24], [x + 4, y + 28]], [[x + 4, y + 28], [x, y + 32]]]), LZ, "mid"));
+  }
+  // TCP: pieces 1 to 3 on their way out; the acknowledgement on its way back, along the lane's back half, lit.
+  [-52, -22, 8].forEach((x, i) => out.push(pkt(x, -30, String(i + 1))));
+  out.push(lines([[[46, -42], [42, -38]], [[42, -38], [46, -34]]], LZ, "mid"));
+  out.push(pkt(52, -46, "ACK", true));
+  // UDP: pieces 1 and 3 on their way, an empty place where 2 was lost, and nothing on the way back.
+  out.push(pkt(-52, 26, "1"), pkt(8, 26, "3"));
+  out.push(L(k.planOutline({ x: -22, y: 26, w: 22, d: 15, r: 1.6 }, LZ, P, 3), { tone: "mid", dotted: true }));
+  return figure("tcp-udp", "TCP · UDP", out.join(""), "Two lanes on one plate. On the lane marked TCP, pieces 1, 2 and 3 head out and a lit acknowledgement comes back. On the lane marked UDP, pieces 1 and 3 head out with an empty place between them where 2 was lost, and nothing comes back.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

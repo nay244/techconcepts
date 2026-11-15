@@ -8,7 +8,8 @@ import type { FigureId, FigureParts } from './types';
  * its driver handles, so the validator only accepts what the figure can show.
  */
 export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
-  dhcp: { places: ['laptop', 'router', 'phone'], cues: {}, layers: [], board: false, start: false },
+  // MAC Address's frames setup (D12): a TV that only listens, so no way to or from it (nor the phone) is drawn; the start's `frames` cue turns it on.
+  dhcp: { places: ['laptop', 'router', 'phone', 'tv'], cues: { frames: 'flag' }, routes: ['laptop>router', 'router>laptop'], layers: [], board: false, start: true },
   subnet: {
     places: ['laptop', 'printer', 'pc', 'router', 'provider'],
     // The mockup's fx, by name: what lights, pulses, rides or spreads while a note plays (src/scenes/drivers/subnet.ts).

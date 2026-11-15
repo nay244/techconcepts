@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_OPTIONAL, plateSites } from './net-map-layers';
 import { FIGURE_PARTS } from './parts';
 
-const SITES = ['web', 'call', 'root', 'tld', 'auth', 'out', 'in', 'mail', 'files', 'host', 'server', 'stranger'];
+const SITES = ['web', 'call', 'root', 'tld', 'auth', 'out', 'in', 'mail', 'files', 'host', 'server', 'stranger', 'voice'];
 
 test('the layers are every protocol’s servers, keyed <protocol>:<site>, in the lesson’s order', () => {
   expect(Object.keys(NET_MAP_LAYERS)).toEqual([
@@ -22,6 +22,7 @@ test('the layers are every protocol’s servers, keyed <protocol>:<site>, in the
     'tls:web',
     'ports:server',
     'nat:stranger',
+    'tcp-udp:voice',
   ]);
   for (const [key, plate] of Object.entries(NET_MAP_LAYERS)) {
     // The name servers have no one site: the plate is keyed by its kind.
@@ -94,6 +95,23 @@ test('FIGURE_PARTS["net-map"] lists home, the internet, the resolver and every s
   });
 });
 
+test('D12’s voice layer: a call plate on slot N behind the internet, cabled to router a, its callout ending at the left of the plate', () => {
+  expect(NET_MAP_LAYERS['tcp-udp:voice']).toEqual({
+    kind: 'call',
+    slot: 'N',
+    site: 'voice',
+    puck: 'a',
+    label: 'CALL.EXAMPLE.NET',
+    describe: 'Behind the internet, the voice server the call goes through.',
+    at: [290, -22],
+    align: 'end',
+    lines: [
+      { cls: 'nm-name', text: 'Voice server' },
+      { cls: 'nm-addr', text: '203.0.113.90 · port 16384' },
+    ],
+  });
+});
+
 test('D11’s two layers: Ports’ server on slot E with no port in its callout, and NAT’s stranger on slot N, drawing nothing of its description', () => {
   expect(NET_MAP_LAYERS['ports:server']).toEqual({
     kind: 'host',
@@ -118,6 +136,6 @@ test('D11’s two layers: Ports’ server on slot E with no port in its callout,
     ],
   });
   expect(NET_MAP_OPTIONAL).toEqual(['phone']);
-  // Only the stranger describes itself.
-  expect(Object.entries(NET_MAP_LAYERS).filter(([, p]) => p.describe !== undefined).map(([k]) => k)).toEqual(['nat:stranger']);
+  // Only the stranger and D12's voice server describe themselves.
+  expect(Object.entries(NET_MAP_LAYERS).filter(([, p]) => p.describe !== undefined).map(([k]) => k)).toEqual(['nat:stranger', 'tcp-udp:voice']);
 });

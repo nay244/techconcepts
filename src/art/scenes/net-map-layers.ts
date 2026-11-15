@@ -21,6 +21,8 @@ interface PlateBase {
   lines: CalloutLine[];
   /** Where the callout's first line starts, on the figure, when it is not under the right-hand plate. */
   at?: [number, number];
+  /** The callout's lines end at `at` rather than start there. */
+  align?: 'end';
 }
 
 /**
@@ -38,7 +40,7 @@ export type ServerPlate =
       anchorTop?: boolean;
     })
   | (PlateBase & {
-      kind: 'pc';
+      kind: 'pc' | 'call';
       site: string;
       /** The internet router its cable runs to. */
       puck: 'a';
@@ -149,5 +151,16 @@ export const NET_MAP_LAYERS: Record<string, ServerPlate> = {
     describe: 'Behind the internet, someone else’s computer, on another network.',
     at: [420, -24],
     lines: [line('nm-name', 'Someone else'), line('nm-addr', '192.0.2.66')],
+  },
+  'tcp-udp:voice': {
+    kind: 'call',
+    slot: 'N',
+    site: 'voice',
+    puck: 'a',
+    label: 'CALL.EXAMPLE.NET',
+    describe: 'Behind the internet, the voice server the call goes through.',
+    at: [290, -22],
+    align: 'end',
+    lines: [line('nm-name', 'Voice server'), line('nm-addr', '203.0.113.90 · port 16384')],
   },
 };

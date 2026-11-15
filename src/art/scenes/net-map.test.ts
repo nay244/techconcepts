@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { normaliseFigure, sha256 } from '../../test/figure-hash';
-import { groupsOf, PHONE_OPEN, SERVER_OPEN, STRANGER_OPEN, withoutD11 } from '../../test/svg-groups';
+import { groupsOf, PHONE_OPEN, SERVER_OPEN, STRANGER_OPEN, VOICE_OPEN, withoutD11 } from '../../test/svg-groups';
 import { drawFigure } from './index';
 import { drawNetMap, type NetMapData } from './net-map';
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_TAG_MAX, plateSites } from './net-map-layers';
@@ -62,15 +62,17 @@ function withoutRouterParts(svg: string): string {
 }
 
 const D11_SITES = ['phone', 'server', 'stranger'];
-/** The data without a route from or to D11's places. */
+/** D12's voice plate, as D11's three places are. */
+const D12_SITES = ['voice'];
+/** The data without a route from or to D11's or D12's places. */
 const withoutD11Routes = (routes: NetMapData['routes']): NetMapData['routes'] =>
-  Object.fromEntries(Object.entries(routes).filter(([key]) => !key.split('>').some((p) => D11_SITES.includes(p))));
+  Object.fromEntries(Object.entries(routes).filter(([key]) => !key.split('>').some((p) => [...D11_SITES, ...D12_SITES].includes(p))));
 
 test('drawNetMap matches the mockup map', async () => {
   const { svg, data } = drawNetMap();
   expect(svg.split(TRAIL_EDGE)).toHaveLength(2);
   // D11's groups come out whole first: unwrapping the phone first would leave its parts in the hash.
-  expect(await sha256(normaliseFigure(withoutRouterParts(withoutD11(svg))))).toBe(EXPECTED.svg);
+  expect(await sha256(normaliseFigure(withoutRouterParts(groupsOf(withoutD11(svg), VOICE_OPEN).rest)))).toBe(EXPECTED.svg);
   const { tops, routes, ...mockup } = data as NetMapData;
   expect(Object.keys(tops)).toEqual(['isp', 'a', 'b', 'c', 'd']);
   expect(await sha256(JSON.stringify({ ...mockup, routes: withoutD11Routes(routes) }))).toBe(EXPECTED.data);
@@ -91,6 +93,32 @@ test.each([
   expect(file.startsWith(HEADER)).toBe(true);
   expect(file.endsWith('</svg>\n')).toBe(true);
   expect(file.slice(HEADER.length, -'</svg>\n'.length)).toBe(groups.join(''));
+});
+
+// D12 / B14, attack cases 2 and 5: the voice file is the art, and the code emits it.
+test('prototypes/d12-part-voice.svg is the five groups the map draws for the voice plate, in order', () => {
+  const { groups } = groupsOf(drawNetMap().svg, VOICE_OPEN);
+  expect(groups).toHaveLength(5);
+  const file: string = readFileSync('prototypes/d12-part-voice.svg', 'utf8');
+  expect(file.startsWith(HEADER)).toBe(true);
+  expect(file.endsWith('</svg>\n')).toBe(true);
+  expect(file.slice(HEADER.length, -'</svg>\n'.length)).toBe(groups.join(''));
+});
+
+test('the voice plate has one light of its own, and a way to and from every base place', () => {
+  const { svg, data } = drawNetMap();
+  const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!);
+  expect(ids.filter((x) => x === 'nm-tcp-udp-busy-voice')).toHaveLength(1);
+  expect(svg).toContain('CALL.EXAMPLE.NET');
+  const { routes } = data as NetMapData;
+  // Every base place has a way to the voice server and back (nine places, so 18 ways).
+  const voice = Object.keys(routes).filter((key) => key.split('>').includes('voice'));
+  expect(voice).toHaveLength(18);
+  for (const place of NET_MAP_BASE_PLACES) {
+    expect(routes[`${place}>voice`], place).toBeDefined();
+    expect(routes[`voice>${place}`], place).toBeDefined();
+  }
+  expect(routes['voice>laptop']).toEqual([...routes['laptop>voice']!].reverse());
 });
 
 test('the phone’s groups are hidden whatever the layers; a description on a layer draws nothing', () => {
