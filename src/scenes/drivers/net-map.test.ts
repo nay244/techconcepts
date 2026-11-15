@@ -13,7 +13,7 @@ import { deriveState, slotsFor, stepEvents, type AppliedCue } from '../../engine
 import { showSweep } from '../../test/show-sweep';
 import { sha256 } from '../../test/figure-hash';
 import { sceneViewOf, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
-import { groupsOf, PHONE_OPEN, SERVER_OPEN, STRANGER_OPEN, withoutD11 } from '../../test/svg-groups';
+import { withoutD11 } from '../../test/svg-groups';
 import { DRIVERS } from './index';
 import { netMapDriver, parseConn } from './net-map';
 
