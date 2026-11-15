@@ -267,7 +267,7 @@ export default defineLesson({
         },
         parties: [],
         backing: {
-          traces: ['term-private', 'term-public', 'term-nat', 'term-pat', 'term-nat-table', 'fact-router', 'fact-ports', 'fact-outside'],
+          traces: ['term-private', 'term-public', 'term-nat', 'term-pat', 'term-nat-table', 'fact-router', 'fact-ports', 'fact-outside', 'fact-reply'],
         },
       },
       overview: {
@@ -294,7 +294,7 @@ export default defineLesson({
           deep: [
             {
               text: 'The router also rewrites the checksums that cover the address and port it changed.',
-              cite: [rfc2663('4.1.2', true)],
+              cite: [rfc2663('4.1.2', true), rfc3022('4.1')],
             },
           ],
           facts: [
@@ -334,7 +334,7 @@ export default defineLesson({
             'Your phone opens its own connection to example.net, port 80, from its temporary port, 50613. Same router, same public address. But two connections to the same site can’t share an outside port, or the router couldn’t tell their replies apart. So it picks a new port, 63847, and writes a second row.',
           deep: [
             {
-              text: 'A NAT that let different devices share one outside port would have “port overloading”. The standards say a NAT must not, since the devices couldn’t then both connect to the same site at once.',
+              text: 'Two devices sharing one outside port to the same site would be “port overloading”. The standards say a NAT must not do it, since both couldn’t then connect to that site at once.',
               cite: [rfc5382('7.1', true), rfc4787('4.2.1', true)],
             },
           ],
@@ -355,7 +355,7 @@ export default defineLesson({
           deep: [
             {
               text: 'A row doesn’t last for ever. A router keeps it while its connection is in use, and how long it waits after things go quiet differs from router to router.',
-              cite: [rfc4787('4.3', true), rfc2663('2.6')],
+              cite: [rfc4787('4.3', true), rfc5382('5', true), rfc2663('2.6')],
             },
           ],
           facts: [
@@ -404,9 +404,9 @@ export default defineLesson({
         terms: [
           {
             id: 'term-private',
-            idea: 'An address from the ranges set aside for home and office networks, reused everywhere and not carried across the internet',
+            idea: 'An address from the ranges set aside for private networks, reused everywhere and not carried across the internet',
             name: 'Private address',
-            cite: [rfc1918('3'), NIST_NAT],
+            cite: [rfc1918('3'), NIST_NAT, cite('nist-sp800-41r1', '4.1.1', { url: `${NIST_PDF}#page=29` })],
           },
           {
             id: 'term-public',
@@ -481,20 +481,20 @@ export default defineLesson({
           {
             id: 'fact-router',
             label: 'Your router',
-            value: 'a private address inside (192.168.1.1) and one public address outside (198.51.100.23), given to it by your provider',
+            value: 'a private address inside (192.168.1.1) and one public address outside (198.51.100.23)',
             cite: [rfc3022('1'), rfc3022('2.2'), NIST_NAT],
           },
           {
             id: 'fact-ports',
             label: 'The ports',
             value: 'your device picks a temporary port for each connection, from the range set aside for that, 49152 to 65535; web servers listen on TCP port 80',
-            cite: [rfc('rfc-6335', '6', true), MS_DYNAMIC, rfc('rfc-9110', '4.2.1', true)],
+            cite: [rfc('rfc-6335', '6', true), rfc('rfc-6335', '8.1.2', true), MS_DYNAMIC, rfc('rfc-9110', '4.2.1', true), cite('nist-sp800-41r1', '4.1.3', { url: `${NIST_PDF}#page=31` })],
           },
           {
             id: 'fact-reply',
             label: 'The reply',
             value: 'goes to the router’s public address and port, the ones the site saw; the router finds the row and swaps both back',
-            cite: [rfc3022('2.2'), rfc3022('4.1'), rfc2663('4.1.2'), NIST_NAT],
+            cite: [rfc3022('2.2'), rfc3022('4.1'), rfc2663('4.1.2'), rfc4787('3'), NIST_NAT],
           },
           {
             id: 'fact-same-site',
@@ -512,7 +512,7 @@ export default defineLesson({
             id: 'fact-timeout',
             label: 'How long a row lasts',
             value:
-              'while its connection is in use, and for a while after it goes quiet; the standards ask for at least 2 minutes for UDP and at least 2 hours 4 minutes for an open TCP connection, and routers differ',
+              'while its connection is in use, and for a while after it goes quiet; the standards ask for at least 2 minutes for UDP, except to some well-known ports, and at least 2 hours 4 minutes for an open TCP connection; routers differ',
             cite: [rfc4787('4.3', true), rfc5382('5', true), rfc2663('2.6'), MS_CONSTRAINTS],
           },
           { id: 'fact-stands-for', label: 'Stands for', value: 'Network Address Translation', cite: [rfc2663('3', true), CISCO_CONSERVE] },
