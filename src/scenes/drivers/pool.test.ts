@@ -94,7 +94,7 @@ test('T1: a table event 0; a note 1,300 with no-answer and 200 without; a reques
   expect(d(eventAt(3, 5))).toBe(1000);
   expect(d(tweak(eventAt(3, 1), { fast: true }))).toBe(1000);
   // A skip on a check would add nothing: only a reader's request waits to pick.
-  expect(d({ ...(eventAt(3, 0) as object), cues: [{ cue: 'skip', arg: 'a' }] } as SceneEvent)).toBe(1500);
+  expect(d(tweak(eventAt(3, 0), { cues: [{ cue: 'skip', arg: 'a' }] }))).toBe(1500);
 });
 
 test('T2: the five steps last 2,950, 5,900, 8,100, 11,850 and 8,950', () => {
