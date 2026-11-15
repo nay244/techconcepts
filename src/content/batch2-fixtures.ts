@@ -329,7 +329,7 @@ const tcpUdp: Fixture = {
         piece({ id: 's5-s2', over: 'UDP', from: 'voice', to: 'laptop', tag: 'SAM 2', kind: 'response', info: 'Sam’s voice, packet 2 (lost)', dropAt: 0.5 }),
         got('s5-g2', 'update', '2', { sam: 'Lost' }),
         piece({ id: 's5-s3', over: 'UDP', from: 'voice', to: 'laptop', tag: 'SAM 3', kind: 'response', info: 'Sam’s voice, packet 3', cues: status('Talking, one packet lost') }),
-        got('s5-g3', 'update', '3', { sam: 'Arrived, played at once' }),
+        got('s5-g3', 'update', '3', { sam: 'Arrived, straight to the app' }),
       ],
     },
   ],

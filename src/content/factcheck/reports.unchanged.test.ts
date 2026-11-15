@@ -17,9 +17,9 @@ const reBySlug = Object.fromEntries(Object.entries(rechecks).map(([p, raw]) => [
 const slugs = Object.keys(fullBySlug).sort();
 const sheet = (slug: string) => claimSheet(getLesson(slug)!, SOURCES);
 
-test('there are twenty-two lesson reports and eight re-checks', () => {
-  expect(slugs).toHaveLength(22);
-  expect(Object.keys(reBySlug)).toHaveLength(8);
+test('there are twenty-five lesson reports and ten re-checks', () => {
+  expect(slugs).toHaveLength(25);
+  expect(Object.keys(reBySlug)).toHaveLength(10);
 });
 
 test('A1.1 each lesson\'s sheet hash equals its re-check\'s hash where there is one, else its report\'s', () => {
@@ -41,7 +41,7 @@ test('A1.2 where a report with no re-check has an items record, itemHashes equal
   expect(stamped).toBeGreaterThan(0);
 });
 
-test('A1.3 each of the eight re-check pairs judges exactly the keys its re-check gave verdicts for, in order', () => {
+test('A1.3 each of the ten re-check pairs judges exactly the keys its re-check gave verdicts for, in order', () => {
   for (const slug of Object.keys(reBySlug)) {
     const full = parseReport(fullBySlug[slug]!).header!;
     const judge = itemsToJudge(full.items!, sheet(slug)).judge;

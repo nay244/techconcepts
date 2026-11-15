@@ -960,7 +960,9 @@ function everyView(lesson: Lesson): SceneView[] {
 const lessonModules = import.meta.glob<Lesson>(['../../content/lessons/*.ts', '!../../content/lessons/*.test.ts'], { import: 'default', eager: true });
 /** The lessons that existed before D11 (the real ARP, Ports and NAT are checked on their own), with Router's fixture. */
 const D11_LESSONS = ['arp', 'ports', 'nat'];
-const otherNetMapLessons = (): Lesson[] => [...Object.values(lessonModules).filter((l) => l.figure === 'net-map' && !D11_LESSONS.includes(l.slug)), routerFixture()];
+/** D12's real TCP/UDP is checked on its own (net-map.batch2.test.ts); its voice plate is new, as D11's parts were. */
+const D12_LESSONS = ['tcp-udp'];
+const otherNetMapLessons = (): Lesson[] => [...Object.values(lessonModules).filter((l) => l.figure === 'net-map' && ![...D11_LESSONS, ...D12_LESSONS].includes(l.slug)), routerFixture()];
 
 test('the phone is hidden at every position of What is IP, Router and every tour unit, and shown at every position of NAT’s', () => {
   const others = otherNetMapLessons();

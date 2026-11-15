@@ -134,7 +134,7 @@ test('24: "Nothing yet." before step 2; then rows 1, 2, 3 in that order; the cel
   expect(arrivedAt(2).cells).toEqual([['1', 'Arrived', '—'], ['2', 'Missing', '—'], ['3', 'Arrived, waiting', '—']]);
   expect(arrivedAt(3).cells).toEqual([['1', 'Arrived', '—'], ['2', 'Arrived, sent again', '—'], ['3', 'Arrived', '—']]);
   expect(arrivedAt(4).cells[0]).toEqual(['1', 'Arrived', 'Arrived']);
-  expect(arrivedAt(5).cells).toEqual([['1', 'Arrived', 'Arrived'], ['2', 'Arrived, sent again', 'Lost'], ['3', 'Arrived', 'Arrived, played at once']]);
+  expect(arrivedAt(5).cells).toEqual([['1', 'Arrived', 'Arrived'], ['2', 'Arrived, sent again', 'Lost'], ['3', 'Arrived', 'Arrived, straight to the app']]);
   for (const step of [1, 2, 3, 4, 5]) expect(arrivedAt(step).miss, `step ${step}`).toBe(0);
   expect(JSON.stringify(tcpUdp)).not.toContain('"miss"');
   expect(arrivedAt(5).head).toEqual(['Piece', 'Page, over TCP', 'Sam’s voice, over UDP']);

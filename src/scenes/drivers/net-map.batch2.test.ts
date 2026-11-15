@@ -91,13 +91,22 @@ test('16: the voice plate’s five groups are shown at every position of TCP/UDP
     expect(voiceGroups(root).map((g) => g.getAttribute('display'))).toEqual([null, null, null, null, null]);
   }
   // Home draws only http:web; every other lesson of the site names its own layers.
-  const others = Object.values(lessonModules).filter((l) => l.figure === 'net-map');
+  const others = Object.values(lessonModules).filter((l) => l.figure === 'net-map' && l.slug !== 'tcp-udp');
   expect(others.length).toBeGreaterThanOrEqual(15);
   for (const v of [...others.flatMap(everyView), { ...viewAt(lesson, 0), layers: ['http:web'] }]) {
     driver.show(v);
     expect(voiceGroups(root).map((g) => g.getAttribute('display'))).toEqual(['none', 'none', 'none', 'none', 'none']);
   }
 }, 30_000);
+
+test('16: the real TCP/UDP lesson shows the voice plate at every position', () => {
+  const real = Object.values(lessonModules).find((l) => l.slug === 'tcp-udp')!;
+  const { root, driver } = mount();
+  for (const v of everyView(real)) {
+    driver.show(v);
+    expect(voiceGroups(root).map((g) => g.getAttribute('display'))).toEqual([null, null, null, null, null]);
+  }
+});
 
 test('16: TCP/UDP and then What is UDP on one driver: the voice plate goes away again', () => {
   const { root, driver } = mount();
