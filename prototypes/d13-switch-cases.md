@@ -418,3 +418,7 @@ Measured on the patch:
 - A frame from the TV, which the story never sends, is allowed and drawn correctly. A flood after the re-plug was measured: copies out of 1, 3 and 4; port 2 (now empty) gets none, and the sender's port 5 gets none back.
 - The figure's SVG is 28 KB gzipped on the Switch page; MAC Address's is about 15. The HTML budget is 250 KB, and TCP/UDP, the largest page, is at 132.6.
 - Packets' Appendix A adds `spot:packets` to `SPOTS` without a hash in `figures.test.ts`. That, and three net-map pins, are B15a's four red tests on this branch.
+
+## After the build (the orchestrator, 2026-11-15)
+
+- **E38** (found by B15b): the cases' "49 ids" counts 37 in the approved figure; the test checks every id unique and prefixed `sw-` instead, which is what the count was for.
