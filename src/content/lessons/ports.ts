@@ -65,7 +65,6 @@ const CF_RDP_PORT = vendor('cloudflare-rdp-browser', '4. Create an Access applic
 const MS_DYNAMIC = vendor('microsoft-dynamic-ports', 'The default dynamic port range for TCP/IP has changed since Windows Vista and in Windows Server 2008', 'Microsoft has increased the dynamic client port range for outgoing connections');
 const MS_DYNAMIC_OLD = vendor('microsoft-dynamic-ports', 'The default dynamic port range for TCP/IP has changed since Windows Vista and in Windows Server 2008', 'This is a change from the configuration of earlier versions of Windows');
 const MS_REFUSED = vendor('microsoft-winsock-errors', 'WSAECONNREFUSED', 'No connection could be made because the target computer actively refused it');
-const BSD_REFUSED = vendor('openbsd-man-connect', 'ERRORS', 'The attempt to connect was forcefully rejected');
 const PALO_RANGE = vendor('paloalto-port-scan', 'What is a Port Scan?', 'They are numbered from 0 to 65535');
 const PALO_WELL_KNOWN = vendor('paloalto-port-scan', 'What is a Port Scan?', 'Ports 0 to 1023 are identified as the');
 const PALO_OPEN = vendor('paloalto-port-scan', 'What is a Port Scan?', 'Running a port scan on a network or server reveals which ports are open and listening');
@@ -75,6 +74,10 @@ const PALO_CLOSED = vendor('paloalto-port-scan', 'Port Scanning Results', 'The t
 const PALO_FILTERED = vendor('paloalto-port-scan', 'Port Scanning Results', 'Typically, packets sent to filtered ports will not receive a response');
 const CISCO_BLOCK = vendor('cisco-fmc-access-rules', 'Access control rule blocking actions', 'Block and Block with reset actions immediately stop traffic from entering the network');
 const PALO_L4 = vendor('paloalto-layer-3-vs-7', 'What is the difference between Layer 7 and Layer 4 firewall?', 'whereas layer 4 firewalls filter traffic based on transport layer information');
+const PALO_PORT_80 = vendor('paloalto-port-scan', 'What is a Port Scan?', 'Port 80 (TCP)');
+const CF_HTTP_PORTS = cite('cloudflare-network-ports', 'Network ports compatible with Cloudflare’s proxy', { url: 'https://developers.cloudflare.com/fundamentals/reference/network-ports/#network-ports-compatible-with-cloudflares-proxy' });
+const CF_SSH_22 = vendor('cloudflare-network-ports', 'How to enable Cloudflare’s proxy for additional ports', 'you have an SSH server that listens for incoming connections on port 22');
+const PALO_BLOCK_OPEN = vendor('paloalto-port-scan', 'Port Scanning Results', 'blocking open ports with firewalls');
 const MS_WF_PORTS = vendor('microsoft-windows-firewall', 'Firewall rules', 'For transport layer protocols, TCP and UDP, you can specify ports or port ranges');
 
 // ---------------------------------------------------------------- events
@@ -102,7 +105,7 @@ const listening: TableDef = {
 };
 
 /** The laptop's SYN: TCP's first message, from a temporary port to the server's port. */
-const syn = (id: string, laptopPort: number, port: number, plain: string): MessageEvent => ({
+const syn = (id: string, laptopPort: number, port: number, plain: string, extra: string[] = []): MessageEvent => ({
   type: 'message',
   id,
   from: 'laptop',
@@ -111,7 +114,7 @@ const syn = (id: string, laptopPort: number, port: number, plain: string): Messa
   kind: 'request',
   log: { time: '—', source: `${LAPTOP}:${laptopPort}`, destination: `${WEB}:${port}`, protocol: 'TCP', info: `SYN to port ${port}`, size: '—' },
   plain,
-  backing: traced('fact-handshake', 'fact-defined', 'term-temporary', 'fact-two-ports', 'fact-common', 'deep-nat'),
+  backing: traced('fact-handshake', 'fact-defined', 'term-temporary', 'fact-two-ports', 'fact-common', 'deep-nat', ...extra),
 });
 
 /** The server's answer from the listening program: SYN-ACK, from its port back to the port the SYN came from. */
@@ -145,7 +148,7 @@ const step1: SceneEvent[] = [
 ];
 
 const step2: SceneEvent[] = [
-  syn('s2-syn', 50423, 443, 'Your laptop sends a SYN from a new temporary port, 50423, to port 443.'),
+  syn('s2-syn', 50423, 443, 'Your laptop sends a SYN from a new temporary port, 50423, to port 443.', ['fact-temporary']),
   listens('s2-match', 'TCP 443', 'The web server is listening on port 443 too.'),
   synAck('s2-synack', 50423, 443, 'The web server answers with a SYN-ACK, from port 443 back to port 50423.', 'Connected to port 443'),
 ];
@@ -191,7 +194,7 @@ const step5: SceneEvent[] = [
     summary: 'Remote Desktop is now listening on 3389.',
     backing: traced('term-open', 'term-listen', 'fact-common'),
   },
-  syn('s5-syn', 50441, 3389, 'Your Remote Desktop app tries again, from a new temporary port, 50441, to port 3389.'),
+  syn('s5-syn', 50441, 3389, 'Your Remote Desktop app tries again, from a new temporary port, 50441, to port 3389.', ['fact-temporary']),
   listens('s5-match', 'TCP 3389', 'Remote Desktop is listening on port 3389.'),
   synAck('s5-synack', 50441, 3389, 'Remote Desktop answers with a SYN-ACK, from port 3389 back to port 50441.', 'Connected to port 3389'),
 ];
@@ -233,7 +236,7 @@ export default defineLesson({
         },
         parties: [],
         backing: {
-          traces: ['term-port', 'term-listen', 'term-connection', 'term-closed', 'term-open', 'fact-common', 'fact-see', 'fact-closed', 'fact-defined'],
+          traces: ['term-port', 'term-listen', 'term-connection', 'term-closed', 'term-open', 'fact-common', 'fact-see', 'fact-closed', 'fact-defined', 'pattern', 'fact-two-ports', 'term-reset', 'fact-handshake'],
         },
       },
       overview: {
@@ -289,7 +292,7 @@ export default defineLesson({
             { label: 'Port 443', value: 'HTTPS, the secure web', backing: { traces: ['fact-common'] } },
           ],
           events: step2,
-          backing: { traces: ['term-connection', 'term-temporary', 'term-listen', 'fact-common', 'fact-handshake'] },
+          backing: { traces: ['term-connection', 'term-temporary', 'fact-temporary', 'term-listen', 'fact-common', 'fact-handshake'] },
         },
         {
           id: 'port-22',
@@ -304,7 +307,7 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Laptop’s port', value: '50431, the SSH app’s own temporary port', backing: { traces: ['term-temporary'] } },
+            { label: 'Laptop’s port', value: '50431, the SSH app’s own temporary port', backing: { traces: ['term-temporary', 'fact-common'] } },
             { label: 'Server’s port', value: '22, where the SSH server is listening', backing: { traces: ['fact-common', 'term-listen'] } },
             { label: 'Not the web server', value: 'each program listens on its own port', backing: { traces: ['why-1'] } },
           ],
@@ -330,7 +333,7 @@ export default defineLesson({
             { label: 'Your app reports', value: 'connection refused', backing: { traces: ['fact-closed'] } },
           ],
           events: step4,
-          backing: { traces: ['term-closed', 'term-reset', 'term-listen', 'term-temporary', 'fact-closed', 'fact-common', 'fact-handshake'] },
+          backing: { traces: ['term-closed', 'term-reset', 'term-listen', 'term-temporary', 'fact-closed', 'fact-common', 'fact-handshake', 'fact-see'] },
         },
         {
           id: 'open-port',
@@ -350,7 +353,7 @@ export default defineLesson({
             { label: 'The answer', value: 'SYN-ACK, not RST', backing: { traces: ['fact-handshake', 'fact-closed'] } },
           ],
           events: step5,
-          backing: { traces: ['term-open', 'term-listen', 'term-temporary', 'fact-common', 'fact-handshake'] },
+          backing: { traces: ['term-open', 'term-listen', 'term-temporary', 'fact-temporary', 'fact-common', 'fact-handshake'] },
         },
       ],
       learn: {
@@ -358,7 +361,7 @@ export default defineLesson({
           {
             id: 'lead-1',
             text: 'An IP address gets a message to the right computer. A port number says which program on that computer the message is for.',
-            cite: [tcp('2.2'), NIST_PORTS],
+            cite: [tcp('2.2'), NIST_PORTS, rfc('rfc-791', '1.1', true)],
           },
           {
             id: 'lead-2',
@@ -438,7 +441,7 @@ export default defineLesson({
           {
             id: 'deep-firewall',
             text: 'A firewall can block a port even while a program listens on it. Then there is often no answer at all, not a reset.',
-            cite: [MS_RDP_PREREQ, PALO_FILTERED, CISCO_BLOCK],
+            cite: [MS_RDP_PREREQ, PALO_FILTERED, CISCO_BLOCK, PALO_BLOCK_OPEN],
           },
           {
             id: 'deep-udp',
@@ -469,8 +472,8 @@ export default defineLesson({
           {
             id: 'fact-common',
             label: 'Common ports',
-            value: '22 SSH, 80 HTTP, 443 HTTPS, 3389 Remote Desktop',
-            cite: [ssh('4.1'), http('4.2.1'), http('4.2.2'), MS_RDP_PORT, CF_RDP_PORT],
+            value: '22 SSH, 80 HTTP (the web), 443 HTTPS (the secure web), 3389 Remote Desktop',
+            cite: [ssh('4.1'), http('4.2.1'), http('4.2.2'), MS_RDP_PORT, CF_RDP_PORT, PALO_PORT_80, CF_HTTP_PORTS, CF_SSH_22],
           },
           {
             id: 'fact-ranges',
@@ -494,7 +497,7 @@ export default defineLesson({
             id: 'fact-closed',
             label: 'Nothing listening (TCP)',
             value: 'the server answers with a reset (RST), and your app reports the connection refused',
-            cite: [tcp('3.5.2'), tcp('3.10.7.1'), MS_REFUSED, BSD_REFUSED],
+            cite: [tcp('3.5.2'), tcp('3.10.7.1'), MS_REFUSED, cite('openbsd-man-connect', 'ERRORS', { url: 'https://man.openbsd.org/connect#ECONNREFUSED' })],
           },
           {
             id: 'fact-see',
@@ -522,7 +525,7 @@ export default defineLesson({
             {
               text: 'The web server on port 80 answers instead.',
               feedback: 'Not quite. The port says which program a message is for, and a message for 3389 is not for the program on port 80.',
-              cite: [tcp('2.2'), NIST_PORTS],
+              cite: [tcp('2.2'), NIST_PORTS, http('4.2.1')],
             },
           ],
           answer: 0,
@@ -544,7 +547,7 @@ export default defineLesson({
             {
               text: '80, the web’s usual port.',
               feedback: 'Not quite. This connection is to 443, and the answer goes back to the port it came from, 50423.',
-              cite: [tcp('4'), NIST_PORTS],
+              cite: [tcp('4'), NIST_PORTS, http('4.2.1')],
             },
           ],
           answer: 0,
