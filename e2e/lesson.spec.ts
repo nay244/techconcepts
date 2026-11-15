@@ -152,7 +152,8 @@ for (const lesson of LESSONS) {
       const segments = page.locator('.topbar__segments .topbar__group').first().locator('.topbar__step');
       for (let i = 0; i < steps - 1; i += 1) await expect(segments.nth(i)).toHaveAttribute('data-state', 'done');
       await expect(segments.nth(steps - 1)).toHaveAttribute('data-state', 'current');
-      expect(await logRows(page).count()).toBeGreaterThanOrEqual(steps);
+      // MAC Address's steps 2 and 3 send no frame: its log has three rows for five steps (D12 §3.2).
+      expect(await logRows(page).count()).toBeGreaterThanOrEqual(lesson.path.endsWith('/mac-address') ? 3 : steps);
       await expect(page.locator('.console__log td[data-idle]')).toHaveCount(0);
       // The scene at its fullest, with every row its tables get, still fits the window.
       expect(await overflowAt(page, 'the end of the run')).toBeNull();
