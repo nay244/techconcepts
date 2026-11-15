@@ -141,7 +141,7 @@ const step1: SceneEvent[] = [
     info: 'SYN: hello',
     plain: 'Hello. Let’s set up a connection.',
     cues: status('Saying hello'),
-    backing: traced('term-handshake', 'term-connection', 'fact-used', 'fact-ports'),
+    backing: traced('term-handshake', 'term-connection', 'fact-setup', 'fact-used', 'fact-ports'),
   }),
   piece({
     id: 's1-synack',
@@ -152,7 +152,7 @@ const step1: SceneEvent[] = [
     kind: 'response',
     info: 'SYN-ACK: hello back',
     plain: 'Hello back. I got your hello.',
-    backing: traced('term-handshake', 'term-connection', 'fact-used', 'fact-ports'),
+    backing: traced('term-handshake', 'term-connection', 'fact-setup', 'fact-used', 'fact-ports'),
   }),
   piece({
     id: 's1-ack',
@@ -164,7 +164,7 @@ const step1: SceneEvent[] = [
     info: 'ACK: connection open',
     plain: 'OK. The connection is open.',
     cues: [{ cue: 'conn', arg: 'open laptop>web' }, ...status('Connected', 'status-known')],
-    backing: traced('term-handshake', 'term-connection', 'fact-used', 'fact-ports'),
+    backing: traced('term-handshake', 'term-connection', 'fact-setup', 'fact-used', 'fact-ports'),
   }),
 ];
 
@@ -312,7 +312,7 @@ const step5: SceneEvent[] = [
     cues: status('Talking, one packet lost'),
     backing: traced('fact-lost', 'why-2', 'fact-used', 'fact-ports'),
   }),
-  got('s5-g3', 'update', '3', { sam: 'Arrived, played at once' }, 'Sam’s voice, packet 3, arrived and was played at once.', traced('fact-lost', 'why-2')),
+  got('s5-g3', 'update', '3', { sam: 'Arrived, straight to the app' }, 'Sam’s voice, packet 3, arrived and went straight to the call app.', traced('fact-lost', 'why-2')),
 ];
 
 // ------------------------------------------------------------------- lesson
@@ -358,13 +358,13 @@ export default defineLesson({
         backing: { traces: ['lead-1', 'fact-used', 'fact-ports', 'fact-loss', 'fact-lost', 'term-handshake'] },
       },
       overview: {
-        hook: 'Every app picks how its data travels. TCP sets up a connection, checks that every piece arrived and sends again whatever didn’t. UDP just sends: no setup, no resending. Watch one piece go missing in each. TCP fills the gap and the page arrives whole; UDP carries on without it, and the call goes on.',
+        hook: 'An app’s data usually travels over TCP or UDP. TCP sets up a connection, checks that every piece arrived and sends again whatever didn’t. UDP just sends: no setup, no resending. Watch one piece go missing in each. TCP fills the gap and the page arrives whole; UDP carries on without it, and the call goes on.',
         hookBacking: { traces: ['lead-1', 'fact-two', 'term-ack', 'fact-lost', 'fact-used'] },
         description:
           'TCP is like sending a long letter as numbered postcards and asking “got them all?”; anything missing is sent again. UDP is like a walkie-talkie: you just speak, and a crackled word is gone.',
         backing: { analogy: true },
         facts: [
-          { label: 'Used for', value: 'TCP: web pages, email, files. UDP: calls, DNS lookups', backing: { traces: ['fact-used'] } },
+          { label: 'Used for', value: 'TCP: web pages (except HTTP/3), email, files. UDP: typically calls and DNS lookups', backing: { traces: ['fact-used'] } },
           { label: 'Before any data', value: 'TCP: a handshake. UDP: nothing', backing: { traces: ['fact-setup'] } },
           { label: 'A lost piece', value: 'TCP sends it again; UDP doesn’t', backing: { traces: ['fact-lost'] } },
           { label: 'OSI layer', value: '4, transport', backing: { traces: ['fact-osi'] } },
@@ -385,7 +385,7 @@ export default defineLesson({
             },
           ],
           facts: [
-            { label: 'Messages', value: 'SYN, SYN-ACK, ACK', backing: { traces: ['term-handshake'] } },
+            { label: 'Messages', value: 'SYN, SYN-ACK, ACK', backing: { traces: ['term-handshake', 'fact-setup'] } },
             { label: 'Costs', value: 'one round trip before any data', backing: { traces: ['fact-setup'] } },
             { label: 'To', value: '203.0.113.80, port 80', backing: { traces: ['fact-ports'] } },
             { label: 'From', value: '192.168.1.100, port 50422', backing: { example: true } },
@@ -541,8 +541,8 @@ export default defineLesson({
         why: [
           {
             id: 'why-1',
-            text: 'Apps that need every byte, in order, such as a web page, an email or a file, use TCP. They pay with a round trip to set up, and a wait whenever a piece is lost.',
-            cite: [RFC768_INTRO, rfc('rfc-8085', '3.3'), rfc('rfc-7413', '1'), tcp('2.2'), tcp('3.10.7.4'), NIST_TCP_UDP],
+            text: 'Apps that need every byte, in order, such as a web page, an email or a file, usually use TCP. They pay with a round trip to set up, and a wait whenever a piece is lost.',
+            cite: [RFC768_INTRO, rfc('rfc-8085', '3.3'), rfc('rfc-7413', '1'), tcp('2.2'), tcp('3.10.7.4'), NIST_TCP_UDP, rfc('rfc-9112', '9', true), rfc('rfc-5321', '4.5.4.2', true), rfc('rfc-959', '8', true)],
           },
           {
             id: 'why-2',
@@ -553,7 +553,7 @@ export default defineLesson({
         deep: [
           {
             id: 'deep-quic',
-            text: 'QUIC, which carries HTTP/3, runs over UDP and does its own acknowledgements and resending, so a lost packet holds up only the stream it was part of.',
+            text: 'QUIC, which carries HTTP/3, runs over UDP and does its own acknowledgements and resending, so a lost packet holds up only the streams whose data it carried.',
             cite: [rfc('rfc-9000', '1', true), rfc('rfc-9000', '13', true), rfc('rfc-9114', '1.2')],
           },
           {
@@ -591,12 +591,12 @@ export default defineLesson({
             id: 'fact-udp-gives',
             label: 'UDP gives',
             value: 'ports and a checksum: no setup, no resending and no promise of order; each message travels whole, on its own',
-            cite: [RFC768_INTRO, RFC768_FIELDS, RFC1122_UDP, rfc('rfc-8085', '3.3'), MS_SOCKET_PARAMS, BSD_SOCKET],
+            cite: [RFC768_INTRO, RFC768_FIELDS, RFC1122_UDP, rfc('rfc-8085', '3.3'), rfc('rfc-8085', '1'), MS_SOCKET_PARAMS, BSD_SOCKET],
           },
           {
             id: 'fact-setup',
             label: 'Before any data',
-            value: 'TCP: a three-way handshake, one round trip. UDP: nothing',
+            value: 'TCP: a three-way handshake (SYN, SYN-ACK, ACK), one round trip. UDP: nothing',
             cite: [tcp('3.5'), rfc('rfc-7413', '1'), RFC768_INTRO, rfc('rfc-8085', '1')],
           },
           {
