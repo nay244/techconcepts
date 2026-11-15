@@ -332,6 +332,10 @@ const IP = {
 const MAC_OF = { router: '00:00:5E:00:53:01', laptop: '00:00:5E:00:53:10', phone: '00:00:5E:00:53:11', tv: '00:00:5E:00:53:12' };
 const frameMsg = (o) => ({ type: 'message', proto: 'Wi-Fi', time: DASH, size: DASH, ...o });
 const keep = (who, word) => ({ type: 'table', op: 'update', key: MAC_OF[who], cells: { frame: word } });
+// After each frame, one replace: the sender's row "Sent it", every other row "Hears it", as the ride left the figure (H1).
+const DEVICES = [['Router', 'router'], ['Laptop', 'laptop'], ['Phone', 'phone'], ['TV', 'tv']];
+const heard = (sender, summary) => ({ type: 'table', op: 'replace', summary,
+  rows: DEVICES.map(([d, w]) => ({ device: d, mac: MAC_OF[w], frame: w === sender ? 'Sent it' : 'Hears it' })) });
 const MAC = {
   key: 'mac', fig: 'dhcp', title: 'MAC Address', no: 'Lesson 4 of 20', osi: [2, 'Data link'],
   overviewSub: 'The address on every frame', stage: 'One frame on a home Wi-Fi',
@@ -355,7 +359,7 @@ const MAC = {
       facts: [['To', '00:00:5E:00:53:01, the router'], ['From', '00:00:5E:00:53:10, the laptop'], ['Heard by', 'every device in range']],
       events: [
         frameMsg({ kind: 'request', from: 'laptop', to: 'router', tag: 'FRAME', src: MAC_OF.laptop, dst: MAC_OF.router, info: 'Frame to 00:00:5E:00:53:01 (the router), carrying a packet for example.net' }),
-        keep('laptop', 'Sent it'), keep('router', 'Hears it'), keep('phone', 'Hears it'), keep('tv', 'Hears it'),
+        heard('laptop', 'Every device hears the frame: the router, the phone and the TV.'),
       ] },
     { title: 'Only the match keeps it', sub: 'Is it mine?',
       narr: 'Each device reads the frame’s destination and compares it with its own MAC address. The router’s matches, so the router keeps the frame and reads the packet inside. The phone’s and the TV’s don’t match, so they ignore it. A frame sent to one device’s address is kept by that device alone.',
@@ -370,14 +374,16 @@ const MAC = {
       facts: [['Sent to', 'everyone: ff:ff:ff:ff:ff:ff'], ['Kept by', 'every device'], ['Then', 'each reads what’s inside']],
       events: [
         frameMsg({ kind: 'broadcast', from: 'router', to: 'laptop', tag: 'TO ALL', src: MAC_OF.router, dst: 'ff:ff:ff:ff:ff:ff', info: 'Frame to ff:ff:ff:ff:ff:ff (everyone)' }),
-        keep('router', 'Sent it'), keep('laptop', 'Keeps it'), keep('phone', 'Keeps it'), keep('tv', 'Keeps it'),
+        heard('router', 'Every device hears the router’s frame: the laptop, the phone and the TV.'),
+        keep('laptop', 'Keeps it'), keep('phone', 'Keeps it'), keep('tv', 'Keeps it'),
       ] },
     { title: 'A new frame from the router', sub: 'MAC addresses stay home',
       narr: 'example.net’s reply reaches your router. The router puts it in a new frame for your laptop: to 00:00:5E:00:53:10, from the router’s own 00:00:5E:00:53:01. example.net’s MAC address isn’t on it: each network a packet crosses puts it in a new frame, with that network’s MAC addresses. The phone and the TV hear this frame too, and ignore it. The laptop keeps it.',
       facts: [['From', '00:00:5E:00:53:01, the router'], ['To', '00:00:5E:00:53:10, the laptop'], ['example.net’s MAC address', 'not on it']],
       events: [
         frameMsg({ kind: 'response', from: 'router', to: 'laptop', tag: 'FRAME', src: MAC_OF.router, dst: MAC_OF.laptop, info: 'Frame to 00:00:5E:00:53:10 (the laptop), carrying example.net’s reply' }),
-        keep('router', 'Sent it'), keep('laptop', 'Keeps it'), keep('phone', 'Ignores it'), keep('tv', 'Ignores it'),
+        heard('router', 'Every device hears the router’s frame: the laptop, the phone and the TV.'),
+        keep('laptop', 'Keeps it'), keep('phone', 'Ignores it'), keep('tv', 'Ignores it'),
       ] },
   ],
 };
@@ -696,6 +702,7 @@ const tableDef = () => (L.key === 'mac' ? L.table : L.tables[state.tableVar]);
 function tableOp(t, op) {
   const def = tableDef();
   if (op.op === 'match') { t.highlight = op.key; return; }
+  if (op.op === 'replace') { t.rows = op.rows.map((r) => ({ ...r })); t.missed = []; t.highlight = null; return; }
   if (op.op === 'add') t.rows.push({ ...op.cells });
   else { const row = t.rows.find((r) => r[def.keyCol] === op.key); if (row) Object.assign(row, op.cells); }
   t.missed = t.missed.filter((k) => k !== op.key);
@@ -833,7 +840,7 @@ async function playStep(chain) {
       apply(e, S); renderPanel(); f.paint(S);
       state.tableSeen = $('.console').dataset.tab === 'table'; markTab();
       if (e.summary) $('#announce').textContent = e.summary;
-      // The frames table (MAC Address): 400ms an update, 900 a match. TCP/UDP's table, on net-map: an add or update lands at once.
+      // The frames table (MAC Address): 400ms an update or a replace, 900 a match. TCP/UDP's table, on net-map: an add or update lands at once.
       const ms = L.key === 'mac' ? (e.op === 'match' ? 900 : 400) : 0;
       if (ms && !(await sleep(ms / state.speed, run))) return;
     } else if (e.type === 'note') {
