@@ -80,6 +80,8 @@ const EXPECTED: Record<string, string> = {
   'spot:ip-address': 'ae81fd3287d6d09e4ebfe178cd104ce7144a2ea73f3abd48950584c1aa4b7c04',
   'spot:mac-address': '9461b5d34cf6ed4fa1c9aae8ed313544e10d187db0df080e5742b5a036484a35',
   'spot:tcp-udp': '486e78bbae5a044469392f3e4f94cf0ef43d5b1ed566c73aade52acb9cfe9e0c',
+  // Drawn for Packets (D13), on 2026-11-15; pinned from its own render, which equals prototypes/d13-packets-spot.svg (the last test).
+  'spot:packets': 'd0d8b1e5aa32f37d8bee06e74fbd88fc29734b47844849d9fbd7b48d3d9bb4b4',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -151,4 +153,23 @@ test.each([
   expect(svg).toContain(`aria-label="${aria}"`);
   expect(svg).toContain(plate);
   expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+// D13 / B15a, attack cases 1a to 1c: the Packets spot is the approved file, byte for byte, with one lit part.
+test('the packets spot is prototypes/d13-packets-spot.svg, with one lit part, no lit LED, its plate label and its words', () => {
+  const file: string = readFileSync('prototypes/d13-packets-spot.svg', 'utf8');
+  expect(`${spot('packets')}\n`).toBe(file);
+  const svg = spot('packets');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(0);
+  expect(svg).toContain('ONE FILE · FOUR PIECES');
+  expect(svg).toContain(
+    'aria-label="A file cut into four numbered pieces, each with a header band across its top. Pieces 2, 3 and 4 still stand side by side, with a dotted outline where piece 1 stood. Piece 1, lit, is in the air over the cable, on its way."',
+  );
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+test('the lit-face number ink is the Packets spot’s alone: no other spot engraves a number on a lit face', () => {
+  for (const kind of SPOTS) if (kind !== 'packets') expect(spot(kind), kind).not.toMatch(/iso-face-text lm-on-lit/);
+  expect(spot('packets')).toMatch(/iso-face-text lm-on-lit/);
 });

@@ -216,6 +216,8 @@
 .lm-shadow { fill: #000; opacity: .28; }
 .lm-pkt-t { font: 700 3.4px var(--mono); fill: var(--anatomy-hi); }
 .lm-pkt-t.lm-on-lit { fill: color-mix(in srgb, var(--lit-b) 30%, #000); }
+/* A number engraved on a lit face (the Packets spot's piece 1): the lit tag's ink. */
+.iso-face-text.lm-on-lit { fill: color-mix(in srgb, var(--lit-b) 30%, #000); }
 .lm-rule { font: 700 3.3px var(--mono); fill: var(--anatomy-hi); letter-spacing: .04em; white-space: pre; }
 .lm-rule-ok { fill: #46d39a; } .lm-rule-no { fill: #ff5a4f; }
 .lm-x { stroke: #200605; stroke-width: .9px; stroke-linecap: round; vector-effect: non-scaling-stroke; }

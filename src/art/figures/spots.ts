@@ -357,10 +357,30 @@ function tcpUdpSpot() {
   return figure("tcp-udp", "TCP · UDP", out.join(""), "Two lanes on one plate. On the lane marked TCP, pieces 1, 2 and 3 head out and a lit acknowledgement comes back. On the lane marked UDP, pieces 1 and 3 head out with an empty place between them where 2 was lost, and nothing comes back.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp'] as const;
+// Packets: one file cut into four numbered pieces, each with a header band across its top; piece 1, lit, already on its way.
+function packetsSpot() {
+  const out = [], W = 17, D = 36, H = 34, Y = -22, GAP = 1.6, X0 = -78, F = Y + D, CY = Y + D / 2, FLY = { x: 46, z: 30 };
+  const piece = (x, z, n, lit = false) => {
+    const T = { x, y: Y, w: W, d: D, r: 1.4 };
+    out.push(S(k.slabOf(T, z, H, P, 3, 0.5), { tone: "hi", lit, inner: L(k.sideSeam(T, z + H - 7, P, 3), { tone: lit ? "lit" : "faint" }) }));
+    out.push(onFaceY(F, rect(lit ? "lm-inlay lm-on-lit" : "lm-inlay", x + 2.5, z + H - 5.6, W - 5, 3.4, 1)));
+    const num = k.faceTextSvg(k.sideMatrix([x + W / 2, F], z + 9, P, "left"), String(n), { size: 13, tone: "mid", anchor: "middle" });
+    out.push(lit ? num.replace('class="iso-face-text"', 'class="iso-face-text lm-on-lit"') : num);
+  };
+  // Where piece 1 stood, the cable out from the end of the file, and where piece 1 is over it.
+  out.push(L(k.planOutline({ x: X0, y: Y, w: W, d: D, r: 1.4 }, 0, P, 3), { tone: "mid", dotted: true }));
+  out.push(tubeOf(tubePieces([[X0 + 4 * W + 3 * GAP - 1, CY, 1.4], [104, CY, 1.4]], 1.2, P, { maxLength: 16 })));
+  out.push(L(k.planOutline({ x: FLY.x, y: Y, w: W, d: D, r: 1.4 }, 0, P, 3), { tone: "lo", dotted: true }));
+  [2, 3, 4].forEach((n, i) => piece(X0 + (i + 1) * (W + GAP), 0, n));
+  out.push(lines([18, 84].flatMap((x) => [[[x, CY - 13], [x + 4, CY - 9]], [[x + 4, CY - 9], [x, CY - 5]]]), 0, "mid"));
+  piece(FLY.x, FLY.z, 1, true);
+  return figure("packets", "ONE FILE · FOUR PIECES", out.join(""), "A file cut into four numbered pieces, each with a header band across its top. Pieces 2, 3 and 4 still stand side by side, with a dotted outline where piece 1 stood. Piece 1, lit, is in the air over the cable, on its way.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

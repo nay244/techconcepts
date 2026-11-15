@@ -73,9 +73,29 @@ test('drawNetMap matches the mockup map', async () => {
   expect(svg.split(TRAIL_EDGE)).toHaveLength(2);
   // D11's groups come out whole first: unwrapping the phone first would leave its parts in the hash.
   expect(await sha256(normaliseFigure(withoutRouterParts(groupsOf(withoutD11(svg), VOICE_OPEN).rest)))).toBe(EXPECTED.svg);
-  const { tops, routes, ...mockup } = data as NetMapData;
+  const { tops, routes, bays, ...mockup } = data as NetMapData;
   expect(Object.keys(tops)).toEqual(['isp', 'a', 'b', 'c', 'd']);
   expect(await sha256(JSON.stringify({ ...mockup, routes: withoutD11Routes(routes) }))).toBe(EXPECTED.data);
+});
+
+// D13 / B15a, attack cases 2b and 3a to 3c: where a parked tag waits.
+test('the bays: four at the laptop, four on the web server, one on each internet router, at the router’s top', () => {
+  const { bays, routes } = drawNetMap().data as NetMapData;
+  expect(Object.keys(bays)).toEqual(['laptop', 'web', 'isp', 'a', 'b', 'c', 'd']);
+  expect(Object.values(bays).map((b) => b.length)).toEqual([4, 4, 1, 1, 1, 1, 1]);
+  expect(bays.laptop![0]).toEqual([-62.5, 84.5, 0.4]);
+  expect(bays.laptop![3]).toEqual([-62.5, 116.9, 0.4]);
+  expect(bays.web![0]).toEqual([89, -88, 18.8]);
+  expect(bays.web![3]).toEqual([89, -79, 5]);
+  for (const r of ['isp', 'a', 'b', 'c', 'd']) {
+    expect(bays[r]![0], r).toEqual(routes[`laptop>${r}`]!.at(-1));
+    expect(bays[r]![0]![2], r).toBe(6.2);
+  }
+  for (const none of ['router', 'phone', 'resolver', 'mail']) expect(none in bays, none).toBe(false);
+});
+
+test('the bays do not depend on which layers the map draws', () => {
+  expect((drawNetMap(['tcp:web']).data as NetMapData).bays).toEqual((drawNetMap().data as NetMapData).bays);
 });
 
 // D11 / B13, attack cases 1 to 4: the six SVG files are the art, and the code emits them.

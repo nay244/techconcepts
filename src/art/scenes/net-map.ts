@@ -28,6 +28,12 @@ export interface NetMapData {
   routes: Record<string, [number, number, number][]>;
   /** Where each internet router's top is on screen, from the figure's origin: the DROPPED mark and the name strip stand there. */
   tops: Record<string, [number, number]>;
+  /**
+   * Where a tag waits once a `park` cue leaves it, by place, as points (x, y, z) on the plates, bay 1 first: four
+   * beside the laptop, in a column down the home plate; four on the web server's dock, a deck with bay 1 on top; one
+   * on each internet router's top.
+   */
+  bays: Record<string, [number, number, number][]>;
 }
 
 const PLATE_H = 7, FOOT_H = 3, FLOOR = -PLATE_H - FOOT_H;
@@ -253,6 +259,16 @@ function route(sites, from, to) {
   }
   return pts.map((q) => q.map((v) => +v.toFixed(2)));
 }
+
+// Where a parked tag waits (the driver's `park` cue). Beside the laptop, a column down the home plate, clear of the
+// laptop, the router and the plate's engraving, where the phone lies on a map that shows it; on the web server, a deck
+// on its dock, each bay a step lower and nearer than the one before, so every tag's words show; on a router, its top.
+const BAYS = {
+  laptop: [0, 1, 2, 3].map((i) => [-62.5, 84.5 + i * 10.8, 0.4]),
+  web: [0, 1, 2, 3].map((i) => [89, -88 + i * 3, 18.8 - i * 4.6]),
+  ...Object.fromEntries(Object.entries(N).map(([n, [x, y]]) => [n, [[x, y, HOP]]])),
+};
+const bays = () => Object.fromEntries(Object.entries(BAYS).map(([place, list]) => [place, list.map((p) => p.map((v) => +v.toFixed(2)))]));
 
 // ---------- The kinds of server plate ----------
 // Each returns its objects, its cables, its places (for routes) and its callout. A server's callout sits under the
@@ -492,6 +508,6 @@ function camera() {
  */
 export function drawNetMap(only?: readonly string[]): DrawnFigure {
   const { svg, layers } = mapSvg(only);
-  const data: NetMapData = { ...camera(), routes: routesOf(layers), tops: tops() };
+  const data: NetMapData = { ...camera(), routes: routesOf(layers), tops: tops(), bays: bays() };
   return { svg, data };
 }
