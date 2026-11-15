@@ -415,7 +415,7 @@ export default defineLesson({
           {
             id: 'why-1',
             text: 'Many devices share one Wi-Fi and hear every frame, so each frame has to say which device it’s for.',
-            cite: [rfc('rfc-9724', '2.1'), rfc('rfc-9724', '2.2'), rfc('rfc-9542', '3'), PALO_L2, CISCO_LAYERS],
+            cite: [rfc('rfc-9724', '2.1'), rfc('rfc-9724', '2.2'), rfc('rfc-9542', '3'), PALO_L2, CISCO_LAYERS, MS_FILTER],
           },
           {
             id: 'why-2',
@@ -564,7 +564,7 @@ export default defineLesson({
             {
               text: 'Nothing: the whole address is random.',
               feedback: 'Not quite. A card’s own address has two halves, the organization’s and the card’s. A device can use a randomized one instead, but this is the card’s own.',
-              cite: [rfc('rfc-9724', '2.1'), rfc('rfc-9724', '2.2'), MS_RANDOM],
+              cite: [rfc('rfc-9724', '2.1'), rfc('rfc-9724', '2.2'), MS_RANDOM, FAQ_OUI],
             },
           ],
           answer: 0,
