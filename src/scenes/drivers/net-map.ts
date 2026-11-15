@@ -1,6 +1,6 @@
 // Only types from the drawing module: its code is for the build, and stays out of the page.
 import type { NetMapData } from '../../art/scenes/net-map';
-import { NET_MAP_LAPTOP_ADDR, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
+import { NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
 import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
 import { animate, easeInOut, wait } from '../motion';
@@ -24,7 +24,8 @@ import { animate, easeInOut, wait } from '../motion';
  * - `tray <site> <on|off>`: a letter waiting on a mail server's tray, or gone from it (it leaves as it is sent);
  * - `addr <text>`, `url <text>`: the laptop's address and its address bar;
  * - `drop <router>`: a DROPPED mark on that router's top, which stays, for a packet a router threw away;
- * - `hide resolver` (a unit's start only): the DNS resolver, its cable and its callout are left off the map.
+ * - `hide resolver` (a unit's start only): the DNS resolver, its cable and its callout are left off the map;
+ * - `show phone` (a unit's start only): the phone, which every other map leaves off, lies on the home plate.
  *
  * A unit's labels give the words before any cue: `laptop` (the status line), `laptopAddr`, `url`, and `router`,
  * the home router's callout in one or two lines (a line with a number is an address, a line of words a note), and
@@ -53,17 +54,20 @@ const RING = { start: 0.6, grow: 2.6, opacity: 0.95, still: 2.2, stillOpacity: 0
 /** The trail and the tag as they set off. */
 const TRAIL_OPACITY = 0.95;
 /** Places at home: a message to or from one lights the home router's lights. */
-const HOME = new Set(['laptop', 'router']);
+const HOME = new Set(['laptop', 'router', 'phone']);
 /** FTP's data line is drawn this far above its control line. */
 const DATA_LINE_LIFT = 'translate(0 -6)';
 /** A table event takes this long on the map, so the learner sees the table before the next thing happens; a drop note too. */
-const TABLE_MS = { replace: 600, match: 900 } as const;
+const TABLE_MS = { replace: 600, match: 900, remove: 600 } as const;
 const DROP_NOTE_MS = 900;
 /** A name strip's width: its letters, and the room round them. */
 const stripWidth = (text: string): number => 11 + 7.4 * [...text].length;
 
 /** The figure's description names its resolver; a map that hides it does not. */
 const RESOLVER_SENTENCE = ' Behind it, the DNS resolver, a card-index cabinet.';
+/** As drawn, home is a laptop and its router; a map that shows the phone says so. */
+const HOME_SENTENCE = 'a laptop and its router.';
+const HOME_WITH_PHONE = 'a laptop, a phone and their router.';
 
 /** A `conn` cue, read. */
 export interface ConnCue {
@@ -107,9 +111,9 @@ function dropAtOf(e: MessageEvent): number {
 }
 
 function duration(event: SceneEvent, data: unknown): number {
-  // A table event takes the time to be seen (an add or an update, only subnetting's own figure's, lands at once), and
+  // A table event takes the time to be seen (an add, an update or a clear lands at once), and
   // so does a note that drops a packet; every other note lands at once.
-  if (event.type === 'table') return event.op === 'replace' || event.op === 'match' ? TABLE_MS[event.op] : 0;
+  if (event.type === 'table') return event.op === 'replace' || event.op === 'match' || event.op === 'remove' ? TABLE_MS[event.op] : 0;
   if (event.type === 'note') return event.cues?.some((c) => c.cue === 'drop') === true ? DROP_NOTE_MS : 0;
   const travel = travelOf(event, lengthOf(routeOf(data as NetMapData, event.from, event.to)));
   if (event.outcome === 'dropped') return travel * dropAtOf(event) + LOST_FADE_MS + LOST_REST_MS;
@@ -174,6 +178,9 @@ interface MapState {
   /** The router a packet was dropped at, and the parts left off the map. */
   drop: string | null;
   hidden: Set<string>;
+  /** The parts left off the map until a unit's start shows them, and the layers the unit shows, for the figure's words. */
+  shown: Set<string>;
+  layers: readonly string[];
 }
 
 /** A cue and the event that played it. */
@@ -266,6 +273,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       trays: new Map(),
       drop: null,
       hidden: new Set(),
+      shown: new Set(),
+      layers: view.layers,
     };
     // The start first, as though it had played before the first event; then one event's cues at a time, so a status
     // and its style go together whatever their order.
@@ -286,10 +295,12 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
           if (!Object.hasOwn(map.tops, arg)) throw new Error(`The network map has no router "${arg}" to drop a packet at.`);
           s.drop = arg;
         } else if (cue === 'hide') {
-          if (!bases.has(arg)) throw new Error(`The network map cannot hide "${arg}".`);
+          if (!bases.has(arg) || NET_MAP_OPTIONAL.includes(arg)) throw new Error(`The network map cannot hide "${arg}".`);
           s.hidden.add(arg);
-        }
-        else if (cue === 'page') {
+        } else if (cue === 'show') {
+          if (!NET_MAP_OPTIONAL.includes(arg)) throw new Error(`The network map cannot show "${arg}".`);
+          s.shown.add(arg);
+        } else if (cue === 'page') {
           if (arg !== 'text' && arg !== 'full') throw new Error(`The network map's page cue needs "text" or "full", not "${arg}".`);
           s.page = arg;
         } else if (cue === 'tray') {
@@ -338,9 +349,18 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       moveTo(discard, map.tops[s.drop]!);
       fade(discard, 1);
     }
-    for (const el of root.querySelectorAll<SVGElement>('[data-base]')) el.toggleAttribute('data-hidden', s.hidden.has(el.dataset.base!));
-    // What the figure says it draws is what it draws: no resolver, no sentence about it.
-    root.setAttribute('aria-label', s.hidden.has('resolver') ? described.replace(RESOLVER_SENTENCE, '') : described);
+    for (const el of root.querySelectorAll<SVGElement>('[data-base]')) {
+      const base = el.dataset.base!;
+      el.toggleAttribute('data-hidden', s.hidden.has(base) || (NET_MAP_OPTIONAL.includes(base) && !s.shown.has(base)));
+    }
+    // What the figure says it draws is what it draws: no resolver, a phone and a stranger only when shown.
+    let words = s.hidden.has('resolver') ? described.replace(RESOLVER_SENTENCE, '') : described;
+    if (s.shown.has('phone')) words = words.replace(HOME_SENTENCE, HOME_WITH_PHONE);
+    for (const key of s.layers) {
+      const sentence = Object.hasOwn(NET_MAP_LAYERS, key) ? NET_MAP_LAYERS[key]!.describe : undefined;
+      if (sentence !== undefined) words += ` ${sentence}`;
+    }
+    root.setAttribute('aria-label', words);
   }
 
   /** Each router's name on its strip, from the unit's labels: a router without one has none. */

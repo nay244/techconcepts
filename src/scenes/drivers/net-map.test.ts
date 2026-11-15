@@ -10,6 +10,7 @@ import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
 import { usePlayback } from '../../engine/playback';
 import type { AppliedCue } from '../../engine/timeline';
 import type { PlayOptions, SceneDriver, SceneView } from '../driver';
+import { groupsOf, PHONE_OPEN, SERVER_OPEN, STRANGER_OPEN, withoutD11 } from '../../test/svg-groups';
 import { DRIVERS } from './index';
 import { netMapDriver, parseConn } from './net-map';
 
@@ -744,7 +745,7 @@ test('What is IP’s scene, with no strip labels and no hide, shows no strip and
   const { root, driver } = mount();
   driver.show(view({ layers: ['ip:web'], labels: { laptop: 'Sending a packet', url: 'example.net', router: '192.168.1.1 inside\n198.51.100.23 outside' } }));
   expect(stripWords(root)).toEqual([null, null, null, null, null]);
-  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
   expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
   expect(part(root, 'nm-discard').style.opacity).toBe('0');
 });
@@ -754,7 +755,7 @@ test('a hidden-resolver start and then a start without it brings the resolver ba
   driver.show(routerView());
   expect(hiddenBases(root).every(Boolean)).toBe(true);
   driver.show(view({ layers: ['ip:web'] }));
-  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
   expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
   expect(stripWords(root)).toEqual([null, null, null, null, null]);
   driver.show(routerView());
@@ -764,8 +765,9 @@ test('a hidden-resolver start and then a start without it brings the resolver ba
 test('`hide` takes only the resolver and `drop` only a router: anything else throws before the figure changes', () => {
   const { root, driver } = mount();
   expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'laptop' }] }))).toThrow(/cannot hide "laptop"/);
+  expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'phone' }] }))).toThrow(/cannot hide "phone"/);
   expect(() => driver.show(view({ cues: [{ cue: 'drop', arg: 'zz' }] }))).toThrow(/no router "zz"/);
-  expect(root.querySelectorAll('[data-hidden]')).toHaveLength(0);
+  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
 });
 
 /** A box in the figure's units: from the attributes, as the figure draws it. */
@@ -870,7 +872,9 @@ test('on the map a replace takes 600 ms, a match 900, a note that drops a packet
   const table = (op: 'replace' | 'match' | 'add' | 'update' | 'remove' | 'clear'): SceneEvent => ({ type: 'table', id: 't', table: 'routes', op, summary: 's' });
   expect(netMapDriver.duration(table('replace'), data)).toBe(600);
   expect(netMapDriver.duration(table('match'), data)).toBe(900);
-  for (const op of ['add', 'update', 'remove', 'clear'] as const) expect(netMapDriver.duration(table(op), data), op).toBe(0);
+  // A remove takes 600 too, so ARP's row is seen before it goes (D11); an add, an update and a clear land at once.
+  expect(netMapDriver.duration(table('remove'), data)).toBe(600);
+  for (const op of ['add', 'update', 'clear'] as const) expect(netMapDriver.duration(table(op), data), op).toBe(0);
   const note = (cues?: Cue[]): SceneEvent => ({ type: 'note', id: 'n', log: {}, plain: 'p', ...(cues === undefined ? {} : { cues }) });
   expect(netMapDriver.duration(note([{ cue: 'drop', arg: 'a' }]), data)).toBe(900);
   expect(netMapDriver.duration(note(), data)).toBe(0);
@@ -931,5 +935,6 @@ test('the figure drawn for Router’s lesson is the approved prototype’s, tag 
   const proto: string = readFileSync('prototypes/d10-router.html', 'utf8');
   const theirs = /<svg data-figure="net-map"[\s\S]*?<\/svg>(?=<\/div>)/.exec(proto)![0];
   const lines = (svg: string): string[] => svg.split('><');
-  expect(lines(drawNetMap(['ip:web']).svg)).toEqual(lines(theirs));
+  // D11's phone is drawn hidden on every map; the prototype was drawn before it, so its groups come out whole first.
+  expect(lines(withoutD11(drawNetMap(['ip:web']).svg))).toEqual(lines(theirs));
 });

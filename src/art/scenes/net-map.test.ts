@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { normaliseFigure, sha256 } from '../../test/figure-hash';
+import { groupsOf, PHONE_OPEN, SERVER_OPEN, STRANGER_OPEN, withoutD11 } from '../../test/svg-groups';
 import { drawFigure } from './index';
 import { drawNetMap, type NetMapData } from './net-map';
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_TAG_MAX, plateSites } from './net-map-layers';
@@ -58,13 +60,75 @@ function withoutRouterParts(svg: string): string {
   return out;
 }
 
+const D11_SITES = ['phone', 'server', 'stranger'];
+/** The data without a route from or to D11's places. */
+const withoutD11Routes = (routes: NetMapData['routes']): NetMapData['routes'] =>
+  Object.fromEntries(Object.entries(routes).filter(([key]) => !key.split('>').some((p) => D11_SITES.includes(p))));
+
 test('drawNetMap matches the mockup map', async () => {
   const { svg, data } = drawNetMap();
   expect(svg.split(TRAIL_EDGE)).toHaveLength(2);
-  expect(await sha256(normaliseFigure(withoutRouterParts(svg)))).toBe(EXPECTED.svg);
-  const { tops, ...mockup } = data as NetMapData;
+  // D11's groups come out whole first: unwrapping the phone first would leave its parts in the hash.
+  expect(await sha256(normaliseFigure(withoutRouterParts(withoutD11(svg))))).toBe(EXPECTED.svg);
+  const { tops, routes, ...mockup } = data as NetMapData;
   expect(Object.keys(tops)).toEqual(['isp', 'a', 'b', 'c', 'd']);
-  expect(await sha256(JSON.stringify(mockup))).toBe(EXPECTED.data);
+  expect(await sha256(JSON.stringify({ ...mockup, routes: withoutD11Routes(routes) }))).toBe(EXPECTED.data);
+});
+
+// D11 / B13, attack cases 1 to 4: the six SVG files are the art, and the code emits them.
+const FILE = (name: string): string => readFileSync(`prototypes/d11-${name}.svg`, 'utf8');
+const HEADER = '<svg xmlns="http://www.w3.org/2000/svg" class="lm-svg nm" viewBox="-98 -60 685 378">';
+
+test.each([
+  ['phone', PHONE_OPEN, 2],
+  ['stranger', STRANGER_OPEN, 5],
+  ['server', SERVER_OPEN, 5],
+] as const)('the %s’s file is exactly the whole groups the map draws for it, in order', (name, open, count) => {
+  const { groups } = groupsOf(drawNetMap().svg, open);
+  expect(groups).toHaveLength(count);
+  const file = FILE(`part-${name}`);
+  expect(file.startsWith(HEADER)).toBe(true);
+  expect(file.endsWith('</svg>\n')).toBe(true);
+  expect(file.slice(HEADER.length, -'</svg>\n'.length)).toBe(groups.join(''));
+});
+
+test('the phone’s groups are hidden whatever the layers; a description on a layer draws nothing', () => {
+  expect(PHONE_OPEN).toContain('data-hidden=""');
+  const plain = drawNetMap().svg;
+  const described = NET_MAP_LAYERS['nat:stranger']!.describe;
+  expect(described).toBeDefined();
+  expect(plain).not.toContain(described!);
+  expect(groupsOf(plain, STRANGER_OPEN).groups.join('')).not.toContain('someone else’s computer');
+});
+
+test('the map keeps its frame and its ids are unique, with one light for each new part', () => {
+  const { svg } = drawNetMap();
+  expect(svg).toContain('viewBox="-98 -60 685 378"');
+  const ids = [...svg.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]!);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const id of ['nm-busy-phone', 'nm-ports-busy-server', 'nm-nat-busy-stranger']) expect(ids.filter((x) => x === id), id).toHaveLength(1);
+});
+
+test('the phone’s way to the router, and back', () => {
+  const { routes } = drawNetMap().data as NetMapData;
+  expect(routes['phone>router']).toEqual([[-55.5, 93, 3.2], [-66, 83, 2.6], [-74, 71, 14]]);
+  expect(routes['router>phone']).toEqual([...routes['phone>router']!].reverse());
+});
+
+test('the stranger’s way to your router is over two internet routers’ tops, from its box to the router’s top', () => {
+  const route = (drawNetMap().data as NetMapData).routes['stranger>router']!;
+  expect(route).toHaveLength(11);
+  expect(route[0]).toEqual([-32, -173, 3]);
+  const at = (p: number[]): number => route.findIndex((q) => q[0] === p[0] && q[1] === p[1] && q[2] === p[2]);
+  expect(at([-28, -20, 6.2])).toBeGreaterThan(0);
+  expect(at([-30, 26, 6.2])).toBeGreaterThan(at([-28, -20, 6.2]));
+  expect(route.at(-1)).toEqual([-74, 71, 14]);
+});
+
+test('the server’s way from the laptop is the web server’s, for its first 13 points, then its own', () => {
+  const { routes } = drawNetMap().data as NetMapData;
+  expect(routes['laptop>server']!.slice(0, 13)).toEqual(routes['laptop>web']!.slice(0, 13));
+  expect(routes['laptop>server']![13]).not.toEqual(routes['laptop>web']![13]);
 });
 
 test('the lost trail’s edge is drawn just under the trail, so the red sits on the figure’s background', () => {

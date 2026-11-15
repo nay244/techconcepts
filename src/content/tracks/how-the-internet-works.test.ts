@@ -989,7 +989,7 @@ test('ICMP: each probe that stops on a router lights that router as it lands, an
     const { root, driver } = mountMap();
     const icmp = unitById('icmp');
     // The internet's routers, and your own at home, where traceroute's first probe stops.
-    const routers = NET_MAP_BASE_PLACES.filter((p) => p !== 'laptop' && p !== 'resolver');
+    const routers = NET_MAP_BASE_PLACES.filter((p) => p !== 'laptop' && p !== 'resolver' && p !== 'phone');
     const lit = () => routers.filter((r) => root.querySelector(`#nm-busy-${r}`)!.classList.contains('on'));
     const stops: string[] = [];
     for (let step = 1; step <= icmp.steps.length; step++) {

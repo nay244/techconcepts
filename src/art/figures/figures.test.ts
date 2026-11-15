@@ -72,6 +72,10 @@ const EXPECTED: Record<string, string> = {
   'spot:osi': '3d050c2938f6823ac7d302fa9c204e46d64333d703b838f9a82c2bedc7ac19cc',
   // Drawn for Lesson 08, Router (D10), on 2026-11-14; pinned from its own render, which equals the approved prototype's (the next test).
   'spot:router': 'ca8cae37e086a144dc1c5b49badfdd3f8c6a175297b456f08e098eb112a9dce8',
+  // Drawn for ARP, Ports and NAT (D11), on 2026-11-14; pinned from their own renders, which equal prototypes/d11-*-spot.svg (the next tests).
+  'spot:arp': 'e09f1f5e2492d4cfdbe20c21bf1916fea07eddb7ad37fcfcd796a8bea16cfafd',
+  'spot:ports': '25309fc97cf788731f193bc04a9a0a8ee04f7bf6b10f602d178452d497ccc7ab',
+  'spot:nat': '1bac1fc6ef5f054d4797175939a21cde2428349def83216f046f37099fa4d5a0',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -112,4 +116,19 @@ test('the Router spot is the approved prototype’s art, tag for tag', () => {
   // The prototype's copy carries the xmlns attribute a page needs and an inline figure does not; nothing else differs.
   const lines = (svg: string): string[] => svg.replace(' xmlns="http://www.w3.org/2000/svg"', '').replace(' iso-svg', '').split('><');
   expect(lines(spot('router'))).toEqual(lines(theirs));
+});
+
+// D11 / B13, attack cases 1 and 25: the three spots are the approved files, byte for byte, with one lit part each.
+test.each([
+  ['arp', 2, 'A laptop at the front sends dotted waves across the plate to three devices: a phone, a printer and a router. Only the router answers: a lit card rises from it, marked IS AT.'],
+  ['ports', 3, 'A tall server with four numbered doors down its front: 22, 80, 443 and 3389. A light beside the first three is on; 3389’s is dark. A lit packet is halfway through door 80.'],
+  ['nat', 3, 'A home router in the middle, with a laptop and a phone behind it and one cable out to the right. Over the laptop’s cable floats a tag with its private address, 192.168.1.100; over the cable out, a lit tag with the router’s public address, 198.51.100.23. A dotted arc joins them over the router.'],
+] as const)('the %s spot is prototypes/d11-%s-spot.svg, with one lit part, its lights and its words', (kind, leds, aria) => {
+  const file: string = readFileSync(`prototypes/d11-${kind}-spot.svg`, 'utf8');
+  expect(`${spot(kind)}\n`).toBe(file);
+  const svg = spot(kind);
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(leds);
+  expect(svg).toContain(`aria-label="${aria}"`);
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
 });

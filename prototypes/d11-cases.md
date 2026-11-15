@@ -13,6 +13,8 @@ The reviewer (Opus) read `prototypes/d11-batch-1.md` (with its §11 rulings), it
 
 Every hole below with an "Answer" is accepted as written, as erratum E<n> for hole H<n>. H4 (the carrier word under Ports' and NAT's tags) needs taste and goes to the designer; its answer is added here as E4 when it comes.
 
+**E4 (the designer).** Ports and NAT set no `over` on any message, as Router. On Ports, SYN, SYN-ACK and RST are TCP's own messages, and the log's protocol column already says TCP, so the word would only repeat itself. On NAT, the lesson is about addresses and ports, not the carrier. ARP keeps "Ethernet" because staying on the local link is its point.
+
 ## Holes
 
 Worst first. Each has one right answer unless marked.

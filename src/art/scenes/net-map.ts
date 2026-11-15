@@ -8,7 +8,7 @@
 // the parts. Its ids carry an `nm-` prefix, so they stay unique on the page.
 import type { DrawnFigure } from './types';
 import { k, G, S, L, D, n1, tubePieces, tubeSvg } from '../common.ts';
-import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_TAG_MAX } from './net-map-layers';
+import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_PHONE_ADDR, NET_MAP_TAG_MAX } from './net-map-layers';
 import './net-map.css';
 
 /** What the driver reads: the figure's camera, where the broadcast ring spreads, and every route along the cables. */
@@ -34,11 +34,13 @@ const PLATE_H = 7, FOOT_H = 3, FLOOR = -PLATE_H - FOOT_H;
 const IP = { x: -52, y: -44, w: 104, d: 88, r: 9 };
 const HP = { x: -134, y: 57, w: 84, d: 70, r: 8 };
 const RP = { x: -118, y: -114, w: 64, d: 54, r: 7 };
-// Places for the servers on the right: E for one big plate, NE and SE for two smaller ones.
-const SLOT = { E: { x: 50, y: -127, w: 84, d: 70, r: 8 }, NE: { x: -30, y: -200, w: 64, d: 54, r: 7 }, SE: { x: 140, y: -26, w: 64, d: 54, r: 7 } };
+// Places for the servers on the right: E for one big plate, NE and SE for two smaller ones; N for a small one behind the internet.
+const SLOT = { E: { x: 50, y: -127, w: 84, d: 70, r: 8 }, NE: { x: -30, y: -200, w: 64, d: 54, r: 7 }, SE: { x: 140, y: -26, w: 64, d: 54, r: 7 }, N: { x: -84, y: -196, w: 56, d: 40, r: 6 } };
 const LB = { x: -127, y: 88, w: 46, d: 30, r: 3.5 }, LZ = 3.2, LID_H = 31;
 const HR = { x: -90, y: 62, w: 32, d: 18, r: 3 }, RZ = 2, RT = RZ + 9;
 const PUCK_R = 7, PUCK_H = 4.6;
+// The phone, lying on the table at home in front of the router: on the home Wi-Fi, so no cable.
+const PH = { x: -60, y: 84, w: 9, d: 18, r: 1.8 }, PH_Z = 2.2;
 const N = { isp: [-30, 26], a: [-28, -20], b: [6, 4], c: [32, -24], d: [28, 26] };
 const LINKS = [["isp", "a"], ["isp", "b"], ["isp", "d"], ["a", "b"], ["b", "c"], ["b", "d"], ["c", "d"]];
 const CB = { x: -104, y: -106, w: 34, d: 26, r: 2 }, CB_H = 28, DRAWERS = [2.4, 10.4, 18.4], DRW_H = 6.8, DRW_OUT = 11;
@@ -110,6 +112,19 @@ function homeRouter(id) {
     out.push(S(k.cylinder(x, y, 1.3, RT + 2.2, 20, P, 16), { tone: "hi", crease: "none" }));
   }
   out.push(`<g class="lm-leds">${[0, 1, 2, 3].map((i) => dot(at([R.x + 7 + i * 5.6, RF, RZ + 4.6]), "lm-led" + (i === 0 ? " on" : ""), 1.1, ` id="${id}-home-led-${i}"`)).join("")}</g>`);
+  return out.join("");
+}
+
+// The phone, flat on the home plate, its screen up: a speaker slot at the top end, a few lines of a page, and the
+// screen's light while it sends or receives. Drawn on its top, where a (u, v) is the world's (x, y).
+const flat = (cls, x, y, w, d, rx, extra = "") => `<rect class="${cls}" x="${n1(x)}" y="${n1(y)}" width="${n1(w)}" height="${n1(d)}" rx="${rx}"${extra}/>`;
+function phone(id) {
+  const out = [S(k.slabOf(PH, 0, PH_Z, P, 4, 0.6), { tone: "hi", inner: L(k.sideSeam(PH, 1, P, 4), { tone: "faint" }) })];
+  const x0 = PH.x + 1.1, y0 = PH.y + 2.4, w = PH.w - 2.2, d = PH.d - 4.8;
+  let top = flat("lm-void", x0, y0, w, d, 0.8) + flat("nm-glow", x0, y0, w, d, 0.8, ` id="${id}-busy-phone"`);
+  top += flat("lm-slot", PH.x + PH.w / 2 - 1.7, PH.y + 0.9, 3.4, 0.7, 0.35);
+  for (let i = 0; i < 3; i++) top += flat("lm-slot", x0 + 1.2, y0 + 2.2 + i * 2.6, w - 2.4 - (i === 2 ? 2 : 0), 0.9, 0.45);
+  out.push(onTopAt(PH_Z, top));
   return out.join("");
 }
 
@@ -196,6 +211,8 @@ const BASE_SITES = {
   laptop: { end: [LB.x + LB.w - 4, LB.y + 18, LZ + 1], leg: [[...LAP_OUT, RIDE], [...HR_IN, RIDE], [HR.x + HR.w / 2, HR.y + HR.d / 2, RT + 3], [...HR_OUT, RIDE]], puck: "isp" },
   router: { end: [HR.x + HR.w / 2, HR.y + HR.d / 2, RT + 3], leg: [[...HR_OUT, RIDE]], puck: "isp" },
   resolver: { end: [CB.x + CB.w - 2, CB.y + 18, 4], leg: [[...DNS_IN, RIDE]], puck: "a" },
+  // The phone's way to the router is through the air: across the plate to the router's front, then over it.
+  phone: { end: [PH.x + PH.w / 2, PH.y + PH.d / 2, PH_Z + 1], leg: [[HR.x + HR.w - 8, HR.y + HR.d + 3, RIDE], [HR.x + HR.w / 2, HR.y + HR.d / 2, RT + 3], [...HR_OUT, RIDE]], puck: "isp" },
   // The routers themselves, by their names in N: a message can stop on top of one (traceroute, NAT).
   ...Object.fromEntries(Object.keys(N).map((n) => [n, { puck: n, router: true }])),
 };
@@ -219,14 +236,16 @@ function ride(stops) {
   return pts;
 }
 // From one place to another along the cables, hopping over every router between. The home router is a place too:
-// messages to it from the laptop stay at home.
+// messages to it from the laptop or the phone stay at home, as far as its top (the first points of their way out).
+const HOME_LEG = { laptop: 3, phone: 2 };
 function route(sites, from, to) {
   const A = sites[from], B = sites[to];
   if (!A || !B) throw new Error(`no route ${from} → ${to}`);
   let pts;
-  if ((from === "laptop" && to === "router") || (from === "router" && to === "laptop")) {
-    const L0 = BASE_SITES.laptop, out = [L0.end, ...L0.leg.slice(0, 3)];
-    pts = from === "laptop" ? out : [...out].reverse();
+  const own = from === "router" ? to : from;
+  if (Object.hasOwn(HOME_LEG, own) && (from === "router" || to === "router")) {
+    const L0 = BASE_SITES[own], out = [L0.end, ...L0.leg.slice(0, HOME_LEG[own])];
+    pts = from === own ? out : [...out].reverse();
   } else {
     const mid = A.puck === B.puck ? [A.puck] : hops(A.puck, B.puck);
     const head = A.router ? [] : [A.end, ...A.leg], tail = B.router ? [] : [...[...B.leg].reverse(), B.end];
@@ -279,6 +298,31 @@ const KINDS = {
       sites: { [o.site]: { end: [TR.x + TR.w / 2, TR.y + TR.d / 2, 3], leg: [[...F, RIDE], [...IN, RIDE]], puck: o.puck } },
       callouts: [callTo(o, o.anchorTop ? [R.x + R.w, R.y, R.h] : [p.x + p.w - 8, p.y + p.d, 0])],
       tall: [[R.x, R.y, R.h]],
+    };
+  },
+  // Someone else's computer, on a small plate of its own: a screen on a stand, a keyboard, and a box the cable runs to.
+  pc(p, id, o) {
+    const SCR = rel(p, { x: 5, y: 9, w: 24, d: 2.4, r: 0.8 }), FOOT = rel(p, { x: 11, y: 5, w: 12, d: 8, r: 1 }), KB = rel(p, { x: 6, y: 17, w: 22, d: 7, r: 0.8 });
+    const BOX = rel(p, { x: 42, y: 5, w: 7, d: 16, r: 1 }), SZ = 5, SH = 14, BH = 18;
+    // The cable leaves by the plate's right-hand edge, clear of the words engraved on its front.
+    const F = [BOX.x + BOX.w + 3, BOX.y + BOX.d / 2], IN = [p.x + p.w + 3, F[1]];
+    let screen = S(k.slabOf(FOOT, 0, 1.2, P, 3, 0.4), { tone: "mid" }) + S(k.cylinder(FOOT.x + FOOT.w / 2, SCR.y - 1.5, 1.1, 1.2, SZ - 1.2, P, 16), { tone: "mid" });
+    screen += S(k.slabOf(SCR, SZ, SH, P, 3, 0.5), { tone: "hi" });
+    const x0 = SCR.x + 1.6, w = SCR.w - 3.2, z0 = SZ + 1.6, h = SH - 3.2;
+    let face = rect("lm-void", x0, z0, w, h, 0.8) + rect("nm-glow", x0, z0, w, h, 0.8, ` id="${id}-busy-${o.site}"`);
+    for (let i = 0; i < 3; i++) face += rect("lm-slot", x0 + 2, z0 + h - 3 - i * 2.8, w - 4 - (i === 2 ? 6 : 0), 1.2, 0.6);
+    screen += onFaceY(SCR.y + SCR.d, face);
+    let keys = "";
+    for (let r = 0; r < 2; r++) for (let c = 0; c < 7; c++) keys += k.planOutline({ x: KB.x + 1.5 + c * 2.8, y: KB.y + 1.2 + r * 2.6, w: 2.2, d: 2, r: 0.4 }, 1.4, P, 3);
+    const kb = S(k.slabOf(KB, 0, 1.4, P, 3, 0.4), { tone: "hi" }) + L(keys, { tone: "lo" });
+    let box = S(k.slabOf(BOX, 0, BH, P, 3, 0.5), { tone: "hi", inner: L(k.sideSeam(BOX, 3, P, 3), { tone: "faint" }) });
+    box += onFaceY(BOX.y + BOX.d, rect("lm-slot", BOX.x + 1.6, BH - 4, BOX.w - 3.2, 1.4, 0.6) + rect("lm-slot", BOX.x + 1.6, BH - 6.6, BOX.w - 3.2, 1.4, 0.6) + `<circle class="lm-led on" cx="${n1(BOX.x + BOX.w / 2)}" cy="${n1(-4.4)}" r="0.9"/>`);
+    return {
+      things: [{ xy: [SCR.x + SCR.w / 2, SCR.y], svg: screen }, { xy: [KB.x + KB.w / 2, KB.y + KB.d / 2], svg: kb }, { xy: [BOX.x + BOX.w / 2, BOX.y + BOX.d / 2], svg: box }],
+      cables: [[N[o.puck], IN, F]],
+      sites: { [o.site]: { end: [F[0], BOX.y + BOX.d + 2, 3], leg: [[...F, RIDE], [...IN, RIDE]], puck: o.puck } },
+      callouts: [callTo(o, [SCR.x + SCR.w, SCR.y, SZ + SH])],
+      tall: [[SCR.x, SCR.y, SZ + SH], [BOX.x, BOX.y, BH]],
     };
   },
   // Any other server: two racks, and a pad at the front that lights while it works.
@@ -334,6 +378,9 @@ const strips = () => `<g id="${ID}-names">` + Object.entries(N).map(([name, xy])
 }).join("") + `</g>`;
 // The resolver is left off the map for a unit that starts with `hide resolver`: each of its parts sits in a group the driver can hide.
 const resolverPart = (svg) => `<g data-base="resolver">${svg}</g>`;
+// The phone is drawn hidden, and shown for a unit that starts with `show phone`.
+const phonePart = (svg) => `<g data-base="phone" data-hidden="">${svg}</g>`;
+const PHONE_CALL = { anchor: [PH.x + PH.w, PH.y + PH.d, PH_Z], at: [70, 196], lines: [{ cls: "nm-name", text: "Your phone" }, { cls: "nm-addr", text: NET_MAP_PHONE_ADDR }] };
 
 // ---------- The parts every protocol shares: home, the internet, the resolver ----------
 function buildBase() {
@@ -342,6 +389,7 @@ function buildBase() {
   const things = [
     { xy: [LB.x + LB.w / 2, LB.y + LB.d / 2], svg: laptop(ID, "") }, { xy: [HR.x + HR.w / 2, HR.y + HR.d / 2], svg: homeRouter(ID) },
     ...Object.entries(N).map(([n, xy]) => ({ xy, svg: puck(xy, n) })), { xy: [CB.x + CB.w / 2, CB.y + CB.d / 2], svg: resolverPart(cabinet(ID)) },
+    { xy: [PH.x + PH.w / 2, PH.y + PH.d / 2], svg: phonePart(phone(ID)) },
   ].sort((a, b) => depth([...a.xy, 0]) - depth([...b.xy, 0]));
   const pts = [RP, HP, IP].flatMap((p) => k.boxCorners(p, FLOOR, 0)).concat([[CB.x, CB.y, CB_H], [HR.x + 5, HR.y + 4, RT + 22]]).map(at);
   return {
@@ -382,7 +430,7 @@ function mapSvg(only) {
   const base = buildBase();
   const layers = Object.entries(NET_MAP_LAYERS).map(([key, s]) => serverLayer(key, s));
   const boxes = [], calls = baseCallouts().map((c) => calloutSvg(c, boxes));
-  const shared = `${calls[0]}${resolverPart(calls[1])}${calls[2]}<g id="${ID}-router" display="none">${calls[3]}</g>`;
+  const shared = `${calls[0]}${resolverPart(calls[1])}${calls[2]}<g id="${ID}-router" display="none">${calls[3]}</g>${phonePart(calloutSvg(PHONE_CALL, boxes))}`;
   // One frame for every protocol, so the map never jumps in size between them: everything any of them shows.
   const pts = [...base.pts, ...boxes.flatMap(([x0, y0, x1, y1]) => [[x0, y0], [x1, y1]]), ...layers.flatMap((l) => l.pts), ...[SLOT.E, SLOT.SE].flatMap((p) => k.boxCorners(p, FLOOR, 0)).map(at)];
   const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), PAD = 18;
