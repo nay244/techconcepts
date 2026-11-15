@@ -313,6 +313,12 @@ describe('the OSI Model lesson’s sources', () => {
       'ieee-eui-guidelines', 'ieee-ra-faq', 'ieee-802-2024', 'microsoft-ndis-packet-filter', 'openbsd-man-bpf-4', 'openbsd-man-ifconfig-8',
       // Job 13: the new lesson TCP/UDP.
       'microsoft-winsock-socket', 'openbsd-man-socket', 'microsoft-teams-network',
+      // Job 14: the new lesson Packets.
+      'rfc-8900', 'rfc-2991', 'cisco-cef-load-balancing',
+      // Job 14: the new lesson Switch.
+      'ieee-802-1q-2022', 'rfc-4762', 'rfc-5556', 'cisco-unicast-flooding', 'cisco-9300-mac-table', 'cisco-network-switch-how', 'openbsd-man-bridge-4', 'paloalto-l2-interface', 'cloudflare-network-switch',
+      // Job 14: the new lesson Load Balancers.
+      'microsoft-azure-lb-components', 'microsoft-azure-lb-probes', 'microsoft-azure-lb-distribution', 'microsoft-app-gateway-how', 'cloudflare-lb-components', 'cloudflare-lb-health', 'cloudflare-lb-lor', 'cloudflare-lb-maintenance', 'google-lb-overview', 'google-health-checks', 'google-backend-service',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });
