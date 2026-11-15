@@ -1034,6 +1034,14 @@ test('the home lights flash for the phone’s messages, and its screen lights wh
   expect([lit(root, 'nm-busy-phone'), done]).toEqual([false, true]);
 });
 
+test('a message between the phone and a place that is not home’s router still flashes the home lights', () => {
+  const { root, driver } = mount();
+  const before = view({ layers: ['tcp:web'], start: [{ cue: 'show', arg: 'phone' }] });
+  driver.show(before);
+  void driver.play(msg({ from: 'phone', to: 'web', tag: 'PACKET' }), before, options());
+  expect(lit(root, 'nm-home-led-1')).toBe(true);
+});
+
 test('the stranger’s screen lights as it sends and goes off a quarter of the way along; the home lights flash', () => {
   const { root, driver } = mount();
   const before = view({ layers: ['tcp:web', 'nat:stranger'] });
