@@ -1,5 +1,5 @@
 /** The scene figures a lesson can be drawn on. Each one is drawn at build time and moved by its own driver. */
-export type FigureId = 'dhcp' | 'subnet' | 'firewall' | 'net-map' | 'osi';
+export type FigureId = 'dhcp' | 'subnet' | 'firewall' | 'net-map' | 'osi' | 'switch';
 
 /** What a lesson may name on a figure. The lesson validator checks every event against these. */
 export interface FigureParts {

@@ -248,6 +248,10 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   }
 
   if (e.type === 'note') {
+    // On the switch, a flood and a re-plug happen to a frame: only a message carries them.
+    if (figure === 'switch') {
+      for (const { cue } of e.cues ?? []) if (cue === 'flood' || cue === 'plug') issues.push(`${where}: cue "${cue}" is for a message; a note sends no frame.`);
+    }
     if (e.board !== undefined && !c.parts.board) issues.push(`${where} has a board, but the ${figure} figure has none.`);
     // A glyph's colour and shape never say what it is alone: the legend says it in words.
     if (e.glyph !== undefined && !c.unit.scene.log.legend.some((entry) => entry.kind === e.glyph)) {
@@ -282,6 +286,12 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   }
   if (c.parts.routes !== undefined && !c.parts.routes.includes(`${e.from}>${e.to}`)) {
     issues.push(`${where} rides from "${e.from}" to "${e.to}", a way the ${figure} figure does not have.`);
+  }
+  // On the switch, a frame to everyone is a broadcast and a broadcast is to everyone; a broadcast floods by itself.
+  if (figure === 'switch') {
+    if (e.kind === 'broadcast' && e.to !== 'all') issues.push(`${where} is a broadcast, so it is sent to "all".`);
+    if (e.kind !== 'broadcast' && e.to === 'all') issues.push(`${where} is sent to "all", so its kind is "broadcast".`);
+    if (e.kind === 'broadcast' && (e.cues ?? []).some((q) => q.cue === 'flood')) issues.push(`${where} is a broadcast, which floods by itself; leave out "flood".`);
   }
 
   if (e.outcome === 'dropped' && e.dropAt === undefined) issues.push(`${where} is dropped, so it needs "dropAt".`);

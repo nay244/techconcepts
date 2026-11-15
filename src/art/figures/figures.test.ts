@@ -66,6 +66,7 @@ const EXPECTED: Record<string, string> = {
   'spot:learn': 'f48b830a8519b1d2c7f2d69bdc5fd5ea12a334eb33555ee9b71e0c859dedf66e',
   'spot:practice': '3d5e9a1240082e5e5d920c4b69bae94c3ea2be1bf0e4394e6e4de204c794dc30',
   'spot:subnet': '841d398bd78c4e35fc5f47fea35060e97ddad297312b9138429c778cc083ba1b',
+  'spot:switch': '36be892c80e718a900d2b7a5ce39990fb433a798e7827e1b24aeb441f54a3fdf',
   'spot:dhcp': 'f78beddc71e112c7aa568d07a3a9d4e24a5acdc31dcc58147b3ab59421177a21',
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.

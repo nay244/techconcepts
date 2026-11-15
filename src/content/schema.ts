@@ -34,7 +34,7 @@ const count = z.number().int().min(0);
 export const messageKindSchema = z.enum(['request', 'response', 'control', 'broadcast', 'encrypted']);
 export const certTagSchema = z.enum(CERT_TAG_IDS);
 /** The scene figures (`FigureId`); `parts.test.ts` keeps this list and `FIGURE_PARTS` the same. */
-export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map', 'osi'] satisfies FigureId[]);
+export const figureIdSchema = z.enum(['dhcp', 'subnet', 'firewall', 'net-map', 'osi', 'switch'] satisfies FigureId[]);
 
 /** A source as a lesson lists it. `source` is its id in the registry (`sources.ts`), which a list made from citations carries. */
 export const sourceSchema = z.strictObject({ label: text, url: httpsUrl, source: slugSchema.optional() });

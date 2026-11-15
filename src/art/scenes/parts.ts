@@ -1,5 +1,6 @@
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, plateSites } from './net-map-layers';
 import { OSI_CUE_ARGS, OSI_ROUTES, OSI_WORDS } from './osi-stacks';
+import { SWITCH_PLACES, SWITCH_PLUG_ARGS, SWITCH_ROUTES } from './switch-parts';
 import type { FigureId, FigureParts } from './types';
 
 /**
@@ -81,5 +82,17 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     board: false,
     start: false,
     labels: true,
+  },
+  // Switch (D13b): four devices on one switch. A frame rides from one device to another, or to `all` (a broadcast).
+  // `flood` sends a frame for one device out of every other port (no match in the table); a broadcast floods by
+  // itself. `plug` moves the laptop's cable to port 5 before its frame is sent (src/scenes/drivers/switch.ts).
+  switch: {
+    places: SWITCH_PLACES,
+    cues: { flood: 'flag', plug: 'text' },
+    args: { plug: SWITCH_PLUG_ARGS },
+    routes: SWITCH_ROUTES,
+    layers: [],
+    board: false,
+    start: false,
   },
 };

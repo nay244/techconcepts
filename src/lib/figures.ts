@@ -17,6 +17,7 @@ const FIGURES: Record<string, () => string> = {
   'mac-address': () => spot('mac-address'),
   'tcp-udp': () => spot('tcp-udp'),
   packets: () => spot('packets'),
+  switch: () => spot('switch'),
 };
 
 /**

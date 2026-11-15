@@ -377,10 +377,36 @@ function packetsSpot() {
   return figure("packets", "ONE FILE · FOUR PIECES", out.join(""), "A file cut into four numbered pieces, each with a header band across its top. Pieces 2, 3 and 4 still stand side by side, with a dotted outline where piece 1 stood. Piece 1, lit, is in the air over the cable, on its way.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets'] as const;
+// Switch: a five-port switch, four cables plugged in and port 5 free. Port 2's plug is lit, its light on: the port the
+// switch has just learned a device on.
+function switchSpot() {
+  const out = [], B = { x: -84, y: -50, w: 168, d: 44, r: 3 }, FT = 2.4, BH = 26, F = B.y + B.d, T = FT + BH;
+  const PX = [-56, -28, 0, 28, 56], PZ = 6, PW = 18, PH = 13;
+  // Four cables out of the front, bending away to the plate's front-left edge.
+  out.push(tubeOf([0, 1, 2, 3].flatMap((i) => {
+    const x = PX[i], y = F + 14 + i * 9;
+    return tubePieces([[x, F + 4, PZ + 4], [x, F + 9, 1.8], [x, y - 4, 1.8], [x - 4, y, 1.8], [-112, y, 1.8]], 1.9, P, { maxLength: 16 });
+  })));
+  for (const [x, y] of byDepth(k.corners(B, 8))) out.push(S(k.cylinder(x, y, 3, 0, FT, P, 16), { tone: "lo" }));
+  out.push(S(k.slabOf(B, FT, BH, P, 5, 0.9), { tone: "hi", inner: L(k.sideSeam(B, FT + 3.4, P, 5), { tone: "faint" }) }));
+  // Vents along the top's back half.
+  out.push(lines(Array.from({ length: 18 }, (_, i) => [[B.x + 34 + i * 6.4, B.y + 6], [B.x + 34 + i * 6.4, B.y + 18]]), T));
+  // The face: each port a socket with its number and its light. Only port 2's light is on.
+  let face = "";
+  PX.forEach((x, i) => {
+    face += rect("lm-inlay", x - PW / 2 - 1.2, PZ - 1.2, PW + 2.4, PH + 2.4, 1.4) + rect("lm-void", x - PW / 2, PZ, PW, PH, 0.8) + rect("lm-slot", x - 4, PZ, 8, 3, 0.4);
+    face += `<text class="lm-rule" x="${n1(x - PW / 2)}" y="${n1(-(PZ + PH + 3.4))}">${i + 1}</text><circle class="lm-led${i === 1 ? " on" : ""}" cx="${n1(x + PW / 2 - 2)}" cy="${n1(-(PZ + PH + 5))}" r="1.6"/>`;
+  });
+  out.push(onFaceY(F, face));
+  // The plugs in ports 1 to 4; port 2's is the lit part.
+  for (const i of [0, 1, 2, 3]) out.push(S(k.slabOf({ x: PX[i] - 7, y: F, w: 14, d: 8, r: 1.2 }, PZ + 1.6, PH - 3.2, P, 3, 0.5), { tone: i === 1 ? "hi" : "mid", lit: i === 1 }));
+  return figure("switch", "FIVE PORTS · MAC TABLE", out.join(""), "A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();
