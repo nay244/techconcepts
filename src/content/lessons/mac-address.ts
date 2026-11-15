@@ -33,6 +33,8 @@ const eui = (heading: string, page: number) => cite('ieee-eui-guidelines', headi
 const EUI_OUI = eui('IEEE-Administered organizational identifiers: OUI and CID', 2);
 const EUI_BITS = eui('Extended Unique Identifiers', 6);
 const EUI_HEX = eui('EUI Structure and Representation', 9);
+/** The page where the heading's examples show an MA-M and an MA-S with a longer first part and a shorter extension. */
+const EUI_EXT = eui('EUI Structure and Representation', 10);
 const EUI_ALL = eui('Unassigned and NULL EUI values', 11);
 
 const FAQ = 'ieee-ra-faq';
@@ -294,7 +296,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Some organizations get a smaller block of addresses, with a longer first part and a shorter second one.',
-              cite: [rfc('rfc-9542', '2.1'), FAQ_SINGLE],
+              cite: [rfc('rfc-9542', '2.1'), FAQ_SINGLE, EUI_EXT],
             },
           ],
           facts: [
@@ -314,7 +316,7 @@ export default defineLesson({
           deep: [
             {
               text: 'One bit in the first byte marks a group address, such as the broadcast address.',
-              cite: [rfc('rfc-9542', '2.1.1'), EUI_BITS],
+              cite: [rfc('rfc-9542', '2.1.1'), EUI_BITS, EUI_ALL],
             },
           ],
           facts: [
@@ -430,7 +432,7 @@ export default defineLesson({
           {
             id: 'deep-blocks',
             text: 'Some organizations get a smaller block of addresses, with a longer first part and a shorter second one.',
-            cite: [rfc('rfc-9542', '2.1'), FAQ_SINGLE],
+            cite: [rfc('rfc-9542', '2.1'), FAQ_SINGLE, EUI_EXT],
           },
           {
             id: 'deep-spoof',
@@ -551,7 +553,7 @@ export default defineLesson({
           options: [
             {
               text: 'Which organization the IEEE Registration Authority gave that block of addresses to.',
-              feedback: 'Right. It’s an OUI. On a real card it’s usually the maker’s; this one is IANA’s, set aside for examples.',
+              feedback: 'Right. It’s an OUI. On a real card it’s usually the maker’s; this one is IANA’s, which sets some of its addresses aside for examples.',
               cite: [rfc('rfc-9724', '2.1'), FAQ_OUI, rfc('rfc-9542', '1.3', true)],
             },
             {
