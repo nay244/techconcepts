@@ -2,6 +2,7 @@
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
 import { lessonFigure } from '../../lib/figures';
 import { drawFigure } from '../../art/scenes';
+import { framesSetup } from '../../art/scenes/dhcp';
 import { fillLabels } from '../../art/scenes/labels';
 import { getEntries, getLesson, neighbors, type AvailableSummary } from '../../content/registry';
 import { tracks } from '../../content/tracks';
@@ -36,7 +37,10 @@ const { track, entry, entries, lesson, next } = Astro.props;
 // slots is unchanged).
 const drawn = drawFigure(lesson.figure);
 const data = drawn.data;
-const svg = fillLabels(drawn.svg, lesson.units[0]!.scene.labels);
+// A scene that starts with `frames` (MAC Address) is drawn as its own setup, so the page never shows DHCP's lease board first.
+const start = lesson.units[0]!.scene.start ?? [];
+const setUp = lesson.figure === 'dhcp' && start.some((c) => c.cue === 'frames') ? framesSetup(drawn.svg) : drawn.svg;
+const svg = fillLabels(setUp, lesson.units[0]!.scene.labels);
 // The next lesson's own art for the Up next card at the end of Practice (null on a track's last ready lesson).
 const nextFigure = next === null ? null : lessonFigure(next);
 // The console has its own top bar and <main id="main">, so the layout adds no header, main or footer.

@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { normaliseFigure, sha256 } from '../../test/figure-hash';
 import { ADDRESSES_OPEN, FRAME_TAG_OPEN, FRAMES_OPEN, groupsOf, inDocumentOrder, TO_ALL_TAG_OPEN, withoutFrames } from '../../test/svg-groups';
-import { drawDhcp, type DhcpSceneData } from './dhcp';
+import { drawDhcp, framesSetup, type DhcpSceneData } from './dhcp';
+import { FRAMES_DESCRIPTION } from './dhcp-frames';
 import { drawFigure } from './index';
 
 // SHA-256 of the mockup's figure, recorded once by a one-off script (never read by this test) from
@@ -108,4 +109,36 @@ test.each([
 
 test('drawFigure draws the DHCP scene', () => {
   expect(drawFigure('dhcp')).toEqual(drawDhcp());
+});
+
+// D12 / B14, the spec's H10: the page draws MAC Address's own setup before and without JavaScript.
+test('framesSetup turns the DHCP plate into the frames setup: the TV and its callouts in, the lease board and DHCP’s callouts out, the laptop online', () => {
+  const { svg } = drawDhcp();
+  const set = framesSetup(svg);
+  expect(set).not.toContain('<g data-setup="frames" display="none">');
+  expect(set.split('<g data-setup="frames">')).toHaveLength(3);
+  expect(set.split('<g data-setup="addresses" display="none">')).toHaveLength(4);
+  expect(set).not.toContain('<g data-setup="addresses">');
+  expect(set).toMatch(/id="dh-lap-ip"[^>]*style="opacity:1"/);
+  expect(set).toMatch(/id="dh-lap-noip" style="opacity:0"/);
+  expect(set).toContain(`aria-label="${FRAMES_DESCRIPTION}"`);
+  expect(set).not.toContain('a laptop with no address yet');
+  // Nothing else changes: put the four things back and it is the drawing.
+  const label = /aria-label="([^"]*)"/.exec(svg)![1]!;
+  const back = set
+    .replaceAll('<g data-setup="frames">', '<g data-setup="frames" display="none">')
+    .replaceAll('<g data-setup="addresses" display="none">', '<g data-setup="addresses">')
+    .replace('id="dh-lap-noip" style="opacity:0"', 'id="dh-lap-noip"')
+    .replace(/(id="dh-lap-ip"[^>]*?)style="opacity:1"/, '$1style="opacity:0"')
+    .replace(FRAMES_DESCRIPTION, label);
+  expect(back).toBe(svg);
+});
+
+test('framesSetup throws when the drawing does not hold each part as many times as it expects', () => {
+  const { svg } = drawDhcp();
+  expect(() => framesSetup(svg.replace('<g data-setup="frames" display="none">', '<g>'))).toThrow(/expects 2 of <g data-setup="frames" display="none"> in the DHCP figure, and found 1/);
+  expect(() => framesSetup(svg.replace('<g data-setup="addresses">', '<g>'))).toThrow(/expects 3 of <g data-setup="addresses"> in the DHCP figure, and found 2/);
+  expect(() => framesSetup(svg.replace('id="dh-lap-noip"', 'id="dh-lap-x"'))).toThrow(/expects 1 of id="dh-lap-noip" in the DHCP figure, and found 0/);
+  expect(() => framesSetup(svg.replace(' style="opacity:0">192.168.1.100', '>192.168.1.100'))).toThrow(/laptop's address on its screen/);
+  expect(() => framesSetup(svg.replace(/aria-label="[^"]*"/, ''))).toThrow(/no aria-label/);
 });

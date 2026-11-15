@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { drawDhcp } from '../../art/scenes/dhcp';
+import { drawDhcp, framesSetup } from '../../art/scenes/dhcp';
 import { FRAMES_DESCRIPTION } from '../../art/scenes/dhcp-frames';
 import { batch2Fixtures, MAC_OF } from '../../content/batch2-fixtures';
 import dhcp from '../../content/lessons/dhcp';
@@ -171,6 +171,17 @@ test('10: in MAC’s scene, at every position, the frames setup is on, the lease
 
 test('10: the figure’s description in the frames setup says the TV, and names MAC addresses', () => {
   expect(FRAMES_DESCRIPTION).toBe('A home Wi-Fi network on one plate: a laptop, a phone and a TV, and the router at the back. Beside each, its name and its MAC address.');
+});
+
+test('H10: the figure the page draws for MAC Address is what the driver shows at the Overview, so hydration changes nothing anyone sees', () => {
+  const host = document.createElement('div');
+  host.innerHTML = framesSetup(drawDhcp().svg);
+  document.body.append(host);
+  const root = host.querySelector<SVGSVGElement>('svg[data-figure="dhcp"]')!;
+  const driver = dhcpDriver.create(root, drawDhcp().data);
+  const drawnAsDrawn = looks(root);
+  driver.show(viewAt(mac, 0));
+  expect(looks(root)).toBe(drawnAsDrawn);
 });
 
 // ---- check 11: the verdicts and the lights at each step’s end
