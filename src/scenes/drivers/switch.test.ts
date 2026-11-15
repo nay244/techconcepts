@@ -2,7 +2,7 @@
 import { afterEach, expect, test } from 'vitest';
 import { drawSwitch } from '../../art/scenes/switch';
 import type { Lesson } from '../../content/schema';
-import { switchFixture } from '../../content/switch-fixture';
+import { switchFixture } from '../../content/batch3-fixtures';
 import { deriveState, positionOf, stepEvents } from '../../engine/timeline';
 import { sceneViewOf, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
 import { switchDriver } from './switch';

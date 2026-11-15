@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { checkStructure } from './define';
 import type { Lesson, MessageEvent } from './schema';
-import { switchFixture } from './switch-fixture';
+import { switchFixture } from './batch3-fixtures';
 
 // D13b: the switch figure's parts and validator rules (prototypes/d13-switch.md §5), with the real figure parts.
 
