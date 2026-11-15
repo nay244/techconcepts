@@ -285,7 +285,7 @@ export default defineLesson({
             'You ask example.net for its page. Its address, 203.0.113.80, belongs to a **load balancer**, not to a server. Behind it are three servers, A, B and C: its **pool**. They have private addresses, so readers only ever use the balancer’s. The balancer passes your request on to server A, and A sends you the page.',
           deep: [
             {
-              text: 'The balancer’s address is called its frontend. The servers behind it don’t need public addresses of their own, because readers only ever use the frontend’s.',
+              text: 'The balancer’s address is called its frontend. The servers behind it don’t need public addresses of their own, because readers use the frontend’s.',
               cite: [AZC_FRONTEND, AZC_POOL, G_FRONTEND, CF_BENEFITS],
             },
           ],
@@ -368,7 +368,7 @@ export default defineLesson({
             'B is working again and answers its next check OK. One good check isn’t enough here either: this balancer waits for two in a row. B passes the next one too, and the balancer marks it healthy. The next request is B’s turn, so it goes to B. All three servers share the work again.',
           deep: [
             {
-              text: 'Some balancers can also be set to send one reader’s requests to the same server every time. It’s called session affinity.',
+              text: 'Some balancers can also be set to keep sending one reader’s requests to the same server. It’s called session affinity.',
               cite: [AZ_SESSION, G_AFFINITY],
             },
           ],
@@ -446,14 +446,14 @@ export default defineLesson({
         pattern: {
           id: 'pattern',
           names: ['Arrive at one address', 'Pass to a healthy server', 'Check every server', 'Skip a failing one', 'Use it again once it passes'],
-          note: 'What a load balancer does, in the order this lesson shows it. The checks never stop: they go on alongside the requests.',
+          note: 'What a load balancer does, in the order this lesson shows it. The checks keep going, alongside the requests.',
           cite: [AZ_CONTACT, G_FRONTEND, AGW_ROUND_ROBIN, G_ROUND_ROBIN, AZP_INTRO, AZP_THRESHOLD, G_HEALTH_STATE, CF_UNHEALTHY],
         },
         why: [
           {
             id: 'why-1',
             text: 'One server can be overwhelmed by too many readers at once. With a balancer in front, a site serves more readers by adding servers to the pool.',
-            cite: [AZC_POOL, AZ_WHY, G_SPREAD, CF_LEAST],
+            cite: [AZC_POOL, AZ_WHY, G_SPREAD, CF_LEAST, G_L7],
           },
           {
             id: 'why-2',
@@ -494,13 +494,13 @@ export default defineLesson({
           {
             id: 'fact-private',
             label: 'The servers',
-            value: 'can have private addresses: readers only use the balancer’s',
+            value: 'can have private addresses, since readers use the balancer’s',
             cite: [AZC_POOL, AZC_MAPS, CF_BENEFITS, CF_ENDPOINTS],
           },
           {
             id: 'fact-methods',
             label: 'How it picks a server',
-            value: 'depends on the balancer: in turn (round robin), favouring fewer requests in progress, or by a hash of the connection',
+            value: 'depends on the balancer; for example, in turn (round robin), favouring fewer requests in progress, or by a hash of the connection',
             cite: [AGW_ROUND_ROBIN, G_ROUND_ROBIN, CF_LEAST, AZ_HASH, G_AFFINITY],
           },
           {
@@ -512,7 +512,7 @@ export default defineLesson({
           {
             id: 'fact-threshold',
             label: 'Marked unhealthy',
-            value: 'after a set number of checks in a row fail; the number is a setting',
+            value: 'usually after a set number of checks in a row fail; the number is a setting',
             cite: [AZP_PROPERTIES, AZP_THRESHOLD, G_HC_INTRO, G_HEALTH_STATE, CF_UNHEALTHY],
           },
           {
@@ -524,7 +524,7 @@ export default defineLesson({
           {
             id: 'fact-back',
             label: 'Getting back',
-            value: 'the checks go on; after a set number pass in a row, it is healthy and gets new requests again',
+            value: 'the checks go on; usually after a set number pass in a row, it is healthy and gets new requests again',
             cite: [AZP_BACK, AZP_THRESHOLD, G_HEALTH_STATE, CF_UNHEALTHY],
           },
           {
@@ -559,7 +559,7 @@ export default defineLesson({
             {
               text: 'Nowhere: the site is down until B is fixed.',
               feedback: 'Not quite. The other servers keep serving, which is one reason to have a pool.',
-              cite: [AZ_WHY, G_HEALTH_STATE, CF_MAINT_NOTE],
+              cite: [AZ_WHY, G_HEALTH_STATE, CF_MAINT_NOTE, G_FRONTEND],
             },
           ],
           answer: 0,
