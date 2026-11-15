@@ -1,4 +1,5 @@
 import { eventLog } from './helpers/internet-events';
+import { SWITCH_DEVICES } from '../art/scenes/switch-parts';
 import { lessonOf, type Fixture } from './batch2-fixtures';
 import type { Cue, Lesson, MessageEvent, NoteEvent, Row, TableDef, TableEvent } from './schema';
 
@@ -121,4 +122,77 @@ const packets: Fixture = {
 };
 
 export const packetsFixture = (): Lesson => lessonOf(packets);
-export const batch3Fixtures = { packets: packetsFixture };
+
+// ---------------------------------------------------------------- Switch (d13-switch.md section 3)
+
+type SwDevice = keyof typeof SWITCH_DEVICES;
+const SW_ALL = 'ff:ff:ff:ff:ff:ff';
+
+const swFrame = (id: string, from: SwDevice, to: SwDevice | 'all', o: Partial<MessageEvent> = {}): MessageEvent => ({
+  type: 'message',
+  id,
+  from,
+  to,
+  tag: to === 'all' ? 'TO ALL' : 'FRAME',
+  kind: to === 'all' ? 'broadcast' : 'request',
+  log: { time: DASH, source: SWITCH_DEVICES[from], destination: to === 'all' ? SW_ALL : SWITCH_DEVICES[to], protocol: 'Ethernet', info: `Frame ${id}`, size: DASH },
+  plain: `Frame ${id}.`,
+  ...o,
+});
+const swTable = (id: string, o: Partial<TableEvent>): TableEvent => ({ type: 'table', id, table: 'mac-table', op: 'match', summary: `Table ${id}.`, ...o }) as TableEvent;
+
+export const macTable: TableDef = {
+  id: 'mac-table',
+  title: 'MAC table',
+  by: 'kept by the switch',
+  columns: [{ key: 'port', label: 'Port', width: 64 }, { key: 'mac', label: 'MAC address' }],
+  keyColumn: 'mac',
+  initialRows: [],
+  empty: 'Empty: the switch hasn’t learned any address yet',
+};
+
+const switchLesson: Fixture = {
+  slug: 'switch-fixture',
+  figure: 'switch',
+  scene: {
+    title: 'Four devices on one switch',
+    views: ['network'],
+    layers: [],
+    labels: {},
+    start: [],
+    panel: { type: 'table', table: structuredClone(macTable) },
+    log: {
+      ...eventLog(),
+      legend: [
+        { kind: 'request', label: 'Frame for one device' },
+        { kind: 'broadcast', label: 'Frame for everyone' },
+        { kind: 'response', label: 'The reply' },
+      ],
+    },
+    parties: [],
+  },
+  steps: [
+    { title: 'Step 1', events: [swFrame('s1-frame', 'laptop', 'printer', { cues: [{ cue: 'flood' }] }), swTable('s1-match', { key: '' })] },
+    { title: 'Step 2', events: [swTable('s2-add', { op: 'add', row: { port: '2', mac: SWITCH_DEVICES.laptop } })] },
+    {
+      title: 'Step 3',
+      events: [
+        swFrame('s3-frame', 'printer', 'laptop', { kind: 'response' }),
+        swTable('s3-add', { op: 'add', row: { port: '4', mac: SWITCH_DEVICES.printer } }),
+        swTable('s3-match', { key: SWITCH_DEVICES.laptop }),
+      ],
+    },
+    { title: 'Step 4', events: [swFrame('s4-frame', 'router', 'all'), swTable('s4-add', { op: 'add', row: { port: '1', mac: SWITCH_DEVICES.router } })] },
+    {
+      title: 'Step 5',
+      events: [
+        swFrame('s5-frame', 'laptop', 'router', { cues: [{ cue: 'plug', arg: 'laptop 5' }] }),
+        swTable('s5-update', { op: 'update', key: SWITCH_DEVICES.laptop, row: { port: '5' } }),
+        swTable('s5-match', { key: SWITCH_DEVICES.router }),
+      ],
+    },
+  ],
+};
+
+export const switchFixture = (): Lesson => lessonOf(switchLesson);
+export const batch3Fixtures = { packets: packetsFixture, switch: switchFixture };
