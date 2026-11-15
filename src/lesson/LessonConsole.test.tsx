@@ -627,7 +627,8 @@ test.each([
   window.history.replaceState({}, '', '/networking/dhcp?step=2');
   const lesson = structuredClone(DHCP);
   const step = lesson.units[0]!.steps[1]!;
-  const table = lesson.units[0]!.scene.panel!.type === 'table' ? lesson.units[0]!.scene.panel.table.id : '';
+  const panel = lesson.units[0]!.scene.panel;
+  const table = panel?.type === 'table' ? panel.table.id : '';
   step.events = [step.events[0]!, { type: 'table', id: 'router-match', table, op: 'match', summary: 'A match.', ...fields }];
   const { container } = renderConsole(lesson);
   const tab = () => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: /^Table/ });
