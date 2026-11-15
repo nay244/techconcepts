@@ -1,167 +1,97 @@
 # Plan
 
-How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orchestrator-handbook.md`. The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9, batches 3 and 4 at e8ea005, batch 5 at 1a1fbb4, job 9's first plan (the Practice page) at 8fd2947, its second (the glossary in the lessons' own words) at 93b5b4f, its third (written definitions, the pilot, the page) at 92506f4, and job 10's (the glossary's remaining entries, paused after batch 3) at ea144eb.
+How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orchestrator-handbook.md`. The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9, batches 3 and 4 at e8ea005, batch 5 at 1a1fbb4, job 9's first plan (the Practice page) at 8fd2947, its second (the glossary in the lessons' own words) at 93b5b4f, its third (written definitions, the pilot, the page) at 92506f4, job 10's (the glossary's remaining entries, paused after batch 3) at ea144eb, and job 11's (Router, the pilot; with the proposal for the other eleven in four batches) at 84cef62.
 
-**Status: the owner said go on 2026-11-14, sharing the four tour lessons** ("Go, share them"), which approved the nine decisions below, decision 2 accepted (direction 2.49).
+# Job 12: Networking Concepts' batch 1, ARP, NAT and Ports
+
+**Status: the owner's go is given** (2026-11-14, direction 2.52): "For this batch skip the mockup and request for my approval to start build. Based on router your proposal and build out was good enough we can skip if possible." The job goes on without another go; the owner sees the three lessons built and checked.
 
 ## Inputs
 
 | | |
 |---|---|
-| **The job** | Job 11: **Networking Concepts' first new lesson, as a pilot** (handbook §7), and the track made ready for the rest. The owner, 2026-11-14: "Let's circle back to the glossary at another time. Now let's finish the Networking Concepts lessons." (direction 2.48). No lesson has yet been written new under the cited method, so the first one is a pilot that measures the path, as Phase 4 began. |
-| **Done means** | Router (decision 1) is live on `/networking/router`: written from an analyst's outline, its scene and card art approved by the owner at the design gate and built to that design, passed by a fresh fact-checker (`npm run fact-check -- router --check` prints `Report OK`). If the owner accepts decision 2, Networking Concepts lists the four checked tour lessons it shares. On `revamp`, `npm test`, `npm run build` and the full `npm run e2e` pass, with one known exception (decision 8). The owner gets the lesson, its measured cost, the scene map for the other eleven lessons, and the plan for them. |
-| **Budget** | Not set by the owner. The estimate is 2.0 to 3.4 million subagent tokens of growth after the go (below); the stops are under "When the work stops for the owner". |
-| **References** | `prototypes/s13-networking-facts.md` (this job's scout); `docs/content-model.md` §3 and §8; handbook §3, §4, §6a and §7; `src/content/lessons/dhcp.ts`, `firewalls.ts` (checked Networking lessons: the shape to write to); `src/content/lessons/what-is-ip.ts` (its routing steps, which Router must agree with); the launch catalogue, `docs/superpowers/specs/2026-11-03-techconcepts-networking-launch-design.md` §8 (one row a lesson); direction §6 and §7 (the look, the Lesson page). |
+| **The job** | Batch 1 of the eleven new Networking lessons proposed at the end of job 11: **ARP** (`arp`, stop 6), **Ports** (`ports`, stop 10), **NAT** (`nat`, stop 12), each on Router's path (handbook §7) with this batch's differences (decision 2). |
+| **Done means** | The three lessons are merged into `revamp`, each passed by a fresh fact-checker (`npm run fact-check -- <slug> --check` prints `Report OK`); Networking lists 20 stops, 12 ready; on `revamp`, `npm test`, `npm run build` and the full `npm run e2e` pass with only the known failure `e2e/glossary.spec.ts:143`. The owner gets the three lessons, the cost and the errata. Nothing pushed. |
+| **Budget** | The estimate below, 3.3 to 4.6 million subagent tokens of growth; stops at 1.6 million for any one lesson's content and 5.0 million for the batch (the scout included). |
+| **References** | `prototypes/s14-batch-1-facts.md` (this job's scout); `prototypes/d10-scene-map.md` (rows ARP, Ports, NAT, and its notes on reusing D10's parts); `prototypes/d10-router.md` and `d10-cases.md` (the last scene spec and its cases); `.superpowers/analysis/router/report.md` (the shape of a new lesson's outline); `src/content/lessons/router.ts` (the shape to write to); `docs/content-model.md` §3 and §8; handbook §4, §6a and §7. |
 
-## What the scout found (S13, `prototypes/s13-networking-facts.md`)
+## What the scout found (S14)
 
-- **The track:** 19 lessons in six parts; 4 are live and checked (OSI Model 1, Subnetting 7, DHCP 9, Firewalls 16), **15 have no file**. A lesson with no file shows as "Not ready yet" on the track page and has no page (a 404). No draft, outline or claim sheet exists for any of the 15; each has one row in the launch catalogue.
-- **Overlap.** Four catalogue rows tell the story a checked tour lesson already tells: DNS (resolver, root, `.com`, authoritative, caching) is What is DNS; TLS (handshake, certificate check, key agreement) is What is TLS; HTTP/HTTPS is What is HTTP and What is HTTPS; TCP/UDP's two halves are What is TCP and What is UDP, though its catalogue row is a side-by-side comparison neither tells. Switch, Proxies, Load Balancers and VPN have no tour lesson; the other seven touch steps of What is IP, What is DHCP or What is TCP.
-- **One lesson, two tracks, is already supported.** `registry.ts` builds each track's entries from the lesson files; a lesson listed by two tracks gets a page in each, its canonical URL in the first track that lists it (`homeOf`, `registry.ts:363`; How the Internet Works is first). The tour's titles are "DNS", "HTTP", "HTTPS" and "TLS/SSL", which read as Networking's own. About's "lessons ready" is a plain sum across tracks (`about.astro:31`) and would count a shared lesson twice.
-- **Scenes.** Five figures are built (`dhcp`, `subnet`, `firewall`, `net-map`, `osi`); the catalogue's "Device table" and "Playground" kinds are not. `net-map` already draws routers (`a` to `d`) between a laptop and the servers, and a `table` panel exists (DHCP's lease table). A live lesson needs a card figure in `src/lib/figures.ts` or the build throws (`figures.ts:24`), so every new lesson needs card art too.
-- **Sources.** Most defining documents are registered (RFC 1812 for routers, RFC 826 ARP, RFC 3022 NAT, the IANA port registry, RFC 1034/1035, RFC 9293, RFC 768). Not registered: IEEE 802 / 802.3 / 802.1D / 802.1Q (no `ieee` source exists yet), RFC 2663, RFC 4301, RFC 2818. Load balancers and proxies rest on vendor pages and RFC 9110.
-- **Tests that count the track:** `registry.test.ts:41-77` (19 slugs, titles, numbers), `reports.unchanged.test.ts:21` (18 lesson reports), `tracks-page.test.ts:26-28`, `track.test.ts:28`, `LessonConsole.test.tsx` ("of 19"), and `e2e/site.spec.ts` (`'4 of 19 lessons ready'`, 15 "Not ready yet", 19 squares, at `:263-267`, `:522-529`, `:580-609`, `:695`, `:720-767`, `:924`). The end-to-end specs find ready lessons from the track pages (`e2e/global-setup.ts`).
-- **Glossary.** New lessons' terms would tie to entries (`router`, `routing-decision`, `forwarding`, `default-gateway` exist); no test requires a tie.
+- **Where they sit.** ARP is stop 6 (part "Addresses & the local network"), Ports 10 and NAT 12 ("Talking across the internet"); all planned, no file. A lesson is ready when its file exists. A ready Networking lesson with no card entry makes the build throw (`src/lib/figures.ts:29`).
+- **Documents.** ARP: RFC 826, RFC 5227, RFC 1122, RFC 894, RFC 9542 and Microsoft's and Cisco's ARP pages are registered; IEEE 802.3 is not. NAT: RFC 3022, RFC 4787, RFC 1918, RFC 5508 are registered; RFC 2663 and RFC 6146 are not, and no vendor NAT page is. Ports: the IANA registry, RFC 6335, RFC 9293, RFC 768, RFC 1122 are registered; no vendor port page is. Allowed hosts include Cloudflare, Cisco, Microsoft and Palo Alto; no Mozilla host.
+- **What they must agree with.** ARP: What is IP's ARP step ("Who has 192.168.1.1?", the router's reply 00:00:5E:00:53:01, the broadcast to ff:ff:ff:ff:ff:ff, "keeps the answer in its ARP cache for a short while"). NAT: What is IP's "NAT and Forwarding" step (the swap to 198.51.100.23, the three private ranges, "port address translation… told apart by port numbers in the NAT table", "can't start a conversation, unless a port is forwarded"), Router's deep-nat line, What is UDP's "remembers that pair for a while". Ports: every checked port line (TCP 80/443/22/25 and ephemeral ports, UDP 53/67/68/123/161/443, DNS, HTTP, HTTPS, TLS, DHCP, Firewalls' 443/22/23, FTP, SMTP, IMAP, POP3, SSH). The example data (192.168.1.100, 192.168.1.1, 198.51.100.23, 203.0.113.80, MACs in the RFC 9542 range) is reused.
+- **Scenes.** `net-map` has the ARP broadcast ring at home, the router's inside/outside callout, `· port N` server plates, the `drop` and `hide` cues; the table panel has a by-line, candidates, the no-match row. The `dhcp` figure draws laptop, phone and router on one Wi-Fi. Card art is a spot in `spots.ts`, tested against its prototype by reading the file.
+- **Counts.** Eleven unit specs and `e2e/site.spec.ts` count 9 ready lessons, 19 checked reports, the Up next chain and "Lessons 18 to 20 are coming soon" (S14 §5); `e2e/lesson.spec.ts:34` lists one-view scenes.
+- **Collisions.** `sources.ts` and `sources.test.ts` ends, `spots.ts`, `figures.ts`, `figures.test.ts`, the count tests, and `net-map` if a lesson adds a part.
 
-## Decisions in this plan (the go approves them)
+## Decisions in this plan
 
-1. **The pilot is Router** (lesson 8, "Getting between networks"). Its defining standard is registered (RFC 1812, with RFC 791 and RFC 1122), so the pilot measures the new-lesson path without first opening a new kind of source (IEEE, which MAC Address and Switch need). `net-map` already draws routers between a laptop and servers and a `table` panel exists, so its scene (a packet hop by hop, the routing table choosing each next hop, the default gateway) is a design problem on parts the code already has, not a new figure; the scene map (decision 4) measures what new figures cost. Its subject is in the checked What is IP (steps "Routing Decision" and "Return Routing") and in the glossary (`router`, `routing-decision`, `forwarding`, `default-gateway`), so the pilot also proves a new lesson can be made to agree with checked words. Not chosen: Packets (lesson 2, next in order) needs a new figure, so its pilot would mix two unknowns; ARP and NAT are close seconds and go in the first batch.
-2. **Networking Concepts shares the four tour lessons that tell its catalogue's story, instead of writing them again.** The track lists `what-is-dns` ("DNS") where `dns` was, `what-is-tls` ("TLS/SSL") where `tls` was, and `what-is-http` ("HTTP") and `what-is-https` ("HTTPS") where `http-https` was: 20 stops, 8 of them live, **11 left to write after the pilot**. Why: each is already cited and checked against the same documents a new lesson would cite, at the same track limits (the tour inherits Networking's); a second lesson on one subject costs about 1 million tokens and must agree with the first forever (the two DHCP lessons already differ in their verbs, S13 §C). What is lost: Networking's versions could have gone further than the tour's; nothing in those four catalogue rows asks for more than the tour lessons show. TCP/UDP stays a new lesson: its point, the two side by side, is a story neither tour lesson tells. A shared lesson's canonical page stays in the tour. Not chosen, and the owner's to pick instead: write all three as new lessons (about 3 to 4.5 million tokens more, 14 left after the pilot).
-3. **A new lesson's analyst report is an outline** (handbook §7): every idea the lesson will teach a beginner, each with its source, section and quoted passage; the Watch story (four to six steps, each backed); what it must agree with in checked lessons and glossary entries; the OSI badge's backing; and what a beginner lesson should not claim. The author writes from it once, then the continued analyst's read and a fresh check run as in Phase 4 (handbook §4). There are no words to keep, so the end-of-track report of changed sentences does not apply; the owner reads the lesson itself.
-4. **Design first, one gate.** After the outline, `designer` draws Router's scene (each Watch step on the figure, the routing table panel) and its card art, at 375 and 1440, as a prototype in `prototypes/d10-router.html` with its spec; two variants at most. In the same unit, at small cost, a one-page **scene map** for the other eleven lessons (`prototypes/d10-scene-map.md`): which figure each can use, which need a new figure or panel, and what card art each needs. The scene map is for the next plan's estimate, not for approval. The owner approves D10; the scene's design is then frozen.
-5. **Build before the author writes.** A Watch step's events must fit the figure's parts (`define.ts` `checkUnit`), so the builder (B12) adds what Router's scene needs (parts, driver, panel, card art, `figures.ts`) against the approved spec, and the author writes on top of it. Spec review first, for both build units.
-6. **No glossary ties in this job.** The glossary is paused (2.48); Router's Learn terms tie to the existing entries when it resumes. Router's words must still agree with those entries' definitions; a line at odds stops the work, as in job 10.
-7. **The counts move.** B11 (decision 2) and B12 update every test S13 §F lists, and About counts a shared lesson once.
-8. **One known failure.** `e2e/glossary.spec.ts:141` (the Glossary page's end at 375) is red on `revamp` and held by the owner (2.48). The job's full `npm run e2e` is done when that is its only failure; nothing in this job touches the glossary.
-9. **The job stops after the pilot.** The owner gets Router, its measured cost, the scene map and the plan for the other eleven (three a batch, a session each, design gate a batch), and says go on that.
+1. **The three run side by side on Router's path.** For each lesson: the analyst's outline (with its rulings and documents registered), the scene and card art, the spec review, the build, the author on its own branch, the continued analyst's read, a fresh full check (a targeted re-check after a near-pass). Three heavy agents at a time.
+2. **No clickable prototype, no design gate (the owner, 2.52, this batch only).** The `designer` decides the three scenes and card arts in one unit, D11, and writes one spec, `prototypes/d11-batch-1.md`, with each spot's SVG saved as its own file (`prototypes/d11-<slug>-spot.svg`) and any new figure part's SVG beside it. The designer looks at each SVG in the browser at both themes, and the scenes at 375 and 1440 on the built site where it can. The build starts after the spec review, without the owner.
+3. **One designer, one spec review, one builder for all three scenes.** The scenes share `net-map`, the table panel, `spots.ts` and `figures.ts`; one writer for those files avoids three-way collisions. B13 builds every part, cue and spot the three scenes need on `job12/batch`, with a test-only fixture per scene, as B12 did.
+4. **Copy, never redraw** (job 11). Each spot and figure part is copied from the spec's SVG and pinned by a test that reads the `.svg` file tag for tag; the build review checks it the same way.
+5. **Two publishers for a Learn part many items trace to** (job 11). Each analyst gives the lead, every term and every fact that several items trace to two publishers before the check (an RFC and a vendor's or IANA's page, or two RFCs), registering what is missing on an allowed host.
+6. **The authors start while B13 is reviewed** (job 11). Each author writes on `lesson/<slug>`, branched from `job12/batch` once B13 reports its build done; review fixes are merged into the lesson branches.
+7. **Agreement with checked words.** Each new lesson agrees with What is IP, Router and every checked port line; no checked lesson's words change. A line at odds that cannot be settled by changing the new lesson stops the work.
+8. **The counts move once.** After the three lessons are merged into `job12/batch`, B13b (the B13 builder, continued) moves every count S14 §5 lists to 12 ready, adds `e2e/arp.spec.ts`, `nat.spec.ts`, `ports.spec.ts` on `router.spec.ts`'s model, and the one-view list.
+9. **No glossary ties** (2.48); the new lessons' terms join the glossary when it resumes.
+10. **One known failure** in the full `npm run e2e`: `e2e/glossary.spec.ts:143`, held by the owner.
 
 ## Units
 
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
-| S13 | scout | scout (Haiku) | Size of the work, overlap, sources, tests. Done (`prototypes/s13-networking-facts.md`). | Every fact has a `path:line`. |
-| B11 | build | builder (Sonnet); reviewer (Opus) for the spec and the build | Decision 2: Networking lists `what-is-dns`, `what-is-tls`, `what-is-http`, `what-is-https` in place of `dns`, `tls`, `http-https`; About counts a lesson once; every count test S13 §F names updated. Spec: decision 2 and this row; cases saved here after the spec review. Only if the owner accepts decision 2. | `npm test`, `npm run build`; `/networking/dns` is gone and `/networking/what-is-dns` renders with its canonical at `/how-the-internet-works/what-is-dns`; the track page shows 20 stops, 8 ready; About's "lessons ready" is 18; `e2e/site.spec.ts`, `e2e/lesson.spec.ts` pass. |
-| L18-a | pilot | analyst (Opus) | Router's outline (decision 3), in `.superpowers/analysis/router/report.md`, sources saved beside it. | Every passage found by script in its saved source; the agreement list against What is IP and the four glossary entries. |
-| L18-r | pilot | orchestrator | Rulings in the report; Router's new documents registered on its branch. | `npm test` passes. |
-| D10 | design | designer (Opus, the orchestrator's model) | Router's scene and card art, 375 and 1440, both themes; the scene map (decision 4). | Both widths looked at in the browser; the spec names every figure part, cue and panel row a step uses. **Design gate: the owner approves.** |
-| B12 | build | builder (Sonnet); reviewer (Opus) for the spec and the build | What the approved scene needs in code: figure parts, driver, the table panel's rows, card art, `figures.ts`. Spec: D10's; cases in `prototypes/d10-cases.md`. | Each attack case a test; the prototype matched at 375 and 1440; `npm test`; build review PASS. |
-| B12b | pilot | the B12 builder, continued (Sonnet) | After L18-b: `e2e/router.spec.ts` run against the real lesson, the count tests (decision 7) and the track page, Tracks page and next-lesson card with Router's spot (erratum E2, `prototypes/d10-cases.md`). | `npm test`; `e2e/router.spec.ts`, `site.spec.ts`, `lesson.spec.ts` at 375 and 1440. |
-| L18-b | pilot | author (Sonnet) | `src/content/lessons/router.ts`, written once from the outline on B12's branch. | `npm run fact-check -- router` prints the sheet; `npx astro check` clean; `npx vitest run --mode development` fails only on Router's missing report. |
-| L18-p | pilot | Router's analyst, continued | The read before the check; the author applies it. | Numbered rulings with exact words and citations, applied. |
-| L18-c | pilot | a fresh fact-checker (Opus) | The check; a targeted re-check after a near-pass. | `npm run fact-check -- router --check` prints `Report OK`. |
-| F11 | end | orchestrator | Merge into `revamp`; the full `npm run e2e`; the ledger's totals and "What to do differently next time"; the direction rows; the next plan for the owner. | `npm test`, `npm run build`, full e2e (decision 8) on `revamp`; counts in `team.md`. |
+| S14 | scout | scout (Haiku) | Sizes, documents, agreement, scene parts, count tests, collisions. Done (`prototypes/s14-batch-1-facts.md`). | Every fact has a `path:line`. |
+| L19-a, L20-a, L21-a | content | analyst (Opus), one a lesson | The outlines of ARP (L19), Ports (L20), NAT (L21) in `.superpowers/analysis/<slug>/report.md`, sources beside it; the Watch story on built figures, what to agree with, what not to claim, the OSI badge, documents to register; two publishers for shared Learn parts. | Every passage found by script. |
+| L19-r, L20-r, L21-r | content | orchestrator | Rulings in each report; every new document registered on `job12/batch` in one commit. | `npm test` passes. |
+| D11 | design | designer (Opus 5.5) | The three scenes and card arts: `prototypes/d11-batch-1.md` and `d11-<slug>-spot.svg` (decision 2). | The spec names every part, cue, panel row and step for each scene, with the outline's backing; each SVG looked at in both themes. |
+| B13 spec | build | reviewer (Opus) | Holes and attack cases for D11's spec; saved as `prototypes/d11-cases.md`. | Holes with one right answer closed as errata. |
+| B13 | build | builder (Sonnet) | What the three scenes need on `job12/batch`: parts, cues, panel abilities, spots, `figures.ts`, fixtures. | Each case a test; spots equal to their `.svg` tag for tag; `npm test`; build in budget. |
+| B13 review | build | reviewer (Opus) | The build against the spec, its SVGs and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
+| L19-b, L20-b, L21-b | content | author (Sonnet), one a lesson | `src/content/lessons/<slug>.ts` on `lesson/<slug>`, written once from the outline. | The sheet prints; `astro check` clean; development tests fail only on the missing report and the counts. |
+| L19-p, L20-p, L21-p | content | the lesson's analyst, continued | The read before the check; the author applies it. | Numbered rulings, applied. |
+| L19-c, L20-c, L21-c | content | a fresh fact-checker (Opus) a lesson | The check; a targeted re-check after a near-pass. | `--check` prints `Report OK`. |
+| B13b | build | B13's builder, continued (Sonnet) | Decision 8, after the three lessons are merged into `job12/batch`. | `npm test`; the three lesson specs, `site.spec.ts`, `lesson.spec.ts` at 375 and 1440. |
+| F12 | end | orchestrator | `job12/batch` into `revamp`; the full `npm run e2e`; ledger, direction row, the owner's result. | `npm test`, `npm run build`, full e2e on `revamp`. |
 
-Order: at the go, B11's spec review and L18-a start together (different files). B11 builds and merges while the outline is written. D10 starts from the outline and its rulings, then the job stops at the design gate. After the owner approves: B12's spec review, B12, L18-b on B12's branch, L18-p, L18-c, F11. Each in its own worktree under `.superpowers/wt/`, E2E ports from 4481.
+Order: the three outlines together; rulings and the registry commit; D11; B13's spec review; B13; the three authors while B13 is reviewed; the reads; the checks; each lesson merged into `job12/batch` when it passes; B13b; F12. Worktrees under `.superpowers/wt/` (`job12`, `arp`, `nat`, `ports`), E2E ports 4481 to 4484.
 
 ## Estimate
 
-Phase 4's lessons cost 0.74 to 1.23 million tokens of growth each, half of it the analyst's; a new lesson's analyst must find what to teach rather than check what is there, and its author writes rather than edits. Design and build units are taken from job 9 (D9 and B8) and job 10 (B10).
+From job 11: a new lesson's content 0.84 million; a scene on a built figure, with card art, 0.90 million including its spec review and build review. Three scenes share one designer, one spec review and one builder.
 
 | Part | Growth, roughly |
 |---|---|
-| B11: spec review, Sonnet build, build review | 0.35 to 0.6 million |
-| L18-a, L18-p: the outline and the read | 0.4 to 0.65 million |
-| D10: Router's scene and card art, the scene map | 0.4 to 0.7 million |
-| B12: spec review, Sonnet build, build review | 0.4 to 0.8 million |
-| L18-b: the author | 0.25 to 0.35 million |
-| L18-c: the check, and a re-check allowance | 0.15 to 0.3 million |
-| **After the go** | **2.0 to 3.4 million** |
+| Three outlines and reads (L19 to L21 a, p) | 0.9 to 1.2 million |
+| Three authors | 0.6 to 0.8 million |
+| Three checks, and a re-check allowance | 0.5 to 0.8 million |
+| D11: three scenes and card arts | 0.25 to 0.45 million |
+| B13: spec review, build, build review | 0.6 to 0.95 million |
+| B13b: counts and lesson specs | 0.15 to 0.25 million |
+| **After S14** | **3.0 to 4.45 million** |
 
-S13 spent 336,994 before the go. Without decision 2, B11 does not run (0.35 to 0.6 million less in this job, about 3 to 4.5 million more for the track). The orchestrator's own tokens are not counted, as in every job.
-
-For a sense of the whole track (not approved by this go): eleven new lessons at 0.8 to 1.3 million each is 9 to 14 million, plus figures and card art the scene map will size, perhaps 3 to 6 million; four batches of three. The pilot replaces these guesses with measured numbers before anyone says go on them.
+S14 spent 240,824. With it, 3.3 to 4.7 million, inside the proposal's 3.5 to 4.2 at its middle.
 
 ## When the work stops for the owner
 
-- **The go on this plan**, with decision 2 (sharing four tour lessons) accepted or not.
-- **The design gate** on D10.
-- Router past **1.6 million** tokens of growth for its content units (L18-a, -b, -p, -c) without an all-pass; the job past **3.8 million**.
-- A claim that fails three checks; a Watch step whose story no allowed source backs.
-- A line of Router at odds with What is IP or a glossary definition that cannot be settled by changing Router.
-- A new host that is not the publisher's own.
-- **The pilot's end** (decision 9).
+- One lesson's content (its a, b, p, c units) past 1.6 million tokens of growth without an all-pass; the batch past 5.0 million.
+- A claim that fails three checks; a Watch story no allowed source backs.
+- A new host that is not the publisher's own; a source readable only after a sign-in.
+- A line at odds with a checked lesson that changing the new lesson cannot settle.
 - Anything `CLAUDE.md` says the owner keeps: push, merge to `main`, deploy, sign-ins, installs.
 
 A build unit that fails two reviews comes back to the orchestrator with both reports. Everything else the orchestrator decides, records in the direction document, and reports with the job's result.
 
 ## What could go wrong
 
-- **A beginner's routing story says more than RFC 1812 does.** "The router picks the best path", "every router knows the whole map", "longest match always wins" are the general words a check fails. The outline lists what each step may say before anyone draws it, and the scene follows the outline.
-- **The scene outruns the outline.** A designer can draw a hop the sources do not back. D10's spec names the outline's backing for every step; the spec review checks it.
-- **`net-map` cannot show a routing table** without new parts. Then B12 is larger than estimated; the spec review sizes it before the build.
-- **Router disagrees with What is IP.** The analyst lists every line of What is IP and the glossary on routing first; Router is changed to agree, What is IP's words are not (they are checked).
-- **A shared lesson shows twice in the end-to-end run.** `global-setup.ts` finds lessons from both track pages; B11's spec review checks the run does not test one lesson twice, or accepts it.
-- **The known glossary failure hides a new one.** F11 compares the e2e failures by name with decision 8's one.
-- **The orchestrator's context grows.** One session for this job; little read; hand-backs of 150 words or fewer.
-
-## Result (2026-11-14)
-
-Router is live on `revamp` at `/networking/router`, passed by a fresh fact-checker (all 100 items, on its second full check); Networking Concepts lists 20 stops, 9 ready. After the go the job used **2.11 million** subagent tokens (estimate 2.0 to 3.4): Router's content 0.84, its design and build 0.90, the four shared lessons 0.36. `team.md` (job 11) has the units, the totals and what to do differently. Errata for the owner: B11's E1–E9 (above) and D10's E1–E11 (`prototypes/d10-cases.md`).
-
-## Proposed next: the other eleven lessons (batch 1 approved by the owner on 2026-11-14, without a design gate: direction 2.52; batches 2 to 4 not approved)
-
-From the pilot's numbers and D10's scene map (`prototypes/d10-scene-map.md`). A batch of three lessons a job, a fresh session a job, one design gate a batch (the three scenes together), the pilot's path for each lesson. Batches go by what their scenes reuse, cheapest first, so each batch's new figure work is built once and used by the next:
-
-| Batch | Lessons | Scenes | Rough growth |
-|---|---|---|---|
-| 1 | ARP, NAT, Ports | `net-map` and the table panel with D10's abilities (whose table, candidates, no match); ARP's "sent to all" may need the `dhcp` figure's ring | 3.5 to 4.2 million |
-| 2 | IP Address, MAC Address, TCP/UDP | Subnetting's bits board and a new address-kind panel; the `dhcp` figure with more home devices; TCP and UDP in turn on `net-map` | 4.5 to 5.5 million |
-| 3 | Switch, Load Balancers, Packets | Two new figures (a switch, a balancer and its pool) and a new `net-map` ability (several packets, out of order) | 5.5 to 7.0 million |
-| 4 | Proxies, VPN | A proxy on the way and a tunnel: new parts on `net-map` or a new figure; a compare mode if Proxies needs one | 4.0 to 5.0 million |
-
-About 17.5 to 21.5 million in all, roughly half of it scenes and card art. Known risk: MAC Address and Switch rest on IEEE 802 standards, which no registered source covers; the first of them proposes `standards.ieee.org` as the publisher's own host, and if a standard can be read only after a sign-in, that comes to the owner.
+- **Beginner words that outrun the RFCs.** "ARP asks everyone", "NAT is a firewall", "a port is a physical socket", "each port belongs to one program". The outline lists what not to claim; the reads catch the rest.
+- **NAT's two-laptop story** needs a second home device: on `net-map` that is a new part, on the `dhcp` figure a new panel. D11 decides; the spec review sizes it.
+- **Ports' story at the server** (a closed port, a refused connection) may need an outcome `net-map` does not show; RFC 9293's reset is the backing.
+- **Three branches meet** at `sources.ts`, the counts and the spots. Decision 3 gives the shared files one writer; registry entries are committed once before the authors start.
+- **The orchestrator's context grows.** Hand-backs of 150 words or fewer; reports read only where a ruling is needed.
 
 ## After this job
 
-- The other eleven lessons, three a batch, a session a batch, each batch's scenes through the design gate together (the next plan, from the pilot's numbers and D10's scene map).
-- The glossary when the owner resumes it: batch 4 (`remote`, `mail`), F10, the page's end at 375, and the new lessons' ties.
+- Batches 2 to 4 of the eleven (job 11's proposal, at 84cef62), each through the design gate unless the owner says otherwise.
+- The glossary when the owner resumes it, with the new lessons' ties.
 - The revamp goes live (the owner's).
-- Held, for the owner to reopen: the standalone Practice page and its missed list (D6, D7); About's sources box; the registry addresses that moved; the code for lessons of several units; exporting saved progress; objective mappings' own fact-check path.
-
-## Not in this plan
-
-- Any change to a checked lesson's words, including What is IP and the four shared tour lessons.
-- Any glossary entry, tie or page change.
-- A new layout for the Lesson page or the track page: only Router's scene and card art are new.
-- Copying another site's text or art; a source host that is not a publisher's own.
-- Anything that leaves this machine.
-
-## B11: the spec review's holes, errata and cases (2026-11-14)
-
-The reviewer (Opus) found nine holes; each has one right answer, ruled by the orchestrator as errata:
-
-- **E1 (hole 1, card art).** A shared lesson's card shows the same art on every track: `lessonFigure` chooses by the lesson's home track (`homeOf`, How the Internet Works for the four), not the page's, as `src/lib/figures.ts:1` already states ("every page that shows a lesson shows the same figure"). So Networking's route shows the tour's name tiles for DNS, HTTP, HTTPS and TLS/SSL beside its spot art. Nothing new is drawn; D10 looks at the route at 375 and 1440, and if the mix reads badly that goes into D10 for the owner.
-- **E2 (hole 2).** `e2e/visual.spec.ts:100` and `:103` name tests and screenshots by `lesson.path`, not the slug, so a lesson found on two track pages runs under each without "duplicate test title". `lesson.spec.ts` already names by path and runs the 4 more lessons (22).
-- **E3 (hole 3).** Numbers and order: DNS 13 (in "Talking across the internet", where `dns` was), HTTP 14, HTTPS 15, TLS/SSL 16 (in "The web"), Firewalls 17 … VPN 20. Ready: 1, 7, 9, 13, 14, 15, 16, 17.
-- **E4 (hole 4).** About's "lessons ready" counts distinct slugs, as `lessonCheckCounts` does (`src/lib/checked.ts:12`): 18. Its test asserts the distinct count, never the old sum.
-- **E5 (hole 5).** The Glossary's "Described in" line is derived from `tracksOf`, so entries tied to the four lessons will name both tracks. True and derived; no report goes stale (group sheets hold no tracks). Accepted, tested, and reported to the owner (the glossary is paused, but nothing in it is edited).
-- **E6 (hole 6).** Progress is keyed by slug, so a shared lesson finished in one track is done in both (the existing design, `registry.test.ts:319`). Stated and tested.
-- **E7 (hole 7).** `what-is-http.ts:233` "The TCP lesson looks at it closely." shows under `/networking/` too; it is true site-wide (the tour's TCP lesson) and checked words do not change. Accepted, reported to the owner.
-- **E8 (hole 8).** `/networking/dns`, `/networking/tls`, `/networking/http-https` return 404; no redirect is added (they were never built).
-- **E9 (hole 9).** The stale comments go: `networking.ts:4` ("19 lessons"), `src/lib/home.ts:210`, `src/lib/hub.ts:77`.
-
-### Attack cases (each a test)
-
-*Unit tests and the build*
-- `registry.test.ts:41-77`: 20 slugs in order; titles exactly `DNS`, `HTTP`, `HTTPS`, `TLS/SSL`.
-- Networking's ready slugs and numbers: osi-model 1, subnetting 7, dhcp 9, what-is-dns 13, what-is-http 14, what-is-https 15, what-is-tls 16, firewalls 17.
-- `tracksOf('what-is-dns')` is `['how-the-internet-works', 'networking']` (red if the track order flips).
-- `neighbors(getEntries('networking'), 'dhcp').next.url` is `/networking/what-is-dns`; Networking's `what-is-tls` has next `firewalls`; the tour's `what-is-tls` has next `null`.
-- `lessonFigure('networking', <DNS entry>)` does not throw and equals the tour's tile.
-- `checkListings` fixture: a lesson listed by two tracks keeps an override only one of them needs; an override neither needs throws, naming both tracks (`registry.ts:204`).
-- `lessonCheckCounts()` is `{ checked: 18, total: 18 }`; the glossary's `readyLessons()` has 18 entries.
-- `reports.unchanged.test.ts:21` stays at 18 (no report added).
-- `check-budgets` passes with the 4 more pages; `/networking` HTML stays under 250 KB.
-- `tracks-page.test.ts:26-28`: 20 entries, 8 known. `LessonConsole.test.tsx:162`, `:444`: 20.
-- `about-page.test.ts:52`: the distinct count (18).
-
-*End to end*
-- `lesson.spec.ts:275`: on `/networking/what-is-dns`, `link[rel=canonical]` and `og:url` are `https://techconcepts.app/how-the-internet-works/what-is-dns`; the tour's copy the same; `/networking/dhcp` keeps its own; `og:image` the default on both.
-- `site.spec.ts:580-594`: 20 stops, 8 ready, 12 not ready; ready titles in order OSI Model, Subnetting, DHCP, DNS, HTTP, HTTPS, TLS/SSL, Firewalls; DNS's `h3 a` links to `/networking/what-is-dns`.
-- Strip "0 of 20 lessons done · 8 ready" at `:522`, `:609`, `:729`, `:742`; 20 squares at `:529`; 20 stops at `:695`, `:924`.
-- Home (`:263`, `:736`, `:765`): `['14 lessons', '8 of 20 lessons ready']`, 20 `.leg__run i`, 8 with `[data-ready]`.
-- About: the `.stats` "lessons ready" value is `18` (a new check in `site.spec.ts`).
-- A shared lesson under `/networking/`: "Lesson 13 of 20" (the tour's copy "6 of 14"), the console's "All 20 lessons", the track link to `/networking`; Networking's TLS/SSL's Up next is Firewalls at `/networking/firewalls`, the tour's TLS/SSL ends "the last lesson of this track"; `/networking/dhcp`'s Up next is DNS at `/networking/what-is-dns`, with art; `/networking/firewalls` ends "Lessons 18 to 20 are coming soon."; `/networking/{dns,tls,http-https}` return 404.
-- Progress (near `site.spec.ts:720`): finish `/how-the-internet-works/what-is-dns`, then `/networking` reads "1 of 20 lessons done · 8 ready" and DNS's stop shows Done; opening `/networking/what-is-dns` stores `lastTrack: 'networking'`.
-- `npx playwright test --list` reports no "duplicate test title"; `global-setup.ts` finds 22 lessons.
-- `e2e/glossary.spec.ts:65` area: `#root-server .gl-row--tracks` reads "Described in How the Internet Works, Networking Concepts"; `#ping` stays tour-only.

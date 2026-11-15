@@ -781,3 +781,13 @@ Planned on 2026-11-14 in a fresh session on Opus 5.5, after the owner paused the
 - A Learn part many items trace to must have two publishers before the check: when one such part was held, the re-check grew past 12 items and a second full check was needed (about 0.16 million).
 - Start the author on its own branch while the scene's build is reviewed: it saved a round of waiting and nothing collided.
 - Ask the scout to list, for a new lesson, the tests that count ready lessons; B12b found them late.
+
+# Job 12: Networking Concepts' batch 1, ARP, Ports and NAT
+
+Planned on 2026-11-14 in a fresh session on Opus 5.5, under the owner's go on batch 1 without a design gate (direction 2.52, 2.53); `plan.md`. Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S14 | scout | Haiku | 1 | 240,824 | `prototypes/s14-batch-1-facts.md` (saved by the orchestrator; the scout writes no file): ARP stop 6, Ports 10, NAT 12, no files; RFC 2663, RFC 6146 and any vendor NAT or port page unregistered; agreement lines in What is IP, Router and every checked port line; eleven count specs and `site.spec.ts`. |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: ten decisions, one designer, one builder for the three scenes. Estimate 3.3 to 4.7 million. Under the owner's go (2.52). |
+
