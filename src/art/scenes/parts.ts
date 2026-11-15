@@ -1,6 +1,7 @@
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, plateSites } from './net-map-layers';
 import { OSI_CUE_ARGS, OSI_ROUTES, OSI_WORDS } from './osi-stacks';
 import { SWITCH_PLACES, SWITCH_PLUG_ARGS, SWITCH_ROUTES } from './switch-parts';
+import { POOL_PLACES, POOL_ROUTES, POOL_SERVERS } from './pool-parts';
 import type { FigureId, FigureParts } from './types';
 
 /**
@@ -91,6 +92,18 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     cues: { flood: 'flag', plug: 'text' },
     args: { plug: SWITCH_PLUG_ARGS },
     routes: SWITCH_ROUTES,
+    layers: [],
+    board: false,
+    start: false,
+  },
+  pool: {
+    places: POOL_PLACES,
+    // A request rides through the balancer to a server; a check rides from the balancer to a server, its answer back
+    // (src/scenes/drivers/pool.ts). `skip` names a server the balancer passes over on a request; `no-answer`, on a
+    // note, the server that did not answer a check in time.
+    cues: { skip: 'text', 'no-answer': 'text' },
+    args: { skip: POOL_SERVERS, 'no-answer': POOL_SERVERS },
+    routes: POOL_ROUTES,
     layers: [],
     board: false,
     start: false,

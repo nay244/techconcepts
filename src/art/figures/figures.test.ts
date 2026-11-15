@@ -64,6 +64,7 @@ const EXPECTED: Record<string, string> = {
   'cover:aplus': 'fa694d51b69b6eb9ce3fea6ad1f361e2c2160b4f029340f71ecb8092b24fcc11',
   'spot:watch': 'b0a517894e64f146f1a7060c7c5c4163801f74c954703beb08ea5f2aad207cb5',
   'spot:learn': 'f48b830a8519b1d2c7f2d69bdc5fd5ea12a334eb33555ee9b71e0c859dedf66e',
+  'spot:load-balancers': '6684065e6029fb918e792c3b8daf2d2847ab835c7ea535bc29124a341119d427',
   'spot:practice': '3d5e9a1240082e5e5d920c4b69bae94c3ea2be1bf0e4394e6e4de204c794dc30',
   'spot:subnet': '841d398bd78c4e35fc5f47fea35060e97ddad297312b9138429c778cc083ba1b',
   'spot:switch': '36be892c80e718a900d2b7a5ce39990fb433a798e7827e1b24aeb441f54a3fdf',

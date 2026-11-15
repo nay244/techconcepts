@@ -403,10 +403,42 @@ function switchSpot() {
   return figure("switch", "FIVE PORTS · MAC TABLE", out.join(""), "A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch'] as const;
+// Load Balancers: one balancer in front, a pool of three servers behind it, cabled in a fan. Server B's lamps are red;
+// a lit request rides the cable to C.
+function loadBalancersSpot() {
+  const out = [], SW = 30, SD = 24, SH = 56, SY = -58;
+  const SVS = [-38, 12, 62].map((x) => ({ x, y: SY, w: SW, d: SD, r: 1.8 }));
+  const BX = { x: -84, y: 24, w: 68, d: 30, r: 2.8 }, BZ = 2.4, BH = 19;
+  const outs = [BX.x + 16, BX.x + 32, BX.x + 48];
+  // The pool's outline on the floor, the cable in from the left edge, and the fan of cables out to the servers.
+  out.push(L(k.planOutline({ x: -48, y: SY - 6, w: 150, d: SD + 20, r: 4 }, 0, P, 4), { tone: "lo", dashed: true }));
+  const fan = SVS.map((B, i) => [[outs[i], BX.y - 3], [outs[i], -6 - i * 4], [B.x + SW / 2, -6 - i * 4], [B.x + SW / 2, SY + SD + 3]]);
+  out.push(tubeOf([[[-112, 42], [BX.x - 3, 42]], ...fan].flatMap((pts) => tubePieces(pts.map(([x, y]) => [x, y, 1.4]), 1.3, P, { maxLength: 14 }))));
+  // The servers: a letter, two lamps for the last two checks (B's both red), drive bays.
+  for (const [i, B] of SVS.entries()) {
+    const ok = i !== 1, F = B.y + B.d;
+    out.push(S(k.slabOf({ x: B.x - 2.6, y: B.y - 2.6, w: SW + 5.2, d: SD + 5.2, r: 2 }, 0, 1.8, P, 3, 0.4), { tone: "lo" }));
+    out.push(S(k.slabOf(B, 1.8, SH - 1.8, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(B, SH - 10, P, 3), { tone: "faint" }) }));
+    let face = `<text class="lm-pkt-t" x="${n1(B.x + 3.4)}" y="${n1(-(SH - 7.4))}">${"ABC"[i]}</text>`;
+    face += [0, 1].map((n) => `<circle class="lm-rule-${ok ? "ok" : "no"}" cx="${n1(B.x + SW - 11 + n * 6.4)}" cy="${n1(-(SH - 5.4))}" r="2"/>`).join("");
+    for (let b = 0; b < 5; b++) face += rect("lm-slot", B.x + 3.4, SH - 17 - b * 7, SW - 7, 3.4, 0.5);
+    out.push(onFaceY(F, face));
+  }
+  // The balancer: a port at its left for the cable in, its address in a window, a light for each server, C's on.
+  out.push(S(k.slabOf({ x: BX.x - 3, y: BX.y - 3, w: BX.w + 6, d: BX.d + 6, r: 3 }, 0, BZ, P, 4, 0.5), { tone: "lo" }));
+  out.push(S(k.slabOf(BX, BZ, BH - BZ, P, 4, 0.7), { tone: "hi", inner: L(k.sideSeam(BX, BZ + 3.4, P, 4), { tone: "faint" }) }));
+  for (let v = 0; v < 6; v++) out.push(L(k.planOutline({ x: BX.x + 8 + v * 8, y: BX.y + 4, w: 2.6, d: 9, r: 1.3 }, BH, P, 3), { tone: "lo" }));
+  out.push(onFaceY(BX.y + BX.d, rect("lm-void", BX.x + 6, BZ + 7, 40, 7, 0.8) + `<text class="lm-addr" x="${n1(BX.x + 8.4)}" y="${n1(-(BZ + 9))}">203.0.113.80</text>`));
+  out.push(`<g class="lm-leds">${[0, 1, 2].map((i) => dot(at([BX.x + 52 + i * 5.6, BX.y + BX.d, BZ + 10.4]), "lm-led" + (i === 2 ? " on" : ""), 1.2)).join("")}</g>`);
+  // The request on its way to server C: the lit part.
+  out.push(S(k.slabOf({ x: 68, y: -24, w: 18, d: 13, r: 1.4 }, 2.8, 5.4, P, 3, 0.5), { tone: "hi", lit: true }));
+  return figure("load-balancers", "ONE ADDRESS · THREE SERVERS", out.join(""), "A load balancer at the front with one cable coming in, and behind it a pool of three servers, A, B and C, each cabled to it. Server B’s two lamps are red. A lit request rides the cable to server C.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch', 'load-balancers'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot, 'load-balancers': loadBalancersSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

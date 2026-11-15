@@ -4,7 +4,7 @@ import { FIGURE_PARTS } from './parts';
 
 test('FIGURE_PARTS has an entry for each figure id the schema accepts, and no other', () => {
   expect(Object.keys(FIGURE_PARTS).sort()).toEqual([...figureIdSchema.options].sort());
-  expect(Object.keys(FIGURE_PARTS).sort()).toEqual(['dhcp', 'firewall', 'net-map', 'osi', 'subnet', 'switch']);
+  expect(Object.keys(FIGURE_PARTS).sort()).toEqual(['dhcp', 'firewall', 'net-map', 'osi', 'pool', 'subnet', 'switch']);
 });
 
 test('every figure’s parts are well formed', () => {

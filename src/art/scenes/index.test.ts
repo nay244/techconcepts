@@ -7,7 +7,7 @@ import type { FigureId } from './types';
 // and has no film grain (ruling R2).
 test('every scene figure draws with data-figure, role="img", a non-empty aria-label and no grain', () => {
   const ids = figureIdSchema.options as readonly FigureId[];
-  expect([...ids].sort()).toEqual(['dhcp', 'firewall', 'net-map', 'osi', 'subnet', 'switch']);
+  expect([...ids].sort()).toEqual(['dhcp', 'firewall', 'net-map', 'osi', 'pool', 'subnet', 'switch']);
   for (const id of ids) {
     const { svg } = drawFigure(id);
     const root = /^<svg\b[^>]*>/.exec(svg)?.[0] ?? '';

@@ -18,6 +18,7 @@ const FIGURES: Record<string, () => string> = {
   'tcp-udp': () => spot('tcp-udp'),
   packets: () => spot('packets'),
   switch: () => spot('switch'),
+  'load-balancers': () => spot('load-balancers'),
 };
 
 /**
