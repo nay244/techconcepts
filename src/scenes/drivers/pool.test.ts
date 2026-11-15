@@ -41,6 +41,7 @@ const viewAt = (step: number, played?: number): SceneView => {
 const options = (o: Partial<PlayOptions> = {}): PlayOptions => ({ speed: 1, reducedMotion: false, signal: new AbortController().signal, ...o });
 const eventsOf = (step: number): SceneEvent[] => stepEvents(lesson, positionOf(lesson, 0, 'step', step));
 const eventAt = (step: number, k: number): SceneEvent => eventsOf(step)[k]!;
+const tweak = (e: SceneEvent, o: object): SceneEvent => ({ ...e, ...o }) as SceneEvent;
 function looks(root: SVGSVGElement): string {
   const copy = root.cloneNode(true) as SVGSVGElement;
   for (const el of copy.querySelectorAll<SVGElement>('[style]')) {
@@ -83,15 +84,15 @@ test('T1: a table event 0; a note 1,300 with no-answer and 200 without; a reques
   const d = (e: SceneEvent) => poolDriver.duration(e, data);
   expect(d(eventAt(1, 1))).toBe(0);
   expect(d(eventAt(3, 3))).toBe(1300);
-  const plain = { ...(eventAt(3, 3) as object), cues: [] } as SceneEvent;
+  const plain = tweak(eventAt(3, 3), { cues: [] });
   expect(d(plain)).toBe(200);
   expect(d(eventAt(1, 0))).toBe(2950);
   expect(d(eventAt(4, 2))).toBe(3650);
-  expect(d({ ...(eventAt(1, 0) as object), fast: true } as SceneEvent)).toBe(1950);
+  expect(d(tweak(eventAt(1, 0), { fast: true }))).toBe(1950);
   expect(d(eventAt(3, 0))).toBe(1500);
   expect(d(eventAt(3, 1))).toBe(1500);
   expect(d(eventAt(3, 5))).toBe(1000);
-  expect(d({ ...(eventAt(3, 1) as object), fast: true } as SceneEvent)).toBe(1000);
+  expect(d(tweak(eventAt(3, 1), { fast: true }))).toBe(1000);
   // A skip on a check would add nothing: only a reader's request waits to pick.
   expect(d({ ...(eventAt(3, 0) as object), cues: [{ cue: 'skip', arg: 'a' }] } as SceneEvent)).toBe(1500);
 });
@@ -436,7 +437,7 @@ test('P9: a tag the figure lacks plays nothing and resolves; its duration is sti
   const before = viewAt(1, 0);
   driver.show(before);
   const drawn = looks(root);
-  const reply = { ...(eventAt(1, 0) as object), tag: 'REPLY' } as SceneEvent;
+  const reply = tweak(eventAt(1, 0), { tag: 'REPLY' });
   expect(poolDriver.duration(reply, data)).toBe(2950);
   const p = driver.play(reply, before, options());
   await vi.advanceTimersByTimeAsync(10);
