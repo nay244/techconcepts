@@ -3638,5 +3638,24 @@
    "aria": "A network map. On the left, your home: a laptop and its router. In the middle, the internet: five routers joined by cables. On the right, the servers this protocol talks to.",
    "sha256": "93745eec731d8d44a9aa82a9c5e5b3151f05fe9550de293007e8944204e7f327"
   }
+ },
+ "layerSets": {
+  "[\"ip:web\"]": "a38471a6b7a5fd8fed9c050bd59803f8856093f2d452a02233e71df9307bc81a",
+  "[\"tcp:web\",\"nat:stranger\"]": "e60fa4cb7e2ffdf224a8c6365aebe414cea82d7f1b8ba005a3bc6981ca728806",
+  "[\"tcp:web\"]": "d3d35f682d76d59298a091d1010fb76f41ed68fd99581ff608ddb706e4cb3857",
+  "[\"ports:server\"]": "638cc9c036884a28a6f6004e0a6c2556c2418a6c1ceeca6f0b60719f0de3b973",
+  "[\"tcp:web\",\"tcp-udp:voice\"]": "fb37b26b0b8bad43ea15848ac716b53882facd9d4a72b34fa9b03520cae1d9dd",
+  "[]": "3ccb48c3d7c005783e622501f265c76a6e089fd4965bf5389557cabe543a7ad1",
+  "[\"dns:names\"]": "1e0b78b8c9fe3063f640edeb8e6751900e5ff91f589b208ddcfd0393a810b36f",
+  "[\"ftp:files\"]": "7fe5e45d9f95d53dd3b4924b1b64c71fae8ce4d98fbfe7bfd6cd1710efdabba6",
+  "[\"http:web\"]": "a98ede986ef15fe6704ffc41a3f7ea0fd650cf3de3c218e244368fd414c9bff2",
+  "[\"https:web\"]": "78d16a26a5a872faef8a40a683ac9c43ad3b818c50965db2ebea19af60145d7c",
+  "[\"icmp:web\"]": "6f42ec2ebc03139491b7c9b5f53f140274f7c53bbcb7256a543ea81cea691657",
+  "[\"imap:mail\"]": "319dc1334ecb8b4fded989cd1057673933ba8d2591884e6feee8ba1901cdb478",
+  "[\"pop3:mail\"]": "9c0ffb65747d7df1e3e85433252431bf882ec2923114f70e8ddf57da6028c1dc",
+  "[\"smtp:out\",\"smtp:in\"]": "a2621a039331afc6a6fe4786eb1c753e449263034e354b27ab7707fb16cb1984",
+  "[\"ssh:host\"]": "19fcf9889f33d2c6ea7ec8dfc937f286d8cfe87e80d71b72caaa8b95ff851cff",
+  "[\"tls:web\"]": "8134c3b365da3d7ccda2a1c71ff30b73c7b7683962bb0d8d0aebf701ba06c27a",
+  "[\"udp:call\"]": "b0289e09fd0e6f888b9792506a13950aa21f111b3149fe253de37423922e65b6"
  }
 }

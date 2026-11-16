@@ -32,12 +32,15 @@ interface Snapshot {
   durations: Record<string, number>;
   states: Record<string, string>;
   figures: Record<string, { aria: string; sha256: string }>;
+  /** Case 1d: `drawNetMap(layers).svg`, the still copy Home draws, for each layer set a unit uses. */
+  layerSets: Record<string, string>;
 }
 
 function take(): Snapshot {
   const svg = NEW_LAYERS.reduce((out, open) => groupsOf(out, open).rest, drawn.svg);
-  const snap: Snapshot = { svg: { sha256: sha(svg), length: svg.length }, durations: {}, states: {}, figures: {} };
+  const snap: Snapshot = { svg: { sha256: sha(svg), length: svg.length }, durations: {}, states: {}, figures: {}, layerSets: {} };
   for (const l of lessons) {
+    for (const u of l.units) snap.layerSets[JSON.stringify(u.scene.layers)] = sha(drawNetMap(u.scene.layers).svg);
     l.units.forEach((u, ui) => u.steps.forEach((s, si) => s.events.forEach((e) => (snap.durations[`${l.slug}/${ui}/${si}/${e.id}`] = netMapDriver.duration(e, data)))));
     const host = document.createElement('div');
     host.innerHTML = drawn.svg;
@@ -63,6 +66,7 @@ function take(): Snapshot {
   return snap;
 }
 
+const LAYER_SETS = 17;
 const FILE = 'src/scenes/drivers/net-map.snapshot.json';
 
 test('every existing net-map lesson draws, derives and times exactly as it did before the Proxies patch', () => {
@@ -77,5 +81,7 @@ test('every existing net-map lesson draws, derives and times exactly as it did b
   expect(now.svg, 'check 1: the SVG without the proxies layers').toEqual(before.svg);
   expect(now.durations, 'check 3: durations').toEqual(before.durations);
   expect(now.states, 'check 4: deriveState').toEqual(before.states);
+  expect(now.layerSets, 'case 1d: the still map for each layer set').toEqual(before.layerSets);
+  expect(Object.keys(before.layerSets)).toHaveLength(LAYER_SETS);
   expect(now.figures, 'check 4g: the driver’s figure and aria-label').toEqual(before.figures);
 }, 120_000);
