@@ -4,8 +4,8 @@ import { tracks } from '../content/tracks';
 import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { lessonCheckCounts, lessonStamp } from './checked';
 
-test('the four lessons Networking shares with the tour count once: 25 ready, 25 checked', () => {
-  expect(lessonCheckCounts()).toEqual({ checked: 25, total: 25 });
+test('the four lessons Networking shares with the tour count once: 28 ready, 28 checked', () => {
+  expect(lessonCheckCounts()).toEqual({ checked: 28, total: 28 });
 });
 
 test('counts every ready lesson once, and how many of them have passed the fact-check', () => {

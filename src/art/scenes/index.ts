@@ -2,7 +2,9 @@ import { drawDhcp } from './dhcp';
 import { drawFirewall } from './firewall';
 import { drawNetMap } from './net-map';
 import { drawOsi } from './osi';
+import { drawPool } from './pool';
 import { drawSubnet } from './subnet';
+import { drawSwitch } from './switch';
 import type { DrawnFigure, FigureId } from './types';
 
 /** How each scene figure is drawn. Every figure a lesson can name has its drawer here, and the compiler checks it. */
@@ -12,6 +14,8 @@ const DRAW: Record<FigureId, () => DrawnFigure> = {
   firewall: drawFirewall,
   'net-map': drawNetMap,
   osi: drawOsi,
+  switch: drawSwitch,
+  pool: drawPool,
 };
 
 /** Draws a scene figure at build time: its SVG markup and the data its driver reads. */

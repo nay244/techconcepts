@@ -4,7 +4,9 @@ import { dhcpDriver } from './dhcp';
 import { firewallDriver } from './firewall';
 import { netMapDriver } from './net-map';
 import { osiDriver } from './osi';
+import { poolDriver } from './pool';
 import { subnetDriver } from './subnet';
+import { switchDriver } from './switch';
 
 /** The driver for each scene figure. */
 export const DRIVERS: Record<FigureId, DriverModule> = {
@@ -13,4 +15,6 @@ export const DRIVERS: Record<FigureId, DriverModule> = {
   firewall: firewallDriver,
   'net-map': netMapDriver,
   osi: osiDriver,
+  switch: switchDriver,
+  pool: poolDriver,
 };

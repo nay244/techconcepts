@@ -64,8 +64,10 @@ const EXPECTED: Record<string, string> = {
   'cover:aplus': 'fa694d51b69b6eb9ce3fea6ad1f361e2c2160b4f029340f71ecb8092b24fcc11',
   'spot:watch': 'b0a517894e64f146f1a7060c7c5c4163801f74c954703beb08ea5f2aad207cb5',
   'spot:learn': 'f48b830a8519b1d2c7f2d69bdc5fd5ea12a334eb33555ee9b71e0c859dedf66e',
+  'spot:load-balancers': '6684065e6029fb918e792c3b8daf2d2847ab835c7ea535bc29124a341119d427',
   'spot:practice': '3d5e9a1240082e5e5d920c4b69bae94c3ea2be1bf0e4394e6e4de204c794dc30',
   'spot:subnet': '841d398bd78c4e35fc5f47fea35060e97ddad297312b9138429c778cc083ba1b',
+  'spot:switch': '36be892c80e718a900d2b7a5ce39990fb433a798e7827e1b24aeb441f54a3fdf',
   'spot:dhcp': 'f78beddc71e112c7aa568d07a3a9d4e24a5acdc31dcc58147b3ab59421177a21',
   'spot:firewall': 'c7f5b530c8e16a31768015820a41134c4c55f6ad47e6d6e1d5cf6f857340f368',
   // Drawn for Lesson 01, OSI Model, on 2026-11-08; pinned from its own first approved render.
@@ -80,6 +82,8 @@ const EXPECTED: Record<string, string> = {
   'spot:ip-address': 'ae81fd3287d6d09e4ebfe178cd104ce7144a2ea73f3abd48950584c1aa4b7c04',
   'spot:mac-address': '9461b5d34cf6ed4fa1c9aae8ed313544e10d187db0df080e5742b5a036484a35',
   'spot:tcp-udp': '486e78bbae5a044469392f3e4f94cf0ef43d5b1ed566c73aade52acb9cfe9e0c',
+  // Drawn for Packets (D13), on 2026-11-15; pinned from its own render, which equals prototypes/d13-packets-spot.svg (the last test).
+  'spot:packets': 'd0d8b1e5aa32f37d8bee06e74fbd88fc29734b47844849d9fbd7b48d3d9bb4b4',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -150,5 +154,38 @@ test.each([
   expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(leds);
   expect(svg).toContain(`aria-label="${aria}"`);
   expect(svg).toContain(plate);
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+// D13 / B15a, attack cases 1a to 1c: the Packets spot is the approved file, byte for byte, with one lit part.
+test('the packets spot is prototypes/d13-packets-spot.svg, with one lit part, no lit LED, its plate label and its words', () => {
+  const file: string = readFileSync('prototypes/d13-packets-spot.svg', 'utf8');
+  expect(`${spot('packets')}\n`).toBe(file);
+  const svg = spot('packets');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(0);
+  expect(svg).toContain('ONE FILE · FOUR PIECES');
+  expect(svg).toContain(
+    'aria-label="A file cut into four numbered pieces, each with a header band across its top. Pieces 2, 3 and 4 still stand side by side, with a dotted outline where piece 1 stood. Piece 1, lit, is in the air over the cable, on its way."',
+  );
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+test('the lit-face number ink is the Packets spot’s alone: no other spot engraves a number on a lit face', () => {
+  for (const kind of SPOTS) if (kind !== 'packets') expect(spot(kind), kind).not.toMatch(/iso-face-text lm-on-lit/);
+  expect(spot('packets')).toMatch(/iso-face-text lm-on-lit/);
+});
+
+// D13b / B15b, attack cases 5 and H5: the Switch spot is the approved file, byte for byte, with one lit part and one light on.
+test('the switch spot is prototypes/d13-switch-spot.svg, with one lit part, one light on, its plate label and its words', () => {
+  const file: string = readFileSync('prototypes/d13-switch-spot.svg', 'utf8');
+  expect(`${spot('switch')}\n`).toBe(file);
+  const svg = spot('switch');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(1);
+  expect(svg).toContain('FIVE PORTS · MAC TABLE');
+  expect(svg).toContain(
+    'aria-label="A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on."',
+  );
   expect(svg).toMatch(/viewBox="36 44 528 372"/);
 });

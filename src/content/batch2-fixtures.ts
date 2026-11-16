@@ -12,7 +12,7 @@ import type { Cue, Lesson, MessageEvent, NoteEvent, Row, SceneEvent, TableDef, T
  * cell words. Test-only: nothing imports it into the site.
  */
 
-interface Fixture {
+export interface Fixture {
   slug: string;
   figure: Lesson['figure'];
   scene: Unit['scene'];
@@ -23,7 +23,7 @@ const DASH = '—';
 const row = (r: Row): Row => ({ ...r });
 const table = (id: string, op: TableEvent['op'], tableId: string, summary: string, o: Partial<TableEvent> = {}): TableEvent => ({ type: 'table', id, table: tableId, op, summary, ...o });
 
-function lessonOf(f: Fixture): Lesson {
+export function lessonOf(f: Fixture): Lesson {
   const lesson = structuredClone(whatIsIp);
   lesson.figure = f.figure;
   const unit = lesson.units[0]!;

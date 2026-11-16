@@ -56,6 +56,8 @@ export const FIXTURE_PARTS: Record<FigureId, FigureParts> = {
     words: ['plate'],
     labels: true,
   },
+  switch: fixtureParts({ board: false, start: false }),
+  pool: fixtureParts({ board: false, start: false }),
 };
 
 function fixtureParts({ board, start }: { board: boolean; start: boolean }): FigureParts {

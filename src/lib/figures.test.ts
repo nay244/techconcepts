@@ -35,8 +35,12 @@ test('Router’s card is its spot, drawn for a lesson that has no home track yet
   expect(lessonFigure(entry)).toBe(spot('router'));
 });
 
-test.each(['arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp'] as const)('%s’s card is its spot, drawn for a lesson that has no home track yet, and does not throw', (slug) => {
+test.each(['arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'load-balancers'] as const)('%s’s card is its spot, drawn for a lesson that has no home track yet, and does not throw', (slug) => {
   const entry = { available: true, key: slug, slug } as unknown as AvailableSummary;
   expect(() => lessonFigure(entry)).not.toThrow();
   expect(lessonFigure(entry)).toBe(spot(slug));
+});
+
+test('5b: the Switch lesson’s card is the switch spot', () => {
+  expect(lessonFigure({ available: true, key: 'switch', slug: 'switch' } as unknown as AvailableSummary)).toBe(spot('switch'));
 });

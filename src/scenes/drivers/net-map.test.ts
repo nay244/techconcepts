@@ -1097,7 +1097,8 @@ test('the table waits: a remove takes 600 ms at 1× and 300 at 2×, so the row i
 
 test('every existing net-map unit takes as long as it did before D11: no step’s events changed their wait, and none removes a row', async () => {
   const sums: Record<string, number> = {};
-  for (const lesson of otherNetMapLessons()) {
+  // Packets (D13) is new, not an existing unit: its times are pinned on its own (net-map.packets.test.ts).
+  for (const lesson of otherNetMapLessons().filter((l) => l.slug !== 'packets')) {
     for (const unit of lesson.units) {
       for (const step of unit.steps) {
         for (const e of step.events) if (e.type === 'table') expect(e.op, `${lesson.slug} ${step.id}`).not.toBe('remove');
