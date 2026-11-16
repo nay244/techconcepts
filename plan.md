@@ -2,83 +2,72 @@
 
 How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orchestrator-handbook.md`. The results are in `team.md`. Earlier plans are in this file's history: Phase 2 at commit f419637, Phase 3 at d9a0545, the Phase 4 pilot at 5664519, What is HTTP alone at 667f7f3, batch 1 at 13b222b, batch 2 at b18acd9, batches 3 and 4 at e8ea005, batch 5 at 1a1fbb4, job 9's first plan (the Practice page) at 8fd2947, its second (the glossary in the lessons' own words) at 93b5b4f, its third (written definitions, the pilot, the page) at 92506f4, job 10's (the glossary's remaining entries, paused after batch 3) at ea144eb, job 11's (Router, the pilot; with the proposal for the other eleven in four batches) at 84cef62, job 12's (batch 1: ARP, Ports, NAT) at 77c72a8, and job 13's (batch 2: IP Address, MAC Address, TCP/UDP, with its result) at a783282, job 14's (batch 3: Packets, Switch, Load Balancers, with its result) at bc70815, and job 15's (the lesson's flow, with its result) at 070cce6.
 
-# Job 16: Home's critique findings
+# Job 16: Home in the Card stack look (it began as Home's critique findings)
 
-**Status: the owner's go is given, scope A, B and C** (2026-11-15, direction 2.73: "A, B and C"). E is taken only where B's layout changes it anyway; D and the minor items wait. D15 was drawn (`prototypes/d15-home-demo.html` and `.md`, `b5b2fb6`) and is **held, not approved**: at its gate the owner asked for `impeccable`'s redesign of Home (direction 2.74), and after five rounds chose the "Card stack" look with the site's present header and a few colours (direction 2.75). **D16 is drawn and at the owner's gate** (`prototypes/d16-home-card-stack.html` and `.md`; the orchestrator's look is in `team.md`). D16 is one prototype of the whole Home page in that look with D15's three fixes carried in (`prototypes/d16-home-card-stack.html` and `.md`; designer on Fable 5.2 at the owner's word), then the owner's gate, where the owner also says whether the look is for Home only. The units below D15 (the spec review, B18, its review, F16) then build D16's approved part; their estimate grows with it and is re-made at the gate. Nothing is built until the owner approves. The owner picked Home as the next page to act on from the `impeccable critique` of 2026-11-15 (Home 22 of 32, the lowest of the seven pages). Nothing is designed until the owner says which findings the design covers (job 15's lesson: the owner kept only the controls of a five-part design).
+**Status: D16 approved with colour variant A (the owner, 2026-11-16, direction 2.76); the build is next, run by a fresh orchestrator on Opus 5.5.** How the job got here: the owner chose findings A, B and C of the Home critique (2.73); D15 drew them; at D15's gate the owner asked for `impeccable`'s redesign of Home (2.74), and after five rounds chose the Card stack look with today's header and a few colours (2.75); D16 drew the whole page in that look with D15's fixes inside, and the owner approved it with variant A (2.76). The job's first plan, for the three fixes alone, is this file at `dbb9229`.
 
 ## Inputs
 
 | | |
 |---|---|
-| **The job** | Home's findings from the critique (`.impeccable/critique/2026-11-15T23-18-00Z__src-pages-index-astro.md` in the main folder; git ignores it). Three major: **A** the phone demo's scene can't be read (297×164px at 375, median label 7px, re-measured by the critique); **B** on a phone, Next step moves the page away from the narration; **C** Tab lands on answer radios that can't be seen (WCAG 2.4.7). Two lesser: **D** the header's "Start learning" goes to `/tracks` while the hero and the closing button go to lesson 1; **E** the demo frame changes height by part (Watch 638, Learn 718, Practice 503px). Minor: the header over the headings, "Guided visual lessons" in the footer against "Short visual lessons" elsewhere, the header's 40×40 icon buttons, the closing button repeating the hero's words. Facts: `prototypes/s18-home-facts.md` (S18). |
-| **Done means** | The owner has approved D15 for the findings the owner chose; B18 is merged into `revamp` with a build review of PASS (or PASS WITH FIXES, each "fixed when" run); on `revamp`, `npm test`, `npm run build` and CI's end-to-end pass (`npx playwright test --grep-invert @visual --project=d1440-dark --project=phone`) pass. For each finding taken, the critique's measurement is re-run on the built page and recorded. Nothing pushed. |
-| **Budget** | 0.9 to 1.5 million subagent tokens of growth for the three major findings (estimate below). A stop for the owner at 1.8 million. |
-| **References** | `docs/direction.md` §9 (Home, adopted by the owner 2026-11-10; "How the demo works": no script, radio groups before the panel, CSS from what is checked, arrow keys), §6 (Patch), 2.22 and 2.23 (the demo follows lesson 1's words); `prototypes/d5-home-sources.md` and `d5-cases.md` (Learn's foot, approved); `src/pages/index.astro`, `src/lib/home.ts`, `src/art/scenes/net-map.ts`; `e2e/site.spec.ts:88-305, 969-1012, 1492-1760`; `src/lib/home.test.ts`. |
-
-## What the scout found (S18)
-
-- **Home's demo shares no code with the lesson console** job 15 changed (`playback.ts`, `PlaybackControls.tsx`, `console.css`). It shares `src/lesson/Rich.tsx`, `src/lesson/sourceNumbers.ts` and the timeline's `positionOf`. Job 15's controls ("Next step", "Play all", replay) are not on Home; Home's own "Next step" is a label.
-- **C's cause:** the three radio groups sit before the panel (`index.astro:109-115`), hidden by size and opacity, never `display:none`, so each group is a Tab stop whichever part shows; the labels that would show the focus go with their hidden pane. No test pins the Tab stops.
-- **B's cause:** a label moves focus to its radio, and the radios sit at the top of `.demo` (`index.astro:404-412`), so the page scrolls there. On a phone the order is tabs, scene, rows, narration, Next (`index.astro:829-833`).
-- **A shares its cause with the Lesson page's phone figures.** Both draw `drawNetMap` in one 685-unit-wide frame made for every protocol (`net-map.ts:469`, pinned at `net-map.test.ts:155` and `:269`). Home draws only lesson 1's layer (`home.ts:133`) inside its own container, at about 0.43px a unit on a phone; the Lesson page at about 0.55 (both computed).
-- **E:** desktop has a 452px minimum on the panel with no recorded basis (`index.astro:463-464`); a phone has none.
-- **D** is an owner decision: "Start learning goes to /tracks on every page (owner, 2026-11-09)" (`docs/superpowers/specs/2026-11-09-site-layouts-design.md:74`), pinned at `e2e/site.spec.ts:382-392`.
+| **The job** | Build Home as `prototypes/d16-home-card-stack.html` and `.md` draw it, variant A: today's header, sections, order and words; cards with a hard edge, index tabs, offset-edge buttons, the figures re-tinted; no script; D15's three fixes (the phone scene readable, Next that does not move the page, Tab stops only on what shows). |
+| **Done means** | B18 is merged into `revamp` with a build review of PASS (or PASS WITH FIXES, each "fixed when" run); on `revamp`, `npm test`, `npm run build` and CI's end-to-end pass (`npx playwright test --grep-invert @visual --project=d1440-dark --project=phone`) pass; the critique's three measures re-run on the built page and recorded (phone label px, scroll after Next, unseen Tab stops); `docs/direction.md` §9 rewritten for the new Home. Nothing pushed. |
+| **Budget** | 1.0 to 1.5 million subagent tokens of growth for the build (estimate below), on top of about 2.29 million spent on the scout, the designs and the redesign rounds. A stop for the owner at 2.0 million for the build. |
+| **References** | `docs/direction.md` 2.73 to 2.76, §6 (Patch, which the header and every other page keep), §9 (Home, to be rewritten); `prototypes/d16-home-card-stack.md` (§10 "For the builder", §11 the acceptance checks, §7 D15's fixes measured again) and `.html`; `prototypes/d15-home-demo.md` (the mechanism D16 keeps); `prototypes/s18-home-facts.md` (Home's code and the tests that pin it, Part 7); `src/pages/index.astro`, `src/lib/home.ts`, `src/lib/home.test.ts`, `e2e/site.spec.ts`. |
 
 ## Decisions in this plan
 
-1. **The owner chooses the scope before the design** (job 15's lesson). The orchestrator's recommendation: the three major findings, A, B and C, with E taken where B's layout touches it anyway. D reopens the owner's rule of 2026-11-09 and is the owner's to take or leave. The minor items wait.
-2. **A is solved inside Home, and the Lesson page's phone figures stay a separate job.** The cause is shared (one 685-unit frame), but Home is a still, one-layer copy in its own container, so it can be cropped or recomposed for the phone without touching `net-map.ts`, the frame its tests pin, or the Lesson page. A fix in the map's frame itself would change every lesson and belongs to the Lesson page's job (the critique's second Lesson group). Labels on the phone at 12px or more, as the critique asks; the designer measures them in the browser.
-3. **The demo stays script-free and keeps its words** (§9: no script, works with JavaScript off, 1.3 KB of script; two `<script>` elements, `e2e/site.spec.ts:1710-1714`). Every word comes from lesson 1 as it is (2.22, 2.23); the five steps stay. If a finding can't be met without script, the designer says so in the spec and it comes to the owner at the gate.
-4. **One design unit, D15**, `prototypes/d15-home-demo.html` and `.md`: a clickable copy of Home's demo (and the header, if D is taken) at 375 and 1440, light and dark, keyboard and JavaScript-off paths, with before and after measurements of each finding taken. Two variants only where a finding has two good answers (likely A: a crop of the layer against a phone recomposition). The `designer` loads `frontend-design`; `impeccable` re-runs `critique` on the built page after B18, not before (2.68).
-5. **C may have one right answer** (taking a hidden group out of the tab order, which CSS can do from the checked part radio). The designer still draws it, because the focus ring and any key hint are things a reader sees.
-6. **One spec review, one builder, one build review** on this job's branch `claude/objective-taussig-eb7520` (its worktree `.claude/worktrees/objective-taussig-eb7520`, at `revamp` `070cce6`), E2E port 4486. The spec review marks every case that only a real browser can try (focus, scroll position, Tab order, sizes) as an end-to-end test (job 15's lesson). Fixes that are exactly what the reviewer names go to a Haiku `builder`, Sonnet if it fails.
+1. **The design is frozen** (2.76): D16 as drawn, variant A. The prototype's variant B, its theme and variant switches and its top bar are not part of the design. A change to the design goes back to `designer`, on the owner's model rule (no Fable without the owner's word).
+2. **Home only.** The look is scoped to Home's own styles; the header, the footer, `src/styles/tokens.ts` and every other page stay Patch. If a token must change, the builder stops and reports.
+3. **No script, no new words, no new island.** Home keeps exactly two `<script>` elements (`e2e/site.spec.ts:1710-1714`); the demo's words come from lesson 1 as today (`src/lib/home.ts`).
+4. **`net-map.ts` and the Lesson page are untouched.** Home re-tints its figures in its own scope and draws its own leaders and crop, as D15 specified.
+5. **One spec review, one builder (Sonnet), one build review**, on a branch off `revamp` in its own worktree, with an E2E port of its own (4486). The spec review marks every case only a real browser can try (focus, scroll, Tab order, sizes, contrast) as an end-to-end test. Fixes that are exactly what the reviewer names go to a Haiku `builder`, Sonnet if it fails.
+6. **Tests that pin today's Home change once, in B18** (S18 Part 7): the tracks' `main .cable > li.leg` (`site.spec.ts:253-263`), the demo's step and Learn checks (`:142-231`), the keyboard checks (`:234-251`), D5's block heights (`:1647-1660`), and `home.test.ts`'s rule that D5's styles hold no colour value but tokens.
 
 ## Units
 
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
-| S18 | scout | scout (Haiku) | Home's demo, its phone view, Next, the answers, the decisions and tests. Done (`prototypes/s18-home-facts.md`). | Every fact has a `path:line`. |
-| **Scope** | plan | **the owner** | Which findings D15 covers. Done: "A, B and C". | The owner's words, in the direction doc. |
-| D15 | design | designer (Opus 5.5) | The chosen findings: `prototypes/d15-home-demo.html` (self-contained, clickable, 375 and 1440, light and dark) and `.md` (each change with the decision it touches, every state, sizes, Tab order, JavaScript off, measurements, acceptance checks). | The designer's own look at both sizes and themes, measured; then the orchestrator walks it at 375 and 1440 in both themes, by touch and by keyboard, and records what it saw in `team.md`. |
-| **Gate** | design | **the owner** | Approves D15, or parts of it. | The owner's words, in the direction doc. |
-| B18 spec | build | reviewer (Opus) | Holes and attack cases for the approved part: `prototypes/d15-cases.md`. | Holes with one right answer closed as errata; taste goes back to `designer`. |
-| B18 | build | builder (Sonnet) | The approved part in `src/pages/index.astro`, `src/lib/home.ts` (and `SiteHeader.astro`, if D is taken), with the tests and specs that pin them (S18 Part 7). | Each case a test; `npm test`; `npm run build`; `e2e/site.spec.ts` at d1440-dark and phone. |
+| S18 | scout | scout (Haiku) | Done (`prototypes/s18-home-facts.md`). | |
+| D15 | design | designer (Opus 5.5) | Done, superseded by D16, which carries its fixes (`prototypes/d15-home-demo.*`). | |
+| R1 to R5 | design | designers (Opus 5.5, then Fable 5.2) | Done: `impeccable`'s five rounds of sketches (`team.md`). | |
+| D16 | design | designer (Fable 5.2, at the owner's word) | Done and approved, variant A (`prototypes/d16-home-card-stack.*`). | The owner's words, direction 2.76. |
+| B18 spec | build | reviewer (Opus) | Holes and attack cases for `d16-home-card-stack.md`, variant A: `prototypes/d16-cases.md`. | Holes with one right answer closed as errata; taste goes back to `designer`. |
+| B18 | build | builder (Sonnet) | D16 in `src/pages/index.astro` and `src/lib/home.ts`, with the tests and specs that pin Home. | Each case a test; `npm test`; `npm run build`; `e2e/site.spec.ts` at d1440-dark and phone. |
 | B18 review | build | reviewer (Opus) | The diff against the spec, the prototype and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
-| F16 | end | orchestrator | The branch into `revamp`; CI's end-to-end pass; the critique's measurements re-run; the ledger, the direction row, the owner's result with errata. | `npm test`, `npm run build`, CI's e2e pass on `revamp`. |
+| F16 | end | orchestrator (Opus 5.5) | The branch into `revamp`; CI's end-to-end pass; the critique's measures re-run; `impeccable critique` on the built Home if the owner wants the score again; §9 rewritten; the ledger; the owner's result with errata. | `npm test`, `npm run build`, CI's e2e pass on `revamp`. |
 
-Order: the owner's scope; D15; the orchestrator's look; **the gate**; the spec review; B18; its review; F16.
+Order: the spec review; B18; its review; F16.
 
 ## Estimate
 
-From job 15: one designer's clickable prototype 0.35 million first pass, 0.13 to 0.19 million a later pass; a spec review 0.21 million; a builder 0.29 million plus 0.30 for fixes; a build review 0.13 million.
-
-| Part | Growth, roughly (A, B and C) |
+| Part | Growth, roughly |
 |---|---|
-| D15: one designer, one or two variants for A | 0.3 to 0.5 million |
-| B18 spec review | 0.1 to 0.2 million |
-| B18: `index.astro`, `home.ts`, `site.spec.ts` | 0.3 to 0.55 million |
-| B18 review, and the fixes | 0.15 to 0.25 million |
-| **Total** | **0.9 to 1.5 million** |
-
-Taking D and E adds about 0.1 million; A alone or C alone costs about half.
+| B18 spec review (a whole page, 13 sections of spec) | 0.2 to 0.3 million |
+| B18: `index.astro`, `home.ts`, `site.spec.ts`, `home.test.ts` | 0.5 to 0.8 million |
+| B18 review, and the fixes | 0.3 to 0.4 million |
+| **Total for the build** | **1.0 to 1.5 million** |
 
 ## When the work stops for the owner
 
-- **The scope**, now, before the design.
-- **The design gate**, after D15 and the orchestrator's look.
-- A finding that can't be met without script, without changing lesson 1's words, or without touching the Lesson page.
-- The job past 1.8 million tokens of growth.
+- A hole in the spec that needs taste and would change what the owner approved.
+- A finding that the look cannot be met without script, without changing a token other pages use, or without touching the Lesson page.
+- The build past 2.0 million tokens of growth.
 - Anything `CLAUDE.md` says the owner keeps: push, merge to `main`, deploy, sign-ins, installs.
 
 A build unit that fails two reviews comes back to the orchestrator with both reports.
 
 ## What could go wrong
 
-- **A crop that leaves something out.** Lesson 1's layer must keep every part a step lights and every way a message takes, at each of the five steps; the page on the laptop appears at step 5 (2.23, `e2e/site.spec.ts:1716-1760`).
-- **Moving the radios changes the CSS.** Every generated rule uses `#radio:checked ~ … .demo__ui` (`index.astro:41`); radios placed beside their rows would need a new way to reach the panel, without script.
-- **Without script, a label still moves focus.** Keeping the narration in view on a phone may mean moving where focus lands, not stopping it.
-- **Phone tests run at 390 (`playwright.config.ts:57`), Home's demo tests at 375 inside the desktop project.** The spec names the width each check runs at.
+- **The prototype's CSS was written to win over the built page's CSS** (selectors prefixed, `!important` in places). The builder moves the rules into `index.astro`'s own styles and the generated CSS, not the overrides.
+- **The figures are re-tinted through custom properties** and three things did not fit by tokens alone (the lit colour on `.lm-defs`, the trail's casing, and the glow, rings and fade-in switched off): each needs a rule scoped to Home that cannot leak into a lesson.
+- **The header stays Patch on a page that is not.** Its tests (`site.spec.ts:382-392`) must keep passing unchanged.
+- **Phone tests run at 390, Home's demo tests at 375.** The spec's checks name their width.
 
 ## Not in this job
 
-The Lesson page's phone figures and Subnetting's hidden bits board (the critique's second Lesson group), every other page, `net-map.ts`'s frame, lesson 1's words, and any change under `src/` before the gate.
+The look on any page but Home; the header and footer; the Lesson page's phone figures and Subnetting's hidden bits board; the critique's findings D (two "start" destinations) and E beyond what D16 draws, and its minor items; `net-map.ts`'s frame; lesson 1's words.
+
+## Open, for the owner
+
+Whether the Card stack look should replace Patch across the site (D16's question 1). The build does not wait for it.
