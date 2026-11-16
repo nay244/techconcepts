@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_OPTIONAL, plateSites } from './net-map-layers';
 import { FIGURE_PARTS } from './parts';
 
-const SITES = ['web', 'call', 'root', 'tld', 'auth', 'out', 'in', 'mail', 'files', 'host', 'server', 'stranger', 'voice'];
+const SITES = ['web', 'call', 'root', 'tld', 'auth', 'out', 'in', 'mail', 'files', 'host', 'server', 'stranger', 'voice', 'origin', 'reverse', 'proxy'];
 
 test('the layers are every protocol’s servers, keyed <protocol>:<site>, in the lesson’s order', () => {
   expect(Object.keys(NET_MAP_LAYERS)).toEqual([
@@ -23,11 +23,13 @@ test('the layers are every protocol’s servers, keyed <protocol>:<site>, in the
     'ports:server',
     'nat:stranger',
     'tcp-udp:voice',
+    'proxies:site',
+    'proxies:proxy',
   ]);
   for (const [key, plate] of Object.entries(NET_MAP_LAYERS)) {
-    // The name servers have no one site: the plate is keyed by its kind.
-    expect(key.split(':')[1], key).toBe(plate.kind === 'names' ? 'names' : plate.site);
-    expect(['E', 'SE', 'N'], key).toContain(plate.slot);
+    // The name servers have no one site: the plate is keyed by its kind; so is Proxies' site plate, which holds two stops.
+    expect(key.split(':')[1], key).toBe(plate.kind === 'names' ? 'names' : plate.kind === 'site' ? 'site' : plate.site);
+    expect(['E', 'SE', 'N', 'NW'], key).toContain(plate.slot);
     expect(plate.lines[0]?.cls, key).toBe('nm-name');
   }
 });
@@ -88,9 +90,10 @@ test('FIGURE_PARTS["net-map"] lists home, the internet, the resolver and every s
       show: 'text',
       park: 'text',
       unpark: 'text',
+      fresh: 'flag',
     },
     // Router's: a packet dropped at one of the internet's routers, and the resolver left off the map; D11's: the phone shown.
-    args: { drop: ['isp', 'a', 'b', 'c', 'd'], hide: ['resolver'], show: ['phone'] },
+    args: { drop: ['isp', 'a', 'b', 'c', 'd'], hide: ['resolver', 'proxy', 'direct'], show: ['phone', 'proxy', 'reverse'] },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
     start: true,
@@ -137,7 +140,7 @@ test('D11’s two layers: Ports’ server on slot E with no port in its callout,
       { cls: 'nm-addr', text: '192.0.2.66' },
     ],
   });
-  expect(NET_MAP_OPTIONAL).toEqual(['phone']);
+  expect(NET_MAP_OPTIONAL).toEqual(['phone', 'proxy', 'reverse']);
   // Only the stranger and D12's voice server describe themselves.
   expect(Object.entries(NET_MAP_LAYERS).filter(([, p]) => p.describe !== undefined).map(([k]) => k)).toEqual(['nat:stranger', 'tcp-udp:voice']);
 });

@@ -207,10 +207,14 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number): De
 
   // Steps before the current one apply in full: none at the Overview, all of them at Learn and Practice.
   const fullSteps = slot.kind === 'overview' ? 0 : slot.kind === 'step' ? slot.step - 1 : u.steps.length;
-  const applied = [
-    ...u.steps.slice(0, fullSteps).flatMap((step) => step.events.map((event) => ({ event, current: false }))),
-    ...events.slice(0, Math.max(0, eventIndex)).map((event) => ({ event, current: true })),
-  ];
+  // Each step that has begun: its start (`step.start`, cues in place as it begins), then its events, in full before the
+  // current step and the first `eventIndex` of it.
+  const begun = slot.kind === 'step' ? slot.step : fullSteps;
+  const applied = u.steps.slice(0, begun).flatMap((step, i) => {
+    const current = i === fullSteps;
+    const own = current ? events.slice(0, Math.max(0, eventIndex)) : step.events;
+    return [...(step.start ?? []).map((cue) => ({ cue, step, current })), ...own.map((event) => ({ event, current }))];
+  });
 
   const defs = tablesOf(u);
   // Fresh tables every time: applyTableEvent changes them in place.
@@ -221,7 +225,13 @@ export function deriveState(lesson: Lesson, p: Position, eventIndex: number): De
   let labels: MessageLabels | null = null;
   let active: SceneEvent | null = null;
 
-  for (const { event, current } of applied) {
+  for (const item of applied) {
+    if ('cue' in item) {
+      const { cue, arg } = item.cue;
+      cues.push({ cue, ...(arg === undefined ? {} : { arg }), eventId: `step:${item.step.id}`, current: item.current });
+      continue;
+    }
+    const { event, current } = item;
     if (current) active = event;
 
     if (event.type === 'table') {

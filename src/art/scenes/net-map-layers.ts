@@ -11,8 +11,10 @@ export interface CalloutLine {
 }
 
 interface PlateBase {
-  /** Where the plate stands: E for one big plate right of the internet, SE for a smaller one in front of it, N for a small one behind the internet. */
-  slot: 'E' | 'SE' | 'N';
+  /** Where the plate stands: E for one big plate right of the internet, SE for a smaller one in front of it, N for a small one behind the internet, NW for one where the resolver stands (a map that shows it hides the resolver). */
+  slot: 'E' | 'SE' | 'N' | 'NE' | 'NW';
+  /** A part of the map the plate is drawn in, hidden until a `show` cue shows it (`NET_MAP_OPTIONAL`). */
+  part?: string;
   /** The words engraved on the plate's front edge. */
   label: string;
   /** A sentence the figure's description adds while the layer is shown. It draws nothing. */
@@ -45,7 +47,21 @@ export type ServerPlate =
       /** The internet router its cable runs to. */
       puck: 'a';
     })
-  | (PlateBase & { kind: 'names' });
+  | (PlateBase & { kind: 'names' })
+  | (PlateBase & {
+      kind: 'proxy';
+      site: string;
+      /** The internet routers its two cables run to: in, from your side (isp), and out, toward the sites it reaches for you (c). */
+      pucks: ['isp', 'c'];
+    })
+  | (PlateBase & {
+      kind: 'site';
+      /** The web server (its racks and the page's dock, as a web plate draws them), and the reverse proxy in front of it, on its cable in. */
+      site: string;
+      front: string;
+      /** The callouts while the reverse proxy is shown: its own, and the web server's behind it. */
+      behind: CalloutLine[][];
+    });
 
 /** The root servers, the servers for .app, and the site's own name server, as the names plate draws them. */
 export const NAME_SERVER_SITES = ['root', 'tld', 'auth'];
@@ -59,8 +75,23 @@ export const NET_MAP_LAPTOP_ADDR = '192.168.1.100';
 /** The places every protocol's map has: home (the laptop, its router and the phone, which a unit shows), the resolver, and the internet's five routers. */
 export const NET_MAP_BASE_PLACES = ['laptop', 'router', 'resolver', 'isp', 'a', 'b', 'c', 'd', 'phone'];
 
-/** The parts of home the map leaves off until a unit's start shows them (`show phone`). */
-export const NET_MAP_OPTIONAL = ['phone'];
+/** The parts the map leaves off until a start shows them (`show phone`; Proxies' `show proxy` and `show reverse`). */
+export const NET_MAP_OPTIONAL = ['phone', 'proxy', 'reverse'];
+
+/** The parts a start may leave off the map (`hide`): the resolver, a shown forward proxy, and the web server's own callout. */
+export const NET_MAP_HIDEABLE = ['resolver', 'proxy', 'direct'];
+
+/** What the figure's description adds while an optional part is shown. */
+export const NET_MAP_PART_SENTENCES: Record<string, string> = {
+  proxy: 'Behind the internet, a forward proxy, with one cable in from the internet and one out.',
+  reverse: 'In front of the web server, on its cable in, the site’s reverse proxy.',
+};
+
+/**
+ * The grammar of a net-map `conn` cue's argument, read by the driver (`parseConn`) and the validator:
+ * `<open|seal|close> <from>>[<via>>]<to>[ data]`. Groups: action, from, via, to, data.
+ */
+export const NET_MAP_CONN_GRAMMAR = /^(open|seal|close) ([a-z0-9-]+)>(?:([a-z0-9-]+)>)?([a-z0-9-]+)( data)?$/;
 
 /** The phone's address as the map draws it. */
 export const NET_MAP_PHONE_ADDR = '192.168.1.101';
@@ -76,7 +107,7 @@ export const NET_MAP_BAY_COUNTS: Record<string, number> = { laptop: 4, web: 4, i
 
 /** The places a message can stop on a plate. */
 export function plateSites(plate: ServerPlate): string[] {
-  return plate.kind === 'names' ? NAME_SERVER_SITES : [plate.site];
+  return plate.kind === 'names' ? NAME_SERVER_SITES : plate.kind === 'site' ? [plate.site, plate.front] : [plate.site];
 }
 
 const line = (cls: CalloutLine['cls'], text: string): CalloutLine => ({ cls, text });
@@ -168,5 +199,29 @@ export const NET_MAP_LAYERS: Record<string, ServerPlate> = {
     at: [290, -22],
     align: 'end',
     lines: [line('nm-name', 'Voice server'), line('nm-addr', '203.0.113.90 · port 16384')],
+  },
+  // Proxies: techconcepts.app's web server, which a reverse proxy can stand in front of (`show reverse`), and a
+  // forward proxy behind the internet, drawn only once a step's start shows it (`show proxy`).
+  'proxies:site': {
+    kind: 'site',
+    slot: 'E',
+    site: 'origin',
+    front: 'reverse',
+    label: 'TECHCONCEPTS.APP',
+    lines: [line('nm-name', 'Web server'), line('nm-addr', '198.51.100.7 · port 443')],
+    behind: [
+      [line('nm-name', 'Reverse proxy'), line('nm-addr', '198.51.100.7 · port 443')],
+      [line('nm-name', 'Web server'), line('nm-addr', '10.0.0.20 · port 80')],
+    ],
+  },
+  'proxies:proxy': {
+    kind: 'proxy',
+    slot: 'NW',
+    part: 'proxy',
+    site: 'proxy',
+    pucks: ['isp', 'c'],
+    label: 'PROXY.EXAMPLE.NET',
+    at: [300, 0],
+    lines: [line('nm-name', 'Forward proxy'), line('nm-addr', '203.0.113.30')],
   },
 };

@@ -27,6 +27,9 @@ export const SERVER_OPEN = '<g data-layer="ports:server" display="none">';
 /** The map without D11's parts: what the mockup's hash and Router's prototype describe. */
 export const withoutD11 = (svg: string): string => [PHONE_OPEN, STRANGER_OPEN, SERVER_OPEN].reduce((out, open) => groupsOf(out, open).rest, svg);
 
+/** D15's two layers, `proxies:site` and `proxies:proxy`: five groups each, taken out whole. */
+export const PROXIES_OPENS = ['<g data-layer="proxies:site" display="none">', '<g data-layer="proxies:proxy" display="none">'];
+
 /** D12's voice plate: the five groups of the layer `tcp-udp:voice`. */
 export const VOICE_OPEN = '<g data-layer="tcp-udp:voice" display="none">';
 /** D12's frames setup on the DHCP plate: the TV and the callouts, and the two tags that only MAC Address's frames carry. */

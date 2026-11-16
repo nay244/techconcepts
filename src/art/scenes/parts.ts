@@ -1,4 +1,4 @@
-import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, plateSites } from './net-map-layers';
+import { NET_MAP_BASE_PLACES, NET_MAP_HIDEABLE, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, plateSites } from './net-map-layers';
 import { OSI_CUE_ARGS, OSI_ROUTES, OSI_WORDS } from './osi-stacks';
 import { SWITCH_PLACES, SWITCH_PLUG_ARGS, SWITCH_ROUTES } from './switch-parts';
 import { POOL_PLACES, POOL_ROUTES, POOL_SERVERS } from './pool-parts';
@@ -62,8 +62,10 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
       // A copy of the tag waits in a bay (`park <place> <bay> <TAG>`) until a message with its tag takes it, or `unpark laptop` sends the laptop's into its screen.
       park: 'text',
       unpark: 'text',
+      // A new visit (Proxies, as a step begins): the page, the padlock and every lit connection go.
+      fresh: 'flag',
     },
-    args: { drop: NET_MAP_ROUTERS, hide: ['resolver'], show: NET_MAP_OPTIONAL },
+    args: { drop: NET_MAP_ROUTERS, hide: NET_MAP_HIDEABLE, show: NET_MAP_OPTIONAL },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
     // Its driver settles a unit's start under the cues that have played.

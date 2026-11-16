@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 import { normaliseFigure, sha256 } from '../../test/figure-hash';
-import { groupsOf, PHONE_OPEN, SERVER_OPEN, STRANGER_OPEN, VOICE_OPEN, withoutD11 } from '../../test/svg-groups';
+import { groupsOf, PHONE_OPEN, PROXIES_OPENS, SERVER_OPEN, STRANGER_OPEN, VOICE_OPEN, withoutD11 } from '../../test/svg-groups';
 import { drawFigure } from './index';
 import { drawNetMap, type NetMapData } from './net-map';
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_TAG_MAX, plateSites } from './net-map-layers';
@@ -64,15 +64,19 @@ function withoutRouterParts(svg: string): string {
 const D11_SITES = ['phone', 'server', 'stranger'];
 /** D12's voice plate, as D11's three places are. */
 const D12_SITES = ['voice'];
-/** The data without a route from or to D11's or D12's places. */
+/** D15's Proxies parts, as D11's are: the forward proxy, the reverse proxy and the site's own `origin` stop. */
+const D15_SITES = ['proxy', 'origin', 'reverse'];
+/** D15's two layers' groups taken out whole: the mockup never drew them. */
+const withoutProxies = (svg: string): string => PROXIES_OPENS.reduce((out, open) => groupsOf(out, open).rest, svg);
+/** The data without a route from or to D11's, D12's or D15's places. */
 const withoutD11Routes = (routes: NetMapData['routes']): NetMapData['routes'] =>
-  Object.fromEntries(Object.entries(routes).filter(([key]) => !key.split('>').some((p) => [...D11_SITES, ...D12_SITES].includes(p))));
+  Object.fromEntries(Object.entries(routes).filter(([key]) => !key.split('>').some((p) => [...D11_SITES, ...D12_SITES, ...D15_SITES].includes(p))));
 
 test('drawNetMap matches the mockup map', async () => {
   const { svg, data } = drawNetMap();
   expect(svg.split(TRAIL_EDGE)).toHaveLength(2);
   // D11's groups come out whole first: unwrapping the phone first would leave its parts in the hash.
-  expect(await sha256(normaliseFigure(withoutRouterParts(groupsOf(withoutD11(svg), VOICE_OPEN).rest)))).toBe(EXPECTED.svg);
+  expect(await sha256(normaliseFigure(withoutRouterParts(groupsOf(withoutProxies(withoutD11(svg)), VOICE_OPEN).rest)))).toBe(EXPECTED.svg);
   const { tops, routes, bays, ...mockup } = data as NetMapData;
   expect(Object.keys(tops)).toEqual(['isp', 'a', 'b', 'c', 'd']);
   expect(await sha256(JSON.stringify({ ...mockup, routes: withoutD11Routes(routes) }))).toBe(EXPECTED.data);
@@ -214,7 +218,7 @@ test('every layer key is drawn exactly once and hidden by default', () => {
   for (const [key, plate] of Object.entries(NET_MAP_LAYERS)) {
     expect(host.querySelector(`#nm-l-plates > [data-layer="${key}"]`)!.textContent, key).toContain(plate.label);
     const callout = host.querySelector(`#nm-l-calls > [data-layer="${key}"]`)!;
-    expect([...callout.querySelectorAll('text')].map((t) => t.textContent), key).toEqual(plate.lines.map((l) => l.text));
+    expect([...callout.querySelectorAll('text')].map((t) => t.textContent), key).toEqual([...plate.lines, ...(plate.kind === 'site' ? plate.behind.flat() : [])].map((l) => l.text));
   }
 });
 
@@ -274,4 +278,77 @@ test('asked for some layers only, the map holds just those, shown, in the same f
   expect(whole.svg).toContain('<g data-layer="http:web" display="none">');
   // And much smaller: the other thirteen layers are not there.
   expect(part.svg.length).toBeLessThan(whole.svg.length / 2);
+});
+
+// D15a / B18a (prototypes/d15-proxies-cases.md, 1 and 2, with E2): the two Proxies layers add to the map and change nothing in it.
+const NEW_ROUTE_ENDS = ['proxy', 'origin', 'reverse'];
+const isNewRoute = (key: string): boolean => key.split('>').some((p) => NEW_ROUTE_ENDS.includes(p));
+
+test('1a: without the two proxies layers the map is today’s, character for character', async () => {
+  const { svg } = drawNetMap();
+  expect(PROXIES_OPENS.map((open) => groupsOf(svg, open).groups.length)).toEqual([5, 5]);
+  const rest = PROXIES_OPENS.reduce((out, open) => groupsOf(out, open).rest, svg);
+  expect(rest).toHaveLength(870295);
+  expect(await sha256(rest)).toBe('4327eb6509888bc8fc1ff02b50407c4b75ad079f05385cded0a6cc00b5237165');
+});
+
+test('1c: the frame, the busy ids and the parts the map hides', () => {
+  const { svg } = drawNetMap();
+  expect(/viewBox="[^"]+"/.exec(svg)![0]).toBe('viewBox="-98 -60 685 378"');
+  const host = document.createElement('div');
+  host.innerHTML = svg;
+  const ids = [...host.querySelectorAll('[id]')].map((el) => el.id);
+  expect(new Set(ids).size).toBe(ids.length);
+  for (const id of ['nm-proxies-busy-proxy', 'nm-proxies-busy-reverse', 'nm-proxies-busy-origin']) expect(ids.filter((i) => i === id), id).toHaveLength(1);
+  expect(host.querySelectorAll('[data-base="proxy"][data-hidden]')).toHaveLength(5);
+  expect(host.querySelectorAll('[data-base="reverse"][data-hidden]')).toHaveLength(3);
+  expect(host.querySelectorAll('[data-base="direct"]')).toHaveLength(1);
+  expect(host.querySelectorAll('[data-base="direct"][data-hidden]')).toHaveLength(0);
+});
+
+test('1d: the still map for any layer set a lesson uses draws no part of Proxies, and a layer set of Proxies shows its parts', () => {
+  expect(drawNetMap(['https:web']).svg).not.toMatch(/data-base="(proxy|reverse|direct)"/);
+  expect(drawNetMap(['proxies:site']).svg).toMatch(/data-base="direct"/);
+});
+
+test('2a: every route of today’s map is there unchanged; the 60 new ones each end at the proxy, the site or the reverse proxy', async () => {
+  const { data } = drawNetMap();
+  const { routes } = data as NetMapData;
+  const keys = Object.keys(routes);
+  expect(keys.filter(isNewRoute)).toHaveLength(60);
+  expect(keys).toHaveLength(374);
+  // The new keys come after the old ones, so the data without them is today's, key for key.
+  expect(keys.slice(0, 314).some(isNewRoute)).toBe(false);
+  const old = { ...(data as NetMapData), routes: Object.fromEntries(Object.entries(routes).filter(([key]) => !isNewRoute(key))) };
+  expect(await sha256(JSON.stringify(old))).toBe('3f337f5faa941d632972e600c67bd6d65c550db9a2f7e2fabac29d7ceb94013c');
+});
+
+test('2b: the tunnel enters the forward proxy by its cable in and leaves by its cable out, at one point on its top', () => {
+  const { routes } = drawNetMap().data as NetMapData;
+  const inward = routes['laptop>proxy']!;
+  const outward = routes['proxy>origin']!;
+  expect(inward.at(-1)).toEqual([-96, -88, 8.6]);
+  expect(outward[0]).toEqual([-96, -88, 8.6]);
+  // The way in runs down the cable in (x of its port), and the way out leaves along the cable out (y of its port).
+  expect(inward.at(-2)![0]).toBe(-104);
+  expect(outward[1]![1]).toBe(-96);
+});
+
+test('2c: the reverse proxy’s own way to the web server is 4 points on the plate, and does not run out to router c', () => {
+  const { routes } = drawNetMap().data as NetMapData;
+  const way = routes['reverse>origin']!;
+  expect(way).toHaveLength(4);
+  expect([way[0], way.at(-1)]).toEqual([[66, -71, 8.6], [90, -71, 3.4]]);
+  expect(way.map((p) => p.join())).not.toContain(routes['laptop>c']!.at(-1)!.join());
+  expect(routes['origin>reverse']).toEqual([...way].reverse());
+});
+
+test('5: the two part files are the layers’ groups in draw order, shown', () => {
+  const { svg } = drawNetMap();
+  const part = (open: string): string => {
+    const shown = open.replace(' display="none"', '');
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="lm-svg nm" viewBox="-98 -60 685 378">${groupsOf(svg, open).groups.map((g) => shown + g.slice(open.length)).join('')}</svg>\n`;
+  };
+  expect(part(PROXIES_OPENS[1]!)).toBe(readFileSync('prototypes/d15-proxies-part-proxy.svg', 'utf8'));
+  expect(part(PROXIES_OPENS[0]!)).toBe(readFileSync('prototypes/d15-proxies-part-site.svg', 'utf8'));
 });

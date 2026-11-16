@@ -41,7 +41,8 @@ const IP = { x: -52, y: -44, w: 104, d: 88, r: 9 };
 const HP = { x: -134, y: 57, w: 84, d: 70, r: 8 };
 const RP = { x: -118, y: -114, w: 64, d: 54, r: 7 };
 // Places for the servers on the right: E for one big plate, NE and SE for two smaller ones; N for a small one behind the internet.
-const SLOT = { E: { x: 50, y: -127, w: 84, d: 70, r: 8 }, NE: { x: -30, y: -200, w: 64, d: 54, r: 7 }, SE: { x: 140, y: -26, w: 64, d: 54, r: 7 }, N: { x: -84, y: -196, w: 56, d: 40, r: 6 } };
+// NW is where the resolver stands, for a plate on a map that hides it (Proxies' forward proxy).
+const SLOT = { E: { x: 50, y: -127, w: 84, d: 70, r: 8 }, NE: { x: -30, y: -200, w: 64, d: 54, r: 7 }, SE: { x: 140, y: -26, w: 64, d: 54, r: 7 }, N: { x: -84, y: -196, w: 56, d: 40, r: 6 }, NW: { x: -118, y: -114, w: 64, d: 54, r: 7 } };
 const LB = { x: -127, y: 88, w: 46, d: 30, r: 3.5 }, LZ = 3.2, LID_H = 31;
 const HR = { x: -90, y: 62, w: 32, d: 18, r: 3 }, RZ = 2, RT = RZ + 9;
 const PUCK_R = 7, PUCK_H = 4.6;
@@ -207,6 +208,32 @@ function tray(T, id, site) {
   return out.join("");
 }
 
+// A proxy: a low box that passes messages on, the same for a forward proxy and a reverse one. A cable plugs into a
+// port on its front faces, and a band on each lights while it works; two arrows on its top, one each way along `dir`,
+// say that it passes things along. Nothing on it opens or reads: no screen, no padlock.
+const BOX_H = 8;
+const onFaceX = (X, inner) => `<g transform="${k.sideMatrix([X, 0], 0, P, "right")}">${inner}</g>`;
+function proxyBox(B, id, site, ports, dir) {
+  const F = B.y + B.d, R = B.x + B.w, out = [];
+  out.push(S(k.slabOf({ x: B.x - 1.2, y: B.y - 1.2, w: B.w + 2.4, d: B.d + 2.4, r: B.r + 1 }, 0, 1.2, P, 3, 0.4), { tone: "lo" }));
+  out.push(S(k.slabOf(B, 1.2, BOX_H - 1.2, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(B, BOX_H - 2.2, P, 3), { tone: "faint" }) }));
+  const port = (u) => rect("lm-void", u - 2, 0.6, 4, 2.6, 1.2);
+  const band = (cls, u0, w) => rect(cls, u0, BOX_H - 4.4, w, 1.6, 0.6);
+  const bands = (cls) => [onFaceY(F, band(cls, B.x + 2.5, B.w - 5)), onFaceX(R, band(cls, -F + 2.5, B.d - 5))];
+  const [onY, onX] = bands("lm-slot");
+  out.push(onFaceY(F, ports.filter((q) => q.face === "y").map((q) => port(q.at)).join("")), onY);
+  out.push(onFaceX(R, ports.filter((q) => q.face === "x").map((q) => port(-q.at)).join("")), onX);
+  out.push(`<g class="nm-busy" id="${id}-busy-${site}">${bands("nm-band").join("")}</g>`);
+  const cx = B.x + B.w / 2, cy = B.y + B.d / 2, half = Math.min(B.w, B.d) / 2 - 2.5, gap = 1.8, hd = 1.4, [ax, ay] = dir, [px, py] = [-ay, ax];
+  const arrow = (s, off) => {
+    const tip = [cx + ax * half * s + px * off, cy + ay * half * s + py * off], tail = [cx - ax * half * s + px * off, cy - ay * half * s + py * off];
+    const barb = (side) => [tip[0] - ax * hd * s + px * hd * side, tip[1] - ay * hd * s + py * hd * side];
+    return k.lineOnTop(tail, tip, BOX_H, P) + k.lineOnTop(tip, barb(1), BOX_H, P) + k.lineOnTop(tip, barb(-1), BOX_H, P);
+  };
+  out.push(L(arrow(1, -gap) + arrow(-1, gap), { tone: "mid" }));
+  return out.join("");
+}
+
 // ---------- Cables, and the routes along them ----------
 const CABLE_R = 1, CABLE_Z = 1.3, TZ = CABLE_Z + CABLE_R, RIDE = 2.6, HOP = PUCK_H + 1.6;
 const cable = (route) => tubeOf(tubePieces(route.map(([x, y]) => [x, y, CABLE_Z]), CABLE_R, P, { maxLength: 14 }));
@@ -244,12 +271,17 @@ function ride(stops) {
 // From one place to another along the cables, hopping over every router between. The home router is a place too:
 // messages to it from the laptop or the phone stay at home, as far as its top (the first points of their way out).
 const HOME_LEG = { laptop: 3, phone: 2 };
+// A place with two cables (Proxies' forward proxy) leaves and is reached by the one nearer the other end.
+const sideFor = (S, other) => (S.side && hops(S.side.puck, other.puck).length < hops(S.puck, other.puck).length ? { ...S, ...S.side } : S);
 function route(sites, from, to) {
-  const A = sites[from], B = sites[to];
-  if (!A || !B) throw new Error(`no route ${from} → ${to}`);
+  if (!sites[from] || !sites[to]) throw new Error(`no route ${from} → ${to}`);
+  const A = sideFor(sites[from], sites[to]), B = sideFor(sites[to], sites[from]);
   let pts;
   const own = from === "router" ? to : from;
-  if (Object.hasOwn(HOME_LEG, own) && (from === "router" || to === "router")) {
+  // Two places on one site's own network (the reverse proxy and the web server behind it): the way between them stays on its plate.
+  if (A.inner?.[to]) pts = A.inner[to];
+  else if (B.inner?.[from]) pts = [...B.inner[from]].reverse();
+  else if (Object.hasOwn(HOME_LEG, own) && (from === "router" || to === "router")) {
     const L0 = BASE_SITES[own], out = [L0.end, ...L0.leg.slice(0, HOME_LEG[own])];
     pts = from === own ? out : [...out].reverse();
   } else {
@@ -357,6 +389,56 @@ const KINDS = {
       tall: [[R.x, R.y, R.h]],
     };
   },
+  // Proxies' forward proxy: a box with two cables, one in from your side of the internet (router isp) to the left end
+  // of its front, and one out from the back end of its right side toward the sites (router c). A message reaches it,
+  // and leaves it, by the cable nearer the other end, so a line laptop > proxy > web goes in at its left and out at its right.
+  proxy(p, id, o) {
+    const B = rel(p, { x: 10, y: 14, w: 24, d: 24, r: 2 }), F = B.y + B.d, R = B.x + B.w;
+    const inX = B.x + 4, outY = B.y + 4, top = [B.x + B.w / 2, B.y + B.d / 2, BOX_H + 0.6];
+    const inLeg = [[inX, F + 3, RIDE], [inX, p.y + p.d + 3, RIDE]], outLeg = [[R + 3, outY, RIDE], [p.x + p.w + 3, outY, RIDE]];
+    const dir = [Math.SQRT1_2, -Math.SQRT1_2];
+    return {
+      things: [{ xy: [B.x + B.w / 2, B.y + B.d / 2], svg: proxyBox(B, id, o.site, [{ face: "y", at: inX }, { face: "x", at: outY }], dir) }],
+      cables: [[N[o.pucks[0]], inLeg[1], [inX, F + 0.5]], [N[o.pucks[1]], outLeg[1], [R + 0.5, outY]]],
+      sites: { [o.site]: { end: top, leg: inLeg, puck: o.pucks[0], side: { leg: outLeg, puck: o.pucks[1] } } },
+      callouts: [callTo(o, [R, B.y, BOX_H])],
+      tall: [[B.x, B.y, BOX_H]],
+    };
+  },
+  // Proxies' web server: two racks at the back and the page on a dock in front, as a web plate has them, with room at
+  // its front left for the site's reverse proxy, which a start shows on the cable in. The cable from router c comes in
+  // at the plate's front, turns at the reverse proxy's place and runs to the dock: with the box shown, the box covers
+  // the turn, and the way from the box to the server stays on the plate. The web server's own callout is a part a
+  // start can hide (`direct`); the two callouts that take its place show with the box.
+  site(p, id, o) {
+    const racks = [rel(p, { x: 8, y: 6, w: 24, d: 26, r: 2, h: 40 }), rel(p, { x: 36, y: 4, w: 28, d: 30, r: 2, h: 50 })];
+    const R = rel(p, { x: 6, y: 46, w: 20, d: 20, r: 2 }), RF = R.y + R.d, port = R.x + 4, mid = [R.x + R.w / 2, R.y + R.d / 2];
+    const DK = rel(p, { x: 32, y: 49, w: 42, d: 14, r: 2 }), PG = { x: DK.x + 3, y: DK.y + 3, w: DK.w - 6, d: DK.d - 6, r: 1 }, IN = [DK.x - 3, mid[1]];
+    const EDGE = [port, p.y + p.d + 3], TURN = [port, mid[1]];
+    let dock = S(k.slabOf(DK, 0, 3, P, 3, 0.5), { tone: "mid", inner: L(k.sideSeam(DK, 1.2, P, 3), { tone: "faint" }) });
+    dock += S(k.slabOf(PG, 3, 2, P, 3, 0.4), { tone: "hi" }) + L([0, 1, 2].map((i) => k.lineOnTop([PG.x + 4, PG.y + 2.4 + i * 2.4], [PG.x + PG.w - 6 - i * 6, PG.y + 2.4 + i * 2.4], 5, P)).join(""), { tone: "lo" });
+    dock += `<g class="nm-busy" id="${id}-busy-${o.site}">${S(k.slabOf(PG, 3, 2, P, 3, 0.4), { tone: "hi", lit: true })}</g>`;
+    const end = [DK.x + 8, DK.y + DK.d / 2, 3.4], top = [...mid, BOX_H + 0.6];
+    const box = proxyBox(R, id, o.front, [{ face: "y", at: port }], [Math.SQRT1_2, -Math.SQRT1_2]);
+    return {
+      things: [
+        ...racks.map((K, i) => ({ xy: [K.x + K.w / 2, K.y + K.d / 2], svg: rack(K, i) })),
+        { xy: [DK.x + DK.w / 2, DK.y + DK.d / 2], svg: dock },
+        { xy: mid, svg: `<g data-base="reverse" data-hidden="">${box}</g>` },
+      ],
+      cables: [[N.c, EDGE, TURN, IN]],
+      sites: {
+        [o.site]: { end, leg: [[...IN, RIDE], [...TURN, RIDE], [...EDGE, RIDE]], puck: "c" },
+        [o.front]: { end: top, leg: [[port, RF + 3, RIDE], [...EDGE, RIDE]], puck: "c", inner: { [o.site]: [top, [R.x + R.w + 1.5, mid[1], RIDE], [...IN, RIDE], end] } },
+      },
+      callouts: [
+        { ...callTo(o, [DK.x + DK.w, DK.y + DK.d, 3]), part: "direct" },
+        { ...callTo(o, [R.x + R.w, RF, BOX_H], o.behind[0]), part: "reverse", hidden: true },
+        { anchor: [racks[1].x + racks[1].w, racks[1].y, racks[1].h], at: [490, -20], align: "end", lines: o.behind[1], part: "reverse", hidden: true },
+      ],
+      tall: [[racks[1].x, racks[1].y, racks[1].h]],
+    };
+  },
   // Any other server: two racks, and a pad at the front that lights while it works.
   host(p, id, o) {
     const racks = [rel(p, { x: p.w - 58, y: 6, w: 24, d: 26, r: 2, h: 40 }), rel(p, { x: p.w - 30, y: 4, w: 24, d: 30, r: 2, h: 46 })];
@@ -446,12 +528,15 @@ function serverLayer(key, s) {
   const protocol = key.split(":")[0];
   const p = SLOT[s.slot], part = KINDS[s.kind](p, `${ID}-${protocol}`, s), pl = plate(p, s.label);
   const things = [...part.things].sort((a, b) => depth([...a.xy, 0]) - depth([...b.xy, 0]));
-  const boxes = [], calls = part.callouts.map((c) => calloutSvg(c, boxes)).join("");
+  // A part of the map a start shows or hides (Proxies' forward proxy, its reverse proxy, the web server's own callout).
+  const inPart = (name, hidden, svg) => (name ? `<g data-base="${name}"${hidden ? ' data-hidden=""' : ""}>${svg}</g>` : svg);
+  const boxes = [], calls = part.callouts.map((c) => inPart(c.part, c.hidden, calloutSvg(c, boxes))).join("");
   const pts = [...part.tall, ...k.boxCorners(p, FLOOR, 0)].map(at);
   for (const [x0, y0, x1, y1] of boxes) pts.push([x0, y0], [x1, y1]);
+  const all = (svg) => inPart(s.part, true, svg);
   return {
     key, protocol, sites: part.sites, pts,
-    parts: { under: pl.under, plates: pl.over, cables: part.cables.map((c) => cable(c)).join(""), things: things.map((t) => t.svg).join(""), calls },
+    parts: { under: all(pl.under), plates: all(pl.over), cables: all(part.cables.map((c) => cable(c)).join("")), things: all(things.map((t) => t.svg).join("")), calls: all(calls) },
   };
 }
 

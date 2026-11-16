@@ -64,6 +64,7 @@ const EXPECTED: Record<string, string> = {
   'cover:aplus': 'fa694d51b69b6eb9ce3fea6ad1f361e2c2160b4f029340f71ecb8092b24fcc11',
   'spot:watch': 'b0a517894e64f146f1a7060c7c5c4163801f74c954703beb08ea5f2aad207cb5',
   'spot:learn': 'f48b830a8519b1d2c7f2d69bdc5fd5ea12a334eb33555ee9b71e0c859dedf66e',
+  'spot:proxies': '3fa9f7c4cad4d1b1a37889e0564e282f361a5731398b9a2bf9b627c205378e90',
   'spot:load-balancers': '6684065e6029fb918e792c3b8daf2d2847ab835c7ea535bc29124a341119d427',
   'spot:practice': '3d5e9a1240082e5e5d920c4b69bae94c3ea2be1bf0e4394e6e4de204c794dc30',
   'spot:subnet': '841d398bd78c4e35fc5f47fea35060e97ddad297312b9138429c778cc083ba1b',
@@ -188,4 +189,23 @@ test('the switch spot is prototypes/d13-switch-spot.svg, with one lit part, one 
     'aria-label="A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on."',
   );
   expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+// D15a / B18a, checks 5 and 6 and attack case 6: Proxies' card art is the approved file, with one lit solid and no padlock.
+test('the Proxies spot is prototypes/d15-proxies-spot.svg, byte for byte', () => {
+  expect(spot('proxies') + '\n').toBe(readFileSync('prototypes/d15-proxies-spot.svg', 'utf8'));
+});
+
+test('the Proxies spot has one lit solid and a thread, no light on, no padlock, its plate label and its address twice', () => {
+  const svg = spot('proxies');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/lm-beam/g) ?? []).length).toBe(1);
+  expect(svg).not.toContain('lm-led on');
+  expect(svg).not.toMatch(/class="[^"]*lock[^"]*"/);
+  expect(svg).toContain('PASSES IT ON · OWN ADDRESS');
+  expect([...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]).filter((t) => t === '203.0.113.30')).toHaveLength(2);
+  expect(svg).toContain(
+    'aria-label="A box with one cable coming in and one going out, its address, 203.0.113.30, in a window on its front. The cable out is lit, and over it floats a lit tag with the same address, 203.0.113.30."',
+  );
+  expect(SPOTS.slice(-2)).toEqual(['load-balancers', 'proxies']);
 });

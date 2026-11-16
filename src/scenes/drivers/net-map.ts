@@ -1,6 +1,6 @@
 // Only types from the drawing module: its code is for the build, and stays out of the page.
 import type { NetMapData } from '../../art/scenes/net-map';
-import { NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
+import { NET_MAP_CONN_GRAMMAR, NET_MAP_HIDEABLE, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_PART_SENTENCES, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
 import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
 import { animate, easeInOut, wait } from '../motion';
@@ -18,14 +18,18 @@ import { animate, easeInOut, wait } from '../motion';
  * - `status <text>`: the laptop's status line; `status-known` and `status-done` style it (with or without the
  *   status of the same event), and a new status without either is plain again;
  * - `conn <open|seal|close> <from>><to>[ data]`: a connection that stays lit, glows brighter once sealed, and goes
- *   once closed; `data` is FTP's dashed second line, drawn above the first;
+ *   once closed; `data` is FTP's dashed second line, drawn above the first; `<from>><via>><to>` runs through a place
+ *   on the way, as one line (Proxies' tunnel through the forward proxy);
+ * - `fresh`: a new visit: the page, the padlock and every lit connection go;
  * - `page text|full`: the page on the laptop's screen, its text first, then all of it;
  * - `lock`: the padlock in the laptop's address bar;
  * - `tray <site> <on|off>`: a letter waiting on a mail server's tray, or gone from it (it leaves as it is sent);
  * - `addr <text>`, `url <text>`: the laptop's address and its address bar;
  * - `drop <router>`: a DROPPED mark on that router's top, which stays, for a packet a router threw away;
- * - `hide resolver` (a unit's start only): the DNS resolver, its cable and its callout are left off the map;
- * - `show phone` (a unit's start only): the phone, which every other map leaves off, lies on the home plate;
+ * - `hide resolver` (a start only): the DNS resolver, its cable and its callout are left off the map; `hide proxy`
+ *   and `hide direct` take Proxies' forward proxy and the web server's own callout off again;
+ * - `show phone` (a start only): the phone, which every other map leaves off, lies on the home plate; `show proxy`
+ *   and `show reverse` draw Proxies' forward proxy and the site's reverse proxy;
  * - `park <place> <bay> <TAG>`: a copy of the tag waits, unlit, in that bay (the laptop's four, the web server's four, a
  *   router's top) until a message with its tag takes it or `unpark laptop` (the only place that unparks) sends the laptop's tags into the laptop's
  *   screen; a gap (a dashed outline) marks an empty bay with a parked tag before and after it. A note that parks takes
@@ -36,6 +40,8 @@ import { animate, easeInOut, wait } from '../motion';
  * A unit's labels give the words before any cue: `laptop` (the status line), `laptopAddr`, `url`, and `router`,
  * the home router's callout in one or two lines (a line with a number is an address, a line of words a note), and
  * `isp`, `a`, `b`, `c` and `d`, the name on a strip at each internet router; a router without a label has no strip.
+ * A step's own start (`step.start`) is cues in place as that step begins, before its first event: they come to the
+ * driver among the played cues, under the id `step:<id>`.
  * A unit's start (`view.start`) is cues already in place before any has played, at every position of the unit:
  * TLS's line, already open (`conn open laptop>web`), and the letters waiting in POP3's and IMAP's mailbox
  * (`tray mail on`). The cues that play go on from there, so TLS's handshake seals the line its start opened.
@@ -92,15 +98,17 @@ export interface ConnCue {
   action: 'open' | 'seal' | 'close';
   from: string;
   to: string;
+  /** A place the line runs through on the way, as one line (Proxies' tunnel through the forward proxy). */
+  via?: string;
   /** FTP's second line, for the data, beside the control line. */
   data: boolean;
 }
 
-/** Reads a `conn` cue's argument, `"<open|seal|close> <from>><to>[ data]"`, or throws: anything else is a mistake in the lesson. */
+/** Reads a `conn` cue's argument, `"<open|seal|close> <from>>[<via>>]<to>[ data]"`, or throws: anything else is a mistake in the lesson. */
 export function parseConn(arg: string): ConnCue {
-  const m = /^(open|seal|close) ([a-z0-9-]+)>([a-z0-9-]+)( data)?$/.exec(arg);
-  if (m === null) throw new Error(`The network map's conn cue needs "<open|seal|close> <from>><to>[ data]", not "${arg}".`);
-  return { action: m[1] as ConnCue['action'], from: m[2]!, to: m[3]!, data: m[4] !== undefined };
+  const m = NET_MAP_CONN_GRAMMAR.exec(arg);
+  if (m === null) throw new Error(`The network map's conn cue needs "<open|seal|close> <from>>[<via>>]<to>[ data]", not "${arg}".`);
+  return { action: m[1] as ConnCue['action'], from: m[2]!, to: m[4]!, ...(m[3] === undefined ? {} : { via: m[3] }), data: m[5] !== undefined };
 }
 
 /** A `park` cue, read: where a copy of the tag waits. */
@@ -212,7 +220,7 @@ interface MapState {
   addr: string;
   url: string;
   /** Lit connections in the order they opened, by id: the route, or the route and ` data`. */
-  conns: Map<string, { route: string; data: boolean; sealed: boolean }>;
+  conns: Map<string, { from: string; to: string; via?: string; data: boolean; sealed: boolean }>;
   page: '' | 'text' | 'full';
   lock: boolean;
   trays: Map<string, boolean>;
@@ -342,11 +350,16 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
         else if (cue === 'addr') s.addr = arg;
         else if (cue === 'url') s.url = arg;
         else if (cue === 'lock') s.lock = true;
+        else if (cue === 'fresh') {
+          s.page = '';
+          s.lock = false;
+          s.conns.clear();
+        }
         else if (cue === 'drop') {
           if (!Object.hasOwn(map.tops, arg)) throw new Error(`The network map has no router "${arg}" to drop a packet at.`);
           s.drop = arg;
         } else if (cue === 'hide') {
-          if (!bases.has(arg) || NET_MAP_OPTIONAL.includes(arg)) throw new Error(`The network map cannot hide "${arg}".`);
+          if (!bases.has(arg) || !NET_MAP_HIDEABLE.includes(arg)) throw new Error(`The network map cannot hide "${arg}".`);
           s.hidden.add(arg);
         } else if (cue === 'show') {
           if (!NET_MAP_OPTIONAL.includes(arg)) throw new Error(`The network map cannot show "${arg}".`);
@@ -374,11 +387,11 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   }
 
   function connect(s: MapState, c: ConnCue): void {
-    const route = `${c.from}>${c.to}`;
-    routeBetween(map, c.from, c.to);
+    const route = c.via === undefined ? `${c.from}>${c.to}` : `${c.from}>${c.via}>${c.to}`;
+    routeOf(map, c);
     const id = c.data ? `${route} data` : route;
     const line = s.conns.get(id);
-    if (c.action === 'open') s.conns.set(id, { route, data: c.data, sealed: false });
+    if (c.action === 'open') s.conns.set(id, { from: c.from, to: c.to, ...(c.via === undefined ? {} : { via: c.via }), data: c.data, sealed: false });
     else if (line === undefined) throw new Error(`The conn cue ${c.action === 'seal' ? 'seals' : 'closes'} ${id}, which is not open.`);
     else if (c.action === 'seal') line.sealed = true;
     else s.conns.delete(id);
@@ -447,7 +460,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
         line.setAttribute('class', `nm-conn${c.data ? ' alt' : ''}${c.sealed ? ' sealed' : ''}`);
         if (c.data) line.setAttribute('transform', DATA_LINE_LIFT);
-        line.setAttribute('points', pointsOf(rideOf(...(c.route.split('>') as [string, string])).flat));
+        line.setAttribute('points', pointsOf(rideOf(c.from, c.to, c.via).flat));
         return line;
       }),
     );
@@ -467,6 +480,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     // What the figure says it draws is what it draws: no resolver, a phone and a stranger only when shown.
     let words = s.hidden.has('resolver') ? described.replace(RESOLVER_SENTENCE, '') : described;
     if (s.shown.has('phone')) words = words.replace(HOME_SENTENCE, HOME_WITH_PHONE);
+    for (const [base, sentence] of Object.entries(NET_MAP_PART_SENTENCES)) if (s.shown.has(base) && !s.hidden.has(base)) words += ` ${sentence}`;
     for (const key of s.layers) {
       const sentence = Object.hasOwn(NET_MAP_LAYERS, key) ? NET_MAP_LAYERS[key]!.describe : undefined;
       if (sentence !== undefined) words += ` ${sentence}`;

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawNetMap, type NetMapData } from '../../art/scenes/net-map';
-import { NET_MAP_LAYERS } from '../../art/scenes/net-map-layers';
+import { NET_MAP_LAYERS, NET_MAP_OPTIONAL } from '../../art/scenes/net-map-layers';
 import { routerFixture } from '../../content/router-fixture';
 import { arpFixture, natFixture, portsFixture } from '../../content/batch1-fixtures';
 import type { Cue, Lesson, MessageEvent, SceneEvent, Unit } from '../../content/schema';
@@ -229,8 +229,8 @@ test('a unit’s start is in place before any cue plays: a line already open, le
 });
 
 test.each([
-  ['', /needs "<open\|seal\|close> <from>><to>\[ data\]"/],
-  ['open', /needs "<open\|seal\|close> <from>><to>\[ data\]", not "open"/],
+  ['', /needs "<open\|seal\|close> <from>>\[<via>>\]<to>\[ data\]"/],
+  ['open', /needs "<open\|seal\|close> <from>>\[<via>>\]<to>\[ data\]", not "open"/],
   ['shut laptop>web', /not "shut laptop>web"/],
   ['open laptop web', /not "open laptop web"/],
   ['open laptop>web extra', /not "open laptop>web extra"/],
@@ -750,7 +750,7 @@ test('What is IP’s scene, with no strip labels and no hide, shows no strip and
   const { root, driver } = mount();
   driver.show(view({ layers: ['ip:web'], labels: { laptop: 'Sending a packet', url: 'example.net', router: '192.168.1.1 inside\n198.51.100.23 outside' } }));
   expect(stripWords(root)).toEqual([null, null, null, null, null]);
-  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
+  expect(root.querySelectorAll(`[data-hidden]${NET_MAP_OPTIONAL.map((part) => `:not([data-base="${part}"])`).join('')}`)).toHaveLength(0);
   expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
   expect(part(root, 'nm-discard').style.opacity).toBe('0');
 });
@@ -760,7 +760,7 @@ test('a hidden-resolver start and then a start without it brings the resolver ba
   driver.show(routerView());
   expect(hiddenBases(root).every(Boolean)).toBe(true);
   driver.show(view({ layers: ['ip:web'] }));
-  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
+  expect(root.querySelectorAll(`[data-hidden]${NET_MAP_OPTIONAL.map((part) => `:not([data-base="${part}"])`).join('')}`)).toHaveLength(0);
   expect(root.getAttribute('aria-label')).toMatch(/DNS resolver/);
   expect(stripWords(root)).toEqual([null, null, null, null, null]);
   driver.show(routerView());
@@ -772,7 +772,7 @@ test('`hide` takes only the resolver and `drop` only a router: anything else thr
   expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'laptop' }] }))).toThrow(/cannot hide "laptop"/);
   expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'phone' }] }))).toThrow(/cannot hide "phone"/);
   expect(() => driver.show(view({ cues: [{ cue: 'drop', arg: 'zz' }] }))).toThrow(/no router "zz"/);
-  expect(root.querySelectorAll('[data-hidden]:not([data-base="phone"])')).toHaveLength(0);
+  expect(root.querySelectorAll(`[data-hidden]${NET_MAP_OPTIONAL.map((part) => `:not([data-base="${part}"])`).join('')}`)).toHaveLength(0);
 });
 
 /** A box in the figure's units: from the attributes, as the figure draws it. */
