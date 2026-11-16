@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 14: Networking Concepts' batch 3, Packets, Switch and Load Balancers
 
-**Status: D13 approved by the owner (2026-11-15, "Approve D13", direction 2.66); the build is under way.** **The owner's go is given** (2026-11-15, direction 2.63 and 2.64): "Start batch 3" in job 13's session, then "Go" on this plan. The design gate stays: the three scenes and card arts come to the owner as clickable prototypes with their spec, and nothing is built until the owner approves them. The outlines and the design go ahead without another go.
+**Status: done (2026-11-15, direction 2.70).** The three lessons are cited, checked and merged into `revamp` (`d77d1e5`); the ledger and the result are in `team.md`. The owner's go was "Start batch 3" and "Go" (2.63, 2.64); the owner approved D13 (2.66).
 
 ## Inputs
 
