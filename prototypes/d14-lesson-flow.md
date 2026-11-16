@@ -34,6 +34,7 @@ The figure in the prototype is a stand-in (three boxes and a moving dot); the fi
   - the top bar, the outline's 268px, the scene, the words' column, and the log under both;
   - D1's reading layout, and its folded log in Learn and Practice;
   - on a phone: the 52px top bar, the scene at 34% (18% when reading), the 48px tabs, the four parts, and the 64px control bar.
+- **The scene pane is untouched** (the owner, 2026-11-15: "The Network/Sequence pane will be untouched as is currently"). Its Network and Sequence views, every figure, its labels, its drawing and its motion, the lesson's table under it, and its size and place at every width stay as they are. The prototype's figure is a stand-in only. B17 changes no file under `src/scenes/` and no figure or panel; the scene still plays a step's messages as today when a step is reached or replayed. The one change it sees is timing that comes from the controls: under reduced motion a step reached by hand lands on its end state at once (§4), as the build spec's §5 already says.
 - **The phone's control bar:** 64px tall, controls 48px tall, 8px apart, 12px from the edges.
   - Today: four controls. Speed 48, ‹ 48, Play 183, › 48.
   - D14: five controls. Speed 48, ‹ 48, the play button 48, replay 48, the forward button 127 (at 375).
