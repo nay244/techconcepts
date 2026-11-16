@@ -727,7 +727,7 @@ export default defineLesson({
             },
             {
               text: 'The proxy encrypts your request, so no one can tell which site you visit.',
-              feedback: 'Not quite. A proxy doesn’t encrypt: the seal is HTTPS’s. And the proxy itself sees which site you asked for.',
+              feedback: 'Not quite. A proxy doesn’t encrypt by itself: the seal is HTTPS’s. And the proxy itself sees which site you asked for.',
               cite: [PA_NO_ENCRYPT, PA_BASIC, RFC_CONNECT, RFC_TLS_CONF],
             },
             {
