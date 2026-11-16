@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 16: Networking Concepts' batch 4, Proxies and VPN
 
-**Status: under way.** Planned 2026-11-16 (direction 2.74); the owner's go for the job, "Continue with Batch 4" (2.73), and on this plan, "Go" (2026-11-16).
+**Status: under way; D15 approved and the batch stop raised to 5.2 million (the owner, 2026-11-16, direction 2.76).** Planned 2026-11-16 (direction 2.74); the owner's go for the job, "Continue with Batch 4" (2.73), and on this plan, "Go" (2026-11-16).
 
 ## Inputs
 
@@ -87,7 +87,7 @@ S18 spent 266,140. With it, **3.2 to 4.2 million**. **The batch stop is 4.2 mill
 
 - **This plan**, now.
 - **The design gate**, after D15 and the prototype words' read.
-- One lesson's content past 1.6 million tokens of growth without an all-pass; the batch past 4.2 million.
+- One lesson's content past 1.6 million tokens of growth without an all-pass; the batch past 5.2 million (raised from 4.2 by the owner at the gate, 2.76).
 - A claim that fails three checks; a Watch story no allowed source backs.
 - A new host that is not the publisher's own; a source readable only after a sign-in.
 - A line at odds with a checked lesson or glossary entry that changing the new lesson cannot settle.
