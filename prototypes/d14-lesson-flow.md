@@ -1,6 +1,6 @@
 # D14: the lesson's flow
 
-This is the spec for unit D14 of job 15 (`plan-job15.md`, decisions 1 to 5). It is revised at the owner's word at the design gate (2026-11-15): "I like the idea of a one step a a time, however only keep "Next Step" and "Next Lesson", and "Play All"". Variant A, step by step, is taken. The control row has three labels: "Next step", "Next lesson" and "Play all". It also has "Pause", while a run is going (§4). After the owner asked about a replay button at the same gate, an icon-only replay (↺, named "Replay step") sits between Play all and the forward button (§3, §4).
+This is the spec for unit D14 of job 15 (`plan.md`, decisions 1 to 5). It is revised at the owner's word at the design gate (2026-11-15): "I like the idea of a one step a a time, however only keep "Next Step" and "Next Lesson", and "Play All"". Variant A, step by step, is taken. The control row has three labels: "Next step", "Next lesson" and "Play all". It also has "Pause", while a run is going (§4). After the owner asked about a replay button at the same gate, an icon-only replay (↺, named "Replay step") sits between Play all and the forward button (§3, §4).
 
 ## Approved: the controls only (the owner, 2026-11-15)
 
