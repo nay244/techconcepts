@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { collectErrors, hydrated, lessonCard, open, pageOverflow, playButton, setSpeed } from './support';
+import { collectErrors, hydrated, lessonCard, open, pageOverflow, playButton, replayButton, setSpeed } from './support';
 
 /**
  * Router's page checks (design D10, spec §8 and the attack cases in prototypes/d10-cases.md): the ones that need a
@@ -173,6 +173,8 @@ test('with reduced motion no candidate row animates; with motion it pulses (chec
     await page.emulateMedia({ reducedMotion });
     await open(page, `${PATH}?step=3`);
     await setSpeed(page, '1×');
+    // With motion the step plays on arrival. With reduced motion it lands complete, so the replay icon plays it, with its waits and no motion.
+    if (reducedMotion === 'reduce') await replayButton(page).click();
     const cell = page.locator('.tpanel tr[data-candidate] > td').first();
     await expect(cell).toBeVisible({ timeout: 30_000 });
     return cell.evaluate((td) => getComputedStyle(td).animationName);

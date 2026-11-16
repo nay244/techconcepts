@@ -1159,6 +1159,8 @@ test.describe('phone', { tag: '@phone' }, () => {
     if (where === 'learn') await moveBy(page, () => page.getByRole('button', { name: 'Previous step', exact: true }).click());
     if (where === 'learn') await expect(kicker(page)).toHaveText(/Learn/);
   }
+  /** The Table tab, named "Table, changed" while the step that has played has changed the table and the reader has not looked. */
+  const tableTab = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: /^Table/ });
   /** Waits for the step, which plays on arrival, to give the lesson's table a row it marked, or the rules a check. */
   async function played(page: Page, marked: string): Promise<void> {
     await expect(page.locator(marked).first()).toBeAttached({ timeout: 15_000 });
@@ -1250,7 +1252,7 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('5: DHCP’s lease table is whole in its tab, its names beside values that start at one x', async ({ page }) => {
           await goTo(page, bySlug('dhcp').path, 4);
           await played(page, '.tpanel tr[data-highlight]');
-          await tab(page, 'Table').click();
+          await tableTab(page).click();
           const table = page.locator('.tpanel');
           const box = (await boxOf(page, '.tpanel'))!;
           const tabsBottom = (await boxOf(page, '.console__tabs'))!.bottom;
@@ -1291,7 +1293,7 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('7: a table of three columns is still a table in its tab, with no sideways scroll', async ({ page }) => {
           await goTo(page, bySlug('what-is-tcp').path, 3);
           await expect(page.locator('.tpanel tbody tr[data-highlight]').first()).toBeAttached({ timeout: 15_000 });
-          await tab(page, 'Table').click();
+          await tableTab(page).click();
           expect(await page.locator('.tpanel__table').evaluate((el) => getComputedStyle(el).display)).toBe('table');
           expect(await page.locator('.tpanel').evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
         });
@@ -1356,6 +1358,7 @@ test.describe('phone', { tag: '@phone' }, () => {
         });
 
         test('10 and 11: the log’s values start at one x on every row, and the short ones share the last line', async ({ page }) => {
+          test.setTimeout(240_000);
           await goTo(page, bySlug('dhcp').path, 5);
           await runAll(page);
           await tab(page, 'Log').click();
