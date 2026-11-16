@@ -357,10 +357,88 @@ function tcpUdpSpot() {
   return figure("tcp-udp", "TCP · UDP", out.join(""), "Two lanes on one plate. On the lane marked TCP, pieces 1, 2 and 3 head out and a lit acknowledgement comes back. On the lane marked UDP, pieces 1 and 3 head out with an empty place between them where 2 was lost, and nothing comes back.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp'] as const;
+// Packets: one file cut into four numbered pieces, each with a header band across its top; piece 1, lit, already on its way.
+function packetsSpot() {
+  const out = [], W = 17, D = 36, H = 34, Y = -22, GAP = 1.6, X0 = -78, F = Y + D, CY = Y + D / 2, FLY = { x: 46, z: 30 };
+  const piece = (x, z, n, lit = false) => {
+    const T = { x, y: Y, w: W, d: D, r: 1.4 };
+    out.push(S(k.slabOf(T, z, H, P, 3, 0.5), { tone: "hi", lit, inner: L(k.sideSeam(T, z + H - 7, P, 3), { tone: lit ? "lit" : "faint" }) }));
+    out.push(onFaceY(F, rect(lit ? "lm-inlay lm-on-lit" : "lm-inlay", x + 2.5, z + H - 5.6, W - 5, 3.4, 1)));
+    const num = k.faceTextSvg(k.sideMatrix([x + W / 2, F], z + 9, P, "left"), String(n), { size: 13, tone: "mid", anchor: "middle" });
+    out.push(lit ? num.replace('class="iso-face-text"', 'class="iso-face-text lm-on-lit"') : num);
+  };
+  // Where piece 1 stood, the cable out from the end of the file, and where piece 1 is over it.
+  out.push(L(k.planOutline({ x: X0, y: Y, w: W, d: D, r: 1.4 }, 0, P, 3), { tone: "mid", dotted: true }));
+  out.push(tubeOf(tubePieces([[X0 + 4 * W + 3 * GAP - 1, CY, 1.4], [104, CY, 1.4]], 1.2, P, { maxLength: 16 })));
+  out.push(L(k.planOutline({ x: FLY.x, y: Y, w: W, d: D, r: 1.4 }, 0, P, 3), { tone: "lo", dotted: true }));
+  [2, 3, 4].forEach((n, i) => piece(X0 + (i + 1) * (W + GAP), 0, n));
+  out.push(lines([18, 84].flatMap((x) => [[[x, CY - 13], [x + 4, CY - 9]], [[x + 4, CY - 9], [x, CY - 5]]]), 0, "mid"));
+  piece(FLY.x, FLY.z, 1, true);
+  return figure("packets", "ONE FILE · FOUR PIECES", out.join(""), "A file cut into four numbered pieces, each with a header band across its top. Pieces 2, 3 and 4 still stand side by side, with a dotted outline where piece 1 stood. Piece 1, lit, is in the air over the cable, on its way.");
+}
+
+// Switch: a five-port switch, four cables plugged in and port 5 free. Port 2's plug is lit, its light on: the port the
+// switch has just learned a device on.
+function switchSpot() {
+  const out = [], B = { x: -84, y: -50, w: 168, d: 44, r: 3 }, FT = 2.4, BH = 26, F = B.y + B.d, T = FT + BH;
+  const PX = [-56, -28, 0, 28, 56], PZ = 6, PW = 18, PH = 13;
+  // Four cables out of the front, bending away to the plate's front-left edge.
+  out.push(tubeOf([0, 1, 2, 3].flatMap((i) => {
+    const x = PX[i], y = F + 14 + i * 9;
+    return tubePieces([[x, F + 4, PZ + 4], [x, F + 9, 1.8], [x, y - 4, 1.8], [x - 4, y, 1.8], [-112, y, 1.8]], 1.9, P, { maxLength: 16 });
+  })));
+  for (const [x, y] of byDepth(k.corners(B, 8))) out.push(S(k.cylinder(x, y, 3, 0, FT, P, 16), { tone: "lo" }));
+  out.push(S(k.slabOf(B, FT, BH, P, 5, 0.9), { tone: "hi", inner: L(k.sideSeam(B, FT + 3.4, P, 5), { tone: "faint" }) }));
+  // Vents along the top's back half.
+  out.push(lines(Array.from({ length: 18 }, (_, i) => [[B.x + 34 + i * 6.4, B.y + 6], [B.x + 34 + i * 6.4, B.y + 18]]), T));
+  // The face: each port a socket with its number and its light. Only port 2's light is on.
+  let face = "";
+  PX.forEach((x, i) => {
+    face += rect("lm-inlay", x - PW / 2 - 1.2, PZ - 1.2, PW + 2.4, PH + 2.4, 1.4) + rect("lm-void", x - PW / 2, PZ, PW, PH, 0.8) + rect("lm-slot", x - 4, PZ, 8, 3, 0.4);
+    face += `<text class="lm-rule" x="${n1(x - PW / 2)}" y="${n1(-(PZ + PH + 3.4))}">${i + 1}</text><circle class="lm-led${i === 1 ? " on" : ""}" cx="${n1(x + PW / 2 - 2)}" cy="${n1(-(PZ + PH + 5))}" r="1.6"/>`;
+  });
+  out.push(onFaceY(F, face));
+  // The plugs in ports 1 to 4; port 2's is the lit part.
+  for (const i of [0, 1, 2, 3]) out.push(S(k.slabOf({ x: PX[i] - 7, y: F, w: 14, d: 8, r: 1.2 }, PZ + 1.6, PH - 3.2, P, 3, 0.5), { tone: i === 1 ? "hi" : "mid", lit: i === 1 }));
+  return figure("switch", "FIVE PORTS · MAC TABLE", out.join(""), "A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on.");
+}
+
+// Load Balancers: one balancer in front, a pool of three servers behind it, cabled in a fan. Server B's lamps are red;
+// a lit request rides the cable to C.
+function loadBalancersSpot() {
+  const out = [], SW = 30, SD = 24, SH = 56, SY = -58;
+  const SVS = [-38, 12, 62].map((x) => ({ x, y: SY, w: SW, d: SD, r: 1.8 }));
+  const BX = { x: -84, y: 24, w: 68, d: 30, r: 2.8 }, BZ = 2.4, BH = 19;
+  const outs = [BX.x + 16, BX.x + 32, BX.x + 48];
+  // The pool's outline on the floor, the cable in from the left edge, and the fan of cables out to the servers.
+  out.push(L(k.planOutline({ x: -48, y: SY - 6, w: 150, d: SD + 20, r: 4 }, 0, P, 4), { tone: "lo", dashed: true }));
+  const fan = SVS.map((B, i) => [[outs[i], BX.y - 3], [outs[i], -6 - i * 4], [B.x + SW / 2, -6 - i * 4], [B.x + SW / 2, SY + SD + 3]]);
+  out.push(tubeOf([[[-112, 42], [BX.x - 3, 42]], ...fan].flatMap((pts) => tubePieces(pts.map(([x, y]) => [x, y, 1.4]), 1.3, P, { maxLength: 14 }))));
+  // The servers: a letter, two lamps for the last two checks (B's both red), drive bays.
+  for (const [i, B] of SVS.entries()) {
+    const ok = i !== 1, F = B.y + B.d;
+    out.push(S(k.slabOf({ x: B.x - 2.6, y: B.y - 2.6, w: SW + 5.2, d: SD + 5.2, r: 2 }, 0, 1.8, P, 3, 0.4), { tone: "lo" }));
+    out.push(S(k.slabOf(B, 1.8, SH - 1.8, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(B, SH - 10, P, 3), { tone: "faint" }) }));
+    let face = `<text class="lm-pkt-t" x="${n1(B.x + 3.4)}" y="${n1(-(SH - 7.4))}">${"ABC"[i]}</text>`;
+    face += [0, 1].map((n) => `<circle class="lm-rule-${ok ? "ok" : "no"}" cx="${n1(B.x + SW - 11 + n * 6.4)}" cy="${n1(-(SH - 5.4))}" r="2"/>`).join("");
+    for (let b = 0; b < 5; b++) face += rect("lm-slot", B.x + 3.4, SH - 17 - b * 7, SW - 7, 3.4, 0.5);
+    out.push(onFaceY(F, face));
+  }
+  // The balancer: a port at its left for the cable in, its address in a window, a light for each server, C's on.
+  out.push(S(k.slabOf({ x: BX.x - 3, y: BX.y - 3, w: BX.w + 6, d: BX.d + 6, r: 3 }, 0, BZ, P, 4, 0.5), { tone: "lo" }));
+  out.push(S(k.slabOf(BX, BZ, BH - BZ, P, 4, 0.7), { tone: "hi", inner: L(k.sideSeam(BX, BZ + 3.4, P, 4), { tone: "faint" }) }));
+  for (let v = 0; v < 6; v++) out.push(L(k.planOutline({ x: BX.x + 8 + v * 8, y: BX.y + 4, w: 2.6, d: 9, r: 1.3 }, BH, P, 3), { tone: "lo" }));
+  out.push(onFaceY(BX.y + BX.d, rect("lm-void", BX.x + 6, BZ + 7, 40, 7, 0.8) + `<text class="lm-addr" x="${n1(BX.x + 8.4)}" y="${n1(-(BZ + 9))}">203.0.113.80</text>`));
+  out.push(`<g class="lm-leds">${[0, 1, 2].map((i) => dot(at([BX.x + 52 + i * 5.6, BX.y + BX.d, BZ + 10.4]), "lm-led" + (i === 2 ? " on" : ""), 1.2)).join("")}</g>`);
+  // The request on its way to server C: the lit part.
+  out.push(S(k.slabOf({ x: 68, y: -24, w: 18, d: 13, r: 1.4 }, 2.8, 5.4, P, 3, 0.5), { tone: "hi", lit: true }));
+  return figure("load-balancers", "ONE ADDRESS · THREE SERVERS", out.join(""), "A load balancer at the front with one cable coming in, and behind it a pool of three servers, A, B and C, each cabled to it. Server B’s two lamps are red. A lit request rides the cable to server C.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch', 'load-balancers'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot, 'load-balancers': loadBalancersSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

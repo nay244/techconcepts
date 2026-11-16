@@ -15,6 +15,7 @@ const read = (path: string): string => readFileSync(new URL(path, import.meta.ur
 const SOURCES = {
   'dhcp.css': read('../art/scenes/dhcp.css'),
   'net-map.css': read('../art/scenes/net-map.css'),
+  'switch.css': read('../art/scenes/switch.css'),
   'console.css': read('../lesson/console.css'),
   'site.css': read('../components/site.css'),
   'about.astro': read('../pages/about.astro'),
@@ -50,6 +51,8 @@ const GREEN_TEXT: GreenText[] = [
   // The figures' callouts sit on the figures' background: DHCP's new address, and a protocol's "done" state on the map.
   { source: 'dhcp.css', selector: '.dh .dh-call .dh-addr.new', grounds: (theme) => ({ 'figure background': figBg(theme) }) },
   { source: 'net-map.css', selector: '.nm .nm-call .nm-state.done', grounds: (theme) => ({ 'figure background': figBg(theme) }) },
+  // Switch's "Keeps it", beside a device's callout.
+  { source: 'switch.css', selector: '.sw .sw-v[data-v="keeps"] .sw-v-t', grounds: (theme) => ({ 'figure background': figBg(theme) }) },
   // A right option's letter, on the option's own green tint over the card.
   {
     source: 'console.css',

@@ -1,5 +1,7 @@
 import { NET_MAP_BASE_PLACES, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, plateSites } from './net-map-layers';
 import { OSI_CUE_ARGS, OSI_ROUTES, OSI_WORDS } from './osi-stacks';
+import { SWITCH_PLACES, SWITCH_PLUG_ARGS, SWITCH_ROUTES } from './switch-parts';
+import { POOL_PLACES, POOL_ROUTES, POOL_SERVERS } from './pool-parts';
 import type { FigureId, FigureParts } from './types';
 
 /**
@@ -57,6 +59,9 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
       hide: 'text',
       // A part the map leaves off until a unit's start shows it: the phone.
       show: 'text',
+      // A copy of the tag waits in a bay (`park <place> <bay> <TAG>`) until a message with its tag takes it, or `unpark laptop` sends the laptop's into its screen.
+      park: 'text',
+      unpark: 'text',
     },
     args: { drop: NET_MAP_ROUTERS, hide: ['resolver'], show: NET_MAP_OPTIONAL },
     layers: Object.keys(NET_MAP_LAYERS),
@@ -78,5 +83,29 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
     board: false,
     start: false,
     labels: true,
+  },
+  // Switch (D13b): four devices on one switch. A frame rides from one device to another, or to `all` (a broadcast).
+  // `flood` sends a frame for one device out of every other port (no match in the table); a broadcast floods by
+  // itself. `plug` moves the laptop's cable to port 5 before its frame is sent (src/scenes/drivers/switch.ts).
+  switch: {
+    places: SWITCH_PLACES,
+    cues: { flood: 'flag', plug: 'text' },
+    args: { plug: SWITCH_PLUG_ARGS },
+    routes: SWITCH_ROUTES,
+    layers: [],
+    board: false,
+    start: false,
+  },
+  pool: {
+    places: POOL_PLACES,
+    // A request rides through the balancer to a server; a check rides from the balancer to a server, its answer back
+    // (src/scenes/drivers/pool.ts). `skip` names a server the balancer passes over on a request; `no-answer`, on a
+    // note, the server that did not answer a check in time.
+    cues: { skip: 'text', 'no-answer': 'text' },
+    args: { skip: POOL_SERVERS, 'no-answer': POOL_SERVERS },
+    routes: POOL_ROUTES,
+    layers: [],
+    board: false,
+    start: false,
   },
 };

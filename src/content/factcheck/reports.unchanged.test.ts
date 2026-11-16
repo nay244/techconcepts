@@ -17,9 +17,9 @@ const reBySlug = Object.fromEntries(Object.entries(rechecks).map(([p, raw]) => [
 const slugs = Object.keys(fullBySlug).sort();
 const sheet = (slug: string) => claimSheet(getLesson(slug)!, SOURCES);
 
-test('there are twenty-five lesson reports and ten re-checks', () => {
-  expect(slugs).toHaveLength(25);
-  expect(Object.keys(reBySlug)).toHaveLength(10);
+test('there are twenty-eight lesson reports and twelve re-checks', () => {
+  expect(slugs).toHaveLength(28);
+  expect(Object.keys(reBySlug)).toHaveLength(12);
 });
 
 test('A1.1 each lesson\'s sheet hash equals its re-check\'s hash where there is one, else its report\'s', () => {

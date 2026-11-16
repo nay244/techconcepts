@@ -24,6 +24,10 @@
 .nm [data-part] { transition: opacity 200ms ease; }
 .nm .nm-tag { will-change: transform; }
 .nm .nm-tag-t { font: 700 3.9px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .02em; }
+/* A parked tag (the park cue) is a copy of the moving tag, unlit: its words take the plates' strongest line colour. */
+.nm .nm-park .nm-tag-t { fill: var(--anatomy-hi); }
+/* An empty bay between two parked tags: a dashed outline where the missing piece goes. */
+.nm .nm-gap { fill: none; stroke: var(--anatomy-mid); stroke-width: 1.2px; stroke-dasharray: 3 2.5; vector-effect: non-scaling-stroke; }
 /* The carrier under the tag, outlined in the plates' darkest shade so it reads over a plate or the page. */
 .nm #nm-over { will-change: transform; }
 .nm .nm-over-t { font: 700 3.2px var(--mono); fill: var(--anatomy-hi); letter-spacing: .04em; paint-order: stroke; stroke: var(--anatomy-shade-0); stroke-width: .9px; stroke-linejoin: round; }

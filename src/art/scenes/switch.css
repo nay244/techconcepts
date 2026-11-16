@@ -1,0 +1,33 @@
+/* The Switch scene's own parts (src/art/scenes/switch.ts). The callouts sit on the page's figure background, so they
+   take the site's ink and line tokens and follow the theme; the parts on the plate take the lumen finish's tokens and
+   stay the same in both themes. The callouts and verdicts are MAC Address's (dhcp.css), so the two scenes read alike. */
+.sw .sw-call .sw-name { font: 700 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; fill: var(--ink-strong); }
+.sw .sw-call .sw-sub { font: 400 13px/1 var(--sans); fill: var(--muted); }
+.sw .sw-call .sw-addr { font: 500 12.5px/1 var(--mono); fill: var(--ink); }
+.sw .sw-port { fill: var(--muted); font-weight: 700; }
+.sw .sw-port.moved { fill: var(--accent); }
+.sw .sw-lead { fill: none; stroke: var(--line-strong); stroke-width: 1px; }
+.sw .sw-lead-dot { fill: var(--muted); }
+.sw .sw-num { font: 700 4.6px var(--mono); fill: var(--anatomy-mid); }
+.sw .sw-pin { fill: #b08a3a; }
+.sw .sw-tag { will-change: transform; }
+.sw .sw-tag-t { font: 700 4.6px var(--mono); fill: color-mix(in srgb, var(--lit-b) 30%, #000); letter-spacing: .03em; }
+/* A frame's way along a cable: bright while it rides, a quiet trace once it has landed. */
+.sw .sw-trace { fill: none; stroke: var(--lit-a); stroke-width: 2px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: 0; }
+.sw .sw-trace[data-on="ride"] { opacity: .95; filter: drop-shadow(0 0 3px var(--lit-b)); }
+.sw .sw-trace[data-on="trace"] { opacity: .5; stroke: var(--lit-b); stroke-width: 3px; }
+/* The cable the laptop leaves behind as it moves: a faint ghost, gone once the move is done. */
+.sw .sw-cable[data-ghost] { opacity: .35; }
+/* Each device's verdict on the copy it got (MAC Address's): sent the ink, kept a filled square in the done green with
+   the words in it, ignored a muted outline with a slash. A device that got no copy says nothing. */
+.sw .sw-v-t { font: 500 13px/1 var(--sans); fill: var(--muted); }
+.sw .sw-v-mark { fill: none; stroke: var(--muted); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.sw .sw-v:not([data-v]) { display: none; }
+.sw .sw-v[data-v="keeps"] .sw-v-mark { fill: var(--allowed); stroke: var(--allowed); }
+.sw .sw-v[data-v="keeps"] .sw-v-t { fill: var(--allowed-text); font-weight: 700; }
+.sw .sw-v[data-v="sent"] .sw-v-mark { fill: var(--ink-strong); stroke: var(--ink-strong); }
+.sw .sw-v[data-v="sent"] .sw-v-t { fill: var(--ink); }
+.sw .sw-v-slash { display: none; fill: none; stroke: var(--muted); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.sw .sw-v[data-v="ignores"] .sw-v-slash { display: inline; }
+/* While the driver's show settles the figure, the lights change at once (src/scenes/drivers/switch.ts). */
+.sw[data-settling] .lm-led { transition: none; }

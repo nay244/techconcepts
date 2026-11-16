@@ -68,6 +68,12 @@ export const NET_MAP_PHONE_ADDR = '192.168.1.101';
 /** The internet's five routers, which a unit's labels may name on a strip and a `drop` cue may mark. */
 export const NET_MAP_ROUTERS = ['isp', 'a', 'b', 'c', 'd'];
 
+/** The cables between the internet's routers. */
+export const NET_MAP_LINKS: [string, string][] = [['isp', 'a'], ['isp', 'b'], ['isp', 'd'], ['a', 'b'], ['b', 'c'], ['b', 'd'], ['c', 'd']];
+
+/** Where a tag can wait (`park`), and how many bays each place has: four at the laptop and on the web server, one on each internet router. */
+export const NET_MAP_BAY_COUNTS: Record<string, number> = { laptop: 4, web: 4, isp: 1, a: 1, b: 1, c: 1, d: 1 };
+
 /** The places a message can stop on a plate. */
 export function plateSites(plate: ServerPlate): string[] {
   return plate.kind === 'names' ? NAME_SERVER_SITES : [plate.site];
