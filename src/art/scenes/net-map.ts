@@ -8,7 +8,7 @@
 // the parts. Its ids carry an `nm-` prefix, so they stay unique on the page.
 import type { DrawnFigure } from './types';
 import { k, G, S, L, D, n1, tubePieces, tubeSvg } from '../common.ts';
-import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_PHONE_ADDR, NET_MAP_TAG_MAX } from './net-map-layers';
+import { NAME_SERVER_SITES, NET_MAP_BASE_PLACES, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_LISTENER_ADDR, NET_MAP_PHONE_ADDR, NET_MAP_TAG_MAX } from './net-map-layers';
 import './net-map.css';
 
 /** What the driver reads: the figure's camera, where the broadcast ring spreads, and every route along the cables. */
@@ -41,7 +41,9 @@ const IP = { x: -52, y: -44, w: 104, d: 88, r: 9 };
 const HP = { x: -134, y: 57, w: 84, d: 70, r: 8 };
 const RP = { x: -118, y: -114, w: 64, d: 54, r: 7 };
 // Places for the servers on the right: E for one big plate, NE and SE for two smaller ones; N for a small one behind the internet.
-const SLOT = { E: { x: 50, y: -127, w: 84, d: 70, r: 8 }, NE: { x: -30, y: -200, w: 64, d: 54, r: 7 }, SE: { x: 140, y: -26, w: 64, d: 54, r: 7 }, N: { x: -84, y: -196, w: 56, d: 40, r: 6 } };
+// NW is where the resolver stands, for a plate on a map that hides it (Proxies' forward proxy).
+// NE stands far enough left that E's racks never hide its front: a plate there is shown beside the web server.
+const SLOT = { E: { x: 50, y: -127, w: 84, d: 70, r: 8 }, NE: { x: -50, y: -182, w: 64, d: 54, r: 7 }, SE: { x: 140, y: -26, w: 64, d: 54, r: 7 }, N: { x: -84, y: -196, w: 56, d: 40, r: 6 }, NW: { x: -118, y: -114, w: 64, d: 54, r: 7 } };
 const LB = { x: -127, y: 88, w: 46, d: 30, r: 3.5 }, LZ = 3.2, LID_H = 31;
 const HR = { x: -90, y: 62, w: 32, d: 18, r: 3 }, RZ = 2, RT = RZ + 9;
 const PUCK_R = 7, PUCK_H = 4.6;
@@ -65,7 +67,7 @@ const dot = ([x, y], cls, r = 1.2, extra = "") => `<circle class="${cls}" cx="${
 const rel = (p, o) => ({ ...o, x: p.x + o.x, y: p.y + o.y });
 
 // ---------- Plates ----------
-function plate(p, label) {
+function plate(p, label, words = (t) => t) {
   const under = `<path class="iso-halo" d="${k.haloOf(p, FLOOR, PLATE_H, P)}"/>`;
   const over = [];
   for (const [x, y] of byDepth(k.corners(p, 13))) {
@@ -77,7 +79,8 @@ function plate(p, label) {
   const screws = k.corners(p, 9);
   over.push(L(screws.map(([x, y]) => k.ring(x, y, 2, 0, P, 18)).join(""), { tone: "lo" }));
   over.push(D(screws.map(([x, y]) => at([x, y, 0])), { size: 0.6, tone: "mid" }));
-  over.push(k.faceTextSvg(k.sideMatrix([p.x + p.w - 12, p.y + p.d], -4.4, P, "left"), label, { size: 3.4, tone: "mid", anchor: "end" }));
+  const engrave = (t) => k.faceTextSvg(k.sideMatrix([p.x + p.w - 12, p.y + p.d], -4.4, P, "left"), t, { size: 3.4, tone: "mid", anchor: "end" });
+  over.push(words(engrave(label), engrave));
   return { under, over: over.join("") };
 }
 
@@ -131,6 +134,27 @@ function phone(id) {
   top += flat("lm-slot", PH.x + PH.w / 2 - 1.7, PH.y + 0.9, 3.4, 0.7, 0.35);
   for (let i = 0; i < 3; i++) top += flat("lm-slot", x0 + 1.2, y0 + 2.2 + i * 2.6, w - 2.4 - (i === 2 ? 2 : 0), 0.9, 0.45);
   out.push(onTopAt(PH_Z, top));
+  return out.join("");
+}
+
+// Someone else on the café's Wi-Fi, beside your laptop: a small laptop of its own, a radio stick at its side, and no
+// cable. Its screen shows what it overhears (the driver's `listener` cue): every line lit while it can read your
+// request, the top line alone (the outside) once the request is sealed, and dark before it has heard anything.
+const LS = { x: -73, y: 101, w: 19, d: 13, r: 1 }, LS_Z = 1.8, LS_LID = 14, LS_AT = [LS.x + LS.w + 1.6, LS.y + 1.4];
+function listener(id) {
+  const out = [S(k.slabOf(LS, 0, LS_Z, P, 4, 0.5), { tone: "hi", inner: L(k.sideSeam(LS, 0.8, P, 4), { tone: "faint" }) })];
+  let keys = "";
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) keys += k.planOutline({ x: LS.x + 2 + c * 3.1, y: LS.y + 4 + r * 3.1, w: 2.4, d: 2.4, r: 0.4 }, LS_Z, P, 3);
+  out.push(L(keys, { tone: "lo" }));
+  const LID = { x: LS.x + 1, y: LS.y, w: LS.w - 2, d: 1.6, r: 0.6 };
+  out.push(S(k.slabOf(LID, LS_Z, LS_LID, P, 3, 0.4), { tone: "hi" }));
+  const x0 = LID.x + 1.6, w = LID.w - 3.2, z0 = LS_Z + 1.6, h = LS_LID - 3.2;
+  const lines = (cls) => [0, 1, 2].map((i) => rect(cls, x0 + 1.6, z0 + h - 3 - i * 3, w - 3.2 - (i === 2 ? 4 : 0), 1.4, 0.5)).join("");
+  let scr = rect("lm-void", x0, z0, w, h, 0.6) + rect("nm-glow", x0, z0, w, h, 0.6) + lines("lm-slot");
+  const lit = lines("nm-px").split("/>");
+  scr += `<g class="nm-hear-head">${lit[0]}/></g><g class="nm-hear-body">${lit[1]}/>${lit[2]}/></g>`;
+  out.push(onFaceY(LID.y + LID.d, `<g id="${id}-listener">${scr}</g>`));
+  out.push(S(k.cylinder(LS_AT[0], LS_AT[1], 1.3, 0, 1.6, P, 16), { tone: "mid" }), S(k.cylinder(LS_AT[0], LS_AT[1], 0.8, 1.6, 11, P, 16), { tone: "hi", crease: "none" }));
   return out.join("");
 }
 
@@ -207,6 +231,32 @@ function tray(T, id, site) {
   return out.join("");
 }
 
+// A proxy: a low box that passes messages on, the same for a forward proxy and a reverse one. A cable plugs into a
+// port on its front faces, and a band on each lights while it works; two arrows on its top, one each way along `dir`,
+// say that it passes things along. Nothing on it opens or reads: no screen, no padlock.
+const BOX_H = 8;
+const onFaceX = (X, inner) => `<g transform="${k.sideMatrix([X, 0], 0, P, "right")}">${inner}</g>`;
+function proxyBox(B, id, site, ports, dir) {
+  const F = B.y + B.d, R = B.x + B.w, out = [];
+  out.push(S(k.slabOf({ x: B.x - 1.2, y: B.y - 1.2, w: B.w + 2.4, d: B.d + 2.4, r: B.r + 1 }, 0, 1.2, P, 3, 0.4), { tone: "lo" }));
+  out.push(S(k.slabOf(B, 1.2, BOX_H - 1.2, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(B, BOX_H - 2.2, P, 3), { tone: "faint" }) }));
+  const port = (u) => rect("lm-void", u - 2, 0.6, 4, 2.6, 1.2);
+  const band = (cls, u0, w) => rect(cls, u0, BOX_H - 4.4, w, 1.6, 0.6);
+  const bands = (cls) => [onFaceY(F, band(cls, B.x + 2.5, B.w - 5)), onFaceX(R, band(cls, -F + 2.5, B.d - 5))];
+  const [onY, onX] = bands("lm-slot");
+  out.push(onFaceY(F, ports.filter((q) => q.face === "y").map((q) => port(q.at)).join("")), onY);
+  out.push(onFaceX(R, ports.filter((q) => q.face === "x").map((q) => port(-q.at)).join("")), onX);
+  out.push(`<g class="nm-busy" id="${id}-busy-${site}">${bands("nm-band").join("")}</g>`);
+  const cx = B.x + B.w / 2, cy = B.y + B.d / 2, half = Math.min(B.w, B.d) / 2 - 2.5, gap = 1.8, hd = 1.4, [ax, ay] = dir, [px, py] = [-ay, ax];
+  const arrow = (s, off) => {
+    const tip = [cx + ax * half * s + px * off, cy + ay * half * s + py * off], tail = [cx - ax * half * s + px * off, cy - ay * half * s + py * off];
+    const barb = (side) => [tip[0] - ax * hd * s + px * hd * side, tip[1] - ay * hd * s + py * hd * side];
+    return k.lineOnTop(tail, tip, BOX_H, P) + k.lineOnTop(tip, barb(1), BOX_H, P) + k.lineOnTop(tip, barb(-1), BOX_H, P);
+  };
+  out.push(L(arrow(1, -gap) + arrow(-1, gap), { tone: "mid" }));
+  return out.join("");
+}
+
 // ---------- Cables, and the routes along them ----------
 const CABLE_R = 1, CABLE_Z = 1.3, TZ = CABLE_Z + CABLE_R, RIDE = 2.6, HOP = PUCK_H + 1.6;
 const cable = (route) => tubeOf(tubePieces(route.map(([x, y]) => [x, y, CABLE_Z]), CABLE_R, P, { maxLength: 14 }));
@@ -244,12 +294,17 @@ function ride(stops) {
 // From one place to another along the cables, hopping over every router between. The home router is a place too:
 // messages to it from the laptop or the phone stay at home, as far as its top (the first points of their way out).
 const HOME_LEG = { laptop: 3, phone: 2 };
+// A place with two cables (Proxies' forward proxy) leaves and is reached by the one nearer the other end.
+const sideFor = (S, other) => (S.side && hops(S.side.puck, other.puck).length < hops(S.puck, other.puck).length ? { ...S, ...S.side } : S);
 function route(sites, from, to) {
-  const A = sites[from], B = sites[to];
-  if (!A || !B) throw new Error(`no route ${from} → ${to}`);
+  if (!sites[from] || !sites[to]) throw new Error(`no route ${from} → ${to}`);
+  const A = sideFor(sites[from], sites[to]), B = sideFor(sites[to], sites[from]);
   let pts;
   const own = from === "router" ? to : from;
-  if (Object.hasOwn(HOME_LEG, own) && (from === "router" || to === "router")) {
+  // Two places on one site's own network (the reverse proxy and the web server behind it): the way between them stays on its plate.
+  if (A.inner?.[to]) pts = A.inner[to];
+  else if (B.inner?.[from]) pts = [...B.inner[from]].reverse();
+  else if (Object.hasOwn(HOME_LEG, own) && (from === "router" || to === "router")) {
     const L0 = BASE_SITES[own], out = [L0.end, ...L0.leg.slice(0, HOME_LEG[own])];
     pts = from === own ? out : [...out].reverse();
   } else {
@@ -357,6 +412,80 @@ const KINDS = {
       tall: [[R.x, R.y, R.h]],
     };
   },
+  // Proxies' forward proxy: a box with two cables, one in from your side of the internet (router isp) to the left end
+  // of its front, and one out from the back end of its right side toward the sites (router c). A message reaches it,
+  // and leaves it, by the cable nearer the other end, so a line laptop > proxy > web goes in at its left and out at its right.
+  proxy(p, id, o) {
+    const B = rel(p, { x: 10, y: 14, w: 24, d: 24, r: 2 }), F = B.y + B.d, R = B.x + B.w;
+    const inX = B.x + 4, outY = B.y + 4, top = [B.x + B.w / 2, B.y + B.d / 2, BOX_H + 0.6];
+    const inLeg = [[inX, F + 3, RIDE], [inX, p.y + p.d + 3, RIDE]], outLeg = [[R + 3, outY, RIDE], [p.x + p.w + 3, outY, RIDE]];
+    const dir = [Math.SQRT1_2, -Math.SQRT1_2];
+    return {
+      things: [{ xy: [B.x + B.w / 2, B.y + B.d / 2], svg: proxyBox(B, id, o.site, [{ face: "y", at: inX }, { face: "x", at: outY }], dir) }],
+      cables: [[N[o.pucks[0]], inLeg[1], [inX, F + 0.5]], [N[o.pucks[1]], outLeg[1], [R + 0.5, outY]]],
+      sites: { [o.site]: { end: top, leg: inLeg, puck: o.pucks[0], side: { leg: outLeg, puck: o.pucks[1] } } },
+      callouts: [callTo(o, [R, B.y, BOX_H])],
+      tall: [[B.x, B.y, BOX_H]],
+    };
+  },
+  // Proxies' web server: two racks at the back and the page on a dock in front, as a web plate has them, with room at
+  // its front left for the site's reverse proxy, which a start shows on the cable in. The cable from router c comes in
+  // at the plate's front, turns at the reverse proxy's place and runs to the dock: with the box shown, the box covers
+  // the turn, and the way from the box to the server stays on the plate. The web server's own callout is a part a
+  // start can hide (`direct`); the two callouts that take its place show with the box.
+  site(p, id, o) {
+    const racks = [rel(p, { x: 8, y: 6, w: 24, d: 26, r: 2, h: 40 }), rel(p, { x: 36, y: 4, w: 28, d: 30, r: 2, h: 50 })];
+    const R = rel(p, { x: 6, y: 46, w: 20, d: 20, r: 2 }), RF = R.y + R.d, port = R.x + 4, mid = [R.x + R.w / 2, R.y + R.d / 2];
+    const DK = rel(p, { x: 32, y: 49, w: 42, d: 14, r: 2 }), PG = { x: DK.x + 3, y: DK.y + 3, w: DK.w - 6, d: DK.d - 6, r: 1 }, IN = [DK.x - 3, mid[1]];
+    const EDGE = [port, p.y + p.d + 3], TURN = [port, mid[1]];
+    let dock = S(k.slabOf(DK, 0, 3, P, 3, 0.5), { tone: "mid", inner: L(k.sideSeam(DK, 1.2, P, 3), { tone: "faint" }) });
+    dock += S(k.slabOf(PG, 3, 2, P, 3, 0.4), { tone: "hi" }) + L([0, 1, 2].map((i) => k.lineOnTop([PG.x + 4, PG.y + 2.4 + i * 2.4], [PG.x + PG.w - 6 - i * 6, PG.y + 2.4 + i * 2.4], 5, P)).join(""), { tone: "lo" });
+    dock += `<g class="nm-busy" id="${id}-busy-${o.site}">${S(k.slabOf(PG, 3, 2, P, 3, 0.4), { tone: "hi", lit: true })}</g>`;
+    const end = [DK.x + 8, DK.y + DK.d / 2, 3.4], top = [...mid, BOX_H + 0.6];
+    const box = proxyBox(R, id, o.front, [{ face: "y", at: port }], [Math.SQRT1_2, -Math.SQRT1_2]);
+    return {
+      things: [
+        ...racks.map((K, i) => ({ xy: [K.x + K.w / 2, K.y + K.d / 2], svg: rack(K, i) })),
+        { xy: [DK.x + DK.w / 2, DK.y + DK.d / 2], svg: dock },
+        { xy: mid, svg: `<g data-base="reverse" data-hidden="">${box}</g>` },
+      ],
+      cables: [[N.c, EDGE, TURN, IN]],
+      sites: {
+        [o.site]: { end, leg: [[...IN, RIDE], [...TURN, RIDE], [...EDGE, RIDE]], puck: "c" },
+        [o.front]: { end: top, leg: [[port, RF + 3, RIDE], [...EDGE, RIDE]], puck: "c", inner: { [o.site]: [top, [R.x + R.w + 1.5, mid[1], RIDE], [...IN, RIDE], end] } },
+      },
+      callouts: [
+        { ...callTo(o, [DK.x + DK.w, DK.y + DK.d, 3]), part: "direct" },
+        { ...callTo(o, [R.x + R.w, RF, BOX_H], o.behind[0]), part: "reverse", hidden: true },
+        { anchor: [racks[1].x + racks[1].w, racks[1].y, racks[1].h], at: [490, -20], align: "end", lines: o.behind[1], part: "reverse", hidden: true },
+      ],
+      tall: [[racks[1].x, racks[1].y, racks[1].h]],
+    };
+  },
+  // A VPN server: a rack at the back, and in front of it the pad where the tunnel ends. The tunnel's cable comes in
+  // at the pad's front from router a; what the server sends on goes out by its own cable, from the pad's right-hand
+  // side across the plate to router c. The pad's top is engraved with one packet inside another, and lights while
+  // the server takes a packet out of the tunnel or puts one in.
+  vpn(p, id, o) {
+    const R = rel(p, { x: p.w - 26, y: 6, w: 20, d: 20, r: 2, h: 34 }), PD = rel(p, { x: 7, y: p.d - 24, w: 24, d: 14, r: 2 });
+    const F = [PD.x + 6, PD.y + PD.d + 2], IN = [F[0], p.y + p.d + 3];
+    const FO = [PD.x + PD.w + 2, PD.y + PD.d / 2], OUT = [p.x + p.w + 3, FO[1]];
+    const end = [PD.x + PD.w / 2, PD.y + PD.d / 2, 3];
+    let pad = S(k.slabOf(PD, 0, 2.4, P, 3, 0.4), { tone: "mid", inner: L(k.sideSeam(PD, 1, P, 3), { tone: "faint" }) });
+    pad += L(k.planOutline({ x: PD.x + 3, y: PD.y + 2.5, w: PD.w - 6, d: PD.d - 5, r: 1 }, 2.4, P, 3) + k.planOutline({ x: PD.x + 7, y: PD.y + 5, w: PD.w - 14, d: PD.d - 10, r: 0.6 }, 2.4, P, 3), { tone: "lo" });
+    const lit = S(k.slabOf(PD, 0, 2.4, P, 3, 0.4), { tone: "hi", lit: true });
+    pad += `<g class="nm-busy" id="${id}-busy-${o.site}">${lit}</g><g class="nm-busy" id="${id}-busy-${o.out}">${lit}</g>`;
+    return {
+      things: [{ xy: [R.x + R.w / 2, R.y + R.d / 2], svg: rack(R, 0) }, { xy: [PD.x + PD.w / 2, PD.y + PD.d / 2], svg: pad }],
+      cables: [[N[o.puck], IN, F], [N[o.outPuck], OUT, FO]],
+      sites: {
+        [o.site]: { end, leg: [[...F, RIDE], [...IN, RIDE]], puck: o.puck },
+        [o.out]: { end, leg: [[...FO, RIDE], [...OUT, RIDE]], puck: o.outPuck },
+      },
+      callouts: [callTo(o, [R.x, R.y + R.d, R.h])],
+      tall: [[R.x, R.y, R.h]],
+    };
+  },
   // Any other server: two racks, and a pad at the front that lights while it works.
   host(p, id, o) {
     const racks = [rel(p, { x: p.w - 58, y: 6, w: 24, d: 26, r: 2, h: 40 }), rel(p, { x: p.w - 30, y: 4, w: 24, d: 30, r: 2, h: 46 })];
@@ -413,15 +542,22 @@ const resolverPart = (svg) => `<g data-base="resolver">${svg}</g>`;
 // The phone is drawn hidden, and shown for a unit that starts with `show phone`.
 const phonePart = (svg) => `<g data-base="phone" data-hidden="">${svg}</g>`;
 const PHONE_CALL = { anchor: [PH.x + PH.w, PH.y + PH.d, PH_Z], at: [70, 196], lines: [{ cls: "nm-name", text: "Your phone" }, { cls: "nm-addr", text: NET_MAP_PHONE_ADDR }] };
+// Home's words and the laptop's cable, which a café map leaves off (`show cafe`): there the laptop is on the Wi-Fi.
+const homePart = (svg) => `<g data-base="home">${svg}</g>`;
+// The café: its words on the plate, the listener beside your laptop, and the listener's callout, drawn hidden.
+const cafePart = (svg) => `<g data-base="cafe" data-hidden="">${svg}</g>`;
+const CAFE_WORDS = "CAFÉ WI-FI · 192.168.1.0/24";
+// Its callout stands below the café plate, at the frame's left, well clear of the internet's words.
+const LISTENER_CALL = { anchor: [LS.x, LS.y + LS.d, LS_Z], at: [-80, 280], lines: [{ cls: "nm-name", text: "Someone listening" }, { cls: "nm-addr", text: NET_MAP_LISTENER_ADDR }] };
 
 // ---------- The parts every protocol shares: home, the internet, the resolver ----------
 function buildBase() {
-  const plates = [plate(RP, "RESOLVER · 192.0.2.53"), plate(HP, "YOUR HOME · 192.168.1.0/24"), plate(IP, "THE INTERNET")];
-  const cables = [cable([LAP_OUT, HR_IN]), cable([HR_OUT, N.isp]), cable([N.a, DNS_IN]), ...LINKS.map(([a, b]) => cable([N[a], N[b]]))];
+  const plates = [plate(RP, "RESOLVER · 192.0.2.53"), plate(HP, "YOUR HOME · 192.168.1.0/24", (home, engrave) => homePart(home) + cafePart(engrave(CAFE_WORDS))), plate(IP, "THE INTERNET")];
+  const cables = [homePart(cable([LAP_OUT, HR_IN])), cable([HR_OUT, N.isp]), cable([N.a, DNS_IN]), ...LINKS.map(([a, b]) => cable([N[a], N[b]]))];
   const things = [
     { xy: [LB.x + LB.w / 2, LB.y + LB.d / 2], svg: laptop(ID, "") }, { xy: [HR.x + HR.w / 2, HR.y + HR.d / 2], svg: homeRouter(ID) },
     ...Object.entries(N).map(([n, xy]) => ({ xy, svg: puck(xy, n) })), { xy: [CB.x + CB.w / 2, CB.y + CB.d / 2], svg: resolverPart(cabinet(ID)) },
-    { xy: [PH.x + PH.w / 2, PH.y + PH.d / 2], svg: phonePart(phone(ID)) },
+    { xy: [PH.x + PH.w / 2, PH.y + PH.d / 2], svg: phonePart(phone(ID)) }, { xy: [LS.x + LS.w / 2, LS.y + LS.d / 2], svg: cafePart(listener(ID)) },
   ].sort((a, b) => depth([...a.xy, 0]) - depth([...b.xy, 0]));
   const pts = [RP, HP, IP].flatMap((p) => k.boxCorners(p, FLOOR, 0)).concat([[CB.x, CB.y, CB_H], [HR.x + 5, HR.y + 4, RT + 22]]).map(at);
   return {
@@ -446,12 +582,15 @@ function serverLayer(key, s) {
   const protocol = key.split(":")[0];
   const p = SLOT[s.slot], part = KINDS[s.kind](p, `${ID}-${protocol}`, s), pl = plate(p, s.label);
   const things = [...part.things].sort((a, b) => depth([...a.xy, 0]) - depth([...b.xy, 0]));
-  const boxes = [], calls = part.callouts.map((c) => calloutSvg(c, boxes)).join("");
+  // A part of the map a start shows or hides (Proxies' forward proxy, its reverse proxy, the web server's own callout).
+  const inPart = (name, hidden, svg) => (name ? `<g data-base="${name}"${hidden ? ' data-hidden=""' : ""}>${svg}</g>` : svg);
+  const boxes = [], calls = part.callouts.map((c) => inPart(c.part, c.hidden, calloutSvg(c, boxes))).join("");
   const pts = [...part.tall, ...k.boxCorners(p, FLOOR, 0)].map(at);
   for (const [x0, y0, x1, y1] of boxes) pts.push([x0, y0], [x1, y1]);
+  const all = (svg) => inPart(s.part, true, svg);
   return {
     key, protocol, sites: part.sites, pts,
-    parts: { under: pl.under, plates: pl.over, cables: part.cables.map((c) => cable(c)).join(""), things: things.map((t) => t.svg).join(""), calls },
+    parts: { under: all(pl.under), plates: all(pl.over), cables: all(part.cables.map((c) => cable(c)).join("")), things: all(things.map((t) => t.svg).join("")), calls: all(calls) },
   };
 }
 
@@ -462,7 +601,7 @@ function mapSvg(only) {
   const base = buildBase();
   const layers = Object.entries(NET_MAP_LAYERS).map(([key, s]) => serverLayer(key, s));
   const boxes = [], calls = baseCallouts().map((c) => calloutSvg(c, boxes));
-  const shared = `${calls[0]}${resolverPart(calls[1])}${calls[2]}<g id="${ID}-router" display="none">${calls[3]}</g>${phonePart(calloutSvg(PHONE_CALL, boxes))}`;
+  const shared = `${calls[0]}${resolverPart(calls[1])}${calls[2]}<g id="${ID}-router" display="none">${calls[3]}</g>${phonePart(calloutSvg(PHONE_CALL, boxes))}${cafePart(calloutSvg(LISTENER_CALL, boxes))}`;
   // One frame for every protocol, so the map never jumps in size between them: everything any of them shows.
   const pts = [...base.pts, ...boxes.flatMap(([x0, y0, x1, y1]) => [[x0, y0], [x1, y1]]), ...layers.flatMap((l) => l.pts), ...[SLOT.E, SLOT.SE].flatMap((p) => k.boxCorners(p, FLOOR, 0)).map(at)];
   const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]), PAD = 18;

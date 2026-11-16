@@ -330,6 +330,12 @@ export const stepSchema = z.strictObject({
   deep: z.array(paragraphSchema).min(1),
   facts: z.array(tracedFactSchema),
   events: z.array(sceneEventSchema),
+  /**
+   * Cues in place as the step begins, before its first event, from then on: Proxies takes the forward proxy off the
+   * map and shows the site's reverse proxy as step 4 begins. Only a figure that shows a start takes it, and like a
+   * scene's start it sets no status.
+   */
+  start: z.array(cueSchema).optional(),
   status: text.optional(),
   /** What the log says while it is empty at this step. */
   idle: text.optional(),

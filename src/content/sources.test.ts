@@ -319,6 +319,10 @@ describe('the OSI Model lesson’s sources', () => {
       'ieee-802-1q-2022', 'rfc-4762', 'rfc-5556', 'cisco-unicast-flooding', 'cisco-9300-mac-table', 'cisco-network-switch-how', 'openbsd-man-bridge-4', 'paloalto-l2-interface', 'cloudflare-network-switch',
       // Job 14: the new lesson Load Balancers.
       'microsoft-azure-lb-components', 'microsoft-azure-lb-probes', 'microsoft-azure-lb-distribution', 'microsoft-app-gateway-how', 'cloudflare-lb-components', 'cloudflare-lb-health', 'cloudflare-lb-lor', 'cloudflare-lb-maintenance', 'google-lb-overview', 'google-health-checks', 'google-backend-service',
+      // Job 16: the new lesson Proxies.
+      'rfc-7239', 'microsoft-what-is-proxy', 'microsoft-windows-proxy', 'microsoft-app-gateway-tls', 'paloalto-proxy-server', 'cloudflare-how-works', 'cloudflare-http-headers', 'cloudflare-gateway-proxy', 'cloudflare-tls-decryption', 'google-swp-overview', 'google-swp-tls', 'google-https-lb', 'google-cdn-overview',
+      // Job 16: the new lesson VPN.
+      'rfc-4301', 'rfc-4303', 'rfc-7296', 'rfc-3948', 'cisco-what-is-vpn', 'cisco-wifi-security', 'paloalto-what-is-vpn', 'paloalto-vpn-tunnel', 'paloalto-ipsec', 'microsoft-windows-vpn', 'microsoft-azure-vpn-p2s', 'google-cloud-vpn',
     ]);
     expect(SOURCES['microsoft-osi']!.publisher).not.toBe(SOURCES['cisco-ipip-decap']!.publisher);
   });

@@ -391,10 +391,12 @@ test('a shared lesson: tracksOf keeps tracks order, and its neighbors differ by 
   const tour = getEntries('how-the-internet-works');
   expect(neighbors(net, 'dhcp').next?.url).toBe('/networking/ports');
   expect(neighbors(net, 'what-is-tls').next?.url).toBe('/networking/firewalls');
-  expect(neighbors(net, 'firewalls').next?.url).toBe('/networking/load-balancers');
+  expect(neighbors(net, 'firewalls').next?.url).toBe('/networking/proxies');
+  expect(neighbors(net, 'proxies').next?.url).toBe('/networking/load-balancers');
+  expect(neighbors(net, 'load-balancers').next?.url).toBe('/networking/vpn');
   expect(neighbors(tour, 'what-is-tls').next).toBeNull();
   expect(net.filter((e) => e.available).map((e) => [e.slug, e.number])).toEqual([
-    ['osi-model', 1], ['packets', 2], ['ip-address', 3], ['mac-address', 4], ['switch', 5], ['arp', 6], ['subnetting', 7], ['router', 8], ['dhcp', 9], ['ports', 10], ['tcp-udp', 11], ['nat', 12], ['what-is-dns', 13], ['what-is-http', 14], ['what-is-https', 15], ['what-is-tls', 16], ['firewalls', 17], ['load-balancers', 19],
+    ['osi-model', 1], ['packets', 2], ['ip-address', 3], ['mac-address', 4], ['switch', 5], ['arp', 6], ['subnetting', 7], ['router', 8], ['dhcp', 9], ['ports', 10], ['tcp-udp', 11], ['nat', 12], ['what-is-dns', 13], ['what-is-http', 14], ['what-is-https', 15], ['what-is-tls', 16], ['firewalls', 17], ['proxies', 18], ['load-balancers', 19], ['vpn', 20],
   ]);
   const dns = net.find((e) => e.slug === 'what-is-dns')!;
   expect(dns.available && dns).toMatchObject({ url: '/networking/what-is-dns', canonical: '/how-the-internet-works/what-is-dns' });

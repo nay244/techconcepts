@@ -50,6 +50,14 @@
 .nm .nm-conn { fill: none; stroke: var(--lit-b); stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .5; }
 .nm .nm-conn.sealed { stroke: var(--lit-a); opacity: .8; stroke-width: 3.5px; filter: drop-shadow(0 0 2px var(--lit-b)); }
 .nm .nm-conn.alt { stroke: var(--lit-a); stroke-width: 2px; stroke-dasharray: 5 4; opacity: .85; }
+/* VPN's tunnel (conn … tunnel): a band round the cables, drawn to the map's scale, that glows once sealed. */
+.nm .nm-conn.tunnel { stroke: var(--lit-b); stroke-width: 7px; opacity: .2; vector-effect: none; }
+.nm .nm-conn.tunnel.sealed { stroke: var(--lit-a); opacity: .42; filter: none; }
+/* The café's listener (show cafe): its screen glows once it has overheard your request; every line lit while it can
+   read it, the top line alone (where it goes) once it is sealed. */
+.nm .nm-hear-head, .nm .nm-hear-body { opacity: 0; transition: opacity 200ms ease; }
+.nm #nm-listener[data-hear] .nm-glow { opacity: .42; }
+.nm #nm-listener[data-hear] .nm-hear-head, .nm #nm-listener[data-hear="reads"] .nm-hear-body { opacity: 1; }
 /* A router's name on a strip of label tape (a unit's labels isp, a, b, c and d), over the cables and pucks. */
 .nm .nm-strip rect { fill: var(--fig-bg); stroke: var(--line-strong); stroke-width: 1px; vector-effect: non-scaling-stroke; }
 .nm .nm-strip text { font: 700 12px / 1 var(--mono); fill: var(--ink-strong); }
@@ -60,7 +68,7 @@
 .nm [data-base][data-hidden] { display: none; }
 /* Reduced motion keeps every light, and only drops the fades. */
 @media (prefers-reduced-motion: reduce) {
-  .nm .nm-glow, .nm .nm-busy, .nm .nm-hold, .nm [data-part], .nm .lm-led { transition: none; }
+  .nm .nm-glow, .nm .nm-busy, .nm .nm-hold, .nm [data-part], .nm .lm-led, .nm .nm-hear-head, .nm .nm-hear-body { transition: none; }
 }
 /* While the driver's show settles the figure, every part changes at once, not over its fade (src/scenes/drivers/net-map.ts). */
 .nm[data-settling] * { transition: none !important; }

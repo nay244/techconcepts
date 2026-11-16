@@ -21,15 +21,16 @@ test('the six parts in order, each with its number, its title, its lessons and h
     [3, 'Getting between networks', 3, 3],
     [4, 'Talking across the internet', 4, 4],
     [5, 'The web', 3, 3],
-    [6, 'Protecting & scaling traffic', 2, 4],
+    [6, 'Protecting & scaling traffic', 4, 4],
   ]);
   // Every planned lesson once, numbered across the track with two digits.
   const all = parts.flatMap((p) => p.lessons);
   expect(all.map((l) => l.n)).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0')));
-  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router', 'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls', 'Load Balancers']);
-  // A lesson not ready yet keeps its planned shape: Packets is ready, Proxies (stop 18) is not.
+  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router', 'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls', 'Proxies', 'Load Balancers', 'VPN']);
+  // Every lesson of the track is ready: Packets at stop 2, Proxies at stop 18, VPN at stop 20, the track's last.
   expect(all[1]).toMatchObject({ ready: true, key: 'packets', n: '02', title: 'Packets' });
-  expect(all[17]).toEqual({ ready: false, key: 'proxies', n: '18', title: 'Proxies' });
+  expect(all[17]).toMatchObject({ ready: true, key: 'proxies', n: '18', title: 'Proxies' });
+  expect(all[19]).toMatchObject({ ready: true, key: 'vpn', n: '20', title: 'VPN' });
 });
 
 test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14', () => {

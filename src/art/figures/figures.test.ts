@@ -64,6 +64,7 @@ const EXPECTED: Record<string, string> = {
   'cover:aplus': 'fa694d51b69b6eb9ce3fea6ad1f361e2c2160b4f029340f71ecb8092b24fcc11',
   'spot:watch': 'b0a517894e64f146f1a7060c7c5c4163801f74c954703beb08ea5f2aad207cb5',
   'spot:learn': 'f48b830a8519b1d2c7f2d69bdc5fd5ea12a334eb33555ee9b71e0c859dedf66e',
+  'spot:proxies': '3fa9f7c4cad4d1b1a37889e0564e282f361a5731398b9a2bf9b627c205378e90',
   'spot:load-balancers': '6684065e6029fb918e792c3b8daf2d2847ab835c7ea535bc29124a341119d427',
   'spot:practice': '3d5e9a1240082e5e5d920c4b69bae94c3ea2be1bf0e4394e6e4de204c794dc30',
   'spot:subnet': '841d398bd78c4e35fc5f47fea35060e97ddad297312b9138429c778cc083ba1b',
@@ -84,6 +85,8 @@ const EXPECTED: Record<string, string> = {
   'spot:tcp-udp': '486e78bbae5a044469392f3e4f94cf0ef43d5b1ed566c73aade52acb9cfe9e0c',
   // Drawn for Packets (D13), on 2026-11-15; pinned from its own render, which equals prototypes/d13-packets-spot.svg (the last test).
   'spot:packets': 'd0d8b1e5aa32f37d8bee06e74fbd88fc29734b47844849d9fbd7b48d3d9bb4b4',
+  // Drawn for VPN (D15b), on 2026-11-16; pinned from its own render, which equals prototypes/d15-vpn-spot.svg (the last test).
+  'spot:vpn': '8901f972b9d06da75e129784bab04d3eecd3e3e8c68bebad166bafb1084ed8bc',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -186,6 +189,40 @@ test('the switch spot is prototypes/d13-switch-spot.svg, with one lit part, one 
   expect(svg).toContain('FIVE PORTS · MAC TABLE');
   expect(svg).toContain(
     'aria-label="A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on."',
+  );
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
+});
+
+// D15a / B18a, checks 5 and 6 and attack case 6: Proxies' card art is the approved file, with one lit solid and no padlock.
+test('the Proxies spot is prototypes/d15-proxies-spot.svg, byte for byte', () => {
+  expect(spot('proxies') + '\n').toBe(readFileSync('prototypes/d15-proxies-spot.svg', 'utf8'));
+});
+
+test('the Proxies spot has one lit solid and a thread, no light on, no padlock, its plate label and its address twice', () => {
+  const svg = spot('proxies');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/lm-beam/g) ?? []).length).toBe(1);
+  expect(svg).not.toContain('lm-led on');
+  expect(svg).not.toMatch(/class="[^"]*lock[^"]*"/);
+  expect(svg).toContain('PASSES IT ON · OWN ADDRESS');
+  expect([...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]).filter((t) => t === '203.0.113.30')).toHaveLength(2);
+  expect(svg).toContain(
+    'aria-label="A box with one cable coming in and one going out, its address, 203.0.113.30, in a window on its front. The cable out is lit, and over it floats a lit tag with the same address, 203.0.113.30."',
+  );
+  expect(SPOTS.slice(-3)).toEqual(['load-balancers', 'proxies', 'vpn']);
+});
+
+// D15b: the VPN spot is the approved file, byte for byte: one lit part (the tunnel), one light on (the server's), no padlock.
+test('the vpn spot is prototypes/d15-vpn-spot.svg, with one lit part, one light on, its plate label and its words', () => {
+  const file: string = readFileSync('prototypes/d15-vpn-spot.svg', 'utf8');
+  expect(`${spot('vpn')}\n`).toBe(file);
+  const svg = spot('vpn');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(1);
+  expect(svg).toContain('SEALED TO THE VPN SERVER');
+  expect(svg).not.toMatch(/lock/i);
+  expect(svg).toContain(
+    'aria-label="A laptop on a small café plate, a cup beside it. From the café, a lit, sealed duct runs to a VPN server standing on a plate of its own. From the server, a plain open cable runs on to a site’s page."',
   );
   expect(svg).toMatch(/viewBox="36 44 528 372"/);
 });

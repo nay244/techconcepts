@@ -27,6 +27,15 @@ export const SERVER_OPEN = '<g data-layer="ports:server" display="none">';
 /** The map without D11's parts: what the mockup's hash and Router's prototype describe. */
 export const withoutD11 = (svg: string): string => [PHONE_OPEN, STRANGER_OPEN, SERVER_OPEN].reduce((out, open) => groupsOf(out, open).rest, svg);
 
+/** D15's two layers, `proxies:site` and `proxies:proxy`: five groups each, taken out whole. */
+export const PROXIES_OPENS = ['<g data-layer="proxies:site" display="none">', '<g data-layer="proxies:proxy" display="none">'];
+
+/** D15b's VPN: the VPN server's and its example.net's layers, the café's groups, and the `home` wrappers round what the café takes the place of. */
+export const VPN_SERVER_OPEN = '<g data-layer="vpn:vpn" display="none">';
+export const VPN_WEB_OPEN = '<g data-layer="vpn:web" display="none">';
+export const CAFE_OPEN = '<g data-base="cafe" data-hidden="">';
+export const HOME_OPEN = '<g data-base="home">';
+
 /** D12's voice plate: the five groups of the layer `tcp-udp:voice`. */
 export const VOICE_OPEN = '<g data-layer="tcp-udp:voice" display="none">';
 /** D12's frames setup on the DHCP plate: the TV and the callouts, and the two tags that only MAC Address's frames carry. */
@@ -55,6 +64,9 @@ export function unwrapGroups(svg: string, open: string): string {
   }
   return out;
 }
+
+/** The map without D15b's parts: its new groups out whole, then home's wrappers opened, so the map is the one before it. */
+export const withoutVpn = (svg: string): string => unwrapGroups([VPN_SERVER_OPEN, VPN_WEB_OPEN, CAFE_OPEN].reduce((out, open) => groupsOf(out, open).rest, svg), HOME_OPEN);
 
 /** The DHCP plate without D12's frames parts: what DHCP's mockup hash describes. */
 export const withoutFrames = (svg: string): string =>

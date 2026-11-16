@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+import { proxiesFixture } from '../content/proxies-fixture';
 import { routerFixture } from '../content/router-fixture';
 import type { Board, Lesson, MessageEvent, SceneEvent } from '../content/schema';
 import { liftedFixture, makeLesson, makeTwoUnitLesson, makeUnit, type TerseLessonInput, type TerseUnitInput } from '../content/test-fixtures';
@@ -539,4 +540,76 @@ test('a note with the dropped glyph gives its row the glyph, and step 5 logs its
   ]);
   expect(log.find((r) => r.eventId === 's5-drop')!.glyph).toBe('dropped');
   expect(deriveState(ROUTER, 5, 6).cues.filter((c) => c.eventId.startsWith('s5-')).map((c) => `${c.cue} ${c.arg ?? ''}`.trim())).toEqual(['drop a', 'status No route: dropped']);
+});
+
+// D15a / B18a, attack cases 4b to 4f (prototypes/d15-proxies-cases.md): a step's own start, in the Proxies fixture.
+const proxies = proxiesFixture();
+const STEP4_START = ['fresh', 'hide proxy', 'hide direct', 'show reverse', 'conn open laptop>reverse', 'conn seal laptop>reverse'];
+const cueText = (c: { cue: string; arg?: string }): string => (c.arg === undefined ? c.cue : `${c.cue} ${c.arg}`);
+const stepPosition = (n: number) => positionOf(proxies, 0, 'step', n);
+
+test('4b: a step’s start applies from its own slot on, at event −1 and 0, as current cues with no log row', () => {
+  const before = deriveState(proxies, stepPosition(3), 14 /* clamped to all of step 3 */);
+  for (const index of [-1, 0]) {
+    const d = deriveState(proxies, stepPosition(4), index);
+    expect(d.cues.slice(-6).map(cueText), String(index)).toEqual(STEP4_START);
+    expect(d.cues.slice(-6).every((c) => c.eventId === 'step:step-4' && c.current)).toBe(true);
+    expect(d.log).toEqual(before.log);
+    expect(d.log).toHaveLength(9);
+  }
+});
+
+test('4c: at the end of step 3 none of step 4’s start is in place yet', () => {
+  const d = deriveState(proxies, stepPosition(3), 99);
+  expect(d.cues.some((c) => c.eventId === 'step:step-4')).toBe(false);
+});
+
+test('4d: a step’s start comes after the cues of the events before it, not ahead of every event', () => {
+  const d = deriveState(proxies, stepPosition(4), 0);
+  const ids = d.cues.map((c) => `${c.eventId}:${cueText(c)}`);
+  const opened = ids.indexOf('s2-ok:conn open laptop>proxy>origin');
+  const fresh = ids.indexOf('step:step-4:fresh');
+  expect(opened).toBeGreaterThan(-1);
+  expect(fresh).toBeGreaterThan(opened);
+  expect(ids.indexOf('step:step-3:conn seal laptop>proxy>origin')).toBeLessThan(ids.indexOf('s3-page:page text'));
+});
+
+test('4e: at Learn and Practice every start is applied, none current; at the Overview none is', () => {
+  const learn = positionOf(proxies, 0, 'learn');
+  const practice = positionOf(proxies, 0, 'practice');
+  for (const p of [learn, practice]) {
+    const starts = deriveState(proxies, p, 0).cues.filter((c) => c.eventId.startsWith('step:'));
+    expect(starts).toHaveLength(11);
+    expect(starts.every((c) => !c.current)).toBe(true);
+  }
+  expect(deriveState(proxies, positionOf(proxies, 0, 'overview'), 0).cues).toEqual([]);
+});
+
+test('4f: a step’s start adds no log row and no table change', () => {
+  const bare = proxiesFixture();
+  for (const s of bare.units[0]!.steps) delete s.start;
+  for (let p = 0; p < slotsFor(proxies).length; p++) {
+    for (const i of [-1, 0, 2]) {
+      const withStarts = deriveState(proxies, p, i);
+      const without = deriveState(bare, p, i);
+      expect(withStarts.log, `${p}/${i}`).toEqual(without.log);
+      expect(withStarts.tables, `${p}/${i}`).toEqual(without.tables);
+    }
+  }
+});
+
+test('16: at Learn the log has 14 rows (13 messages and a note), no time or size, the proxy’s port only on the site’s side, the note naming no one', () => {
+  const log = deriveState(proxies, positionOf(proxies, 0, 'learn'), 0).log;
+  expect(log).toHaveLength(14);
+  expect(log.filter((r) => r.type === 'message')).toHaveLength(13);
+  expect(log.filter((r) => r.type === 'note')).toHaveLength(1);
+  for (const r of log) expect([r.cells.time, r.cells.size], r.eventId).toEqual(['—', '—']);
+  const note = log.find((r) => r.type === 'note')!;
+  expect([note.cells.protocol, note.cells.source, note.cells.destination]).toEqual(['—', '—', '—']);
+  // Between the laptop and the proxy the proxy's address has no port; between the proxy and the site it has :41500.
+  for (const r of log.filter((m) => m.from === 'proxy' || m.to === 'proxy')) {
+    const proxySide = (r.from === 'proxy' ? r.cells.source : r.cells.destination) as string;
+    const towardSite = r.from === 'origin' || r.to === 'origin';
+    expect(proxySide, r.eventId).toBe(towardSite ? '203.0.113.30:41500' : '203.0.113.30');
+  }
 });
