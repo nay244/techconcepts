@@ -1183,15 +1183,52 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   font: 700 13px/1 var(--mono);
   font-variant-numeric: tabular-nums;
 }
-.cbtn--play {
-  min-width: 112px;
-  padding: 0 16px;
+/* Left to right: speed, Back, the play button (Play all or Pause), replay, the forward button. Only the forward button is orange. */
+.cbtn--alt {
+  min-width: 118px;
+  padding: 0 12px;
+  justify-content: start;
+}
+.cbtn--alt svg {
+  width: 13px;
+  height: 13px;
+}
+.cbtn--go {
+  min-width: 152px;
+  padding: 0 12px 0 16px;
+  overflow: hidden;
+  justify-content: space-between;
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--bg);
-  font: 700 13px/1 var(--mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--accent-ink);
+  font: 600 16px/1 var(--display);
+  letter-spacing: 0.01em;
+}
+.go__label {
+  white-space: nowrap;
+}
+/* The log head is a size container in every desktop layout: when it is narrow, the play button drops its words and
+   keeps its icon (its name stays "Play all" or "Pause"), so the legend is never pushed onto the controls. */
+@media (min-width: 1100px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
+  :root.js .log__head {
+    container-type: inline-size;
+  }
+}
+@container (max-width: 829.98px) {
+  .console__controls .cbtn--alt {
+    width: 36px;
+    min-width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  .console__controls .cbtn--alt .cbtn__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 .log__scroll {
@@ -1571,8 +1608,67 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     height: 48px;
     min-width: 48px;
   }
-  :root.js .console__controls .cbtn--play {
+  :root.js .console__controls .cbtn--speed,
+  :root.js .console__controls .cbtn--replay,
+  :root.js .console__controls .cbtn--alt,
+  :root.js .console__controls .cbtn--back {
+    width: 48px;
+    padding: 0;
+  }
+  :root.js .console__controls .cbtn--alt {
+    min-width: 48px;
+    justify-content: center;
+  }
+  :root.js .console__controls .cbtn--alt .cbtn__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  :root.js .console__controls .cbtn--alt svg {
+    width: 16px;
+    height: 16px;
+  }
+  /* Five controls: the forward button takes what is left (127px at 375, "Next lesson" and its › fit). */
+  :root.js .console__controls .cbtn--go {
     flex: 1;
+    min-width: 0;
+    gap: 6px;
+    padding: 0 10px 0 12px;
+    font-size: 17px;
+  }
+  /* Narrower than 375: the › goes first, and the words are centred. */
+  @media (max-width: 374px) {
+    :root.js .console__controls .cbtn--go {
+      justify-content: center;
+      padding: 0 8px;
+    }
+    :root.js .console__controls .cbtn--go svg {
+      display: none;
+    }
+  }
+  /* Narrower than 360: five 44px controls, 6px apart, words at 16px, so "Next lesson" still fits (96px at 320). */
+  @media (max-width: 359px) {
+    :root.js .console__controls {
+      gap: 6px;
+    }
+    :root.js .console__controls .cbtn {
+      height: 44px;
+      min-width: 44px;
+    }
+    :root.js .console__controls .cbtn--speed,
+    :root.js .console__controls .cbtn--replay,
+    :root.js .console__controls .cbtn--alt,
+    :root.js .console__controls .cbtn--back {
+      width: 44px;
+      min-width: 44px;
+    }
+    :root.js .console__controls .cbtn--go {
+      padding: 0 4px;
+      font-size: 16px;
+    }
   }
 
   /* The message strip (OSI Model) is one line, pinned under the scene: 40px with its top line, which is
@@ -1840,10 +1936,6 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
   :root.js .console__controls {
     padding-inline: var(--ph-side);
-  }
-  /* Play is wide here: its mark and its word stay together in the middle. */
-  :root.js .console__controls .cbtn--play {
-    justify-content: center;
   }
   /* The top bar has room again for the two things the phone drops for want of it. */
   :root.js .topbar__segments {

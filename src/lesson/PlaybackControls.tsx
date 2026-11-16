@@ -1,7 +1,6 @@
 import type { Dispatch } from 'react';
 import type { Lesson, Unit } from '../content/schema';
-import { playLabel, SPEEDS, type PlaybackAction, type PlaybackState } from '../engine/playback';
-import type { Position } from '../engine/timeline';
+import { canReplay, playButton, SPEEDS, type ForwardButton, type PlaybackAction, type PlaybackState } from '../engine/playback';
 
 export interface PlaybackControlsProps {
   lesson: Lesson;
@@ -9,8 +8,10 @@ export interface PlaybackControlsProps {
   dispatch: Dispatch<PlaybackAction>;
   /** The unit at the current position. */
   unit: Unit;
-  /** The lesson's last position (its last unit's Practice). */
-  last: Position;
+  /** What the forward button reads and leads to (`forwardButton`). */
+  forward: ForwardButton;
+  /** Presses the forward button: the console knows where "Next step" and "Next lesson" lead. */
+  onForward(): void;
 }
 
 const ICON = {
@@ -18,6 +19,12 @@ const ICON = {
   next: <path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
   play: <path d="M3 2l9 5-9 5z" fill="currentColor" />,
   pause: <path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor" />,
+  replay: (
+    <>
+      <path d="M2.6 7.4A4.6 4.6 0 1 0 4 3.7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M1.6 1.8l.9 3.2 3.1-.9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
 };
 
 function Icon({ name }: { name: keyof typeof ICON }) {
@@ -29,19 +36,21 @@ function Icon({ name }: { name: keyof typeof ICON }) {
 }
 
 /**
- * The log header's controls: the speed button, previous, Play and next. The
- * speed button shows the speed and names the next one; Play's words come from
- * `playLabel` (Play, Pause, Replay or Watch again). Presentational: the console
- * owns the keyboard shortcuts.
+ * The log header's controls, left to right: the speed button, Back, the play
+ * button (Play all, or Pause while a run is going), the replay icon, and the
+ * forward button, the only orange one: "Next step" inside the lesson, "Next
+ * lesson" at its end. The speed button shows the speed and names the next one.
+ * Presentational: the console owns what the forward button does and the keys.
  *
- * Previous and Next say `aria-disabled` at either end rather than `disabled`:
- * a disabled button drops its focus to the page, and these are pressed again
- * and again, so the one in hand keeps the focus and simply does nothing.
+ * Every button that can have nothing to do says `aria-disabled` rather than
+ * `disabled`: a disabled button drops its focus to the page, and these are
+ * pressed again and again, so the one in hand keeps the focus and does nothing.
  */
-export function PlaybackControls({ lesson, state, dispatch, unit, last }: PlaybackControlsProps) {
+export function PlaybackControls({ lesson, state, dispatch, unit, forward, onForward }: PlaybackControlsProps) {
   const atStart = state.position === 0;
-  const atEnd = state.position >= last;
-  const label = playLabel(lesson, state);
+  const play = playButton(state);
+  const noSteps = unit.steps.length === 0;
+  const replayable = canReplay(lesson, state);
   const nextSpeed = SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length];
   const speedLabel = `Speed ${state.speed}×. Click for ${nextSpeed}×`;
 
@@ -58,9 +67,9 @@ export function PlaybackControls({ lesson, state, dispatch, unit, last }: Playba
       </button>
       <button
         type="button"
-        className="cbtn"
+        className="cbtn cbtn--back"
         aria-label="Previous step"
-        title="Previous step"
+        title="Previous step (←)"
         aria-disabled={atStart}
         onClick={() => {
           if (!atStart) dispatch({ type: 'prev' });
@@ -71,23 +80,41 @@ export function PlaybackControls({ lesson, state, dispatch, unit, last }: Playba
       {/* A unit with no Watch steps has nothing to play. */}
       <button
         type="button"
-        className="cbtn cbtn--play"
-        disabled={unit.steps.length === 0}
-        onClick={() => dispatch({ type: 'toggle' })}
+        className="cbtn cbtn--alt"
+        aria-label={play.words}
+        title={`${play.words} (Space)`}
+        aria-disabled={noSteps}
+        onClick={() => {
+          if (!noSteps) dispatch({ type: 'toggle' });
+        }}
       >
-        <Icon name={label === 'Pause' ? 'pause' : 'play'} />
-        <span>{label}</span>
+        <Icon name={play.icon} />
+        <span className="cbtn__label" aria-hidden="true">
+          {play.words}
+        </span>
       </button>
       <button
         type="button"
-        className="cbtn"
-        aria-label="Next step"
-        title="Next step"
-        aria-disabled={atEnd}
+        className="cbtn cbtn--replay"
+        aria-label="Replay step"
+        title="Replay step"
+        aria-disabled={!replayable}
         onClick={() => {
-          if (!atEnd) dispatch({ type: 'next' });
+          if (replayable) dispatch({ type: 'replay' });
         }}
       >
+        <Icon name="replay" />
+      </button>
+      <button
+        type="button"
+        className="cbtn cbtn--go"
+        title={forward.disabled ? forward.reason : forward.words === 'Next step' ? 'Next step (→)' : 'Next lesson'}
+        aria-disabled={forward.disabled}
+        onClick={() => {
+          if (!forward.disabled) onForward();
+        }}
+      >
+        <span className="go__label">{forward.words}</span>
         <Icon name="next" />
       </button>
     </div>

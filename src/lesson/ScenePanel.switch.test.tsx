@@ -19,7 +19,7 @@ const lesson = batch3Fixtures.switch();
 const drawn = drawSwitch();
 const figure = <div dangerouslySetInnerHTML={{ __html: drawn.svg }} />;
 const position = positionOf(lesson, 0, 'step', 5);
-const state = (mode: PlaybackState['mode']): PlaybackState => ({ position, eventIndex: 0, mode, ended: false, speed: 1 });
+const state = (mode: PlaybackState['mode']): PlaybackState => ({ position, eventIndex: 0, mode, speed: 1 });
 const panel = (mode: PlaybackState['mode']) => (
   <ScenePanel unit={lesson.units[0]!} figure={figure} figureData={drawn.data} derived={deriveState(lesson, position, 0)} playback={state(mode)} reducedMotion={false} />
 );

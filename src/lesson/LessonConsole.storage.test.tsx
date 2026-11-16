@@ -17,7 +17,7 @@ const entry = entries.find((e): e is AvailableSummary => e.available && e.slug =
 
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });
 const heading = () => within(explanation()).getByRole('heading', { level: 2 });
-const playButton = () => screen.getByRole('button', { name: /^(Play|Pause|Replay|Watch again)$/ });
+const playButton = () => screen.getByRole('button', { name: /^(Play all|Pause)$/ });
 const logRows = () =>
   within(within(screen.getByRole('region', { name: 'Event log' })).getByRole('table'))
     .getAllByRole('row')
@@ -67,7 +67,8 @@ test('with storage blocked the lesson still plays end to end', async () => {
       vi.advanceTimersByTime(500);
     });
   }
-  expect(playButton()).toHaveAccessibleName('Replay');
+  expect(playButton()).toHaveAccessibleName('Play all');
+  expect(heading()).toHaveTextContent('Retransmission');
   expect(logRows()).toHaveLength(5);
 
   await user.click(screen.getByRole('button', { name: 'Next step' }));

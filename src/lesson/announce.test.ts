@@ -52,7 +52,7 @@ const sayState = (s: PlaybackState) => said(TWO, s.position, s.eventIndex);
 test('a jump (go, next or prev) says only where it lands, even after steps full of table changes', () => {
   const reducer = createPlaybackReducer(TWO);
   // Table Lookup played through, as a hand-played step leaves it.
-  const played: PlaybackState = { position: 3, eventIndex: 3, mode: 'idle', ended: false, speed: 1 };
+  const played: PlaybackState = { position: 3, eventIndex: 3, mode: 'idle', speed: 1 };
   expect(sayState(reducer(played, { type: 'next' }))).toBe('Lost Message');
   expect(sayState(reducer(played, { type: 'prev' }))).toBe('Neighbor Reply');
   expect(sayState(reducer(played, { type: 'go', position: 3 }))).toBe('Table Lookup');
@@ -61,7 +61,7 @@ test('a jump (go, next or prev) says only where it lands, even after steps full 
 test('Pause, which plays the rest of the step at once, says it by the same rule', () => {
   const reducer = createPlaybackReducer(TWO);
   // A run part way through Neighbor Reply: only its message has played.
-  const running: PlaybackState = { position: 2, eventIndex: 1, mode: 'run', ended: false, speed: 1 };
+  const running: PlaybackState = { position: 2, eventIndex: 1, mode: 'run', speed: 1 };
   expect(sayState(running)).toBe('Neighbor Reply. The router answers the laptop.');
   const paused = reducer(running, { type: 'toggle' });
   expect(paused.mode).toBe('idle');

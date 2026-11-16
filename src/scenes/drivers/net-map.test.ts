@@ -894,7 +894,6 @@ test('played at 1×, step 3 waits 600 ms before its table, then shows the candid
   const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
   // Step 3 is position 3. Playing it from its start, with the table events' own waits.
   act(() => hook.result.current[1]({ type: 'go', position: 3 } as never));
-  act(() => hook.result.current[1]({ type: 'toggle' } as never));
   expect(where()).toBe('3:0');
   wait(599);
   expect(where()).toBe('3:0');
@@ -918,7 +917,6 @@ test('played at 1×, step 3 waits 600 ms before its table, then shows the candid
   act(() => fast.result.current[1]({ type: 'cycleSpeed' } as never));
   act(() => fast.result.current[1]({ type: 'cycleSpeed' } as never));
   expect(fast.result.current[0].speed).toBe(2);
-  act(() => fast.result.current[1]({ type: 'toggle' } as never));
   expect(at2()).toBe('3:0');
   wait(299);
   expect(at2()).toBe('3:0');
@@ -1084,7 +1082,6 @@ test('the table waits: a remove takes 600 ms at 1× and 300 at 2×, so the row i
     const hook = renderHook(() => usePlayback(lesson, (event) => netMapDriver.duration(event, data)));
     act(() => hook.result.current[1]({ type: 'go', position: 5 } as never));
     for (let i = 0; i < cycles; i++) act(() => hook.result.current[1]({ type: 'cycleSpeed' } as never));
-    act(() => hook.result.current[1]({ type: 'toggle' } as never));
     expect(at(hook)).toBe('5:0');
     act(() => vi.advanceTimersByTime(ms - 1));
     expect(at(hook), `${ms - 1} ms`).toBe('5:0');

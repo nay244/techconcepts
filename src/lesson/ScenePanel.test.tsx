@@ -39,7 +39,6 @@ const at = (position: number, eventIndex: number, mode: PlaybackState['mode'], s
   position,
   eventIndex,
   mode,
-  ended: false,
   speed,
 });
 

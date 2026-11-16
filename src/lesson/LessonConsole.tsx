@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Panel } from '../content/schema';
-import { usePlayback } from '../engine/playback';
-import { appliedEvents, deriveState, parseStepParam, positionOf, resumeLabel, slotsFor, type Position } from '../engine/timeline';
+import { forwardButton, usePlayback } from '../engine/playback';
+import { appliedEvents, deriveState, parseStepParam, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
 import type { LessonDefinition } from '../lib/glossary';
@@ -78,6 +78,8 @@ export interface LessonConsoleProps {
   figure?: ReactNode;
   /** What the figure's driver needs at runtime (`DrawnFigure.data`). */
   figureData?: unknown;
+  /** Opens a page: "Next lesson" at the last Practice. Left out, the browser's own navigation; tests hand in their own. */
+  navigate?: (url: string) => void;
 }
 
 /** What the log says while it is empty, unless the step says otherwise. */
@@ -99,7 +101,7 @@ function FinishedMarker() {
  * renders the Overview first, as the server did, and only then follows a
  * `?step=` link. Every move is recorded as progress; Practice is never saved.
  *
- * Keys (`useLessonShortcuts`): Space plays or pauses, → and ← move. A polite
+ * Keys (`useLessonShortcuts`): Space plays all or pauses, → does what the forward button does while it reads "Next step", ← goes back. A polite
  * live region says each step's title and, as it plays, its latest message,
  * then any table changes since (`stepAnnouncement`).
  *
@@ -107,14 +109,13 @@ function FinishedMarker() {
  * the learner has opened (the outline ticks them) and the Practice picks, per
  * unit, so a visit elsewhere does not clear them.
  */
-export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, stamp, definitions, figure, figureData }: LessonConsoleProps) {
+export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, stamp, definitions, figure, figureData, navigate = (url) => window.location.assign(url) }: LessonConsoleProps) {
   // Each event waits as long as the figure's driver takes to play it.
   const [state, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
   const { position, eventIndex } = state;
   const derived = useMemo(() => deriveState(lesson, position, eventIndex), [lesson, position, eventIndex]);
   const { slot } = derived;
   const unit = lesson.units[derived.unit]!;
-  const last = useMemo(() => positionOf(lesson, lesson.units.length - 1, 'practice'), [lesson]);
   const reducedMotion = useReducedMotion();
   const trackUrl = `/${trackId}`;
   const go = useCallback((target: Position) => dispatch({ type: 'go', position: target }), [dispatch]);
@@ -194,9 +195,23 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     [unit.id],
   );
 
+  // The forward button, and → with it while it reads "Next step". At the last Practice "Next lesson" opens the next
+  // lesson, or does nothing when there is none; a key never leaves the page.
+  const forward = forwardButton(lesson, state, { next, number: entry.number, total });
+  const pressForward = () => {
+    if (forward.disabled) return;
+    if (forward.href !== undefined) navigate(forward.href);
+    else if (slot.kind === 'practice') {
+      // A following unit: its Overview, with the words showing on a phone and focus on them (the end row's jump).
+      goFromOutline(position + 1);
+      explanation.current?.focus();
+    } else dispatch({ type: 'next' });
+  };
   useLessonShortcuts({
     toggle: () => dispatch({ type: 'toggle' }),
-    next: () => dispatch({ type: 'next' }),
+    next: () => {
+      if (forward.words === 'Next step') pressForward();
+    },
     prev: () => dispatch({ type: 'prev' }),
   });
 
@@ -317,7 +332,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           idle={idle}
           fresh={fresh?.eventId ?? null}
           fold={{ open: logOpen, onToggle: toggleLog }}
-          controls={<PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} last={last} />}
+          controls={<PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} forward={forward} onForward={pressForward} />}
         />
       </main>
       <p className="sr-only" aria-live="polite" data-announce="">

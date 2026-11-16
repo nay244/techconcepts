@@ -95,7 +95,10 @@ async function wait(ms: number): Promise<void> {
 const topBar = () => screen.getByRole('banner');
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });
 const heading = () => within(explanation()).getByRole('heading', { level: 2 });
-const playButton = () => screen.getByRole('button', { name: /^(Play|Pause|Replay|Watch again)$/ });
+const playButton = () => screen.getByRole('button', { name: /^(Play all|Pause)$/ });
+const replayButton = () => screen.getByRole('button', { name: 'Replay step' });
+/** The forward button: the orange one, "Next step" or "Next lesson". */
+const forwardButton = () => screen.getByRole('button', { name: /^Next (step|lesson)$/ });
 /** The log's rows, without its header row. A lone "nothing yet" row counts as none. */
 function logRows(): HTMLElement[] {
   const table = within(screen.getByRole('region', { name: 'Event log' })).getByRole('table');
@@ -234,9 +237,9 @@ test('ArrowRight walks Overview → steps → Learn → Practice and records pro
   expect(stored().lessons[KEY]).toMatchObject({ status: 'finished' });
 });
 
-test('Play runs the steps: the log fills step by step and the button says Pause, then Replay', async () => {
+test('Play all runs the steps: the log fills step by step and the button says Pause, then Play all', async () => {
   renderConsole();
-  expect(playButton()).toHaveAccessibleName('Play');
+  expect(playButton()).toHaveAccessibleName('Play all');
   expect(logRows()).toHaveLength(0);
 
   await user.click(playButton());
@@ -269,7 +272,8 @@ test('Play runs the steps: the log fills step by step and the button says Pause,
   await wait(EVENT_MS);
   expect(heading()).toHaveTextContent('Retransmission');
   expect(logRows()).toHaveLength(5);
-  expect(playButton()).toHaveAccessibleName('Replay');
+  expect(playButton()).toHaveAccessibleName('Play all');
+  expect(forwardButton()).toHaveAccessibleName('Next step');
 });
 
 test('each event waits as long as the figure’s driver takes to play it', async () => {
@@ -284,11 +288,11 @@ test('each event waits as long as the figure’s driver takes to play it', async
   expect(logRows()).toHaveLength(1);
 });
 
-test('on Learn the button says Watch again', async () => {
+test('on Learn the play button reads Play all and runs from step 1', async () => {
   window.history.replaceState({}, '', '/networking/dhcp?step=6');
   renderConsole();
   expect(heading()).toHaveTextContent('What happened and why');
-  expect(playButton()).toHaveAccessibleName('Watch again');
+  expect(playButton()).toHaveAccessibleName('Play all');
   // It runs the unit's steps from the first.
   await user.click(playButton());
   expect(heading()).toHaveTextContent('Neighbor Hello');
@@ -457,12 +461,12 @@ test('the outline moves the lesson, and All 20 lessons opens the track list in a
   expect(dialog).not.toHaveAttribute('open');
 });
 
-test('Space plays and pauses, and is left alone on a button', async () => {
+test('Space plays all and pauses, and is left alone on a button', async () => {
   renderConsole();
   await user.keyboard(' ');
   expect(playButton()).toHaveAccessibleName('Pause');
   await user.keyboard(' ');
-  expect(playButton()).toHaveAccessibleName('Play');
+  expect(playButton()).toHaveAccessibleName('Play all');
   expect(heading()).toHaveTextContent('Neighbor Hello');
 
   screen.getByRole('button', { name: /^Speed / }).focus();
@@ -485,17 +489,25 @@ test('after Resume or the end row’s next unit, focus lands on the explanation,
   expect(explanation()).toHaveFocus();
 });
 
-test('Next and Previous keep their focus at either end and do nothing there', async () => {
-  window.history.replaceState({}, '', '/networking/dhcp?step=6');
-  renderConsole();
-  const next = screen.getByRole('button', { name: 'Next step' });
-  await user.click(next);
+test('the forward button keeps its focus as its words change, and Next lesson is disabled where no lesson follows', async () => {
+  window.history.replaceState({}, '', '/networking/firewalls?step=6');
+  renderConsole(FIREWALLS);
+  const forward = forwardButton();
+  expect(forward).toHaveAccessibleName('Next step');
+  await user.click(forward);
   expect(heading()).toHaveTextContent('Two questions');
-  expect(next).toHaveFocus();
-  expect(next).toHaveAttribute('aria-disabled', 'true');
-  await user.click(next);
+  // The same element, now "Next lesson", disabled: the last ready lesson. It keeps the focus and does nothing.
+  expect(forwardButton()).toBe(forward);
+  expect(forward).toHaveAccessibleName('Next lesson');
+  expect(forward).toHaveFocus();
+  expect(forward).toHaveAttribute('aria-disabled', 'true');
+  expect(forward).toHaveAttribute('title', 'No next lesson is ready yet.');
+  await user.click(forward);
+  await user.keyboard('{Enter}');
+  await user.keyboard(' ');
   expect(heading()).toHaveTextContent('Two questions');
-  expect(next).toHaveFocus();
+  expect(forward).toHaveFocus();
+  expect(window.location.pathname).toBe('/networking/firewalls');
 
   // Space and the arrows are the console's, and a focused button keeps them for itself.
   const previous = screen.getByRole('button', { name: 'Previous step' });
@@ -601,8 +613,7 @@ test('the Table tab is marked when the step has changed the table and the reader
   expect(tab()).toHaveAccessibleName('Table');
   expect(container.querySelector('.tab__mark')).toBeNull();
 
-  // Step 2 plays the router's answer, then adds a row.
-  await user.click(playButton());
+  // Step 2 plays the router's answer on arrival, then adds a row.
   await wait(EVENT_MS);
   await wait(EVENT_MS);
   expect(tab()).toHaveAccessibleName('Table, changed');
@@ -634,7 +645,6 @@ test.each([
   const tab = () => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: /^Table/ });
   await wait(0);
   expect(tab()).toHaveAccessibleName('Table');
-  await user.click(playButton());
   await wait(EVENT_MS);
   expect(tab()).toHaveAccessibleName('Table');
   await wait(EVENT_MS);

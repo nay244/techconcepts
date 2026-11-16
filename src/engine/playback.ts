@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useMemo, useReducer, type Dispatch } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useReducer, type Dispatch } from 'react';
 import type { Lesson, SceneEvent } from '../content/schema';
 import { slotsFor, stepEvents, type Position } from './timeline';
 
@@ -15,8 +15,8 @@ export type DurationOf = (e: SceneEvent) => number;
 /**
  * What playback is doing:
  * - `'idle'`: nothing is playing.
- * - `'step'`: a step reached by hand plays once.
- * - `'run'`: Play is running the unit's steps, and this one is playing.
+ * - `'step'`: a step reached by hand, or replayed, plays once.
+ * - `'run'`: Play all is running the unit's steps, and this one is playing.
  * - `'hold'`: the run has finished this step and waits before the next.
  */
 export type Mode = 'idle' | 'step' | 'run' | 'hold';
@@ -26,16 +26,21 @@ export interface PlaybackState {
   /** How many of the step's events have been applied. While a step plays, the next one is pending. */
   eventIndex: number;
   mode: Mode;
-  /** A run has finished the unit's last step, so Play reads Replay and starts the unit over. */
-  ended: boolean;
   speed: Speed;
 }
 
+/**
+ * A hand move (`go`, `next`, `prev`) says whether the step lands complete at once (`instant`, true when the reader asked
+ * for reduced motion at the moment of the move; left out, false). `usePlayback`'s dispatch fills it in.
+ */
 export type PlaybackAction =
-  | { type: 'go'; position: Position }
-  | { type: 'next' }
-  | { type: 'prev' }
+  | { type: 'go'; position: Position; instant?: boolean }
+  | { type: 'next'; instant?: boolean }
+  | { type: 'prev'; instant?: boolean }
+  /** Play all from the unit's first step, or Pause while a run is going. */
   | { type: 'toggle' }
+  /** Plays the current Watch step again from its first message, with its waits. A hand action: it stops a run. */
+  | { type: 'replay' }
   /** Ends the pending event's wait. It names the event it was set for, so a late one is ignored. */
   | { type: 'tick'; position: Position; eventIndex: number }
   /** Ends a hold. It names the step it was set for, so a late one is ignored. */
@@ -43,15 +48,15 @@ export type PlaybackAction =
   | { type: 'cycleSpeed' };
 
 export function initialPlayback(): PlaybackState {
-  return { position: 0, eventIndex: 0, mode: 'idle', ended: false, speed: 1 };
+  return { position: 0, eventIndex: 0, mode: 'idle', speed: 1 };
 }
 
 /**
  * The rules for playing a lesson, after the mockups. Moving by hand (`go`,
- * `next`, `prev`) stops any run and plays that step once. Play (`toggle`) runs
- * every step of the current unit, from the current step or else the unit's
- * first, holding between steps; during a run it pauses with the step shown
- * complete. The state is only a cursor: what the scene shows comes from
+ * `next`, `prev`) stops any run and plays that step once (or lands it complete
+ * when `instant`). Play all (`toggle`) runs every step of the current unit
+ * from the unit's first, holding between steps; during a run it pauses with
+ * the step shown complete. `replay` plays the current step again. The state is only a cursor: what the scene shows comes from
  * `deriveState(lesson, position, eventIndex)`.
  */
 export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: PlaybackAction) => PlaybackState {
@@ -60,14 +65,16 @@ export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: Pla
   const eventCount = (p: Position) => stepEvents(lesson, p).length;
 
   /** A hand move. A position out of range (or not a whole number) is read as the nearest one, as the timeline does. */
-  function go(s: PlaybackState, target: Position): PlaybackState {
+  function go(s: PlaybackState, target: Position, instant = false): PlaybackState {
     const position = Number.isNaN(target) ? 0 : Math.min(Math.max(Math.trunc(target), 0), last);
-    return { ...s, position, eventIndex: 0, mode: eventCount(position) > 0 ? 'step' : 'idle', ended: false };
+    const count = eventCount(position);
+    if (instant) return { ...s, position, eventIndex: count, mode: 'idle' };
+    return { ...s, position, eventIndex: 0, mode: count > 0 ? 'step' : 'idle' };
   }
 
   /** The run plays the step at `position` from its first event. */
   function runFrom(s: PlaybackState, position: Position): PlaybackState {
-    return settle({ ...s, position, eventIndex: 0, mode: 'run', ended: false });
+    return settle({ ...s, position, eventIndex: 0, mode: 'run' });
   }
 
   /**
@@ -81,14 +88,13 @@ export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: Pla
     const next = slots[s.position + 1];
     return next?.kind === 'step' && next.unit === slots[s.position]!.unit
       ? { ...s, mode: 'hold' }
-      : { ...s, mode: 'idle', ended: true };
+      : { ...s, mode: 'idle' };
   }
 
   function toggle(s: PlaybackState): PlaybackState {
     if (s.mode === 'run' || s.mode === 'hold') return { ...s, mode: 'idle', eventIndex: eventCount(s.position) };
+    // Play all: from the unit's first step, wherever the reader is in the unit.
     const slot = slots[s.position]!;
-    if (slot.kind === 'step' && !s.ended) return runFrom(s, s.position);
-    // The Overview, Learn, Practice or a finished run: start from the unit's first step.
     const first = slots.findIndex((x) => x.unit === slot.unit && x.kind === 'step');
     return first === -1 ? s : runFrom(s, first);
   }
@@ -96,13 +102,15 @@ export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: Pla
   return (s, a) => {
     switch (a.type) {
       case 'go':
-        return go(s, a.position);
+        return go(s, a.position, a.instant);
       case 'next':
-        return go(s, s.position + 1);
+        return go(s, s.position + 1, a.instant);
       case 'prev':
-        return go(s, s.position - 1);
+        return go(s, s.position - 1, a.instant);
       case 'toggle':
         return toggle(s);
+      case 'replay':
+        return canReplay(lesson, s) ? { ...s, eventIndex: 0, mode: 'step' } : s;
       case 'tick':
         if ((s.mode !== 'step' && s.mode !== 'run') || a.position !== s.position || a.eventIndex !== s.eventIndex) return s;
         return settle({ ...s, eventIndex: s.eventIndex + 1 });
@@ -114,12 +122,53 @@ export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: Pla
   };
 }
 
-/** The Play button's label. */
-export function playLabel(lesson: Lesson, s: PlaybackState): 'Play' | 'Pause' | 'Replay' | 'Watch again' {
-  if (s.mode === 'run' || s.mode === 'hold') return 'Pause';
-  const kind = slotsFor(lesson)[s.position]?.kind;
-  if (kind === 'learn' || kind === 'practice') return 'Watch again';
-  return s.ended ? 'Replay' : 'Play';
+/** Whether the step at the current position has anything to replay: a Watch step with at least one event. */
+export function canReplay(lesson: Lesson, s: PlaybackState): boolean {
+  return slotsFor(lesson)[s.position]?.kind === 'step' && stepEvents(lesson, s.position).length > 0;
+}
+
+/** The play button's words and icon: Pause only while a run is going (playing a step or holding), else Play all. */
+export function playButton(s: PlaybackState): { words: 'Play all' | 'Pause'; icon: 'play' | 'pause' } {
+  return s.mode === 'run' || s.mode === 'hold' ? { words: 'Pause', icon: 'pause' } : { words: 'Play all', icon: 'play' };
+}
+
+/** What the lesson's end looks like from the page: the next ready lesson, if any, and this lesson's number among the track's total. */
+export interface LessonEnd {
+  next: { url: string } | null;
+  number: number;
+  total: number;
+}
+
+export interface ForwardButton {
+  words: 'Next step' | 'Next lesson';
+  /** Nothing to go to: the button stays in its slot and does nothing. */
+  disabled: boolean;
+  /** The next lesson's address, at Practice when one is ready. */
+  href?: string;
+  /** Why it is disabled, for its title. */
+  reason?: string;
+}
+
+/**
+ * The forward button's words and what it leads to. "Next step" everywhere inside the lesson, to a following
+ * unit's Overview included; "Next lesson" at the last Practice: to the next ready lesson, or disabled, with its reason.
+ */
+export function forwardButton(lesson: Lesson, s: PlaybackState, end: LessonEnd): ForwardButton {
+  const slot = slotsFor(lesson)[s.position];
+  if (slot === undefined || slot.kind !== 'practice' || lesson.units[slot.unit + 1] !== undefined) {
+    return { words: 'Next step', disabled: false };
+  }
+  if (end.next !== null) return { words: 'Next lesson', disabled: false, href: end.next.url };
+  return {
+    words: 'Next lesson',
+    disabled: true,
+    reason: end.number === end.total ? 'There is no next lesson: this is the track’s last.' : 'No next lesson is ready yet.',
+  };
+}
+
+/** Whether the reader has asked for reduced motion, right now. False where `matchMedia` is missing. */
+export function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 }
 
 /** During a hold, the step it leads to and how long it lasts: the top bar fills that step's segment over `ms`. */
@@ -140,12 +189,22 @@ export function pendingEvent(lesson: Lesson, s: PlaybackState): SceneEvent | nul
  * Playback state for a lesson. It waits out the pending event
  * (`durationOf(event) / speed`) and then ticks, and waits out a hold
  * (`HOLD_MS / speed`) and then ends it. The wait is cancelled and restarted on
- * every state change and cancelled on unmount. Reduced motion changes no wait:
- * the scene skips its motion, but a run keeps its pace.
+ * every state change and cancelled on unmount. Reduced motion changes no wait
+ * of a run or a replay, but a hand move (`go`, `next`, `prev`) lands its step
+ * complete at once: the returned dispatch reads the setting at the moment of the
+ * move and carries it as `instant`.
  */
 export function usePlayback(lesson: Lesson, durationOf: DurationOf): [PlaybackState, Dispatch<PlaybackAction>] {
   const reducer = useMemo(() => createPlaybackReducer(lesson), [lesson]);
-  const [state, dispatch] = useReducer(reducer, undefined, initialPlayback);
+  const [state, rawDispatch] = useReducer(reducer, undefined, initialPlayback);
+  const dispatch = useCallback<Dispatch<PlaybackAction>>(
+    (action) => {
+      if (action.type === 'go' || action.type === 'next' || action.type === 'prev') {
+        rawDispatch({ ...action, instant: action.instant ?? prefersReducedMotion() });
+      } else rawDispatch(action);
+    },
+    [],
+  );
   // Read when a wait starts, so a new durationOf on each render does not restart the wait.
   const msAt1x = useEffectEvent((event: SceneEvent) => durationOf(event));
 
@@ -153,12 +212,12 @@ export function usePlayback(lesson: Lesson, durationOf: DurationOf): [PlaybackSt
     const { position, eventIndex, speed } = state;
     const hold = holding(state);
     if (hold !== null) {
-      const timer = setTimeout(() => dispatch({ type: 'holdDone', position }), hold.ms);
+      const timer = setTimeout(() => rawDispatch({ type: 'holdDone', position }), hold.ms);
       return () => clearTimeout(timer);
     }
     const event = pendingEvent(lesson, state);
     if (event === null) return;
-    const timer = setTimeout(() => dispatch({ type: 'tick', position, eventIndex }), msAt1x(event) / speed);
+    const timer = setTimeout(() => rawDispatch({ type: 'tick', position, eventIndex }), msAt1x(event) / speed);
     return () => clearTimeout(timer);
   }, [lesson, state]);
 

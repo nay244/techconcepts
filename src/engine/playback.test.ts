@@ -8,8 +8,11 @@ import {
   HOLD_MS,
   holding,
   initialPlayback,
+  canReplay,
+  forwardButton,
   pendingEvent,
-  playLabel,
+  playButton,
+  prefersReducedMotion,
   SPEEDS,
   usePlayback,
   type PlaybackAction,
@@ -67,21 +70,20 @@ afterEach(() => {
 // ---------------------------------------------------------------- the reducer
 
 test('playback starts at the Overview, idle, at 1×', () => {
-  expect(initialPlayback()).toEqual({ position: 0, eventIndex: 0, mode: 'idle', ended: false, speed: 1 });
-  expect(playLabel(L, initialPlayback())).toBe('Play');
+  expect(initialPlayback()).toEqual({ position: 0, eventIndex: 0, mode: 'idle', speed: 1 });
+  expect(playButton(initialPlayback()).words).toBe('Play all');
 });
 
 test('go plays that step once, then idles', () => {
   const s = apply(initialPlayback(), go(2));
-  expect(s).toEqual({ position: 2, eventIndex: 0, mode: 'step', ended: false, speed: 1 });
+  expect(s).toEqual({ position: 2, eventIndex: 0, mode: 'step', speed: 1 });
   const { end, trace } = playOut(s);
   expect(trace).toEqual(['step 2:0', 'step 2:1', 'idle 2:2']);
-  expect(end).toMatchObject({ ended: false });
-  expect(playLabel(L, end)).toBe('Play');
+  expect(playButton(end).words).toBe('Play all');
 
   // The Overview, Learn and Practice have nothing to play.
   for (const position of [0, 6, 7, 8]) {
-    expect(apply(s, go(position))).toEqual({ position, eventIndex: 0, mode: 'idle', ended: false, speed: 1 });
+    expect(apply(s, go(position))).toEqual({ position, eventIndex: 0, mode: 'idle', speed: 1 });
   }
 });
 
@@ -98,10 +100,10 @@ test('go, next and prev move by one and keep to the lesson', () => {
   expect(apply(s, go(Number.NaN))).toMatchObject({ position: 0, mode: 'idle' });
 });
 
-test('toggle from idle runs every step of the unit with a hold between, then ends with Replay', () => {
+test('toggle from idle runs every step of the unit with a hold between, then stops idle on the last step', () => {
   const started = apply(initialPlayback(), toggle);
-  expect(started).toEqual({ position: 1, eventIndex: 0, mode: 'run', ended: false, speed: 1 });
-  expect(playLabel(L, started)).toBe('Pause');
+  expect(started).toEqual({ position: 1, eventIndex: 0, mode: 'run', speed: 1 });
+  expect(playButton(started)).toEqual({ words: 'Pause', icon: 'pause' });
 
   const { end, trace } = playOut(started);
   expect(trace).toEqual([
@@ -112,17 +114,17 @@ test('toggle from idle runs every step of the unit with a hold between, then end
     'run 5:0', 'idle 5:1',
   ]);
   // The run stops at the unit's last step: it never moves on to Learn.
-  expect(end).toEqual({ position: 5, eventIndex: 1, mode: 'idle', ended: true, speed: 1 });
-  expect(playLabel(L, end)).toBe('Replay');
+  expect(end).toEqual({ position: 5, eventIndex: 1, mode: 'idle', speed: 1 });
+  expect(playButton(end)).toEqual({ words: 'Play all', icon: 'play' });
 
   // A hold names the step it leads to and lasts HOLD_MS at 1×.
   const held = apply(started, tick(started));
   expect(held.mode).toBe('hold');
-  expect(playLabel(L, held)).toBe('Pause');
+  expect(playButton(held).words).toBe('Pause');
   expect(holding(held)).toEqual({ next: 2, ms: 2600 });
   expect(HOLD_MS).toBe(2600);
 
-  // Replay runs the unit again from its first step.
+  // Play all runs the unit again from its first step.
   expect(apply(end, toggle)).toEqual(started);
 });
 
@@ -133,8 +135,8 @@ test('toggle during a run pauses with the current step complete', () => {
   expect(at(oneIn)).toBe('run 2:1');
 
   const paused = apply(oneIn, toggle);
-  expect(paused).toEqual({ position: 2, eventIndex: 2, mode: 'idle', ended: false, speed: 1 });
-  expect(playLabel(L, paused)).toBe('Play');
+  expect(paused).toEqual({ position: 2, eventIndex: 2, mode: 'idle', speed: 1 });
+  expect(playButton(paused).words).toBe('Play all');
   expect(pendingEvent(L, paused)).toBeNull();
 
   // Pausing in a hold keeps the step that just finished.
@@ -143,22 +145,22 @@ test('toggle during a run pauses with the current step complete', () => {
   expect(apply(held, toggle)).toEqual(paused);
   expect(holding(apply(held, toggle))).toBeNull();
 
-  // Play again runs on from the start of that step.
-  expect(apply(paused, toggle)).toEqual({ position: 2, eventIndex: 0, mode: 'run', ended: false, speed: 1 });
-  // And Play during a hand-played step starts a run from it.
-  expect(apply(initialPlayback(), go(3), toggle)).toMatchObject({ position: 3, eventIndex: 0, mode: 'run' });
+  // Play all after a pause starts again from the unit's first step: there is no resume.
+  expect(apply(paused, toggle)).toEqual({ position: 1, eventIndex: 0, mode: 'run', speed: 1 });
+  // And Play all during a hand-played step runs from the unit's first step too.
+  expect(apply(initialPlayback(), go(3), toggle)).toMatchObject({ position: 1, eventIndex: 0, mode: 'run' });
 });
 
-test('toggle on Learn runs from step 1 and the label was Watch again', () => {
+test('toggle on Learn and Practice runs from step 1, and reads Play all', () => {
   for (const position of [6, 7]) {
     const s = apply(initialPlayback(), go(position));
-    expect(playLabel(L, s)).toBe('Watch again');
-    expect(apply(s, toggle)).toEqual({ position: 1, eventIndex: 0, mode: 'run', ended: false, speed: 1 });
+    expect(playButton(s).words).toBe('Play all');
+    expect(apply(s, toggle)).toEqual({ position: 1, eventIndex: 0, mode: 'run', speed: 1 });
   }
   // In the second unit, it runs that unit's own first step.
   expect(apply(initialPlayback(), go(14), toggle)).toMatchObject({ position: 9 });
-  // The Overview says Play.
-  expect(playLabel(L, apply(initialPlayback(), go(8)))).toBe('Play');
+  // The Overview says Play all, and runs the unit's first step.
+  expect(playButton(apply(initialPlayback(), go(8))).words).toBe('Play all');
 });
 
 test('a hand move during a hold stops the run, and the late holdDone is ignored', () => {
@@ -167,7 +169,7 @@ test('a hand move during a hold stops the run, and the late holdDone is ignored'
   expect(at(held)).toBe('hold 1:1');
 
   const moved = apply(held, { type: 'next' });
-  expect(moved).toEqual({ position: 2, eventIndex: 0, mode: 'step', ended: false, speed: 1 });
+  expect(moved).toEqual({ position: 2, eventIndex: 0, mode: 'step', speed: 1 });
   expect(r(moved, { type: 'holdDone', position: 1 })).toBe(moved);
 
   // Going back by hand stops it too.
@@ -242,7 +244,7 @@ test('the pending event is the one not yet applied, and null between steps', () 
 test('a step with no events completes at once in a run', () => {
   // Beta's first step has no events: the run holds on it, then carries on.
   const started = apply(initialPlayback(), go(8), toggle);
-  expect(started).toEqual({ position: 9, eventIndex: 0, mode: 'hold', ended: false, speed: 1 });
+  expect(started).toEqual({ position: 9, eventIndex: 0, mode: 'hold', speed: 1 });
   expect(holding(started)).toEqual({ next: 10, ms: 2600 });
 
   // Its last step has none either: the run ends the moment it gets there.
@@ -254,11 +256,11 @@ test('a step with no events completes at once in a run', () => {
     'run 12:0', 'hold 12:1',
     'idle 13:0',
   ]);
-  expect(end).toMatchObject({ ended: true });
-  expect(playLabel(L, end)).toBe('Replay');
+  expect(end).toMatchObject({ position: 13, mode: 'idle' });
+  expect(playButton(end).words).toBe('Play all');
 
   // By hand, such a step simply shows, idle.
-  expect(apply(initialPlayback(), go(9))).toEqual({ position: 9, eventIndex: 0, mode: 'idle', ended: false, speed: 1 });
+  expect(apply(initialPlayback(), go(9))).toEqual({ position: 9, eventIndex: 0, mode: 'idle', speed: 1 });
 });
 
 test('toggle in a unit with no steps changes nothing', () => {
@@ -346,7 +348,7 @@ test('timers: each event waits durationOf(event)/speed ms and a hold waits 2600/
   // Nothing waits when idle, and unmounting clears a pending wait.
   dispatch(toggle);
   dispatch(toggle);
-  expect(where()).toBe('idle 2:2');
+  expect(where()).toBe('idle 1:1'); // Play all ran from step 1, and Pause showed it complete
   expect(vi.getTimerCount()).toBe(0);
   dispatch(toggle);
   expect(vi.getTimerCount()).toBe(1);
@@ -371,8 +373,8 @@ test('a re-render with a new durationOf keeps the current wait and times the nex
   expect(where()).toBe('run 2:1');
 });
 
-test('reduced motion leaves every duration unchanged', () => {
-  // The hook takes the lesson and the durations, and nothing about motion.
+test('reduced motion leaves every duration of a run unchanged', () => {
+  // The hook still takes only the lesson and the durations: it reads the setting itself, when a hand move is dispatched.
   expect(usePlayback.length).toBe(2);
 
   vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('prefers-reduced-motion'), media: q }));
@@ -386,4 +388,143 @@ test('reduced motion leaves every duration unchanged', () => {
   expect(where()).toBe('hold 1:1');
   wait(1);
   expect(where()).toBe('run 2:0');
+});
+
+// ---------------------------------------------------------------- D14: one step at a time, replay, the buttons
+
+test('an instant hand move lands the step complete and idle; a plain one plays it', () => {
+  expect(apply(initialPlayback(), { type: 'go', position: 3, instant: true })).toEqual({ position: 3, eventIndex: 2, mode: 'idle', speed: 1 });
+  expect(apply(initialPlayback(), { type: 'next', instant: true })).toMatchObject({ position: 1, eventIndex: 1, mode: 'idle' });
+  expect(apply(initialPlayback(), go(3), { type: 'prev', instant: true })).toMatchObject({ position: 2, eventIndex: 2, mode: 'idle' });
+  // Learn has no events: complete is 0.
+  expect(apply(initialPlayback(), { type: 'go', position: 6, instant: true })).toMatchObject({ eventIndex: 0, mode: 'idle' });
+  // It stops a run too.
+  const started = apply(initialPlayback(), toggle);
+  expect(apply(started, { type: 'next', instant: true })).toMatchObject({ position: 2, eventIndex: 2, mode: 'idle' });
+  expect(apply(initialPlayback(), go(3))).toMatchObject({ eventIndex: 0, mode: 'step' });
+});
+
+test('replay plays the current step again from its first event, in place, and stops a run', () => {
+  const played = playOut(apply(initialPlayback(), go(3))).end;
+  expect(at(played)).toBe('idle 3:2');
+  expect(r(played, { type: 'replay' })).toEqual({ position: 3, eventIndex: 0, mode: 'step', speed: 1 });
+  // Mid-play it starts over.
+  const mid = apply(initialPlayback(), go(3), { type: 'tick', position: 3, eventIndex: 0 });
+  expect(at(mid)).toBe('step 3:1');
+  expect(at(r(mid, { type: 'replay' }))).toBe('step 3:0');
+  // During a run it stops the run and keeps the position; the step then idles, never moving on.
+  const midRun = apply(initialPlayback(), toggle, tick(apply(initialPlayback(), toggle)), { type: 'holdDone', position: 1 });
+  expect(at(midRun)).toBe('run 2:0');
+  const replayed = r(midRun, { type: 'replay' });
+  expect(at(replayed)).toBe('step 2:0');
+  expect(playOut(replayed).trace.at(-1)).toBe('idle 2:2');
+  // During a hold it replays the step that just finished, not the next.
+  const held = apply(initialPlayback(), toggle, tick(apply(initialPlayback(), toggle)));
+  expect(at(held)).toBe('hold 1:1');
+  expect(at(r(held, { type: 'replay' }))).toBe('step 1:0');
+  expect(r(replayed, { type: 'holdDone', position: 2 })).toBe(replayed);
+  // Pause in a hold keeps the step.
+  expect(at(r(held, toggle))).toBe('idle 1:1');
+});
+
+test('replay is enabled on a Watch step with at least one event, and nowhere else', () => {
+  const enabled = [1, 2, 3, 4, 5, 10, 11, 12].filter((p) => canReplay(L, { ...initialPlayback(), position: p }));
+  expect(enabled).toEqual([1, 2, 3, 4, 5, 10, 11, 12]);
+  // The Overview, Learn, Practice and a step with no events.
+  for (const p of [0, 6, 7, 8, 9, 13, 14, 15]) expect(canReplay(L, { ...initialPlayback(), position: p })).toBe(false);
+  // Pressing it where there is nothing to replay changes nothing.
+  const s = apply(initialPlayback(), go(9));
+  expect(r(s, { type: 'replay' })).toBe(s);
+  const learn = apply(initialPlayback(), go(6));
+  expect(r(learn, { type: 'replay' })).toBe(learn);
+});
+
+test('Play all runs from the unit’s first step and stops on its last, never crossing into the next unit', () => {
+  const s = apply(initialPlayback(), go(4), toggle);
+  expect(at(s)).toBe('run 1:0');
+  const { end } = playOut(s);
+  expect(at(end)).toBe('idle 5:1');
+  // From the second unit's Practice it runs the second unit.
+  expect(at(apply(initialPlayback(), go(15), toggle))).toBe('hold 9:0');
+});
+
+test('the play button says Pause only while a run is going', () => {
+  const started = apply(initialPlayback(), toggle);
+  expect(playButton(started).words).toBe('Pause');
+  expect(playButton(apply(started, tick(started))).words).toBe('Pause'); // hold
+  expect(playButton(apply(initialPlayback(), go(3))).words).toBe('Play all'); // a step's own play
+  expect(playButton(apply(started, { type: 'replay' })).words).toBe('Play all');
+});
+
+test('the forward button reads Next step everywhere but the last Practice', () => {
+  const end = { next: { url: '/t/next' }, number: 3, total: 9 };
+  for (let p = 0; p <= 14; p++) {
+    expect(forwardButton(L, { ...initialPlayback(), position: p }, end)).toEqual({ words: 'Next step', disabled: false });
+  }
+  // Unit 1's Practice (7) leads to unit 2's Overview, even with a next lesson ready.
+  expect(forwardButton(L, { ...initialPlayback(), position: 7 }, end).words).toBe('Next step');
+  // The lesson's last Practice: a next lesson, its address.
+  expect(forwardButton(L, { ...initialPlayback(), position: 15 }, end)).toEqual({ words: 'Next lesson', disabled: false, href: '/t/next' });
+  // The track's last lesson, and the last ready one.
+  expect(forwardButton(L, { ...initialPlayback(), position: 15 }, { next: null, number: 9, total: 9 })).toEqual({
+    words: 'Next lesson',
+    disabled: true,
+    reason: 'There is no next lesson: this is the track’s last.',
+  });
+  expect(forwardButton(L, { ...initialPlayback(), position: 15 }, { next: null, number: 3, total: 9 })).toEqual({
+    words: 'Next lesson',
+    disabled: true,
+    reason: 'No next lesson is ready yet.',
+  });
+});
+
+test('prefersReducedMotion reads the setting each time, and is false without matchMedia', () => {
+  vi.stubGlobal('matchMedia', undefined);
+  expect(prefersReducedMotion()).toBe(false);
+  let reduce = true;
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('prefers-reduced-motion'), media: q }));
+  expect(prefersReducedMotion()).toBe(true);
+  reduce = false;
+  expect(prefersReducedMotion()).toBe(false);
+});
+
+test('under reduced motion a hand move through the hook lands complete with no timer; replay and Play all keep their waits', () => {
+  let reduce = true;
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('prefers-reduced-motion'), media: q }));
+  const { dispatch, wait, where, state } = renderPlayback();
+  dispatch(go(3));
+  expect(where()).toBe('idle 3:2');
+  expect(vi.getTimerCount()).toBe(0);
+  expect(state().eventIndex).toBe(stepEvents(L, 3).length);
+  dispatch({ type: 'next' });
+  expect(where()).toBe('idle 4:1');
+  dispatch({ type: 'prev' });
+  expect(where()).toBe('idle 3:2');
+  // Replay keeps its waits.
+  dispatch({ type: 'replay' });
+  expect(where()).toBe('step 3:0');
+  wait(1000);
+  expect(where()).toBe('step 3:1');
+  wait(1000);
+  expect(where()).toBe('idle 3:2');
+  // The setting turned off: the next hand move plays with its waits.
+  reduce = false;
+  dispatch(go(2));
+  expect(where()).toBe('step 2:0');
+  expect(vi.getTimerCount()).toBe(1);
+});
+
+test('Pause during a run through the hook leaves nothing waiting; Play all after it starts at the first step', () => {
+  const { dispatch, wait, where } = renderPlayback();
+  dispatch(go(3));
+  dispatch(toggle);
+  expect(where()).toBe('run 1:0');
+  wait(1000);
+  dispatch(toggle); // the hold after step 1
+  expect(where()).toBe('idle 1:1');
+  expect(vi.getTimerCount()).toBe(0);
+  wait(30_000);
+  expect(where()).toBe('idle 1:1');
+  dispatch(toggle);
+  expect(where()).toBe('run 1:0');
 });

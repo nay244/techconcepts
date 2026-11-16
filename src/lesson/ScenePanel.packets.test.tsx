@@ -20,7 +20,7 @@ const panel = (lesson: Lesson) => (
     figure={<svg data-figure="net-map" role="img" aria-label="Fixture figure" />}
     figureData={{ routes: {} }}
     derived={deriveState(lesson, 1, 0)}
-    playback={{ position: 1, eventIndex: 0, mode: 'idle', ended: false, speed: 1 }}
+    playback={{ position: 1, eventIndex: 0, mode: 'idle', speed: 1 }}
     reducedMotion={false}
   />
 );
