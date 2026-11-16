@@ -16,18 +16,20 @@ const SUBNETTING = getLesson('subnetting')!;
 test('the six parts in order, each with its number, its title, its lessons and how many are ready', () => {
   const parts = trackParts(networkingTrack, entries, lessonOf, lessonStamp);
   expect(parts.map((p) => [p.n, p.title, p.ready, p.lessons.length])).toEqual([
-    [1, 'The big picture', 1, 2],
-    [2, 'Addresses & the local network', 3, 4],
+    [1, 'The big picture', 2, 2],
+    [2, 'Addresses & the local network', 4, 4],
     [3, 'Getting between networks', 3, 3],
     [4, 'Talking across the internet', 4, 4],
     [5, 'The web', 3, 3],
-    [6, 'Protecting & scaling traffic', 1, 4],
+    [6, 'Protecting & scaling traffic', 2, 4],
   ]);
   // Every planned lesson once, numbered across the track with two digits.
   const all = parts.flatMap((p) => p.lessons);
   expect(all.map((l) => l.n)).toEqual(Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0')));
-  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'IP Address', 'MAC Address', 'ARP', 'Subnetting', 'Router', 'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls']);
-  expect(all[1]).toEqual({ ready: false, key: 'packets', n: '02', title: 'Packets' });
+  expect(all.filter((l) => l.ready).map((l) => l.title)).toEqual(['OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router', 'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls', 'Load Balancers']);
+  // A lesson not ready yet keeps its planned shape: Packets is ready, Proxies (stop 18) is not.
+  expect(all[1]).toMatchObject({ ready: true, key: 'packets', n: '02', title: 'Packets' });
+  expect(all[17]).toEqual({ ready: false, key: 'proxies', n: '18', title: 'Proxies' });
 });
 
 test('How the Internet Works: six parts, every lesson ready, numbered 01 to 14', () => {

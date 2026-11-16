@@ -31,7 +31,7 @@ requireLessons(LESSONS);
  * Subnetting's Watch is about the address itself, the OSI Model's scene has the Network view only (its figure is
  * the layers, not a message between machines), and Router's, ARP's, Ports', NAT's, IP Address's and MAC Address's have it only (D10 §2, D11 §2.10, D12 §2.10), so none has a Network / Sequence switch (spec §6.3, §12).
  */
-const NO_SEQUENCE = new Set(['subnetting', 'osi-model', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address']);
+const NO_SEQUENCE = new Set(['subnetting', 'osi-model', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'packets', 'switch', 'load-balancers']);
 
 /** How long a Play run may take: the longest first unit runs about 46 s at 1× and 23 s at 2×. */
 const RUN_TIMEOUT = 120_000;
@@ -152,8 +152,10 @@ for (const lesson of LESSONS) {
       const segments = page.locator('.topbar__segments .topbar__group').first().locator('.topbar__step');
       for (let i = 0; i < steps - 1; i += 1) await expect(segments.nth(i)).toHaveAttribute('data-state', 'done');
       await expect(segments.nth(steps - 1)).toHaveAttribute('data-state', 'current');
-      // MAC Address's steps 2 and 3 send no frame: its log has three rows for five steps (D12 §3.2).
-      expect(await logRows(page).count()).toBeGreaterThanOrEqual(lesson.path.endsWith('/mac-address') ? 3 : steps);
+      // MAC Address's steps 2 and 3 send no frame: its log has three rows for five steps (D12 §3.2). Switch's step 2
+      // only writes the table (s2-add), so its log has four rows for five steps (src/content/lessons/switch.ts).
+      const rows = lesson.path.endsWith('/mac-address') ? 3 : lesson.path.endsWith('/switch') ? 4 : steps;
+      expect(await logRows(page).count()).toBeGreaterThanOrEqual(rows);
       await expect(page.locator('.console__log td[data-idle]')).toHaveCount(0);
       // The scene at its fullest, with every row its tables get, still fits the window.
       expect(await overflowAt(page, 'the end of the run')).toBeNull();

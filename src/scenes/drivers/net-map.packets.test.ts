@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { drawNetMap, type NetMapData } from '../../art/scenes/net-map';
+import { getLesson } from '../../content/registry';
 import { routerFixture } from '../../content/router-fixture';
 import { batch3Fixtures } from '../../content/batch3-fixtures';
 import type { Lesson, MessageEvent, SceneEvent } from '../../content/schema';
@@ -109,6 +110,18 @@ test('4c, 4d, 15: the times the spec gives, at 1×; a park or via does not lengt
   expect(netMapDriver.duration(fast, data)).toBeCloseTo(320 + 2.2 * flatLength(data.routes['web>laptop']!) + 300, 6);
   const viaFast = { ...(event('s4-p3') as MessageEvent), fast: true };
   expect(netMapDriver.duration(viaFast, data)).toBeCloseTo(320 + 2.2 * flatLength(routeOf(data, viaFast)) + 300, 6);
+});
+
+// The lesson's own events (src/content/lessons/packets.ts), not the fixture's: the same ids and the same times at 1×.
+test('the Packets lesson’s own net-map events take the times the spec gives, at 1×', () => {
+  const own = getLesson('packets')!.units[0]!;
+  const at = (id: string): SceneEvent => own.steps.flatMap((s) => s.events).find((e) => e.id === id)!;
+  const t = (id: string): number => netMapDriver.duration(at(id), data);
+  expect(t('s5-order')).toBe(600);
+  for (const id of ['s4-p3', 's4-p4']) expect(Math.abs(t(id) - 2126)).toBeLessThan(1);
+  expect(Math.abs(t('s3-p2') - 1399)).toBeLessThan(1);
+  expect(Math.abs(t('s4-p2') - 1566)).toBeLessThan(1);
+  for (const id of ['s1-req', 's2-p1']) expect(Math.abs(t(id) - 2015)).toBeLessThan(1);
 });
 
 test('15b: a note with a page and a status and no park, unpark or drop still takes no time', () => {

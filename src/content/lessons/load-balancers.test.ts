@@ -52,7 +52,6 @@ test('the log’s addresses are the figure’s callouts: requests go to 203.0.11
 
 test('no source states a time or a size for these messages, so each is a dash', () => {
   for (const e of events.filter((x) => x.type !== 'table')) {
-    if (e.type === 'table') continue;
     expect(e.log.time).toBe('—');
     expect(e.log.size).toBe('—');
   }
