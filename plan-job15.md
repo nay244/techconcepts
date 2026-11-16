@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 15: the lesson's flow
 
-**Status: D14 at the design gate (2026-11-15), waiting for the owner: variant A, variant B, or neither.** The designer recommends A. **The owner's go is given** (2026-11-15, direction 2.69): "Lesson flow", then "Design now". The design gate stays: D14 comes to the owner as a clickable prototype with its spec, and nothing is built until the owner approves one of its two Play variants. This plan covers what 2.69 sets and nothing more, so D14 starts without another go.
+**Status: D14 revised at the owner's word, back to the gate when done.** At the gate (2026-11-15) the owner said: "I like the idea of a one step a a time, however only keep \"Next Step\" and \"Next Lesson\", and \"Play All\"". The orchestrator reads it as variant A, with the controls' words cut to three: the forward button reads "Next step" at every slot inside the lesson (Overview, steps, the last step to Learn, Learn to Practice) and "Next lesson" at Practice; the play button reads "Play all" (from step 1) and "Pause" only while a run is going; "Watch step 1", "Go to Learn", "Go to Practice", "Replay step" and "Watch again" go. Variant B is dropped. The revised prototype comes back to the owner before the spec review; the owner's word goes into `docs/direction.md` as the next free row when this branch is merged into `revamp`. **The owner's go is given** (2026-11-15, direction 2.69): "Lesson flow", then "Design now". The design gate stays: D14 comes to the owner as a clickable prototype with its spec, and nothing is built until the owner approves one of its two Play variants. This plan covers what 2.69 sets and nothing more, so D14 starts without another go.
 
 ## Inputs
 
