@@ -1,6 +1,6 @@
 # D14: the lesson's flow
 
-This is the spec for unit D14 of job 15 (`plan-job15.md`, decisions 1 to 5). It is revised at the owner's word at the design gate (2026-11-15): "I like the idea of a one step a a time, however only keep "Next Step" and "Next Lesson", and "Play All"". Variant A, step by step, is taken. The control row has three labels: "Next step", "Next lesson" and "Play all". It also has "Pause", while a run is going (§4).
+This is the spec for unit D14 of job 15 (`plan-job15.md`, decisions 1 to 5). It is revised at the owner's word at the design gate (2026-11-15): "I like the idea of a one step a a time, however only keep "Next Step" and "Next Lesson", and "Play All"". Variant A, step by step, is taken. The control row has three labels: "Next step", "Next lesson" and "Play all". It also has "Pause", while a run is going (§4). After the owner asked about a replay button at the same gate, an icon-only replay (↺, named "Replay step") sits between Play all and the forward button (§3, §4).
 
 The prototype is `prototypes/d14-lesson-flow.html`. It is one file with no network. It plays through a whole lesson (HTTP) at any width, with a panel that switches the end case, the theme and reduced motion. It was designed against the site at `abc1646` and against `prototypes/s17-lesson-flow-facts.md` (S17).
 
@@ -23,7 +23,7 @@ The figure in the prototype is a stand-in (three boxes and a moving dot); the fi
 | # | Today | D14 | Decision it touches |
 |---|---|---|---|
 | 1 | Play runs every step with a 2.6 s hold. HTTP's step 1 is on screen 2.8 s. | Nothing moves on unless the reader asks. Each step plays once when the reader arrives, then waits. "Play all" keeps today's run, from step 1. | The build spec's playback row, `docs/superpowers/specs/2026-11-05-techconcepts-redesign-build-design.md:41` (**owner, 2026-11-05**). Reopened by the owner's word above. |
-| 2 | The orange button reads Play, Pause, Replay or Watch again. Going on takes the icon-only › (36×34 on a desktop). | The orange button always goes forward. It reads "Next step" inside the lesson and "Next lesson" at its end. The › button is gone, because the orange button is the forward button. "Play all" and "Pause" move to a smaller button beside it. | The same row (Play, Pause, Replay). Direction §7 ("Back and Next are pinned at the bottom", as built). |
+| 2 | The orange button reads Play, Pause, Replay or Watch again. Going on takes the icon-only › (36×34 on a desktop). | The orange button always goes forward. It reads "Next step" inside the lesson and "Next lesson" at its end. The › button is gone, because the orange button is the forward button. "Play all" and "Pause" move to a smaller button beside it, and replaying a step moves to an icon-only ↺ button. | The same row (Play, Pause, Replay). Direction §7 ("Back and Next are pinned at the bottom", as built). |
 | 3 | Practice ends on "That's the whole lesson." in small grey text. Practice is never ticked. Watch again stays orange. | A closing block: "That's the whole lesson." as a heading, the lesson's own pattern as a row of lit tapes, and the way on (the Up next card, or "Back to the track"). Practice is ticked in the outline once every question has an answer. | Build spec §6.3 end row, `:153` (no owner mark). `Explanation.tsx` EndRow. |
 | 4 | A wrong pick changes only the border to ink. | The option says it: a ✕ and "Not this one" on the option, a light hatch, the same ✕ before the feedback's "Not quite.", and a way back to Learn. No error colour (`console.css:1088` is kept). A right pick keeps its green and gains a ✓ and "Right". | D1 §6 (the feedback's source numbers, kept). `console.css:1088`. |
 | 5 | The keys work and nothing says so. Watch › Learn › Practice are boxed like buttons, though they are not buttons. | One line in the log's head names Space, ← and →, where a keyboard is likely. Watch, Learn and Practice lose their boxes and read as words. The empty log says what it is for. | None. |
@@ -34,10 +34,11 @@ The figure in the prototype is a stand-in (three boxes and a moving dot); the fi
   - the top bar, the outline's 268px, the scene, the words' column, and the log under both;
   - D1's reading layout, and its folded log in Learn and Practice;
   - on a phone: the 52px top bar, the scene at 34% (18% when reading), the 48px tabs, the four parts, and the 64px control bar.
-- **The phone's control bar geometry:** four controls, 48px tall, 8px apart, 12px from the edges.
-  - Today: speed 48, ‹ 48, Play 183, › 48.
-  - D14: speed 48, ‹ 48, the play button 48, the forward button 183.
-  - The widest button stays the widest. It moves under the thumb at the right, where › was. Its width does not change with its label, and it is never removed.
+- **The phone's control bar:** 64px tall, controls 48px tall, 8px apart, 12px from the edges.
+  - Today: four controls. Speed 48, ‹ 48, Play 183, › 48.
+  - D14: five controls. Speed 48, ‹ 48, the play button 48, replay 48, the forward button 127 (at 375).
+  - The widest button stays the widest. It moves under the thumb at the right, where › was.
+  - No control changes size or place with its label or state, at any slot. Disabled controls stay in their slots.
 - **The speed button:** one button that cycles 0.5×, 1×, 1.5×, 2× (owner, 2026-11-05).
 - **Words that stay:**
   - the narration and every lesson word (copied from `src/content/lessons/what-is-http.ts`);
@@ -57,17 +58,30 @@ Touches:
 - direction §7 ("Back and Next are pinned at the bottom", as built, no owner mark);
 - `PlaybackControls.tsx`.
 
-**Order, left to right, at every width:** speed, Back (‹), the play button, the forward button.
+**Order, left to right, at every width:** speed, Back (‹), the play button, replay (↺), the forward button.
 
 - The › button is removed. The forward button is the old Next, labelled and wide.
-- Today's order is speed, ‹, Play, ›. The widest button moves one place right, under the thumb, where › was.
+- Today's order is speed, ‹, Play, ›. The widest button moves to the right end, under the thumb, where › was.
+- Replay sits next to the forward button. The two buttons that act on "this step, then the next" are together, and the run's button (Play all) is between Back and replay.
 
 | Control | Class | Desktop (≥1100, in the log head) | Tablet on its side (900–1099) | Phone layouts (≤1099 otherwise) |
 |---|---|---|---|---|
 | Speed | `cbtn cbtn--speed` | 52×34, unchanged | 52×44 | 48×48 |
 | Back | `cbtn`, aria-label "Previous step" | 36×34, icon, unchanged | 44×44 | 48×48 |
 | Play button (new role) | `cbtn cbtn--alt` | 13px icon and words; `min-width: 118px; padding: 0 12px`; start-aligned | as desktop, 44 tall | **icon only**, 48×48, 16px icon; its words are its `aria-label` |
-| Forward button (new) | `cbtn cbtn--go` | `min-width: 152px; padding: 0 12px 0 16px`; words `600 16px/1 var(--display)`, sentence case; a 14px › icon at the right end | as desktop, 44 tall | `flex: 1` (183px at 375 wide); words 17px |
+| Replay (new) | `cbtn cbtn--replay`; `aria-label` and `title` "Replay step" | 36×34, 14px ↺ icon, no words: Back's tile | 44×44 | 48×48 |
+| Forward button (new) | `cbtn cbtn--go` | `min-width: 152px; padding: 0 12px 0 16px`; words `600 16px/1 var(--display)`, sentence case; a 14px › icon at the right end | as desktop, 44 tall | `flex: 1` (127px at 375 wide); words 17px; `gap: 6px; padding: 0 10px 0 12px` |
+
+**The phone's forward button, measured** (Practice, "Next lesson", the longer label):
+
+| Viewport | Forward button | What it shows |
+|---|---|---|
+| 390 (the e2e `phone` project) | 142×48 | words 17px and › |
+| 375 | 127×48 | words 17px (80px) and ›; 13px left, 11px right, border included |
+| 374 to 360 | 112×48 at 360 | words 17px, centred, **no ›** (`@media (max-width: 374px)`): words and › would need 124px |
+| 359 to 320 | 96×44 at 320 | all five controls 44×44, 6px apart; words 16px (76px), centred, no › (`@media (max-width: 359px)`) |
+
+No document names a narrowest phone. The e2e phone is 390 and the design width is 375, so the two narrower rules are a fallback: below 360, the 48px targets give way to 44px (WCAG 2.5.5's size) rather than clip the words. "Next step" is shorter than "Next lesson" at every width.
 
 - **Gaps:** 6px on a desktop and 8px on a phone, both as today. The phone bar stays 64px with 8px/12px padding.
 - **Colours:** only the forward button is orange.
@@ -79,8 +93,10 @@ Touches:
   - "Next step (→)"
   - "Play all (Space)" or "Pause (Space)"
   - "Previous step (←)"
+  - "Replay step" (no key)
   - "Next lesson" has no key in its title.
 - **Back** is `aria-disabled` on the Overview, as today.
+- **Replay** is `aria-disabled` wherever there is nothing to replay: the Overview, a step with no messages (HTTP's step 1), Learn and Practice. Its disabled look is Back's on the Overview: `.cbtn[aria-disabled='true']`, 40% opacity, no press scale. It stays in its slot.
 
 **The forward button.** It has two labels, and neither changes the button's size.
 
@@ -96,12 +112,12 @@ Touches:
 
 - **A disabled forward button** has `.cbtn[aria-disabled='true']`'s 40% opacity, as Back has on the Overview. It keeps its place, its width and its words.
 - **The way on when there is no next lesson** is in the end block, which says why and offers "Back to the track" (§7).
-- **Fit:** "Next lesson" is the longer label. It fits the phone's 183px at 17px with room to spare. On a desktop both labels sit in the 152px minimum.
+- **Fit:** "Next lesson" is the longer label. It fits the phone's 127px at 17px with its › (measured below). On a desktop both labels sit in the 152px minimum.
 
 **Why these labels** (point 4 of the revision):
 
 - **A following unit reads "Next step".** Its Overview is the next place in the same lesson. "Next lesson" would be false, and "Next step" goes on as it did everywhere before.
-- **No next lesson keeps "Next lesson", disabled.** Only the three labels are allowed. The disabled button keeps the bar's four slots and the forward button's 183px in place, and it says plainly that this is the end. The end block's "Back to the track" carries the way on.
+- **No next lesson keeps "Next lesson", disabled.** Only the three labels are allowed. The disabled button keeps the bar's slots and the forward button's width in place, and it says plainly that this is the end. The end block's "Back to the track" carries the way on.
 
 **Keys** (`useLessonShortcuts.ts`, with its ignore rules unchanged):
 
@@ -109,6 +125,7 @@ Touches:
 - ← does Back.
 - Space presses the play button.
 - A held Space does nothing more, because repeats are ignored.
+- Replay has no key. R would be the only letter key on the page and would need a fourth item in the key line; Back then Next step (← →) already replays a step from the keyboard (§4).
 
 ## 4. The play button: Play all, or Pause
 
@@ -125,27 +142,30 @@ Nothing moves on by itself unless the reader asks for the run. Arriving at a ste
 
 - **After Pause,** "Play all" starts again from step 1; there is no resume. Going on from the paused step is "Next step". This holds one rule for the button ("Play all is the whole run") and keeps the bar to the three labels.
 - **The end of a run.** A run ends on the last step. The forward button there reads "Next step" (to Learn), and the play button reads "Play all".
-- **Hand moves stop a run,** as today. These include the forward button, →, ←, Back, the outline, a `?step=` link and "Back to Learn".
+- **Hand moves stop a run,** as today. These include the forward button, →, ←, Back, replay, the outline, a `?step=` link and "Back to Learn".
 - **Speeds.** A message's wait and the 2.6 s hold are divided by the speed, as today. A step a reader waits on has no timer, so the speed changes only how fast its messages play.
 
-**To see a step again:**
+**To see a step again: the replay icon (↺).**
 
-- Press Back, then Next step. Arriving at a step plays it once, from its first message, so arriving on it again replays it.
-- On step 1, which has no messages, the step is simply shown again.
-- On a phone this is two taps: ‹, then the orange button. On a keyboard it is ← then →.
-- "Replay step" and "Watch again" are gone.
+- **What it does:** it plays the current Watch step again from its first message. The step's log rows go, then come back one message at a time, with the step's waits at the current speed. The position does not change.
+- **During a run** it is a hand action: it stops the run (the play button reads "Play all") and replays this step. The step then waits, as any step reached by hand does.
+- **During the step's own play** it starts the step again from its first message.
+- **Disabled** where there is nothing to replay: the Overview, a step with no messages (HTTP's step 1), Learn and Practice.
+- **Back, then Next step, still works.** Arriving at a step plays it once, so arriving on it again replays it. That is the keyboard's way (← →).
+- "Watch again" is gone; "Replay step" is now the icon's name, not a label.
 
 **Reduced motion:**
 
 - **A step reached by hand lands complete at once.** All its messages are applied, with no waits and no pulse.
   - Today it waits out each message with the motion skipped (`playback.ts:143-144`).
   - The build spec, §5 (`:89`), says "everything jumps to its end state", so this follows the spec.
-- **So Back, then Next step, still shows the step again.** It shows the step as its end state, every log row at once, not one message at a time. The way to see messages arrive one at a time under reduced motion is Play all.
+- **Replay plays with its waits.** Under reduced motion the replay icon plays the step's messages with their waits and no motion (no dot, no pulse), so the log fills one row at a time. It is the reader's way to see a step's messages arrive in order.
+- **Back, then Next step,** lands the step complete, every log row at once.
 - **Play all keeps its pace.** Each message keeps its wait and the hold stays 2.6 s, because the run is a timer, not motion.
 - The top bar's fill is hidden, as today.
 - This was measured in the prototype on HTTP step 3:
-  - Normal motion: Back, then Next step, shows 2 rows, then 5 as the step plays.
-  - Reduced motion: 5 rows at once.
+  - Normal motion: replay, or Back then Next step, shows 2 rows, then 3 after one message, then 5.
+  - Reduced motion: replay shows 2, then 3, then 5; Back then Next step shows 5 at once.
 
 **Space** presses the play button: Play all, or Pause during a run.
 
@@ -156,6 +176,7 @@ Nothing moves on by itself unless the reader asks for the run. Arriving at a ste
 - `playLabel` is replaced by two functions:
   - `forwardButton(lesson, state, end)`, returning `{ words: 'Next step' | 'Next lesson', disabled, href? }`;
   - `playButton(state)`, returning `{ words: 'Play all' | 'Pause', icon }`.
+- `replayStep` (mode `step` from event 0 at the current position; plays with its waits even under reduced motion; stops a run) and `canReplay(lesson, state)` (a Watch step with at least one event).
 - `HOLD_MS` stays 2600.
 
 ## 5. Variant B: drawn, not taken
@@ -297,7 +318,9 @@ Touches:
 
 | Width | Layout (direction §7) | D14 |
 |---|---|---|
-| ≤760 | phone | The control bar: speed, ‹, the play button (icon), the forward button (183px at 375). No key line. The end block's "Back to the track" shows. Option tags drop under the words up to 400px. |
+| ≤359 | phone, narrowest | Five controls at 44×44, 6px apart; the forward button's words 16px, no › (96px at 320). |
+| 360–374 | phone, narrow | As the phone; the forward button drops its › and centres its words (112px at 360). |
+| ≤760 | phone | The control bar: speed, ‹, the play button (icon), replay (icon), the forward button (127px at 375). No key line. The end block's "Back to the track" shows. Option tags drop under the words up to 400px. |
 | 761–1099, upright or under 900 | the phone layout, grown (520px column) | As the phone. The bar sits inside the 520px column. |
 | 900–1099 on its side | desktop, with the outline in a tab | The desktop row at 44px. The key line shows when the container query passes. With the outline folded, the log head is the window less 24px, so the line shows only near the top of this range (about 1024 wide). This layout is not drawn in the prototype, which shows the phone layout up to 1099, so the builder measures it. |
 | ≥1100 | desktop | The desktop row at 34px. The key line shows from about 1300px. |
@@ -311,7 +334,8 @@ With JavaScript off, the page keeps its stacked layout and has no controls, as t
 | Forward button | Next step · Next lesson |
 | Forward button's title when disabled | There is no next lesson: this is the track’s last. · No next lesson is ready yet. |
 | Play button | Play all · Pause |
-| Button titles | Next step (→) · Play all (Space) · Pause (Space) · Previous step (←) · Next lesson |
+| Replay (name and title only, not shown) | Replay step |
+| Button titles | Next step (→) · Play all (Space) · Pause (Space) · Previous step (←) · Replay step · Next lesson |
 | End block | That’s the whole lesson. · That’s the whole of <unit>. · And the last lesson of this track. · And the last ready one for now. Lessons <a> to <b> are coming soon. · Next in this lesson · Up next (kept) · Back to the track |
 | Option tags | Right · Not this one |
 | Back to Learn | Back to Learn · Back to Learn: <term name> |
@@ -325,7 +349,7 @@ With JavaScript off, the page keeps its stacked layout and has no controls, as t
 - "Watch again".
 - "That’s the whole lesson, and the last lesson of this track." and "…, and the last ready one for now." as one sentence. Each is split into the heading and the line.
 - "Press Play to start."
-- From the first pass: "Watch step 1", "Go to Learn", "Go to Practice", "Go to <unit>", "Replay step", and "Back to the track" as the bar's words.
+- From the first pass: "Watch step 1", "Go to Learn", "Go to Practice", "Go to <unit>", "Replay step" as a visible label, and "Back to the track" as the bar's words.
 
 No new words state a fact about a protocol. The pattern's names are Learn's own checked words.
 
@@ -338,13 +362,15 @@ No new words state a fact about a protocol. The pattern's names are Learn's own 
 | HTTP step 1 on screen at 1× | 2.8 s, reached by Play (S17) | until the reader moves; 2.7 s if they choose Play all (measured) |
 | Step 1 at 0.5× / 1.5× / 2× | 5.2 / 1.7 / 1.3 s (hold ÷ speed) | no timer; under Play all, 5.2 / 1.7 / 1.3 s |
 | Forward action, 1440 | › icon, 36×34, no words | "Next step" or "Next lesson", 152×34, orange |
-| Forward action, 375 | › icon, 48×48 | "Next step" or "Next lesson", 183×48, orange |
+| Forward action, 375 | › icon, 48×48 | "Next step" or "Next lesson", 127×48, orange ("Next lesson" 80px at 17px, with its ›) |
+| Replay, 1440 / 375 | Replay 112×34 / 183×48, orange, in Play's place | ↺ icon, 36×34 / 48×48, tile |
 | Play button, 1440 | Play 112×34, orange | "Play all" or "Pause", 118×34, tile |
 | Play button, 375 | Play 183×48, orange | icon, 48×48 |
-| Phone control bar | speed 48, ‹ 48, Play 183, › 48, at x 12/68/124/315 | speed 48, ‹ 48, play 48, forward 183, at x 12/68/124/180, the same at every slot and end case |
+| Phone control bar | speed 48, ‹ 48, Play 183, › 48, at x 12/68/124/315 | speed 48, ‹ 48, play 48, replay 48, forward 127, at x 12/68/124/180/236, the same at every slot and end case |
+| Desktop control row, 1440 | speed, ‹ 36, Play 112, › 36 | speed 52, ‹ 36 (x 1053), play 118 (1095), replay 36 (1219), forward 152 (1261) |
 | Tap targets on the phone | all ≥48×48 | all ≥48×48; Back to Learn 44 tall; the Up next card 104px tall |
 | Page width at 375 | 375 (no sideways scroll) | 375 |
-| Key line, 1440 | none | 310×22; log head 1134px |
+| Key line, 1440 | none | 310×22; log head 1134px; 24px to the speed button. Still shows from about 1305px, with the replay icon in the row (20px gaps at 1310) |
 | Practice's words, 1440, nothing picked | the end row fits | 748px in a 729px panel (19px of scroll); end block 206px |
 | Practice's Explain tab, 375, both answers wrong | 714px of words in a 502px tab | 1,060px |
 
@@ -360,13 +386,14 @@ Each check can be a unit test (`playback.test.ts`, `LessonConsole.test.tsx`, `Pr
 
 **The row**
 
-1. The controls are, in order, the speed button, "Previous step", the play button and the forward button. No control in the row is named "Replay", "Replay step", "Watch again", "Play", "Go to Learn", "Go to Practice" or "Back to the track".
+1. The controls are, in order, the speed button, "Previous step", the play button, "Replay step" and the forward button. No control in the row is named "Replay", "Watch again", "Play", "Go to Learn", "Go to Practice" or "Back to the track", and "Replay step" has no visible text.
 2. The forward button's accessible name is "Next step" on the Overview, on each of steps 1–5 and on Learn, and "Next lesson" on Practice (HTTP has a next lesson).
 3. Pressing the forward button seven times from the Overview reaches Practice through every slot in order (Overview → step 1 … step 5 → Learn → Practice).
 4. When no run is going, the play button's accessible name is "Play all" on the Overview, on a step (during and after the step's own play) and on Learn and Practice.
 5. The forward button is the only control with the `--accent` background.
-6. At 375×812 the four controls are 48px tall at x 12, 68, 124 and 180, and the forward button is 183px wide and ends 12px from the right edge. The same holds on Practice in all four end cases, and during a run. The page does not scroll sideways.
-7. Titles: the forward button has "Next step (→)", or "Next lesson" with no key; the play button has "Play all (Space)" or "Pause (Space)"; Back has "Previous step (←)".
+6. At 375×812 the five controls are 48px tall at x 12, 68, 124, 180 and 236, and the forward button is 127px wide and ends 12px from the right edge. The same holds on every slot, in all four end cases, and during a run. The page does not scroll sideways. The forward button's words and › are not clipped (`scrollWidth` equals `clientWidth` for its words, and the › ends at least 8px inside the button).
+6a. At 360×780 the forward button shows "Next lesson" unclipped with no ›; at 320×640 the controls are 44px and "Next lesson" is unclipped.
+7. Titles: the forward button has "Next step (→)", or "Next lesson" with no key; the play button has "Play all (Space)" or "Pause (Space)"; Back has "Previous step (←)"; replay has "Replay step".
 
 **Play all and Pause**
 
@@ -375,14 +402,16 @@ Each check can be a unit test (`playback.test.ts`, `LessonConsole.test.tsx`, `Pr
 10. "Play all" on step 3, on Learn or on Practice moves to step 1 and runs from there.
 11. Any hand move during a run stops it: the forward button, →, ←, Back, the outline, or "Back to Learn".
 12. Pressing the forward button on the Overview shows step 1 and starts no timer. After 30 s at 1× the page is still on step 1.
-13. On step 3, after its messages have played, Back then Next step leaves 2 log rows and then refills to 5, one message at a time.
-14. With reduced motion, a step reached by the forward button shows all its log rows at once (HTTP step 3: five rows), and Back then Next step shows five rows at once again.
+13. On step 3, after its messages have played, "Replay step" leaves 2 log rows and then refills to 5, one message at a time, and the position stays step 3. Back then Next step does the same.
+13a. "Replay step" is `aria-disabled` on the Overview, step 1, Learn and Practice, and enabled on steps 2–5; pressing it while disabled changes nothing. It has Back's disabled opacity.
+13b. During a Play all run on step 3, "Replay step" stops the run (the play button reads "Play all"), replays step 3, and the page is still on step 3 after 10 s at 1×.
+14. With reduced motion, a step reached by the forward button shows all its log rows at once (HTTP step 3: five rows), and Back then Next step shows five rows at once again. "Replay step" shows 2, then 3, then 5 rows, a message's wait apart, with no dot on the figure.
 15. With reduced motion, "Play all" keeps its pace: step 2 lasts its two messages' durations plus 2600 ms.
 
 **Keys**
 
 16. → does what the forward button does on the Overview, a step, Learn, and on Practice with a following unit. On Practice with "Next lesson", whether enabled or disabled, → does nothing and the URL does not change.
-17. ← goes back. Space presses the play button. A repeated Space does nothing more.
+17. ← goes back. Space presses the play button. A repeated Space does nothing more. No key presses "Replay step".
 18. At 1440×900 on a fine pointer, the log head shows "Space", "←" and "→" in `kbd`, with the words "play all or pause", "back" and "next step". At 1100×800 and at 375×812 it does not.
 
 **The ending**
@@ -416,12 +445,15 @@ Each check can be a unit test (`playback.test.ts`, `LessonConsole.test.tsx`, `Pr
 
 ## 14. Decisions
 
-1. The forward button replaces ›, rather than being added as a fifth control. The phone's four 48px slots stay, and the forward action gets the widest one (measured above).
+1. The forward button replaces ›, and the forward action gets the widest slot (measured above). With the replay icon the phone has five 48px-tall slots.
 2. Step by step is taken, at the owner's word. Variant B is kept in `ef39c54` only.
 3. Play all keeps today's 2.6 s hold, because the plan defines it as today's run.
 4. Play all always starts at step 1, so the button means one thing everywhere. Going on from a step is the forward button's job.
 5. Pause shows only during a run, because only a run moves on by itself, and Space must be able to stop it.
-6. Seeing a step again is Back, then Next step, because arriving plays a step once. This needs no third button.
+6. Seeing a step again is the replay icon, at the owner's word. It has no words, so the bar keeps three labels, and it sits beside the forward button so the step's two actions are together. Back, then Next step, also works.
+6a. Replay is present at every slot and disabled where there is nothing to replay, so the bar never shifts.
+6b. Replay has no key: one letter key would be the page's only one, and ← → already replay.
+6c. The phone's forward button narrows to 127px at 375. Its words stay 17px; its padding and gap tighten so "Next lesson" and › fit. Below 375 the › goes; below 360 the controls go to 44px.
 7. A following unit reads "Next step", because its Overview is the next place in the same lesson.
 8. With no next lesson, "Next lesson" stays and is disabled. This keeps the bar's geometry and the three labels, and the end block offers "Back to the track".
 9. The end block's "Back to the track" now shows at every width, because it is the only way on there.

@@ -296,7 +296,7 @@ h2, h3 { font-family: var(--display); color: var(--ink-strong); }
 .log__glyph[data-kind='response'] { border: 0; width: auto; height: auto; color: var(--response); font-weight: 700; }
 
 /* ================================================================ D14: the control row */
-/* Left to right: speed, back, the play button, the forward button. The › button is gone: the forward button is it. */
+/* Left to right: speed, back, the play button, replay (icon), the forward button. The › button is gone: the forward button is it. */
 .console__controls { display: flex; flex: none; align-items: center; gap: 6px; margin-inline-start: auto; }
 .cbtn--speed { min-width: 52px; font: 700 13px/1 var(--mono); font-variant-numeric: tabular-nums; }
 .cbtn--alt { min-width: 118px; padding: 0 12px; justify-content: start; }
@@ -381,11 +381,13 @@ h2, h3 { font-family: var(--display); color: var(--ink-strong); }
   }
   .console__controls .cbtn { height: 48px; min-width: 48px; }
   .console__controls .cbtn--speed { width: 48px; padding: 0; }
+  .console__controls .cbtn--replay, .console__controls .cbtn--back { width: 48px; padding: 0; }
   /* D14: on a phone the play button is its icon; its name is in aria-label. */
   .console__controls .cbtn--alt { width: 48px; min-width: 48px; padding: 0; justify-content: center; }
   .cbtn--alt .cbtn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .cbtn--alt svg { width: 16px; height: 16px; }
-  .console__controls .cbtn--go { flex: 1; min-width: 0; font-size: 17px; padding: 0 14px 0 16px; }
+  /* D14: five controls; the forward button takes what is left (127px at 375). Its words and › need 12 + 80 + 6 + 14 + 10 = 122px inside the border. */
+  .console__controls .cbtn--go { flex: 1; min-width: 0; font-size: 17px; gap: 6px; padding: 0 10px 0 12px; }
   .practice__option { padding: 11px 12px; }
   .practice__see { min-height: 44px; margin: 0; }
   .toast { bottom: calc(var(--ph-ctl) + 12px); }
@@ -396,6 +398,18 @@ h2, h3 { font-family: var(--display); color: var(--ink-strong); }
   .console__outline { padding-inline: calc(var(--ph-side) - 8px); }
   .console__log { padding-inline: calc(var(--ph-side) - 14px); }
   .topbar__segments { display: flex; }
+}
+/* Narrower than 375: the forward button drops its › and centres its words (112px at 360). */
+@media (max-width: 374px) {
+  .console__controls .cbtn--go { justify-content: center; padding: 0 8px; }
+  .console__controls .cbtn--go svg { display: none; }
+}
+/* Narrower than 360 (320 wide): five controls at 44px, 6px apart, words at 16px, so "Next lesson" still fits (96px). */
+@media (max-width: 359px) {
+  .console__controls { gap: 6px; }
+  .console__controls .cbtn { height: 44px; min-width: 44px; }
+  .console__controls .cbtn--speed, .console__controls .cbtn--back, .console__controls .cbtn--alt, .console__controls .cbtn--replay { width: 44px; }
+  .console__controls .cbtn--go { font-size: 16px; padding: 0 4px; }
 }
 @media (max-width: 400px) {
   .practice__option { grid-template-columns: 22px 1fr; }
@@ -474,6 +488,7 @@ h2, h3 { font-family: var(--display); color: var(--ink-strong); }
           <button type="button" class="cbtn cbtn--speed" id="speed">1×</button>
           <button type="button" class="cbtn cbtn--back" id="back" aria-label="Previous step" title="Previous step"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2L4 7l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <button type="button" class="cbtn cbtn--alt" id="alt"><svg viewBox="0 0 14 14" aria-hidden="true" id="altIcon"></svg><span class="cbtn__label" id="altLabel">Play all</span></button>
+          <button type="button" class="cbtn cbtn--replay" id="replay" aria-label="Replay step" title="Replay step"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2.6 7.4A4.6 4.6 0 1 0 4 3.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M1.6 1.8l.9 3.2 3.1-.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <button type="button" class="cbtn cbtn--go" id="go"><span class="go__label" id="goLabel">Next step</span><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </div>
@@ -881,6 +896,15 @@ function pause() {
   render();
 }
 
+// The replay icon: this Watch step again from its first message, with its waits (also under reduced motion, without the motion). A hand action: it stops a run.
+const replayable = () => kindOf(S.pos) === 'step' && count(S.pos) > 0;
+function replayStep() {
+  if (!replayable()) return;
+  arrive(S.pos);
+  S.mode = 'step';
+  render();
+}
+
 // The forward button: "Next step" everywhere inside the lesson, "Next lesson" at Practice when there is one.
 function forward() {
   if (S.pos < PRACTICE) return go(S.pos + 1);
@@ -1113,6 +1137,7 @@ function render(moved) {
   $('alt').setAttribute('aria-label', L.alt);
   $('altIcon').innerHTML = ICON[L.icon];
   $('back').setAttribute('aria-disabled', String(S.pos === 0));
+  $('replay').setAttribute('aria-disabled', String(!replayable()));
   $('speed').textContent = `${S.speed}×`;
   const next = SPEEDS[(SPEEDS.indexOf(S.speed) + 1) % SPEEDS.length];
   $('speed').setAttribute('aria-label', `Speed ${S.speed}×. Click for ${next}×`);
@@ -1148,6 +1173,7 @@ function toast(msg) {
 
 // ---------------------------------------------------------------- input
 $('go').addEventListener('click', () => { if ($('go').getAttribute('aria-disabled') !== 'true') forward(); });
+$('replay').addEventListener('click', () => { if ($('replay').getAttribute('aria-disabled') !== 'true') replayStep(); });
 $('alt').addEventListener('click', () => { if ($('alt').getAttribute('aria-disabled') !== 'true') alternate(); });
 $('back').addEventListener('click', () => { if (S.pos > 0) go(S.pos - 1); });
 $('speed').addEventListener('click', () => { S.speed = SPEEDS[(SPEEDS.indexOf(S.speed) + 1) % SPEEDS.length]; render(); });
