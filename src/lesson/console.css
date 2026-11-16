@@ -2018,6 +2018,15 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     height: 44px;
     min-width: 44px;
   }
+  :root.js .console__controls .cbtn--speed {
+    min-width: 52px;
+  }
+  :root.js .console__controls .cbtn--alt {
+    min-width: 118px;
+  }
+  :root.js .console__controls .cbtn--go {
+    min-width: 152px;
+  }
 
   /* The tabs sit on top of the words' column: Explain and Steps. The log and the lesson's table are on show under
      both, so they need no tab. */
