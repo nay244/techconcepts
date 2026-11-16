@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 16: Home's critique findings
 
-**Status: planned (2026-11-15, direction 2.73); waiting for the owner's go and the owner's scope.** The owner picked Home as the next page to act on from the `impeccable critique` of 2026-11-15 (Home 22 of 32, the lowest of the seven pages). Nothing is designed until the owner says which findings the design covers (job 15's lesson: the owner kept only the controls of a five-part design).
+**Status: the owner's go is given, scope A, B and C** (2026-11-15, direction 2.73: "A, B and C"). E is taken only where B's layout changes it anyway; D and the minor items wait. D15 is under way. The owner picked Home as the next page to act on from the `impeccable critique` of 2026-11-15 (Home 22 of 32, the lowest of the seven pages). Nothing is designed until the owner says which findings the design covers (job 15's lesson: the owner kept only the controls of a five-part design).
 
 ## Inputs
 
@@ -38,7 +38,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
 | S18 | scout | scout (Haiku) | Home's demo, its phone view, Next, the answers, the decisions and tests. Done (`prototypes/s18-home-facts.md`). | Every fact has a `path:line`. |
-| **Scope** | plan | **the owner** | Which findings D15 covers. | The owner's words, in the direction doc. |
+| **Scope** | plan | **the owner** | Which findings D15 covers. Done: "A, B and C". | The owner's words, in the direction doc. |
 | D15 | design | designer (Opus 5.5) | The chosen findings: `prototypes/d15-home-demo.html` (self-contained, clickable, 375 and 1440, light and dark) and `.md` (each change with the decision it touches, every state, sizes, Tab order, JavaScript off, measurements, acceptance checks). | The designer's own look at both sizes and themes, measured; then the orchestrator walks it at 375 and 1440 in both themes, by touch and by keyboard, and records what it saw in `team.md`. |
 | **Gate** | design | **the owner** | Approves D15, or parts of it. | The owner's words, in the direction doc. |
 | B18 spec | build | reviewer (Opus) | Holes and attack cases for the approved part: `prototypes/d15-cases.md`. | Holes with one right answer closed as errata; taste goes back to `designer`. |
