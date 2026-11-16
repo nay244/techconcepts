@@ -120,11 +120,8 @@ test('32: under reduced motion the listener’s parts and its glow do not fade',
   expect(durations.every((d) => parseFloat(d) < 0.001), `transition durations: ${durations.join(', ')}`).toBe(true);
 });
 
-test('33: the band at step 3 is 7px wide with no vector-effect, at 0.42 opacity, and draws 6 to 7 px at 1440 and 3 to 4.5 px at 375', async ({ page }) => {
-  for (const [size, low, high] of [
-    [DESKTOP, 6, 7],
-    [PHONE, 3, 4.5],
-  ] as const) {
+test('33: the band at step 3 is 7 units wide with no vector-effect, at 0.42 opacity, and draws 7 × its figure’s scale, which is more than 3.5 × the scale', async ({ page }) => {
+  for (const size of [DESKTOP, PHONE]) {
     await page.setViewportSize(size);
     await open(page, PATH);
     await openStep(page, 3, size === PHONE);
@@ -132,16 +129,69 @@ test('33: the band at step 3 is 7px wide with no vector-effect, at 0.42 opacity,
       const el = document.querySelector<SVGPolylineElement>('svg[data-figure="net-map"] .nm-conn.tunnel.sealed')!;
       const style = getComputedStyle(el);
       const svg = el.ownerSVGElement!;
-      const vb = svg.viewBox.baseVal;
-      return { stroke: style.strokeWidth, vector: style.vectorEffect, opacity: style.opacity, scale: svg.getBoundingClientRect().width / vb.width };
+      return { stroke: style.strokeWidth, vector: style.vectorEffect, opacity: style.opacity, scale: svg.getBoundingClientRect().width / svg.viewBox.baseVal.width };
     });
+    // E26: the stroke is 7 user units as approved, so its drawn width is 7 × the figure's scale (its rendered width over its viewBox).
     expect(band.stroke, `stroke at ${size.width}`).toBe('7px');
     expect(band.vector, `vector-effect at ${size.width}`).toBe('none');
     expect(band.opacity, `opacity at ${size.width}`).toBe('0.42');
     const drawn = 7 * band.scale;
-    expect(drawn, `drawn width at ${size.width}`).toBeGreaterThanOrEqual(low);
-    expect(drawn, `drawn width at ${size.width}`).toBeLessThanOrEqual(high);
+    expect(Math.abs(drawn - 7 * band.scale), `drawn width at ${size.width}`).toBeLessThanOrEqual(0.5);
+    // A `.sealed` 3.5-unit stroke winning would draw 3.5 × the scale; that must fail this.
+    expect(drawn, `drawn width at ${size.width} against a 3.5-unit stroke`).toBeGreaterThan(1.5 * 3.5 * band.scale);
   }
+});
+
+/**
+ * Case 34: the tunnel ends at the server. The out cable is the figure's own `vpn:web` cable (the pad to router c and on to
+ * the web server), and the in cable is the tunnel's band (`laptop>vpn`); each is sampled at its midpoint, in the figure's
+ * screen space through its own screen matrix.
+ */
+test('34: the tunnel ends at the server: the out cable’s midpoint pixel is the same at step 1 and step 3, the in cable’s is not', async ({ page }) => {
+  await page.setViewportSize(DESKTOP);
+  await open(page, PATH);
+  await openStep(page, 3, false);
+  const at = await page.evaluate(() => {
+    const svg = document.querySelector<SVGSVGElement>('svg[data-figure="net-map"]')!;
+    const box = svg.getBoundingClientRect();
+    const onScreen = (el: SVGGeometryElement, length: number) => {
+      const p = el.getPointAtLength(length);
+      const m = el.getScreenCTM()!;
+      return { x: m.a * p.x + m.c * p.y + m.e - box.left, y: m.b * p.x + m.d * p.y + m.f - box.top };
+    };
+    const out = [...document.querySelectorAll<SVGPathElement>('svg[data-figure="net-map"] g[data-layer="vpn:web"] path')].sort(
+      (a, b) => b.getTotalLength() - a.getTotalLength(),
+    )[0]!;
+    const band = document.querySelector<SVGGeometryElement>('svg[data-figure="net-map"] .nm-conn.tunnel.sealed')!;
+    return { out: onScreen(out, out.getTotalLength() / 2), in: onScreen(band, band.getTotalLength() / 2) };
+  });
+  const shot = async () => figure(page).screenshot();
+  await openStep(page, 1, false);
+  const after1 = await shot();
+  await openStep(page, 3, false);
+  const after3 = await shot();
+  const [outBefore, outAfter, inBefore, inAfter] = await page.evaluate(
+    async ({ shots, at }) => {
+      const decode = async (data: string) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${data}`;
+        await img.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        return ctx;
+      };
+      const sample = (ctx: CanvasRenderingContext2D, x: number, y: number) => Array.from(ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data.slice(0, 3));
+      const [c1, c2] = [await decode(shots.step1), await decode(shots.step3)];
+      return [sample(c1, at.out.x, at.out.y), sample(c2, at.out.x, at.out.y), sample(c1, at.in.x, at.in.y), sample(c2, at.in.x, at.in.y)];
+    },
+    { shots: { step1: after1.toString('base64'), step3: after3.toString('base64') }, at },
+  );
+  const maxDiff = (p: number[], q: number[]) => Math.max(...p.map((v, i) => Math.abs(v - q[i]!)));
+  expect(maxDiff(outBefore!, outAfter!), 'the out cable’s pixel, step 1 against step 3').toBeLessThanOrEqual(6);
+  expect(maxDiff(inBefore!, inAfter!), 'the in cable’s pixel, step 1 against step 3').toBeGreaterThan(6);
 });
 
 test('35: the callout “Someone listening” clears the other callouts, lies left of “The internet” and below the café plate', async ({ page }) => {
@@ -161,11 +211,17 @@ test('35: the callout “Someone listening” clears the other callouts, lies le
   // "Lies left of The internet's left edge": the callout starts to the left of it (its words run past that edge; nothing overlaps).
   expect(listening!.left).toBeLessThan(internet!.left);
   expect(listening!.top).toBeGreaterThanOrEqual(plate!.bottom - 1);
+  // E27: the dot is drawn on the listener's edge by design, so its centre must be within 2 px of the listener's box.
   const dot = await page.evaluate(() => {
-    // The listener's leader dot: the one inside the café's plate group.
+    // The listener's leader dot (in the café's callout group).
     const d = document.querySelector('svg[data-figure="net-map"] g[data-base="cafe"] .nm-lead-dot')?.getBoundingClientRect();
-    const c = document.querySelector('svg[data-figure="net-map"] g[data-base="cafe"]')?.getBoundingClientRect();
-    return d === undefined || c === undefined ? null : { inside: d.left >= c.left && d.right <= c.right && d.top >= c.top && d.bottom <= c.bottom };
+    // The café's listener group is the café's group with the most parts (the plate is the one with a single part).
+    const groups = [...document.querySelectorAll<SVGGElement>('svg[data-figure="net-map"] g[data-base="cafe"]')];
+    const c = groups.sort((x, y) => y.children.length - x.children.length)[0]?.getBoundingClientRect();
+    if (d === undefined || c === undefined) return null;
+    const cx = d.left + d.width / 2;
+    const cy = d.top + d.height / 2;
+    return { inside: cx >= c.left - 2 && cx <= c.right + 2 && cy >= c.top - 2 && cy <= c.bottom + 2 };
   });
   expect(dot).toEqual({ inside: true });
 });
