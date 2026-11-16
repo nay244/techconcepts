@@ -244,7 +244,7 @@ export default defineLesson({
           ],
         },
         parties: [],
-        backing: { traces: ['term-switch', 'term-port', 'term-table', 'term-learn', 'term-flood', 'fact-start'] },
+        backing: { traces: ['term-switch', 'term-port', 'term-table', 'term-learn', 'term-flood', 'fact-start', 'term-broadcast', 'fact-broadcast'] },
       },
       overview: {
         hook: 'On Wi-Fi, every device in range hears each frame. Plug a laptop, a TV and a printer into a switch, and at first it has no idea which is where. So a frame for a device it doesn’t know goes out of every other port. But every frame also says who sent it, and from that the switch learns who is on which port. Soon a frame for one device goes down that device’s cable only.',
