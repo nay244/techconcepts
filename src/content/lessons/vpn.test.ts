@@ -24,7 +24,11 @@ test('VPN validates on the net-map figure, with 5 steps and 2 questions', () => 
 });
 
 test('the events are the built fixture’s, each step’s in order, with backing added', () => {
-  expect(unit.steps.map((s) => s.events.map(bare))).toEqual(vpnSteps.map((s) => s.events));
+  // One plain line is the author's: the fixture's placeholder names the café's router, which no Learn part states.
+  const fixture = structuredClone(vpnSteps.map((s) => s.events));
+  const nat = fixture[1]!.find((e) => e.id === 's2-init-back') as MessageEvent;
+  nat.plain = 'The server agrees, and both find a NAT in the way.';
+  expect(unit.steps.map((s) => s.events.map(bare))).toEqual(fixture);
   expect(messages.length).toBe(14);
   expect(tables.length).toBe(6);
 });

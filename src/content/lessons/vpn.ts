@@ -84,7 +84,6 @@ const PA_SSTP = vendor('paloalto-what-is-vpn', 'Secure Socket Tunneling Protocol
 const PA_OPENVPN = vendor('paloalto-what-is-vpn', 'OpenVPN', 'OpenVPN is a flexible open'); // I-20
 const PA_WIREGUARD = vendor('paloalto-what-is-vpn', 'WireGuard', 'WireGuard is a modern'); // I-20
 const PA_WIREGUARD_UDP = vendor('paloalto-what-is-vpn', 'WireGuard', 'It uses UDP for fast'); // I-20
-const PA_LOGS = vendor('paloalto-what-is-vpn', 'Business VPN selection process', 'Check for independent audits'); // I-14
 const PA_TUNNEL = vendor('paloalto-vpn-tunnel', 'What Is a VPN Tunnel?', 'A VPN tunnel is a secure'); // I-3
 const PA_TO_SERVER = vendor('paloalto-vpn-tunnel', '2. Establishment of an encrypted tunnel', 'This encryption shields the internet traffic'); // I-13
 const PA_DECRYPT = vendor('paloalto-vpn-tunnel', '4. Decryption at the VPN server', 'The VPN server receives the encrypted data'); // I-12
@@ -106,6 +105,8 @@ const EDGE_HTTP = cite('microsoft-edge-https-first', 'What are HTTP and HTTPS?',
 const CHROME_SYMBOLS = cite('google-chrome-secure', 'What each security symbol means', { url: 'https://support.google.com/chrome/answer/95617#:~:text=What%20each%20security%20symbol%20means' }); // I-2; What is HTTPS's CHROME_SYMBOLS
 const G_VPN = vendor('google-cloud-vpn', 'Cloud VPN overview', 'one VPN gateway handling encryption'); // I-18
 const HTTP_GET = d('rfc-9110', '9.3.1');          // fact-get
+const HTTP_REQUEST_LINE = d('rfc-9112', '3');     // fact-get
+const HTTP_TARGET = d('rfc-9112', '3.2.1');       // fact-get
 
 // ---------------------------------------------------------------- events
 
@@ -206,7 +207,7 @@ const step2: SceneEvent[] = [
     source: `${VPN}:500`,
     destination: `${LAPTOP}:500`,
     info: 'Keys agreed; there’s a NAT in the way, so carry on at port 4500',
-    plain: 'The server agrees, and both see the café’s router in the way.',
+    plain: 'The server agrees, and both find a NAT in the way.',
     backing: traced('term-ike', 'fact-setup', 'fact-ports', 'fact-nat'),
   }),
   msg('s2-auth', 'laptop', 'vpn', 'IKE_AUTH', 'request', {
@@ -320,9 +321,9 @@ export default defineLesson({
   level: 'beginner',
   certTags: [],
   summary:
-    'A VPN seals what you send inside a tunnel to a VPN server, so the café’s Wi-Fi sees only that you’re talking to it. Watch the tunnel being set up, a request wrapped and unwrapped, and why HTTPS still matters past the server.',
+    'A VPN seals what goes through its tunnel to a VPN server, so on the café’s Wi-Fi it shows only that you’re talking to the server. Watch the tunnel being set up, a request wrapped and unwrapped, and why HTTPS still matters past the server.',
   figure: 'net-map',
-  backing: { traces: ['lead-1', 'lead-2', 'term-ike', 'fact-ends', 'fact-https'] },
+  backing: { traces: ['lead-1', 'lead-2', 'term-ike', 'fact-ends', 'fact-https', 'why-1'] },
   units: [
     {
       id: 'vpn',
@@ -343,12 +344,12 @@ export default defineLesson({
         backing: {
           traces: [
             'why-1', 'fact-wifi', 'lead-1', 'lead-2', 'term-vpn-server', 'term-tunnel', 'term-ike', 'fact-setup', 'fact-here', 'fact-https',
-            'fact-outer', 'fact-inner', 'fact-server-reads', 'fact-ends',
+            'fact-reply', 'fact-outer', 'fact-inner', 'fact-server-reads', 'fact-ends',
           ],
         },
       },
       overview: {
-        hook: 'On a café’s Wi-Fi you can’t tell who is listening. A VPN wraps what you send in a sealed packet addressed to a VPN server, so all the café sees is that you’re talking to it. But the seal ends at the server: from there your request goes on as it would have without the VPN. Watch both, and see why HTTPS still matters.',
+        hook: 'On a café’s Wi-Fi you can’t tell who is listening. A VPN wraps what you send through it in a sealed packet addressed to a VPN server, so all the café sees of it is that you’re talking to the server. But the seal ends at the server: from there your request goes on as it would have without the VPN. Watch both, and see why HTTPS still matters.',
         hookBacking: { traces: ['why-1', 'lead-1', 'lead-2', 'fact-outer', 'fact-ends', 'fact-https'] },
         description:
           'Think of putting your postcard in a sealed envelope addressed to a friend, who opens it and posts the postcard on. Until your friend, everyone sees only the envelope; after, it’s a postcard again. HTTPS is the locked box: it stays shut the whole way.',
@@ -356,8 +357,8 @@ export default defineLesson({
         facts: [
           { label: 'Does', value: 'seals your traffic in a tunnel to a VPN server', backing: { traces: ['lead-1', 'term-tunnel'] } },
           { label: 'Protects', value: 'your device to the VPN server, not beyond', backing: { traces: ['fact-ends'] } },
-          { label: 'The network you’re on sees', value: 'only that you’re talking to the VPN server', backing: { traces: ['fact-outer'] } },
-          { label: 'Kinds', value: 'remote access (device to network) and site-to-site (network to network)', backing: { traces: ['term-remote-access', 'term-site-to-site'] } },
+          { label: 'The network you’re on sees', value: 'for traffic in the tunnel, only that you’re talking to the VPN server', backing: { traces: ['fact-outer'] } },
+          { label: 'Kinds include', value: 'remote access (device to network) and site-to-site (network to network)', backing: { traces: ['term-remote-access', 'term-site-to-site'] } },
           { label: 'One way to build it', value: 'IPsec, with IKE and ESP', backing: { traces: ['term-ipsec', 'term-ike', 'term-esp'] } },
         ],
       },
@@ -367,10 +368,10 @@ export default defineLesson({
           title: 'Plain HTTP on Café Wi-Fi',
           sub: 'Without a VPN, someone listening could read it',
           narrative:
-            'You’re in a café, on its Wi-Fi, and you open example.net. Your laptop sends a plain HTTP request through the café’s router and on across the internet. Someone listening on the café’s network, or at any router on the way, could read it: which site you asked for, what you asked, and the page that comes back.',
+            'You’re in a café, on its Wi-Fi, and you open example.net. Your laptop sends a plain HTTP request over the Wi-Fi and on across the internet. Someone listening on the café’s network, or anyone on the way, could read it: which site you asked for, what you asked, and the page that comes back.',
           deep: [
             {
-              text: 'On Wi-Fi you don’t run, such as a café’s or a hotel’s, security guides advise using a VPN. It seals what you send before it leaves your laptop, as far as the VPN server.',
+              text: 'On Wi-Fi you don’t run, such as a café’s or a hotel’s, security guides advise using a VPN. It seals what you send through it before it leaves your laptop, as far as the VPN server.',
               cite: [NIST_WIFI, PA_PUBLIC_WIFI, CISCO_WIFI_VPN, NIST_REMOTE],
             },
           ],
@@ -390,7 +391,7 @@ export default defineLesson({
             'Now you turn the VPN on. Your laptop and the VPN server, at 203.0.113.40, first agree on secret keys, in a way someone listening can’t work out. Then each proves who it is, already encrypted, and the server gives your laptop an address on its side: 203.0.113.41. This is **IKE**, the part of **IPsec** that sets up the **tunnel**.',
           deep: [
             {
-              text: 'The café’s router swaps your laptop’s address and port for its own, as NAT does. So IKE moves to UDP port 4500, and the sealed packets that follow travel inside UDP there too, which a NAT can pass.',
+              text: 'Here a NAT is in the way: it swaps your laptop’s address and port for its own. So IKE moves to UDP port 4500, and the sealed packets that follow travel inside UDP there too, which a NAT can pass.',
               cite: [IKE_NAT, ESP_UDP, NIST_UDP],
             },
           ],
@@ -398,7 +399,7 @@ export default defineLesson({
             { label: 'IKE', value: 'agrees on keys, then each side proves who it is', backing: { traces: ['term-ike', 'fact-setup'] } },
             { label: 'Someone listening', value: 'can’t work out the keys being agreed', backing: { traces: ['fact-setup'] } },
             { label: 'Your address on the VPN’s side', value: '203.0.113.41', backing: { traces: ['fact-address'] } },
-            { label: 'Ports', value: 'UDP 500, then 4500 because the café’s router does NAT', backing: { traces: ['fact-ports', 'fact-nat'] } },
+            { label: 'Ports', value: 'UDP 500, then 4500 because a NAT is in the way', backing: { traces: ['fact-ports', 'fact-nat'] } },
           ],
           events: step2,
           backing: { traces: ['term-vpn-server', 'term-ipsec', 'term-ike', 'term-tunnel', 'fact-setup', 'fact-address', 'fact-ports', 'fact-nat'] },
@@ -429,7 +430,7 @@ export default defineLesson({
           title: 'Out of the Tunnel',
           sub: 'The VPN server sends it on',
           narrative:
-            'At the VPN server, the tunnel ends. The server takes off the outer packet, decrypts your request and sends it on to example.net, just as it would have gone without a VPN: plain HTTP. The site sees it come from 203.0.113.41, the VPN’s address, not the café’s. From here, whoever runs the VPN server and anyone on the way can read it. The page comes back the same way, through the tunnel to you.',
+            'At the VPN server, the tunnel ends. The server takes off the outer packet, decrypts your request and sends it on to example.net, just as it would have gone without a VPN: plain HTTP. The site sees it come from 203.0.113.41, the VPN’s address. From here, whoever runs the VPN server and anyone on the way can read it. The page comes back the same way, through the tunnel to you.',
           deep: [
             {
               text: 'Some VPNs send all your traffic through the tunnel, as here. Others send only work traffic, and the rest goes straight to the internet from the café: that’s a split tunnel.',
@@ -454,7 +455,7 @@ export default defineLesson({
           deep: [
             {
               text: 'Whoever runs the VPN server, your work or a VPN service you pay for, can see what the café could have seen without it. Using a VPN moves who can watch; HTTPS still matters.',
-              cite: [ESP_RECEIVER, NIST_DECRYPTED, MS_VPN_PROFILE, PA_PERSONAL],
+              cite: [ESP_RECEIVER, NIST_DECRYPTED, MS_VPN_PROFILE, PA_PERSONAL, TLS_ENDS],
             },
           ],
           facts: [
@@ -544,7 +545,7 @@ export default defineLesson({
         why: [
           {
             id: 'why-1',
-            text: 'On a network you don’t run, such as a café’s Wi-Fi, you can’t tell who is listening. A VPN keeps what you send sealed until it reaches the VPN server.',
+            text: 'On a network you don’t run, such as a café’s Wi-Fi, you can’t tell who is listening. A VPN keeps what you send through it sealed until it reaches the VPN server.',
             cite: [NIST_WIFI, PA_PUBLIC_WIFI, CISCO_WIFI_VPN, MS_COFFEE, CISCO_EAVESDROP, NIST_REMOTE, PA_TO_SERVER],
           },
           {
@@ -653,8 +654,8 @@ export default defineLesson({
           {
             id: 'fact-get',
             label: 'A web request',
-            value: 'GET asks the site for a page: the one named after it, here /',
-            cite: [HTTP_GET],
+            value: 'GET asks the site for a page; the path after it, here /, says which',
+            cite: [HTTP_GET, HTTP_REQUEST_LINE, HTTP_TARGET],
           },
           {
             id: 'fact-name',
@@ -667,7 +668,7 @@ export default defineLesson({
       practice: [
         {
           id: 'past-the-server',
-          prompt: 'You’re on café Wi-Fi with your VPN on, and you open a plain http:// page. Where could someone read your request?',
+          prompt: 'You’re on café Wi-Fi with your VPN on for all your traffic, and you open a plain http:// page. Where could someone read your request?',
           options: [
             {
               text: 'At the VPN server, and on the way from it to the site.',
@@ -689,7 +690,7 @@ export default defineLesson({
         },
         {
           id: 'what-the-cafe-sees',
-          prompt: 'Your VPN is on. What can someone listening on the café’s Wi-Fi see?',
+          prompt: 'Your VPN is on for all your traffic. What can someone listening on the café’s Wi-Fi see?',
           options: [
             {
               text: 'That you’re talking to the VPN server, but not which sites you reach or what you send.',
