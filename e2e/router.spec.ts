@@ -24,12 +24,12 @@ const DESKTOP = { width: 1440, height: 900 };
 const tableTab = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: /^Table/ });
 const figure = (page: Page) => page.locator('svg[data-figure="net-map"]');
 
-/** Plays the unit at 2× from its Overview, and waits for the run to end on Replay. */
+/** Plays the unit at 2× from its Overview, and waits for the run to end on its last step. */
 async function playToEnd(page: Page): Promise<void> {
   await setSpeed(page, '2×');
   await playButton(page).click();
   await expect(playButton(page)).toHaveText('Pause');
-  await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+  await expect(playButton(page)).toHaveText('Play all', { timeout: RUN_TIMEOUT });
 }
 
 /**
@@ -173,7 +173,6 @@ test('with reduced motion no candidate row animates; with motion it pulses (chec
     await page.emulateMedia({ reducedMotion });
     await open(page, `${PATH}?step=3`);
     await setSpeed(page, '1×');
-    await playButton(page).click();
     const cell = page.locator('.tpanel tr[data-candidate] > td').first();
     await expect(cell).toBeVisible({ timeout: 30_000 });
     return cell.evaluate((td) => getComputedStyle(td).animationName);

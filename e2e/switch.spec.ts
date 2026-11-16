@@ -115,14 +115,14 @@ test('31: Switch has no Network / Sequence switch', async ({ page }) => {
   await expect(figure(page)).toBeVisible();
 });
 
-test('a reduced-motion run plays to the end and settles on Replay', async ({ page }) => {
+test('a reduced-motion run plays to the end and settles on Play all', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 30_000);
   const errors = collectErrors(page);
   await page.setViewportSize(DESKTOP);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await open(page, PATH);
   await playToEnd(page);
-  await expect(playButton(page)).toHaveText('Replay');
+  await expect(playButton(page)).toHaveText('Play all');
   expect(errors).toEqual([]);
 });
 

@@ -21,12 +21,12 @@ export function onlyInDesktopDark(path: string): void {
 export const tableTab = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: /^Table/ });
 export const figure = (page: Page) => page.locator('svg[data-figure="net-map"]');
 
-/** Plays the unit at 2× from its Overview, and waits for the run to end on Replay. */
+/** Plays the unit at 2× from its Overview, and waits for the run to end on its last step. */
 export async function playToEnd(page: Page): Promise<void> {
   await setSpeed(page, '2×');
   await playButton(page).click();
   await expect(playButton(page)).toHaveText('Pause');
-  await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+  await expect(playButton(page)).toHaveText('Play all', { timeout: RUN_TIMEOUT });
 }
 
 export interface Seen {

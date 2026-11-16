@@ -92,7 +92,7 @@ async function playAll(page: Page): Promise<Seen> {
   await setSpeed(page, '2×');
   await playButton(page).click();
   await expect(playButton(page)).toHaveText('Pause');
-  await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+  await expect(playButton(page)).toHaveText('Play all', { timeout: RUN_TIMEOUT });
   await page.waitForTimeout(600);
   return watched(page);
 }

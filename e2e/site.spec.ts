@@ -14,6 +14,7 @@ import {
   position,
   readyLessons,
   requireLessons,
+  setSpeed,
   settledFrame,
   viewSwitch,
 } from './support';
@@ -61,10 +62,10 @@ const sideButton = (page: Page) => page.locator('main .side .side-now__btn');
 /** A stop's status words: Not started, In progress, ✓ Done or Not ready yet. */
 const stateOf = (stop: Locator) => stop.locator('.stop__k');
 
-/** Walks a lesson with the next button to its last position, its last Practice, where it counts as finished. */
+/** Walks a lesson with the forward button to its last position, its last Practice ("Next lesson"), where it counts as finished. */
 async function finishLesson(page: Page, path: string): Promise<void> {
   await open(page, path);
-  for (let i = 0; i < 400 && (await nextButton(page).getAttribute('aria-disabled')) !== 'true'; i += 1) {
+  for (let i = 0; i < 400 && (await nextButton(page).textContent()) !== 'Next lesson'; i += 1) {
     await moveBy(page, () => nextButton(page).click());
   }
   await expect(kicker(page)).toContainText('Practice');
@@ -1158,10 +1159,16 @@ test.describe('phone', { tag: '@phone' }, () => {
     if (where === 'learn') await moveBy(page, () => page.getByRole('button', { name: 'Previous step', exact: true }).click());
     if (where === 'learn') await expect(kicker(page)).toHaveText(/Learn/);
   }
-  /** Plays the current step until the lesson's table has a row the step marked, or the rules show a check. */
+  /** Waits for the step, which plays on arrival, to give the lesson's table a row it marked, or the rules a check. */
   async function played(page: Page, marked: string): Promise<void> {
-    await playButton(page).click();
     await expect(page.locator(marked).first()).toBeAttached({ timeout: 15_000 });
+  }
+  /** Plays all of the unit at 2× and waits for the run to end on its last step. */
+  async function runAll(page: Page): Promise<void> {
+    await setSpeed(page, '2×');
+    await playButton(page).click();
+    await expect(playButton(page)).toHaveText('Pause');
+    await expect(playButton(page)).toHaveText('Play all', { timeout: 90_000 });
   }
   /** Where a log cell's value starts: after its name, in the 84px column (the cell is a grid). */
   const valueX = (cell: Locator) =>
@@ -1283,7 +1290,6 @@ test.describe('phone', { tag: '@phone' }, () => {
 
         test('7: a table of three columns is still a table in its tab, with no sideways scroll', async ({ page }) => {
           await goTo(page, bySlug('what-is-tcp').path, 3);
-          await playButton(page).click();
           await expect(page.locator('.tpanel tbody tr[data-highlight]').first()).toBeAttached({ timeout: 15_000 });
           await tab(page, 'Table').click();
           expect(await page.locator('.tpanel__table').evaluate((el) => getComputedStyle(el).display)).toBe('table');
@@ -1295,7 +1301,6 @@ test.describe('phone', { tag: '@phone' }, () => {
           const table = page.getByRole('button', { name: /^Table/ });
           await expect(table).toHaveAccessibleName('Table');
           await expect(table).not.toHaveAttribute('aria-label');
-          await playButton(page).click();
           await expect(table).toHaveAccessibleName('Table, changed', { timeout: 15_000 });
           await expect(table).toHaveAttribute('aria-label', 'Table, changed');
           await expect(table).toHaveText('Table');
@@ -1343,8 +1348,6 @@ test.describe('phone', { tag: '@phone' }, () => {
           });
           await goTo(page, bySlug('firewalls').path, 2);
           await played(page, '.rpanel tr[data-state="deny"]');
-          await playButton(page).click();
-          await expect(playButton(page)).toContainText(/Play|Resume|Continue/);
           await expect(page.getByRole('button', { name: 'Rules, changed' })).toBeVisible();
           await page.getByRole('button', { name: 'Rules, changed' }).click();
           const seen = await page.evaluate(() => (window as unknown as { __scrolled: string[] }).__scrolled);
@@ -1354,8 +1357,7 @@ test.describe('phone', { tag: '@phone' }, () => {
 
         test('10 and 11: the log’s values start at one x on every row, and the short ones share the last line', async ({ page }) => {
           await goTo(page, bySlug('dhcp').path, 5);
-          await playButton(page).click();
-          await expect(page.locator('.console__controls .cbtn--play')).toContainText(/Replay|Watch again|Play/, { timeout: 30_000 });
+          await runAll(page);
           await tab(page, 'Log').click();
           const rows = await logRows(page).all();
           expect(rows.length).toBeGreaterThan(2);
@@ -1382,8 +1384,7 @@ test.describe('phone', { tag: '@phone' }, () => {
           expect(await page.locator('.log__scroll').evaluate((el) => el.scrollWidth - el.clientWidth)).toBe(0);
 
           await goTo(page, bySlug('firewalls').path, 6);
-          await playButton(page).click();
-          await expect(page.locator('.console__controls .cbtn--play')).toContainText(/Replay|Watch again|Play/, { timeout: 30_000 });
+          await runAll(page);
           await tab(page, 'Log').click();
           const fx: Record<string, number[]> = { Source: [], Destination: [], Service: [], Decision: [] };
           for (const row of await logRows(page).all()) {
@@ -1409,7 +1410,6 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('13 and 14: OSI Model’s message strip is pinned under the scene while watching, and gone while reading', async ({ page }) => {
           const expected = SCENE[screen.height as 812 | 844];
           await goTo(page, bySlug('osi-model').path, 6);
-          await playButton(page).click();
           await expect.poll(async () => page.locator('.labels-chip:not(.is-data)').count(), { timeout: 30_000 }).toBeGreaterThanOrEqual(6);
           const strip = (await boxOf(page, '.console__stage .labels'))!;
           expect(strip.height).toBe(40);

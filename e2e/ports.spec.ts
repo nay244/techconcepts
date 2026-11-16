@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { checkCard, checkPhoneTable, DESKTOP, figure, onlyInDesktopDark, playToEnd, RUN_TIMEOUT, watched, watchPanel } from './batch1';
-import { collectErrors, open, playButton, setSpeed } from './support';
+import { collectErrors, open, setSpeed } from './support';
 
 /** Ports’ page checks (design D11, §8 and prototypes/d11-cases.md): the ones that need a browser. */
 const PATH = '/networking/ports';
@@ -58,8 +58,8 @@ test('step 4 ends with the no-match row under the three rows, and the figure is 
   test.setTimeout(RUN_TIMEOUT);
   await page.setViewportSize(DESKTOP);
   await open(page, `${PATH}?step=4`);
+  // Step 4 plays on arrival.
   await setSpeed(page, '2×');
-  await playButton(page).click();
   await expect(page.locator('tr.tpanel__nomatch')).toHaveCount(1, { timeout: 60_000 });
   await expect(page.locator('.tpanel tbody tr')).toHaveCount(4);
   expect((await figure(page).boundingBox())!.height).toBeGreaterThanOrEqual(316);

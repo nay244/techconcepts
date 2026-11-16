@@ -303,14 +303,14 @@ for (const size of [{ width: 768, height: 1024 }, { width: 899, height: 1200 }])
 }
 
 /** Check 16. */
-test('the step controls keep their place between a Watch step and Learn', async ({ page }) => {
+test('the controls keep their place between a Watch step and Learn (the forward button at 1261 at 1440)', async ({ page }) => {
   await page.setViewportSize(S1440);
   await open(page, pathOf('osi-model'));
   await nextButton(page).click();
   await expect(kicker(page)).toContainText('Step 1');
-  const watch = await box(page, '.console__controls .cbtn[aria-label="Next step"]');
+  const watch = await box(page, '.console__controls .cbtn--go');
   await openAt(page, 'osi-model', 'learn');
-  const learn = await box(page, '.console__controls .cbtn[aria-label="Next step"]');
+  const learn = await box(page, '.console__controls .cbtn--go');
   expect(learn.x).toBe(watch.x);
-  expect(learn.x).toBe(1377);
+  expect(learn.x).toBe(1261);
 });

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { SITE_PAGES, collectErrors, kicker, open, playButton, readyLessons, requireLessons, settledFrame, stepCount } from './support';
+import { SITE_PAGES, collectErrors, kicker, open, readyLessons, requireLessons, settledFrame, stepCount } from './support';
 
 /**
  * Full-page screenshots for the visual check against the mockups (spec §11.1): Home, the track, each ready lesson
@@ -38,22 +38,17 @@ async function animationsDone(page: Page): Promise<void> {
   await settledFrame(page);
 }
 
-/** Opens a lesson at a place, settled: a step is played to its end and paused there, so the scene is complete. */
+/** Opens a lesson at a place, settled: a step lands complete (reduced motion while it arrives), so the scene is complete. */
 async function openLessonAt(page: Page, path: string, place: Place): Promise<void> {
   await open(page, path);
   if (place === 'overview') return;
   const steps = await stepCount(page);
+  // A step plays on arrival. Under reduced motion it lands complete at once, with every one of its events applied.
+  if (place === 'step3') await page.emulateMedia({ reducedMotion: 'reduce' });
   await open(page, `${path}?step=${positionOf(place, steps)}`);
   const label = { step3: `Step 3 of ${steps}`, learn: 'Learn', practice: 'Practice' }[place];
   await expect(kicker(page)).toContainText(label);
-  if (place === 'step3') {
-    // Play runs on from step 3; pausing at once shows step 3 complete, with every one of its events applied.
-    await playButton(page).click();
-    await expect(playButton(page)).toHaveText('Pause');
-    await playButton(page).click();
-    await expect(playButton(page)).toHaveText('Play');
-    await expect(kicker(page)).toContainText(label);
-  }
+  if (place === 'step3') await page.emulateMedia({ reducedMotion: null });
 }
 
 test.describe('screenshots', { tag: '@visual' }, () => {

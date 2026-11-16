@@ -49,12 +49,13 @@ async function unitCount(page: Page): Promise<number> {
   return Math.max(1, await page.locator('.console__outline .outline__unit').count());
 }
 
-/** Plays the first unit at 2× from where the page is, and waits for the run to end on Replay. */
-async function playToReplay(page: Page): Promise<void> {
+/** Plays all of the current unit at 2× (Play all runs from the unit's first step), and waits for the run to end on its last step. */
+async function playAll(page: Page): Promise<void> {
   await setSpeed(page, '2×');
   await playButton(page).click();
   await expect(playButton(page)).toHaveText('Pause');
-  await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+  await expect(playButton(page)).toHaveText('Play all', { timeout: RUN_TIMEOUT });
+  await expect(kicker(page)).toContainText(/Step (\d+) of \1$/);
 }
 
 /** What the page shows that is too big for the window, at the kicker's position; null when nothing is. */
@@ -141,12 +142,12 @@ for (const lesson of LESSONS) {
       expect(errors).toEqual([]);
     });
 
-    test('Play runs every step of the unit to the last, then says Replay, with the log filled', async ({ page }) => {
+    test('Play all runs every step of the unit to the last, then says Play all again, with the log filled', async ({ page }) => {
       const errors = collectErrors(page);
       await open(page, lesson.path);
       const steps = await stepCount(page);
       await expect(logRows(page)).toHaveCount(0);
-      await playToReplay(page);
+      await playAll(page);
       await expect(kicker(page)).toContainText(`Step ${steps} of ${steps}`);
       // Every step's segment is passed, and the last is current.
       const segments = page.locator('.topbar__segments .topbar__group').first().locator('.topbar__step');
@@ -219,17 +220,17 @@ for (const lesson of LESSONS) {
       await network.click();
       await expect(figure).toBeVisible();
       await expect(page.locator('.console__scene .seq')).toHaveCount(0);
-      await expect(playButton(page)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+      await expect(playButton(page)).toHaveText('Play all', { timeout: RUN_TIMEOUT });
       await settledFrame(page);
       const switched = await figureSnapshot(page);
 
-      // A run of the last step on a page that never switched views ends on the same scene.
+      // A run on a page that never switched views ends on the same scene.
       const steps = await stepCount(page);
       const fresh = await context.newPage();
       const freshErrors = collectErrors(fresh);
       await open(fresh, `${lesson.path}?step=${steps}`);
       await expect(kicker(fresh)).toContainText(`Step ${steps} of ${steps}`);
-      await playToReplay(fresh);
+      await playAll(fresh);
       await expect(logRows(fresh)).toHaveCount(await logRows(page).count());
       await settledFrame(fresh);
       expect(switched).toEqual(await figureSnapshot(fresh));
@@ -256,7 +257,7 @@ for (const lesson of LESSONS) {
           }
         }),
       ).toBe('throws');
-      await playToReplay(page);
+      await playAll(page);
       expect(await logRows(page).count()).toBeGreaterThan(0);
       let at = await position(page);
       for (let moves = 0; !at.atEnd; moves += 1) {
@@ -303,24 +304,24 @@ test.describe('lesson specifics', () => {
     return lesson;
   }
 
-  test('reduced motion: a Play run takes as long as it does with motion (DHCP)', async ({ browser, page }, testInfo) => {
+  test('reduced motion: a Play all run takes as long as it does with motion (DHCP)', async ({ browser, page }, testInfo) => {
     test.skip(testInfo.project.name !== 'reduced-motion', 'Compares the reduced-motion project with a normal run.');
     const dhcp = lessonNamed('dhcp');
-    /** One run of the lesson's first unit at 1×, from Play to Replay, measured in the page. */
+    /** One run of the lesson's first unit at 1×, from Play all to its end, measured in the page. */
     async function runTime(p: Page): Promise<number> {
       await open(p, dhcp.path);
       await p.evaluate(() => {
-        const button = document.querySelector('.console__controls .cbtn--play')!;
+        const button = document.querySelector('.console__controls .cbtn--alt')!;
         const w = window as unknown as { runStart: number; runEnd: Promise<number> };
         w.runEnd = new Promise((resolve) => {
           new MutationObserver(() => {
-            if (button.textContent?.includes('Replay')) resolve(performance.now());
+            if (button.textContent?.includes('Play all')) resolve(performance.now());
           }).observe(button, { subtree: true, characterData: true, childList: true });
         });
         button.addEventListener('click', () => (w.runStart = performance.now()), { once: true, capture: true });
       });
       await playButton(p).click();
-      await expect(playButton(p)).toHaveText('Replay', { timeout: RUN_TIMEOUT });
+      await expect(playButton(p)).toHaveText('Play all', { timeout: RUN_TIMEOUT });
       return p.evaluate(async () => {
         const w = window as unknown as { runStart: number; runEnd: Promise<number> };
         return Math.round((await w.runEnd) - w.runStart);
@@ -334,7 +335,7 @@ test.describe('lesson specifics', () => {
     const normal = await runTime(normalPage);
     await normalContext.close();
     const reduced = await runTime(page);
-    const note = `${dhcp.title}'s first unit, Play to Replay at 1×: ${normal} ms with motion, ${reduced} ms with reduced motion`;
+    const note = `${dhcp.title}'s first unit, Play all to its end at 1×: ${normal} ms with motion, ${reduced} ms with reduced motion`;
     testInfo.annotations.push({ type: 'run time', description: note });
     // As long as normal: within a quarter either way.
     expect(Math.abs(reduced - normal) / normal).toBeLessThanOrEqual(0.25);

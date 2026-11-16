@@ -98,8 +98,12 @@ export async function pageOverflow(page: Page): Promise<{ down: number; sideways
 
 /** The explanation's kicker ("Overview", "Watch · Step 2 of 5", "DNS · Learn"): it differs from one position to the next. */
 export const kicker = (page: Page): Locator => page.locator('.console__explain .explain__kicker');
-export const playButton = (page: Page): Locator => page.locator('.console__controls .cbtn--play');
-export const nextButton = (page: Page): Locator => page.getByRole('button', { name: 'Next step', exact: true });
+/** The play button: "Play all", or "Pause" while a run is going. */
+export const playButton = (page: Page): Locator => page.locator('.console__controls .cbtn--alt');
+/** The replay icon: it plays the current step again. */
+export const replayButton = (page: Page): Locator => page.locator('.console__controls .cbtn--replay');
+/** The forward button, the orange one: "Next step" inside the lesson, "Next lesson" at the last Practice. */
+export const nextButton = (page: Page): Locator => page.locator('.console__controls .cbtn--go');
 export const speedButton = (page: Page): Locator => page.locator('.console__controls .cbtn--speed');
 export const viewSwitch = (page: Page): Locator => page.getByRole('group', { name: 'View', exact: true });
 /** The log's rows, without the line it shows while it is empty. */
@@ -114,7 +118,7 @@ export interface Position {
   sideways: number;
   /** How many Network / Sequence switches the scene has (0 or 1). */
   viewSwitches: number;
-  /** Whether Previous and Next are at the lesson's ends. */
+  /** Whether Previous is at the lesson's start, and the forward button has reached "Next lesson" (the lesson's last Practice). */
   atStart: boolean;
   atEnd: boolean;
 }
@@ -146,7 +150,7 @@ export async function position(page: Page, leaving?: string): Promise<Position> 
       sideways: Math.max(0, root.scrollWidth - window.innerWidth),
       viewSwitches: document.querySelectorAll('[role="group"][aria-label="View"]').length,
       atStart: disabled('Previous step'),
-      atEnd: disabled('Next step'),
+      atEnd: document.querySelector('.console__controls .cbtn--go')?.textContent === 'Next lesson',
     };
   }, leaving ?? null);
 }
