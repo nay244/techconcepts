@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { hydrated, kicker, nextButton, open, pageOverflow, playButton, readyLessons, replayButton, requireLessons, settledFrame } from './support';
+import { figureSnapshot, hydrated, kicker, logRows, nextButton, open, pageOverflow, playButton, readyLessons, replayButton, requireLessons, setSpeed, settledFrame } from './support';
 
 /**
  * D14's control row, measured on the built site (B17): its order, sizes and places at every width, the one orange
@@ -91,14 +91,19 @@ test.describe('the row at 1440', () => {
     await open(page, `${HTTP}?step=1`);
     await hydrated(page);
     expect(await bg(nextButton(page))).toBe('rgb(176, 70, 23)');
-    const last = LESSONS.at(-1)!;
-    await open(page, `${last.path}?step=99`);
-    await hydrated(page);
-    await expect(kicker(page)).toContainText('Practice');
-    if ((await nextButton(page).getAttribute('aria-disabled')) === 'true') {
+    // Some ready lesson has no next lesson: its Practice shows the disabled button.
+    let found = false;
+    for (const lesson of LESSONS) {
+      await open(page, `${lesson.path}?step=99`);
+      await hydrated(page);
+      await expect(kicker(page)).toContainText('Practice');
+      if ((await nextButton(page).getAttribute('aria-disabled')) !== 'true') continue;
+      found = true;
       expect(await bg(nextButton(page))).toBe('rgb(176, 70, 23)');
       expect(await nextButton(page).evaluate((el) => getComputedStyle(el).opacity)).toBe('0.4');
+      break;
     }
+    expect(found, 'a ready lesson with a disabled Next lesson').toBe(true);
   });
 
   test('13a: replay is disabled on the Overview, a step with nothing to replay, Learn and Practice, and enabled on a step that plays', async ({ page }) => {
@@ -117,6 +122,31 @@ test.describe('the row at 1440', () => {
     await expect(nextButton(page)).toHaveText('Next lesson');
   });
 
+  test('13: after a replay of DHCP step 4 (its table remounts) the figure equals a fresh arrival at step 4', async ({ page, context }) => {
+    test.setTimeout(120_000);
+    await open(page, `${DHCP}?step=4`);
+    await hydrated(page);
+    await setSpeed(page, '2×');
+    const rows = logRows(page);
+    await expect(rows).toHaveCount(4, { timeout: 30_000 });
+    await page.waitForTimeout(2500);
+    await replayButton(page).click();
+    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(4, { timeout: 30_000 });
+    await page.waitForTimeout(2500);
+    await settledFrame(page);
+    const replayed = await figureSnapshot(page);
+
+    const fresh = await context.newPage();
+    await open(fresh, `${DHCP}?step=4`);
+    await hydrated(fresh);
+    await setSpeed(fresh, '2×');
+    await expect(logRows(fresh)).toHaveCount(4, { timeout: 30_000 });
+    await fresh.waitForTimeout(2500);
+    await settledFrame(fresh);
+    expect(replayed).toEqual(await figureSnapshot(fresh));
+  });
+
   test('12 and 13: nothing moves on unasked; replay refills the log one message at a time and stays on the step', async ({ page }) => {
     await open(page, HTTP);
     await hydrated(page);
@@ -133,6 +163,49 @@ test.describe('the row at 1440', () => {
     await expect(rows).toHaveCount(2);
     await expect(rows).toHaveCount(5, { timeout: 30_000 });
     await expect(kicker(page)).toContainText('Step 3 of');
+  });
+});
+
+test.describe('14: reduced motion lands a step complete at once', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  const full = (page: Page) => logRows(page);
+
+  test('the forward button, Back then Next, a ?step= load, an outline click and Resume', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await open(page, HTTP);
+    await hydrated(page);
+    await nextButton(page).click();
+    await nextButton(page).click();
+    await nextButton(page).click();
+    await expect(kicker(page)).toContainText('Step 3 of');
+    await expect(full(page)).toHaveCount(5, { timeout: 150 });
+    await expect(page.locator('.topbar__fill')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Previous step', exact: true }).click();
+    await nextButton(page).click();
+    await expect(full(page)).toHaveCount(5, { timeout: 150 });
+
+    await open(page, `${HTTP}?step=3`);
+    await hydrated(page);
+    await expect(kicker(page)).toContainText('Step 3 of');
+    await expect(full(page)).toHaveCount(5, { timeout: 300 });
+
+    await page.locator('.console__outline').getByRole('button', { name: /^HTTP Exchange/ }).click();
+    await expect(kicker(page)).toContainText('Step 4 of');
+    const at4 = await full(page).count();
+    await page.waitForTimeout(6000);
+    expect(await full(page).count(), 'step 4 landed with every row').toBe(at4);
+    expect(at4).toBeGreaterThanOrEqual(5);
+
+    // Resume: the visit to step 3 was recorded.
+    await open(page, `${HTTP}?step=3`);
+    await expect(kicker(page)).toContainText('Step 3 of');
+    await open(page, HTTP);
+    await hydrated(page);
+    await page.getByRole('button', { name: /^Resume at step/ }).click();
+    await expect(full(page).first()).toBeVisible({ timeout: 300 });
+    const resumed = await full(page).count();
+    await page.waitForTimeout(6000);
+    expect(await full(page).count(), 'Resume landed with every row').toBe(resumed);
   });
 });
 
@@ -178,7 +251,7 @@ for (const width of [375, 390]) {
 }
 
 for (const [width, height, forward, arrow, controls] of [
-  [374, 780, 126 - 0, false, 48],
+  [374, 780, 126, false, 48],
   [360, 780, 112, false, 48],
   [359, 780, 135, false, 44],
   [320, 640, 96, false, 44],
@@ -190,8 +263,15 @@ for (const [width, height, forward, arrow, controls] of [
     await expect(nextButton(page)).toHaveText('Next lesson');
     const b = await boxes(page);
     expect(b.slice(0, 4).map((x) => [x.w, x.h])).toEqual(Array(4).fill([controls, controls]));
-    if (width !== 374) expect(b[4]!.w).toBe(forward);
+    expect(b[4]!.w).toBe(forward);
     await expectUnclipped(page, `${width}`);
+    // Without the ›, the words are centred in the button (within 1px).
+    const off = await nextButton(page).evaluate((button) => {
+      const r = button.getBoundingClientRect();
+      const l = button.querySelector('.go__label')!.getBoundingClientRect();
+      return Math.abs((l.left + l.right) / 2 - (r.left + r.right) / 2);
+    });
+    expect(off, 'the words are centred').toBeLessThanOrEqual(1);
     expect(await nextButton(page).evaluate((el) => getComputedStyle(el.querySelector('svg')!).display)).toBe(arrow ? 'inline' : 'none');
     expect((await pageOverflow(page)).sideways).toBe(0);
     if (width === 320) expect(await page.locator('.console__controls').evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(64);

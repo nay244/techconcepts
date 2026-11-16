@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Panel } from '../content/schema';
@@ -203,7 +204,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     if (forward.href !== undefined) navigate(forward.href);
     else if (slot.kind === 'practice') {
       // A following unit: its Overview, with the words showing on a phone and focus on them (the end row's jump).
-      goFromOutline(position + 1);
+      // Committed first: on a phone the words are hidden until the Explain tab shows, and a hidden panel cannot take focus.
+      flushSync(() => goFromOutline(position + 1));
       explanation.current?.focus();
     } else dispatch({ type: 'next' });
   };

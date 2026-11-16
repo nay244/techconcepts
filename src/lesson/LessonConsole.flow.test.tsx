@@ -7,6 +7,7 @@ import type { Lesson, SceneEvent } from '../content/schema';
 import { liftedFixture, makeLesson, makeUnit } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
+import { seedProgress } from '../test/progress';
 import LessonConsole from './LessonConsole';
 
 // The lesson's flow (D14, the controls): one step at a time, Play all, Pause, replay and the forward button.
@@ -196,9 +197,27 @@ test('2 and 19: in a lesson of three units Next step leads on from a unit’s Pr
   expect(document.querySelector('.console')).toHaveAttribute('data-tab', 'explain');
   expect(explanation()).toHaveFocus();
   expect(navigate).not.toHaveBeenCalled();
+});
 
+test('2: the last unit’s Practice of a lesson of three units reads Next lesson, and Practice of the first reads Next step', () => {
   window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=23');
   render(consoleFor(THREE));
+  expect(forwardButton()).toHaveAccessibleName('Next lesson');
+  expect(forwardButton()).not.toHaveAttribute('title', 'Next step (→)');
+});
+
+test('E8: focus reaches the explanation only once the Explain tab is showing', async () => {
+  window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=7');
+  render(consoleFor(THREE));
+  await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Steps' }));
+  const tabsAtFocus: (string | undefined)[] = [];
+  const real = HTMLElement.prototype.focus;
+  vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function (this: HTMLElement, ...args) {
+    if (this === explanation()) tabsAtFocus.push((document.querySelector('.console') as HTMLElement).dataset.tab);
+    return real.apply(this, args);
+  });
+  await user.click(forwardButton());
+  expect(tabsAtFocus).toEqual(['explain']);
 });
 
 test('16 and 19: → on a unit’s Practice leads to the next unit’s Overview with the words focused; on the last Practice it does nothing', async () => {
@@ -462,7 +481,7 @@ test('14: under reduced motion a hand move lands the step complete at once; repl
   expect(logRows()).toHaveLength(4);
 });
 
-test('14: a ?step= link, an outline click and Resume land complete under reduced motion', async () => {
+test('14: a ?step= link and an outline click land complete under reduced motion', async () => {
   reduceMotion(true);
   window.history.replaceState({}, '', '/networking/dhcp?step=4');
   const { unmount } = render(consoleFor(DHCP));
@@ -472,6 +491,16 @@ test('14: a ?step= link, an outline click and Resume land complete under reduced
   expect(logRows()).toHaveLength(3);
   expect(vi.getTimerCount()).toBe(0);
   unmount();
+});
+
+test('14: Resume lands the step complete under reduced motion', async () => {
+  reduceMotion(true);
+  seedProgress({ dhcp: { status: 'in-progress', furthestPosition: 4 } }, 'dhcp');
+  render(consoleFor(DHCP));
+  await user.click(screen.getByRole('button', { name: /^Resume at step 4/ }));
+  expect(kicker().textContent).toBe('Watch · Step 4 of 5');
+  expect(logRows()).toHaveLength(4);
+  expect(vi.getTimerCount()).toBe(0);
 });
 
 test('15: Play all keeps its pace under reduced motion', async () => {
