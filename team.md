@@ -968,3 +968,12 @@ Planned on 2026-11-15 in a session of its own on Opus 5.5, beside job 14, under 
 - **A case that needs CSS must be an end-to-end test.** The build's blocker (focus on a hidden panel) had a unit test that could not fail in jsdom. The spec review should mark which cases only a real browser can try.
 - **The build fixes were exactly what the reviewer named:** next time they can go to a Haiku `builder` (job 13's rule), with Sonnet if it fails.
 - **`net-map.test.ts`'s "phone is hidden at every position" test timed out under load on `revamp` too.** Fixed after the job at the owner's word ("Yes, fix it here"): that test alone gets a 20 s limit (about 2 s alone, 6 to 7 s at load 13, 10.6 s with two suites at once at load 20). With two suites at once, four other heavy scene tests (`17c`, TCP/UDP's and two "fresh driver" tests) also time out; each passes in a single run, including at load 13, so they are left as they are.
+
+# Job 16: Networking Concepts' batch 4, Proxies and VPN
+
+Planned on 2026-11-16 in a fresh session on Opus 5.5, under the owner's go "Continue with Batch 4" (direction 2.73, 2.74); `plan.md`. Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S18 | scout | Haiku | 1 | 266,140 | `prototypes/s18-batch-4-facts.md` (saved by the orchestrator from the transcript): stops 18 and 20, VPN the track's last (its end row already exists, tested on What is TLS); RFC 9110 and NIST SP 800-77r1 registered, no IPsec RFC, RFC 7239 or "what is a proxy/VPN" page; no checked prose on proxies or IPsec, Load Balancers never says "proxy" by test; no compare mode, `NE` free, no tunnel or proxy drawn; e2e helpers after B17. |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: thirteen decisions, no compare mode, D15 in two parts, B18a and B18b one after another, B19 on Haiku. Estimate 3.2 to 4.2 million; batch stop 4.2 million. Waiting for the owner's go. |
