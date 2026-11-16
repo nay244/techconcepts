@@ -38,7 +38,8 @@ test('the scene is the built fixture’s: its steps’ starts, events, routes, t
       expect(e.log).toEqual(w.log);
     }
     if (e.type === 'note' && w.type === 'note') expect(e.log).toEqual(w.log);
-    if (e.type === 'table' && w.type === 'table') expect(e.row).toEqual(w.row);
+    // Ruling 7 (L28-p): the forward proxy row's last cell also names the port.
+    if (e.type === 'table' && w.type === 'table') expect(e.row).toEqual(e.id === 's3-row' ? { ...w.row, readers: `${w.row?.readers} and port` } : w.row);
   }
   expect(unit.scene.layers).toEqual(['proxies:site', 'proxies:proxy']);
   expect(unit.scene.labels).toEqual({ laptop: 'Wants techconcepts.app', url: 'techconcepts.app', router: '198.51.100.23 outside' });

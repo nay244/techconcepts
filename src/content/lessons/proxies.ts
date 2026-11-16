@@ -53,6 +53,18 @@ const RFC_FWD_WHY = cite('rfc-7239', '1');
 const RFC_FWD_HEADER = cite('rfc-7239', '4', { defining: true });
 const RFC_TLS_CONF = cite('rfc-9846', '1', { defining: true });
 const RFC_TLS_DATA = cite('rfc-9112', '9.7', { defining: true });
+const EDGE_ICON = at(
+  'microsoft-edge-secure',
+  'Verify the connection icon in the address bar',
+  'https://support.microsoft.com/en-us/edge/securely-browse-the-web-in-microsoft-edge#:~:text=Verify%20the%20connection%20icon%20in%20the%20address%20bar',
+);
+const CF_MIXED = at(
+  'cloudflare-mixed-content',
+  'Mixed content errors',
+  'https://developers.cloudflare.com/ssl/troubleshooting/mixed-content-errors/#:~:text=Mixed%20content%20errors',
+);
+const RFC_TARGET = cite('rfc-9112', '3.2.1', { defining: true });
+const RFC_FRESH = cite('rfc-9111', '1', { defining: true });
 const RFC_GET = cite('rfc-9110', '9.3.1', { defining: true });
 const RFC_OK = cite('rfc-9110', '15.3.1', { defining: true });
 const RFC_NAPT = cite('rfc-3022', '2.2');
@@ -201,7 +213,7 @@ const step1: SceneEvent[] = [
     info: 'TLS application data (200 OK, the page inside)',
     plain: 'The page comes back, sealed.',
     cues: PAGE,
-    backing: traced('fact-https', 'fact-here', 'fact-request'),
+    backing: traced('fact-https', 'fact-here', 'fact-request', 'fact-padlock'),
   }),
 ];
 
@@ -255,7 +267,7 @@ const step3: SceneEvent[] = [
     'Forward proxy',
     '203.0.113.30, the proxy',
     'Not sent; the proxy knows it',
-    'Your browser and the site; the proxy sees only the site’s name',
+    'Your browser and the site; the proxy sees only the site’s name and port',
     'The site sees a connection from the proxy, 203.0.113.30.',
     traced('fact-sees', 'fact-knows', 'term-tunnel', 'fact-connect', 'fact-https', 'fact-passes-on'),
   ),
@@ -275,7 +287,7 @@ const step3: SceneEvent[] = [
     info: 'The sealed page, passed back unread',
     plain: 'The page comes back through the tunnel, still sealed.',
     cues: PAGE,
-    backing: traced('term-tunnel', 'fact-https', 'fact-connect'),
+    backing: traced('term-tunnel', 'fact-https', 'fact-connect', 'fact-padlock'),
   }),
 ];
 
@@ -325,7 +337,7 @@ const step5: SceneEvent[] = [
     info: 'TLS application data (200 OK, the page inside)',
     plain: 'The reverse proxy seals the page and sends it to you.',
     cues: PAGE,
-    backing: traced('pattern', 'term-termination', 'fact-https', 'fact-here', 'fact-request'),
+    backing: traced('pattern', 'term-termination', 'fact-https', 'fact-here', 'fact-request', 'fact-padlock'),
   }),
 ];
 
@@ -427,8 +439,8 @@ export default defineLesson({
             'Now your laptop is set to use a **forward proxy**, at 203.0.113.30. Your browser no longer connects to the site itself. It asks the proxy to **CONNECT** to techconcepts.app, port 443. The proxy opens a connection of its own to the site, then answers 200 OK: the **tunnel** is open. From now on, it just passes bytes along, both ways.',
           deep: [
             {
-              text: 'Your laptop knows to use the proxy because it’s set up with the proxy’s address, by hand or automatically. Organisations often set their devices up this way, to check and log their web traffic.',
-              cite: [MS_WIN_SUMMARY, MS_WIN_MANUAL, RFC_INTERMEDIARY, G_SWP_HOW, G_SWP_MODES, MS_FORWARD],
+              text: 'Your laptop knows to use the proxy because it’s set up with the proxy’s address. Organisations often set their devices up this way, to check and log their web traffic.',
+              cite: [MS_WIN_SUMMARY, MS_WIN_MANUAL, RFC_INTERMEDIARY, G_SWP_HOW, G_SWP_MODES, MS_FORWARD, PA_LOGGING],
             },
           ],
           facts: [
@@ -468,7 +480,7 @@ export default defineLesson({
           title: 'A Proxy for the Site',
           sub: 'The reverse proxy opens the seal',
           narrative:
-            'Now there’s no proxy on your side, but techconcepts.app has a **reverse proxy** in front of its server. The site’s address, 198.51.100.7, now leads to the reverse proxy, and the web server sits behind it at a private address. The reverse proxy holds the site’s certificate, so your sealed line ends there. It opens the seal and reads your request.',
+            'Now there’s no proxy on your side, but techconcepts.app has a **reverse proxy** in front of its server. The site’s address, 198.51.100.7, now leads to the reverse proxy, and the web server sits behind it. The reverse proxy holds the site’s certificate, so your sealed line ends there. It opens the seal and reads your request.',
           deep: [
             {
               text: 'Ending HTTPS at the reverse proxy saves the servers behind it that work, and lets the reverse proxy read each request to choose where it goes.',
@@ -496,11 +508,11 @@ export default defineLesson({
           title: 'Passed to the Server',
           sub: 'Your address goes along in a header',
           narrative:
-            'The reverse proxy passes your request to the web server on a connection of its own: plain HTTP, inside the site’s network. So the server sees the reverse proxy’s address, 10.0.0.2. Your address goes along in a header, **X-Forwarded-For**: 198.51.100.23. The page comes back the same way, and the reverse proxy seals it for you.',
+            'The reverse proxy passes your request to the web server on a connection of its own, as plain HTTP. So the server sees the reverse proxy’s address, 10.0.0.2. Your address goes along in a header, **X-Forwarded-For**: 198.51.100.23. The page comes back the same way, and the reverse proxy seals it for you.',
           deep: [
             {
               text: 'A reverse proxy can keep a copy of the page and give it to the next reader without asking the server, but only if the site’s response allows it. A response marked no-store or private isn’t kept for others.',
-              cite: [RFC_CACHE_STORE, RFC_NO_STORE, RFC_PRIVATE, G_CDN_CACHE],
+              cite: [RFC_CACHE_STORE, RFC_NO_STORE, RFC_PRIVATE, RFC_FRESH, G_CDN_CACHE],
             },
           ],
           facts: [
@@ -546,7 +558,7 @@ export default defineLesson({
           },
           {
             id: 'term-reverse',
-            idea: 'A proxy in front of a site’s servers, working for the site',
+            idea: 'A proxy in front of a site’s servers, working for the site: requests for the site reach it first',
             name: 'Reverse proxy',
             cite: [RFC_INTERMEDIARY, MS_REVERSE, PA_REVERSE, CF_REVERSE],
           },
@@ -644,7 +656,7 @@ export default defineLesson({
           {
             id: 'fact-https',
             label: 'HTTPS',
-            value: 'sends every HTTP message as TLS application data, so only its two ends, your browser and the site, can read what’s inside',
+            value: 'sends every HTTP message encrypted, as TLS application data, so only its two ends, your browser and the site, can read what’s inside',
             cite: [RFC_TLS_DATA, RFC_TLS_CONF, RFC_HTTPS_443, CF_TLS_HIDDEN],
           },
           {
@@ -668,7 +680,7 @@ export default defineLesson({
           {
             id: 'fact-cache',
             label: 'Copies',
-            value: 'only of answers the site allows to be kept',
+            value: 'only when the response lets it be kept: one marked no-store or private isn’t kept for others',
             cite: [RFC_CACHE_STORE, RFC_NO_STORE, RFC_PRIVATE, G_CDN_CACHE],
           },
           {
@@ -680,7 +692,7 @@ export default defineLesson({
           {
             id: 'fact-setup',
             label: 'A forward proxy is used by',
-            value: 'devices set up with its address, by hand or automatically',
+            value: 'devices set up with its address',
             cite: [RFC_INTERMEDIARY, MS_WIN_SUMMARY, MS_WIN_MANUAL, G_SWP_MODES, PA_EXPLICIT],
           },
           {
@@ -692,8 +704,14 @@ export default defineLesson({
           {
             id: 'fact-request',
             label: 'An HTTP page request',
-            value: 'GET asks for a page; the answer 200 OK sends it back',
-            cite: [RFC_GET, RFC_OK],
+            value: 'GET asks for a page, and GET / for the page at the site’s bare address; the answer 200 OK sends it back',
+            cite: [RFC_GET, RFC_OK, RFC_TARGET],
+          },
+          {
+            id: 'fact-padlock',
+            label: 'The padlock',
+            value: 'your browser shows it when the page came over HTTPS from a site with a valid certificate',
+            cite: [EDGE_ICON, CF_MIXED],
           },
         ],
       },
