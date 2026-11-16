@@ -992,7 +992,8 @@ test('the phone is hidden at every position of What is IP, Router and every tour
   driver.show(everyView(nat)[0]!);
   driver.show(everyView(whatIpLesson())[0]!);
   expect(phoneGroups(root).map((g) => g.hasAttribute('data-hidden'))).toEqual([true, true]);
-});
+  // Every view of every net-map lesson: about 2 s alone, past the default 5 s when the whole suite loads the machine.
+}, 20_000);
 
 const whatIpLesson = (): Lesson => Object.values(lessonModules).find((l) => l.slug === 'what-is-ip')!;
 
