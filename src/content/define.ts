@@ -388,12 +388,12 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   // A part a start hides is not on the map, so no message can start or end there (the optional parts have their own rule below).
   const parts = partsAt(c.unit, c.step);
   for (const arg of parts.hidden) {
-    if (!NET_MAP_OPTIONAL.includes(arg) && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which the scene's start hides.`);
+    if (!NET_MAP_OPTIONAL.includes(arg) && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which a start hides.`);
   }
   // On the network map, an optional part (the phone, a proxy) is drawn only once a start has shown it, and any other server only with a layer that draws it.
   if (figure === 'net-map') {
     for (const [role, id] of [['sent from', e.from], ['sent to', e.to]] as const) {
-      if (id === 'phone' && !isShown(parts, 'phone')) issues.push(`${where} is ${role} "phone", which the scene's start does not show (cue "show phone").`);
+      if (id === 'phone' && !isShown(parts, 'phone')) issues.push(`${where} is ${role} "phone", which a start does not show (cue "show phone").`);
       if ((id === 'proxy' || id === 'reverse') && !isShown(parts, id)) issues.push(`${where} is ${role} "${id}", which no start has shown by this step, or one has hidden it since (cue "show ${id}").`);
       if (NET_MAP_BASE_PLACES.includes(id)) continue;
       // A site several layers draw (the web server, the mail server) is on the map when any one of them is in the scene.
@@ -547,7 +547,7 @@ function readPark(arg: string | undefined, where: string, c: UnitContext): { pla
     if (!drawn.some((layer) => c.unit.scene.layers.includes(layer))) c.issues.push(`${at} needs a layer that draws the web server in the scene (${drawn.map((layer) => `"${layer}"`).join(', ')}).`);
   }
   if (place === 'laptop') {
-    if (isShown(partsAt(c.unit, c.step), 'phone')) c.issues.push(`${at}: the laptop's column lies where the phone does, and the scene's start shows the phone.`);
+    if (isShown(partsAt(c.unit, c.step), 'phone')) c.issues.push(`${at}: the laptop's column lies where the phone does, and a start shows the phone.`);
     if (isShown(partsAt(c.unit, c.step), 'cafe')) c.issues.push(`${at}: the laptop's column lies where the café's listener does, and the scene's start shows the café.`);
     if (Object.hasOwn(c.unit.scene.labels, 'router')) c.issues.push(`${at}: the laptop's column lies under the home router's callout, and the scene's labels give "router".`);
   }

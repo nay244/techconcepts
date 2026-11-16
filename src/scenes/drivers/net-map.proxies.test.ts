@@ -107,13 +107,27 @@ test('8: step 2’s first frame shows the forward proxy and nothing of the first
 
 test('8b: `fresh` leaves the address bar, the status, the trays and the parks as they were', () => {
   const { root, driver } = mount();
-  driver.show(end(1));
+  // Played before step 2's `fresh`: the mail server's tray on, and a tag parked in the laptop's bay 1.
+  const earlier = (view: SceneView): SceneView => ({
+    ...view,
+    cues: [
+      { cue: 'tray', arg: 'mail on', eventId: 'earlier', current: false },
+      { cue: 'park', arg: 'laptop 1 GET', eventId: 'earlier', current: false },
+      ...view.cues,
+    ],
+  });
+  const webTray = (): boolean => root.querySelector('.nm-hold[id$="-hold-mail"]')!.classList.contains('on');
+  driver.show(earlier(end(1)));
   const before = ['nm-url', 'nm-lapState', 'nm-lapAddr'].map((id) => root.querySelector(`#${id}`)!.textContent);
   expect(before[0]).toBe('techconcepts.app');
   expect(before[1]).toBe('Wants techconcepts.app');
-  driver.show(viewAt(2, 0));
+  const parked = root.querySelectorAll('.nm-park, .nm-gap').length;
+  expect(parked).toBeGreaterThan(0);
+  expect(webTray()).toBe(true);
+  driver.show(earlier(viewAt(2, 0)));
   expect(['nm-url', 'nm-lapState', 'nm-lapAddr'].map((id) => root.querySelector(`#${id}`)!.textContent)).toEqual(before);
-  expect(root.querySelectorAll('.nm-park, .nm-gap')).toHaveLength(0);
+  expect(root.querySelectorAll('.nm-park, .nm-gap')).toHaveLength(parked);
+  expect(webTray()).toBe(true);
 });
 
 test('9: after step 2 one open line runs through the box’s top: its points are laptop>proxy then proxy>origin without its first point', () => {
@@ -235,6 +249,9 @@ test('15: the figure’s description carries the forward proxy’s sentence at s
     }
   }
   expect(original).toContain('DNS resolver');
+  // The Overview: the original label with the resolver's sentence left out, and no part's sentence added.
+  driver.show(sceneViewOf(lesson.units[0]!, deriveState(lesson, positionOf(lesson, 0, 'overview'), 0)));
+  expect(root.getAttribute('aria-label')).toBe(original.replace(' Behind it, the DNS resolver, a card-index cabinet.', ''));
 });
 
 test('19c: a line opened through the proxy is named with its via: sealing laptop>origin names a line that is not open', () => {

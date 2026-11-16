@@ -41,10 +41,13 @@ interface Snapshot {
   layerSets: Record<string, string>;
 }
 
-function take(): Snapshot {
+/** The lessons the snapshot records: every one when it is written, else only those on file, so a new lesson does not turn it red. */
+const recordedSlugs = (snap: Snapshot): Set<string> => new Set(Object.keys(snap.durations).map((key) => key.split('/')[0]!));
+
+function take(slugs?: Set<string>): Snapshot {
   const svg = without(drawn.svg);
   const snap: Snapshot = { svg: { sha256: sha(svg), length: svg.length }, durations: {}, states: {}, figures: {}, layerSets: {} };
-  for (const l of lessons) {
+  for (const l of lessons.filter((lesson) => slugs === undefined || slugs.has(lesson.slug))) {
     for (const u of l.units) snap.layerSets[JSON.stringify(u.scene.layers)] = sha(withoutVpn(drawNetMap(u.scene.layers).svg));
     l.units.forEach((u, ui) => u.steps.forEach((s, si) => s.events.forEach((e) => (snap.durations[`${l.slug}/${ui}/${si}/${e.id}`] = netMapDriver.duration(e, data)))));
     const host = document.createElement('div');
@@ -77,10 +80,10 @@ const LAYER_SETS = 17;
 const FILE = 'src/scenes/drivers/net-map.snapshot.json';
 
 test('every existing net-map lesson draws, derives and times exactly as it did before the Proxies and VPN patches', () => {
-  const now = take();
   // @ts-expect-error - no @types/node in this project; vitest runs under node
-  if (process.env.WRITE_SNAPSHOT === '1') writeFileSync(FILE, JSON.stringify(now, null, 1) + '\n');
+  if (process.env.WRITE_SNAPSHOT === '1') writeFileSync(FILE, JSON.stringify(take(), null, 1) + '\n');
   const before = JSON.parse(readFileSync(FILE, 'utf8')) as Snapshot;
+  const now = take(recordedSlugs(before));
   // The 20 lessons give 409 events and 745 states; Router's fixture adds 20 events and 36 states.
   const real = (keys: string[]): number => keys.filter((k) => !k.startsWith('router-fixture/')).length;
   expect(real(Object.keys(before.durations))).toBe(409);

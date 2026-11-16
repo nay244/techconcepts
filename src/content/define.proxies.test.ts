@@ -150,13 +150,23 @@ test('18l: the phone and the resolver follow the steps’ starts too', () => {
     start(l, 1).push({ cue: 'show', arg: 'phone' });
     message(l, 's2-connect').from = 'phone';
   }).join('\n');
-  expect(phone).not.toContain('"phone", which the scene');
-  expect(issues((l) => (message(l, 's2-connect').from = 'phone')).join('\n')).toContain('"phone", which the scene\'s start does not show');
+  expect(phone).not.toContain('"phone", which a start');
+  expect(issues((l) => (message(l, 's2-connect').from = 'phone')).join('\n')).toContain('"phone", which a start does not show (cue "show phone")');
+  // The scene's start hides no resolver here, so only the step 2 start that hides it can refuse the message in step 3.
   const resolver = issues((l) => {
+    unit(l).scene.start = [];
     start(l, 2).push({ cue: 'hide', arg: 'resolver' });
     message(l, 's3-in').from = 'resolver';
   }).join('\n');
-  expect(resolver).toContain('"resolver", which the scene\'s start hides');
+  expect(resolver).toContain('"resolver", which a start hides');
+  expect(resolver).not.toContain('"resolver", which the scene');
+  // The laptop's column: a step 2 start that shows the phone, then a park in the laptop's bay 1 in step 3.
+  const column = issues((l) => {
+    start(l, 2).push({ cue: 'show', arg: 'phone' });
+    ((message(l, 's3-in').cues ??= []) as Cue[]).push({ cue: 'park', arg: 'laptop 1 GET' });
+  }).join('\n');
+  expect(column).toContain('the laptop\'s column lies where the phone does, and a start shows the phone.');
+  expect(issues((l) => ((message(l, 's3-in').cues ??= []) as Cue[]).push({ cue: 'park', arg: 'laptop 1 GET' })).join('\n')).not.toContain('the laptop\'s column lies where the phone does');
   // Before the step that hides a part that no scene start hid, a message there is not refused.
   expect(
     issues((l) => {

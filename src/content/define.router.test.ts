@@ -64,6 +64,6 @@ test('the cue `drop` takes a router and goes on an event, once', () => {
 });
 
 test('a message to or from the hidden resolver fails', () => {
-  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { to: 'resolver' }))).toContain('which the scene\'s start hides');
-  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { from: 'resolver' }))).toContain('which the scene\'s start hides');
+  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { to: 'resolver' }))).toContain('which a start hides');
+  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { from: 'resolver' }))).toContain('which a start hides');
 });
