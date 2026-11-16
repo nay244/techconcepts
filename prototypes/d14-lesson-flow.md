@@ -2,6 +2,31 @@
 
 This is the spec for unit D14 of job 15 (`plan-job15.md`, decisions 1 to 5). It is revised at the owner's word at the design gate (2026-11-15): "I like the idea of a one step a a time, however only keep "Next Step" and "Next Lesson", and "Play All"". Variant A, step by step, is taken. The control row has three labels: "Next step", "Next lesson" and "Play all". It also has "Pause", while a run is going (§4). After the owner asked about a replay button at the same gate, an icon-only replay (↺, named "Replay step") sits between Play all and the forward button (§3, §4).
 
+## Approved: the controls only (the owner, 2026-11-15)
+
+To "Approve D14 with all of these changes?" the owner answered **"Controls only"**, after confirming that the Network/Sequence pane stays as it is. D14 is frozen at this scope. The prototype still draws the deferred parts; a builder ignores them.
+
+**Approved, to build in B17:**
+
+- §3, the control row: speed, Back, Play all, the replay icon, the forward button; its sizes, order and colours at every width, the narrow-phone rules, and the button titles that name the keys.
+- §4, the play button and replay: one step at a time (a step plays once on arrival and waits), Play all from step 1, Pause during a run, replay, hand moves, speeds and reduced motion.
+- The keys' behaviour (→, ←, Space as §3 and §4 say). Not the key line in the log head.
+- The forward button's words and actions at every slot, including Practice: "Next lesson" to the next ready lesson; "Next step" to a following unit's Overview; "Next lesson" `aria-disabled`, with its title, when there is no next lesson.
+- From §10, the control bar's rows only; from §11, the rows for the forward button, its disabled titles, the play button, replay and the button titles; from §12, the controls' measurements.
+- Acceptance checks 1 to 17 and 29; from 19, the first two sentences; from 20 and 21, the bar's disabled "Next lesson" and its title only. Check 11 loses "or Back to Learn".
+
+**Deferred to a later job, not built:** §7 (the closing block, the pattern tapes and Practice ticked in the outline), §8 (the wrong answer), §9 (the key line, the chips and the empty log's words), and checks 18, 22 to 28, the card in 19 and the block's parts of 20 and 21.
+
+**What a reader sees at the end, with the controls only.** Today's end row (`Explanation.tsx` EndRow) stays as it is, word for word, and the bar's forward button sits beside it:
+
+| Case | Today's end row, kept | The bar's forward button |
+|---|---|---|
+| A next ready lesson | "That’s the whole lesson." and the Up next card | "Next lesson", to the same lesson |
+| A following unit | "Next: <unit>, …" and its "Go to <unit>" button | "Next step", to the same Overview |
+| The track's last lesson, or the last ready one | the sentence and its "Back to the track" link | "Next lesson", disabled, its title giving the reason |
+
+The empty log keeps "Nothing has happened yet. Press Play to start." until the later job, although the button now reads "Play all". The three lessons' idle words that say "Press Play, or pick a step." are unchanged too.
+
 The prototype is `prototypes/d14-lesson-flow.html`. It is one file with no network. It plays through a whole lesson (HTTP) at any width, with a panel that switches the end case, the theme and reduced motion. It was designed against the site at `abc1646` and against `prototypes/s17-lesson-flow-facts.md` (S17).
 
 The Lesson page keeps its layout:
