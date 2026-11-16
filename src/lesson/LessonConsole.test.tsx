@@ -96,7 +96,6 @@ const topBar = () => screen.getByRole('banner');
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });
 const heading = () => within(explanation()).getByRole('heading', { level: 2 });
 const playButton = () => screen.getByRole('button', { name: /^(Play all|Pause)$/ });
-const replayButton = () => screen.getByRole('button', { name: 'Replay step' });
 /** The forward button: the orange one, "Next step" or "Next lesson". */
 const forwardButton = () => screen.getByRole('button', { name: /^Next (step|lesson)$/ });
 /** The log's rows, without its header row. A lone "nothing yet" row counts as none. */

@@ -129,8 +129,8 @@ test('1: five controls in order, all buttons; replay shows no words; no old Play
   expect(replayButton().textContent).toBe('');
   expect(controls().querySelector('.cbtn--play')).toBeNull();
   // exact names: "Replay" and "Play" alone match nothing
-  expect(screen.queryByRole('button', { name: 'Replay', exact: true })).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Play', exact: true })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Replay' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
   expect(screen.queryByRole('button', { name: /Watch again|Go to Learn|Go to Practice/ })).toBeNull();
 });
 
