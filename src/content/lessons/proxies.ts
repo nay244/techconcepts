@@ -644,7 +644,7 @@ export default defineLesson({
           {
             id: 'fact-not-sealed',
             label: 'Does a proxy encrypt?',
-            value: 'no; over HTTPS the seal is your browser’s and the site’s',
+            value: 'not by itself; over HTTPS the seal is your browser’s and the site’s',
             cite: [PA_NO_ENCRYPT, PA_BASIC, RFC_CONNECT, RFC_TLS_CONF],
           },
           {
