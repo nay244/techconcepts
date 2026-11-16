@@ -1,7 +1,7 @@
 ```json fact-check
 {
   "slug": "vpn",
-  "hash": "60208187360ecb16b790b852b57aace7e07996032982b598469e626c2ce47b65",
+  "hash": "5d626a2f1e228a9ce9ed9dd6ef5921188417176ad172b785780a796858a37a9a",
   "checked": "2026-11-16",
   "checker": "claude-opus-5-5",
   "verdicts": {
@@ -25,15 +25,15 @@
     "units[0].steps[0].events[0] (event \"s1-get\")": "✅",
     "units[0].steps[0].events[1] (event \"s1-row\")": "✅",
     "units[0].steps[0].events[2] (event \"s1-page\")": "✅",
-    "units[0].steps[1] (step \"ike\")": "⚠️",
+    "units[0].steps[1] (step \"ike\")": "✅",
     "units[0].steps[1].facts[0] (step \"ike\", fact \"IKE\")": "✅",
     "units[0].steps[1].facts[1] (step \"ike\", fact \"Someone listening\")": "✅",
     "units[0].steps[1].facts[2] (step \"ike\", fact \"Your address on the VPN’s side\")": "✅",
     "units[0].steps[1].facts[3] (step \"ike\", fact \"Ports\")": "✅",
     "units[0].steps[1].events[0] (event \"s2-init\")": "✅",
     "units[0].steps[1].events[1] (event \"s2-init-back\")": "✅",
-    "units[0].steps[1].events[2] (event \"s2-auth\")": "⚠️",
-    "units[0].steps[1].events[3] (event \"s2-auth-back\")": "⚠️",
+    "units[0].steps[1].events[2] (event \"s2-auth\")": "✅",
+    "units[0].steps[1].events[3] (event \"s2-auth-back\")": "✅",
     "units[0].steps[2] (step \"esp\")": "✅",
     "units[0].steps[2].facts[0] (step \"esp\", fact \"Outside\")": "✅",
     "units[0].steps[2].facts[1] (step \"esp\", fact \"Inside, sealed\")": "✅",
@@ -218,29 +218,29 @@
   "overrides": [],
   "quotes": {
     "checked": "2026-11-16",
-    "count": 192,
-    "digest": "d5616f36a175383c4fdea98ac4b2a277072d1e1ebdb424137f381f0a484f47f8",
+    "count": 197,
+    "digest": "c2d7b4b5a5f138b86a8c836756cd19c20068c786ffdf8c523d186053d2bfa64d",
     "files": {
       "nist-sp800-77r1": "2343fd37c8cf23a8bfb594b481a867298f4177adf3146228bd365d2b9affe30e",
-      "paloalto-what-is-vpn": "b036e84c383b0fdaaac991cf2a3cccf3dee7c60f5f3b599b4e9b93375a3ed688",
-      "cisco-wifi-security": "60dfc08b2c916d209157fab575d77e8bdc87df9ff510f7b9850ea30852a7ca85",
+      "paloalto-what-is-vpn": "5796490b8af8375e6da1f3f80d03ebf5cd8bccdc8f603d7551e8a7926a914a86",
+      "cisco-wifi-security": "ec57b48747bab148cfbe68e4aa2f30a5cae49f13baf8a3aab373f115a2511200",
       "rfc-7296": "b6c1bf3921e85dd3674f427ffcaded0209e1f9718e8d601e2f918371f46329a1",
       "rfc-3948": "e37df55098e76e53dc15d681da342a077759f480f953370bff50cf2bba87123c",
       "rfc-4303": "d22f9d4120e5645525b63ac7bbf8ef78c334fe003a2c48bf1e25ac25f6e7dc58",
-      "paloalto-vpn-tunnel": "2bb0c5a3d5133f02faac830fcb65cb41d7749b573f902d0dd43c32252fde6a4b",
-      "microsoft-windows-vpn": "51a12054906d133a4e381b804327cea10ae2c9594c68b41db8e18fa518b41f6f",
+      "paloalto-vpn-tunnel": "e39588aaa7fa4823a9c5beb72459e0c4ddc1f1005382f67a348f3feb1a2ed111",
+      "microsoft-windows-vpn": "465d70443854ce1feff40100599dc288c2f714458b14b0e10dddde75e81b2ab9",
       "rfc-9846": "b1bee06a814f92ca4677c85b97519be53869b2bf8edc79ade955fb51c0402b17",
-      "cisco-what-is-vpn": "39a610d119720069170057846ba67409317e70db1993b066ef140c7c044f450a",
+      "cisco-what-is-vpn": "f169538b3111cf60f797a1a8e1e1ef8cd1db49119c52bd4c3bdea6a2f516dea3",
       "rfc-4301": "a2411e90515f59665e1059b1bb66d8123bd9e384ccfc8b7ccca65db85d5d7736",
-      "paloalto-ipsec": "48f9b42f38b5bdeb1d44246c6215f18257a1aa52693ff806c2def89f97b9efcd",
+      "paloalto-ipsec": "df76ff1d7e2289d683f60ccb98fde16a86db6ae1a4c88f1d481a611c3a396b09",
       "microsoft-azure-network-best-practices": "2c1ded97c988911f361df8c0b355640d36289dd1e38be33f19c7d199463e6b51",
-      "google-cloud-vpn": "cf05000b5bf645151543e71999bd9fde87001796ef6c27a9b4f1d4ed56940f5f",
+      "google-cloud-vpn": "c2d9f51673a11f39157cdff5a658daa65247a53a484767ea3b66b816e7ffcaf7",
       "microsoft-azure-vpn-p2s": "ff5c5e99f2f24077b72cd0d4900c5165f7b1b011461671564b557bb087564131",
       "rfc-9110": "21c1cdce6ab0e5509b04d84a28000836c7a087cf786efe6f04877ebfff47232a",
       "microsoft-ms-sstp": "73054080b3820ebef5d5d875a9901ea28bb14f7a5aac27906ef89d9fb2dc1850",
       "nist-sp800-123": "742981fb54b065581f1c70d39b44c06b997775234e7d29c9f41f829acdf6ef89",
-      "microsoft-edge-https-first": "e5f9fc8ab6b626d962796a8040f421a497e264bd47b36cf479e237494dc12a77",
-      "google-chrome-secure": "bdbec694570200c1ea84946cf9103068038845a39314a9ab22d3f44b0bc4f439",
+      "microsoft-edge-https-first": "24eadb5fec82053c55652b1d3439cfe4006b45f4e17e4f2cdbcc74c73ca5143a",
+      "google-chrome-secure": "6e11ed7c92bfc27a26f8fe1c18aaee345e050da8e9a17228aa53a860dcec0c5d",
       "rfc-9112": "e4f426bac6206b67fdf9e0da826154f70588db2133a0a86b15cde4ff725d8937"
     }
   },
@@ -326,7 +326,7 @@
     "units[0].learn.facts[0] (\"fact-wifi\")": "5594bbe10721bfbb5fd075b0322b599914cb700a842dad7bea9afb7bb7898794",
     "units[0].learn.facts[1] (\"fact-https\")": "336100db8001e369438a2308ace79f6ea5fe04a836984c6cd991bd1cb531cf12",
     "units[0].learn.facts[2] (\"fact-setup\")": "3d60a798fd47ef3976aa57dc63a337bce2c67b09f46ea7a5042158404daeb545",
-    "units[0].learn.facts[3] (\"fact-address\")": "ee7b7d03fd4c47c81e23c6184e7a900ae1cdc0bdc40f96706b8a4c126cf20a0a",
+    "units[0].learn.facts[3] (\"fact-address\")": "3bf396e5a696bf1ee89aa224b74e30a62aabaf87f32cdd885ae02437fd4340ca",
     "units[0].learn.facts[4] (\"fact-ports\")": "9ea6da5d3a777e5d545a081b0077ad58627ed883f634ef003f3f7dca8ca49522",
     "units[0].learn.facts[5] (\"fact-nat\")": "12993c7a442ed448b6b132ce1ddf7f92d8f65407b2fe48f0d896fa91f3ab48c2",
     "units[0].learn.facts[6] (\"fact-outer\")": "70960ea4f56d111970b4fa9414f67b6a8a21ec15af4c4a64bb4fb985ab8abeb7",
@@ -352,120 +352,88 @@
 }
 ```
 
-# Fact-check: vpn
+# Fact-check: VPN
 
-Checked 2026-11-16 against the claim sheet whose hash is in the header. Every source was fetched in this run: the RFCs as plain text from the RFC Editor, the NIST publications as PDFs (text saved with `pdftotext -raw`), the vendor pages as HTML. The two Cisco pages refused a command-line read (Access Denied), so they were read in the built-in browser and their text saved as `.txt`.
-
-Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" step. They say the address on the VPN's side is asked for and given during IKE (in IKE_AUTH), and no Learn part they trace to says so. It is true (RFC 7296 §2.19), but Watch may not add it.
+Full check of the claim sheet, every source fetched from its publisher on 2026-11-16. All 102 items pass.
 
 ## Claims
 
 ### units[0].osi — ✅
 
-- Note: The badge says "spans". I looked for an allowed source that puts VPNs at one layer and found none. NIST SP 800-77r1 §8 sorts VPN protocols by layer: data link layer VPNs (§8.1), transport layer SSL VPNs (§8.2), and IPsec at the network layer (Executive Summary). Palo Alto's IPsec page puts IPsec VPNs at the network layer and SSL VPNs at the application layer. Every source I read puts different VPNs at different layers, so the badge holds.
+- Note: The badge is `spans`. NIST SP 800-77r1 §8 groups VPN protocols by the layer they work at (data link layer VPNs, transport layer SSL VPNs) and its Executive Summary puts IPsec at the network layer; Palo Alto's IPsec page puts IPsec VPNs at the network layer and SSL VPNs at the application layer. No allowed source met in this check puts "a VPN" at a single layer, so `spans` holds.
 
 ### units[0].steps[0].deep[0] (step "plain-cafe", Go deeper) — ✅
 
 - `nist-sp800-77r1` §8.1.1
-  > It is good practice to consider WiFi encryption to be
-  > insufficient and to not trust the access point. Devices on a WiFi network should use a remote
-  > access VPN like IPsec to communicate with resources on the wired network. This is especially
-  > true for WiFi access points belonging to third parties, such as restaurants and hotels.
+  > Devices on a WiFi network should use a remote access VPN like IPsec to communicate with resources on the wired network. This is especially true for WiFi access points belonging to third parties, such as restaurants and hotels.
 - `paloalto-what-is-vpn` §Personal VPN benefits
   > Public networks are often unsecured. That makes it easier for attackers to intercept data. A VPN helps reduce that risk by encrypting your traffic before it leaves the device.
 - `cisco-wifi-security` §Virtual private networks (VPNs)
   > VPNs are another source of Wi-Fi network security. They allow users to create secure, identity-protected tunnels between unprotected Wi-Fi networks and the internet.
 - `nist-sp800-77r1` §2.4.2
-  > The user can now use the organization’s computing resources, and the network
-  > traffic between the user’s host (the remote device in Figure 3) and the VPN gateway will be
-  > protected by the IPsec connection.
-- Note: The advice part is confirmed by NIST and Palo Alto. NIST frames it for reaching an organisation's network, and the lesson says "security guides advise" more broadly. NIST and Cisco together confirm that the seal runs only as far as the VPN server.
-- Note: NIST SP 800-77r1 (June 2020) is final and not withdrawn. The vendor pages are live.
+  > the network traffic between the user’s host (the remote device in Figure 3) and the VPN gateway will be protected by the IPsec connection.
+- Note: The advice to use a VPN on others' Wi-Fi, and the sealing before the traffic leaves the device, are each stated by NIST and by Palo Alto. "As far as the VPN server" matches NIST's host-to-gateway protection.
+- Note: NIST SP 800-77r1 (June 2020) is final and not withdrawn; the vendor pages are live.
 
 ### units[0].steps[1].deep[0] (step "ike", Go deeper) — ✅
 
 - `rfc-7296` §2.23
-  > When those nodes make connections to nodes on the real Internet, the
-  > NAT gateway "translates" the IP source address to an address that
-  > will be routed back to the gateway.
+  > When those nodes make connections to nodes on the real Internet, the NAT gateway "translates" the IP source address to an address that will be routed back to the gateway.
 - `rfc-7296` §2.23
-  > It is a common practice of NATs to translate TCP and UDP port numbers
-  > as well as addresses
+  > It is a common practice of NATs to translate TCP and UDP port numbers as well as addresses
 - `rfc-7296` §2.23
-  > An IPsec
-  > endpoint that discovers a NAT between it and its correspondent (as
-  > described below) MUST send all subsequent traffic from port 4500
+  > For that reason, IKEv2 will use UDP encapsulation of IKE and ESP packets. This encoding is slightly less efficient but is easier for NATs to process.
 - `rfc-7296` §2.23
-  > However, if a NAT
-  > is detected, both devices MUST use UDP encapsulation for ESP.
+  > An IPsec endpoint that discovers a NAT between it and its correspondent (as described below) MUST send all subsequent traffic from port 4500,
 - `rfc-3948` §1
-  > This protocol specification defines methods to encapsulate and
-  > decapsulate ESP packets inside UDP packets for traversing Network
-  > Address Translators (NATs)
+  > This protocol specification defines methods to encapsulate and decapsulate ESP packets inside UDP packets for traversing Network Address Translators (NATs)
 - `nist-sp800-77r1` §4.2.1
-  > The NAT device can rewrite the IP address of the outer UDP packet and track
-  > multiple clients by the UDP port number.
-- Note: RFC 7296 defines IKEv2, including its NAT traversal (§2.23). RFC 3948 defines how ESP is carried inside UDP to get through a NAT. Both are the current defining documents.
-- Note: RFC 7296 is not obsoleted. Its updates (RFCs 7427, 7670, 8247, 8983, 9370, 9827) change algorithms, authentication and notifications, not NAT traversal or ports. RFC 3948 is neither obsoleted nor updated.
+  > when IKE detects a NAT during the negotiation, it switches the IKE negotiation from UDP port 500 to UDP port 4500.
+- `nist-sp800-77r1` §4.2.1
+  > ESPinUDP also uses port 4500 to ensure that the NAT device only has one NAT mapping for all traffic (ESP and IKE).
+- Note: RFC 7296 (IKEv2, Internet Standard) defines NAT traversal for IKE, including the move to port 4500; RFC 3948 (Proposed Standard) defines UDP encapsulation of ESP. Neither is obsoleted; RFC 7296's updates (RFCs 7427, 7670, 8247, 8983, 9370, 9827) do not touch NAT traversal.
 
 ### units[0].steps[2].deep[0] (step "esp", Go deeper) — ✅
 
 - `rfc-4303` §3.1.2
-  > In tunnel mode, the "inner" IP header carries the ultimate (IP)
-  > source and destination addresses, while an "outer" IP header contains
-  > the addresses of the IPsec "peers", e.g., addresses of security
-  > gateways.
+  > In tunnel mode, the "inner" IP header carries the ultimate (IP) source and destination addresses, while an "outer" IP header contains the addresses of the IPsec "peers", e.g., addresses of security gateways.
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `rfc-4303` §1
-  > ESP can be used to provide confidentiality, data origin
-  > authentication, connectionless integrity
+  > ESP can be used to provide confidentiality, data origin authentication, connectionless integrity, an anti-replay service
 - `nist-sp800-77r1` §4.1.1
-  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the
-  > source and destination of the packet and contains the entire, now-encrypted, original packet as its
-  > payload.
+  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the source and destination of the packet and contains the entire, now-encrypted, original packet as its payload.
 - `nist-sp800-77r1` §4.1.1
-  > The ICV is used to detect any changes
-  > to the data over which the ICV is computed.
-- Note: RFC 4303 defines ESP and its tunnel mode packet. Integrity is optional in ESP, but encryption without it is not recommended, so the ordinary case has the check.
-- Note: RFC 4303 is not obsoleted or updated.
+  > The ICV is used to detect any changes to the data over which the ICV is computed.
+- Note: RFC 4303 defines ESP, its tunnel mode and its services; it is a Proposed Standard and not obsoleted. NIST independently states each part.
+- Note: ESP can in principle run without integrity; the claim describes the ordinary, recommended case.
 
 ### units[0].steps[3].deep[0] (step "out-of-the-tunnel", Go deeper) — ✅
 
 - `nist-sp800-77r1` §2.4.2
-  > Only traffic for the organization itself will be sent over the VPN
-  > connection; a separate internet connection would be required. This is called a split-tunnel VPN.
+  > Only traffic for the organization itself will be sent over the VPN connection; a separate internet connection would be required. This is called a split-tunnel VPN.
 - `nist-sp800-77r1` §2.4.2
-  > In that case, a remote host will send all its traffic via the VPN connection to the VPN
-  > gateway; this allows IPsec protection to be applied to all of the traffic.
+  > In that case, a remote host will send all its traffic via the VPN connection to the VPN gateway;
 - `paloalto-vpn-tunnel` §What Is VPN Split Tunneling?
   > VPN split tunneling is a feature that allows a user to route some internet traffic through a secure VPN, while other traffic accesses the internet directly, bypassing the VPN.
-- Note: NIST and Palo Alto confirm both kinds independently.
+- Note: "Work traffic" is the lesson's everyday word for NIST's traffic for the organization itself.
 
 ### units[0].steps[4].deep[0] (step "https-matters", Go deeper) — ✅
 
 - `rfc-4303` §3.4.4.1
-  > The receiver decrypts the ESP Payload Data, Padding, Pad
-  > Length, and Next Header using the key, encryption algorithm,
-  > algorithm mode, and cryptographic synchronization data
+  > The receiver decrypts the ESP Payload Data, Padding, Pad Length, and Next Header using the key, encryption algorithm, algorithm mode, and cryptographic synchronization data (if any), indicated by the SA.
 - `nist-sp800-77r1` §2.4.2
-  > Traffic received and
-  > decrypted by the VPN gateway that is not meant for the local organization can be sent to the
-  > organization’s firewall for inspection and then sent onwards through the organization’s internet
-  > connection.
+  > As shown in Figure 3, the remote access VPN does not provide full protection for data throughout transit.
 - `microsoft-windows-vpn` §Create a VPN profile
-  > You can either create a VPN profile on your own or set up a work account to get a VPN profile from your company.
+  > If it’s for work, look for VPN settings or a VPN app on your company’s intranet site while you’re at work, or contact your company's support person.
 - `microsoft-windows-vpn` §Create a VPN profile
-  > If it’s for a VPN service you subscribe to for personal use
+  > If it’s for a VPN service you subscribe to for personal use,
 - `paloalto-what-is-vpn` §How does a VPN work?
   > The VPN encrypts the user’s internet traffic and routes it through a remote server operated by the VPN provider.
 - `rfc-9846` §1
-  > Confidentiality: Data sent over the channel after establishment is
-  > only visible to the endpoints.
-- Note: RFC 4303 §3.4.4.1 defines how the receiving end (here the VPN server) decrypts ESP, which is why the server sees the inner packet. RFC 9846 is the current definition of TLS, the protection behind HTTPS.
-- Note: "What the café could have seen" is the plain packet: where it goes and, without HTTPS, what it says. The lesson leaves out link-level details such as the laptop's MAC address. "A VPN service you pay for" leaves out free services. Both pass as true for a beginner.
-- Note: RFC 9846 (July 2026) obsoletes RFC 8446 and is not obsoleted.
+  > Confidentiality: Data sent over the channel after establishment is only visible to the endpoints.
+- Note: RFC 4303 defines ESP's inbound processing, in which the VPN server decrypts what it receives; RFC 9846 is the current TLS 1.3 specification (obsoletes RFC 8446) and defines the confidentiality HTTPS relies on. Who runs the server is stated by Microsoft and Palo Alto.
+- Note: "A VPN service you pay for" leaves out free and self-run VPN services.
 
 ### units[0].learn.lead[0] ("lead-1") — ✅
 
@@ -473,161 +441,119 @@ Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" s
   > A virtual private network, or VPN, is an encrypted connection over the Internet from a device to a network.
 - `paloalto-vpn-tunnel` §What Is a VPN Tunnel?
   > A VPN tunnel is a secure, encrypted connection between a network device and a VPN server that safeguards data transfer over the internet.
+- `nist-sp800-77r1` §2.4.2
+  > each remote access user then establishes a VPN connection between their remote device (host) and the VPN gateway.
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `rfc-4301` §4.1
-  > If ESP is employed, the protection is afforded only to
-  > the tunneled packet, not to the outer header.
+  > If ESP is employed, the protection is afforded only to the tunneled packet, not to the outer header.
 - `rfc-7296` §1.1.3
-  > The outer
-  > destination address will always be that of the security gateway,
-  > while the inner destination address will be the ultimate destination
-  > for the packet.
+  > The outer destination address will always be that of the security gateway, while the inner destination address will be the ultimate destination for the packet.
 - `nist-sp800-77r1` §4.1.1
-  > encrypting the original IP header conceals the nature of the communications, such as the actual
-  > source or destination of the packet, protocol, and ports used
+  > encrypting the original IP header conceals the nature of the communications, such as the actual source or destination of the packet, protocol, and ports used
 - `paloalto-ipsec` §IPsec Tunnel Mode
   > Tunnel Mode encapsulates the entire IP packet, including its header, within a new packet with a new header.
-- `nist-sp800-77r1` §2.4.2
-  > each remote access user then establishes a VPN
-  > connection between their remote device (host) and the VPN gateway.
-- Note: RFC 4303, RFC 4301 and RFC 7296 define the tunnel-mode packet: an outer header to the gateway, with the inner packet protected. "Sees only that you're talking to the VPN server" leaves out what a listener can still learn from packet sizes and timing.
-- Note: RFC 4301 is not obsoleted. Its updates (RFC 6040 on ECN in tunnels, RFC 7619 on NULL authentication) do not touch this.
+- Note: RFC 4303 and RFC 4301 define ESP tunnel mode; RFC 7296 §1.1.3 defines the device-to-gateway tunnel and its addresses. NIST and Palo Alto independently state the same.
+- Note: "Sees only that you're talking to the VPN server" leaves out what the outer packets still show, such as their size and timing.
 
 ### units[0].learn.lead[1] ("lead-2") — ✅
 
 - `rfc-4303` §3.4.4.1
-  > The receiver decrypts the ESP Payload Data, Padding, Pad
-  > Length, and Next Header using the key, encryption algorithm,
-  > algorithm mode, and cryptographic synchronization data
+  > The receiver reconstructs the original IP datagram from:
+- `rfc-4303` §3.4.4.1
+  > for tunnel mode -- the entire IP datagram in the ESP Payload field.
 - `rfc-7296` §1.1.3
-  > the inner IP header will contain the source IP address assigned by the
-  > security gateway (i.e., the address that will get traffic routed to
-  > the security gateway for forwarding to the endpoint).
+  > the protected endpoint will want an IP address associated with the security gateway so that packets returned to it will go to the security gateway and be tunneled back.
 - `nist-sp800-77r1` §2.4.2
-  > As shown in Figure 3, the remote access VPN does not provide full protection for data
-  > throughout transit. The dashed lines indicate that communications between the gateway and the
-  > destination hosts (e.g., servers, laptops, desktops) on the right side of the figure are not protected.
+  > The dashed lines indicate that communications between the gateway and the destination hosts (e.g., servers, laptops, desktops) on the right side of the figure are not protected.
 - `paloalto-vpn-tunnel` §4. Decryption at the VPN server
   > The VPN server receives the encrypted data and uses keys to decrypt it. Once decrypted, the data can continue to its intended destination on the internet.
 - `rfc-9846` §1
-  > Confidentiality: Data sent over the channel after establishment is
-  > only visible to the endpoints.
-- Note: RFC 4303 defines decryption at the tunnel's end, and RFC 7296 defines the endpoint-to-gateway tunnel. "As they would have gone without a VPN" refers to how readable the packets are. The changed source address is taught separately (fact-address).
+  > Confidentiality: Data sent over the channel after establishment is only visible to the endpoints.
+- Note: "As they would have gone without a VPN" speaks of how readable they are; the source address does change to the VPN's, which the lesson teaches in its own fact.
 
 ### units[0].learn.terms[0] ("term-vpn") — ✅
 
 - `cisco-what-is-vpn` §What is a virtual private network (VPN)?
   > A virtual private network, or VPN, is an encrypted connection over the Internet from a device to a network.
 - `nist-sp800-77r1` §2.3
-  > A Virtual Private
-  > Network (VPN) is a virtual network built on top of existing physical networks that can provide a
-  > secure communications mechanism for data and IP information transmitted between networks or
-  > between different nodes on the same network.
+  > A Virtual Private Network (VPN) is a virtual network built on top of existing physical networks that can provide a secure communications mechanism for data and IP information transmitted between networks or between different nodes on the same network.
 - `paloalto-vpn-tunnel` §What Is a VPN Tunnel?
   > A VPN tunnel is a secure, encrypted connection between a network device and a VPN server that safeguards data transfer over the internet.
-- Note: This idea line describes the device-to-network kind that the lesson shows. It uses no "only", so it does not rule out site-to-site, which the lesson also teaches. Cisco and NIST both give the full name.
+- Note: The full name is given by Cisco and NIST. The idea describes the device-to-server kind this lesson shows; NIST's definition is broader (network to network too), which the lesson covers in its site-to-site term.
 
 ### units[0].learn.terms[1] ("term-vpn-server") — ✅
 
 - `nist-sp800-77r1` §2.4.2
-  > The organization
-  > deploys a VPN gateway onto its network; each remote access user then establishes a VPN
-  > connection between their remote device (host) and the VPN gateway.
+  > The organization deploys a VPN gateway onto its network; each remote access user then establishes a VPN connection between their remote device (host) and the VPN gateway.
 - `nist-sp800-77r1` §2.4.2
-  > Traffic received and
-  > decrypted by the VPN gateway that is not meant for the local organization can be sent to the
-  > organization’s firewall for inspection and then sent onwards through the organization’s internet
-  > connection.
+  > Traffic received and decrypted by the VPN gateway that is not meant for the local organization can be sent to the organization’s firewall for inspection and then sent onwards through the organization’s internet connection.
 - `paloalto-vpn-tunnel` §4. Decryption at the VPN server
   > The VPN server receives the encrypted data and uses keys to decrypt it. Once decrypted, the data can continue to its intended destination on the internet.
 - `paloalto-what-is-vpn` §How does a VPN work?
   > That client establishes a secure connection to a VPN gateway managed by the organization.
 - `rfc-7296` §1.1.3
-  > the address that will get traffic routed to
-  > the security gateway for forwarding to the endpoint
+  > the inner IP header will contain the source IP address assigned by the security gateway (i.e., the address that will get traffic routed to the security gateway for forwarding to the endpoint).
 - `rfc-4303` §3.4.4.1
-  > The receiver decrypts the ESP Payload Data, Padding, Pad
-  > Length, and Next Header
-- Note: Both names are used by the sources: Palo Alto uses "VPN server" and "VPN gateway", and NIST uses "VPN gateway".
+  > for tunnel mode -- the entire IP datagram in the ESP Payload field.
+- Note: Both names, VPN server and VPN gateway, are used by Palo Alto; NIST uses VPN gateway.
 
 ### units[0].learn.terms[2] ("term-tunnel") — ✅
 
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `rfc-4301` §4.1
-  > For a tunnel mode SA, there is an "outer" IP header that specifies
-  > the IPsec processing source and destination, plus an "inner" IP
-  > header that specifies the (apparently) ultimate source and
-  > destination for the packet.
+  > For a tunnel mode SA, there is an "outer" IP header that specifies the IPsec processing source and destination, plus an "inner" IP header that specifies the (apparently) ultimate source and destination for the packet.
 - `nist-sp800-77r1` §4.1.1
-  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the
-  > source and destination of the packet and contains the entire, now-encrypted, original packet as its
-  > payload.
+  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the source and destination of the packet and contains the entire, now-encrypted, original packet as its payload.
 - `paloalto-ipsec` §IPsec Tunnel Mode
   > Tunnel Mode encapsulates the entire IP packet, including its header, within a new packet with a new header.
 - `cisco-what-is-vpn` §Is VPN traffic encrypted?
   > traffic on the virtual network is sent securely by establishing an encrypted connection across the Internet known as a tunnel.
 - `paloalto-vpn-tunnel` §How is tunneling accomplished in a VPN?
   > In a VPN, tunneling is accomplished by encapsulating a network protocol within packets carried by the second network.
-- Note: RFC 4303 and RFC 4301 define the IPsec tunnel-mode packet. TLS-based VPNs carry packets in a TLS stream rather than one new packet for each, which this idea line leaves out.
+- Note: RFC 4303 and RFC 4301 define tunnel mode. The idea describes IPsec's tunnel mode, which the lesson shows; other VPN kinds tunnel in their own ways.
 
 ### units[0].learn.terms[3] ("term-ipsec") — ✅
 
 - `rfc-4301` §3.1
-  > IPsec security services are offered at the IP layer through selection
-  > of appropriate security protocols, cryptographic algorithms, and
-  > cryptographic keys.
+  > IPsec security services are offered at the IP layer through selection of appropriate security protocols, cryptographic algorithms, and cryptographic keys.
 - `rfc-4301` §3.2
-  > IPsec uses two protocols to provide traffic security services --
-  > Authentication Header (AH) and Encapsulating Security Payload (ESP).
+  > IPsec uses two protocols to provide traffic security services -- Authentication Header (AH) and Encapsulating Security Payload (ESP).
 - `nist-sp800-77r1` §2.3
   > The most common use of IPsec implementations is providing VPN services.
 - `nist-sp800-77r1` §Executive Summary
   > IPsec is a network layer security protocol with two main components:
-- Note: RFC 4301 defines the IPsec architecture.
+- Note: RFC 4301 defines the IPsec architecture; it is a Proposed Standard, not obsoleted, updated only by RFCs 6040 and 7619, which do not touch this.
 
 ### units[0].learn.terms[4] ("term-ike") — ✅
 
 - `rfc-7296` §1
-  > IKE performs mutual authentication between two parties and
-  > establishes an IKE Security Association (SA) that includes shared
-  > secret information
+  > IKE performs mutual authentication between two parties and establishes an IKE Security Association (SA) that includes shared secret information
 - `rfc-7296` §1.2
-  > Communication using IKE always begins with IKE_SA_INIT and IKE_AUTH
-  > exchanges
+  > The first pair of messages (IKE_SA_INIT) negotiate cryptographic algorithms, exchange nonces, and do a Diffie-Hellman exchange [DH].
 - `nist-sp800-77r1` §Executive Summary
-  > Internet Key Exchange (IKE) is the protocol used by IPsec to negotiate IPsec
-  > connection settings; authenticate endpoints to each other; define the security parameters
-  > of IPsec-protected connections; negotiate session keys
+  > Internet Key Exchange (IKE) is the protocol used by IPsec to negotiate IPsec connection settings; authenticate endpoints to each other;
 - `paloalto-what-is-vpn` §Internet Protocol Security (IPsec)
   > It also uses Internet Key Exchange (IKE) to establish encryption keys between devices.
-- Note: RFC 7296 defines IKEv2, the current version, and its full name.
+- Note: RFC 7296 defines IKEv2, including the full name; it is an Internet Standard (STD 79) and not obsoleted.
 
 ### units[0].learn.terms[5] ("term-esp") — ✅
 
 - `rfc-4303` §1
-  > ESP can be used to provide confidentiality, data origin
-  > authentication, connectionless integrity
+  > ESP can be used to provide confidentiality, data origin authentication, connectionless integrity, an anti-replay service
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `rfc-4301` §3.2
-  > The Encapsulating Security Payload (ESP) protocol [Ken05a] offers
-  > the same set of services, and also offers confidentiality.
+  > The Encapsulating Security Payload (ESP) protocol [Ken05a] offers the same set of services, and also offers confidentiality. Use of ESP to provide confidentiality without integrity is NOT RECOMMENDED.
 - `nist-sp800-77r1` §Executive Summary
-  > Encapsulating Security Payload (ESP) is the protocol that transports the encrypted and
-  > integrity-protected network communications across the network.
-- Note: RFC 4303 defines ESP and its full name. ESP may run with NULL encryption, a rarer case this line leaves out.
+  > Encapsulating Security Payload (ESP) is the protocol that transports the encrypted and integrity-protected network communications across the network.
+- Note: RFC 4303 defines ESP and gives its full name. ESP may run with NULL encryption or without integrity; the idea gives the ordinary case.
 
 ### units[0].learn.terms[6] ("term-remote-access") — ✅
 
 - `nist-sp800-77r1` §2.4.2
-  > The organization
-  > deploys a VPN gateway onto its network; each remote access user then establishes a VPN
-  > connection between their remote device (host) and the VPN gateway.
+  > The organization deploys a VPN gateway onto its network; each remote access user then establishes a VPN connection between their remote device (host) and the VPN gateway.
 - `cisco-what-is-vpn` §Remote access
   > A remote access VPN securely connects a device outside the corporate office.
 - `cisco-what-is-vpn` §Remote access
@@ -638,65 +564,48 @@ Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" s
 ### units[0].learn.terms[7] ("term-site-to-site") — ✅
 
 - `nist-sp800-77r1` §2.4.1
-  > IPsec-based VPNs are often used to provide secure network communications between two
-  > networks.
+  > This is typically done by deploying a VPN gateway onto each network and establishing a VPN connection between the two gateways.
 - `cisco-what-is-vpn` §Site-to-site
   > A site-to-site VPN connects the corporate office to branch offices over the Internet.
 - `paloalto-what-is-vpn` §Site-to-site VPN
-  > A site-to-site VPN connects two or more networks over the internet. It’s typically used to link a company’s main office with its branch offices.
+  > A site-to-site VPN connects two or more networks over the internet.
 - `microsoft-azure-network-best-practices` §Disable RDP and SSH access to virtual machines
   > A site-to-site VPN connects an entire network to another network over the internet.
 - `google-cloud-vpn` §Cloud VPN overview
-  > The VPN
-  > connection encrypts traffic traveling between the networks, with one VPN gateway
-  > handling encryption and the other handling decryption.
-- Note: NIST calls this kind "gateway-to-gateway". Cisco, Palo Alto and Microsoft give the name "site-to-site".
+  > The VPN connection encrypts traffic traveling between the networks, with one VPN gateway handling encryption and the other handling decryption.
 
 ### units[0].learn.pattern ("pattern") — ✅
 
 - `rfc-7296` §1.2
-  > The first pair of messages (IKE_SA_INIT) negotiate
-  > cryptographic algorithms, exchange nonces, and do a Diffie-Hellman
-  > exchange [DH].
+  > The first pair of messages (IKE_SA_INIT) negotiate cryptographic algorithms, exchange nonces, and do a Diffie-Hellman exchange [DH].
 - `rfc-7296` §1.2
-  > The second pair of messages (IKE_AUTH) authenticate the previous
-  > messages, exchange identities and certificates, and establish the
-  > first Child SA.
+  > The second pair of messages (IKE_AUTH) authenticate the previous messages, exchange identities and certificates, and establish the first Child SA.
 - `nist-sp800-77r1` §2.3.3
-  > After performing the DH key exchange and
-  > calculating the shared key, the endpoints still need to authenticate each other
+  > After performing the DH key exchange and calculating the shared key, the endpoints still need to authenticate each other
 - `nist-sp800-77r1` §Executive Summary
-  > Encapsulating Security Payload (ESP) is the protocol that transports the encrypted and
-  > integrity-protected network communications across the network.
+  > Encapsulating Security Payload (ESP) is the protocol that transports the encrypted and integrity-protected network communications across the network.
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `nist-sp800-77r1` §4.1.1
-  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the
-  > source and destination of the packet
+  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the source and destination of the packet
 - `rfc-4303` §3.4.4.1
-  > The receiver decrypts the ESP Payload Data, Padding, Pad
-  > Length, and Next Header
+  > for tunnel mode -- the entire IP datagram in the ESP Payload field.
 - `paloalto-vpn-tunnel` §4. Decryption at the VPN server
   > The VPN server receives the encrypted data and uses keys to decrypt it. Once decrypted, the data can continue to its intended destination on the internet.
 - `rfc-7296` §1.1.3
-  > the address that will get traffic routed to
-  > the security gateway for forwarding to the endpoint
+  > the address that will get traffic routed to the security gateway for forwarding to the endpoint
 - `nist-sp800-77r1` §2.4.2
-  > As shown in Figure 3, the remote access VPN does not provide full protection for data
-  > throughout transit.
+  > the remote access VPN does not provide full protection for data throughout transit.
 - `rfc-9846` §1
-  > Confidentiality: Data sent over the channel after establishment is
-  > only visible to the endpoints.
-- Note: RFC 7296 defines the order of the IKE exchanges (keys first, then authentication), and RFC 4303 defines ESP sealing and decryption at the far end.
+  > Confidentiality: Data sent over the channel after establishment is only visible to the endpoints.
+- Note: The order (keys, then identities, then sealed traffic, unwrapped and sent on at the gateway) is defined by RFC 7296 §1.2 and RFC 4303, and stated independently by NIST and Palo Alto.
 
 ### units[0].learn.why[0] ("why-1") — ✅
 
 - `nist-sp800-77r1` §8.1.1
-  > It is good practice to consider WiFi encryption to be
-  > insufficient and to not trust the access point.
+  > It is good practice to consider WiFi encryption to be insufficient and to not trust the access point.
 - `paloalto-what-is-vpn` §Personal VPN benefits
-  > Public networks are often unsecured. That makes it easier for attackers to intercept data. A VPN helps reduce that risk by encrypting your traffic before it leaves the device.
+  > Public networks are often unsecured. That makes it easier for attackers to intercept data.
 - `cisco-wifi-security` §Virtual private networks (VPNs)
   > They allow users to create secure, identity-protected tunnels between unprotected Wi-Fi networks and the internet.
 - `microsoft-windows-vpn` §Summary
@@ -704,12 +613,10 @@ Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" s
 - `cisco-what-is-vpn` §What is a virtual private network (VPN)?
   > It prevents unauthorized people from eavesdropping on the traffic and allows the user to conduct work remotely.
 - `nist-sp800-77r1` §2.4.2
-  > the network
-  > traffic between the user’s host (the remote device in Figure 3) and the VPN gateway will be
-  > protected by the IPsec connection.
+  > the network traffic between the user’s host (the remote device in Figure 3) and the VPN gateway will be protected by the IPsec connection.
 - `paloalto-vpn-tunnel` §2. Establishment of an encrypted tunnel
   > This encryption shields the internet traffic from unauthorized access as it moves through the user's internet connection to the VPN server.
-- Note: "You can't tell who is listening" puts in everyday words NIST's advice not to trust the access point and Palo Alto's point that public networks are often unsecured.
+- Note: "You can't tell who is listening" puts in a beginner's words NIST's advice not to trust the access point and Palo Alto's point that public networks are often unsecured.
 
 ### units[0].learn.why[1] ("why-2") — ✅
 
@@ -720,109 +627,90 @@ Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" s
 - `paloalto-what-is-vpn` §Remote access VPN
   > This allows remote employees to access apps, files, and services as if they were on the corporate network.
 - `nist-sp800-77r1` §2.4.2
-  > The user can now use the organization’s computing resources
+  > The user can now use the organization’s computing resources,
 
 ### units[0].learn.deep[0] ("deep-protocols", Learn's Go deeper) — ✅
 
 - `nist-sp800-77r1` §8.2
-  > The most common IPsec alternative is the SSL VPN. Although these are still called
-  > SSL VPNs, they now use the TLS protocol rather than the older SSL protocol.
+  > The most common IPsec alternative is the SSL VPN. Although these are still called SSL VPNs, they now use the TLS protocol rather than the older SSL protocol.
 - `nist-sp800-77r1` §8.2
-  > Usually, it is run over
-  > port 443 (HTTPS) since most networks pass on this traffic without attempting any kind of deep
-  > packet inspection.
+  > Usually, it is run over port 443 (HTTPS) since most networks pass on this traffic without attempting any kind of deep packet inspection.
 - `microsoft-azure-vpn-p2s` §What protocol does P2S use?
-  > A TLS VPN solution can penetrate firewalls, since most firewalls open TCP port 443 outbound, which TLS uses.
+  > OpenVPN® Protocol, an SSL/TLS based VPN protocol. A TLS VPN solution can penetrate firewalls, since most firewalls open TCP port 443 outbound, which TLS uses.
+- `microsoft-azure-vpn-p2s` §What protocol does P2S use?
+  > Secure Socket Tunneling Protocol (SSTP), a proprietary TLS-based VPN protocol.
 - `paloalto-what-is-vpn` §SSL VPN
   > An SSL VPN uses the Secure Sockets Layer (SSL) or Transport Layer Security (TLS) protocol to encrypt browser-based connections.
 - `rfc-9110` §4.2.2
-  > capable of
-  > establishing a TLS ([TLS13]) connection that has been secured for
-  > HTTP communication.
+  > The "https" URI scheme is hereby defined for minting identifiers within the hierarchical namespace governed by a potential origin server listening for TCP connections on a given port and capable of establishing a TLS ([TLS13]) connection that has been secured for HTTP communication.
 - `paloalto-what-is-vpn` §Secure Socket Tunneling Protocol (SSTP)
-  > SSTP is a VPN protocol that Microsoft developed. It establishes a secure tunnel using SSL/TLS encryption. Because it relies on the same port used for HTTPS traffic, it can pass through most firewalls without issue.
+  > Because it relies on the same port used for HTTPS traffic, it can pass through most firewalls without issue.
 - `microsoft-ms-sstp` §1.3 Overview
-  > When a client establishes an SSTP-based VPN connection,
-  > it first establishes a TCP connection to the
+  > When a client establishes an SSTP-based VPN connection, it first establishes a TCP connection to the SSTP server over TCP port 443.
+- `microsoft-ms-sstp` §1.3 Overview
+  > This protocol enables users to access a private network by using HTTPS.
 - `nist-sp800-77r1` §8.2.1
-  > Secure Socket Tunneling Protocol (SSTP) is the Microsoft version of an SSL VPN. It uses
-  > SSL/TLS over port 443
+  > Secure Socket Tunneling Protocol (SSTP) is the Microsoft version of an SSL VPN. It uses SSL/TLS over port 443
 - `nist-sp800-77r1` §8.2.3
-  > OpenVPN is a popular SSL VPN protocol/implementation that was originally written in 2001. It
-  > uses SSL or TLS over any preconfigured port and can use TCP or UDP as the transport protocol.
+  > OpenVPN is a popular SSL VPN protocol/implementation that was originally written in 2001. It uses SSL or TLS over any preconfigured port
 - `paloalto-what-is-vpn` §OpenVPN
   > OpenVPN is a flexible open-source protocol that supports both site-to-site and remote access VPNs.
 - `nist-sp800-77r1` §8.3
   > is a fairly new VPN implementation originally written for the Linux kernel.
-- `nist-sp800-77r1` §8.3
-  > It combines the control plane (IKE functionality) and data plane (ESP functionality) over a single, preconfigured UDP port.
 - `paloalto-what-is-vpn` §WireGuard
-  > WireGuard is a modern, open-source VPN protocol known for its streamlined design and strong cryptographic foundation.
+  > WireGuard is a modern, open-source VPN protocol
 - `paloalto-what-is-vpn` §WireGuard
   > It uses UDP for fast, low-latency communication
-- Note: RFC 9110 §4.2.2 defines the https scheme as HTTP over TLS, so it is the defining standard for "TLS, the protection behind HTTPS".
-- Note: "Often on port 443" is said of TLS VPNs as a group, as NIST says. OpenVPN can run on any port it is set to, and the lesson does not claim a default port for it.
-- Note: RFC 9110 is not obsoleted or updated.
+- Note: RFC 9110 defines the https scheme, which requires TLS (current, Internet Standard). "Often on port 443" is NIST's "usually"; OpenVPN can use any configured port.
 
 ### units[0].learn.deep[1] ("deep-admin", Learn's Go deeper) — ✅
 
 - `microsoft-azure-network-best-practices` §Disable RDP and SSH access to virtual machines
   > Point-to-site VPN is more secure than direct RDP or SSH connections because the user has to authenticate twice before connecting to a VM.
 - `microsoft-azure-network-best-practices` §Disable RDP and SSH access to virtual machines
-  > The potential security problem with using these protocols over the internet is that attackers can use brute force techniques to gain access to Azure virtual machines.
-- `microsoft-azure-network-best-practices` §Disable RDP and SSH access to virtual machines
   > Disable direct RDP and SSH access to your Azure virtual machines from the internet.
 - `nist-sp800-123` §6.5
-  > Remote administration should
-  > generally not be allowed from a host located outside the organization’s network unless it is performed
-  > from an organization-controlled computer through the organization’s remote access solution, such as a
-  > VPN.
+  > Remote administration should generally not be allowed from a host located outside the organization’s network unless it is performed from an organization-controlled computer through the organization’s remote access solution, such as a VPN.
+- `nist-sp800-123` §6.5
+  > Use a strong authentication mechanism (e.g., public/private key pair, two-factor authentication).
 - `nist-sp800-77r1` §2.4.2
-  > The user is typically asked by the VPN gateway to
-  > authenticate their identity before the connection can be established.
-- Note: Microsoft and NIST SP 800-123 confirm "only through its VPN" independently. Microsoft states signing in twice, and NIST SP 800-77r1 confirms that the VPN asks for its own sign-in.
-- Note: NIST SP 800-123 (July 2008) is final, and the NIST CSRC page shows it neither withdrawn nor superseded.
+  > The user is typically asked by the VPN gateway to authenticate their identity before the connection can be established.
+- Note: Reaching servers only through the VPN is stated by Microsoft and by NIST SP 800-123; the two sign-ins are stated by Microsoft, and separately by NIST (the VPN sign-in in SP 800-77r1, the server sign-in in SP 800-123). SP 800-123 (July 2008) is final and not withdrawn on CSRC.
+- Note: "A company can" leaves the choice open, as the sources do.
 
 ### units[0].learn.facts[0] ("fact-wifi") — ✅
 
 - `nist-sp800-77r1` §8.1.1
-  > Devices on a WiFi network should use a remote
-  > access VPN like IPsec to communicate with resources on the wired network. This is especially
-  > true for WiFi access points belonging to third parties, such as restaurants and hotels.
+  > It is good practice to consider WiFi encryption to be insufficient and to not trust the access point. Devices on a WiFi network should use a remote access VPN like IPsec to communicate with resources on the wired network.
 - `paloalto-what-is-vpn` §Personal VPN benefits
-  > Public networks are often unsecured. That makes it easier for attackers to intercept data.
+  > Public networks are often unsecured. That makes it easier for attackers to intercept data. A VPN helps reduce that risk
 - `cisco-wifi-security` §Virtual private networks (VPNs)
   > VPNs are another source of Wi-Fi network security.
 - `microsoft-windows-vpn` §Summary
-  > A VPN connection can help provide a more secure connection and access to your company's network and the internet, for example, when you’re working from a coffee shop or similar public place.
+  > when you’re working from a coffee shop or similar public place.
 
 ### units[0].learn.facts[1] ("fact-https") — ✅
 
 - `microsoft-edge-https-first` §What are HTTP and HTTPS?
-  > HTTP sends data (like passwords or card numbers) in plain text, making it easier for hackers to intercept. HTTPS (Hypertext Transfer Protocol Secure) encrypts that data, keeping your information private and secure.
+  > HTTP sends data (like passwords or card numbers) in plain text, making it easier for hackers to intercept.
+- `microsoft-edge-https-first` §What are HTTP and HTTPS?
+  > HTTPS (Hypertext Transfer Protocol Secure) encrypts that data, keeping your information private and secure.
 - `google-chrome-secure` §What each security symbol means
-  > Someone may be able to view and change the information you send and get through this site.
+  > Information you send or get through the site is private between you and the site.
 - `google-chrome-secure` §What each security symbol means
-  > The information you send or get through the site is private.
+  > The site doesn’t use a private connection. Someone may be able to view and change the information you send and get through this site.
 - `rfc-9846` §1
-  > Confidentiality: Data sent over the channel after establishment is
-  > only visible to the endpoints.
-- Note: RFC 9846 defines TLS, whose confidentiality property makes the data visible only to the two ends. The case of a proxy that inspects TLS is left out.
+  > Confidentiality: Data sent over the channel after establishment is only visible to the endpoints.
+- Note: RFC 9846 is the current TLS 1.3 specification and defines the confidentiality HTTPS gives; Microsoft and Google each state both halves.
 
 ### units[0].learn.facts[2] ("fact-setup") — ✅
 
 - `rfc-7296` §1.2
-  > The first pair of messages (IKE_SA_INIT) negotiate
-  > cryptographic algorithms, exchange nonces, and do a Diffie-Hellman
-  > exchange [DH].
+  > The first pair of messages (IKE_SA_INIT) negotiate cryptographic algorithms, exchange nonces, and do a Diffie-Hellman exchange [DH].
 - `rfc-7296` §1.2
-  > Parts of these messages are encrypted and integrity
-  > protected with keys established through the IKE_SA_INIT exchange, so
-  > the identities are hidden from eavesdroppers
+  > Parts of these messages are encrypted and integrity protected with keys established through the IKE_SA_INIT exchange, so the identities are hidden from eavesdroppers
 - `nist-sp800-77r1` §2.3.3
-  > VPNs typically use the DH key exchange algorithm to create a confidential communication
-  > channel to calculate a shared key between the two endpoints that an eavesdropper cannot obtain
-  > or compute.
+  > VPNs typically use the DH key exchange algorithm to create a confidential communication channel to calculate a shared key between the two endpoints that an eavesdropper cannot obtain or compute.
 - `rfc-7296` §1
   > IKE performs mutual authentication between two parties
 - Note: RFC 7296 defines the IKE_SA_INIT and IKE_AUTH exchanges.
@@ -830,155 +718,115 @@ Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" s
 ### units[0].learn.facts[3] ("fact-address") — ✅
 
 - `rfc-7296` §1.1.3
-  > the
-  > inner IP header will contain the source IP address assigned by the
-  > security gateway
+  > the inner IP header will contain the source IP address assigned by the security gateway
 - `rfc-7296` §2.19
-  > an endpoint may need an IP address in the network protected by the
-  > security gateway and may need to have that address dynamically
-  > assigned.
+  > Since the IKE_AUTH exchange creates an IKE SA and a Child SA, the IRAC MUST request the IRAS-controlled address (and optionally other information concerning the protected network) in the IKE_AUTH exchange.
 - `paloalto-what-is-vpn` §How does a VPN work?
-  > Once the tunnel is established, the device’s traffic is sent to the VPN server before reaching any websites or services. That server assigns a new IP address to the user’s device.
+  > That server assigns a new IP address to the user’s device. Which helps obscure location and identity.
 - `cisco-wifi-security` §Virtual private networks (VPNs)
   > It also can conceal a user's IP address by using a virtual IP address it assigns to the user's traffic as it passes through the VPN server.
-- Note: RFC 7296 defines the address the gateway gives and its place as the inner source. Palo Alto and Cisco state that sites see the VPN's address rather than yours. Often the VPN server also translates the address it gave into its own public one, a detail this line leaves out. A beginner still learns the right thing: sites see the VPN's address, not the café's.
+- Note: RFC 7296 defines the address request in IKE_AUTH and the assigned inner source address. That sites see the VPN's address is stated by Palo Alto and Cisco.
+- Note: Some VPN servers translate the assigned address to a public one of their own before sending traffic on; either way a site sees a VPN address, not the café's or yours, so a beginner is not misled.
 
 ### units[0].learn.facts[4] ("fact-ports") — ✅
 
 - `rfc-7296` §2
-  > IKE normally listens and sends on UDP port 500, though IKE messages
-  > may also be received on UDP port 4500
+  > IKE normally listens and sends on UDP port 500, though IKE messages may also be received on UDP port 4500 with a slightly different format (see Section 2.23).
 - `rfc-7296` §2.23
-  > An IPsec
-  > endpoint that discovers a NAT between it and its correspondent (as
-  > described below) MUST send all subsequent traffic from port 4500
+  > An IPsec endpoint that discovers a NAT between it and its correspondent (as described below) MUST send all subsequent traffic from port 4500,
 - `nist-sp800-77r1` §4.2.1
   > when IKE detects a NAT during the negotiation, it switches the IKE negotiation from UDP port 500 to UDP port 4500.
 - `paloalto-ipsec` §IPSec Ports
   > UDP port 500 for initiating connections and negotiating keys, and UDP port 4500 for situations where Network Address Translation (NAT) is involved.
-- Note: RFC 7296 defines IKE's ports. An initiator may start on 4500, a rarer case that "normally" covers.
+- Note: "Normally" leaves room for IKEv2 starting on port 4500, which RFC 7296 allows.
 
 ### units[0].learn.facts[5] ("fact-nat") — ✅
 
 - `rfc-7296` §2.23
-  > For that reason, IKEv2 will use UDP
-  > encapsulation of IKE and ESP packets.  This encoding is slightly less
-  > efficient but is easier for NATs to process.
+  > For that reason, IKEv2 will use UDP encapsulation of IKE and ESP packets. This encoding is slightly less efficient but is easier for NATs to process.
 - `rfc-3948` §1
-  > This protocol specification defines methods to encapsulate and
-  > decapsulate ESP packets inside UDP packets for traversing Network
-  > Address Translators (NATs)
+  > This protocol specification defines methods to encapsulate and decapsulate ESP packets inside UDP packets for traversing Network Address Translators (NATs)
 - `rfc-7296` §1.1.3
-  > packets will have to be UDP encapsulated in order to be
-  > routed properly.
+  > In that case, the IP address as seen by the security gateway will not be the same as the IP address sent by the protected endpoint, and packets will have to be UDP encapsulated in order to be routed properly.
 - `nist-sp800-77r1` §4.2.1
-  > The NAT device can rewrite the IP address of the outer UDP packet and track
-  > multiple clients by the UDP port number.
-- Note: RFC 7296 and RFC 3948 define the UDP encapsulation used to get through a NAT.
+  > The NAT device can rewrite the IP address of the outer UDP packet and track multiple clients by the UDP port number.
 
 ### units[0].learn.facts[6] ("fact-outer") — ✅
 
 - `rfc-4301` §4.1
-  > If ESP is employed, the protection is afforded only to
-  > the tunneled packet, not to the outer header.
+  > If ESP is employed, the protection is afforded only to the tunneled packet, not to the outer header.
 - `rfc-7296` §1.1.3
-  > On each packet from
-  > the protected endpoint, the outer IP header will contain the source
-  > IP address associated with its current location
+  > On each packet from the protected endpoint, the outer IP header will contain the source IP address associated with its current location
 - `rfc-7296` §1.1.3
-  > The outer
-  > destination address will always be that of the security gateway
+  > The outer destination address will always be that of the security gateway,
 - `rfc-4303` §3.1.2
-  > an "outer" IP header contains
-  > the addresses of the IPsec "peers"
+  > an "outer" IP header contains the addresses of the IPsec "peers", e.g., addresses of security gateways.
 - `nist-sp800-77r1` §4.1.1
-  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the
-  > source and destination of the packet
-- Note: RFC 4301, RFC 4303 and RFC 7296 define the outer header and what ESP protects.
+  > The ICV computation does not include the new IP header.
+- Note: RFC 4301, RFC 4303 and RFC 7296 define the outer header and what ESP covers.
 
 ### units[0].learn.facts[7] ("fact-inner") — ✅
 
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `nist-sp800-77r1` §4.1.1
-  > encrypting the original IP header conceals the nature of the communications, such as the actual
-  > source or destination of the packet, protocol, and ports used
+  > encrypting the original IP header conceals the nature of the communications, such as the actual source or destination of the packet, protocol, and ports used
 - `paloalto-ipsec` §IPsec Tunnel Mode
-  > Tunnel Mode encapsulates the entire IP packet, including its header, within a new packet with a new header.
-- Note: RFC 4303 defines ESP tunnel mode.
+  > It is most commonly used in gateway-to-gateway communications, where it safeguards internal network details by encrypting the entire original packet.
 
 ### units[0].learn.facts[8] ("fact-ends") — ✅
 
 - `nist-sp800-77r1` §2.4.2
-  > As shown in Figure 3, the remote access VPN does not provide full protection for data
-  > throughout transit.
+  > The dashed lines indicate that communications between the gateway and the destination hosts (e.g., servers, laptops, desktops) on the right side of the figure are not protected.
 - `nist-sp800-77r1` §2.4.2
-  > the network
-  > traffic between the user’s host (the remote device in Figure 3) and the VPN gateway will be
-  > protected by the IPsec connection.
+  > the network traffic between the user’s host (the remote device in Figure 3) and the VPN gateway will be protected by the IPsec connection.
 - `rfc-7296` §1.1.3
-  > the address that will get traffic routed to
-  > the security gateway for forwarding to the endpoint
+  > The outer destination address will always be that of the security gateway,
 - `paloalto-vpn-tunnel` §2. Establishment of an encrypted tunnel
   > This encryption shields the internet traffic from unauthorized access as it moves through the user's internet connection to the VPN server.
 - `paloalto-vpn-tunnel` §4. Decryption at the VPN server
   > The VPN server receives the encrypted data and uses keys to decrypt it.
-- Note: RFC 7296 §1.1.3 defines the endpoint-to-gateway tunnel, which ends at the gateway.
 
 ### units[0].learn.facts[9] ("fact-server-reads") — ✅
 
 - `rfc-4303` §3.4.4.1
-  > The receiver decrypts the ESP Payload Data, Padding, Pad
-  > Length, and Next Header
+  > The receiver decrypts the ESP Payload Data, Padding, Pad Length, and Next Header using the key, encryption algorithm, algorithm mode, and cryptographic synchronization data (if any), indicated by the SA.
 - `rfc-4303` §3.1.2
-  > In tunnel mode, the "inner" IP header carries the ultimate (IP)
-  > source and destination addresses
+  > In tunnel mode, the "inner" IP header carries the ultimate (IP) source and destination addresses,
 - `nist-sp800-77r1` §2.4.2
-  > Traffic received and
-  > decrypted by the VPN gateway that is not meant for the local organization can be sent to the
-  > organization’s firewall for inspection
+  > Traffic received and decrypted by the VPN gateway that is not meant for the local organization can be sent to the organization’s firewall for inspection
 - `rfc-9846` §1
-  > Confidentiality: Data sent over the channel after establishment is
-  > only visible to the endpoints.
-- Note: RFC 4303 defines decryption at the receiving end, after which the inner header (where you go) and payload are in the clear. RFC 9846 defines TLS confidentiality, which keeps the content sealed from the server.
+  > Confidentiality: Data sent over the channel after establishment is only visible to the endpoints.
+- Note: RFC 4303 defines the decryption at the receiving end of the tunnel; RFC 9846 defines TLS's confidentiality, which keeps HTTPS content from the VPN server.
 
 ### units[0].learn.facts[10] ("fact-reply") — ✅
 
 - `rfc-7296` §1.1.3
-  > the protected endpoint will want an IP
-  > address associated with the security gateway so that packets returned
-  > to it will go to the security gateway and be tunneled back.
+  > the protected endpoint will want an IP address associated with the security gateway so that packets returned to it will go to the security gateway and be tunneled back.
 - `nist-sp800-77r1` §2.4.2
-  > Similarly, response traffic from the internet flows back via the organization’s
-  > firewall to the VPN gateway and is then sent via the VPN connection to the remote host.
+  > Similarly, response traffic from the internet flows back via the organization’s firewall to the VPN gateway and is then sent via the VPN connection to the remote host.
 - `paloalto-vpn-tunnel` §5. Return of data to the user's device
   > Data sent from the internet back to the user also passes through the encrypted tunnel, ensuring privacy and security in both directions.
-- Note: RFC 7296 §1.1.3 defines the endpoint-to-gateway scenario and the return path.
 
 ### units[0].learn.facts[11] ("fact-whose") — ✅
 
 - `microsoft-windows-vpn` §Create a VPN profile
   > You can either create a VPN profile on your own or set up a work account to get a VPN profile from your company.
 - `microsoft-windows-vpn` §Create a VPN profile
-  > If it’s for a VPN service you subscribe to for personal use
+  > If it’s for a VPN service you subscribe to for personal use,
 - `paloalto-what-is-vpn` §How does a VPN work?
   > The VPN encrypts the user’s internet traffic and routes it through a remote server operated by the VPN provider.
 - `paloalto-what-is-vpn` §How does a VPN work?
   > That client establishes a secure connection to a VPN gateway managed by the organization.
-- Note: This line leaves out free services and a server you run yourself, which are rarer cases.
+- Note: Leaves out free VPN services and servers people run themselves; work and paid services are the ordinary cases.
 
 ### units[0].learn.facts[12] ("fact-here") — ✅
 
 - `rfc-9110` §4.2.1
-  > If the port
-  > subcomponent is empty or not given, TCP port 80 (the reserved port
-  > for WWW services) is the default.
+  > If the port subcomponent is empty or not given, TCP port 80 (the reserved port for WWW services) is the default.
 - `rfc-9110` §4.2.2
-  > If the port
-  > subcomponent is empty or not given, TCP port 443 (the reserved port
-  > for HTTP over TLS) is the default.
-- Note: RFC 9110 defines the http and https schemes and their default ports.
+  > If the port subcomponent is empty or not given, TCP port 443 (the reserved port for HTTP over TLS) is the default.
+- Note: RFC 9110 defines the http and https schemes and their default ports; it is an Internet Standard and not obsoleted.
 
 ### units[0].learn.facts[13] ("fact-layers") — ✅
 
@@ -992,267 +840,128 @@ Result: 99 ✅, 3 ⚠️, 0 ❌. The three ⚠️ are Watch items in the "ike" s
   > IPsec VPNs encrypt at the network layer.
 - `paloalto-ipsec` §IPsec vs. SSL VPN
   > SSL VPNs work at the application layer
-- Note: NIST puts TLS (SSL) VPNs at the transport layer and Palo Alto puts them at the application layer. Both are above the network layer, so "higher up" holds. The lesson leaves out link-layer VPNs (NIST §8.1), which do not contradict it.
+- Note: NIST places TLS (SSL) VPNs at the transport layer and Palo Alto at the application layer; both are above the network layer, so "higher up" holds. The fact does not say every VPN is at the network layer or above.
 
 ### units[0].learn.facts[14] ("fact-get") — ✅
 
 - `rfc-9110` §9.3.1
-  > The GET method requests transfer of a current selected representation
-  > for the target resource.
+  > The GET method requests transfer of a current selected representation for the target resource.
 - `rfc-9112` §3
-  > A request-line begins with a method token, followed by a single space
-  > (SP), the request-target, and another single space (SP), and ends
-  > with the protocol version.
+  > A request-line begins with a method token, followed by a single space (SP), the request-target, and another single space (SP), and ends with the protocol version.
 - `rfc-9112` §3.2.1
-  > If the target URI's path component is
-  > empty, the client MUST send "/" as the path within the origin-form of
-  > request-target.
-- Note: RFC 9110 defines GET, and RFC 9112 defines the request line and its path. "A page" is the everyday word for the representation.
-- Note: RFC 9112 is not obsoleted. Its one update (RFC 9931, on optimistic protocol transitions) does not touch this.
+  > If the target URI's path component is empty, the client MUST send "/" as the path within the origin-form of request-target.
+- Note: RFC 9110 defines GET and RFC 9112 the request line; both are Internet Standards, not obsoleted (RFC 9112's update, RFC 9931, does not touch this). "A page" is the everyday word for the representation.
 
 ### units[0].learn.facts[15] ("fact-name") — ✅
 
 - `cisco-what-is-vpn` §What is a virtual private network (VPN)?
   > A virtual private network, or VPN, is an encrypted connection over the Internet from a device to a network.
 - `nist-sp800-77r1` §2.3
-  > A Virtual Private
-  > Network (VPN) is a virtual network built on top of existing physical networks
+  > A Virtual Private Network (VPN) is a virtual network built on top of existing physical networks
 
 ### units[0].practice[0].options[0] (question "past-the-server") — ✅
 
 - `nist-sp800-77r1` §2.4.2
-  > The dashed lines indicate that communications between the gateway and the
-  > destination hosts (e.g., servers, laptops, desktops) on the right side of the figure are not protected.
+  > The dashed lines indicate that communications between the gateway and the destination hosts (e.g., servers, laptops, desktops) on the right side of the figure are not protected.
 - `rfc-7296` §1.1.3
-  > the address that will get traffic routed to
-  > the security gateway for forwarding to the endpoint
+  > the inner IP header will contain the source IP address assigned by the security gateway (i.e., the address that will get traffic routed to the security gateway for forwarding to the endpoint).
 - `rfc-4303` §3.4.4.1
-  > The receiver decrypts the ESP Payload Data, Padding, Pad
-  > Length, and Next Header
+  > for tunnel mode -- the entire IP datagram in the ESP Payload field.
 - `paloalto-vpn-tunnel` §4. Decryption at the VPN server
   > The VPN server receives the encrypted data and uses keys to decrypt it. Once decrypted, the data can continue to its intended destination on the internet.
-- Note: This is the right answer, and the feedback is correct for it.
+- Note: The option is the right answer for a plain http:// page sent through a full tunnel; its feedback matches.
 
 ### units[0].practice[0].options[1] (question "past-the-server") — ✅
 
 - `nist-sp800-77r1` §2.4.2
-  > As shown in Figure 3, the remote access VPN does not provide full protection for data
-  > throughout transit.
+  > As shown in Figure 3, the remote access VPN does not provide full protection for data throughout transit.
 - `paloalto-vpn-tunnel` §2. Establishment of an encrypted tunnel
   > This encryption shields the internet traffic from unauthorized access as it moves through the user's internet connection to the VPN server.
 - `rfc-9846` §1
-  > Confidentiality: Data sent over the channel after establishment is
-  > only visible to the endpoints.
-- Note: This is a wrong answer, and the feedback correctly says why.
+  > Confidentiality: Data sent over the channel after establishment is only visible to the endpoints.
+- Note: The option is wrong and marked wrong; the feedback says why.
 
 ### units[0].practice[0].options[2] (question "past-the-server") — ✅
 
 - `rfc-4301` §4.1
-  > If ESP is employed, the protection is afforded only to
-  > the tunneled packet, not to the outer header.
+  > If ESP is employed, the protection is afforded only to the tunneled packet, not to the outer header.
 - `rfc-7296` §1.1.3
-  > The outer
-  > destination address will always be that of the security gateway
+  > The outer destination address will always be that of the security gateway, while the inner destination address will be the ultimate destination for the packet.
 - `nist-sp800-77r1` §4.1.1
-  > encrypting the original IP header conceals the nature of the communications, such as the actual
-  > source or destination of the packet
-- Note: This is a wrong answer, and the feedback correctly says why.
+  > encrypting the original IP header conceals the nature of the communications, such as the actual source or destination of the packet, protocol, and ports used
+- Note: The option is wrong (on the café's Wi-Fi the request is sealed) and marked wrong.
 
 ### units[0].practice[1].options[0] (question "what-the-cafe-sees") — ✅
 
 - `rfc-7296` §1.1.3
-  > On each packet from
-  > the protected endpoint, the outer IP header will contain the source
-  > IP address associated with its current location
+  > On each packet from the protected endpoint, the outer IP header will contain the source IP address associated with its current location
+- `rfc-7296` §1.1.3
+  > The outer destination address will always be that of the security gateway, while the inner destination address will be the ultimate destination for the packet.
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `nist-sp800-77r1` §4.1.1
-  > encrypting the original IP header conceals the nature of the communications, such as the actual
-  > source or destination of the packet, protocol, and ports used
-- Note: This is the right answer, and the feedback is correct for it.
+  > encrypting the original IP header conceals the nature of the communications, such as the actual source or destination of the packet, protocol, and ports used
+- Note: Right, and marked right, for a full tunnel as the prompt sets.
 
 ### units[0].practice[1].options[1] (question "what-the-cafe-sees") — ✅
 
 - `rfc-4301` §4.1
-  > If ESP is employed, the protection is afforded only to
-  > the tunneled packet, not to the outer header.
+  > If ESP is employed, the protection is afforded only to the tunneled packet, not to the outer header.
 - `nist-sp800-77r1` §4.1.1
-  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the
-  > source and destination of the packet
-- Note: This is a wrong answer, and the feedback correctly says why.
+  > The new IP header lists the endpoints of the ESP tunnel (such as two IPsec gateways) as the source and destination of the packet
+- Note: Wrong, and marked wrong.
 
 ### units[0].practice[1].options[2] (question "what-the-cafe-sees") — ✅
 
 - `rfc-4303` §3.1.2
-  > In tunnel mode, ESP protects the
-  > entire inner IP packet, including the entire inner IP header.
+  > In tunnel mode, ESP protects the entire inner IP packet, including the entire inner IP header.
 - `nist-sp800-77r1` §4.1.1
-  > Encrypting the original IP header and its payload
-  > protects their confidentiality
+  > Encrypting the original IP header and its payload protects their confidentiality;
 - `paloalto-ipsec` §IPsec Tunnel Mode
   > Tunnel Mode encapsulates the entire IP packet, including its header, within a new packet with a new header.
-- Note: This is a wrong answer, and the feedback correctly says why.
+- Note: Wrong, and marked wrong.
 
 ## Traced, example, analogy and unbacked parts
 
-The example addresses in the event logs come from RFC 1918 (192.168.1.100) and RFC 5737 (203.0.113.x), and example.net is an example name. The ports either trace to fact-here and fact-ports, or are made-up client ports.
-
-### title — ✅
-
-### units[0].name — ✅
-
-### backing (the lesson's subtitle and summary) — ✅
-
-### units[0].backing (the unit's full name and purpose) — ✅
-
-### units[0].scene.backing (the scene) — ✅
-
-### units[0].overview.hookBacking (the Overview hook) — ✅
-
-### units[0].overview.backing (the Overview description) — ✅
-
-- Note: The analogy is the sealed envelope that a friend opens and posts on. It matches the lesson: outside the envelope, only the friend's address shows. The friend (the VPN server) can read the postcard, and HTTPS stays shut the whole way. It does not mislead.
-
-### units[0].overview.facts[0] (Overview fact "Does") — ✅
-
-### units[0].overview.facts[1] (Overview fact "Protects") — ✅
-
-### units[0].overview.facts[2] (Overview fact "The network you’re on sees") — ✅
-
-### units[0].overview.facts[3] (Overview fact "Kinds include") — ✅
-
-### units[0].overview.facts[4] (Overview fact "One way to build it") — ✅
-
-### units[0].steps[0] (step "plain-cafe") — ✅
-
-### units[0].steps[0].facts[0] (step "plain-cafe", fact "Your request") — ✅
-
-### units[0].steps[0].facts[1] (step "plain-cafe", fact "Someone on the café’s Wi-Fi") — ✅
-
-### units[0].steps[0].facts[2] (step "plain-cafe", fact "On Wi-Fi you don’t run") — ✅
-
-### units[0].steps[0].events[0] (event "s1-get") — ✅
-
-### units[0].steps[0].events[1] (event "s1-row") — ✅
-
-### units[0].steps[0].events[2] (event "s1-page") — ✅
-
-### units[0].steps[1] (step "ike") — ⚠️
-
-- Note: The narrative says the server gives the laptop its address as part of this step, and then says "This is IKE". So it teaches that IKE hands out the address. None of the Learn parts it traces says so: fact-address says only that the VPN server gives you an address, and term-ike and fact-setup say IKE agrees on keys and proves identity. It is true (RFC 7296 §2.19, already cited by fact-address), but Watch adds it. To fix it, say in a Learn part (fact-address or fact-setup) that the address is given during the setup, in IKE_AUTH.
-
-### units[0].steps[1].facts[0] (step "ike", fact "IKE") — ✅
-
-### units[0].steps[1].facts[1] (step "ike", fact "Someone listening") — ✅
-
-### units[0].steps[1].facts[2] (step "ike", fact "Your address on the VPN’s side") — ✅
-
-### units[0].steps[1].facts[3] (step "ike", fact "Ports") — ✅
-
-### units[0].steps[1].events[0] (event "s2-init") — ✅
-
-### units[0].steps[1].events[1] (event "s2-init-back") — ✅
-
-- Note: That the NAT is found in the first exchange follows from fact-ports: UDP 500 to start, 4500 once a NAT is found, and the next message goes on port 4500.
-
-### units[0].steps[1].events[2] (event "s2-auth") — ⚠️
-
-- Note: The log line and its plain words say the laptop asks for an address inside IKE_AUTH. No traced Learn part says the address is asked for or given in IKE_AUTH. fact-setup gives IKE_AUTH only as proving who each side is. This is the same gap as the "ike" step.
-
-### units[0].steps[1].events[3] (event "s2-auth-back") — ⚠️
-
-- Note: The log line says the address comes in the IKE_AUTH reply. As with s2-auth, no traced Learn part puts the address in IKE_AUTH.
-
-### units[0].steps[2] (step "esp") — ✅
-
-### units[0].steps[2].facts[0] (step "esp", fact "Outside") — ✅
-
-### units[0].steps[2].facts[1] (step "esp", fact "Inside, sealed") — ✅
-
-### units[0].steps[2].facts[2] (step "esp", fact "Someone on the café’s Wi-Fi") — ✅
-
-### units[0].steps[2].facts[3] (step "esp", fact "It travels") — ✅
-
-### units[0].steps[2].events[0] (event "s3-esp") — ✅
-
-### units[0].steps[2].events[1] (event "s3-row") — ✅
-
-### units[0].steps[3] (step "out-of-the-tunnel") — ✅
-
-### units[0].steps[3].facts[0] (step "out-of-the-tunnel", fact "The VPN server") — ✅
-
-### units[0].steps[3].facts[1] (step "out-of-the-tunnel", fact "From there to the site") — ✅
-
-### units[0].steps[3].facts[2] (step "out-of-the-tunnel", fact "The site sees you as") — ✅
-
-### units[0].steps[3].facts[3] (step "out-of-the-tunnel", fact "The page") — ✅
-
-### units[0].steps[3].events[0] (event "s4-server") — ✅
-
-### units[0].steps[3].events[1] (event "s4-get") — ✅
-
-### units[0].steps[3].events[2] (event "s4-after") — ✅
-
-### units[0].steps[3].events[3] (event "s4-page") — ✅
-
-### units[0].steps[3].events[4] (event "s4-esp") — ✅
-
-### units[0].steps[4] (step "https-matters") — ✅
-
-### units[0].steps[4].facts[0] (step "https-matters", fact "With HTTPS") — ✅
-
-### units[0].steps[4].facts[1] (step "https-matters", fact "The VPN server sees") — ✅
-
-### units[0].steps[4].facts[2] (step "https-matters", fact "The VPN protects") — ✅
-
-### units[0].steps[4].facts[3] (step "https-matters", fact "HTTPS protects") — ✅
-
-### units[0].steps[4].events[0] (event "s5-esp") — ✅
-
-### units[0].steps[4].events[1] (event "s5-server") — ✅
-
-### units[0].steps[4].events[2] (event "s5-https") — ✅
-
-### units[0].steps[4].events[3] (event "s5-after") — ✅
-
-### units[0].steps[4].events[4] (event "s5-https-back") — ✅
-
-### units[0].steps[4].events[5] (event "s5-esp-back") — ✅
-
-### units[0].learn.lead[2] ("lead-3") — ✅
-
-- Note: This is the same envelope analogy as the Overview, and it does not mislead.
-
-### units[0].practice[0].prompt (question "past-the-server") — ✅
-
-- Note: The prompt has no false premise. "VPN on for all your traffic" matches the full-tunnel case that the lesson teaches beside split tunnels.
-
-### units[0].practice[1].prompt (question "what-the-cafe-sees") — ✅
+Each traced part was read against the Learn parts its Traces line names; none adds a value, name, number, outcome or condition beyond them. The addresses are RFC 1918 (192.168.1.100) and RFC 5737 (203.0.113.0/24) example data; the names are example.net.
+
+- `title` — ✅
+- `units[0].name` — ✅
+- `backing (the lesson's subtitle and summary)` — ✅
+- `units[0].backing (the unit's full name and purpose)` — ✅
+- `units[0].scene.backing (the scene)` — ✅
+- `units[0].overview.hookBacking (the Overview hook)` — ✅
+- `units[0].overview.backing (the Overview description)` — ✅ (analogy: the envelope is opened by the friend and the postcard goes on readable, as the tunnel ends at the VPN server; the locked box stands for HTTPS sealing to the site)
+- `units[0].overview.facts[0]` to `facts[4]` — ✅ (facts[4] says IPsec is one way to build a VPN, which is weaker than term-ipsec, not more)
+- `units[0].steps[0]` and its facts and events — ✅
+- `units[0].steps[1]` and its facts and events — ✅ (the address is given in IKE_AUTH, as fact-address now says; the laptop asking for it in IKE_AUTH is the request side of that same exchange)
+- `units[0].steps[2]` and its facts and events — ✅
+- `units[0].steps[3]` and its facts and events — ✅
+- `units[0].steps[4]` and its facts and events — ✅
+- `units[0].learn.lead[2] ("lead-3")` — ✅ (analogy, as for the Overview description)
+- `units[0].practice[0].prompt (question "past-the-server")` — ✅ (no false premise; it sets a full tunnel and a plain http:// page)
+- `units[0].practice[1].prompt (question "what-the-cafe-sees")` — ✅
 
 ## Sources
 
-All checked 2026-11-16.
+All checked on 2026-11-16.
 
-- `cisco-what-is-vpn`: live. It refused a command-line read and was read in the browser. It is an explainer that describes current practice.
-- `cisco-wifi-security`: live. It was read in the browser the same way, and it describes current practice.
-- `google-chrome-secure`: live Chrome Help page that describes the current product.
-- `google-cloud-vpn`: live Google Cloud documentation for the current product.
-- `microsoft-azure-network-best-practices`: live Microsoft Learn page that describes current practice.
-- `microsoft-azure-vpn-p2s`: live Microsoft Learn page for the current product.
-- `microsoft-edge-https-first`: live Microsoft Support page for the current Edge.
-- `microsoft-ms-sstp`: live Microsoft open specification (MS-SSTP §1.3), last updated 2024-10-30. SSTP is a current Windows protocol.
-- `microsoft-windows-vpn`: live Microsoft Support page for Windows 11.
-- `nist-sp800-123`: final (July 2008). The CSRC page shows it neither withdrawn nor superseded.
-- `nist-sp800-77r1`: final (June 2020), and it supersedes SP 800-77. The CSRC page shows it not withdrawn.
-- `paloalto-ipsec`, `paloalto-vpn-tunnel`, `paloalto-what-is-vpn`: live Palo Alto Networks Cyberpedia explainers that describe current practice.
-- `rfc-3948`: Proposed Standard, neither obsoleted nor updated (RFC Editor info page).
-- `rfc-4301`: not obsoleted. It is updated by RFC 6040 and RFC 7619, and neither touches these claims.
-- `rfc-4303`: neither obsoleted nor updated.
-- `rfc-7296`: Internet Standard, not obsoleted. Its updates (RFCs 7427, 7670, 8247, 8983, 9370, 9827) leave the exchanges, ports and NAT traversal used here unchanged.
-- `rfc-9110`: Internet Standard, neither obsoleted nor updated.
-- `rfc-9112`: Internet Standard, not obsoleted. It is updated by RFC 9931, which does not touch the request line.
-- `rfc-9846`: TLS 1.3 (July 2026). It obsoletes RFC 8446 and is itself not obsoleted.
+- `rfc-3948` — Proposed Standard; the RFC Editor info page lists no obsoleting RFC. Current.
+- `rfc-4301` — Proposed Standard; not obsoleted; updated by RFCs 6040 and 7619, neither of which touches the sections used. Current.
+- `rfc-4303` — Proposed Standard; not obsoleted. Current.
+- `rfc-7296` — Internet Standard (STD 79); not obsoleted; updated by RFCs 7427, 7670, 8247, 8983, 9370 and 9827, none of which changes NAT traversal, the initial exchanges or address assignment. Current.
+- `rfc-9110` — Internet Standard; not obsoleted. Current.
+- `rfc-9112` — Internet Standard; not obsoleted; updated by RFC 9931, which does not touch the request line. Current.
+- `rfc-9846` — Proposed Standard; the current TLS 1.3 specification (obsoletes RFC 8446); not obsoleted. Current.
+- `nist-sp800-77r1` — CSRC lists SP 800-77 Rev. 1 (June 2020) as final; it supersedes SP 800-77 and is not itself withdrawn or superseded. Current.
+- `nist-sp800-123` — CSRC lists SP 800-123 (July 2008) as final, with no withdrawal or superseding revision. Current.
+- `cisco-what-is-vpn`, `cisco-wifi-security` — live Cisco explainer pages on current practice. Current.
+- `google-chrome-secure` — live Chrome Help page. Current.
+- `google-cloud-vpn` — live Google Cloud documentation for a current product. Current.
+- `microsoft-azure-network-best-practices`, `microsoft-azure-vpn-p2s` — live Microsoft Learn documentation for current products. Current.
+- `microsoft-edge-https-first`, `microsoft-windows-vpn` — live Microsoft Support pages for current products. Current.
+- `microsoft-ms-sstp` — live Microsoft Open Specifications page for SSTP. Current.
+- `paloalto-ipsec`, `paloalto-vpn-tunnel`, `paloalto-what-is-vpn` — live Palo Alto Networks Cyberpedia explainer pages describing current practice. Current.
 
 ## Limit overrides
 
