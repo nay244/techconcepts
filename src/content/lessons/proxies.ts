@@ -469,7 +469,7 @@ export default defineLesson({
             { label: 'The site sees', value: '203.0.113.30, the proxy', backing: { traces: ['fact-sees'] } },
             { label: 'The proxy reads', value: 'nothing inside the seal', backing: { traces: ['term-tunnel', 'fact-https'] } },
             { label: 'The proxy knows', value: 'your address and the site’s name', backing: { traces: ['fact-knows'] } },
-            { label: 'A proxy', value: 'doesn’t encrypt: the seal is your browser’s and the site’s', backing: { traces: ['fact-not-sealed'] } },
+            { label: 'A proxy', value: 'doesn’t encrypt by itself: the seal is your browser’s and the site’s', backing: { traces: ['fact-not-sealed'] } },
           ],
           events: step3,
           backing: { traces: ['term-tunnel', 'fact-connect', 'fact-https', 'fact-sees', 'fact-knows', 'fact-not-sealed', 'lead-1'] },
