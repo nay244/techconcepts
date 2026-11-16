@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 16: Home's critique findings
 
-**Status: the owner's go is given, scope A, B and C** (2026-11-15, direction 2.73: "A, B and C"). E is taken only where B's layout changes it anyway; D and the minor items wait. D15 is under way. The owner picked Home as the next page to act on from the `impeccable critique` of 2026-11-15 (Home 22 of 32, the lowest of the seven pages). Nothing is designed until the owner says which findings the design covers (job 15's lesson: the owner kept only the controls of a five-part design).
+**Status: the owner's go is given, scope A, B and C** (2026-11-15, direction 2.73: "A, B and C"). E is taken only where B's layout changes it anyway; D and the minor items wait. **D15 is drawn and at the owner's gate** (`prototypes/d15-home-demo.html` and `.md`, `b5b2fb6`; the orchestrator's look is in `team.md`). Nothing is built until the owner approves it. The owner picked Home as the next page to act on from the `impeccable critique` of 2026-11-15 (Home 22 of 32, the lowest of the seven pages). Nothing is designed until the owner says which findings the design covers (job 15's lesson: the owner kept only the controls of a five-part design).
 
 ## Inputs
 
