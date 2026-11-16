@@ -68,7 +68,6 @@ const CISCO_WORKS = vendor('cisco-what-is-vpn', 'How does a virtual private netw
 const CISCO_TUNNEL = vendor('cisco-what-is-vpn', 'Is VPN traffic encrypted?', 'an encrypted connection across the Internet known as a tunnel'); // I-9
 const CISCO_REMOTE = vendor('cisco-what-is-vpn', 'Remote access', 'A remote access VPN securely connects a device outside the corporate office'); // I-18
 const CISCO_SITE = vendor('cisco-what-is-vpn', 'Site-to-site', 'connects the corporate office to branch offices over the Internet'); // I-18
-const CISCO_WIFI_RISK = vendor('cisco-wifi-security', 'How do unsecured Wi-Fi networks create risk?', 'Using open or unsecured networks can be risky'); // I-1
 const CISCO_WIFI_VPN = vendor('cisco-wifi-security', 'Virtual private networks (VPNs)', 'VPNs are another source of Wi-Fi network security'); // I-1
 const CISCO_WIFI_ADDRESS = vendor('cisco-wifi-security', 'Virtual private networks (VPNs)', 'by using a virtual IP address it assigns'); // I-7
 // Palo Alto Networks
