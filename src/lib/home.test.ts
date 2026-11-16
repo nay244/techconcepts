@@ -5,7 +5,7 @@ import { getEntries, getLesson, trackTotals } from '../content/registry';
 import { SOURCES } from '../content/sources';
 import { tracks } from '../content/tracks';
 import type { Lesson } from '../content/schema';
-import { groupsOf, PHONE_OPEN } from '../test/svg-groups';
+import { CAFE_OPEN, groupsOf, PHONE_OPEN } from '../test/svg-groups';
 import { numberedSources } from '../lesson/sourceNumbers';
 import { lessonStamp } from './checked';
 import { foldSources, homeDemo, homeStops, leadText, litSteps, sourceName } from './home';
@@ -293,9 +293,11 @@ test('Home’s still map shows no name strip, no DROPPED mark and every part of 
   const { scene } = homeDemo();
   expect([...scene.matchAll(/<g class="nm-strip"[^>]*>/g)].every((m) => m[0].includes('display="none"'))).toBe(true);
   expect(scene).toMatch(/id="nm-discard" style="opacity:0"/);
-  // The phone is the one part drawn hidden (D11): both its groups, and nothing else.
+  // The phone (D11) and the café (D15b) are the parts drawn hidden: their groups, and nothing else.
   const { groups, rest } = groupsOf(scene, PHONE_OPEN);
   expect(groups).toHaveLength(2);
-  expect(rest).not.toContain('data-hidden');
+  const cafe = groupsOf(rest, CAFE_OPEN);
+  expect(cafe.groups).toHaveLength(3);
+  expect(cafe.rest).not.toContain('data-hidden');
   expect(scene).toContain('<g data-base="resolver">');
 });

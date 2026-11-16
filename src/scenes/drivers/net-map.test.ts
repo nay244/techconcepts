@@ -13,7 +13,7 @@ import { deriveState, slotsFor, stepEvents, type AppliedCue } from '../../engine
 import { showSweep } from '../../test/show-sweep';
 import { sha256 } from '../../test/figure-hash';
 import { sceneViewOf, type PlayOptions, type SceneDriver, type SceneView } from '../driver';
-import { withoutD11 } from '../../test/svg-groups';
+import { withoutD11, withoutVpn } from '../../test/svg-groups';
 import { DRIVERS } from './index';
 import { netMapDriver, parseConn } from './net-map';
 
@@ -229,8 +229,9 @@ test('a unit’s start is in place before any cue plays: a line already open, le
 });
 
 test.each([
-  ['', /needs "<open\|seal\|close> <from>>\[<via>>\]<to>\[ data\]"/],
-  ['open', /needs "<open\|seal\|close> <from>>\[<via>>\]<to>\[ data\]", not "open"/],
+  ['', /needs "<open\|seal\|close> <from>>\[<via>>\]<to>\[ data\| tunnel\]"/],
+  ['open', /needs "<open\|seal\|close> <from>>\[<via>>\]<to>\[ data\| tunnel\]", not "open"/],
+  ['open laptop>vpn data tunnel', /not "open laptop>vpn data tunnel"/],
   ['shut laptop>web', /not "shut laptop>web"/],
   ['open laptop web', /not "open laptop web"/],
   ['open laptop>web extra', /not "open laptop>web extra"/],
@@ -240,8 +241,9 @@ test.each([
 });
 
 test('the conn cue reads its action, its two places and the data line', () => {
-  expect(parseConn('open laptop>web')).toEqual({ action: 'open', from: 'laptop', to: 'web', data: false });
-  expect(parseConn('close laptop>files data')).toEqual({ action: 'close', from: 'laptop', to: 'files', data: true });
+  expect(parseConn('open laptop>web')).toEqual({ action: 'open', from: 'laptop', to: 'web', data: false, tunnel: false });
+  expect(parseConn('close laptop>files data')).toEqual({ action: 'close', from: 'laptop', to: 'files', data: true, tunnel: false });
+  expect(parseConn('seal laptop>vpn tunnel')).toEqual({ action: 'seal', from: 'laptop', to: 'vpn', data: false, tunnel: true });
 });
 
 test('show fails loudly for a connection with no route, or one sealed before it opens', () => {
@@ -939,7 +941,7 @@ test('the figure drawn for Router’s lesson is the approved prototype’s, tag 
   const theirs = /<svg data-figure="net-map"[\s\S]*?<\/svg>(?=<\/div>)/.exec(proto)![0];
   const lines = (svg: string): string[] => svg.split('><');
   // D11's phone is drawn hidden on every map; the prototype was drawn before it, so its groups come out whole first.
-  expect(lines(withoutD11(drawNetMap(['ip:web']).svg))).toEqual(lines(theirs));
+  expect(lines(withoutD11(withoutVpn(drawNetMap(['ip:web']).svg)))).toEqual(lines(theirs));
 });
 
 // ---------------------------------------------------------------- D11 / B13: the phone, the stranger, Ports' server, ARP's row that leaves
@@ -1136,4 +1138,43 @@ test.each([['arp', arpFixture], ['ports', portsFixture], ['nat', natFixture]] as
   vi.useRealTimers();
   const lesson = fixture();
   expect(showSweep(lesson)).toBeGreaterThanOrEqual(20);
+});
+
+// ---------------------------------------------------------------- D15b: the café, its listener, and VPN's tunnel
+
+const cafeView = (o: Parameters<typeof view>[0] = {}): SceneView => view({ layers: ['vpn:vpn', 'vpn:web'], start: [{ cue: 'hide', arg: 'resolver' }, { cue: 'show', arg: 'cafe' }], ...o });
+const baseGroups = (root: SVGSVGElement, base: string): SVGElement[] => [...root.querySelectorAll<SVGElement>(`[data-base="${base}"]`)];
+
+test('`show cafe` draws the café in home’s place, and says so; without it, the café is hidden and home is drawn', () => {
+  const { root, driver } = mount();
+  driver.show(cafeView());
+  expect(baseGroups(root, 'cafe').map((g) => g.hasAttribute('data-hidden'))).toEqual([false, false, false]);
+  expect(baseGroups(root, 'home').every((g) => g.hasAttribute('data-hidden'))).toBe(true);
+  expect(root.getAttribute('aria-label')).toContain('On the left, a café: your laptop, the café’s router, and someone else on its Wi-Fi, listening.');
+  expect(root.getAttribute('aria-label')).toContain('the VPN server, where the tunnel from your laptop ends.');
+  driver.show(view({ layers: ['http:web'] }));
+  expect(baseGroups(root, 'cafe').every((g) => g.hasAttribute('data-hidden'))).toBe(true);
+  expect(baseGroups(root, 'home').some((g) => g.hasAttribute('data-hidden'))).toBe(false);
+  expect(root.getAttribute('aria-label')).toContain('your home: a laptop and its router.');
+});
+
+test('`listener` sets what the café’s listener makes out, and the latest one wins; no cue leaves it dark', () => {
+  const { root, driver } = mount();
+  const listener = root.querySelector('#nm-listener')!;
+  driver.show(cafeView());
+  expect(listener.hasAttribute('data-hear')).toBe(false);
+  driver.show(cafeView({ cues: [{ cue: 'listener', arg: 'reads' }] }));
+  expect(listener.getAttribute('data-hear')).toBe('reads');
+  driver.show(cafeView({ cues: [{ cue: 'listener', arg: 'reads' }, { cue: 'listener', arg: 'outside' }] }));
+  expect(listener.getAttribute('data-hear')).toBe('outside');
+  expect(() => driver.show(cafeView({ cues: [{ cue: 'listener', arg: 'sees' }] }))).toThrow(/listener cue needs "reads" or "outside"/);
+});
+
+test('`conn … tunnel` draws a tunnel band, apart from a plain line on the same route; home cannot be hidden', () => {
+  const { root, driver } = mount();
+  driver.show(cafeView({ cues: [{ cue: 'conn', arg: 'open laptop>vpn tunnel' }, { cue: 'conn', arg: 'seal laptop>vpn tunnel' }] }));
+  const lines = [...root.querySelectorAll('#nm-conns polyline')];
+  expect(lines.map((l) => l.getAttribute('class'))).toEqual(['nm-conn tunnel sealed']);
+  expect(() => driver.show(cafeView({ cues: [{ cue: 'conn', arg: 'seal laptop>vpn' }] }))).toThrow(/seals laptop>vpn, which is not open/);
+  expect(() => driver.show(view({ start: [{ cue: 'hide', arg: 'home' }] }))).toThrow(/cannot hide "home"/);
 });

@@ -57,15 +57,17 @@ export const FIGURE_PARTS: Record<FigureId, FigureParts> = {
       // A router that threw a packet away keeps a DROPPED mark; a unit may start with the resolver left off the map.
       drop: 'text',
       hide: 'text',
-      // A part the map leaves off until a unit's start shows it: the phone.
+      // A part the map leaves off until a unit's start shows it: the phone, or the café (VPN), in home's place.
       show: 'text',
+      // With the café: what the one listening on its Wi-Fi makes out (VPN).
+      listener: 'text',
       // A copy of the tag waits in a bay (`park <place> <bay> <TAG>`) until a message with its tag takes it, or `unpark laptop` sends the laptop's into its screen.
       park: 'text',
       unpark: 'text',
       // A new visit (Proxies, as a step begins): the page, the padlock and every lit connection go.
       fresh: 'flag',
     },
-    args: { drop: NET_MAP_ROUTERS, hide: NET_MAP_HIDEABLE, show: NET_MAP_OPTIONAL },
+    args: { drop: NET_MAP_ROUTERS, hide: NET_MAP_HIDEABLE, show: NET_MAP_OPTIONAL, listener: ['reads', 'outside'] },
     layers: Object.keys(NET_MAP_LAYERS),
     board: false,
     // Its driver settles a unit's start under the cues that have played.

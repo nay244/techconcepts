@@ -11,7 +11,7 @@ export interface CalloutLine {
 }
 
 interface PlateBase {
-  /** Where the plate stands: E for one big plate right of the internet, SE for a smaller one in front of it, N for a small one behind the internet, NW for one where the resolver stands (a map that shows it hides the resolver). */
+  /** Where the plate stands: E for one big plate right of the internet, SE for a smaller one in front of it, N for a small one behind the internet, NE for a small one behind it on the right, NW for one where the resolver stands (a map that shows it hides the resolver). */
   slot: 'E' | 'SE' | 'N' | 'NE' | 'NW';
   /** A part of the map the plate is drawn in, hidden until a `show` cue shows it (`NET_MAP_OPTIONAL`). */
   part?: string;
@@ -61,6 +61,15 @@ export type ServerPlate =
       front: string;
       /** The callouts while the reverse proxy is shown: its own, and the web server's behind it. */
       behind: CalloutLine[][];
+    })
+  | (PlateBase & {
+      kind: 'vpn';
+      /** Where the tunnel ends, on the pad: its cable runs to `puck`. */
+      site: string;
+      puck: 'a';
+      /** The same pad, for what the server sends on out of the tunnel: its own cable runs to `outPuck`. */
+      out: string;
+      outPuck: 'c';
     });
 
 /** The root servers, the servers for .app, and the site's own name server, as the names plate draws them. */
@@ -76,7 +85,10 @@ export const NET_MAP_LAPTOP_ADDR = '192.168.1.100';
 export const NET_MAP_BASE_PLACES = ['laptop', 'router', 'resolver', 'isp', 'a', 'b', 'c', 'd', 'phone'];
 
 /** The parts the map leaves off until a start shows them (`show phone`; Proxies' `show proxy` and `show reverse`). */
-export const NET_MAP_OPTIONAL = ['phone', 'proxy', 'reverse'];
+export const NET_MAP_OPTIONAL = ['phone', 'proxy', 'reverse', 'cafe'];
+
+/** An optional part that, shown, takes the place of a part every map draws: the café's words and its listener take home's words and the laptop's cable. */
+export const NET_MAP_INSTEAD: Record<string, string> = { cafe: 'home' };
 
 /** The parts a start may leave off the map (`hide`): the resolver, a shown forward proxy, and the web server's own callout. */
 export const NET_MAP_HIDEABLE = ['resolver', 'proxy', 'direct'];
@@ -89,12 +101,15 @@ export const NET_MAP_PART_SENTENCES: Record<string, string> = {
 
 /**
  * The grammar of a net-map `conn` cue's argument, read by the driver (`parseConn`) and the validator:
- * `<open|seal|close> <from>>[<via>>]<to>[ data]`. Groups: action, from, via, to, data.
+ * `<open|seal|close> <from>>[<via>>]<to>[ data| tunnel]`. Groups: action, from, via, to, the ending (` data` or ` tunnel`).
  */
-export const NET_MAP_CONN_GRAMMAR = /^(open|seal|close) ([a-z0-9-]+)>(?:([a-z0-9-]+)>)?([a-z0-9-]+)( data)?$/;
+export const NET_MAP_CONN_GRAMMAR = /^(open|seal|close) ([a-z0-9-]+)>(?:([a-z0-9-]+)>)?([a-z0-9-]+)( data| tunnel)?$/;
 
 /** The phone's address as the map draws it. */
 export const NET_MAP_PHONE_ADDR = '192.168.1.101';
+
+/** The address of someone listening on the café's Wi-Fi (`show cafe`), as the map draws it: on the laptop's network. */
+export const NET_MAP_LISTENER_ADDR = '192.168.1.66';
 
 /** The internet's five routers, which a unit's labels may name on a strip and a `drop` cue may mark. */
 export const NET_MAP_ROUTERS = ['isp', 'a', 'b', 'c', 'd'];
@@ -107,7 +122,7 @@ export const NET_MAP_BAY_COUNTS: Record<string, number> = { laptop: 4, web: 4, i
 
 /** The places a message can stop on a plate. */
 export function plateSites(plate: ServerPlate): string[] {
-  return plate.kind === 'names' ? NAME_SERVER_SITES : plate.kind === 'site' ? [plate.site, plate.front] : [plate.site];
+  return plate.kind === 'names' ? NAME_SERVER_SITES : plate.kind === 'site' ? [plate.site, plate.front] : plate.kind === 'vpn' ? [plate.site, plate.out] : [plate.site];
 }
 
 const line = (cls: CalloutLine['cls'], text: string): CalloutLine => ({ cls, text });
@@ -224,4 +239,20 @@ export const NET_MAP_LAYERS: Record<string, ServerPlate> = {
     at: [300, 0],
     lines: [line('nm-name', 'Forward proxy'), line('nm-addr', '203.0.113.30')],
   },
+  // VPN: the VPN server behind the internet on the right, and example.net with no port (it is reached at 80, then 443).
+  // The server comes first: the layers are drawn in this order, and its plate stands behind the web server's.
+  'vpn:vpn': {
+    kind: 'vpn',
+    slot: 'NE',
+    site: 'vpn',
+    puck: 'a',
+    out: 'vpn-out',
+    outPuck: 'c',
+    label: 'VPN SERVER',
+    describe: 'Behind the internet, the VPN server, where the tunnel from your laptop ends.',
+    at: [330, -14],
+    align: 'end',
+    lines: [line('nm-name', 'VPN server'), line('nm-addr', '203.0.113.40')],
+  },
+  'vpn:web': web('EXAMPLE.NET', '203.0.113.80'),
 };

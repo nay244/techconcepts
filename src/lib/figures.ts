@@ -20,6 +20,7 @@ const FIGURES: Record<string, () => string> = {
   switch: () => spot('switch'),
   'load-balancers': () => spot('load-balancers'),
   proxies: () => spot('proxies'),
+  vpn: () => spot('vpn'),
 };
 
 /**

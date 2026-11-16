@@ -85,6 +85,8 @@ const EXPECTED: Record<string, string> = {
   'spot:tcp-udp': '486e78bbae5a044469392f3e4f94cf0ef43d5b1ed566c73aade52acb9cfe9e0c',
   // Drawn for Packets (D13), on 2026-11-15; pinned from its own render, which equals prototypes/d13-packets-spot.svg (the last test).
   'spot:packets': 'd0d8b1e5aa32f37d8bee06e74fbd88fc29734b47844849d9fbd7b48d3d9bb4b4',
+  // Drawn for VPN (D15b), on 2026-11-16; pinned from its own render, which equals prototypes/d15-vpn-spot.svg (the last test).
+  'spot:vpn': '8901f972b9d06da75e129784bab04d3eecd3e3e8c68bebad166bafb1084ed8bc',
   'internet-thumb': '4fe3a6139382805d18be7e4692e5e3609ea7c477463311dd7078d071d616e04f',
 };
 
@@ -207,5 +209,20 @@ test('the Proxies spot has one lit solid and a thread, no light on, no padlock, 
   expect(svg).toContain(
     'aria-label="A box with one cable coming in and one going out, its address, 203.0.113.30, in a window on its front. The cable out is lit, and over it floats a lit tag with the same address, 203.0.113.30."',
   );
-  expect(SPOTS.slice(-2)).toEqual(['load-balancers', 'proxies']);
+  expect(SPOTS.slice(-3)).toEqual(['load-balancers', 'proxies', 'vpn']);
+});
+
+// D15b: the VPN spot is the approved file, byte for byte: one lit part (the tunnel), one light on (the server's), no padlock.
+test('the vpn spot is prototypes/d15-vpn-spot.svg, with one lit part, one light on, its plate label and its words', () => {
+  const file: string = readFileSync('prototypes/d15-vpn-spot.svg', 'utf8');
+  expect(`${spot('vpn')}\n`).toBe(file);
+  const svg = spot('vpn');
+  expect((svg.match(/data-lit/g) ?? []).length).toBe(1);
+  expect((svg.match(/class="lm-led on"/g) ?? []).length).toBe(1);
+  expect(svg).toContain('SEALED TO THE VPN SERVER');
+  expect(svg).not.toMatch(/lock/i);
+  expect(svg).toContain(
+    'aria-label="A laptop on a small café plate, a cup beside it. From the café, a lit, sealed duct runs to a VPN server standing on a plate of its own. From the server, a plain open cable runs on to a site’s page."',
+  );
+  expect(svg).toMatch(/viewBox="36 44 528 372"/);
 });

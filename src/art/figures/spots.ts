@@ -462,10 +462,46 @@ function loadBalancersSpot() {
   return figure("load-balancers", "ONE ADDRESS · THREE SERVERS", out.join(""), "A load balancer at the front with one cable coming in, and behind it a pool of three servers, A, B and C, each cabled to it. Server B’s two lamps are red. A lit request rides the cable to server C.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch', 'load-balancers', 'proxies'] as const;
+// VPN: a laptop on a small café plate, a sealed duct from it to a VPN server on a plate of its own, and an open cable
+// on from the server to a site's page. The duct is the lit part; nothing past the server is sealed, and there is no padlock.
+function vpnSpot() {
+  const out = [], CZ = 2.4, SZ = 2.4;
+  // The café: a small plate, the laptop on it, a cup on its saucer beside it.
+  const CP = { x: -108, y: -2, w: 68, d: 62, r: 4 };
+  out.push(S(k.slabOf(CP, 0, CZ, P, 4, 0.5), { tone: "mid", inner: L(k.sideSeam(CP, 1, P, 4), { tone: "faint" }) }));
+  const LB = { x: -102, y: 6, w: 42, d: 28, r: 3.5 }, LZ = CZ + 3.2, LH = 26;
+  out.push(S(k.slabOf(LB, CZ, 3.2, P, 5, 0.8), { tone: "hi" }));
+  let keys = "";
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 7; c++) keys += k.planOutline({ x: LB.x + 5 + c * 4.6, y: LB.y + 6 + r * 4.6, w: 3.6, d: 3.6, r: 0.6 }, LZ, P, 3);
+  out.push(L(keys, { tone: "lo" }));
+  const LID = { x: LB.x + 1, y: LB.y, w: LB.w - 2, d: 2.4, r: 1 };
+  out.push(S(k.slabOf(LID, LZ, LH, P, 3, 0.5), { tone: "hi" }));
+  out.push(onFaceY(LID.y + LID.d, rect("lm-void", LID.x + 3, LZ + 3, LID.w - 6, LH - 6, 0.8) + rect("lm-slot", LID.x + 6, LZ + LH - 9, 18, 1.4, 0.7) + rect("lm-slot", LID.x + 6, LZ + LH - 12.4, 24, 1.4, 0.7)));
+  out.push(S(k.cylinder(-50, 46, 6.4, CZ, 1, P, 32), { tone: "mid" }), S(k.cylinder(-50, 46, 3.8, CZ + 1, 6.4, P, 32), { tone: "hi" }));
+  out.push(L(k.onTop(k.circleRing(-50, 46, 3, 24), CZ + 7.4, P, true), { tone: "lo" }));
+  // The VPN server, on its plate at the back: one tall box, its drive bays, one light on.
+  const SP = { x: -2, y: -70, w: 52, d: 46, r: 4 }, R = { x: 8, y: -64, w: 30, d: 26, r: 2 }, RH = 44, RF = R.y + R.d;
+  out.push(S(k.slabOf(SP, 0, SZ, P, 4, 0.5), { tone: "mid", inner: L(k.sideSeam(SP, 1, P, 4), { tone: "faint" }) }));
+  out.push(S(k.slabOf(R, SZ, RH, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(R, SZ + RH - 4, P, 3), { tone: "faint" }) }));
+  out.push(onFaceY(RF, [0, 1, 2, 3].map((i) => rect("lm-slot", R.x + 3.4, SZ + RH - 12 - i * 8, R.w - 12, 4, 0.6) + `<circle class="lm-led${i === 0 ? " on" : ""}" cx="${n1(R.x + R.w - 4.6)}" cy="${n1(-(SZ + RH - 10 - i * 8))}" r="1.1"/>`).join("")));
+  out.push(lines([0, 1, 2].map((i) => [[R.x + 5, R.y + 6 + i * 6], [R.x + R.w - 5, R.y + 6 + i * 6]]), SZ + RH));
+  // On from the server: an open cable to the right, and the site's page standing at its end, its lines plain to read.
+  out.push(tubeOf(tubePieces([[50, -38, 1.4], [86, -38, 1.4], [86, 22, 1.4]], 1.3, P, { maxLength: 14 })));
+  const PG = { x: 71, y: 24, w: 30, d: 3, r: 0.8 }, PZ = 2, PH = 40;
+  out.push(S(k.slabOf({ x: PG.x - 2, y: PG.y - 3, w: PG.w + 4, d: PG.d + 6, r: 1.4 }, 0, PZ, P, 3, 0.4), { tone: "mid" }));
+  out.push(S(k.slabOf(PG, PZ, PH, P, 3, 0.4), { tone: "hi" }));
+  out.push(onFaceY(PG.y + PG.d, rect("lm-inlay", PG.x + 3, PZ + PH - 8, PG.w - 6, 5, 1) + [0, 1, 2, 3, 4].map((i) => rect("lm-slot", PG.x + 3, PZ + PH - 14 - i * 5, PG.w - 6 - (i % 2) * 7, 1.6, 0.6)).join("")));
+  // The sealed duct, from the café plate's edge to the server plate's front, round one corner: the lit part.
+  const DW = 9, DH = 8, y0 = 22, xc = 14;
+  const duct = [[-40, y0 - DW / 2], [xc + DW / 2, y0 - DW / 2], [xc + DW / 2, -24], [xc - DW / 2, -24], [xc - DW / 2, y0 + DW / 2], [-40, y0 + DW / 2]].reverse();
+  out.push(S(k.extrude(duct, 0, DH, P, { convex: false, bevel: 0.6 }), { tone: "hi", lit: true }));
+  return figure("vpn", "SEALED TO THE VPN SERVER", out.join(""), "A laptop on a small café plate, a cup beside it. From the café, a lit, sealed duct runs to a VPN server standing on a plate of its own. From the server, a plain open cable runs on to a site’s page.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch', 'load-balancers', 'proxies', 'vpn'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot, 'load-balancers': loadBalancersSpot, proxies: proxiesSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot, 'load-balancers': loadBalancersSpot, proxies: proxiesSpot, vpn: vpnSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

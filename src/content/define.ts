@@ -199,6 +199,11 @@ function checkStart(c: UnitContext, at: string): void {
   }
   const where = `${at}: the scene's start`;
   checkCues(start, where, c, true);
+  // The café (VPN) takes the home plate's place, once per unit: it is not drawn with the phone, and its callout stands where the router's does.
+  if (start.some((q) => q.cue === 'show' && q.arg === 'cafe')) {
+    if (start.some((q) => q.cue === 'show' && q.arg === 'phone')) c.issues.push(`${where}: cues "show cafe" and "show phone" cannot go together; the café has no phone.`);
+    if (Object.hasOwn(c.unit.scene.labels, 'router')) c.issues.push(`${where}: cue "show cafe" draws the listener's callout where the home router's stands, and the scene's labels give "router".`);
+  }
   for (const { cue } of start) {
     if (STATUS_CUES.includes(cue)) c.issues.push(`${where}: cue "${cue}" sets the status, and a start may not; each step sets its own.`);
   }
@@ -216,6 +221,7 @@ function checkStepStart(c: UnitContext, at: string, step: Unit['steps'][number])
     return;
   }
   checkCues(step.start, where, c, true);
+  if (step.start.some((q) => q.cue === 'show' && q.arg === 'cafe')) c.issues.push(`${where}: cue "show cafe" is for the scene's start; the café is a unit's start, not a step's.`);
   for (const { cue } of step.start) {
     if (STATUS_CUES.includes(cue)) c.issues.push(`${where}: cue "${cue}" sets the status, and a start may not; each step sets its own.`);
   }
@@ -249,8 +255,12 @@ function checkMapCues(cues: Cue[], where: string, c: UnitContext, atStart: boole
   for (const { cue, arg } of cues) {
     if (cue !== 'conn' || arg === undefined) continue;
     const m = NET_MAP_CONN_GRAMMAR.exec(arg);
-    const via = m?.[3];
-    if (m === null || via === undefined) continue;
+    if (m === null) {
+      c.issues.push(`${where}: cue "conn ${arg}" needs "<open|seal|close> <from>>[<via>>]<to>[ data| tunnel]".`);
+      continue;
+    }
+    const via = m[3];
+    if (via === undefined) continue;
     const [from, to] = [m[2]!, m[4]!];
     const at = `${where}: cue "conn ${arg}"`;
     if (via === from || via === to) c.issues.push(`${at} runs through "${via}", which is one of its two ends.`);
@@ -277,6 +287,9 @@ function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext, atSta
   if (atStart && (cues ?? []).some((q) => q.cue === 'drop')) c.issues.push(`${where}: cue "drop" is for an event; the start cannot drop a packet.`);
   if (atStart && (cues ?? []).some((q) => q.cue === 'park' || q.cue === 'unpark')) c.issues.push(`${where}: cues "park" and "unpark" are for an event; the start cannot park a tag.`);
   if ((cues ?? []).filter((q) => q.cue === 'drop').length > 1) c.issues.push(`${where}: an event has at most one "drop" cue.`);
+  // Only the café (VPN) has a listener.
+  const cafe = c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'cafe');
+  if (!cafe && (cues ?? []).some((q) => q.cue === 'listener')) c.issues.push(`${where}: cue "listener" needs the café, and the scene's start does not show it (cue "show cafe").`);
   for (const { cue, arg } of cues ?? []) {
     const type = Object.hasOwn(c.parts.cues, cue) ? c.parts.cues[cue] : undefined;
     if (type === undefined) c.issues.push(`${where}: cue "${cue}" is not one the ${c.figure} figure has.`);
@@ -455,7 +468,10 @@ function entryRouter(place: string): string | undefined {
   if (NET_MAP_ROUTERS.includes(place)) return place;
   if (place === 'resolver') return 'a';
   if (place === 'laptop' || place === 'router' || place === 'phone') return 'isp';
-  for (const plate of Object.values(NET_MAP_LAYERS)) if (plateSites(plate).includes(place)) return 'puck' in plate ? plate.puck : 'c';
+  for (const plate of Object.values(NET_MAP_LAYERS)) {
+    if (plate.kind === 'vpn' && place === plate.out) return plate.outPuck;
+    if (plateSites(plate).includes(place)) return 'puck' in plate ? plate.puck : 'c';
+  }
   return undefined;
 }
 
@@ -532,6 +548,7 @@ function readPark(arg: string | undefined, where: string, c: UnitContext): { pla
   }
   if (place === 'laptop') {
     if (isShown(partsAt(c.unit, c.step), 'phone')) c.issues.push(`${at}: the laptop's column lies where the phone does, and the scene's start shows the phone.`);
+    if (isShown(partsAt(c.unit, c.step), 'cafe')) c.issues.push(`${at}: the laptop's column lies where the café's listener does, and the scene's start shows the café.`);
     if (Object.hasOwn(c.unit.scene.labels, 'router')) c.issues.push(`${at}: the laptop's column lies under the home router's callout, and the scene's labels give "router".`);
   }
   return { place, bay, tag };

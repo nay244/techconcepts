@@ -1,6 +1,6 @@
 // Only types from the drawing module: its code is for the build, and stays out of the page.
 import type { NetMapData } from '../../art/scenes/net-map';
-import { NET_MAP_CONN_GRAMMAR, NET_MAP_HIDEABLE, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_PART_SENTENCES, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
+import { NET_MAP_CONN_GRAMMAR, NET_MAP_HIDEABLE, NET_MAP_INSTEAD, NET_MAP_LAPTOP_ADDR, NET_MAP_LAYERS, NET_MAP_OPTIONAL, NET_MAP_PART_SENTENCES, NET_MAP_ROUTERS, NET_MAP_TAG_MAX } from '../../art/scenes/net-map-layers';
 import type { Cue, MessageEvent, SceneEvent } from '../../content/schema';
 import type { DriverModule, PlayOptions, SceneDriver, SceneView } from '../driver';
 import { animate, easeInOut, wait } from '../motion';
@@ -17,9 +17,10 @@ import { animate, easeInOut, wait } from '../motion';
  * What a message leaves once it lands are its cues, and `show` paints all of them that have played, in order:
  * - `status <text>`: the laptop's status line; `status-known` and `status-done` style it (with or without the
  *   status of the same event), and a new status without either is plain again;
- * - `conn <open|seal|close> <from>><to>[ data]`: a connection that stays lit, glows brighter once sealed, and goes
- *   once closed; `data` is FTP's dashed second line, drawn above the first; `<from>><via>><to>` runs through a place
- *   on the way, as one line (Proxies' tunnel through the forward proxy);
+ * - `conn <open|seal|close> <from>><to>[ data| tunnel]`: a connection that stays lit, glows brighter once sealed, and
+ *   goes once closed; `data` is FTP's dashed second line, drawn above the first; `tunnel` is VPN's wide band, drawn
+ *   round the cables it runs along; `<from>><via>><to>` runs through a place on the way, as one line (Proxies' tunnel
+ *   through the forward proxy);
  * - `fresh`: a new visit: the page, the padlock and every lit connection go;
  * - `page text|full`: the page on the laptop's screen, its text first, then all of it;
  * - `lock`: the padlock in the laptop's address bar;
@@ -30,6 +31,10 @@ import { animate, easeInOut, wait } from '../motion';
  *   and `hide direct` take Proxies' forward proxy and the web server's own callout off again;
  * - `show phone` (a start only): the phone, which every other map leaves off, lies on the home plate; `show proxy`
  *   and `show reverse` draw Proxies' forward proxy and the site's reverse proxy;
+ * - `show cafe` (a start only): the home plate is a café's, with its own words, its Wi-Fi in place of the laptop's
+ *   cable, and someone else on it, listening; what it takes the place of (`NET_MAP_INSTEAD`) is left off;
+ * - `listener <reads|outside>` (with `show cafe`): the listener's glow, with what it can read (`reads`: the request,
+ *   its address and its words) or only where it goes (`outside`);
  * - `park <place> <bay> <TAG>`: a copy of the tag waits, unlit, in that bay (the laptop's four, the web server's four, a
  *   router's top) until a message with its tag takes it or `unpark laptop` (the only place that unparks) sends the laptop's tags into the laptop's
  *   screen; a gap (a dashed outline) marks an empty bay with a parked tag before and after it. A note that parks takes
@@ -92,6 +97,11 @@ const RESOLVER_SENTENCE = ' Behind it, the DNS resolver, a card-index cabinet.';
 /** As drawn, home is a laptop and its router; a map that shows the phone says so. */
 const HOME_SENTENCE = 'a laptop and its router.';
 const HOME_WITH_PHONE = 'a laptop, a phone and their router.';
+/** A map that shows the café says so, in place of home. */
+const HOME_PLACE = 'your home: a laptop and its router.';
+const CAFE_PLACE = 'a café: your laptop, the café’s router, and someone else on its Wi-Fi, listening.';
+/** What the listener on the café's Wi-Fi can make out: all of a plain request, or only where a sealed one goes. */
+const HEARS = ['reads', 'outside'] as const;
 
 /** A `conn` cue, read. */
 export interface ConnCue {
@@ -102,13 +112,15 @@ export interface ConnCue {
   via?: string;
   /** FTP's second line, for the data, beside the control line. */
   data: boolean;
+  /** VPN's tunnel: a wide band round the cables, not a line on them. */
+  tunnel: boolean;
 }
 
-/** Reads a `conn` cue's argument, `"<open|seal|close> <from>>[<via>>]<to>[ data]"`, or throws: anything else is a mistake in the lesson. */
+/** Reads a `conn` cue's argument, `"<open|seal|close> <from>>[<via>>]<to>[ data| tunnel]"`, or throws: anything else is a mistake in the lesson. */
 export function parseConn(arg: string): ConnCue {
   const m = NET_MAP_CONN_GRAMMAR.exec(arg);
-  if (m === null) throw new Error(`The network map's conn cue needs "<open|seal|close> <from>>[<via>>]<to>[ data]", not "${arg}".`);
-  return { action: m[1] as ConnCue['action'], from: m[2]!, to: m[4]!, ...(m[3] === undefined ? {} : { via: m[3] }), data: m[5] !== undefined };
+  if (m === null) throw new Error(`The network map's conn cue needs "<open|seal|close> <from>>[<via>>]<to>[ data| tunnel]", not "${arg}".`);
+  return { action: m[1] as ConnCue['action'], from: m[2]!, to: m[4]!, ...(m[3] === undefined ? {} : { via: m[3] }), data: m[5] === ' data', tunnel: m[5] === ' tunnel' };
 }
 
 /** A `park` cue, read: where a copy of the tag waits. */
@@ -220,7 +232,9 @@ interface MapState {
   addr: string;
   url: string;
   /** Lit connections in the order they opened, by id: the route, or the route and ` data`. */
-  conns: Map<string, { from: string; to: string; via?: string; data: boolean; sealed: boolean }>;
+  conns: Map<string, { from: string; to: string; via?: string; data: boolean; tunnel: boolean; sealed: boolean }>;
+  /** What the listener on the café's Wi-Fi makes out, or '' when it is dark. */
+  hear: '' | (typeof HEARS)[number];
   page: '' | 'text' | 'full';
   lock: boolean;
   trays: Map<string, boolean>;
@@ -266,6 +280,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   const busies = bySite('busy', '[id*="-busy-"]');
   const holds = bySite('hold', '.nm-hold');
   const lock = holds.get('lock') ?? [];
+  /** The listener on the café's Wi-Fi: only a map that can show the café has one. */
+  const listener = root.querySelector<SVGGElement>('#nm-listener');
   const homeLeds = [1, 2, 3].map((i) => part(`nm-home-led-${i}`));
   const tags = Array.from({ length: NET_MAP_TAG_MAX }, (_, i) => part(`nm-tag-${i + 1}`));
   const over = part('nm-over');
@@ -328,6 +344,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
       conns: new Map(),
       page: '',
       lock: false,
+      hear: '',
       trays: new Map(),
       parks: new Map(),
       drop: null,
@@ -350,7 +367,10 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
         else if (cue === 'addr') s.addr = arg;
         else if (cue === 'url') s.url = arg;
         else if (cue === 'lock') s.lock = true;
-        else if (cue === 'fresh') {
+        else if (cue === 'listener') {
+          if (!HEARS.includes(arg as (typeof HEARS)[number])) throw new Error(`The network map's listener cue needs "reads" or "outside", not "${arg}".`);
+          s.hear = arg as (typeof HEARS)[number];
+        } else if (cue === 'fresh') {
           s.page = '';
           s.lock = false;
           s.conns.clear();
@@ -389,9 +409,9 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
   function connect(s: MapState, c: ConnCue): void {
     const route = c.via === undefined ? `${c.from}>${c.to}` : `${c.from}>${c.via}>${c.to}`;
     routeOf(map, c);
-    const id = c.data ? `${route} data` : route;
+    const id = c.data ? `${route} data` : c.tunnel ? `${route} tunnel` : route;
     const line = s.conns.get(id);
-    if (c.action === 'open') s.conns.set(id, { from: c.from, to: c.to, ...(c.via === undefined ? {} : { via: c.via }), data: c.data, sealed: false });
+    if (c.action === 'open') s.conns.set(id, { from: c.from, to: c.to, ...(c.via === undefined ? {} : { via: c.via }), data: c.data, tunnel: c.tunnel, sealed: false });
     else if (line === undefined) throw new Error(`The conn cue ${c.action === 'seal' ? 'seals' : 'closes'} ${id}, which is not open.`);
     else if (c.action === 'seal') line.sealed = true;
     else s.conns.delete(id);
@@ -458,7 +478,7 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     conns.replaceChildren(
       ...[...s.conns.values()].map((c) => {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-        line.setAttribute('class', `nm-conn${c.data ? ' alt' : ''}${c.sealed ? ' sealed' : ''}`);
+        line.setAttribute('class', `nm-conn${c.data ? ' alt' : ''}${c.tunnel ? ' tunnel' : ''}${c.sealed ? ' sealed' : ''}`);
         if (c.data) line.setAttribute('transform', DATA_LINE_LIFT);
         line.setAttribute('points', pointsOf(rideOf(c.from, c.to, c.via).flat));
         return line;
@@ -466,6 +486,8 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     );
     for (const [site, els] of holds) if (site !== 'lock') light(els, s.trays.get(site) ?? false);
     light(lock, s.lock);
+    if (s.hear === '') listener?.removeAttribute('data-hear');
+    else listener?.setAttribute('data-hear', s.hear);
     for (const el of page) fade(el, wants(s, el) ? 1 : 0);
     if (s.drop === null) fade(discard, 0);
     else {
@@ -475,11 +497,13 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     paintParks(s.parks);
     for (const el of root.querySelectorAll<SVGElement>('[data-base]')) {
       const base = el.dataset.base!;
-      el.toggleAttribute('data-hidden', s.hidden.has(base) || (NET_MAP_OPTIONAL.includes(base) && !s.shown.has(base)));
+      const instead = Object.entries(NET_MAP_INSTEAD).some(([shown, gone]) => gone === base && s.shown.has(shown));
+      el.toggleAttribute('data-hidden', s.hidden.has(base) || instead || (NET_MAP_OPTIONAL.includes(base) && !s.shown.has(base)));
     }
     // What the figure says it draws is what it draws: no resolver, a phone and a stranger only when shown.
     let words = s.hidden.has('resolver') ? described.replace(RESOLVER_SENTENCE, '') : described;
     if (s.shown.has('phone')) words = words.replace(HOME_SENTENCE, HOME_WITH_PHONE);
+    if (s.shown.has('cafe')) words = words.replace(HOME_PLACE, CAFE_PLACE);
     for (const [base, sentence] of Object.entries(NET_MAP_PART_SENTENCES)) if (s.shown.has(base) && !s.hidden.has(base)) words += ` ${sentence}`;
     for (const key of s.layers) {
       const sentence = Object.hasOwn(NET_MAP_LAYERS, key) ? NET_MAP_LAYERS[key]!.describe : undefined;

@@ -117,8 +117,8 @@ test('18h: a conn through a place needs real places, the middle neither end, and
 test('18i: the cues hide and show take only their parts, and the messages say which', () => {
   const found = (cue: Cue) => issues((l) => (unit(l).scene.start = [{ cue: 'hide', arg: 'resolver' }, cue])).join('\n');
   expect(found({ cue: 'hide', arg: 'laptop' })).toContain('cue "hide" takes "resolver", "proxy" or "direct", not "laptop"');
-  expect(found({ cue: 'show', arg: 'resolver' })).toContain('cue "show" takes "phone", "proxy" or "reverse", not "resolver"');
-  expect(found({ cue: 'show', arg: 'direct' })).toContain('cue "show" takes "phone", "proxy" or "reverse", not "direct"');
+  expect(found({ cue: 'show', arg: 'resolver' })).toContain('cue "show" takes "phone", "proxy", "reverse" or "cafe", not "resolver"');
+  expect(found({ cue: 'show', arg: 'direct' })).toContain('cue "show" takes "phone", "proxy", "reverse" or "cafe", not "direct"');
   expect(found({ cue: 'hide', arg: 'reverse' })).toContain('cue "hide" takes "resolver", "proxy" or "direct", not "reverse"');
 });
 
@@ -177,12 +177,12 @@ test('18m2: a step carries `start` in the schema, and a lesson of another figure
 });
 
 test('19a: parseConn reads a place on the way, and a two-place conn has no via key', () => {
-  expect(parseConn('open laptop>proxy>origin')).toEqual({ action: 'open', from: 'laptop', via: 'proxy', to: 'origin', data: false });
+  expect(parseConn('open laptop>proxy>origin')).toEqual({ action: 'open', from: 'laptop', via: 'proxy', to: 'origin', data: false, tunnel: false });
   expect('via' in parseConn('open laptop>web')).toBe(false);
 });
 
 test('19b: a sealed through-line reads with its via and data flag; four places throw', () => {
-  expect(parseConn('seal laptop>proxy>origin data')).toEqual({ action: 'seal', from: 'laptop', via: 'proxy', to: 'origin', data: true });
+  expect(parseConn('seal laptop>proxy>origin data')).toEqual({ action: 'seal', from: 'laptop', via: 'proxy', to: 'origin', data: true, tunnel: false });
   expect(() => parseConn('open a>b>c>d')).toThrow('<from>>[<via>>]<to>');
 });
 
