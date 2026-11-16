@@ -588,7 +588,7 @@ export default defineLesson({
           {
             id: 'fact-address',
             label: 'Your address on the VPN’s side',
-            value: 'the VPN server gives you one; your packets inside the tunnel carry it as their source, and sites see your requests come from it',
+            value: 'the VPN server gives you one during IKE’s setup, in IKE_AUTH; your packets inside the tunnel carry it as their source, and sites see your requests come from it',
             cite: [IKE_REMOTE, IKE_ADDRESS, PA_NEW_ADDRESS, CISCO_WIFI_ADDRESS],
           },
           {
