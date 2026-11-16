@@ -65,14 +65,19 @@ describe('TrackRoute', () => {
   });
 
   test('a lesson not ready yet is an outline stop with its number, Not ready yet and no link', () => {
-    render(route());
-    const soon = parts.flatMap((p) => p.lessons).find((l) => !l.ready)!;
+    // Every Networking lesson is ready now, so the last one is shown as not ready for this test only.
+    const vpn = entries.find((e) => e.slug === 'vpn')!;
+    const planned = entries.map((e) => (e === vpn ? { ...vpn, available: false } : e)) as typeof entries;
+    const plannedParts = trackParts(networkingTrack, planned, (e: AvailableSummary) => getLesson(e.slug)!, lessonStamp);
+    render(<TrackRoute parts={plannedParts} entries={planned} known={known} />);
+    const soon = plannedParts.flatMap((p) => p.lessons).find((l) => !l.ready)!;
+    expect(soon.title).toBe('VPN');
     const stop = stopOf(soon.title);
     expect(stop).toHaveClass('stop--soon');
     expect(within(stop).getByText('Not ready yet')).toBeInTheDocument();
     expect(within(stop).getAllByText(soon.n).length).toBeGreaterThan(0);
     expect(within(stop).queryByRole('link')).toBeNull();
-    expect(screen.getAllByText('Not ready yet')).toHaveLength(entries.length - ready.length);
+    expect(screen.getAllByText('Not ready yet')).toHaveLength(planned.filter((e) => !e.available).length);
   });
 
   test('the figure link is out of the tab order and hidden; the title link is the accessible one', () => {
