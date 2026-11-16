@@ -968,3 +968,11 @@ Planned on 2026-11-15 in a session of its own on Opus 5.5, beside job 14, under 
 - **A case that needs CSS must be an end-to-end test.** The build's blocker (focus on a hidden panel) had a unit test that could not fail in jsdom. The spec review should mark which cases only a real browser can try.
 - **The build fixes were exactly what the reviewer named:** next time they can go to a Haiku `builder` (job 13's rule), with Sonnet if it fails.
 - **`net-map.test.ts`'s "phone is hidden at every position" test timed out under load on `revamp` too.** Fixed after the job at the owner's word ("Yes, fix it here"): that test alone gets a 20 s limit (about 2 s alone, 6 to 7 s at load 13, 10.6 s with two suites at once at load 20). With two suites at once, four other heavy scene tests (`17c`, TCP/UDP's and two "fresh driver" tests) also time out; each passes in a single run, including at load 13, so they are left as they are.
+
+# Job 16: Home's critique findings
+
+Planned on 2026-11-15 in a session of its own on Opus 5.5, started from the session that closed job 15, after the owner picked Home (direction 2.73). Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S18 | scout | Haiku | 1 | 155,440 (the agent's reported total) | `prototypes/s18-home-facts.md`. No code shared with the lesson console; the phone scene's cause (one 685-unit frame) is shared with the Lesson page's phone figures; C's cause is the radio groups before the panel, never `display:none`; header "Start learning" is `SiteHeader.astro:48`, set by the owner on 2026-11-09. |
