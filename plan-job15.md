@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 15: the lesson's flow
 
-**Status: D14 at the design gate.** **The owner's go is given** (2026-11-15, direction 2.69): "Lesson flow", then "Design now". The design gate stays: D14 comes to the owner as a clickable prototype with its spec, and nothing is built until the owner approves one of its two Play variants. This plan covers what 2.69 sets and nothing more, so D14 starts without another go.
+**Status: D14 at the design gate (2026-11-15), waiting for the owner: variant A, variant B, or neither.** The designer recommends A. **The owner's go is given** (2026-11-15, direction 2.69): "Lesson flow", then "Design now". The design gate stays: D14 comes to the owner as a clickable prototype with its spec, and nothing is built until the owner approves one of its two Play variants. This plan covers what 2.69 sets and nothing more, so D14 starts without another go.
 
 ## Inputs
 
@@ -79,3 +79,5 @@ The phone figures' legibility and Subnetting's hidden bits board (the critique's
 | Unit | Who (model) | Tries | Growth | Result |
 |---|---|---|---|---|
 | S17 | scout (Haiku), in the session that ran the critique | 1 | not counted here | Facts saved at `fa5db4a`. |
+| D14 | designer (Opus 5.5) | 1 (stopped once by the usage limit, continued with its context) | 347,229 (the agent's reported total) | `prototypes/d14-lesson-flow.html` and `.md` (16 sections, 30 acceptance checks). Recommends A. HTTP step 1 at 1×: today 2.8 s; A waits for the reader (Play all 2.7 s); B 22.1 s, a countdown from 21 s. Phone bar stays four controls at 48px, the forward button 183×48 where › was. Open for the owner: `see` pointers on every question (an author's task), three lessons' idle words that say "Press Play", A's Play all at B's pace. |
+| D14 look | orchestrator (Opus 5.5) | 1 | not counted | Played headless (Playwright, `file://`) at 1440×900 and 375×812, light and dark, both variants: Overview, five steps by the forward button, Learn, Practice, one right and one wrong answer, the end. No page errors, no sideways scroll in any of the eight runs. Forward button at each slot as the spec's §3 table (A: Watch step 1, Next step ×4, Go to Learn, Go to Practice, Next lesson; B: Play the steps, then the same with a countdown). A: step 1 still on screen 8 s after arriving, nothing moved. B: step 1's countdown ran 21 s to 1 s, one second a second, then step 2 started at 17 s. Wrong answer: ✕ "Not this one" on the option with a hatch, ✕ before "Not quite.", "Back to Learn: Status code"; right keeps its green with ✓ "Right". Practice ticked in the outline once both questions had picks. The four end cases at 1440 dark read as the spec's §7 table; "Back to the track" shows twice at 1440 (block and bar) as specified, once on a phone. The key line shows in the log head at 1440. Feedback words match `what-is-http.ts`. |
