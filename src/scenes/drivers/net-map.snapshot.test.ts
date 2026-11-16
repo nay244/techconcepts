@@ -63,6 +63,9 @@ function take(slugs?: Set<string>): Snapshot {
         if (i < 0) continue;
         const view = sceneViewOf(l.units[slot.unit]!, derived);
         driver.show(view);
+        // Every recorded lesson predates the café and the VPN: home is never hidden, and no café is ever shown.
+        expect(root.querySelector('[data-base="home"][data-hidden]'), `${l.slug}/${p}/${i}: home hidden`).toBeNull();
+        expect(root.querySelector('[data-base="cafe"]:not([data-hidden])'), `${l.slug}/${p}/${i}: café shown`).toBeNull();
         const copy = root.cloneNode(true) as SVGSVGElement;
         for (const g of copy.querySelectorAll('[data-layer]')) if (!view.layers.includes(g.getAttribute('data-layer')!)) g.remove();
         for (const g of copy.querySelectorAll('[data-base="cafe"]')) g.remove();

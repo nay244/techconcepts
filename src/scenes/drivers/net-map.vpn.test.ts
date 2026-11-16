@@ -58,7 +58,9 @@ const viewAt = (step: number, played = 0): SceneView => {
   const p = positionOf(lesson, 0, 'step', step);
   return sceneViewOf(unit, deriveState(lesson, p, Math.min(played, stepEvents(lesson, p).length)));
 };
-const eventAt = (step: number, n: number): MessageEvent => stepEvents(lesson, positionOf(lesson, 0, 'step', step))[n - 1] as MessageEvent;
+/** The view at a slot that is not a step (Learn, Practice), once its events are not yet played. */
+const viewOfSlot = (kind: 'learn' | 'practice'): SceneView => sceneViewOf(unit, deriveState(lesson, positionOf(lesson, 0, kind), 0));
+const eventAt =(step: number, n: number): MessageEvent => stepEvents(lesson, positionOf(lesson, 0, 'step', step))[n - 1] as MessageEvent;
 const all = unit.steps.flatMap((s) => s.events);
 const text = (root: SVGSVGElement, id: string): string => root.querySelector(`#${id}`)!.textContent ?? '';
 const hear = (root: SVGSVGElement): string | null => root.querySelector('#nm-listener')!.getAttribute('data-hear');
@@ -94,6 +96,12 @@ test('11: the laptop keeps its address, 192.168.1.100, in every state, at Learn 
   for (const [s, n] of STATES) {
     driver.show(viewAt(s, n));
     expect(text(root, 'nm-lapAddr'), `${s}.${n}`).toBe('192.168.1.100');
+  }
+  for (const kind of ['learn', 'practice'] as const) {
+    driver.show(viewOfSlot(kind));
+    expect(text(root, 'nm-lapAddr'), kind).toBe('192.168.1.100');
+    expect(lockOn(root), kind).toBe(true);
+    expect(hear(root), kind).toBe('outside');
   }
   expect(all.some((e) => e.type === 'message' && e.cues?.some((c) => c.cue === 'addr'))).toBe(false);
 });
@@ -162,6 +170,13 @@ test('15: the page from 1.3, the address bar https from 5.1, the padlock only at
     expect(lockOn(root), `lock ${s}.${n}`).toBe(s === 5 && n === 6);
   }
   expect(lockOn(root)).toBe(true);
+  for (const kind of ['learn', 'practice'] as const) {
+    driver.show(viewOfSlot(kind));
+    expect(lockOn(root), kind).toBe(true);
+    expect(pageText(root).every((o) => o === '1'), `page ${kind}`).toBe(true);
+    expect(text(root, 'nm-url'), `url ${kind}`).toBe('https://example.net');
+    expect(hear(root), kind).toBe('outside');
+  }
 });
 
 test('16: a cue the map refuses throws before the figure changes', () => {
@@ -179,6 +194,16 @@ test('16: a cue the map refuses throws before the figure changes', () => {
   const v1 = viewAt(1, 0);
   expect(() => driver.show({ ...v1, cues: [...v1.cues, { cue: 'conn', arg: 'seal laptop>vpn tunnel', eventId: 'x', current: true }] })).toThrow('seals laptop>vpn tunnel, which is not open');
   expect(root.outerHTML).toBe(fresh);
+});
+
+test('16b: with only laptop>vpn tunnel open, sealing laptop>vpn throws, and the figure does not change', () => {
+  const { root, driver } = mount();
+  driver.show(viewAt(2, 1));
+  expect(conns(root).map((l) => l.getAttribute('class'))).toEqual(['nm-conn tunnel']);
+  const looks = root.outerHTML;
+  const view = viewAt(2, 1);
+  expect(() => driver.show({ ...view, cues: [...view.cues, { cue: 'conn', arg: 'seal laptop>vpn', eventId: 'x', current: true }] })).toThrow('seals laptop>vpn, which is not open');
+  expect(root.outerHTML).toBe(looks);
 });
 
 test('17: the band is drawn after the cables and under the things and the tags', () => {
@@ -228,7 +253,7 @@ const tagWords = (root: SVGSVGElement): string[] => [...root.querySelectorAll<SV
 test.each([
   [4, 2, 'GET /'],
   [4, 4, 'PAGE'],
-])('19: mid-ride at %i.%i the trail is the plain one, the tag reads %s, the only band is the tunnel, and the server’s out site is the lit one', async (s, n, word) => {
+])('19: mid-ride at %i.%i the trail is the plain one, the tag reads %s, the only band is the tunnel, and at 0.2 the sender’s light is on for 4.2 and the vpn site never', async (s, n, word) => {
   const { root, land } = await midRide(s, n, 0.5);
   expect(root.querySelector('#nm-trail')!.getAttribute('class')).toBe('nm-trail');
   expect(tagWords(root)).toEqual([word]);
@@ -237,7 +262,7 @@ test.each([
   // The sender's light goes off a quarter of the way along (so not at 0.5): early in the ride, the out site's is the one on.
   const early = await midRide(s, n, 0.2);
   const lit = (id: string): boolean => early.root.querySelector(`#${id}`)!.classList.contains('on');
-  expect(lit(n === 2 ? 'nm-vpn-busy-vpn-out' : 'nm-vpn-busy-vpn-out')).toBe(n === 2);
+  expect(lit('nm-vpn-busy-vpn-out')).toBe(n === 2);
   expect(lit('nm-vpn-busy-vpn')).toBe(false);
   await early.land();
 });

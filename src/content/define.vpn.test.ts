@@ -146,3 +146,13 @@ test('22 (E22): the fixture’s messages keep to the routes the spec draws, with
   const conns = cues.filter((c) => c.cue === 'conn').map((c) => c.arg);
   expect(conns).toEqual(['open laptop>vpn tunnel', 'seal laptop>vpn tunnel']);
 });
+
+test('9g (case 7): a message riding "via" a whose route passes router b twice is one issue; the fixture without it passes', () => {
+  const found = vpn((l) => {
+    const get = events(l).find((e): e is MessageEvent => e.id === 's4-get' && e.type === 'message')!;
+    get.via = 'a';
+  });
+  expect(found).toHaveLength(1);
+  expect(found[0]).toContain('riding "via" a passes router b twice');
+  expect(vpn()).toEqual([]);
+});
