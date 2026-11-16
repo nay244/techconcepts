@@ -236,3 +236,11 @@ test('15: the figure’s description carries the forward proxy’s sentence at s
   }
   expect(original).toContain('DNS resolver');
 });
+
+test('19c: a line opened through the proxy is named with its via: sealing laptop>origin names a line that is not open', () => {
+  const { driver } = mount();
+  const view = end(2);
+  const cue = { cue: 'conn', arg: 'seal laptop>origin', eventId: 'x', current: true };
+  expect(() => driver.show({ ...view, cues: [...view.cues, cue] })).toThrow('seals laptop>origin, which is not open');
+  expect(() => driver.show({ ...view, cues: [...view.cues, { ...cue, arg: 'seal laptop>proxy>origin' }] })).not.toThrow();
+});
