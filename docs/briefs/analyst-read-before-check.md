@@ -30,4 +30,9 @@ Two of three lessons were a near-pass with three items each. Every one was of th
 6. **Every Go deeper sentence and every clause the author added** rests on a defining document or on two publishers. A clause on one publisher is ruled: a second publisher, or the clause cut.
 7. **The absolutes in the facts most items trace to:** "every", "only", one range, one number. Rule "often", "usually" or the second range where the sources say so.
 
+## Since job 14 (check these too)
+
+8. **Each half of a claim and each item of a list** against its own passages: two publishers, or a defining document, for each.
+9. **The scene's legend and every label on the figure** as traced items: each needs a Learn part on the scene's traces that states it (Switch's "Frame for everyone" held a check).
+
 For a glossary group, run `npm run fact-check -- glossary/<id>` and read every item as the fact-checker will, ties included.

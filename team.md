@@ -976,4 +976,4 @@ Planned on 2026-11-16 in a fresh session on Opus 5.5, under the owner's go "Cont
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
 | S18 | scout | Haiku | 1 | 266,140 | `prototypes/s18-batch-4-facts.md` (saved by the orchestrator from the transcript): stops 18 and 20, VPN the track's last (its end row already exists, tested on What is TLS); RFC 9110 and NIST SP 800-77r1 registered, no IPsec RFC, RFC 7239 or "what is a proxy/VPN" page; no checked prose on proxies or IPsec, Load Balancers never says "proxy" by test; no compare mode, `NE` free, no tunnel or proxy drawn; e2e helpers after B17. |
-| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: thirteen decisions, no compare mode, D15 in two parts, B18a and B18b one after another, B19 on Haiku. Estimate 3.2 to 4.2 million; batch stop 4.2 million. Waiting for the owner's go. |
+| Plan | orchestrator | Opus 5.5 | 1 | not counted | `plan.md`: thirteen decisions, no compare mode, D15 in two parts, B18a and B18b one after another, B19 on Haiku. Estimate 3.2 to 4.2 million; batch stop 4.2 million. The owner said go ("Go"). |

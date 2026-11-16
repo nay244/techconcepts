@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 16: Networking Concepts' batch 4, Proxies and VPN
 
-**Status: planned (2026-11-16, direction 2.74), waiting for the owner's go on this plan.** The owner's go for the job: "Continue with Batch 4" (2.73).
+**Status: under way.** Planned 2026-11-16 (direction 2.74); the owner's go for the job, "Continue with Batch 4" (2.73), and on this plan, "Go" (2026-11-16).
 
 ## Inputs
 

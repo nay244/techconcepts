@@ -45,3 +45,8 @@ Keep your working notes: after the lesson passes its check you will be asked for
 - **The unit's full name needs a Learn part.** The unit's own `backing` shows the protocol's full name and its purpose line: a Learn part on its traces must state the expansion (a fact "Stands for": the full name, citing the standard's title or abstract) and another must state the purpose in so many words. Two of three first checks failed on this.
 - **Read each traced item clause by clause against the exact words of the parts it traces.** The other failures were: an Overview fact saying a thing is kept on the server, traced to parts that say it of something else; a step's narrative naming an idea or a contrast no Learn part states; a port number in a cited sentence that is in the document but not in the cited sections.
 - **To run the tests that hold your lesson's words before a report exists:** `npx vitest run --mode development` (the gate only warns there). Only `src/lib/checked.test.ts` should fail. Other heavy jobs may be running on this machine: if a playback or animation test fails once, run that file again alone before believing it.
+
+## What batch 3 of the new lessons taught (added for job 16)
+
+- **A scene's legend and every label on the figure is a traced item.** Switch's second check held on its legend "Frame for everyone": the scene's traces did not name the parts that state a broadcast. List every legend and label in the scene's backing and give each a Learn part on its traces.
+- **Each half of a claim, and each item of a list, needs its own two publishers** (or a defining document). The first checks of Packets and Switch each held one half of one claim on one publisher.
