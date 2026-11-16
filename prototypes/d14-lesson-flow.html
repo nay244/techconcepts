@@ -277,7 +277,7 @@ h2, h3 { font-family: var(--display); color: var(--ink-strong); }
 .console__log { grid-column: 1 / -1; grid-row: 2; display: flex; flex-direction: column; overflow: hidden; }
 .log__head { display: flex; align-items: center; gap: 20px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
 .log__name { margin: 0; padding: 3px 7px; border: 1px solid var(--line-strong); border-radius: 2px; color: var(--ink-strong); font: 700 11px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
-.log__fold { display: none; }
+.log__fold { display: none; white-space: nowrap; }
 .console[data-reading] .log__fold { display: inline-grid; }
 .log__legend { display: flex; gap: 4px 16px; margin: 0; padding: 0; color: var(--muted); font: 400 13px/1.2 var(--sans); list-style: none; white-space: nowrap; }
 .log__legend li { display: inline-flex; align-items: center; gap: 6px; }
@@ -315,12 +315,22 @@ h2, h3 { font-family: var(--display); color: var(--ink-strong); }
 .log__keys kbd { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; background: var(--tile); color: var(--ink-strong); font: 500 11.5px/1 var(--mono); }
 .log__keys kbd + kbd { margin-inline-start: -2px; }
 .log__keys kbd:not(:first-child) { margin-inline-start: 6px; }
-@media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+/* The log head is a size container in every desktop layout (and the tablet on its side, not drawn here). */
+@media (min-width: 1100px) {
   .log__head { container-type: inline-size; }
 }
+/* The key line: a fine pointer and room. */
 @container (min-width: 970px) {
-  .log__keys { display: flex; }
-  .log__keys + .console__controls { margin-inline-start: 4px; }
+  @media (hover: hover) and (pointer: fine) {
+    .log__keys { display: flex; }
+    .log__keys + .console__controls { margin-inline-start: 4px; }
+  }
+}
+/* Erratum E5: under 830px of log head (about 1165px wide on a desktop) the play button drops its words, as on a phone,
+   so a 179px legend item ("Broadcast to everyone") keeps clear of the speed button. 118px becomes 36px. */
+@container (max-width: 829.98px) {
+  .console__controls .cbtn--alt { min-width: 36px; width: 36px; padding: 0; justify-content: center; }
+  .console__controls .cbtn--alt .cbtn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 
 .toast { position: fixed; left: 50%; bottom: 84px; z-index: 30; margin: 0; padding: 10px 14px; transform: translate(-50%, 8px); border: 1px solid var(--line-strong); border-radius: var(--r-btn); background: var(--ink-strong); color: var(--bg); font: 500 14px/1.3 var(--sans); opacity: 0; pointer-events: none; transition: opacity 160ms, transform 160ms var(--ease-out); max-width: calc(100vw - 32px); }

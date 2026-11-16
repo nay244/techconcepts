@@ -145,6 +145,25 @@ No document names a narrowest phone. The e2e phone is 390 and the design width i
 - **A following unit reads "Next step".** Its Overview is the next place in the same lesson. "Next lesson" would be false, and "Next step" goes on as it did everywhere before.
 - **No next lesson keeps "Next lesson", disabled.** Only the three labels are allowed. The disabled button keeps the bar's slots and the forward button's width in place, and it says plainly that this is the end. The end block's "Back to the track" carries the way on.
 
+**Erratum E5, D14's designer: when the log head is narrow, the play button drops its words.** Found in B17's spec review, on the site at 1100×800, DHCP Learn, with the log open.
+
+- **The problem.** The log head is 794px. "Show log" is 77px. Today's controls are 297px. The new desktop row is 52 + 36 + 118 + 36 + 152 + 4×6 = 418px, which leaves the legend about 133px. A legend item can be 179px ("Broadcast to everyone", in DHCP, ARP, What is DHCP and What is IP), and it runs about 46px onto the speed button from 1100 to about 1145px wide.
+- **What gives way:** the play button's words. Below a 830px log-head content box, the play button is icon-only, as on a phone.
+  - It is 36×34, the same tile as Back and replay.
+  - Its words ("Play all" or "Pause") stay as its `aria-label`, and its title is unchanged.
+  - The row is then 336px (82px less), and the legend gets about 215px at 1100, which leaves 36px spare over 179.
+- **Nothing else changes.** The legend does not truncate, the head stays one line, and the forward button keeps its 152px minimum and its words.
+- **Why the play button.** Its icon already carries it on a phone, while the forward button's words are the one label the reader needs at every step.
+- **CSS rules:**
+  - The log head is a size container (`container-type: inline-size`) in every desktop layout: ≥1100, and the tablet on its side (`console.css:76`). This applies with any pointer, so the key line's fine-pointer test moves inside its container rule (`@container (min-width: 970px) { @media (hover: hover) and (pointer: fine) { … } }`).
+  - `@container (max-width: 829.98px)`: `.cbtn--alt` becomes `width: 36px; min-width: 36px; padding: 0; justify-content: center`, and its label is visually hidden (the phone's rule).
+- **Measured in the prototype** (log head content box = viewport − 334 on a desktop):
+  - 1100: 766px, play button 36px.
+  - 1163: 829px, 36px.
+  - 1165: 831px, 118px.
+  - The words come back from about 1164px wide. There the legend has about 197px (1164 − 967), 18px over 179.
+- **The tablet on its side** (content box = window − 52) is 848px at 900, so the play button keeps its words there. The legend is 197px at 900 (measured by the reviewer) and only grows to 1099. If a build ever puts that layout under 830px, the icon-only button is 44×44.
+
 **Keys** (`useLessonShortcuts.ts`, with its ignore rules unchanged):
 
 - → does what the forward button does whenever that button reads "Next step". When it reads "Next lesson", → does nothing, because a key never leaves the page.
@@ -350,6 +369,24 @@ Touches:
 | 761–1099, upright or under 900 | the phone layout, grown (520px column) | As the phone. The bar sits inside the 520px column. |
 | 900–1099 on its side | desktop, with the outline in a tab | The desktop row at 44px. The key line shows when the container query passes. With the outline folded, the log head is the window less 24px, so the line shows only near the top of this range (about 1024 wide). This layout is not drawn in the prototype, which shows the phone layout up to 1099, so the builder measures it. |
 | ≥1100 | desktop | The desktop row at 34px. The key line shows from about 1300px. |
+
+**Erratum E5, D14's designer: the pass bar for the log head's row** (§3, E5). This replaces "the builder measures it" for 900–1099 on its side.
+
+**Where to test.** DHCP's Learn (it has the 179px legend item), with the log open, at:
+
+- desktop widths 1100, 1120, 1145, 1163, 1164, 1200 and 1280 (×800);
+- the tablet on its side at 900×600, 1024×768 and 1099×700, with the outline in its tab.
+
+**At each, all of these hold:**
+
+1. **No overlap.** Every legend item's right edge is at least 8px left of the speed button's left edge.
+2. **One line.** Every control in the row has the same top, and the log head's height equals its height at 1440×900. Nothing in the row or "Show log" wraps: each control's height is 34px (desktop) or 44px (on its side).
+3. **Nothing clipped.** For each legend item, `scrollWidth ≤ clientWidth`. For the forward button's words, `scrollWidth ≤ clientWidth`.
+4. **The play button's width:**
+   - 36px when the log head's content box is under 830px (1100, 1120, 1145 and 1163 on a desktop), with its accessible name still "Play all";
+   - 118px or more at 1164, 1200 and 1280;
+   - 118px or more at 900, 1024 and 1099 on its side.
+5. **No sideways scroll.** The page does not scroll sideways.
 
 With JavaScript off, the page keeps its stacked layout and has no controls, as today.
 
