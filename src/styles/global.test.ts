@@ -13,15 +13,15 @@ test('text is smoothed the browser’s way, as in the approved mockups, so it ke
 test('headings and the lesson’s titles wrap where the mockups’ do, not balanced', () => {
   // A page whose mockup balances a title sets that itself, in its own styles.
   expect(globalCss).not.toMatch(/text-wrap:\s*balance/);
-  // One exception: the scene's title, which wraps to two lines while a desktop reader has Learn or Practice (D1).
+  // Two exceptions: the scene's title, which wraps to two lines while a desktop reader has Learn or Practice (D1), and the
+  // forward button's words (D19), which wrap between words and are never cut.
   const balanced = consoleCss.match(/[^{}]*\{[^{}]*text-wrap:\s*balance[^{}]*\}/g) ?? [];
-  expect(balanced.map((rule) => rule.split('{')[0]!.trim())).toEqual(['.console[data-reading] .stage__title']);
+  expect(balanced.map((rule) => rule.split('{')[0]!.trim())).toEqual(['.console[data-reading] .stage__title', '.guide__foot .go__label']);
 });
 
-test('the lesson’s top bar gives its spare room to the crumb, as the three newest lesson mockups do', () => {
-  // internet-v2, subnet-v1 and firewalls-v1 set `.top > .now { flex: 1 0 auto; }`, which puts the OSI and progress
-  // blocks beside the theme switch; the crumb still gives way first when the bar is short of room.
-  expect(consoleCss).toMatch(/\.topbar__now \{[^}]*flex: 1 1 auto;[^}]*min-width: 340px;/);
+test('the lesson’s bar gives its spare room to the timeline, and the track’s cell has the column’s width and half the gap', () => {
+  expect(consoleCss).toMatch(/\.timeline \{[^}]*flex: 1 1 0;[^}]*min-width: 0;/);
+  expect(consoleCss).toMatch(/\.top__lesson \{[^}]*flex: 0 0 calc\(var\(--track\) \+ 5px\);/);
 });
 
 test('the faces have one name each: data is set in --mono, and the old --font-mono alias is gone', () => {

@@ -104,8 +104,6 @@ export interface LogPanelProps {
   idle: string;
   /** The row that has just played, which pulses once. */
   fresh?: string | null;
-  /** The playback controls, which sit in the header. */
-  controls?: ReactNode;
   /** Whether the log is open, and the button that folds it. The button shows only on a desktop reading Learn or Practice (console.css). */
   fold?: { open: boolean; onToggle(): void } | null;
 }
@@ -114,7 +112,7 @@ export interface LogPanelProps {
 export const NO_SCRIPT_NOTE = 'This lesson needs JavaScript to play.';
 
 /**
- * The log under the scene: its title, its legend and the playback controls,
+ * The log under the track and the scene: its title and its legend,
  * over a real table of `#` plus the unit's own columns. A column keyed `plain`
  * shows each event's plain words. The table's layout is fixed: each column
  * takes its own width, and those without one share the rest; a prose column's
@@ -130,7 +128,7 @@ export const NO_SCRIPT_NOTE = 'This lesson needs JavaScript to play.';
  * React never draws a `<noscript>`'s children in the browser, so with
  * JavaScript on the note is never there.
  */
-export function LogPanel({ log, rows, idle, fresh = null, controls, fold = null }: LogPanelProps) {
+export function LogPanel({ log, rows, idle, fresh = null, fold = null }: LogPanelProps) {
   const titleId = useId();
   const scrollId = useId();
   const noteKind = log.legend.find((entry) => entry.kind === 'note' || entry.kind === 'change')?.kind ?? 'note';
@@ -165,7 +163,6 @@ export function LogPanel({ log, rows, idle, fresh = null, controls, fold = null 
             ))}
           </ul>
         ) : null}
-        {controls}
       </div>
       <div ref={scroller} id={scrollId} className="log__scroll" role="region" aria-labelledby={titleId} tabIndex={0}>
         <table className="log__table" role="table" aria-labelledby={titleId}>

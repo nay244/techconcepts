@@ -456,26 +456,46 @@ test('the play button says Pause only while a run is going', () => {
   expect(playButton(apply(started, { type: 'replay' })).words).toBe('Play all');
 });
 
-test('the forward button reads Next step everywhere but the last Practice', () => {
-  const end = { next: { url: '/t/next' }, number: 3, total: 9 };
-  for (let p = 0; p <= 14; p++) {
-    expect(forwardButton(L, { ...initialPlayback(), position: p }, end)).toEqual({ words: 'Next step', disabled: false });
-  }
-  // Unit 1's Practice (7) leads to unit 2's Overview, even with a next lesson ready.
-  expect(forwardButton(L, { ...initialPlayback(), position: 7 }, end).words).toBe('Next step');
-  // The lesson's last Practice: a next lesson, its address.
-  expect(forwardButton(L, { ...initialPlayback(), position: 15 }, end)).toEqual({ words: 'Next lesson', disabled: false, href: '/t/next' });
+test('the forward button names the place it goes to, in a full form and a short one (D19 case 35)', () => {
+  const end = { next: { url: '/t/next', title: 'Ports' }, number: 3, total: 9 };
+  const at0 = (p: number) => forwardButton(L, { ...initialPlayback(), position: p }, end);
+  // Alpha's Overview leads to its step 1; its last step leads to Learn, then Practice.
+  const step1 = L.units[0]!.steps[0]!.title;
+  expect(at0(0).words).toEqual({ full: `Next: ${step1}`, short: 'Next: step 1' });
+  expect(at0(0).names).toEqual({ full: `Next: ${step1}, step 1`, short: `Next: step 1, ${step1}` });
+  expect(at0(0).titles.full).toBe(`Next: ${step1}, step 1 (→)`);
+  expect(at0(5).words).toEqual({ full: 'Next: Learn', short: 'Next: Learn' });
+  expect(at0(6).words.full).toBe('Next: Practice');
+  expect(at0(6).names.short).toBe('Next: Practice');
+  expect(at0(6).titles.full).toBe('Next: Practice (→)');
+  // Unit 1's Practice (7) leads to unit 2's Overview, named like any other place (E26), even with a next lesson ready.
+  const beta = L.units[1]!.name;
+  expect(at0(7).words).toEqual({ full: `Next: ${beta}`, short: `Next: ${beta}` });
+  expect(at0(7).names.full).toBe(`Next: ${beta}, Overview`);
+  expect(at0(7).href).toBeUndefined();
+  // Beta's steps carry beta's titles and their own numbers.
+  expect(at0(8).words.short).toBe('Next: step 1');
+  // The lesson's last Practice: a next lesson, named, its address; the short form keeps the words "Next lesson".
+  expect(at0(15)).toEqual({
+    words: { full: 'Next lesson: Ports', short: 'Next lesson' },
+    names: { full: 'Next lesson: Ports', short: 'Next lesson: Ports' },
+    titles: { full: 'Next lesson: Ports', short: 'Next lesson: Ports' },
+    disabled: false,
+    href: '/t/next',
+  });
   // The track's last lesson, and the last ready one.
-  expect(forwardButton(L, { ...initialPlayback(), position: 15 }, { next: null, number: 9, total: 9 })).toEqual({
-    words: 'Next lesson',
-    disabled: true,
-    reason: 'There is no next lesson: this is the track’s last.',
-  });
-  expect(forwardButton(L, { ...initialPlayback(), position: 15 }, { next: null, number: 3, total: 9 })).toEqual({
-    words: 'Next lesson',
-    disabled: true,
-    reason: 'No next lesson is ready yet.',
-  });
+  const last = forwardButton(L, { ...initialPlayback(), position: 15 }, { next: null, number: 9, total: 9 });
+  expect(last.words).toEqual({ full: 'Next lesson', short: 'Next lesson' });
+  expect(last.disabled).toBe(true);
+  expect(last.titles.full).toBe('There is no next lesson: this is the track’s last.');
+  const notYet = forwardButton(L, { ...initialPlayback(), position: 15 }, { next: null, number: 3, total: 9 });
+  expect(notYet.disabled).toBe(true);
+  expect(notYet.reason).toBe('No next lesson is ready yet.');
+  // → moves wherever the button stays in the lesson: no href, not disabled.
+  for (let p = 0; p <= 14; p++) {
+    expect(at0(p).disabled).toBe(false);
+    expect(at0(p).href).toBeUndefined();
+  }
 });
 
 test('prefersReducedMotion reads the setting each time, and is false without matchMedia', () => {

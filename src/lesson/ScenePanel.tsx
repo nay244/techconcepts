@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { FigureId } from '../art/scenes/types';
 import type { SceneEvent, Unit } from '../content/schema';
 import type { PlaybackState } from '../engine/playback';
@@ -17,6 +18,11 @@ export interface ScenePanelProps {
   derived: DerivedState;
   playback: PlaybackState;
   reducedMotion: boolean;
+  /**
+   * Where the lesson's table stands when it is not under the scene: an element in the guide. Null keeps it under the
+   * scene. It is one panel either way: the same component, drawn into another place.
+   */
+  panelHome?: HTMLElement | null;
 }
 
 type View = 'network' | 'sequence';
@@ -60,7 +66,7 @@ function playSafely(d: SceneDriver, event: SceneEvent, view: SceneView, o: PlayO
  * page, and when new figure data remakes the driver (which then shows the
  * scene as it stands, again without a replay).
  */
-export function ScenePanel({ unit, figure, figureData, derived, playback, reducedMotion }: ScenePanelProps) {
+export function ScenePanel({ unit, figure, figureData, derived, playback, reducedMotion, panelHome = null }: ScenePanelProps) {
   const titleId = useId();
   const [chosen, setChosen] = useState<View>('network');
   const hasSequence = unit.scene.views.length > 1;
@@ -127,6 +133,8 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   const latest = derived.log.at(-1);
   const current = latest !== undefined && derived.events.some((e) => e.id === latest.eventId) ? latest : null;
 
+  const panel = <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} playing={pending} />;
+
   return (
     <section className="console__panel console__stage" aria-labelledby={titleId}>
       <div className="stage__head">
@@ -150,7 +158,7 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
         </div>
         {view === 'sequence' ? <SequenceView parties={unit.scene.parties} rows={derived.log} current={current} /> : null}
       </div>
-      <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} playing={pending} />
+      {panelHome === null ? panel : createPortal(panel, panelHome)}
     </section>
   );
 }

@@ -39,7 +39,6 @@ function show(position: number, lesson: Lesson = DHCP, onGo = vi.fn(), definitio
       number={entry.number}
       total={entries.length}
       trackUrl={tour ? '/how-the-internet-works' : '/networking'}
-      stamp={{ checked: null, sources: lesson.units[slot.unit]!.references.length }}
       definitions={definitions}
       onGo={onGo}
     />,
@@ -86,12 +85,13 @@ test('Go deeper is closed by default on steps and Learn', async () => {
   expect(deeper()).not.toHaveAttribute('open');
 });
 
-test('Learn ends with its sources, in view without opening Go deeper; a lesson that cites nothing yet says it is not checked', () => {
+test('Learn ends with its sources, in view without opening Go deeper, and shows no stamp', () => {
   show(6);
   const foot = screen.getByRole('heading', { level: 3, name: 'Sources' }).parentElement!;
   expect(deeper().contains(foot)).toBe(false);
-  // Not checked yet: said where a checked lesson says when, and the list has no numbers for claims to point at.
-  expect(within(foot).getByRole('link', { name: 'Not checked yet' })).toHaveAttribute('href', '/about#facts');
+  // The lesson page shows no stamp (2.97); the list has no numbers for claims to point at.
+  expect(foot.querySelector('.stamp, .explain__stamp')).toBeNull();
+  expect(foot).not.toHaveTextContent(/Checked|Not checked yet/);
   const list = within(foot).getByRole('list');
   expect(list.tagName).toBe('UL');
   const sources = within(list).getAllByRole('link');
@@ -120,12 +120,12 @@ test('a cited lesson numbers its sources, and each claim in Learn links the exac
       number={entry.number}
       total={entries.length}
       trackUrl="/networking"
-      stamp={{ checked: '2026-11-08', sources: unit.references.length }}
       onGo={vi.fn()}
     />,
   );
   const foot = screen.getByRole('heading', { level: 3, name: 'Sources' }).parentElement!;
-  expect(within(foot).getByRole('link', { name: 'Checked 8 Nov 2026' })).toHaveAttribute('href', '/about#facts');
+  expect(foot.querySelector('.stamp, .explain__stamp')).toBeNull();
+  expect(foot).not.toHaveTextContent(/Checked/);
   const list = within(foot).getByRole('list');
   expect(list.tagName).toBe('OL');
   const listed = within(list).getAllByRole('link');
@@ -266,15 +266,43 @@ test('kickers name the unit in a lesson of many units', () => {
   expect(screen.getByText('Beta · Overview')).toBeInTheDocument();
 });
 
-test('the Overview’s first line holds the kicker and the stamp, which links to where the facts come from; a step has no stamp there', () => {
-  const { container, unmount } = show(0);
-  const lead = container.querySelector('.explain__lead')!;
-  expect(within(lead as HTMLElement).getByText('Overview')).toHaveClass('explain__kicker');
-  expect(within(lead as HTMLElement).getByRole('link', { name: /^Not checked yet/ })).toHaveAttribute('href', '/about#facts');
-  unmount();
-  const step = show(1).container;
-  expect(step.querySelector('.explain__lead')).toBeNull();
-  expect(step.querySelector('.stamp')).toBeNull();
+test('the words open with the kicker alone, and no stamp stands anywhere in them (2.97, case 12)', () => {
+  for (const position of [0, 1, 6, 7]) {
+    const { container, unmount } = show(position);
+    const head = container.querySelector('.explain__head')!;
+    expect(head.querySelector('.explain__kicker')).not.toBeNull();
+    expect(container.querySelector('.stamp, .explain__stamp, .explain__lead')).toBeNull();
+    expect(container).not.toHaveTextContent(/Checked \d|Not checked yet/);
+    unmount();
+  }
+});
+
+test('a unit that names a layer opens its words with the OSI badge beside the kicker, and one that spans layers shows none (D19 case 19)', () => {
+  const lesson = getLesson('firewalls')!;
+  const position = 0;
+  const entries = getEntries('networking');
+  const render0 = (l: typeof lesson) =>
+    render(
+      <Explanation
+        lesson={l}
+        position={position}
+        slot={slotsFor(l)[position]!}
+        unit={l.units[0]!}
+        picked={{}}
+        onPick={vi.fn()}
+        next={null}
+        nextFigure={null}
+        number={1}
+        total={entries.length}
+        trackUrl="/networking"
+        onGo={vi.fn()}
+      />,
+    );
+  const layered = render0({ ...lesson, units: [{ ...lesson.units[0]!, osi: { layers: [3, 4], cite: [] } }] }).container;
+  expect(layered.querySelector('.explain__head .explain__osi')).toHaveTextContent('OSI layers 3 and 4');
+  expect(layered.querySelectorAll('.explain__chips i[data-on]')).toHaveLength(2);
+  const spans = render0({ ...lesson, units: [{ ...lesson.units[0]!, osi: 'spans' }] }).container;
+  expect(spans.querySelector('.explain__osi')).toBeNull();
 });
 
 // A term's definition in Learn (prototypes/d9-glossary.md §10 as D9a §4 amends it; checks 26 to 28, 31 to 34; attack cases 26 to 28, 31 to 34).
@@ -410,7 +438,6 @@ test('28: what is open stays open when the reader goes to Practice and back', as
       number={1}
       total={1}
       trackUrl="/networking"
-      stamp={{ checked: null, sources: 0 }}
       definitions={DEFS}
       onGo={vi.fn()}
     />

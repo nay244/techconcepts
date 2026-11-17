@@ -15,12 +15,14 @@ interface Props {
   image?: string;
   /** What the share image shows, for a reader who cannot see it. Left out with a page's own `image`, no description is given. */
   imageAlt?: string;
-  /**
-   * The site header and footer around the page. The lesson page turns them off:
-   * its console has its own top bar and owns the whole screen, and marks its own
-   * main region with id="main" for the skip link.
-   */
+  /** The site header and footer around the page (default true); `false` leaves them out and the page marks its own main region. */
   chrome?: boolean;
+  /**
+   * Whether the layout wraps the page in its own `<main id="main">` (default true). The lesson page turns it off: its bar
+   * and track column stand before its `main` (the scene, the guide and the log), so the skip link lands past the bar's
+   * stops, and the page has one `main`.
+   */
+  main?: boolean;
   /** Which header link is the current section (marked aria-current="page"). */
   current?: 'tracks' | 'glossary' | 'how' | 'about';
   /** Home: the header sits over the hero until the page scrolls. */
@@ -46,7 +48,7 @@ interface Props {
 const SITE_NAME = 'TechConcepts';
 const DEFAULT_IMAGE = '/og-default.png';
 const DEFAULT_IMAGE_ALT = 'TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside.';
-const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, current, overHero = false, canonical, footer = true, split = false } = Astro.props;
+const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, main = true, current, overHero = false, canonical, footer = true, split = false } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -76,11 +78,11 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
          controls, and the log's "Press Play" words, where LogPanel's own no-script note says the lesson needs
          JavaScript. The page's stylesheets load after this one and set these controls' display at the same
          specificity, so the rules are !important.
-         The lesson's outline is all buttons, so it goes whole, heading and landmark too. It is made invisible rather
-         than removed, so it keeps its cell and the console's grid does not move; nothing inside it sets visibility
-         back. */
+         The lesson's timeline (buttons), the bar's lessons button, the lessons sheet (a dialog with its Close button),
+         the key line, and a lesson of many units' unit list and filters go too; the track column's lessons are links, and
+         stay and work. */
     }
-    <noscript><style>.theme-toggle, .stage__views, .console__tabs, .console__controls, .log__fold, .log__idle-words { display: none !important; } .console__outline { visibility: hidden !important; } :root .site-head[data-over-hero] { background: var(--ground); }</style></noscript>
+    <noscript><style>.theme-toggle, .stage__views, .console__tabs, .console__controls, .log__fold, .log__idle-words, .timeline__nav, .top__lessons, .sheet, .keys, .track__units { display: none !important; } :root .site-head[data-over-hero] { background: var(--ground); }</style></noscript>
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta property="og:title" content={fullTitle} />
@@ -100,9 +102,13 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
       chrome ? (
         <>
           <SiteHeader current={current} overHero={overHero} />
-          <main id="main">
+          {main ? (
+            <main id="main">
+              <slot />
+            </main>
+          ) : (
             <slot />
-          </main>
+          )}
           {footer && <SiteFooter />}
         </>
       ) : (

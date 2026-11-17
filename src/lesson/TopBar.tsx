@@ -1,11 +1,8 @@
-import LogoMark from '../components/LogoMark';
-import { Stamp } from '../components/Stamp';
 import type { Lesson, Unit } from '../content/schema';
 import { holding, type PlaybackState } from '../engine/playback';
-import { positionOf, type Slot } from '../engine/timeline';
-import type { LessonStamp } from '../lib/stamp';
-import ThemeToggle from '../components/ThemeToggle';
+import type { Position, Slot } from '../engine/timeline';
 import { placeLabel } from './placeLabel';
+import { Timeline, positionsOf } from './Timeline';
 
 export interface TopBarProps {
   lesson: Lesson;
@@ -15,105 +12,74 @@ export interface TopBarProps {
   number: number;
   /** Every lesson the track plans, written or not: the "20" in "Lesson 10 of 20". */
   total: number;
-  /** Whether the lesson has been fact-checked, and when; and how many sources it lists. */
-  stamp: LessonStamp;
   state: PlaybackState;
   /** What the current position shows, and its unit (the console's derived state). */
   slot: Slot;
   unit: Unit;
-  /** With less motion asked for, a hold does not fill the next step's segment. */
+  /** With less motion asked for, a hold does not fill the rule between two marks. */
   reducedMotion: boolean;
+  /** Goes to a place (a stop of the timeline). */
+  onGo(position: Position): void;
+  /** Opens the lessons sheet (the button under 1100px wide). */
+  onOpenLessons(): void;
 }
 
-const OSI_NAMES = ['Physical', 'Data link', 'Network', 'Transport', 'Session', 'Presentation', 'Application'];
+const LIST_ICON = (
+  <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false">
+    <path d="M2 3.5h10M2 7h10M2 10.5h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
 
 /**
- * 'OSI layer 7, Application', or 'OSI layers 3 and 4'. Null when the unit names no layer. With `named: false`, a
- * single layer is only its number, 'OSI layer 7': a lesson of many units says it that way (internet-v2), which
- * leaves its long title room in the bar at 1280 px; the one-unit lessons' mockups name the layer.
+ * The lesson's bar, under the site's header: over the track column, "Tracks /" and the track's name (both links); over
+ * the scene, the timeline of the lesson's places with its count. It holds no mark, no theme button and no stamp: the
+ * site's header has the first two and the lesson page shows no stamp.
+ *
+ * Under 1100px there is no track column, so the first cell holds the lesson's name (the page's `h1` at those widths;
+ * the column's head holds it from 1100px, and CSS shows exactly one of the two), and the button "9 of 20" opens the
+ * lessons sheet. The bar is a `div`: the site's header is the page's one banner.
  */
-export function osiHeading(layers: number[], { named = true }: { named?: boolean } = {}): string | null {
-  const sorted = [...new Set(layers)].sort((a, b) => a - b);
-  if (sorted.length === 0) return null;
-  if (sorted.length === 1) return named ? `OSI layer ${sorted[0]}, ${OSI_NAMES[sorted[0]! - 1]}` : `OSI layer ${sorted[0]}`;
-  return `OSI layers ${sorted.slice(0, -1).join(', ')} and ${sorted.at(-1)}`;
-}
-
-// ---------------------------------------------------------------- the bar
-
-/**
- * The lesson's top bar: the logo; where the learner is (Tracks / track / lesson, "Lesson
- * 10 of 20", the lesson's stamp, a segment per step of the current unit plus Learn and Practice,
- * and "Step 2 of 5", never the step's title, which can be too long); the unit's
- * OSI layers; and the round theme button the site's headers use. The segments are
- * drawn for the eye and said in words beside them.
- */
-export function TopBar({ lesson, trackTitle, trackUrl, number, total, stamp, state, slot, unit, reducedMotion }: TopBarProps) {
-  const start = positionOf(lesson, slot.unit, 'overview');
-  const here = state.position - start;
+export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion, onGo, onOpenLessons }: TopBarProps) {
   const hold = reducedMotion ? null : holding(state);
-
-  /** The segment for the unit's part `i` (1 to n for the steps, then Learn, then Practice). */
-  function segment(i: number) {
-    const status = i < here ? 'done' : i === here ? 'current' : undefined;
-    const filling = hold !== null && hold.next === start + i ? hold : null;
-    return (
-      <span key={i} className="topbar__step" data-state={status}>
-        {filling === null ? null : <span className="topbar__fill" style={{ animationDuration: `${filling.ms}ms` }} />}
-      </span>
-    );
-  }
-
-  const n = unit.steps.length;
-  // A unit that spans layers names none, so it shows no OSI chip.
-  const layers = unit.osi === 'spans' ? [] : unit.osi.layers;
-  const osi = osiHeading(layers, { named: lesson.units.length === 1 });
-
   return (
-    <header className="console__panel console__top">
-      <a className="topbar__brand" href="/" aria-label="TechConcepts home">
-        <LogoMark />
-        <b>TechConcepts</b>
-      </a>
-
-      <div className="topbar__now">
-        <div className="topbar__crumb">
-          <a href="/tracks">Tracks</a>
-          <span aria-hidden="true">/</span>
-          <a href={trackUrl}>{trackTitle}</a>
-          <span aria-hidden="true">/</span>
-          {/* A title too long for the bar is cut short with an ellipsis; the whole of it stays in the heading. */}
-          <h1 title={lesson.title}>{lesson.title}</h1>
-          <em>{`Lesson ${number} of ${total}`}</em>
-          <Stamp stamp={stamp} href="/about#facts" />
-        </div>
-        <div className="topbar__steps">
-          <span className="topbar__segments" aria-hidden="true">
-            <span className="topbar__group">{unit.steps.map((_, i) => segment(i + 1))}</span>
-            <span className="topbar__group">{segment(n + 1)}</span>
-            <span className="topbar__group">{segment(n + 2)}</span>
+    <div className="console__panel console__top">
+      <div className="top__lesson">
+        <h1 className="top__name" title={lesson.title}>
+          {lesson.title}
+        </h1>
+        <span className="top__where">{placeLabel(unit, slot)}</span>
+        <p className="top__trk">
+          <a className="track__crumb" href="/tracks">
+            Tracks
+          </a>
+          <span className="track__crumb" aria-hidden="true">
+            /
           </span>
-          <span className="topbar__where">{placeLabel(unit, slot)}</span>
-        </div>
+          <a className="track__title" href={trackUrl}>
+            <span>{trackTitle}</span>
+          </a>
+        </p>
       </div>
-
-      {osi === null ? null : (
-        <div className="topbar__osi">
-          <p className="console__ptitle">{osi}</p>
-          <span className="topbar__chips" aria-hidden="true">
-            {[1, 2, 3, 4, 5, 6, 7].map((layer) => (
-              <i key={layer} data-on={layers.includes(layer) ? '' : undefined}>
-                {layer}
-              </i>
-            ))}
-          </span>
-        </div>
-      )}
-
-      <div className="topbar__tools">
-        <ThemeToggle />
-      </div>
-    </header>
+      <Timeline
+        units={lesson.units}
+        unitIndex={slot.unit}
+        positions={positionsOf(lesson, slot.unit, unit.steps.length)}
+        position={state.position}
+        slot={slot}
+        onGo={onGo}
+        hold={hold}
+      />
+      <button
+        type="button"
+        className="cbtn top__lessons"
+        aria-haspopup="dialog"
+        aria-label={`${number} of ${total}: all ${total} lessons, this is lesson ${number}`}
+        onClick={onOpenLessons}
+      >
+        {LIST_ICON}
+        <span aria-hidden="true">{`${number} of ${total}`}</span>
+      </button>
+    </div>
   );
 }
 

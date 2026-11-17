@@ -187,10 +187,12 @@ test('an empty log shows the step’s idle text', () => {
   expect(within(table()).getByText('Nothing has reached the firewall yet.')).toBeInTheDocument();
 });
 
-test('the playback controls sit in its header', () => {
-  render(<LogPanel log={LOG} rows={[]} idle="Nothing yet." controls={<button type="button">Play</button>} />);
-  const title = screen.getByRole('heading', { name: 'Firewall log' });
-  expect(title.parentElement).toContainElement(screen.getByRole('button', { name: 'Play' }));
+test('its head holds the title and the legend and no playback control: the controls live in the guide (D19 case 10)', () => {
+  const { container } = render(<LogPanel log={LOG} rows={[]} idle="Nothing yet." />);
+  const head = container.querySelector('.log__head')!;
+  expect(within(head as HTMLElement).getByRole('heading', { name: 'Firewall log' })).toBeInTheDocument();
+  expect(within(head as HTMLElement).getByRole('list', { name: 'Legend' })).toBeInTheDocument();
+  expect(within(head as HTMLElement).queryByRole('button')).toBeNull();
 });
 
 // On a phone the rows are drawn as stacked entries, not a grid (console.css). The table keeps its meaning there

@@ -49,7 +49,6 @@ function consoleFor(lesson: Lesson, lastOfTrack = false) {
       next={lastOfTrack ? null : neighbors(entries, lesson.slug).next}
       nextFigure={null}
       entries={entries}
-      stamp={{ checked: null, sources: 2 }}
       navigate={navigate}
     />
   );
@@ -125,7 +124,7 @@ test('1: five controls in order, all buttons; replay shows no words; no old Play
   render(consoleFor(DHCP));
   const row = [...controls().children];
   expect(row.map((el) => el.tagName)).toEqual(['BUTTON', 'BUTTON', 'BUTTON', 'BUTTON', 'BUTTON']);
-  expect(row.map((el) => el.getAttribute('aria-label') ?? el.textContent)).toEqual(['Speed 1×. Click for 1.5×', 'Previous step', 'Play all', 'Replay step', 'Next step']);
+  expect(row.map((el) => el.getAttribute('aria-label') ?? el.textContent)).toEqual(['Speed 1×. Click for 1.5×', 'Previous step', 'Play all', 'Replay step', 'Next: Neighbor Hello, step 1']);
   expect(row.map((el) => el.className.split(' ').at(-1))).toEqual(['cbtn--speed', 'cbtn--back', 'cbtn--alt', 'cbtn--replay', 'cbtn--go']);
   expect(replayButton().textContent).toBe('');
   expect(controls().querySelector('.cbtn--play')).toBeNull();
@@ -137,7 +136,7 @@ test('1: five controls in order, all buttons; replay shows no words; no old Play
 
 test('7: the titles name the keys, and Back keeps its plain accessible name', async () => {
   render(consoleFor(DHCP));
-  expect(forwardButton()).toHaveAttribute('title', 'Next step (→)');
+  expect(forwardButton()).toHaveAttribute('title', 'Next: Neighbor Hello, step 1 (→)');
   expect(playButton()).toHaveAttribute('title', 'Play all (Space)');
   expect(backButton()).toHaveAttribute('title', 'Previous step (←)');
   expect(backButton().getAttribute('aria-label')).toBe('Previous step');
@@ -147,21 +146,31 @@ test('7: the titles name the keys, and Back keeps its plain accessible name', as
   expect(playButton()).toHaveAccessibleName('Pause');
 });
 
-test('2 and 3: "Next step" through every slot, seven presses from the Overview, "Next lesson" on Practice that opens the next lesson', async () => {
+test('2 and 3: the forward button names its place through every slot, seven presses from the Overview, and "Next lesson: Firewalls" on Practice opens the next lesson', async () => {
   render(consoleFor(DHCP));
   const seen: string[] = [];
+  const named: string[] = [];
   for (let i = 0; i < 7; i += 1) {
-    expect(forwardButton()).toHaveAccessibleName('Next step');
+    named.push(forwardButton().getAttribute('aria-label')!);
     await user.click(forwardButton());
     seen.push(kicker().textContent!);
   }
+  expect(named).toEqual([
+    'Next: Neighbor Hello, step 1',
+    'Next: Neighbor Reply, step 2',
+    'Next: Table Lookup, step 3',
+    'Next: Lost Message, step 4',
+    'Next: Retransmission, step 5',
+    'Next: Learn',
+    'Next: Practice',
+  ]);
   expect(seen[0]).toBe('Watch · Step 1 of 5');
   expect(seen[4]).toBe('Watch · Step 5 of 5');
   expect(seen[5]).toMatch(/^Learn/);
   expect(seen[6]).toMatch(/^Practice/);
-  expect(forwardButton()).toHaveAccessibleName('Next lesson');
+  expect(forwardButton()).toHaveAccessibleName('Next lesson: Firewalls');
   expect(forwardButton().tagName).toBe('BUTTON');
-  expect(forwardButton()).toHaveAttribute('title', 'Next lesson');
+  expect(forwardButton()).toHaveAttribute('title', 'Next lesson: Firewalls');
   await user.click(forwardButton());
   expect(navigate).toHaveBeenCalledExactlyOnceWith('/networking/firewalls');
 });
@@ -174,21 +183,21 @@ test('3: Enter seven times on the focused forward button keeps the focus on it t
     expect(forwardButton()).toHaveFocus();
   }
   expect(heading()).toHaveTextContent('Two questions');
-  expect(forwardButton()).toHaveAccessibleName('Next lesson');
+  expect(forwardButton()).toHaveAccessibleName('Next lesson: Firewalls');
 });
 
 test('2: the same label whether Practice is reached by clicks or by ?step=7', () => {
   window.history.replaceState({}, '', '/networking/dhcp?step=7');
   render(consoleFor(DHCP));
-  expect(forwardButton()).toHaveAccessibleName('Next lesson');
+  expect(forwardButton()).toHaveAccessibleName('Next lesson: Firewalls');
 });
 
-test('2 and 19: in a lesson of three units Next step leads on from a unit’s Practice, and only the last unit’s Practice says Next lesson', async () => {
+test('2 and 19: in a lesson of three units the forward button leads on from a unit’s Practice, and only the last unit’s Practice says Next lesson', async () => {
   window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=7');
   render(consoleFor(THREE));
   expect(heading()).toHaveTextContent(/./);
-  expect(forwardButton()).toHaveAccessibleName('Next step');
-  expect(forwardButton()).toHaveAttribute('title', 'Next step (→)');
+  expect(forwardButton()).toHaveAccessibleName('Next: Beta, Overview');
+  expect(forwardButton()).toHaveAttribute('title', 'Next: Beta, Overview (→)');
   // On a phone with the Log tab showing, the tabs switch to Explain first, and focus lands on the words.
   await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Log' }));
   expect(document.querySelector('.console')).toHaveAttribute('data-tab', 'log');
@@ -199,17 +208,17 @@ test('2 and 19: in a lesson of three units Next step leads on from a unit’s Pr
   expect(navigate).not.toHaveBeenCalled();
 });
 
-test('2: the last unit’s Practice of a lesson of three units reads Next lesson, and Practice of the first reads Next step', () => {
+test('2: the last unit’s Practice of a lesson of three units reads Next lesson, and Practice of the first names the next unit', () => {
   window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=23');
   render(consoleFor(THREE));
-  expect(forwardButton()).toHaveAccessibleName('Next lesson');
-  expect(forwardButton()).not.toHaveAttribute('title', 'Next step (→)');
+  expect(forwardButton()).toHaveAccessibleName(/^Next lesson/);
+  expect(forwardButton()).not.toHaveAttribute('title', 'Next: Beta, Overview (→)');
 });
 
 test('E8: focus reaches the explanation only once the Explain tab is showing', async () => {
   window.history.replaceState({}, '', '/how-the-internet-works/what-is-http?step=7');
   render(consoleFor(THREE));
-  await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Steps' }));
+  await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Log' }));
   const tabsAtFocus: (string | undefined)[] = [];
   const real = HTMLElement.prototype.focus;
   vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function (this: HTMLElement, ...args) {
@@ -294,7 +303,7 @@ test('8: Play all from the Overview holds 2600 ms between steps, stops on step 5
   await wait(2 * EVENT_MS + HOLD_MS + 2 * EVENT_MS + HOLD_MS + EVENT_MS + HOLD_MS + EVENT_MS);
   expect(kicker().textContent).toBe('Watch · Step 5 of 5');
   expect(playButton()).toHaveAccessibleName('Play all');
-  expect(forwardButton()).toHaveAccessibleName('Next step');
+  expect(forwardButton()).toHaveAccessibleName('Next: Learn');
   await wait(60_000);
   expect(kicker().textContent).toBe('Watch · Step 5 of 5');
 });
@@ -333,7 +342,7 @@ test('10: Play all on a step, on Learn and on Practice leads to step 1 and Pause
     await user.click(playButton());
     expect(kicker().textContent).toBe('Watch · Step 1 of 5');
     expect(playButton()).toHaveAccessibleName('Pause');
-    expect(forwardButton()).toHaveAccessibleName('Next step');
+    expect(forwardButton()).toHaveAccessibleName('Next: Neighbor Reply, step 2');
     view.unmount();
   }
 });
@@ -344,7 +353,7 @@ test('11: every hand move during a run stops it, and nothing moves on afterwards
     ['→', () => keyOnPage('{ArrowRight}')],
     ['←', () => keyOnPage('{ArrowLeft}')],
     ['Back', () => user.click(backButton())],
-    ['an outline item', () => user.click(within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name: /^Table Lookup/ }))],
+    ['a stop of the timeline', () => user.click(within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name: /^Step 3, Table Lookup/ }))],
   ];
   for (const [name, move] of moves) {
     const view = render(consoleFor(DHCP));
@@ -481,13 +490,13 @@ test('14: under reduced motion a hand move lands the step complete at once; repl
   expect(logRows()).toHaveLength(4);
 });
 
-test('14: a ?step= link and an outline click land complete under reduced motion', async () => {
+test('14: a ?step= link and a press of a stop land complete under reduced motion', async () => {
   reduceMotion(true);
   window.history.replaceState({}, '', '/networking/dhcp?step=4');
   const { unmount } = render(consoleFor(DHCP));
   await wait(0);
   expect(logRows()).toHaveLength(4);
-  await user.click(within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name: /^Table Lookup/ }));
+  await user.click(within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name: /^Step 3, Table Lookup/ }));
   expect(logRows()).toHaveLength(3);
   expect(vi.getTimerCount()).toBe(0);
   unmount();
