@@ -1,17 +1,27 @@
 # D19: the Lesson page's layout, rearranged in Patch
 
-Unit D19 of job 19 (`plan.md`; direction 2.90 to 2.95). Drawn on Fable 5.2 by the owner's word (2.93). **Revision 2, 2026-11-17, after the owner's second gate (2.95).**
+Unit D19 of job 19 (`plan.md`; direction 2.90 to 2.97). Drawn on Fable 5.2 by the owner's word (2.93). **Approved revision 2 (2.96), amended 2.97, 2026-11-17.**
 
 - **Prototype:** `prototypes/d19-lesson-layout.html`. One file, no network. Both themes, every place of the DHCP lesson (Networking, lesson 9 of 20) and the 20-lesson track list. The yellow button at the bottom left ("D19: theme, states") switches theme, place and the timeline's stress cases, and prints the measures this spec quotes. The same switches work in the address: `?theme=light|dark&place=0..7|learn|practice|end&titles=dhcp|osi|tcp&keys=show&panel=open`.
-- **What is real in it.** The words, the figure at each step, the lease table, the log's rows, the stamp, the Sequence view (a still of step 4) and the site's own CSS for those parts are copied from the built page by a script; nothing was retyped. The layout, the timeline, the track column, the forward button's words and the key line are D19's.
+- **What is real in it.** The words, the figure at each step, the lease table, the log's rows, the Sequence view (a still of step 4) and the site's own CSS for those parts are copied from the built page by a script; nothing was retyped. The layout, the timeline, the track column, the forward button's words and the key line are D19's.
 - **What is not drawn:** the page with JavaScript off (§7), a lesson with more than one unit (none exists; §4.9), a phone on its side under 600px tall (unchanged: the stacked page).
+
+## Amendment 2.97: the stamp leaves the Lesson page
+
+The owner, after approval: "On the lesson's page remove the section noting \"Checked \"date\", \"x\" sources\""; to where: "Everywhere on the lesson".
+
+- **Removed:** the stamp ("Checked 12 Nov 2026, 16 sources", or "Not checked yet, 2 sources") from the lesson's bar, from the Overview's first line on a phone and an upright tablet, and from the foot of Learn ("Checked 12 Nov 2026" under the "Sources" heading).
+- **Kept:** the numbered source marks in the words and after Practice's feedback, and the sources list at the foot of Learn under its "Sources" heading. `Stamp` stays on the track page and About.
+- **The bar's third cell holds the OSI badge alone.** In the 68px bar it keeps its place and width over the guide, so the timeline stays exactly over the scene, 782px at 1440, the same on every lesson; where the unit names no layer (8 of the 30 lessons, DHCP among them) the cell is empty and its rule is not drawn. The timeline is not widened into it: its stops would then stand at different widths from one lesson of a track to the next, and no longer over the scene they step through.
+- **In the one-line bar** (under 890px tall, and a tablet on its side) the cell was already only as wide as its content. It is now the badge alone, 310px, and is not drawn where there is no layer. The timeline's cell there grows: at 1280 wide 707px beside a badge (it was 633px beside the stamp and the chips) and 1,017px with none; at 1100 wide 527px beside a badge. So the badge keeps its label at every width from 1100px (revision 2 cut it to its chips under 1440px), and 13 marks keep their 34px at 1100px and up. On a tablet on its side the badge is its chips, as before; the timeline's cell is 670px beside them at 1024 wide.
+- **Nothing else moves:** the drawing, the words' room, the log's rows and every other measure are revision 2's.
 
 ## What revision 2 changed
 
 The owner at the second gate (2.95): "Let's also insert of website top navbar onto the Lesson page. Current how would a user go back to our page's tab from the lesson page"; the brand's word leaves the lesson's bar; Play all's fill comes back.
 
 - **The site's own header stands on top of the Lesson page**, as `SiteHeader.astro` writes it: 68px and its 1px rule, the mark and "TechConcepts", Tracks, Glossary, How a lesson works, Sources, About, the theme button; under 960px its menu button. The page has no footer.
-- **The lesson's bar under it lost what the header now carries:** the mark and the theme button. It keeps the lesson's name with "Lesson 9 of 20", the timeline, the count, the stamp and the OSI badge.
+- **The lesson's bar under it lost what the header now carries:** the mark and the theme button. It keeps the lesson's name with "Lesson 9 of 20", the timeline, the count and the OSI badge (and, until 2.97, the stamp).
 - **The header's 69px come out of the log, not the scene.** The scene's panel is exactly as tall as today's at every window size, so the drawing is never smaller than today's and keeps revision 1's gain. The log shows 3.1 rows at 1440×900 (today 4.6; revision 1 5.2).
 - **The bar has two forms by the window's height.** 890px tall or more: 68px, the names under the marks, as revision 1 drew it. Under 890px, and on a tablet on its side: one line, 44px, the timeline as marks with the count and the current place's name beside them.
 - **Play all's fill is back:** while a step holds, the rule fills from the current mark to the next.
@@ -22,7 +32,7 @@ Kept from revision 1 (2.94): the Line layout (the track column, the scene, the f
 
 ## 1. What the page must still say, and what it said badly
 
-Everything the page tells a reader today stays (2.91): the scene with Network and Sequence, the explanation with Go deeper and numbered sources, the event log, the lesson's own table, Learn and Practice at D1's width, the stamp, the OSI badge, job 15's five controls, the theme button. No lesson word changes. Every place is one press away. The phone is one screen.
+Everything the page tells a reader today stays (2.91): the scene with Network and Sequence, the explanation with Go deeper and numbered sources, the event log, the lesson's own table, Learn and Practice at D1's width, the OSI badge, job 15's five controls, the theme button. No lesson word changes. Every place is one press away. The phone is one screen.
 
 Measured on `revamp` on 2026-11-17, at 1440×900 unless a size is given:
 
@@ -44,7 +54,7 @@ The brief's "685×326 on DHCP" is the 2026-11-10 measure (§7 of the direction d
 ┌ the site's header 69 ──────────────────────────────────────────────────────┐
 │ ◆ TechConcepts      [Tracks] Glossary  How a lesson works  Sources  About ☾ │
 ├ the lesson's bar 68 ───────────────────────────────────────────────────────┤
-│ DHCP          │ ✓───✓───✓───✓───[4]┄┄┄5┄┄┄▪┄┄┄▪    Step 4 │ ✓ Checked …     │
+│ DHCP          │ ✓───✓───✓───✓───[4]┄┄┄5┄┄┄▪┄┄┄▪    Step 4 │                 │
 │ Lesson 9 of 20│ Over DHCP DHCP DHCP DHCP Lease Learn Prac   of 5 │ OSI layer … 1-7 │
 ├ track 232 ────┼ scene 771 × 550 ───────────────────┬ guide 389 × 727 ──────┤
 │ Tracks /      │ Network | Sequence          title  │ the words             │
@@ -57,7 +67,7 @@ The brief's "685×326 on DHCP" is the 2026-11-10 measure (§7 of the direction d
 ```
 
 - **The header answers the owner's question:** from a lesson, Tracks, the Glossary, About and home are one press away.
-- **The bar's three cells stand over the three columns.** The lesson's name and "Lesson 9 of 20" sit over the track's list. The timeline sits over the scene and is exactly as wide as it. The stamp and the badge sit over the guide.
+- **The bar's three cells stand over the three columns.** The lesson's name and "Lesson 9 of 20" sit over the track's list. The timeline sits over the scene and is exactly as wide as it. The OSI badge sits over the guide.
 - **The right column is a guide** under the bar to the foot of the page: the words, then the lesson's table, then job 15's controls in their order with the forward button on a line of its own, then the key line.
 - **The log runs under the track and the scene** (1015px), not under the words.
 
@@ -165,7 +175,7 @@ One panel under the header, three cells with a rule between them. At 1100px and 
 
 1. **Over the track** (the track's width and half the gap, 237px): the lesson's name as the page's `h1`; "Lesson 9 of 20".
 2. **Over the scene:** the timeline (§4.3).
-3. **Over the guide** (the guide's width and half the gap, 395px): the stamp; when the unit names a layer, the OSI badge (label, then the seven chips).
+3. **Over the guide** (the guide's width and half the gap, 395px): the OSI badge (label, then the seven chips) when the unit names a layer; otherwise empty, with no rule before it.
 
 **Two forms, by the window's height** (`@media (min-height: 890px)`):
 
@@ -174,13 +184,13 @@ One panel under the header, three cells with a rule between them. At 1100px and 
 | Height | 68px | 44px |
 | First cell | the name; under it "Lesson 9 of 20" | the name, then "Lesson 9 of 20", on one line |
 | Timeline | names under the marks (§4.3's three forms) | marks, then the count and the current place's name, on one line |
-| Last cell | the stamp; under it the OSI badge | the stamp, then the badge, on one line; the cell is as wide as they need. Under 1440px wide the badge is its chips only (its label stays as the chips' accessible name) |
+| Last cell | the OSI badge, centred on the bar's height | the OSI badge with its label; the cell is as wide as the badge needs (310px), and is not drawn where the unit names no layer |
 
-Measured: the longest badge label, "OSI layer 6, Presentation", is 267px with its chips; the cell has 324px at its narrowest in the tall form.
+Measured: the longest badge label, "OSI layer 6, Presentation", is 267px with its chips; the cell has 324px at its narrowest in the 68px bar.
 
 Gone from the bar since today: the mark and "TechConcepts" (the header's), the theme button (the header's), the crumbs "Tracks / Networking Concepts /" (the track column's head, and the header's Tracks), and the row of segments (the timeline is the segments, made pressable and named).
 
-**Under 1100px:** a button with a list icon and "9 of 20" (28px tall on a phone, 34px on a tablet), accessible name "All 20 lessons. This is lesson 9", opens the lessons sheet (§4.8); "Lesson 9 of 20" is hidden there. On a tablet on its side the bar is the 44px form. On a phone it is one line, 36px: the name, "Step 4 of 5" (or "Overview", "Learn", "Practice") and the button. On an upright tablet it is 44px and also shows the stamp.
+**Under 1100px:** a button with a list icon and "9 of 20" (28px tall on a phone, 34px on a tablet), accessible name "All 20 lessons. This is lesson 9", opens the lessons sheet (§4.8); "Lesson 9 of 20" is hidden there. On a tablet on its side the bar is the 44px form. On a phone it is one line, 36px: the name, "Step 4 of 5" (or "Overview", "Learn", "Practice") and the button. On an upright tablet it is the same at 44px.
 
 ### 4.2 The track's lessons (`nav`, labelled by the track's title)
 
@@ -215,7 +225,7 @@ One `nav` labelled "This lesson", holding an `ol` of buttons, one a place, in or
 | Marks | 10 places or more at any width (OSI Model's 13); 9 places under 712px; any count under 632px (Learn and Practice, where the scene is narrower) | marks 34px apart; at the end the count and, under it, the current step's name on one line |
 
 - **A long name** takes two lines and breaks inside a word only when the word alone is wider than its slot; what is left over after two lines ends in an ellipsis. Measured at 1440 with TCP/UDP: "TCP: Three-Way Handshake", "TCP: Packet Loss" and "TCP: Retransmission" are whole; "UDP: Connectionless Send" and "UDP: Packet Loss, No Retransmission" end in an ellipsis. The whole title is the stop's `title`, its accessible name, the words' heading and, in the marks form, the line's end.
-- **Thirteen places** (OSI Model), measured at 1440×900: 13 marks take 442px; the count and "Presentation Layer" have the 300px left. In the 44px bar the marks may close up to 24px apart: at 1100 and at 1024 wide 13 marks take 312px beside the stamp and the badge's chips, and the count follows; the place's name is cut with an ellipsis when it has no room.
+- **Thirteen places** (OSI Model), measured at 1440×900: 13 marks take 442px; the count and "Presentation Layer" have the 300px left. In the 44px bar 13 marks keep their 34px at 1100px wide and up (442px of the 499px beside the badge at 1100) and on a tablet on its side; were a cell ever narrower, the marks may close up to 24px apart, and the place's name is cut with an ellipsis when it has no room.
 - Of the 34 lesson pages, 21 have 8 places, 12 have 9 and one has 13.
 
 ### 4.4 The forward button's words
@@ -274,7 +284,7 @@ The header is 69px at the top at every width. Everything below is the lesson, in
 |---|---|
 | **1100px and up** | Columns 232, 1fr, `clamp(348px, 27vw, 392px)`; rows: the bar (68px, or 44px under 890px tall), 1fr, the log (§4.7); 12px gaps and padding. The guide spans the two lower rows; the log spans the track and the scene. |
 | Learn and Practice there | Guide `max(348px, min(560px, 100vw - 764px))`: 560px from 1324 wide, 516px at 1280; the scene keeps 484px. The timeline is in its marks form. |
-| **900 to 1099px, on its side, 600px tall or more** | No track column; the bar's "9 of 20" button. The bar is the 44px form: the name; the marks, the count and the place's name; the stamp; the button. Scene and words (348px) side by side; no tabs (the Steps tab's job is the bar's); the table under the scene. The five controls are one row of 44px buttons at the foot of the words (68px with its padding). The log across the foot, with its 32px head. At 1024×768: scene's panel 640×452 (as today), words 346×381 (today 404), 2.8 log rows (today 3.3). |
+| **900 to 1099px, on its side, 600px tall or more** | No track column; the bar's "9 of 20" button. The bar is the 44px form: the name; the marks, the count and the place's name; the OSI badge's chips; the button. Scene and words (348px) side by side; no tabs (the Steps tab's job is the bar's); the table under the scene. The five controls are one row of 44px buttons at the foot of the words (68px with its padding). The log across the foot, with its 32px head. At 1024×768: scene's panel 640×452 (as today), words 346×381 (today 404), 2.8 log rows (today 3.3). |
 | **Upright, or under 900px wide, 600px tall or more** | The phone layout, grown (D3's tunings stay): header 69; bar 44; scene 40dvh; the stops row 40px; tabs 48px: Explain, Log, Table; one centred 520px column; controls 64px. At 768×1024 the words have 349px (today 450). |
 | **Up to 760px** | Header 69; bar 36; scene 34dvh (18dvh in Learn and Practice); the stops row 36px (marks 24px; a stop is 44×35 with 8 places, 27×35 with 13 at 375 wide, 26×35 at 360); tabs 44px: Explain, Log, Table; the tab's part; controls 64px. At 375×812: 69 + 36 + 276 + 36 + 44 + 287 + 64. In Learn the words have 417px (today 502). |
 | Controls on a phone | Job 15's row and sizes: 48px buttons at x 12, 68, 124, 180 and the forward button from 236 (127px at 375). Under 360px: 44px buttons. |
@@ -288,7 +298,7 @@ The header is 69px at the top at every width. Everything below is the lesson, in
 
 **DOM order, which is the Tab order:**
 
-1. The skip link; the site's header: home, the five links (or, under 960px, the menu button after the theme button), the theme button. Then the lesson's bar: the timeline's stops (1100px and up, and a tablet on its side), the stamp, the lessons button under 1100px.
+1. The skip link; the site's header: home, the five links (or, under 960px, the menu button after the theme button), the theme button. Then the lesson's bar: the timeline's stops (1100px and up, and a tablet on its side), the lessons button under 1100px.
 2. The track's lessons (1100px and up).
 3. The scene: Network, Sequence.
 4. Under 900px or upright: the stops row, then the tabs. The timeline is mounted here, after the scene, at these widths, so the order follows the screen.
@@ -330,7 +340,9 @@ The page keeps today's rules (`no-script.test.ts`): the note "This lesson needs 
 | This lesson | the timeline's `nav` label | kept (it was the outline's heading) |
 | Step 4 of 5; Overview; Learn; Practice | the timeline's end | kept (`placeLabel`), moved within the bar |
 | Lesson 9 of 20 | the bar, under the lesson's name | kept, moved one line down |
-| OSI layer 7, Application | the bar, under the stamp | kept; set in sentence case |
+| OSI layer 7, Application | the bar's third cell | kept; set in sentence case |
+| Checked <date>, <n> sources; Not checked yet, <n> sources | the bar; the Overview's first line on a phone | removed from the Lesson page (2.97) |
+| Checked <date>; Not checked yet | the foot of Learn, under "Sources" | removed from the Lesson page (2.97); the "Sources" heading and the list stay |
 | Tracks / | track column's head | moved from the bar |
 | All <N> lessons, × Close | the sheet's bar | kept from the dialog |
 | ✓ Done, In progress, Not ready yet | lesson rows | kept (`STATUS_WORDS`) |
@@ -364,7 +376,8 @@ None at any size tried, with the header on: 1920×1080, 1440×900, 1440×889, 13
 - `src/lesson/LogPanel.tsx`: the controls leave its head at every width.
 - The lesson's table is one instance whose home follows §4.6 (the guide, or under the scene). `useFocusAcrossRemounts` already keeps a table's focus across a remount. The guide's entry form reuses the rules at `console.css` for `.tpanel__table:has(thead th:nth-child(4))`, and `rules.css` and `bits.css` under 640px, keyed on the guide as well as on the width.
 - The head's no-script style: the `<noscript>` list and the new selectors.
-- `src/lesson/Explanation.tsx`: no change.
+- **The stamp (2.97).** `Stamp` is used on the Lesson page in three places, and all three go: `TopBar.tsx:88` (the bar); `Explanation.tsx:396` (the Overview's first line, `.explain__lead`, shown on a phone and an upright tablet); `Explanation.tsx:117-118` (`p.explain__stamp` in `Sources`, the foot of Learn). The `stamp` prop then has no reader on this page: it leaves `TopBarProps`, `Explanation`'s props and `LessonConsole`'s (`LessonConsole.tsx:74-75`, `:277`, `:327`), and `[lesson].astro` stops passing it. `.explain__lead` keeps the kicker alone. `src/components/Stamp.tsx` and `src/lib/stamp.ts` stay for the track page's cards and About. The `console.css` rules for `.topbar__crumb .stamp`, `.explain__lead .stamp` and `.explain__stamp` go; `.stamp` itself is in `site.css` and stays.
+- `src/lesson/Explanation.tsx`: no change to words; the two stamps above leave it.
 
 **Units.** As planned: B22 the header, the shared parts and 1100px and up; B23 the phone and 761 to 1099px.
 
@@ -372,16 +385,16 @@ None at any size tried, with the header on: 1920×1080, 1440×900, 1440×889, 13
 
 | Spec | What changes |
 |---|---|
-| `site.spec.ts` | its header checks loop over the site's pages: the lesson pages join them, among the pages with no "Start learning" (`:392`), the theme button's checks (`:410-419`, `:975-976`: one `.site-head .theme-toggle`, hidden without script), the menu's (`:462-478`) and the header's place (`:126`, `:512`); the @phone "one screen with its tabs" check now has the header above the lesson, and the tab count is three (two for OSI Model) |
+| `site.spec.ts` | its header checks loop over the site's pages: the lesson pages join them, among the pages with no "Start learning" (`:392`), the theme button's checks (`:410-419`, `:975-976`: one `.site-head .theme-toggle`, hidden without script), the menu's (`:462-478`) and the header's place (`:126`, `:512`); the @phone "one screen with its tabs" check now has the header above the lesson, and the tab count is three (two for OSI Model); any check that a lesson shows "Checked" or "Not checked yet" is dropped for lesson pages and kept for the track page and About |
 | `lesson.spec.ts` | "one screen" with the header; the outline walk becomes a walk of the timeline's stops; on a phone it uses the stops row, not the Steps tab; the lesson page has one `main` |
 | `controls.spec.ts` | the row at 1440 is in the guide: four buttons on one line, the forward button under them; its words and `title`; the phone's x positions stay (12, 68, 124, 180, 236) and its y is unchanged (pinned at the foot) |
 | `reading.spec.ts` | words 516px at 1280 (was 480); the folded log is 45px (was 52); Learn's room 590px at 1440×900 (was 730) |
-| `tablet.spec.ts` | `.topbar__brand b` (`:128`, `:226`, `:355`) is gone: the header's `.brand b` shows at every width; 1024×768: no tabs, words 346×381, the 44px bar, the controls' row at the foot of the words; 768×1024: the header, the 44px bar, the stops row, three tabs, words 349px, the scene from 113px to 523px (was 52 to 462) |
+| `tablet.spec.ts` | `.topbar__brand b` (`:128`, `:226`, `:355`) is gone: the header's `.brand b` shows at every width; 1024×768: no tabs, words 346×381, the 44px bar, the controls' row at the foot of the words; 768×1024: the header, the 44px bar, the stops row, three tabs, words 349px, the scene from 113px to 523px (was 52 to 462); its stamp-placement checks (the stamp in the bar at 761px and up, on the Overview's first line under that) become checks that the lesson page has no `.stamp` at any size |
 | Figure boxes at 1440×900: `load-balancers` (733×347), `ip-address` (396px), `tcp-udp` (346px), `ports` (316px), `mac-address` (316px) | each scene becomes 769px wide and 498px tall (the table has left); the specs' panel checks move to the guide |
 | `subnetting.spec.ts`, `ip-address.spec.ts` at 1440 | the board is the fitted one in the guide; "the line is where it always was" needs a new measure |
 | `router.spec.ts`, `arp.spec.ts`, `nat.spec.ts`, `vpn.spec.ts`, `proxies.spec.ts` | the 1440 panel checks move to the guide; `proxies` reaches steps from the timeline |
 | `visual.spec.ts` | screenshots only; at 1280×800 and 1366×768 they now show the 44px bar and the table under the scene |
-| Unit tests | `BaseLayout.test.ts` and `no-script.test.ts` (the lesson page now has `.site-head`; its buttons are hidden without script); `LessonConsole*.test.tsx` (tabs, where the controls, the table and the timeline mount); `Outline`, `TopBar`, `playback` |
+| Unit tests | `BaseLayout.test.ts` and `no-script.test.ts` (the lesson page now has `.site-head`; its buttons are hidden without script); `LessonConsole*.test.tsx` (tabs, where the controls, the table and the timeline mount); `Outline`, `TopBar`, `playback`; `TopBar.test.ts:53-55` ("the bar carries the lesson's stamp") and `Explanation.test.tsx:269-277` ("the Overview's first line holds the kicker and the stamp") turn into "no stamp"; the `stamp=` prop leaves the fixtures in `LessonConsole*.test.tsx`, `Explanation.test.tsx` and `TopBar.test.ts` |
 
 ## 11. Acceptance checks
 
@@ -404,10 +417,16 @@ Each can be tried on the prototype.
 10. The log's panel spans the track and the scene (1015×165 at 1440×900), its head is 32px and holds no control, and it shows at least 3 rows at 1440×900 and 1280×800.
 11. No lesson word differs from `src/content/`.
 
+**No stamp (2.97)**
+
+40. At every size, at every place, the lesson page has no `.stamp` and shows neither "Checked" nor "Not checked yet".
+41. Learn still ends with the "Sources" heading and the numbered list (16 sources on DHCP), and the words still carry their numbered source marks.
+42. The track page's lesson cards and About still show the stamp.
+
 **The lesson's bar and the timeline**
 
 12. At 1100px wide and up, in a window 890px tall or more, the bar is 68px with three cells; the first is as wide as the track column and the last as wide as the guide, each within 6px. Under 890px tall it is 44px.
-13. The bar holds the lesson's name as the `h1`, "Lesson 9 of 20", the stamp and the OSI badge when the unit names a layer; it holds no mark, no theme button, no crumb and no segments.
+13. The bar holds the lesson's name as the `h1`, "Lesson 9 of 20", and the OSI badge when the unit names a layer; it holds no stamp, no mark, no theme button, no crumb and no segments. Where the unit names no layer the 68px bar's third cell is empty with no rule, and the timeline's cell is the same width as on a lesson with a badge (782px at 1440).
 14. The timeline has one stop for every place, in order: 8 for DHCP, 13 for OSI Model. Exactly one has `aria-current="step"`. Stops before it show a tick; the rule is orange up to it and dashed after.
 15. At 1440×900 with DHCP every stop shows its name under its mark, no name is cut, and the line ends with "Step 4 of 5". At the Overview it ends with "Overview".
 16. At 1280×800 and 1366×768 the stops are marks on one line, followed by the count and the current step's name.
@@ -452,7 +471,7 @@ Each can be tried on the prototype.
 4. The bar stays 68px where the window is 890px tall or more, and is one line under that: the names under the marks need the height, and a short window needs it more.
 5. The timeline is in the bar, not in a band of its own: the bar is the only row over the scene that costs the drawing nothing.
 6. "Lesson 9 of 20" stays in the bar, with the lesson's name and over the track's list: it is the lesson's place in the track.
-7. The stamp and the OSI badge share the cell over the guide.
+7. The cell over the guide holds the OSI badge alone, and stays where it is with nothing in it on a lesson with no layer: the timeline is then the same width, over the scene, on every lesson (2.97).
 8. Stops are numbered squares on a rule: the reference's manner (one line, names under, the count at the end) in Patch's shapes; its circles, colours and words are not copied.
 9. Overview, Learn and Practice are stops with a dot, not numbers: only the Watch steps are numbered today, and "Step 4 of 5" must stay true.
 10. The count gives up its room before any name does, and names give way to marks before any name is squeezed under 80px: a cut name names nothing.
