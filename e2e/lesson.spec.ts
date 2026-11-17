@@ -343,13 +343,17 @@ test.describe('lesson specifics', () => {
 
   test('DHCP: a focused lease table keeps focus while playback adds a row to it', async ({ page }) => {
     const dhcp = lessonNamed('dhcp');
-    // Step 4 plays the Acknowledge, then a table event that remounts the lease table with its new row.
-    await open(page, `${dhcp.path}?step=4`);
+    // Step 3 is where the lease table is still empty. Moving on with → plays step 4: the Acknowledge, then a table
+    // event that remounts the lease table with its new row.
+    await open(page, `${dhcp.path}?step=3`);
+    await settledFrame(page);
     const table = page.getByRole('region', { name: 'DHCP lease table' });
     const lease = table.getByRole('cell', { name: '192.168.1.100' });
     // The row must arrive after the focus, or the remount is never tested.
     await expect(lease).toHaveCount(0);
     await table.focus();
+    // The shortcut fires on the focused table: it does not scroll sideways, so → reaches the lesson.
+    await page.keyboard.press('ArrowRight');
     await expect(lease).toBeVisible({ timeout: 30_000 });
     await expect(table).toBeFocused();
   });
