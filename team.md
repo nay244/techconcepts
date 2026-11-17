@@ -1088,3 +1088,11 @@ Planned on 2026-11-15 in a session of its own on Opus 5.5, started from the sess
 - **A worktree made by the app has its own copy of `node_modules`, not a link.** In it `npx playwright` fails on every spec and two `registry.glossary.test.ts` tests fail (they pass in the main folder). Link `node_modules` as `CLAUDE.md` says, or run the main folder's CLI, and run the final checks in the main folder.
 - **Check the end-to-end port before the final pass.** 4471 was held by an `astro preview` left running in the main folder for two days, and the first pass died on it after the build. Run `lsof -iTCP:4471 -sTCP:LISTEN` first, or give the final pass a port of its own.
 - **In a measuring script, SVG `checkVisibility()` reports a `display: none` group as visible.** Read the computed `display` up the chain instead.
+
+# Job 18: the Tracks page in the Card stack look
+
+Planned on 2026-11-16 in a session of its own on Opus 5.5, started from the session that closed job 17. The owner: "Now let's work on the Tracks page"; to whether Card stack replaces Patch: "Site-wide excluding our current Lesson's page" (direction 2.84, 2.85). Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S20 | scout | Haiku | 1 | 146,115 (the agent's reported total) | `prototypes/s20-tracks-facts.md`. 3 panels (14 + 20 ready, A+ none); one island a ready track; 140 lines of styles, phone "not designed yet"; 213 KB gzipped, mostly 34 lesson figures for the up-next card; `TrackStrip` and `hub.css` shared with the track page; `e2e/global-setup.ts:16-20` needs `main article.panel h2 a`. |
