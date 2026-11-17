@@ -1128,3 +1128,10 @@ Planned on 2026-11-16 in a session of its own on Opus 5.5, started from the sess
 # Job 19: the Lesson page
 
 Numbers claimed on `revamp` at plan time (2026-11-17): job 19, direction rows from 2.90, scout S21, design D19, build from B22, end F19.
+
+Planned on 2026-11-17 in a session of its own on Opus 5.5, started from the session that closed job 18. The owner: "let's plan out the Lesson page"; asked for a comparison with a reference site; chose "Rearrange the layout" with three of its ideas (direction 2.90, 2.91). Token figures are growth.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S21 | scout | Haiku | 1 | 195,499 (the agent's reported total) | `prototypes/s21-lesson-facts.md` (9 parts). One island; `console.css` 2,068 lines; the track's lessons already in the page ("All N lessons" dialog); 34 lesson pages; 644 unit test declarations, 18 end-to-end specs; open faults listed, the bits board's fitting found built (`d6714fa`, §7 corrected). |
+| S21 compare | orchestrator | Opus 5.5 | 1 | not counted | `prototypes/s21-reference-designed-to-scale.md`: the reference site beside ours at 1440×900 and 375×812, measured. Phone figure labels: ours 1.3–7.1px (DHCP), theirs 7.5–10.1px. |

@@ -80,3 +80,85 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 ## Not in this job
 
 The track page, About, the Glossary and 404 in Card stack (later jobs, 2.84); the header and footer; the Lesson page; Home, beyond moving its styles unchanged; A+'s lessons; the critique's findings D and E on Home.
+
+# Job 19: the Lesson page, its layout rearranged in Patch
+
+**Status: planned 2026-11-17; waiting for the owner's go.** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
+
+## Inputs
+
+| | |
+|---|---|
+| **The job** | The Lesson page's layout rearranged, in Patch, on phone and desktop, light and dark, around the three ideas the owner chose: **the steps as a numbered timeline in place of today's outline**, **a forward button that names where it goes, with a line naming the keys**, and **the track's lessons in the left column**. |
+| **Done means** | The owner has approved D19 at the design gate; the build units are merged into `revamp`, each with a build review of PASS (or PASS WITH FIXES, each "fixed when" run); on `revamp`, `npm test`, `npm run build`, CI's end-to-end pass and, because every lesson's layout changes, the full `npm run e2e` once at F19. |
+| **Budget** | 2.2 to 3.2 million subagent tokens of growth (estimate below), plus S21's 0.20 million spent. A stop for the owner at 3.6 million. |
+| **References** | `docs/direction.md` 2.84 (Patch stays here), 2.90 (the scope), §6 (Patch), §7 (the Lesson page as built and why), §10 (the "stage and a line" take, not adopted in 2026-11; the owner now asks for its timeline idea, so it may be drawn again), 2.71–2.72 (job 15's controls); `prototypes/s21-lesson-facts.md` (the code, regions, tests, faults); `prototypes/s21-reference-designed-to-scale.md` (the reference site's layout and spacing beside ours, measured); `prototypes/d1-*`, `d2-*`, `d3-*` (reading, phone, tablet), `d14-lesson-flow.*` (the controls, its key line). |
+
+## What the scout found (S21)
+
+- One island (`LessonConsole`, `client:load`) draws the whole page: top bar, outline, tabs, scene, explanation, log, controls. `console.css` is 2,068 lines; `LessonConsole.tsx` 347, `Outline.tsx` 289, `TopBar.tsx` 120. The page uses no site header or footer (`chrome={false}`), reads `tokens.ts` through `BaseLayout`, and loads neither `hub.css` nor `card-stack.css`.
+- The track's lessons are already in the page: "All N lessons" opens them in a dialog, by part, with Done or In progress (`Outline.tsx:124-155`). Moving them into the sidebar needs no new data.
+- 34 lesson pages (14 + 20); 22 on the network map, 26 with a Table tab, 17 with a Sequence view. DHCP's page is 152 KB gzipped.
+- Pinned by 644 unit test declarations under `src/lesson/`, `src/engine/`, `src/scenes/` (64 render the console) and 18 end-to-end specs; several measure the 1440 figure box (Load Balancers 733×347, IP Address 396px, TCP/UDP 346px, Ports 316px) and `lesson.spec.ts` walks the outline to every place.
+- Still open: the phone figures' labels (1.3 to 7.1px on DHCP at 375, measured again 2026-11-17), the Bits tab that never marks a change, the ending, a wrong answer's mark, the keys, Go deeper's expand-all, the controls late in tab order, the HTTP up-next tile. Job 15 fixed the labels that pointed back and the timer. The bits board's fitting is built (`d6714fa`); §7's two lines saying otherwise are corrected in this change.
+
+## Decisions in this plan
+
+1. **The look stays Patch** (2.84): its tokens, type, colours and figures. No token changes; `tokens.ts` and `card-stack.css` untouched.
+2. **The layout is open, within what the page tells a reader.** Kept: the scene with its Network and Sequence views, the explanation with Go deeper and the numbered sources, the event log, the lesson's own table, Learn and Practice with D1's reading width, the stamp, the OSI badge, Play all, replay and the speed button (2.71), the theme button. A reader can still reach every place of the lesson (Overview, each step, Learn, Practice) in one press.
+3. **The timeline replaces the outline** (the owner's words: "Their step timeline in place of our current one"). It holds every place, not the Watch steps alone, and uses the lesson's existing step titles; **no lesson word changes and no new fact is written**, so no fact-check is needed. This reverses the 2026-11-10 decision that the sidebar keeps the old outline's design (§7), by the owner's word. Whether the top bar's step segments stay beside it is the designer's call.
+4. **The left column holds the track's lessons**, from the data "All N lessons" uses today, with this browser's Done and In progress, the current lesson lit. No search: the site has none and the owner did not choose it.
+5. **The forward button names where it goes** ("Next: <place>") where it fits, and a key line names the keys. This reopens 2.71's labels by the owner's word; the designer rules what a phone's 127px button says.
+6. **The phone stays one screen** (§7, hypothesis 2.9): the scene pinned, the words in the room left, the controls in the thumb zone. A design that gives this up comes to the owner.
+7. **D19 draws two layouts** (the most `CLAUDE.md` allows without the owner's word), both carrying decisions 3–5, different in where the words, the log and the controls go. Each at 375 and 1440, light and dark, in the states Overview, a Watch step, Learn, Practice and the lesson's end, and the 768×1024 and 1024×768 tablets in its spec (D3's two layouts). Each layout is measured against today's at 1440×900 (the figure's size, the words' width, the empty room under a step) and at 375×812 (the scene's height, the words' room), since the owner's standing rule is to rearrange only with a measured gain. The keyboard order follows the new reading order. The owner picks at the gate.
+8. **Build units after the gate.** The design sets the split; the planned one is B22 (the shared parts: the timeline, the track column, the forward label and key line, the desktop layout) then B23 (phone and the 761–1099 range), one after the other because both write `console.css` and `LessonConsole.tsx`; one spec review covers both. Each in a worktree of its own (`.superpowers/wt/b22`, branch `job19/b22` off `revamp`, `node_modules` linked, E2E port 4490; B23 off B22's branch, port 4491). Every end-to-end measure that changes with the approved layout is changed in the build and listed in its report.
+
+## Units
+
+| Unit | Phase | Owner (model) | What | Check |
+|---|---|---|---|---|
+| S21 | scout | scout (Haiku) | Done: `prototypes/s21-lesson-facts.md`. The orchestrator's comparison: `prototypes/s21-reference-designed-to-scale.md`. | |
+| D19 | design | designer (Opus 5.5) | `prototypes/d19-lesson-layout.html` and `.md`: two layouts in Patch, the states and widths of decision 7, the measures against today's, "For the builder" and acceptance checks as D18's spec has. | The orchestrator plays it in the browser at 375 and 1440, light and dark, and at the two tablets. |
+| Gate | design | the owner | D19's prototype and spec. | The owner's words. |
+| B22–B23 spec | build | reviewer (Opus) | Holes and attack cases for D19, a keyboard walk both ways included, the cases only a browser can try marked: `prototypes/d19-cases.md`. | Holes with one answer closed as errata; taste back to `designer`. |
+| B22 | build | builder (Sonnet) | The timeline, the track column, the forward label and key line, the desktop layout; the tests that pin them changed once; each case a test. | `npm test`; `npm run build`; the lesson specs at d1440-dark. |
+| B22 review | build | reviewer (Opus) | The diff against D19, the prototype and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
+| B23 | build | builder (Sonnet) | The phone and the 761–1099 range. | `npm test`; `npm run build`; the lesson specs at phone and `tablet.spec.ts`. |
+| B23 review | build | reviewer (Opus) | As B22's. | As B22's. |
+| F19 | end | orchestrator (Opus 5.5) | Into `revamp`; CI's end-to-end pass, then the full `npm run e2e`; §7 rewritten for the new layout; the ledger; the owner's result with errata. | As "Done means". |
+
+Order: D19; the gate; the spec review; B22; its review; B23; its review; F19.
+
+## Estimate
+
+| Part | Growth, roughly |
+|---|---|
+| D19 (two layouts, five states, two widths, two themes, two tablets in the spec) | 0.8 to 1.0 million |
+| Spec review | 0.2 to 0.3 million |
+| B22 | 0.5 to 0.8 million |
+| B23 | 0.4 to 0.6 million |
+| Two build reviews, and the fixes | 0.3 to 0.5 million |
+| **Total** | **2.2 to 3.2 million** |
+
+## When the work stops for the owner
+
+- The design gate.
+- A design that changes a lesson's words, a token, the site header or footer, or gives up the phone's one screen.
+- A hole in the approved spec that needs taste and would change what the owner approved.
+- The job past 3.6 million tokens of growth.
+- Anything `CLAUDE.md` says the owner keeps: push, merge to `main`, deploy, sign-ins, installs.
+
+A build unit that fails two reviews comes back to the orchestrator with both reports.
+
+## What could go wrong
+
+- **Eighteen specs measure today's layout.** The figure boxes at 1440, the outline walk, the phone bar's x positions, the tablet's breakpoints. The spec review lists which measures the design changes, so a builder changes those and no others.
+- **The figure gets smaller.** The scene is the lesson; a layout that gives the timeline or the track room by shrinking the drawing below today's 685×326 at 1440×900 is not a gain. The designer reports the drawing's size for each layout.
+- **The track column is long.** Networking has 20 lessons; at 900 tall with the bar the column must scroll or fold by part without losing the current lesson.
+- **The forward label overflows.** Step titles run to about 30 characters ("Network and Broadcast Addresses"); "Next: …" must fit, wrap or shorten by a rule, never be cut mid-word.
+- **The tablet ranges** (D3) carry two layouts of their own; a desktop-first build can break them. B23 owns them and runs `tablet.spec.ts`.
+- **No JavaScript.** The stacked page must still read; the timeline and the track list need a no-script form.
+
+## Not in this job
+
+The phone figures' label size and the Sequence view on a phone (the critique's P1, not chosen by the owner: "Phone figure fit to box" was offered and left out; it stays open for a job of its own), the Bits tab's change mark, the lesson's ending, the wrong answer's mark, Go deeper's expand-all, the HTTP up-next tile; search; Card stack on this page (2.84); the track page, About, the Glossary and 404 in Card stack; the header and footer; any lesson's words.
