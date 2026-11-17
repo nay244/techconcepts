@@ -181,6 +181,18 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const [guideTable, setGuideTable] = useState<HTMLElement | null>(null);
   const roomForTable = useMediaQuery('(min-width: 1100px) and (min-height: 890px)');
   const tableInGuide = roomForTable && (slot.kind === 'overview' || slot.kind === 'step') && unit.scene.panel?.type !== 'labels';
+  // In the guide the table is capped and scrolls inside itself, so the row the step is about is brought into its view
+  // (the panel's own scroll box only: the page and the guide never move).
+  useEffect(() => {
+    if (!tableInGuide || guideTable === null) return;
+    const row = guideTable.querySelector<HTMLElement>(MARKED_ROW);
+    const panel = row?.closest<HTMLElement>('.tpanel, .rpanel');
+    if (row == null || panel == null) return;
+    const r = row.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    if (r.top < p.top) panel.scrollTop -= p.top - r.top + 4;
+    else if (r.bottom > p.bottom) panel.scrollTop += r.bottom - p.bottom + 4;
+  });
   // The forward button shows its short form wherever the guide has less than the full form's room (under 1100px wide).
   const shortForward = useMediaQuery('(max-width: 1099px)');
   const [sheetOpen, setSheetOpen] = useState(false);

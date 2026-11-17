@@ -9,7 +9,6 @@ import type { Lesson, SceneEvent } from '../content/schema';
 import { liftedFixture, makeLesson, makeUnit, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
-import { THEME_KEY } from '../lib/theme';
 import { PROGRESS_KEY } from '../progress/store';
 import { seedProgress, type SeedLesson } from '../test/progress';
 import LessonConsole from './LessonConsole';

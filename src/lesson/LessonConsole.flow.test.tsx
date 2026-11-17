@@ -296,10 +296,16 @@ test('8: Play all from the Overview holds 2600 ms between steps, stops on step 5
   await user.click(playButton());
   await wait(EVENT_MS);
   expect(kicker().textContent).toBe('Watch · Step 1 of 5');
+  // During the hold the timeline's rule fills from step 1's mark to step 2's, over the hold's length (case 21); at 1× it is 2600ms.
+  expect(document.querySelector('.tl li[data-fill] button')).toHaveAccessibleName(/^Step 1, /);
+  expect(document.querySelector('.tl li[data-fill-next] button')).toHaveAccessibleName(/^Step 2, /);
+  expect((document.querySelector('.timeline') as HTMLElement).style.getPropertyValue('--hold')).toBe(`${HOLD_MS}ms`);
   await wait(HOLD_MS - 1);
   expect(kicker().textContent).toBe('Watch · Step 1 of 5');
   await wait(1);
   expect(kicker().textContent).toBe('Watch · Step 2 of 5');
+  // When the next step arrives the fill is gone (the rule up to its mark is solid).
+  expect(document.querySelector('[data-fill], [data-fill-next]')).toBeNull();
   await wait(2 * EVENT_MS + HOLD_MS + 2 * EVENT_MS + HOLD_MS + EVENT_MS + HOLD_MS + EVENT_MS);
   expect(kicker().textContent).toBe('Watch · Step 5 of 5');
   expect(playButton()).toHaveAccessibleName('Play all');
@@ -318,7 +324,7 @@ test('9: Pause shows the step complete and the run stays stopped; Play all then 
   expect(logRows()).toHaveLength(2);
   await wait(30_000);
   expect(kicker().textContent).toBe('Watch · Step 2 of 5');
-  expect(document.querySelector('.topbar__fill')).toBeNull();
+  expect(document.querySelector('[data-fill], [data-fill-next]')).toBeNull();
   await user.click(playButton());
   expect(kicker().textContent).toBe('Watch · Step 1 of 5');
 });
@@ -387,7 +393,7 @@ test('12: the forward button on the Overview shows step 1 and nothing moves on u
   expect(kicker().textContent).toBe('Watch · Step 2 of 5');
   expect(logRows()).toHaveLength(2);
   expect(playButton()).toHaveAccessibleName('Play all');
-  expect(document.querySelector('.topbar__fill')).toBeNull();
+  expect(document.querySelector('[data-fill], [data-fill-next]')).toBeNull();
 });
 
 // ---------------------------------------------------------------- 13: replay
@@ -467,7 +473,7 @@ test('14: under reduced motion a hand move lands the step complete at once; repl
   for (let i = 0; i < 4; i += 1) await user.click(forwardButton());
   expect(kicker().textContent).toBe('Watch · Step 4 of 5');
   expect(logRows()).toHaveLength(4);
-  expect(document.querySelector('.topbar__fill')).toBeNull();
+  expect(document.querySelector('[data-fill], [data-fill-next]')).toBeNull();
   expect(vi.getTimerCount()).toBe(0);
   await user.click(backButton());
   await user.click(forwardButton());

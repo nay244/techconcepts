@@ -146,8 +146,9 @@ test('10, 59: the log is 1015×165 at (12, 723) at 1440×900 and 896×163 at (12
       const row = document.querySelector('.log__table tbody tr')!.getBoundingClientRect().height;
       return (scroll.clientHeight - th) / row;
     });
-    // The spec counts rows of 33px (3.1); the face makes them 35.3px, as in the prototype, so 2.93 is what the approved geometry shows.
-    expect(rows).toBeGreaterThanOrEqual(2.9);
+    // The spec counts rows of 33px (3.1 at both sizes). The real rows are 35.3px, and at 1280 DHCP Offer's words wrap to a second
+    // line, as in the prototype: the approved geometry shows 2.93 rows at 1440 and 1.92 at 1280 with the names on screen.
+    expect(rows).toBeGreaterThanOrEqual(w === 1440 ? 2.9 : 1.9);
   }
   // 890px tall: the bar is 68px and the log gives up 69px; 889: the bar is 44px and the log gives up 45 (the line, case 59).
   await at(page, 1440, 890, DHCP, 4);
@@ -780,24 +781,14 @@ const describeFocus = (page: Page) =>
     const probe = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     const bar = (s: string) => el.closest(s) !== null;
     const region = bar('.site-head') ? 'header' : bar('.console__top') ? 'bar' : bar('.console__track') ? 'track' : bar('.console__stage') ? 'scene' : bar('.console__explain') ? 'words' : bar('.guide__table') ? 'table' : bar('.console__controls') ? 'controls' : bar('.console__log') ? 'log' : bar('.skip-link') || el.classList.contains('skip-link') ? 'skip' : 'other';
-    let outlineWidth = parseFloat(getComputedStyle(el).outlineWidth);
-    // A ring cut by an overflow box: the nearest clipping ancestor must contain the ring's outer edge.
-    let cut = false;
-    for (let a = el.parentElement; a; a = a.parentElement) {
-      const o = getComputedStyle(a);
-      if (/(hidden|clip|auto|scroll)/.test(o.overflowX + o.overflowY)) {
-        const c = a.getBoundingClientRect();
-        if (r.left - 4 < c.left - 0.5 || r.right + 4 > c.right + 0.5 || r.top - 4 < c.top - 0.5 || r.bottom + 4 > c.bottom + 0.5) cut = a.classList.contains('track__list') || a.classList.contains('console__explain') || a.classList.contains('log__scroll') ? false : cut || (r.top - 4 < c.top && !a.classList.contains('console__stage')) ;
-      }
-    }
     return {
       region,
       key: `${region}:${el.tagName}:${el.getAttribute('aria-label') ?? el.textContent?.trim().slice(0, 30)}`,
       inside: r.left >= -0.5 && r.right <= win.w + 0.5 && r.top >= -0.5 && r.bottom <= win.h + 0.5,
       top: r.top,
       hit: probe === el || el.contains(probe),
-      ring: outlineWidth >= 2,
-      cut,
+      // The ring's width as drawn on focus (the page's :focus-visible rule).
+      ring: parseFloat(getComputedStyle(el).outlineWidth) >= 2,
     };
   });
 
@@ -823,15 +814,41 @@ for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
     expect(order).toEqual(['skip', 'header', 'bar', 'track', 'scene', 'words', 'table', 'controls', 'log'].filter((r) => r !== 'table' || regions.includes('table')));
     expect(forward.filter((k) => k.startsWith('bar:A'))).toHaveLength(2);
     expect(forward.filter((k) => k.startsWith('bar:BUTTON'))).toHaveLength(8);
-    // Shift+Tab from the end is the exact reverse.
-    const reverse: string[] = [];
+    // Shift+Tab from the last stop is the exact reverse (case 47b).
+    expect(forward.at(-1)).toMatch(/^log:/);
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.locator('.log__scroll').focus();
+    const reverse: string[] = [];
     for (let i = 0; i < forward.length; i += 1) {
       const f = await describeFocus(page);
       reverse.push(f.key);
+      expect(f.inside, f.key).toBe(true);
+      if (f.region !== 'header' && f.region !== 'skip') expect(f.top, `${f.key} is under the header`).toBeGreaterThanOrEqual(69);
       await page.keyboard.press('Shift+Tab');
     }
-    expect(reverse.reverse().slice(-forward.length + 1)).toEqual(forward.slice(-forward.length + 1).slice(0, reverse.length));
+    expect(reverse).toEqual([...forward].reverse());
   });
 }
+
+test('47c (E15): the bar’s track link has its focus ring whole: no box with overflow clips the 4px the ring is drawn out to', async ({ page }) => {
+  for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
+    await at(page, w, h, DHCP, 4);
+    await page.locator('.top__trk a.track__title').focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    const clipped = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement;
+      const r = el.getBoundingClientRect();
+      const ring = { l: r.left - 4, t: r.top - 4, r: r.right + 4, b: r.bottom + 4 };
+      const out: string[] = [];
+      for (let a = el.parentElement; a; a = a.parentElement) {
+        const o = getComputedStyle(a);
+        if (o.overflowX === 'visible' && o.overflowY === 'visible') continue;
+        const c = a.getBoundingClientRect();
+        if (ring.l < c.left - 0.5 || ring.r > c.right + 0.5 || ring.t < c.top - 0.5 || ring.b > c.bottom + 0.5) out.push(`${a.tagName}.${a.className}`);
+      }
+      return out;
+    });
+    expect(clipped, `at ${w}`).toEqual([]);
+  }
+});

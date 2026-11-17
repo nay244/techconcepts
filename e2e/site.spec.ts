@@ -731,8 +731,10 @@ test.describe('desktop', () => {
   test.describe('lessons Networking shares with the tour', () => {
     test('a shared lesson under /networking/ counts in Networking: Lesson 13 of 20, the tour copy 6 of 14', async ({ page }) => {
       await open(page, '/networking/what-is-dns');
+      // At 1440 the lesson's place is the track column's head, and the track's lessons are the column (no "All 20 lessons" button).
       await expect(page.getByText('Lesson 13 of 20', { exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'All 20 lessons' }).first()).toBeVisible();
+      await expect(page.locator('.console__track nav [aria-current="page"]')).toContainText('DNS');
+      await expect(page.getByRole('link', { name: /Tracks/ }).first()).toBeVisible();
       await expect(page.locator('a[href="/networking"]').first()).toBeVisible();
       await open(page, '/how-the-internet-works/what-is-dns');
       await expect(page.getByText('Lesson 6 of 14', { exact: true })).toBeVisible();
@@ -1514,18 +1516,19 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
   const heightOf = async (locator: Locator): Promise<number> => (await locator.boundingBox())!.height;
 
   /** The links at the foot of the lesson's own Learn part, read in a window of its own with scripts on. */
-  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; labels: string[]; stamp: string; top: string }> {
+  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; labels: string[] }> {
     const context = await page.context().browser()!.newContext({ viewport: { width: 1440, height: 900 } });
     const lesson = await context.newPage();
     try {
       await open(lesson, `${new URL(page.url()).origin}${HTTP_PATH}`);
-      const top = squash(await lesson.locator('.console__top .stamp').innerText());
-      await lesson.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+      // The lesson page shows no stamp (2.97): only the sources are compared with Home's block.
+      await lesson.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: 'Learn', exact: true }).click();
       await expect(kicker(lesson)).toHaveText('Learn');
       const items = lesson.locator('.console__explain .explain__foot ol.explain__sources > li');
       const hrefs = await items.locator('a').evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
       const labels = await items.locator('a').evaluateAll((links) => links.map((a) => a.firstChild?.textContent ?? ''));
-      return { hrefs, labels, stamp: squash(await lesson.locator('.console__explain .explain__foot .stamp').innerText()), top };
+      expect(await lesson.locator('.stamp').count()).toBe(0);
+      return { hrefs, labels };
     } finally {
       await context.close();
     }
@@ -1626,8 +1629,6 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
           const hrefs = await links.evaluateAll((a) => a.map((el) => (el as HTMLAnchorElement).href));
           expect(hrefs).toEqual(foot.hrefs);
           expect(hrefs).toHaveLength(20);
-          expect(foot.top).toBe(STAMP);
-          expect(foot.stamp.startsWith('Checked 11 Nov 2026')).toBe(true);
           expect(await links.evaluateAll((a) => a.map((el) => el.getAttribute('title')))).toEqual(foot.labels);
           expect(await links.last().getAttribute('title')).toMatch(/^RFC 6335: /);
           expect(await links.evaluateAll((a) => a.filter((el) => el.hasAttribute('target')).length)).toBe(0);

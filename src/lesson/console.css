@@ -39,6 +39,19 @@
   font: 15px/1.5 var(--sans);
 }
 
+/* The site's header is sticky and 69px tall: a focused element scrolled into view on the stacked page (JavaScript off under
+   1100px, a phone on its side) is never left under it. Where the page does not scroll this changes nothing. */
+:root:has(.console) {
+  scroll-padding-top: 69px;
+}
+/* The one rule the Lesson page adds to the header: its open menu (under 960px) lies over the lesson, so the one-screen page does not grow. */
+body:has(.console) .site-head .menu-panel {
+  position: absolute;
+  inset: 100% 0 auto;
+  background: var(--ground);
+  border-bottom: 1px solid var(--line-strong);
+}
+
 :where(.console) button {
   font: inherit;
   color: inherit;
@@ -1064,10 +1077,11 @@ a.outline__lesson:hover {
 .guide__table:empty {
   display: none;
 }
-.guide__table .tpanel {
+.guide__table :is(.tpanel, .rpanel, .bits) {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
+  overflow: auto;
   padding: 10px 16px 12px;
 }
 /* In the guide a table of four columns or more is the phone's entry form (D2): one entry a row, each value under its name. */
@@ -2024,8 +2038,8 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     --ph-tabs: 48px;
     --ph-ctl: calc(64px + env(safe-area-inset-bottom));
     display: block;
-    height: 100vh;
-    height: 100dvh;
+    height: calc(100vh - 69px);
+    height: calc(100dvh - 69px);
     min-height: 0;
     padding: 0;
     overflow: hidden;

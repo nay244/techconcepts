@@ -82,7 +82,7 @@ test.describe('the row at 1440', () => {
     expect(accent.length).toBeGreaterThan(0);
     expect(orange).toMatch(/^rgb\((240, 112, 46|176, 70, 23)\)$/); // dark #f0702e, light #b04617
 
-    await expect(nextButton(page)).toHaveAttribute('title', 'Next: step 3, TCP Connection (→)');
+    await expect(nextButton(page)).toHaveAttribute('title', 'Next: TCP Connection, step 3 (→)');
     await expect(playButton(page)).toHaveAttribute('title', 'Play all (Space)');
     await expect(page.getByRole('button', { name: 'Previous step', exact: true })).toHaveAttribute('title', 'Previous step (←)');
     await expect(replayButton(page)).toHaveAttribute('title', 'Replay step');

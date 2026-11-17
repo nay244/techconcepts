@@ -23,7 +23,7 @@ onlyInDesktopDark(PATH);
 const stepItem = (page: Page, step: number) => page.getByRole('navigation', { name: 'This lesson' }).getByRole('button').nth(step);
 
 
-async function openStep(page: Page, step: number, phone: boolean): Promise<void> {
+async function openStep(page: Page, step: number): Promise<void> {
   await stepItem(page, step).click();
   await expect(kicker(page)).toContainText(`Step ${step} of 5`);
 }
@@ -88,7 +88,7 @@ test('14 at 375: from the Steps tab, the outline shows the same proxy and revers
   await page.setViewportSize(PHONE);
   await open(page, PATH);
   for (const step of [1, 2, 3, 4, 5]) {
-    await openStep(page, step, true);
+    await openStep(page, step);
     await expect.poll(() => shown(page), `step ${step} at 375`).toEqual({ proxy: PROXY_STEPS.includes(step) ? 5 : 0, reverse: REVERSE_STEPS.includes(step) ? 3 : 0 });
   }
 });
@@ -103,7 +103,7 @@ for (const [name, size] of [['1440 × 900', DESKTOP], ['375 × 812', PHONE]] as 
       await open(page, PATH);
       const phone = size === PHONE;
       for (const step of [1, 2, 3, 4, 5]) {
-        await openStep(page, step, phone);
+        await openStep(page, step);
         await expect.poll(async () => (await pageOverflow(page)).sideways, `step ${step} sideways`).toBe(0);
         // The two pairs the design names: the forward proxy's callout against the internet's, the reverse proxy's against the web server's.
         const boxes = await calloutBoxes(page);
