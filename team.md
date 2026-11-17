@@ -1002,3 +1002,50 @@ Planned on 2026-11-16 in a fresh session on Opus 5.5, under the owner's go "Cont
 | L29-c | fact-checker, fresh each | Opus | 2 | 192,956; 188,483 | Full check 1: 99 of 102, three ⚠️ in Watch's IKE step (the address given in IKE_AUTH, which no Learn part said) (`039ee07`); the orchestrator's script fix to `fact-address` (`a634cf0`); 18 items traced it, past the re-check's 12, so full check 2: 102 of 102. **All pass** (`ab2a816`). |
 | VPN merge | orchestrator | Opus 5.5 | 1 | not counted | `820167a` on `job16/batch`; an unused citation constant dropped (`0b1e34b`); build 0 errors, every page within budget (42 pages). |
 | B19 | builder | Haiku | 1 (and one follow-up) | 303,183 | `acfaec0`, `5a9e6ef`, `7505214` on `job16/batch`: 20 of 20 ready, 30 lessons, 30 reports, 13 re-checks; Up next firewalls → proxies → load-balancers → vpn; `NO_SEQUENCE` gains both; the D11 hash test excludes the new lessons (hash unchanged); `e2e/proxies.spec.ts` and `e2e/vpn.spec.ts` from the [browser] cases and checks 21, 23, 24. Two cases red on measurement, settled by the orchestrator as errata E26 (the band's drawn width is 7 × the figure's scale) and E27 (the lead dot on the listener's edge) (`561799a`); case 34 built from the DOM's cables through `getScreenCTM`, shown red by pointing it at the band. `npm test` 2,387 of 2,387; build 0 errors, 42 pages within budget; the five specs 429 passed and 3 failed, then the route-end fix and `vpn.spec.ts` 14 of 14. Not built: case 38's unsealed-band and lit-line contrast clauses (no DOM hook for those pixels); Proxies 20c's tag timing. |
+| F16 | orchestrator | Opus 5.5 | 1 | not counted | `job16/batch` merged into `revamp` (`f38b34b`): `npm test` 2,387 of 2,387, build 0 errors and 42 pages within budget; both lessons looked at in the browser at 1440 (VPN's band ends at the server; Proxies' reverse proxy before the web server) and 375 (no sideways scroll). CI's end-to-end run: 572 passed, 2 failed, the held `glossary.spec.ts:143` and a new one, Proxies' table 556 px in a 482 px panel at Learn, 1280×720 (`reading.spec.ts:125`). Measured with a throwaway script on `dist/`: headers that never wrap set the width; letting them wrap gives 482 of 482. Past the stop, so to the owner: "Yes, wrap headers" (direction 2.77). |
+| F16a | builder | Haiku | 1 | 88,173 | `8e45527`, one line of `table.css` (`.tpanel th` wraps); red with `nowrap` put back, green after; `npm test` 2,387, `reading.spec.ts` 23 of 23, the five lesson specs 248 passed. It left three polling shells it could not stop; the orchestrator stopped its task, which ended them. Merged `b077ed7`. |
+| F16 runs | orchestrator | Opus 5.5 | 1 | not counted | On `revamp` at `b077ed7` (`E2E_PORT=4485`): CI's end-to-end run **573 passed, 1 failed, 1 skipped** (18.6 minutes), the failure the held `glossary.spec.ts:143`. The full `npm run e2e`: **1,931 passed, 3 failed, 1,024 skipped** (48.5 minutes): `glossary.spec.ts:143` in d1440-dark and d1440-light (held), and `[reduced-motion] lesson.spec.ts:344`, "DHCP: a focused lease table keeps focus while playback adds a row to it". That one fails 5 of 5 alone, and 3 of 3 on `revamp` before job 16's merge (`b253658`): since job 15 a step plays on arrival, so under reduced motion the lease row is there before the test focuses the table, and its precondition ("the row must arrive after the focus") cannot hold. Job 15 ran only CI's projects, so the full run had not tried it since job 14. Not this job's; reported to the owner as a follow-up. |
+
+## Spend by role
+
+| Role | Model | Tokens |
+|---|---|---|
+| scout | Haiku | 266,140 |
+| analyst (two, each continued for the words and the read) | Opus | 861,164 |
+| designer (two) | Opus 5.5 | 1,268,316 |
+| reviewer (two spec reviews, two build reviews) | Opus | 694,349 |
+| builder (B18a, B18b) | Sonnet | 478,567 |
+| builder (B18a and B18b fixes, B19, F16a) | Haiku | 623,975 |
+| author (two, each continued for the fixes) | Sonnet | 486,499 |
+| fact-checker (five, fresh each) | Opus | 663,993 |
+| **All subagents** | | **5,343,003** |
+
+Against 3.2 to 4.2 million planned and a stop of 4.2 million, raised to 5.2 at the gate (direction 2.76). The stop was crossed by B19's follow-up (about 5.25 million when it ended) and the orchestrator did not catch it before sending that follow-up; it was caught when the run's tally was made, and the owner's yes for F16a (2.77) was asked with the figure. Analysts' figures are each transcript's growth at the end, so they include the words (L28-w, L29-w) and the reads (L28-p, L29-p).
+
+## What each lesson cost
+
+| | Proxies | VPN |
+|---|---|---|
+| Analyst: outline, words, read before the check | 367,321 | 493,843 |
+| Author: the lesson and the read's fixes | 250,874 | 235,625 |
+| Fact-checker | 283,756 (a full check, two re-checks) | 380,237 (two full checks) |
+| **The lesson's content** | **901,951** | **1,109,705** |
+| Items, sources | 97, 25 | 102, 21 |
+
+Both well under the 1.6 million stop. The design (1.27 million) cost more than both lessons' content together; it was the run's overrun (planned 0.4 to 0.58).
+
+## Could go one model lower next time
+
+- **Named test fixes after a build review:** both went to Haiku (B18a fixes, B18b fixes) and both passed every "fixed when" the orchestrator ran. Keep them there.
+- **The counts and the specs (B19) on Haiku** passed, but it read two cases as written where they were measured wrong, and could not reach a geometry hook for case 34 until told how. A Haiku builder for a spec that is all [browser] cases needs the brief to name how each one is measured.
+- **Nothing on Opus could go lower.** The reads before the check found 13 and 16 faults; the checks held back 1 and 3 items they had not seen.
+
+## What to do differently next time
+
+- **Keep the running total in view and check it before each agent past the estimate.** The batch crossed its stop on B19's follow-up and the orchestrator saw it only when tallying. A line in the handbook: before sending an agent once the batch is past its estimate, run `tokens.py` over the job's transcripts.
+- **A lesson's Learn table needs measuring at 1280×720 Learn in its own spec.** Proxies' four-column table passed every case and the design gate and failed only on the shared `reading.spec.ts`. A new lesson's spec should open Learn at 1280 and check `.tpanel`'s width, or the design should be shown at that size.
+- **A fact in Learn that Watch leans on must say when, not only what.** VPN's first check failed three Watch items on "the address is given in IKE_AUTH", which the outline had but the lesson's fact did not. The read before the check should trace each log line's verb (asks, gives) to a Learn part, as it traces labels.
+- **A fix to a fact many items trace can be past a re-check.** VPN's one-phrase fix was traced by 18 items, so it cost a second full check (188,000); count the traces before choosing the fix's place.
+- **Spec cases that give a drawn size in pixels should give it in figure units** (E26), and a "lies inside" between a dot and a group should allow the drawing's own touching (E27).
+- **Don't let a builder poll with loops it cannot stop.** F16a left three shells; a brief line, "wait for runs with the tool's own background notice, not a loop", would prevent it.
+- **Held, still:** a `show phone` in a step's start escapes the café-with-phone rule (B18b review note); `define.ts:551`'s café message still says "the scene's start shows the café"; case 38's unsealed-band and lit-line contrast clauses and Proxies 20c's tag timing are not tested; the net-map pages carry every lesson's layers (32 KB more HTML each).

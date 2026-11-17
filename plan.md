@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 16: Networking Concepts' batch 4, Proxies and VPN
 
-**Status: under way; D15 approved and the batch stop raised to 5.2 million (the owner, 2026-11-16, direction 2.76).** Planned 2026-11-16 (direction 2.74); the owner's go for the job, "Continue with Batch 4" (2.73), and on this plan, "Go" (2026-11-16).
+**Status: done (2026-11-16, direction 2.78).** Proxies and VPN are cited, checked and on `revamp`; Networking Concepts is 20 of 20 ready. Planned 2026-11-16 (direction 2.74); the owner's go for the job, "Continue with Batch 4" (2.73), and on this plan, "Go"; D15 approved and the stop raised to 5.2 million (2.76); table headers wrap, past the stop (2.77). The ledger is in `team.md`, job 16.
 
 ## Inputs
 
