@@ -213,3 +213,18 @@ Measured in headless Chromium on the prototype (its bar removed), with every rea
 - **No ready lesson** ("the strip alone, as today"): on a desk the card's third column (`minmax(320px, 380px)`) would stand empty. No track reaches it today.
 - **"Watch again" goes to `?step=`** when the finished lesson's record has a position (today's `lessonHref`); the spec keeps it.
 - **The `@visual` `tracks` shots** change by design and assert nothing; they are for a person.
+
+## Errata (the orchestrator, 2026-11-16)
+
+Each hole above, closed. The builder builds these as part of the approved design; the build's reviewer checks them.
+
+- **E1 (H1).** The token and figure-tint blocks keep their marking comments in `src/styles/card-stack.css`; `home.test.ts`'s two block tests read them from there and scan the rest of both files for colour values; `var(--link)` absent from both; `home.ts:322`'s comment points at the new file. These are the only Home tests that change.
+- **E2 (H2).** Home's blocks move as they are, the `prefers-color-scheme: dark` twins included.
+- **E3 (H3).** The strip's words keep the width of their longest form ("M of M lessons done" for that track, tabular figures), so the wrap point does not depend on progress.
+- **E4 (H4).** On Tracks a focused `.btn` has 8px corners; focused links that are not buttons 3px, written `.tp :global(a:not(.btn):focus-visible)`.
+- **E5 (H5).** Home's focused anchor buttons keep 8px corners after the move (Home's own rule becomes `a:not(.btn):focus-visible`, or the shared rule keeps its weight); a test pins it.
+- **E6 (H6).** `.tp .isl { display: none; }` is the prototype's switch and is not built.
+- **E7 (H7).** Count the `<script>` elements on `/tracks` (built page and container render) on `revamp` before the change and pin each number in its test.
+- **E8 (H8).** `useUpNext.ts`, `TrackStrip.tsx`, `hub.ts` and `hub.css` are not in the diff.
+- **E9 (H9, the owner's answer, 2026-11-16: "Always leave room for two lines").** Below 430px wide the up-next box's subtitle always reserves two lines, so no card's height depends on which lesson is next. Networking's card on a phone is about 21px taller than drawn; no word changes. Check 14 seeds every lesson of both tracks in turn at 320, 360, 375, 390 and 412.
+- **E10 (H10).** A lesson that is not ready keeps today's faint look in the strip (`hub.css`, opacity 0.6): Tracks' `opacity: 1` and ring apply only to lessons that are ready. No track has one today; `tracks-page.test.ts:20`'s partly ready track gets a test.
