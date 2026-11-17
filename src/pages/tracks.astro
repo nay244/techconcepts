@@ -1,218 +1,418 @@
 ---
-// The Tracks page (spec §6.2, as the adopted insideout-study mockup's Tracks): one wide panel per track, in Home's
-// order, each with the id Home's track cards link to. A track's name, who it is for and its art are built here; its
-// strip, its Start / Continue button and the card for the lesson up next are the progress island, which shows a first
-// visit until this browser's progress has loaded (and in full without JavaScript). A+ has no lessons yet: its panel
-// says so, with no link.
+// The Tracks page in the Card stack (prototypes/d18-tracks-card-stack.md, layout 1, Stack): one card a track, down the
+// page, in the order to take them, each with its index tab. A track's cover, name and who it is for are built here; its
+// strip, its Start / Continue button and the lesson up next are the progress island, which shows a first visit until
+// this browser's progress has loaded (and in full without JavaScript). A+ has no lessons yet: its card says so, with no
+// link. The look's shared parts are src/styles/card-stack.css; the rules below are this page's own and scoped to it.
 import { coverStill, type CoverId } from '../art/figures/covers';
 import { cropViewBox } from '../art/ids';
-import { STATUS_WORDS } from '../lib/hub';
+import { homeStops } from '../lib/home';
 import { trackCards } from '../lib/tracks-page';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TrackPanelProgress from '../components/hub/TrackPanelProgress';
 import '../components/site.css';
 import '../components/hub/hub.css';
+import '../styles/card-stack.css';
 
-// Each track's name with its last word in the accent, as Home sets a lesson's title: 'Networking <em>Concepts</em>'.
-const cards = trackCards().map((c) => {
-  const cut = c.title.lastIndexOf(' ');
-  return { ...c, head: c.title.slice(0, cut + 1), last: c.title.slice(cut + 1) };
-});
-// A planned track's cover, cropped close to its plate as Home crops it.
-const soonArt = (id: CoverId): string => cropViewBox(coverStill(id, `tracks-${id}`), '30 20 540 378');
+// Each card's tab names its place in the order, in the words Home's cards use ("Start here", "Then go deeper").
+const order = new Map(homeStops().map((stop) => [stop.id, stop.order]));
+const cards = trackCards();
+// A track's cover, cropped close to its plate as Home crops it; a box of another shape crops it from the middle.
+const art = (id: CoverId): string =>
+  cropViewBox(coverStill(id, `tracks-${id}`), '30 20 540 378').replace(/^<svg /, '<svg preserveAspectRatio="xMidYMid slice" ');
 ---
 
 <BaseLayout title="Tracks" current="tracks" description="Every TechConcepts track: sets of short visual lessons, taken in order.">
   <div class="wrap tp">
     <div class="tp-head">
-      <h1 class="disp">Pick a <em>track</em></h1>
-      <p>Each track is a set of short visual lessons, taken in order.</p>
+      <h1>Pick a track</h1>
+      <div class="tp-head__words">
+        <p>Each track is a set of short visual lessons, taken in order.</p>
+        {/* One line: Astro drops the space at a line break before a link. */}
+        <p>New to IT? Start with <a href="#how-the-internet-works">How the Internet Works</a>, then go deeper with <a href="#networking">Networking Concepts</a>. Every lesson is Watch, Learn, then Practice.</p>
+      </div>
     </div>
 
     <div class="panels">
       {
-        cards.map((c) =>
+        cards.map((c, i) =>
           c.ready ? (
-            <article class="panel" id={c.id} aria-labelledby={`${c.id}-h`}>
-              <h2 class="panel__t disp" id={`${c.id}-h`}>
-                <a href={c.href}>{c.head}<em>{c.last}</em></a>
+            <article class="panel trk cs-card cs-card--beneath" id={c.id} aria-labelledby={`${c.id}-h`} style={`--strip-longest: "${c.stripLongest}"`}>
+              <div class="trk__art" aria-hidden="true" set:html={art(c.cover)} />
+              <p class:list={['trk__tab', 'cs-tab', { 'cs-tab--here': i === 0 }]}>{order.get(c.id)}</p>
+              <h2 class="trk__name" id={`${c.id}-h`}>
+                <a href={c.href}>{c.title}</a>
               </h2>
-              <p class="panel__who">{c.blurb}</p>
-              {/* The island draws the strip, the button row and the up-next card straight into this grid. */}
-              <TrackPanelProgress client:load entries={c.entries} known={c.known} trackUrl={c.href}>
-                {c.figures.map(({ slot, svg }) => (
-                  <Fragment slot={slot} set:html={svg} />
-                ))}
-              </TrackPanelProgress>
+              <p class="trk__who">{c.blurb}</p>
+              {/* The island draws the strip and the lesson up next straight into this grid. */}
+              <TrackPanelProgress client:load entries={c.entries} known={c.known} trackUrl={c.href} />
             </article>
           ) : (
-            <article class="panel" id={c.id} aria-labelledby={`${c.id}-h`}>
-              <h2 class="panel__t disp" id={`${c.id}-h`}>{c.head}<em>{c.last}</em></h2>
-              <p class="panel__who">{c.blurb}</p>
-              <span class="h-chip h-chip--plain panel__chip">{STATUS_WORDS['not-ready']}</span>
-              <div class="panel__cta">
-                <span class="btn panel__off">Lessons on the way</span>
-              </div>
-              <div class="next next--soon">
-                <span class="next__art" aria-hidden="true" set:html={soonArt(c.cover)} />
-                <span>
-                  <span class="next__k">Coming soon</span>
-                  <b class="next__t disp">Lesson 1 is being written</b>
-                  <span class="next__s">Each lesson will follow the A+ exam objectives.</span>
-                </span>
-              </div>
+            <article class="panel trk trk--soon cs-card cs-card--soon" id={c.id} aria-labelledby={`${c.id}-h`}>
+              <div class="trk__art" aria-hidden="true" set:html={art(c.cover)} />
+              <p class="trk__tab cs-tab">Not ready yet</p>
+              <h2 class="trk__name" id={`${c.id}-h`}>{c.title}</h2>
+              <p class="trk__who">{c.blurb}</p>
+              <p class="trk__soon"><b>Lesson 1 is being written.</b> Each lesson will follow the A+ exam objectives.</p>
             </article>
           ),
         )
       }
     </div>
-
-    <p class="outro">
-      {/* One line: Astro drops the space at a line break before a link. */}
-      New to IT? Start with <a href="#how-the-internet-works">How the Internet Works</a>, then go deeper with <a href="#networking">Networking Concepts</a>. Every lesson is Watch, Learn, then Practice.
-    </p>
   </div>
 </BaseLayout>
 
 <style>
   .tp {
-    padding-top: 36px;
-    padding-bottom: 72px;
+    padding-top: clamp(32px, 4vw, 48px);
+    padding-bottom: 8px; /* the footer keeps its own space above it */
   }
+
+  /* The head: the page's name on the desk, and the order to take the tracks in, said before the cards. */
   .tp-head {
-    margin-bottom: 36px;
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 14px clamp(24px, 4vw, 64px);
+    align-items: end;
+    margin-bottom: 76px; /* 34px of it is the first row of tabs */
   }
   .tp-head h1 {
-    font-size: 64px;
+    margin: 0;
+    font-size: clamp(44px, 5vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.012em;
+    color: var(--ink-strong);
   }
   .tp-head p {
-    margin: 12px 0 0;
-    color: var(--muted);
-    font-size: 17px;
+    margin: 0;
+    max-width: 34em;
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1.55;
+  }
+  .tp-head p + p {
+    margin-top: 6px;
+  }
+  .tp-head a {
+    color: var(--ink-strong);
+    text-decoration: underline;
+    text-decoration-color: var(--cs-hair);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.16em;
+  }
+  .tp-head a:hover {
+    text-decoration-color: currentColor;
+  }
+  /* A focused link keeps 3px corners; a focused button keeps the shared 8px (the card stack's own rule). */
+  .tp :global(a:not(.btn):focus-visible) {
+    border-radius: 3px;
   }
 
-  /* ---------- One panel per track: the track on the left, the lesson up next on the right ---------- */
-  .panels {
-    display: grid;
-    gap: 26px;
-  }
-  /* The island's parts (the strip, the button row and the card) are grid items here too: Astro's island wrapper is
-     display: contents. The left column stacks the name, who it is for, the strip and the buttons; the card takes the
-     right column across all four rows. */
+  /* A track. Home's links (/tracks#<id>) land it with its tab clear of the 68px header. */
   .panel {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 500px;
-    align-content: center;
-    column-gap: 40px;
-    padding: 40px 44px;
-    border-radius: var(--r-card);
-    background: var(--card);
-    box-shadow: var(--shadow-sm);
-    /* Home's links to /tracks#<id> land the panel clear of the sticky header (68px), as other pages' anchors do. */
-    scroll-margin-top: 92px;
-  }
-  .panel > :global(*),
-  .panel :global(.strip),
-  .panel :global(.panel__cta) {
-    grid-column: 1;
+    scroll-margin-top: 114px;
+    scroll-margin-inline: 16px;
     min-width: 0;
   }
-  .panel :global(.next) {
-    grid-column: 2;
-    grid-row: 1 / span 4;
+  .trk__art {
+    overflow: hidden;
+    background: var(--cs-card);
   }
-  .panel__t {
-    font-size: 44px;
+  .trk__art :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
-  .panel__t a {
+  .trk__name {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    color: var(--ink-strong);
+  }
+  .trk__name a {
     color: inherit;
-    text-decoration: none;
-  }
-  .panel__t a:hover {
     text-decoration: underline;
+    text-decoration-color: var(--cs-hair);
     text-decoration-thickness: 2px;
-    text-underline-offset: 0.12em;
+    text-underline-offset: 0.14em;
   }
-  .panel__who {
-    max-width: 560px;
-    margin: 14px 0 0;
-    color: var(--muted);
-    font-size: 17px;
+  .trk__name a:hover {
+    text-decoration-color: currentColor;
+  }
+  .trk__who {
+    margin: 8px 0 0;
+    max-width: 36em;
+    color: var(--ink);
+    font-size: 16.5px;
     line-height: 1.5;
   }
-  .panel :global(.strip) {
-    margin-top: 26px;
-  }
-
-  /* ---------- A+: no lessons yet, so nothing on its panel is a link or a control ---------- */
-  .panel__chip {
-    justify-self: start;
-    margin-top: 26px;
-  }
-  /* A plain span shaped like a button, muted so it does not read as one to press: no link, no focus, no hover. */
-  .panel__off,
-  .panel__off:hover {
-    border-color: var(--line);
-    background: var(--card);
-    color: var(--muted);
-    cursor: default;
-  }
-  .panel__off:active {
-    transform: none;
-  }
-  /* Not a link, so not a .lift card: a plain outline at rest, and no hover. */
-  .next--soon {
-    box-shadow: inset 0 0 0 1px var(--line);
-  }
-  .next--soon .next__k {
+  .trk--soon .trk__name {
     color: var(--muted);
   }
 
-  .outro {
-    max-width: 640px;
-    margin: 56px auto 0;
+  /* How far this browser has got: one square a lesson. Hollow is not done, green is done, orange is up next. The
+     island's parts are the card's children (its wrapper is display: contents), and hub.css is not edited: the track
+     page keeps its own strip. A lesson that is not ready keeps hub.css's faint look: only the three states below are drawn here. */
+  .tp :global(.strip) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 16px;
+  }
+  .tp :global(.strip__sq) {
+    align-items: center;
+  }
+  .tp :global(.strip__sq i) {
+    width: 10px;
+    height: 10px;
+    margin-block: 2px;
+  }
+  .tp :global(.strip__sq i[data-state]) {
+    background: none;
+    box-shadow: inset 0 0 0 1.5px var(--cs-edge);
+    opacity: 1;
+  }
+  .tp :global(.strip__sq i[data-state='done']) {
+    background: var(--cs-done);
+  }
+  .tp :global(.strip__sq i[data-state='current']) {
+    height: 14px;
+    margin-block: 0;
+    background: var(--cs-here);
+  }
+  /* The words keep the width of their longest form ("14 of 14 lessons done"), so the strip wraps at the same width
+     whatever the count: a hidden copy of the longest form sets the box. */
+  .tp :global(.strip__w) {
+    color: var(--muted);
+    font: 400 15px/1.3 var(--sans);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .tp :global(.strip__w)::after {
+    content: var(--strip-longest);
+    display: block;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  /* The lesson up next, and the way in. Not a link as a whole: the button is the one way to the lesson. */
+  .tp :global(.upnext) {
+    padding: 14px 16px 16px;
+    border-radius: var(--cs-r-in);
+    background: var(--cs-quiet);
+  }
+  .tp :global(.upnext__k) {
+    margin: 0;
+    color: var(--ink);
+    font: 600 15px/1.2 var(--display);
+    letter-spacing: 0.01em;
+  }
+  .tp :global(.upnext__l) {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 0;
+  }
+  .tp :global(.upnext__n) {
+    flex: none;
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 6px;
+    background: var(--cs-card);
+    color: var(--ink-strong);
+    font: 700 14px/1 var(--mono);
+  }
+  .tp :global(.upnext__n[data-state='here']) {
+    background: var(--cs-here);
+    color: var(--cs-here-ink);
+  }
+  .tp :global(.upnext__n[data-state='done']) {
+    font-size: 0;
+  }
+  .tp :global(.upnext__n[data-state='done'])::after {
+    content: '';
+    width: 13px;
+    height: 7px;
+    margin-top: -3px;
+    border: solid var(--cs-done);
+    border-width: 0 0 3px 3px;
+    transform: rotate(-45deg);
+  }
+  .tp :global(.upnext__t) {
+    min-width: 0;
+    color: var(--ink-strong);
+    font: 700 22px/1.15 var(--display);
+  }
+  .tp :global(.upnext__s) {
+    margin: 6px 0 0 46px;
     color: var(--muted);
     font-size: 15px;
-    text-align: center;
+    line-height: 1.45;
   }
-  .outro a {
+  .tp :global(.upnext__go) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin: 16px 0 0;
+  }
+  .tp :global(.upnext__go .btn) {
+    padding: 0 24px;
+  }
+  .tp :global(.wholetrack) {
     color: var(--ink-strong);
-    font-weight: 600;
+    font-size: 15.5px;
+    text-decoration: underline;
+    text-decoration-color: var(--cs-hair);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.2em;
+  }
+  .tp :global(.wholetrack:hover) {
+    color: var(--ink-strong);
+    text-decoration-color: currentColor;
   }
 
-  /* ---------- Narrow screens: not designed yet (task 8), only kept from breaking ---------- */
-  @media (max-width: 1000px) {
-    .panel {
-      grid-template-columns: minmax(0, 1fr);
-      padding: 28px 24px;
-    }
-    .panel :global(.next) {
-      grid-column: 1;
-      grid-row: auto;
-      margin-top: 26px;
-    }
-    .panel :global(.panel__cta) {
-      flex-wrap: wrap;
+  /* A+: no lessons yet, so no strip, no button and no link: the place where a lesson would be says so. */
+  .trk__soon {
+    margin: 0;
+    padding: 14px 16px 16px;
+    border: 2px dashed var(--cs-hair);
+    border-radius: var(--cs-r-in);
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .trk__soon b {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ink-strong);
+    font: 700 20px/1.2 var(--display);
+  }
+
+  /* On a narrow card the button and "See the whole track" stack, in every state, so the card is as tall with Watch
+     again as with Start and does not move when progress loads. */
+  @media (max-width: 480px) {
+    .tp :global(.upnext__go) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
     }
   }
-  @media (max-width: 560px) {
-    .tp-head h1 {
-      font-size: 44px;
+  /* Below 430px a subtitle can take one line or two, depending on the lesson; room for two is always kept, so no
+     card's height depends on which lesson is up next. */
+  @media (max-width: 429px) {
+    .tp :global(.upnext__s) {
+      min-height: calc(2 * 1.45 * 15px);
     }
-    .panel__t {
-      font-size: 32px;
+  }
+  @media (max-width: 860px) {
+    .tp-head {
+      grid-template-columns: minmax(0, 1fr);
+      margin-bottom: 62px;
     }
-    /* The words go under the squares rather than squeezing them into a column. */
-    .panel :global(.strip) {
-      flex-wrap: wrap;
-      row-gap: 8px;
+    .tp-head p {
+      font-size: 17px;
     }
-    .panel :global(.next) {
-      flex-direction: column;
-      align-items: stretch;
+    .trk__name {
+      font-size: 24px;
     }
-    .panel :global(.next__art) {
-      flex-basis: auto;
+  }
+
+  /* ---------- Stack: one card a track, down the page; on a desk, the drawing, the track, the lesson up next ---------- */
+  .panels {
+    display: grid;
+    gap: 70px;
+  }
+  @media (min-width: 861px) {
+    .panel {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) minmax(320px, 380px);
+      grid-template-rows: auto auto 1fr;
+      column-gap: 32px;
+      padding-right: 22px;
+    }
+    /* The whole drawing, as Home shows it, centred in the column, however tall the card grows. */
+    .trk__art :global(svg) {
+      height: auto;
+    }
+    .trk__art {
+      display: grid;
+      align-items: center;
+      grid-column: 1;
+      grid-row: 1 / -1;
+      min-height: 210px;
+      border-right: 2px solid var(--cs-edge);
+      border-radius: 0 0 0 var(--cs-r-in);
+    }
+    .trk--soon .trk__art {
+      border-right-style: dashed;
+    }
+    .trk__name {
+      grid-column: 2;
+      grid-row: 1;
+      margin-top: 24px;
+    }
+    .trk__who {
+      grid-column: 2;
+      grid-row: 2;
+    }
+    .tp :global(.strip) {
+      grid-column: 2;
+      grid-row: 3;
+      align-self: end;
+      margin-bottom: 24px;
+    }
+    .tp :global(.upnext),
+    .trk__soon {
+      grid-column: 3;
+      grid-row: 1 / -1;
+      align-self: center;
+      margin: 20px 0;
+    }
+  }
+  @media (min-width: 861px) and (max-width: 1140px) {
+    .panel {
+      grid-template-columns: 240px minmax(0, 1fr);
+      grid-template-rows: auto auto auto 1fr;
+      padding-right: 24px;
+    }
+    .tp :global(.strip) {
+      align-self: start;
+      margin-bottom: 0;
+    }
+    .tp :global(.upnext),
+    .trk__soon {
+      grid-column: 2;
+      grid-row: 4;
+      align-self: start;
+      margin: 18px 0 24px;
+    }
+  }
+  @media (max-width: 860px) {
+    /* The card sits 14px in from the screen's edge, as Home's cards do; its words start at 32px. */
+    .panels {
+      gap: 62px;
+    }
+    .panel {
+      margin: 0 calc(-18px + var(--cs-stack)) 0 -18px;
+      padding: 0 16px 18px;
+    }
+    /* No drawing on a phone: the card is the track's name, who it is for, the progress and the way in. */
+    .trk__art {
+      display: none;
+    }
+    .trk__name {
+      margin-top: 18px;
+    }
+    .tp :global(.upnext),
+    .trk__soon {
+      margin-top: 16px;
     }
   }
 </style>

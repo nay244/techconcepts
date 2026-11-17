@@ -1,5 +1,7 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { trackCards, type PlannedTrackCard, type ReadyTrackCard } from './tracks-page';
+import { stripLongest, trackCards, type PlannedTrackCard, type ReadyTrackCard } from './tracks-page';
 
 const ready = (id: string) => trackCards().find((c): c is ReadyTrackCard => c.ready && c.id === id)!;
 
@@ -7,17 +9,19 @@ test('How the Internet Works first, then Networking, then A+', () => {
   expect(trackCards().map((c) => c.id)).toEqual(['how-the-internet-works', 'networking', 'comptia-a-plus']);
 });
 
-test('How the Internet Works links to its page, with all 14 lessons ready and a figure for each', () => {
+test('How the Internet Works links to its page, with all 14 lessons ready and its own cover', () => {
   const card = ready('how-the-internet-works');
   expect(card).toMatchObject({ ready: true, title: 'How the Internet Works', href: '/how-the-internet-works' });
   expect(card.blurb).toBe('Meet the 14 protocols the internet runs on, from HTTP and DNS to email, SSH and TLS, one short lesson each.');
   expect(card.entries).toHaveLength(14);
   expect(Object.keys(card.known)).toHaveLength(14);
-  expect(card.figures.map((f) => f.slot)).toEqual(Array.from({ length: 14 }, (_, i) => `art${i + 1}`));
-  for (const { svg } of card.figures) expect(svg).toMatch(/^<svg/);
+  // The card wears the track's cover, not a figure for each lesson (D18 §7): the page no longer sends 34 figures.
+  expect(card.cover).toBe('web');
+  expect(card).not.toHaveProperty('figures');
+  expect(card.stripLongest).toBe('14 of 14 lessons done');
 });
 
-test('a track with some lessons ready lists every lesson, and a figure for each ready one', () => {
+test('a track with lessons lists every lesson, and wears its own cover', () => {
   const card = ready('networking');
   expect(card).toMatchObject({ ready: true, title: 'Networking Concepts', href: '/networking' });
   expect(card.blurb).toBe(
@@ -26,11 +30,9 @@ test('a track with some lessons ready lists every lesson, and a figure for each 
   expect(card.entries).toHaveLength(20);
   // The progress island reads the ready lessons' last positions, as the track page does: all 20 are ready.
   expect(Object.keys(card.known)).toHaveLength(20);
-  // The shared lessons wear the tour's name tiles (the home track decides), at numbers 13 to 16.
-  expect(card.figures.map((f) => f.slot)).toEqual(['art1', 'art2', 'art3', 'art4', 'art5', 'art6', 'art7', 'art8', 'art9', 'art10', 'art11', 'art12', 'art13', 'art14', 'art15', 'art16', 'art17', 'art18', 'art19', 'art20']);
-  const readyNumbers = card.entries.filter((e) => e.available).map((e) => `art${e.number}`);
-  expect(card.figures.map((f) => f.slot)).toEqual(readyNumbers);
-  for (const { svg } of card.figures) expect(svg).toMatch(/^<svg/);
+  expect(card.cover).toBe('networking');
+  expect(card).not.toHaveProperty('figures');
+  expect(card.stripLongest).toBe('20 of 20 lessons done');
 });
 
 test('a planned track is no link, has no lessons, and wears its cover', () => {
@@ -42,4 +44,14 @@ test('a planned track is no link, has no lessons, and wears its cover', () => {
     blurb: 'Hardware, operating systems, networking and troubleshooting, mapped to the A+ exam objectives.',
     cover: 'aplus',
   });
+});
+
+test('the page sends no lesson figure: tracks-page.ts no longer reads lessonFigure', () => {
+  expect(readFileSync('src/lib/tracks-page.ts', 'utf8')).not.toContain('lessonFigure');
+});
+
+test('a track with a lesson not ready has the widest strip words with the ready count (E3)', () => {
+  // The strip's words grow by a digit as lessons are done and by " · R ready" while some are not ready; the longest form is what the page reserves.
+  const entries = ready('networking').entries.map((e, i) => (i < 3 ? e : ({ ...e, available: false } as typeof e)));
+  expect(stripLongest(entries)).toBe('20 of 20 lessons done · 3 ready');
 });
