@@ -83,7 +83,7 @@ The track page, About, the Glossary and 404 in Card stack (later jobs, 2.84); th
 
 # Job 19: the Lesson page, its layout rearranged in Patch
 
-**Status: planned 2026-11-17; waiting for the owner's go.** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
+**Status: the owner said go, 2026-11-17 (direction 2.92); D19 is next.** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
 
 ## Inputs
 
