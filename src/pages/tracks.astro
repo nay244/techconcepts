@@ -108,9 +108,14 @@ const art = (id: CoverId): string =>
     border-radius: 3px;
   }
 
-  /* A track. Home's links (/tracks#<id>) land it with its tab clear of the 68px header. */
+  /* The 68px sticky header must not hide what has keyboard focus (WCAG 2.4.11): the root keeps 80px (the header, and
+     room for the focus ring) above anything scrolled into view on this page. The cards' margin is the 114px Home's
+     links need (the header, the 34px tab, 12px of air) less that, so the anchors land where they always have. */
+  :global(html) {
+    scroll-padding-top: 80px;
+  }
   .panel {
-    scroll-margin-top: 114px;
+    scroll-margin-top: 34px;
     scroll-margin-inline: 16px;
     min-width: 0;
   }

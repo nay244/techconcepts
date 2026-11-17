@@ -243,6 +243,7 @@ for (const [vname, viewport] of VIEWS) {
 
       test('the figures are re-tinted: no pool, no halo, no orbit; whole on a desk, absent on a phone', async ({ page }) => {
         await open(page, '/tracks');
+        const cardColour = await token(page, '--cs-card');
         const info = await page.locator('main .lm-svg').evaluateAll((svgs) =>
           svgs.map((s) => {
             const c = getComputedStyle(s);
@@ -253,12 +254,21 @@ for (const [vname, viewport] of VIEWS) {
               shown: getComputedStyle(s.closest('.trk__art')!).display !== 'none',
               w: s.getBoundingClientRect().width,
               h: s.getBoundingClientRect().height,
-              fig: c.getPropertyValue('--fig-bg').trim() || getComputedStyle(document.querySelector('main')!).getPropertyValue('--fig-bg').trim(),
+              fig: (() => {
+                // --fig-bg resolved through a probe placed where the cover is.
+                const probe = document.createElement('div');
+                s.closest('.trk__art')!.append(probe);
+                probe.style.color = 'var(--fig-bg)';
+                const colour = getComputedStyle(probe).color;
+                probe.remove();
+                return colour;
+              })(),
             };
           }),
         );
         for (const f of info) {
           expect([f.pool, f.halo, f.orbit]).toEqual(['0', '0', 0]);
+          expect(f.fig).toBe(cardColour);
           expect(f.shown).toBe(vname === '1440');
           if (vname === '1440') expect(Math.abs(f.h - (f.w * 378) / 540)).toBeLessThanOrEqual(1);
         }
@@ -534,9 +544,12 @@ test.describe('nothing moves when progress loads', () => {
       window.localStorage.setItem('techconcepts:v2', v);
       (window as unknown as { __cls: number }).__cls = 0;
       new PerformanceObserver((list) => {
-        // Only shifts of the cards count: a 1px move of the head's words at 27ms, before the fonts load, is the header's own and is on every page.
+        // Measured: one shift of 0.00044 at ~25ms, the head's second paragraph and its "Networking Concepts" link each moving
+        // 1px up, on /tracks only (it is new with this page's head). Only an entry whose every source is inside .tp-head is
+        // skipped; a shift of anything else counts.
         for (const e of list.getEntries() as unknown as { value: number; sources: { node: Node | null }[] }[]) {
-          if (e.sources.some((s) => (s.node?.parentElement ?? (s.node as Element | null))?.closest('article') != null)) (window as unknown as { __cls: number }).__cls += e.value;
+          const inHead = e.sources.length > 0 && e.sources.every((s) => (s.node?.parentElement ?? (s.node as Element | null))?.closest('.tp-head') != null);
+          if (!inHead) (window as unknown as { __cls: number }).__cls += e.value;
         }
       }).observe({ type: 'layout-shift', buffered: true });
     }, record(S1, 'what-is-udp'));
@@ -588,7 +601,37 @@ test.describe('the page’s height (measured: 1,599 at 1440 and 2,368 at 375 wit
     const size = (gzipSync(html, { level: 9 }) as { length: number }).length;
     expect(size).toBeLessThanOrEqual(70_000);
     expect(html).not.toMatch(/<template/);
+    // E7: the built page has as many <script> as it had before the change (counted on revamp e6441c2: 4).
+    expect(html.match(/<script/g)?.length).toBe(4);
   });
+});
+
+test.describe('keyboard focus never hides under the sticky header (E11)', () => {
+  for (const [width, height] of [[320, 700], [375, 812], [390, 844], [1440, 900]] as const) {
+    test(`walking Shift+Tab up from the footer at ${width}, every focused element in main is below the header`, async ({ browser }) => {
+      const ctx = await browser.newContext({ viewport: { width, height } });
+      const page = await ctx.newPage();
+      await open(page, '/tracks');
+      await page.locator('.site-foot a').first().focus();
+      const bad: string[] = [];
+      let visited = 0;
+      for (let i = 0; i < 14; i += 1) {
+        await page.keyboard.press('Shift+Tab');
+        await settle(page);
+        const r = await page.evaluate(() => {
+          const el = document.activeElement as HTMLElement;
+          const head = document.querySelector('.site-head')!.getBoundingClientRect().bottom;
+          return { inMain: el.closest('main') !== null, top: el.getBoundingClientRect().top, head, name: (el.textContent ?? '').trim().slice(0, 24) };
+        });
+        if (!r.inMain) continue;
+        visited += 1;
+        if (r.top < r.head) bad.push(`${r.name} top ${Math.round(r.top)} < header ${Math.round(r.head)}`);
+      }
+      expect(visited).toBeGreaterThanOrEqual(8);
+      expect(bad).toEqual([]);
+      await ctx.close();
+    });
+  }
 });
 
 test.describe('Home’s links land the card with its tab clear of the header', () => {
@@ -611,16 +654,33 @@ test.describe('Home’s links land the card with its tab clear of the header', (
   }
   test.describe('arriving from Home with progress stored, the target does not move when the island loads', () => {
     test.use({ viewport: { width: 375, height: 812 }, isMobile: false, hasTouch: false });
-    test('#networking', async ({ page }) => {
-      await seedInit(page, S1, 'what-is-udp');
+    test('#networking, with every lesson of the track above it done', async ({ page }) => {
+      await seedInit(page, S3, 'what-is-tls');
       await open(page, '/');
+      // From here on the island's own script is held, so the first render is the server's; it is let go after the first read.
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      await page.route('**/_astro/TrackPanelProgress*.js', async (route) => {
+        await gate;
+        await route.continue();
+      });
       await page.locator('a[href="/tracks#networking"]').first().click();
-      await expect(page).toHaveURL(/\/tracks#networking$/);
-      await open(page, '/tracks#networking');
-      await expect.poll(async () => { const a = await page.evaluate(() => window.scrollY); await page.waitForTimeout(150); return a === (await page.evaluate(() => window.scrollY)); }).toBe(true);
-      const top = await page.evaluate(() => document.querySelector('#networking .cs-tab')!.getBoundingClientRect().top);
-      expect(top).toBeGreaterThanOrEqual(69);
-      expect(top).toBeLessThanOrEqual(270);
+      await page.waitForURL(/\/tracks#networking$/, { waitUntil: 'commit' });
+      const tab = () => page.evaluate(() => document.querySelector('#networking .cs-tab')!.getBoundingClientRect().top);
+      await expect(page.locator('#networking .cs-tab')).toBeVisible();
+      await expect(page.locator('astro-island[ssr]').first()).toBeAttached();
+      await expect.poll(async () => { const a = await tab(); await page.waitForTimeout(150); return a === (await tab()); }).toBe(true);
+      const before = await tab();
+      // The browser's scroll anchoring can hide a card above the target growing, so the cards' own boxes are read too.
+      const boxesBefore = await heights(page);
+      expect(before).toBeGreaterThanOrEqual(69);
+      expect(before).toBeLessThanOrEqual(270);
+      release();
+      await hydratedOrStatic(page);
+      await settle(page);
+      await expect(card(page, 'how-the-internet-works').locator('.strip__w')).toHaveText('14 of 14 lessons done');
+      expect(Math.abs((await tab()) - before)).toBeLessThanOrEqual(1);
+      for (const [i, h] of (await heights(page)).entries()) expect(Math.abs(h - boxesBefore[i]!), `card ${i}`).toBeLessThanOrEqual(1);
     });
   });
 });
