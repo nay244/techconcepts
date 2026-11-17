@@ -18,6 +18,7 @@ The spec review of `prototypes/d17-home-card-stack.md`, colour variant A only (d
 - **E12 (H12, D16's checks).** D16's checks 2, 4, 6, 7 and 22 are still owed (D17 replaced only D16's check 14); their cases are under checks 20, 21 and 15 below.
 - **E13 (H13, check 24).** "At y 69 or lower" means the new narration's top is **≥ 69** (below the header's bottom).
 - **E14 (H14, D5's block).** D5's height limits stay at 115 (375) and 99 (1440) (`site.spec.ts`); measured 113.1 and 97.1. What changes in the tests that pin today's Home: the answer-radio count in Learn (3 → 0), the `.demo__row` clicks at a phone width, and the colour assertions in S19 Part 7.
+- **E15 (from the build, the phone step title).** The step title on a phone keeps line-height **1.25**, as the prototype's D17 block computes it; the spec's 1.2 is void (§10: where the spec and the block differ, the block is right). Found by the builder, confirmed by the build review.
 
 ## Attack cases, by §11's checks
 
