@@ -462,19 +462,27 @@ test('30: the part holding this lesson is a heading and cannot be closed; every 
   await expect(page.locator('.track__nav details[open]')).toHaveCount(0);
 });
 
-test('31: Tab through the track’s rows at 1100×700: each focused row is wholly inside the list and not under the head', async ({ page }) => {
+test('31: Tab through every one of the track’s rows at 1100×700: each focused row is wholly inside the list’s box and not under the head', async ({ page }) => {
   await at(page, 1100, 700, DHCP);
   await page.locator('.track__nav summary').first().focus();
-  for (let i = 0; i < 6; i += 1) {
+  const seen: string[] = [];
+  for (let i = 0; i < 40; i += 1) {
     await page.keyboard.press('Tab');
-    const ok = await page.evaluate(() => {
+    const r = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement;
+      if (!el.closest('.console__track')) return null;
       const list = document.querySelector('.track__list')!.getBoundingClientRect();
-      const r = el.getBoundingClientRect();
-      return !el.closest('.track__list') || (r.top >= list.top - 1 && r.bottom <= list.bottom + 1);
+      const head = document.querySelector('.track__head')!.getBoundingClientRect();
+      const b = el.getBoundingClientRect();
+      // Wholly inside the list's box, and not under the head.
+      return { name: el.textContent!.trim().slice(0, 24), ok: b.top >= list.top - 1 && b.bottom <= list.bottom + 1 && b.top >= head.bottom - 0.5 };
     });
-    expect(ok).toBe(true);
+    if (r === null) break;
+    seen.push(r.name);
+    expect(r.ok, `${r.name} is wholly in the list`).toBe(true);
   }
+  // The part holding DHCP is open, so its lessons are rows too: the walk reached past the first part's heading.
+  expect(seen.length).toBeGreaterThan(6);
 });
 
 test('61: the progress count loads without a jump: "0 of 20 done" before it, "6 of 20 done" after, the head 72px and the list where it was', async ({ page }) => {
