@@ -49,11 +49,8 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
         </h1>
         <span className="top__where">{placeLabel(unit, slot)}</span>
         <p className="top__trk">
-          <a className="track__crumb" href="/tracks">
-            Tracks
-          </a>
-          <span className="track__crumb" aria-hidden="true">
-            /
+          <span className="track__crumb">
+            <a href="/tracks">Tracks</a> <span aria-hidden="true">/</span>
           </span>
           <a className="track__title" href={trackUrl}>
             <span>{trackTitle}</span>
