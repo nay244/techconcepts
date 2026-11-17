@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 18: the Tracks page in the Card stack look
 
-**Status: the owner said go with the layout open ("Redesign the layout too", 2026-11-16, direction 2.86); D18 approved with layout 1, Stack, as drawn (2.87); the spec review is next.** Planned under 2.84 and 2.85. The owner said "Now let's work on the Tracks page", and to whether Card stack replaces Patch: "Site-wide excluding our current Lesson's page." Numbers claimed on `revamp`: job 18, direction rows 2.84 to 2.89, S20, D18, B21, F18.
+**Status: the owner said go with the layout open ("Redesign the layout too", 2026-11-16, direction 2.86); D18 approved with layout 1, Stack, as drawn (2.87); errata E1–E11 (2.88, `prototypes/d18-cases.md`); B21 built, FAIL then PASS WITH FIXES; on `revamp` at `aa6d838`; job 18 done (2.89).** Planned under 2.84 and 2.85. The owner said "Now let's work on the Tracks page", and to whether Card stack replaces Patch: "Site-wide excluding our current Lesson's page." Numbers claimed on `revamp`: job 18, direction rows 2.84 to 2.89, S20, D18, B21, F18.
 
 ## Inputs
 

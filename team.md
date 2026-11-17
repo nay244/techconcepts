@@ -1101,3 +1101,26 @@ Planned on 2026-11-16 in a session of its own on Opus 5.5, started from the sess
 | B21 spec | reviewer | Opus | 1 | 174,631 (the agent's reported total) | `prototypes/d18-cases.md`: 10 holes (8 one answer, 2 taste), 90 cases (51 end-to-end, 36 unit, 3 on the build). Closed as E1–E10; H9 (the up-next box's height on a phone) by the owner: "Always leave room for two lines". |
 | B21 | builder | Sonnet | 1 | 288,066 (the agent's reported total) | `job18/b21`: d20881b (the shared `src/styles/card-stack.css`, Home byte-identical), b4a5904 (Tracks, layout 1). `npm test` 2,427 passed; build within budget; `site.spec.ts` 337 passed; two new specs 124 passed. `/tracks` 1440 1,886 → 1,599px, 375 3,245 → 2,368px; 213,325 → 59,388 bytes gzipped. |
 | B21 review | reviewer | Opus | 1 (stopped by the session's end, resumed) | 196,260 (the agent's reported total) | FAIL: one blocker (Shift+Tab hides the track names, and at 1440 "See the whole track", under the sticky header at 375, 390 and 1440, where today's page passes; E11) and four test fixes. Home byte-identical, confirmed. `.superpowers/job18/b21-review.md`. |
+| B21 fixes | builder (continued) | Sonnet | 2 | 311,531 (the agent's reported total, with B21) | a21ebbd: E11 (`scroll-padding-top: 80px` on /tracks only, cards' `scroll-margin-top` 114 → 34; a Shift+Tab walk at 320, 375, 390 and 1440, red before at 375, 390 and 1440) and the first review's four test fixes; aa6d838: the second review's fix, the rule pinned to /tracks only (red with it moved to `card-stack.css`). |
+| B21 review 2 | reviewer (fresh) | Opus | 1 | 79,475 (the agent's reported total) | PASS WITH FIXES: E11 holds both ways at 320 to 1440, ring at 75 at worst; Home's anchors on the same pixels; one fix (a test pinning the rule to /tracks only), its "fixed when" run by the orchestrator: passes. `.superpowers/job18/b21-review-2.md`. |
+| F18 | orchestrator | Opus 5.5 | 1 | not counted | `job18/b21` fast-forwarded into `revamp` (aa6d838). `npm test` 2,427 passed (168 files); `npm run build` within budget on 42 pages, `/tracks` 59.7 KB gzipped; CI's end-to-end pass on port 4489: 850 passed, 3 skipped, 1 failed, the held `glossary.spec.ts:143`, as in job 17. |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| scout | Haiku | 146,115 |
+| designer | Opus 5.5 | 300,473 |
+| reviewer (spec, build, build again) | Opus | 450,366 |
+| builder | Sonnet | 311,531 |
+| **Total** | | **1,208,485** (estimate 1.55 to 2.2 million) |
+
+## Could go one model lower next time
+
+- The second build review's one fix was a single test with its check named; a Haiku `builder` would have done.
+
+## What to do differently next time
+
+- **Give the spec review a keyboard walk in both directions at the drawn widths.** The cases named Shift+Tab under the header, but no test was written for it until the build review found the fault; a short card is where focus hides behind a sticky header without a scroll.
+- **A test that claims "arriving from X" must not reload.** The first build's test re-opened the page; the reviewer caught it. Briefs for the builder can say so.
+- **A background agent stopped by the session's end leaves no file.** Tell every reviewer to write its review in parts, as the analysts do; resuming it then loses nothing.
