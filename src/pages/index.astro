@@ -4,12 +4,14 @@
 // come the tracks to begin with, where the facts come from, and the way into lesson 1.
 // Every lesson word and every number is worked out from the content when the page is built (src/lib/home.ts).
 // Nothing reads progress: a returning visitor sees the same page.
+// The look is the Card stack (prototypes/d17-home-card-stack.md): cards with a hard edge on Patch's ground. It is scoped to this
+// page, so the header, the footer and every other page keep Patch.
 import { coverStill, type CoverId } from '../art/figures/covers';
 import { pageFigure } from '../art/figures/pages';
 import { cropViewBox } from '../art/ids';
 import { factCheckSentence } from '../lib/about';
 import { lessonCheckCounts } from '../lib/checked';
-import { foldSources, homeDemo, homeStops, litSteps } from '../lib/home';
+import { PARTS, demoCss, foldSources, homeDemo, homeStops } from '../lib/home';
 import { startLesson } from '../lib/start';
 import Rich from '../lesson/Rich';
 import Stamp from '../components/Stamp';
@@ -23,7 +25,6 @@ const stops = homeStops();
 const checks = lessonCheckCounts();
 const factCheck = factCheckSentence(checks.checked, checks.total);
 
-const PARTS = ['watch', 'learn', 'practice'] as const;
 const PART_WORDS = { watch: 'Watch', learn: 'Learn', practice: 'Practice' } as const;
 const last = demo.steps.length;
 // Learn's foot (prototypes/d5-home-sources.md): the stamp, the first three sources, and the rest behind a <details>.
@@ -33,51 +34,11 @@ const List = demo.learn.numbered ? 'ol' : 'ul';
 // A cover, cropped close to its plate. Each copy on the page tags its own ids.
 const coverArt = (id: CoverId): string => cropViewBox(coverStill(id, `home-${id}`), '30 20 540 378');
 
-// ---------- The demo's states, as CSS ----------
-// The demo is three groups of radio buttons (the part, the step, the answer) that come before its panel, so a checked
-// button can show, hide and light things in the panel with the sibling selector alone. The scene's own parts are
-// switched the same way; where its driver would set an inline `opacity:0`, the rule is !important.
-const UI = '.demo__ui';
-const when = (...ids: string[]): string => `${ids.map((id) => `#${id}:checked`).join(' ~ ')} ~ ${UI}`;
-const focus = (id: string): string => `#${id}:focus-visible ~ ${UI} label[for="${id}"]{outline:2px solid var(--focus);outline-offset:2px}`;
-// Before any step: no way is lit, and the laptop's screen is empty. (The map is drawn with the page loaded, and a
-// lesson's driver clears it when it starts; here the first rule does.)
-const css: string[] = ['.home-trail{opacity:0;transition:opacity 200ms ease}', `${UI} #nm-page [data-part]{opacity:0}`];
-for (const part of PARTS) {
-  css.push(`${when(`demo-${part}`)} .demo__pane--${part}{display:block}`);
-  css.push(`${when(`demo-${part}`)} .demo__parts label[for="demo-${part}"]{background:var(--card);color:var(--ink-strong);box-shadow:inset 0 -2px 0 var(--here)}`);
-  css.push(focus(`demo-${part}`));
-}
-for (const step of demo.steps) {
-  const id = `demo-s${step.n}`;
-  css.push(`${when(id)} .demo__say--${step.n}{display:block}`);
-  css.push(`${when(id)} .demo__next--${step.n}{display:inline-flex}`);
-  css.push(`${when(id)} .demo__row[for="${id}"]{border-color:var(--here);background:var(--here-soft)}`);
-  css.push(`${when(id)} .demo__row[for="${id}"] .demo__n{border-color:var(--here);color:var(--here)}`);
-  // The steps before the one you are on are done.
-  for (const done of demo.steps.filter((s) => s.n < step.n)) {
-    css.push(`${when(id)} .demo__row[for="demo-s${done.n}"] .demo__n{border-color:var(--allowed);background:var(--allowed);color:var(--accent-ink)}`);
-  }
-  css.push(focus(id));
-  // The way the step's messages take lights up, and so does everything at work on it.
-  if (step.lights.trail) css.push(`${when('demo-watch', id)} .home-trail[data-step="${step.n}"]{opacity:.9}`);
-  css.push(`${step.lights.busy.map((busy) => `${when('demo-watch', id)} #${busy}`).join(',')}{opacity:1}`);
-}
-// The page on the laptop follows the lesson's own cues (src/lib/home.ts): its words are lit from the first step that
-// has a page cue, its pictures from the first with page: 'full', and they stay through Learn and Practice.
-const lit = litSteps(demo.page, last);
-const litWhen = (on: { steps: number[]; parts: string[] }): string[] => [
-  ...on.steps.map((n) => when('demo-watch', `demo-s${n}`)),
-  ...on.parts.map((part) => when(`demo-${part}`)),
-];
-css.push(`${litWhen(lit.words).map((s) => `${s} #nm-page [data-part="text"]`).join(',')}{opacity:1!important}`);
-css.push(`${litWhen(lit.pictures).map((s) => `${s} #nm-page [data-part="pic"]`).join(',')}{opacity:1!important}`);
-demo.practice.options.forEach((option, i) => {
-  const id = `demo-a${i + 1}`;
-  css.push(`${when(id)} .demo__why--${i + 1}{display:block}`);
-  css.push(`${when(id)} .demo__pick[for="${id}"]{border-color:var(--${option.right ? 'allowed' : 'line-strong'});background:var(--card-2)}`);
-  css.push(focus(id));
-});
+// The demo's states, as CSS (src/lib/home.ts): which part, step and answer shows, and what each lights.
+const css = demoCss(demo);
+
+// The phone's key: the drawing's own callouts, in two bands. An address breaks only at its " · ".
+const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
 ---
 
 <BaseLayout
@@ -105,32 +66,73 @@ demo.practice.options.forEach((option, i) => {
     </header>
 
     <div class="demo">
-      <style is:inline set:html={css.join('\n')}></style>
-      {PARTS.map((part, i) => <input class="demo__in" type="radio" name="demo-part" id={`demo-${part}`} checked={i === 0} aria-label={`${PART_WORDS[part]} part`} />)}
+      <style is:inline set:html={css}></style>
+      {PARTS.map((part, i) => <input class="demo__in demo__in--part" type="radio" name="demo-part" id={`demo-${part}`} checked={i === 0} aria-label={`${PART_WORDS[part]} part`} />)}
       {
         demo.steps.map((step) => (
-          <input class="demo__in" type="radio" name="demo-step" id={`demo-s${step.n}`} checked={step.n === 1} aria-label={`Watch, step ${step.n} of ${last}: ${step.title}`} />
+          <input class="demo__in demo__in--step" type="radio" name="demo-step" id={`demo-s${step.n}`} checked={step.n === 1} aria-label={`Watch, step ${step.n} of ${last}: ${step.title}`} />
         ))
       }
-      {demo.practice.options.map((option, i) => <input class="demo__in" type="radio" name="demo-answer" id={`demo-a${i + 1}`} aria-label={`Answer: ${option.text}`} />)}
+      {demo.practice.options.map((option, i) => <input class="demo__in demo__in--answer" type="radio" name="demo-answer" id={`demo-a${i + 1}`} aria-label={`Answer: ${option.text}`} />)}
 
       <div class="demo__ui">
         <div class="demo__parts" aria-hidden="true">
           {PARTS.map((part) => <label for={`demo-${part}`}>{PART_WORDS[part]}</label>)}
         </div>
+        <p class="demo__hint demo__hint--part" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd><span>Arrow keys switch between Watch, Learn and Practice.</span></p>
 
         <figure class="demo__scene">
-          <Fragment set:html={demo.scene} />
+          <div class="demo__key demo__key--above" aria-hidden="true">
+            {
+              demo.key.above.map((call) => (
+                <p class={call.end ? 'demo__call demo__call--end' : 'demo__call'}>
+                  <b>{call.name}</b>
+                  {call.lines.map((line) =>
+                    line.kind === 'addr' ? (
+                      <span class="demo__addr">
+                        {addrParts(line.text).map((piece, i) => (i === 0 ? <span>{piece}</span> : <Fragment>{' '}<span>{piece}</span></Fragment>))}
+                      </span>
+                    ) : line.kind === 'state' ? (
+                      <i>{line.text}</i>
+                    ) : (
+                      <span>{line.text}</span>
+                    ),
+                  )}
+                </p>
+              ))
+            }
+          </div>
+          <div class="demo__crop"><Fragment set:html={demo.scene} /></div>
+          <div class="demo__key demo__key--below" aria-hidden="true">
+            {
+              demo.key.below.map((call) => (
+                <p class={call.end ? 'demo__call demo__call--end' : 'demo__call'}>
+                  <b>{call.name}</b>
+                  {call.lines.map((line) =>
+                    line.kind === 'addr' ? (
+                      <span class="demo__addr">
+                        {addrParts(line.text).map((piece, i) => (i === 0 ? <span>{piece}</span> : <Fragment>{' '}<span>{piece}</span></Fragment>))}
+                      </span>
+                    ) : line.kind === 'state' ? (
+                      <i>{line.text}</i>
+                    ) : (
+                      <span>{line.text}</span>
+                    ),
+                  )}
+                </p>
+              ))
+            }
+          </div>
         </figure>
 
         <div class="demo__pane demo__pane--watch">
-          <ol class="demo__rows" aria-hidden="true">
+          <ol class="demo__rows" aria-hidden="true" style={`--steps:${last}`}>
             {
               demo.steps.map((step) => (
                 <li>
                   <label class="demo__row" for={`demo-s${step.n}`}>
                     <span class="demo__n">{step.n}</span>
-                    <span>
+                    <span class="demo__t">
                       <b>{step.title}</b>
                       <small>{step.sub}</small>
                     </span>
@@ -139,6 +141,7 @@ demo.practice.options.forEach((option, i) => {
               ))
             }
           </ol>
+          <p class="demo__hint demo__hint--step" aria-hidden="true"><kbd>←</kbd><kbd>→</kbd><span>Arrow keys move between the steps.</span></p>
           <div class="demo__says" aria-live="polite">
             {
               demo.steps.map((step) => (
@@ -247,6 +250,7 @@ demo.practice.options.forEach((option, i) => {
               ))
             }
           </div>
+          <p class="demo__hint demo__hint--answer" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd><span>Arrow keys choose an answer.</span></p>
           <div aria-live="polite">
             {
               demo.practice.options.map((option, i) => (
@@ -322,6 +326,48 @@ demo.practice.options.forEach((option, i) => {
 </BaseLayout>
 
 <style>
+  /* TOKENS BEGIN: the Card stack's own names, on Home's :root. No Patch token is given a new value here, so the header
+     and the footer, which read only Patch's, do not change. The page's ground stays Patch's ground. Colour variant A:
+     Patch's own colours, so this block adds no colour value to the site. */
+  :global(:root) {
+    /* construction */
+    --cs-edge: var(--ink-strong);
+    --cs-card: var(--card);
+    --cs-quiet: var(--tile);
+    --cs-hair: var(--line-strong);
+    --cs-r: 10px;
+    --cs-r-in: 8px;
+    --cs-off: 3px;
+    --cs-stack: 6px;
+    --cs-dither: conic-gradient(var(--cs-edge) 25%, var(--cs-card) 0) 0 0 / 2px 2px;
+    /* colour jobs: do this, you are here, done, a request, a response */
+    --cs-act: var(--accent);
+    --cs-act-ink: var(--accent-ink);
+    --cs-act-edge: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
+    --cs-here: var(--here);
+    --cs-here-ink: var(--here-ink);
+    --cs-here-wash: var(--here-soft);
+    --cs-done: var(--allowed);
+    --cs-done-text: var(--allowed-text);
+    --cs-request: var(--request);
+    --cs-response: var(--response);
+  }
+  /* In the dark the stack is drawn in light line, so every hard edge is the ink. */
+  :global([data-theme='dark']) {
+    --cs-edge: var(--ink);
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme])) {
+      --cs-edge: var(--ink);
+    }
+  }
+  @media (max-width: 860px) {
+    :global(:root) {
+      --cs-stack: 4px;
+    }
+  }
+  /* TOKENS END */
+
   :global(html) {
     scroll-behavior: smooth;
   }
@@ -330,123 +376,285 @@ demo.practice.options.forEach((option, i) => {
       scroll-behavior: auto;
     }
   }
+  :global(main) {
+    --gap: clamp(56px, 7vw, 96px);
+  }
   h2 {
     margin: 0;
-    font-size: clamp(30px, 3.6vw, 44px);
-    line-height: 1.05;
+    font-size: clamp(28px, 2.6vw, 34px);
+    line-height: 1.1;
+    letter-spacing: 0;
   }
   section[id] {
     /* Clear of the sticky header when a link lands here. */
     scroll-margin-top: 88px;
   }
+  /* Links are ink, underlined; blue means a request and nothing else. */
+  a:not(.btn) {
+    text-decoration-thickness: 1.5px;
+  }
+  a:focus-visible {
+    border-radius: 3px;
+  }
 
-  /* ---------- The opening: the line, set large, and what to do about it ---------- */
+  /* ---------- Buttons: a hard edge and a solid offset edge, pressed in when pressed ---------- */
+  .btn {
+    min-height: 48px;
+    padding: 0 22px;
+    border: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r-in);
+    background: var(--cs-card);
+    box-shadow: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
+    color: var(--ink-strong);
+    font: 600 18px/1.2 var(--display);
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition:
+      transform 80ms var(--ease-out),
+      box-shadow 80ms var(--ease-out);
+  }
+  .btn:hover {
+    background: var(--cs-quiet);
+  }
+  .btn--primary {
+    background: var(--cs-act);
+    color: var(--cs-act-ink);
+    box-shadow: var(--cs-act-edge);
+  }
+  .btn--primary:hover {
+    background: color-mix(in srgb, var(--cs-act) 88%, var(--cs-edge));
+  }
+  .btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--cs-edge);
+  }
+  .btn:focus-visible {
+    border-radius: var(--cs-r-in);
+  }
+
+  /* ---------- The opening: the line on the desk, set large, and what to do about it ---------- */
   .open {
     display: grid;
     grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: 24px clamp(24px, 4vw, 64px);
+    gap: 28px clamp(24px, 4vw, 64px);
     align-items: end;
-    padding-top: clamp(36px, 6vw, 88px);
-    padding-bottom: clamp(28px, 4vw, 48px);
+    padding-top: clamp(40px, 5.6vw, 80px);
+    padding-bottom: clamp(44px, 5.2vw, 76px);
   }
   .open h1 {
     margin: 0;
-    font-size: clamp(52px, 9.2vw, 132px);
-    line-height: 0.9;
-    letter-spacing: -0.01em;
+    font-size: clamp(50px, 7.4vw, 104px);
+    line-height: 0.94;
+    letter-spacing: -0.012em;
     text-wrap: balance;
   }
   .open__say {
     margin: 0;
-    max-width: 34em;
+    max-width: 27em;
     color: var(--ink-strong);
-    font-size: 19px;
+    font-size: 20px;
     line-height: 1.5;
   }
   .open__acts {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 20px;
+    gap: 16px;
+    margin-top: 28px;
   }
   .open__facts {
-    margin: 16px 0 0;
+    margin: 22px 0 0;
     color: var(--muted);
     font-size: 15px;
   }
 
-  /* ---------- The demo: a lesson in small, switched by radio buttons alone ---------- */
+  /* ---------- The demo: a stack of three cards, Watch, Learn and Practice, switched by radio buttons alone ---------- */
   .try {
-    padding-bottom: clamp(48px, 7vw, 96px);
+    padding-bottom: 0;
   }
   .try__head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 6px 20px;
-    padding: 16px 0 14px;
-    border-top: 2px solid var(--ink-strong);
-  }
-  .try__head h2 {
-    font-size: 26px;
+    padding: 0 0 18px;
   }
   .try__head p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 16px;
+    margin: 6px 0 0;
+    color: var(--ink);
+    font-size: 17px;
   }
-  .try__head a {
-    color: var(--link);
-  }
+  /* The demo is the grid: the tabs' row, the card's top edge, the part's rows, the card's foot edge. The card itself is
+     .demo::before, a grid item across all of them; the card beneath it is its box-shadow and the one beneath that
+     (dithered) is .demo::after. */
   .demo {
+    --tab: 50px;
     position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+    grid-template-rows: var(--tab) 2px auto auto auto auto 1fr 2px;
+    grid-template-areas:
+      '.     parts'
+      'top   top'
+      'scene hint'
+      'scene rows'
+      'scene keys'
+      'scene says'
+      'scene nexts'
+      'foot  foot';
+    /* The longest part's room: D16's 503, the tabs' 50 and the two edges. */
+    min-height: 555px;
+    padding: 0 2px;
+    margin-right: calc(2 * var(--cs-stack));
+    overflow: visible;
   }
-  /* The radio buttons are out of sight, and still reached by Tab and the arrow keys. */
+  .demo::before {
+    content: '';
+    grid-row: top-start / foot-end;
+    grid-column: 1 / -1;
+    margin: 0 -2px;
+    border: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r);
+    background: var(--cs-card);
+    /* the card beneath: its right and bottom edge */
+    box-shadow:
+      var(--cs-stack) var(--cs-stack) 0 -2px var(--cs-card),
+      var(--cs-stack) var(--cs-stack) 0 0 var(--cs-edge);
+  }
+  .demo::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    grid-row: top-start / foot-end;
+    grid-column: 1 / -1;
+    inset: calc(2 * var(--cs-stack)) calc(-2 * var(--cs-stack) - 2px) calc(-2 * var(--cs-stack)) calc(2 * var(--cs-stack));
+    border: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r);
+    background: var(--cs-dither);
+  }
+  /* The radio buttons are out of sight, and still reached by Tab and the arrow keys. Each sits in the grid area where its
+     group shows its result, so focusing it (a tap on a label does) scrolls nowhere when that place is on screen, and
+     only as far as that place when it is not. The top margin is the header's height, and no more. */
   .demo__in {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 1px;
     height: 1px;
     margin: 0;
     opacity: 0;
     pointer-events: none;
+    scroll-margin-top: 70px;
+  }
+  /* The tabs, the figure and the top of the part; */
+  .demo__in--part {
+    grid-area: parts;
+    scroll-margin-bottom: 360px;
+  }
+  /* the top of the narration, clear of the phone's Next bar; */
+  .demo__in--step {
+    grid-area: says;
+    scroll-margin-bottom: 80px;
+  }
+  /* the question, its three answers and the hint below them. */
+  .demo__in--answer {
+    grid-area: rows;
+    scroll-margin-bottom: 324px;
   }
   .demo__ui {
-    display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
-    grid-template-rows: auto 1fr;
-    grid-template-areas: 'scene parts' 'scene pane';
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-card);
-    background: var(--card);
-    overflow: hidden;
+    display: contents;
   }
+  /* Index tabs, standing on the card's top edge. */
   .demo__parts {
     grid-area: parts;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    border-bottom: 1px solid var(--line-strong);
-    background: var(--bg-soft);
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: end;
+    height: calc(var(--tab) + 2px);
+    margin: 0 0 -2px -2px;
   }
   .demo__parts label {
-    display: grid;
-    place-items: center;
-    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 46px;
+    padding: 0 22px;
+    border: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r-in) var(--cs-r-in) 0 0;
+    background: var(--cs-quiet);
     color: var(--ink);
     font: 600 17px/1 var(--display);
     letter-spacing: 0.01em;
     cursor: pointer;
   }
   .demo__parts label + label {
-    border-left: 1px solid var(--line);
+    margin-left: -2px;
   }
+  .demo__parts label::before {
+    content: '';
+    display: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: var(--cs-here);
+    box-shadow: 0 0 0 1.5px var(--cs-edge);
+  }
+  /* The key hints: a strip of label tape by each group while that group has keyboard focus. */
+  .demo__hint {
+    display: none;
+    width: fit-content;
+    padding: 5px 10px 5px 8px;
+    border: 1px solid var(--cs-hair);
+    border-radius: 6px;
+    background: var(--cs-quiet);
+    color: var(--ink-strong);
+    font: 600 15px/1.25 var(--display);
+    letter-spacing: 0.01em;
+  }
+  .demo__hint--part {
+    grid-area: hint;
+    margin: 12px 18px 0;
+  }
+  .demo__hint--step {
+    grid-area: keys;
+    margin: 12px 18px 0;
+  }
+  .demo__hint--answer {
+    margin: 12px 0 0;
+  }
+  .demo__hint kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    margin-right: 2px;
+    padding: 0 3px;
+    border: 1.5px solid var(--cs-edge);
+    border-bottom-width: 3px;
+    border-radius: 4px;
+    background: var(--cs-card);
+    font: 700 12px/1 var(--mono);
+    vertical-align: 1px;
+  }
+  .demo__hint kbd + kbd {
+    margin-left: 1px;
+  }
+  .demo__hint span {
+    margin-left: 6px;
+  }
+  .demo__in--part:focus-visible ~ .demo__ui .demo__hint--part,
+  .demo__in--step:focus-visible ~ .demo__ui .demo__hint--step,
+  .demo__in--answer:focus-visible ~ .demo__ui .demo__hint--answer {
+    display: block;
+  }
+  /* The scene: the figure on the card's own paper, a hard rule between it and the words. 6px at the sides keeps the
+     drawing 720px wide at 1440, so its callout names stay 12px. */
   .demo__scene {
     grid-area: scene;
     display: grid;
     place-items: center;
     margin: 0;
-    padding: 12px;
-    border-right: 1px solid var(--line-strong);
-    background: var(--fig-bg);
+    padding: 12px 6px;
+    border-right: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r-in) 0 0 var(--cs-r-in);
+    background: var(--cs-card);
   }
   .demo__scene :global(svg) {
     width: 100%;
@@ -457,56 +665,96 @@ demo.practice.options.forEach((option, i) => {
       transition: none !important;
     }
   }
-  .demo__pane {
-    grid-area: pane;
+  /* The phone's key, its crop box and its leaders: off above 860px, where the drawing's own callouts show. */
+  .demo__key {
     display: none;
-    /* Tall enough for the longest part, so the scene beside it keeps its size as the parts change. */
-    min-height: 452px;
-    padding: 16px 18px 18px;
   }
+  .demo__crop {
+    width: 100%;
+  }
+  :global(.nm .home-leads) {
+    display: none;
+  }
+  :global(.nm .home-leads path) {
+    fill: none;
+    stroke: var(--cs-hair);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+  :global(.nm .home-leads circle) {
+    fill: var(--muted);
+  }
+  .demo__pane {
+    display: none;
+    min-height: 0;
+  }
+  .demo__pane--learn,
+  .demo__pane--practice {
+    grid-column: 2;
+    grid-row: rows-start / nexts-end;
+    padding: 20px 20px 22px;
+  }
+  /* The steps. */
   .demo__rows {
+    grid-area: rows;
     display: grid;
     gap: 2px;
     margin: 0;
-    padding: 0;
+    padding: 16px 16px 0;
     list-style: none;
   }
   .demo__row {
     display: grid;
-    grid-template-columns: 26px 1fr;
-    gap: 10px;
-    align-items: start;
-    padding: 6px 8px;
-    border: 1px solid transparent;
-    border-radius: 3px;
+    grid-template-columns: 30px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 6px 10px;
+    border: 2px solid transparent;
+    border-radius: var(--cs-r-in);
     cursor: pointer;
   }
   .demo__n {
+    position: relative;
     display: grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
-    border: 1.5px solid var(--line-strong);
-    border-radius: 50%;
-    background: var(--card);
-    color: var(--muted);
-    font: 700 12px/1 var(--mono);
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 6px;
+    background: var(--cs-card);
+    color: var(--ink-strong);
+    font: 700 14px/1 var(--mono);
+  }
+  /* A step behind you: a tick, drawn, in the done colour. The number stays in the markup. */
+  .demo__n::after {
+    content: '';
+    display: none;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 13px;
+    height: 7px;
+    margin: -6px 0 0 -7px;
+    border: solid var(--cs-done);
+    border-width: 0 0 3px 3px;
+    transform: rotate(-45deg);
   }
   .demo__row b {
     display: block;
     color: var(--ink-strong);
-    font: 600 16.5px/1.25 var(--display);
+    font: 600 17px/1.25 var(--display);
   }
   .demo__row small {
     display: block;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.35;
   }
   .demo__says {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
+    grid-area: says;
+    margin: 14px 18px 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--cs-hair);
   }
   .demo__say,
   .demo__why {
@@ -516,14 +764,18 @@ demo.practice.options.forEach((option, i) => {
     font-size: 16px;
     line-height: 1.5;
   }
+  .demo__say {
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
   .demo__say p {
     margin: 0;
   }
-  /* What the step sends: who to whom, and the words on the message. A request is the blue pair, a reply the brown. */
+  /* What the step sends: who to whom, and the words on the message. A request has the blue bar, a reply the brown. */
   .demo__msgs {
     display: grid;
-    gap: 4px;
-    margin: 10px 0 0;
+    gap: 5px;
+    margin: 12px 0 0;
     padding: 0;
     list-style: none;
     font-size: 14.5px;
@@ -532,13 +784,14 @@ demo.practice.options.forEach((option, i) => {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    padding: 5px 8px 5px 10px;
-    border-left: 3px solid var(--request);
-    background: var(--card-2);
-    color: var(--ink);
+    padding: 6px 10px 6px 11px;
+    border-left: 5px solid var(--cs-request);
+    border-radius: 2px 6px 6px 2px;
+    background: var(--cs-quiet);
+    color: var(--ink-strong);
   }
   .demo__msgs li[data-kind='response'] {
-    border-left-color: var(--response);
+    border-left-color: var(--cs-response);
   }
   .demo__msgs b {
     color: var(--ink-strong);
@@ -547,24 +800,32 @@ demo.practice.options.forEach((option, i) => {
   }
   .demo__sealed {
     margin: 14px 0 0;
-    padding: 10px 12px;
-    border-left: 3px solid var(--encrypted);
-    background: var(--card-2);
+    padding: 12px 14px;
+    border-radius: var(--cs-r-in);
+    background: var(--cs-quiet);
+    color: var(--ink-strong);
     font-size: 15px;
     line-height: 1.45;
   }
   .demo__sealed b {
     display: block;
     color: var(--ink-strong);
-    font: 600 16px/1.3 var(--display);
+    font: 600 17px/1.3 var(--display);
   }
   .demo__sealed a {
     display: block;
     margin-top: 4px;
-    color: var(--link);
   }
   .demo__nexts {
     margin-top: 14px;
+  }
+  .demo__pane--watch > .demo__nexts {
+    grid-area: nexts;
+    align-self: start;
+    margin: 16px 18px 20px;
+  }
+  .demo__pane--learn > .demo__nexts {
+    margin-top: 16px;
   }
   .demo__next {
     display: none;
@@ -576,7 +837,7 @@ demo.practice.options.forEach((option, i) => {
     margin: 0;
     color: var(--ink-strong);
     font-size: 17px;
-    line-height: 1.5;
+    line-height: 1.55;
   }
   .demo__terms {
     display: grid;
@@ -589,23 +850,22 @@ demo.practice.options.forEach((option, i) => {
     gap: 12px;
     align-items: baseline;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--cs-hair);
     font-size: 15px;
     line-height: 1.4;
   }
   .demo__terms dd {
     margin: 0;
     color: var(--ink-strong);
-    font: 600 16px/1.3 var(--display);
+    font: 600 16.5px/1.3 var(--display);
   }
   .demo__after {
-    margin: 12px 0 0;
+    margin: 14px 0 0;
     color: var(--muted);
-    font-size: 14.5px;
+    font-size: 15px;
   }
-  .demo__after a,
-  .facts a {
-    color: var(--link);
+  :global(.stamp[data-checked] svg) {
+    color: var(--cs-done-text);
   }
   /* ---- D5: Learn's foot. The lesson's stamp, then its sources by their short names. ---- */
   .demo__src { margin: 12px 0 0; }
@@ -624,14 +884,14 @@ demo.practice.options.forEach((option, i) => {
   ul.demo__list { padding-left: 21px; }
   ul.demo__list > li { grid-template-columns: minmax(0, 1fr); }
   .demo__num { color: var(--muted); font: 600 12px/1 var(--mono); text-align: right; }
-  .demo__list a { justify-self: start; padding: 4px 0; color: var(--link); text-underline-offset: 2px; overflow-wrap: anywhere; }
+  .demo__list a { justify-self: start; padding: 4px 0; text-underline-offset: 2px; overflow-wrap: anywhere; }
   .demo__more { margin: 4px 0 0; }
   .demo__more > summary {
     display: flex;
     align-items: center;
     gap: 7px;
     min-height: 44px;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--cs-hair);
     color: var(--ink-strong);
     font: 600 15px/1.2 var(--display);
     letter-spacing: 0.01em;
@@ -645,10 +905,10 @@ demo.practice.options.forEach((option, i) => {
   .demo__more > summary::before {
     content: '';
     flex: none;
-    width: 14px;
-    height: 14px;
-    border: 1.5px solid var(--line-strong);
-    border-radius: 2px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 4px;
     background:
       linear-gradient(var(--ink-strong), var(--ink-strong)) center / 7px 1.5px no-repeat,
       linear-gradient(var(--ink-strong), var(--ink-strong)) center / 1.5px 7px no-repeat;
@@ -673,111 +933,151 @@ demo.practice.options.forEach((option, i) => {
     .demo__more > ul.demo__list > li { grid-template-columns: minmax(0, 1fr); }
   }
   /* ---- end of D5: Learn's foot ---- */
+  /* Practice: each answer is a pressable card with a ring at the left. */
   .demo__picks {
     display: grid;
-    gap: 8px;
-    margin-top: 14px;
+    gap: 12px;
+    margin: 16px var(--cs-off) 0 0;
   }
   .demo__pick {
-    padding: 11px 14px;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-opt);
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 10px 14px 10px 46px;
+    border: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r-in);
+    background: var(--cs-card);
+    box-shadow: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
     color: var(--ink-strong);
     font-size: 16px;
     line-height: 1.4;
     cursor: pointer;
+    transition:
+      transform 80ms var(--ease-out),
+      box-shadow 80ms var(--ease-out);
   }
   .demo__pick:hover {
-    background: var(--card-2);
+    background: var(--cs-quiet);
+  }
+  .demo__pick::before,
+  .demo__pick::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 50%;
+  }
+  .demo__pick::before {
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 50%;
+    background: var(--cs-card);
   }
   .demo__why {
-    margin-top: 12px;
+    margin-top: 16px;
     padding: 10px 12px;
-    border-left: 3px solid var(--line-strong);
-    background: var(--card-2);
+    border-left: 5px solid var(--cs-edge);
+    border-radius: 2px 6px 6px 2px;
+    background: var(--cs-quiet);
     font-size: 15.5px;
   }
   .demo__why[data-right] {
-    border-left-color: var(--allowed);
+    border-left-color: var(--cs-done);
   }
 
-  /* ---------- The tracks, in order, along one cable ---------- */
+  @media (min-width: 861px) {
+    /* The heading stands beside the tabs: its words end before the tabs begin. */
+    .try__head {
+      width: 57%;
+    }
+    .demo {
+      margin-top: calc(-1 * var(--tab));
+    }
+  }
+
+  /* ---------- The tracks: each is a card with its own tab and one card beneath ---------- */
   .order {
-    padding: clamp(48px, 7vw, 96px) 0;
-    border-top: 1px solid var(--line-strong);
+    padding: var(--gap) 0 0;
   }
   .cable {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
-    margin: 28px 0 0;
+    gap: 40px;
+    margin: 62px 0 0;
     padding: 0;
     list-style: none;
   }
   .leg {
     position: relative;
-    padding-top: 26px;
-  }
-  /* The cable runs along the top of every leg, and each leg hangs from a square on it. */
-  .leg::before {
-    content: '';
-    position: absolute;
-    top: 5px;
-    left: 0;
-    right: -28px;
-    height: 3px;
-    background: repeating-linear-gradient(90deg, var(--ink-strong) 0 8px, transparent 8px 12px);
-  }
-  .leg:last-child::before {
-    right: 0;
-  }
-  .leg::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 13px;
-    height: 13px;
-    border: 2px solid var(--ink-strong);
-    border-radius: 2px;
-    background: var(--ink-strong);
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    border: 2px solid var(--cs-edge);
+    border-radius: 0 var(--cs-r) var(--cs-r) var(--cs-r);
+    background: var(--cs-card);
+    box-shadow:
+      var(--cs-stack) var(--cs-stack) 0 -2px var(--cs-card),
+      var(--cs-stack) var(--cs-stack) 0 0 var(--cs-edge);
   }
   .leg__art {
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-card);
-    background: var(--fig-bg);
+    border-bottom: 2px solid var(--cs-edge);
+    border-radius: 0 var(--cs-r-in) 0 0;
+    background: var(--cs-card);
     overflow: hidden;
   }
+  /* "Start here", "Then go deeper": the card's index tab. */
   .leg__order {
-    margin: 16px 0 2px;
-    color: var(--muted);
-    font: 600 15px/1.2 var(--display);
-    letter-spacing: 0.02em;
+    position: absolute;
+    left: -2px;
+    bottom: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    margin: 0;
+    padding: 0 14px;
+    border: 2px solid var(--cs-edge);
+    border-bottom: 0;
+    border-radius: var(--cs-r-in) var(--cs-r-in) 0 0;
+    background: var(--cs-card);
+    color: var(--ink-strong);
+    font: 600 16px/1 var(--display);
+    letter-spacing: 0.01em;
+  }
+  .leg:first-child .leg__order::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: var(--cs-here);
+    box-shadow: 0 0 0 1.5px var(--cs-edge);
   }
   .leg h3 {
-    margin: 0;
+    margin: 20px 24px 0;
     font-size: 26px;
   }
   .leg h3 a {
-    text-decoration-color: transparent;
+    text-decoration-color: var(--cs-hair);
     text-decoration-thickness: 2px;
   }
   .leg h3 a:hover {
-    text-decoration-color: var(--here);
+    text-decoration-color: currentColor;
   }
   .leg__blurb {
-    margin: 6px 0 0;
-    font-size: 16px;
+    margin: 8px 24px 0;
+    font-size: 16.5px;
     line-height: 1.5;
   }
   .leg__count {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    align-self: end;
     gap: 6px 10px;
-    margin: 12px 0 0;
+    margin: 14px 24px 22px;
     color: var(--muted);
-    font-size: 14.5px;
+    font-size: 15px;
   }
   .leg__run {
     display: flex;
@@ -785,86 +1085,332 @@ demo.practice.options.forEach((option, i) => {
   }
   .leg__run i {
     width: 10px;
-    height: 8px;
+    height: 10px;
     border-radius: 2px;
-    box-shadow: inset 0 0 0 1.5px var(--line-strong);
+    box-shadow: inset 0 0 0 1.5px var(--cs-edge);
   }
   .leg__run i[data-ready] {
-    background: var(--ink-strong);
+    background: var(--cs-edge);
     box-shadow: none;
   }
 
-  /* ---------- Where the facts come from, and the way in ---------- */
+  /* ---------- Where the facts come from, and the way in: one card each ---------- */
   .facts,
   .close {
-    padding: clamp(40px, 6vw, 80px) 0;
-    border-top: 1px solid var(--line-strong);
-  }
-  .facts {
-    background: var(--card);
+    padding: var(--gap) 0 0;
   }
   .facts__grid,
   .close__grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: clamp(24px, 5vw, 72px);
+    width: calc(100% - 64px);
+    max-width: 1240px;
+    padding: 0;
+    gap: 0;
+    align-items: stretch;
+    border: 2px solid var(--cs-edge);
+    border-radius: var(--cs-r);
+    background: var(--cs-card);
+  }
+  .facts__grid > div,
+  .close__grid > div {
+    align-self: center;
+    padding: clamp(24px, 4vw, 56px);
+  }
+  .facts__grid > .facts__art,
+  .close__grid > .close__art {
+    align-self: stretch;
+    display: grid;
     align-items: center;
+    padding: clamp(12px, 2vw, 28px);
+  }
+  .facts__art {
+    border-right: 2px solid var(--cs-edge);
+  }
+  .close__art {
+    border-left: 2px solid var(--cs-edge);
   }
   .facts p,
   .close p {
     max-width: 34em;
     margin: 14px 0 0;
+    color: var(--ink);
     font-size: 18px;
     line-height: 1.55;
   }
   .close .btn {
-    margin-top: 22px;
+    margin-top: 26px;
   }
 
+  /* ---------- Phone and tablet (860px and below) ---------- */
   @media (max-width: 860px) {
+    :global(main) {
+      /* How far a card's edge sits outside the page's 32px gutter: 14px from the screen's edge. */
+      --out: 18px;
+    }
     .open {
       grid-template-columns: minmax(0, 1fr);
       align-items: start;
     }
-    .demo__ui {
+    .open__say {
+      font-size: 19px;
+    }
+    .open__acts {
+      gap: 14px;
+    }
+    .try__head p {
+      font-size: 16.5px;
+    }
+    /* A card's edge sits 14px from the screen's; the words inside it start at 32px, under the header's logo. */
+    .demo {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto;
-      grid-template-areas: 'parts' 'scene' 'pane';
-    }
-    .demo__scene {
-      border-right: 0;
-      border-bottom: 1px solid var(--line-strong);
-      padding: 6px;
-    }
-    .demo__pane {
+      grid-template-rows: var(--tab) 2px auto auto auto auto auto auto 2px;
+      grid-template-areas: 'parts' 'top' 'hint' 'scene' 'rows' 'keys' 'says' 'nexts' 'foot';
       min-height: 0;
+      margin: 0 calc(-1 * var(--out) + 2 * var(--cs-stack)) 0 calc(-1 * var(--out));
+    }
+    /* The tabs span the card, so its top corners are square: the first and last tab carry its edges up. */
+    .demo::before {
+      border-radius: 0 0 var(--cs-r) var(--cs-r);
+    }
+    .demo__parts {
+      margin-left: -2px;
+      margin-right: -2px;
+    }
+    .demo__parts label {
+      flex: 1;
+      justify-content: center;
+      padding: 0 6px;
+    }
+    .demo__pane--learn,
+    .demo__pane--practice {
+      grid-column: 1;
+      padding: 18px 16px 20px;
+    }
+    .demo__hint--part {
+      margin: 12px 16px 12px;
+    }
+    .demo__hint--step {
+      margin: 12px 16px 0;
+    }
+    /* The figure: the drawing is cropped to lesson 1's layer (the crop's own CSS is generated, src/lib/home.ts), with its
+       callouts moved out of it into a key above and below. */
+    .demo__scene {
+      display: block;
+      place-items: normal;
+      padding: 0;
+      border-right: 0;
+      border-bottom: 2px solid var(--cs-edge);
+      border-radius: 0;
+      overflow: hidden;
+    }
+    .demo__scene :global(.nm-call) {
+      display: none;
+    }
+    :global(.nm .home-leads) {
+      display: inline;
+    }
+    .demo__key {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 12px;
+      padding: 12px 16px 4px;
+    }
+    .demo__key--below {
+      padding: 4px 16px 12px;
+    }
+    .demo__call {
+      margin: 0;
+    }
+    .demo__call--end {
+      text-align: right;
+    }
+    .demo__call b {
+      display: block;
+      color: var(--ink-strong);
+      font: 700 12px/1.4 var(--mono);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .demo__call span,
+    .demo__call i {
+      display: block;
+      color: var(--muted);
+      font: 400 13px/1.35 var(--sans);
+    }
+    .demo__call .demo__addr {
+      color: var(--ink);
+      font: 500 12px/1.4 var(--mono);
+    }
+    .demo__call .demo__addr > span {
+      display: inline;
+      color: inherit;
+      font: inherit;
+      white-space: nowrap;
+    }
+    /* The steps as a strip of five tiles, and the step on show named under it, so the figure, the step, its narration and
+       Next fit one screen. The rows lend their number and words to the strip's grid (display: contents). */
+    .demo__rows {
+      grid-template-columns: repeat(var(--steps, 5), minmax(0, 1fr));
+      gap: 8px;
+      padding: 16px 16px 0;
+    }
+    .demo__rows > li,
+    .demo__row {
+      display: contents;
+    }
+    .demo__n {
+      grid-row: 1;
+      width: auto;
+      height: 46px;
+      border-radius: var(--cs-r-in);
+      background: var(--tile-bg, var(--cs-card));
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .demo__t {
+      display: none;
+      grid-row: 2;
+      grid-column: 1 / -1;
+      padding-top: 12px;
+    }
+    /* The title's line stays the row's 1.25: the prototype measures so (811px at step 1), though the spec's text says 1.2. */
+    .demo__row .demo__t b {
+      font-size: 21px;
+    }
+    .demo__row .demo__t small {
+      font-size: 14.5px;
+    }
+    .demo__says {
+      margin: 12px 16px 0;
+    }
+    /* Next stays at the foot of the screen while the card is on it, as the card's foot. */
+    .demo__nexts,
+    .demo__pane--watch > .demo__nexts {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      margin: 16px 0 0;
+      padding: 10px calc(16px + var(--cs-off)) calc(10px + var(--cs-off) + env(safe-area-inset-bottom)) 16px;
+      border-top: 2px solid var(--cs-edge);
+      border-radius: 0 0 var(--cs-r-in) var(--cs-r-in);
+      background: var(--cs-card);
+    }
+    .demo__pane--learn > .demo__nexts {
+      margin: 16px -16px -20px;
+    }
+    .demo__next {
+      width: 100%;
     }
     .cable {
+      gap: 62px;
+      margin-top: 58px;
       grid-template-columns: minmax(0, 1fr);
-      gap: 36px;
     }
-    /* On a phone the cable runs down the side. */
     .leg {
-      padding: 0 0 0 30px;
+      margin: 0 calc(-1 * var(--out) + var(--cs-stack)) 0 calc(-1 * var(--out));
     }
-    .leg::before {
-      top: 0;
-      bottom: -36px;
-      left: 5px;
-      right: auto;
-      width: 3px;
-      height: auto;
-      background: repeating-linear-gradient(180deg, var(--ink-strong) 0 8px, transparent 8px 12px);
+    .leg h3 {
+      margin: 18px 16px 0;
+      font-size: 24px;
     }
-    .leg:last-child::before {
-      bottom: 0;
+    .leg__blurb {
+      margin: 8px 16px 0;
+    }
+    .leg__count {
+      margin: 14px 16px 20px;
     }
     .facts__grid,
     .close__grid {
       grid-template-columns: minmax(0, 1fr);
+      width: calc(100% - 28px);
+    }
+    .facts__grid > div,
+    .close__grid > div {
+      padding: 22px 16px 26px;
+    }
+    .facts__grid > .facts__art,
+    .close__grid > .close__art {
+      padding: 8px;
+      border: 0;
+      border-bottom: 2px solid var(--cs-edge);
     }
     .close__art {
       order: -1;
     }
   }
+
+  /* FIGURE TINT BEGIN: the site's own drawings, re-tinted for the cards (no figure is redrawn). The lit colour and the two
+     glows are set where the figures and their shared gradients (.lm-defs) are, so the header and the footer keep Patch's.
+     #main gives each rule its weight over src/art/lumen.css in any order. */
+  :global(main),
+  :global(.lm-defs) {
+    --fig-bg: var(--cs-card);
+    --lit-a: var(--cs-here);
+    --lit-b: var(--cs-here);
+    --pool-op: 0;
+    --halo-op: 0;
+  }
+  :global(#main .lm-svg) {
+    --anatomy-paper: var(--cs-card);
+    --anatomy-face: #ffffff;
+    --anatomy-top: #ffffff;
+    --anatomy-shade-0: #c6cdd0;
+    --anatomy-shade-1: #dde2e3;
+    --anatomy-shade-2: #eef1f1;
+    --anatomy-shade-3: #ffffff;
+    --anatomy-hi: #12171b;
+    --anatomy-mid: #2b3238;
+    --anatomy-lo: #57626a;
+    --anatomy-faint: #a6aeb2;
+    --anatomy-weight: 0.9px;
+    animation: none;
+  }
+  :global([data-theme='dark'] #main .lm-svg) {
+    --anatomy-face: #1f2428;
+    --anatomy-top: #262b30;
+    --anatomy-shade-0: #0c0f11;
+    --anatomy-shade-1: #121518;
+    --anatomy-shade-2: #171b1e;
+    --anatomy-shade-3: #1f2428;
+    --anatomy-hi: #f3f5f6;
+    --anatomy-mid: #c6cdd1;
+    --anatomy-lo: #949ea4;
+    --anatomy-faint: #4d565c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme]) #main .lm-svg) {
+      --anatomy-face: #1f2428;
+      --anatomy-top: #262b30;
+      --anatomy-shade-0: #0c0f11;
+      --anatomy-shade-1: #121518;
+      --anatomy-shade-2: #171b1e;
+      --anatomy-shade-3: #1f2428;
+      --anatomy-hi: #f3f5f6;
+      --anatomy-mid: #c6cdd1;
+      --anatomy-lo: #949ea4;
+      --anatomy-faint: #4d565c;
+    }
+  }
+  /* The lit way: a flat line in the "here" colour. No glow. */
+  :global(#main .nm .nm-trail) {
+    stroke: var(--cs-here);
+    stroke-width: 3.5px;
+    filter: none;
+  }
+  :global(#main .nm .nm-trail-edge) {
+    stroke: var(--cs-edge);
+    stroke-width: 7.5px;
+  }
+  :global(#main .nm .nm-glow) {
+    display: none;
+  }
+  :global(#main .lm-led.on) {
+    filter: none;
+  }
+  /* The dotted rings round a plate were the glow's edge; with no glow they go. */
+  :global(#main .lm-orbit) {
+    display: none;
+  }
+  /* FIGURE TINT END */
 </style>

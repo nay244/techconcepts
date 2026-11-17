@@ -51,6 +51,40 @@ export interface HomeDemo {
   parts: { watch: string; learn: string; practice: string };
   /** The first Watch step (counted from 1) in which the page on the laptop shows its words, and the first its pictures. */
   page: { words: number; pictures: number };
+  /** The drawing's four callouts, for the phone's key: the drawing's own words, in two bands (D16 §2.2.3). */
+  key: HomeKey;
+  /** The part of the map a phone shows, and the map's own frame (D16 §2.2.2). */
+  crop: HomeCrop;
+}
+
+/** One line of a callout, by the drawing's own kind: an address, a sub-line, or the laptop's state. */
+export interface KeyLine {
+  kind: 'addr' | 'sub' | 'state';
+  text: string;
+}
+
+/** A callout moved out of the drawing into the key: its name and its lines; `end` for the right-aligned ones. */
+export interface KeyCall {
+  name: string;
+  lines: KeyLine[];
+  end: boolean;
+}
+
+export interface HomeKey {
+  above: KeyCall[];
+  below: KeyCall[];
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface HomeCrop extends Box {
+  /** The SVG's own viewBox, which the crop does not change. */
+  view: Box;
 }
 
 export interface HomeSource {
@@ -85,6 +119,75 @@ export interface Lit {
 export function litSteps(page: { words: number; pictures: number }, last: number): { words: Lit; pictures: Lit } {
   const from = (first: number): Lit => ({ steps: Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i), parts: ['learn', 'practice'] });
   return { words: from(page.words), pictures: from(page.pictures) };
+}
+
+/**
+ * The part of the map a phone shows, in the map's own units: lesson 1's layer, with every trail, every busy part and the
+ * page on the laptop inside it and a few units to spare (D16 §2.2.2, measured). The SVG's viewBox is not changed.
+ */
+export const CROP: Box = { x: -78, y: -22, w: 604, h: 232 };
+
+/** The four callouts the phone's key repeats, by the drawing's own first line, with the band each belongs to. */
+const KEY_CALLS = [
+  { name: 'Your laptop', band: 'above', end: false },
+  { name: 'DNS resolver', band: 'above', end: false },
+  { name: 'The internet', band: 'below', end: true },
+  { name: 'Web server', band: 'below', end: true },
+] as const;
+
+const LINE_KINDS: Record<string, KeyLine['kind']> = { 'nm-addr': 'addr', 'nm-sub': 'sub', 'nm-state': 'state' };
+
+const unescape = (text: string): string => text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+/** The map's own frame, read from the drawing. */
+export function viewBoxOf(svg: string): Box {
+  const m = /viewBox="(-?[\d.]+) (-?[\d.]+) ([\d.]+) ([\d.]+)"/.exec(svg);
+  if (m === null) throw new Error("The network map has no viewBox for Home's demo to crop.");
+  return { x: Number(m[1]), y: Number(m[2]), w: Number(m[3]), h: Number(m[4]) };
+}
+
+/**
+ * The key's words and the leaders' starts, read out of the drawn callouts (the four `<g class="nm-call">` groups whose
+ * first `<text>` is in KEY_CALLS), so the key cannot drift from the drawing. Throws when one of the four is missing.
+ */
+export function readKey(svg: string): { key: HomeKey; dots: { cx: number; cy: number; band: 'above' | 'below' }[] } {
+  const drawn = [...svg.matchAll(/<g class="nm-call">(.*?)<\/g>/g)].map((g) => {
+    const texts = [...g[1]!.matchAll(/<text class="(nm-[a-z]+)"[^>]*>([^<]*)<\/text>/g)]
+      .map((t) => ({ cls: t[1]!, text: unescape(t[2]!) }))
+      .filter((t) => t.text !== '');
+    const dot = /<circle class="nm-lead-dot" cx="(-?[\d.]+)" cy="(-?[\d.]+)"/.exec(g[1]!);
+    return { texts, dot };
+  });
+  const key: HomeKey = { above: [], below: [] };
+  const dots: { cx: number; cy: number; band: 'above' | 'below' }[] = [];
+  for (const call of KEY_CALLS) {
+    const found = drawn.find((d) => d.texts[0]?.text === call.name);
+    if (found === undefined || found.dot === null) throw new Error(`The network map has no "${call.name}" callout for Home's phone key.`);
+    key[call.band].push({
+      name: call.name,
+      end: call.end,
+      lines: found.texts.slice(1).map((t) => ({ kind: LINE_KINDS[t.cls] ?? 'sub', text: t.text })),
+    });
+    dots.push({ cx: Number(found.dot[1]), cy: Number(found.dot[2]), band: call.band });
+  }
+  return { key, dots };
+}
+
+/** A leader for each callout: a vertical line from its own lead dot to the crop's edge, and a dot at the start. */
+function leaders(dots: { cx: number; cy: number; band: 'above' | 'below' }[]): string {
+  const edge = { above: CROP.y, below: CROP.y + CROP.h };
+  const body = dots.map(({ cx, cy, band }) => `<path d="M${cx.toFixed(1)} ${cy.toFixed(1)}V${edge[band]}"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3"/>`).join('');
+  return `<g class="home-leads" aria-hidden="true">${body}</g>`;
+}
+
+/** The CSS that crops the drawing to CROP on a phone: a box of the crop's shape, the SVG wider and shifted inside it. */
+export function cropCss(crop: HomeCrop): string {
+  const { view } = crop;
+  return (
+    `.demo .demo__scene .demo__crop{overflow:hidden;aspect-ratio:${crop.w} / ${crop.h}}` +
+    `.demo .demo__scene .demo__crop > svg{width:calc(100% * ${view.w} / ${crop.w});max-width:none;max-height:none;` +
+    `margin:calc(-100% * ${crop.y - view.y} / ${crop.w}) 0 0 calc(-100% * ${crop.x - view.x} / ${crop.w})}`
+  );
 }
 
 /** The driver's own trail and its edge, where the demo's lit ways are drawn in beside them (src/art/scenes/net-map.ts). */
@@ -178,6 +281,8 @@ export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): H
     throw new Error(`Home's demo lists ${listed.list.length} sources for ${slug}, and the lesson's stamp says ${stamp.sources}.`);
   }
   const at = (kind: 'step' | 'learn' | 'practice'): string => `${entry.url}?step=${positionOf(lesson, 0, kind)}`;
+  const { key, dots } = readKey(drawn);
+  const withTrails = drawn.replace(TRAIL, `${TRAIL}${trails.join('')}`);
   return {
     lesson: { title: lesson.title, fullName: unit.fullName, url: entry.url, number: entry.number, track: track.title },
     steps,
@@ -190,10 +295,88 @@ export function homeDemo(slug = 'what-is-http', sealedSlug = 'what-is-https'): H
     },
     sealed: { title: sealedLesson.title, lead: leadText(sealedLesson.units[0]!.learn.lead), url: sealedEntry.url, number: sealedEntry.number },
     practice: { prompt: question.prompt, options: question.options.map((o, i) => ({ text: o.text, feedback: o.feedback, right: i === question.answer })) },
-    scene: drawn.replace(TRAIL, `${TRAIL}${trails.join('')}`),
+    scene: withTrails.replace(/<\/svg>\s*$/, `${leaders(dots)}</svg>`),
     parts: { watch: at('step'), learn: at('learn'), practice: at('practice') },
     page,
+    key,
+    crop: { ...CROP, view: viewBoxOf(drawn) },
   };
+}
+
+// ---------------------------------------------------------------- the demo's states, as CSS
+
+/** The demo's three radio groups, in the order of its tabs. */
+export const PARTS = ['watch', 'learn', 'practice'] as const;
+/** The groups that are Tab stops and are heard, by the part on show (D16 §2.4: a group not on show is not a stop). */
+const GROUPS_SHOWN: Record<(typeof PARTS)[number], string[]> = { watch: ['step'], learn: [], practice: ['answer'] };
+
+const UI = '.demo__ui';
+const when = (...ids: string[]): string => `${ids.map((id) => `#${id}:checked`).join(' ~ ')} ~ ${UI}`;
+const ring = (offset: number): string => `outline:2px solid var(--focus);outline-offset:${offset}px`;
+const focus = (id: string, offset = 2): string => `#${id}:focus-visible ~ ${UI} label[for="${id}"]{${ring(offset)}}`;
+
+/**
+ * The demo's states, as CSS. The demo is three groups of radio buttons (the part, the step, the answer) that come before
+ * its panel, so a checked button can show, hide and light things in the panel with the sibling selector alone. The
+ * scene's own parts are switched the same way; where its driver would set an inline `opacity:0`, the rule is !important.
+ * The looks (the colours) are tokens of the Card stack (src/pages/index.astro); the rules here decide only what shows.
+ */
+export function demoCss(demo: HomeDemo): string {
+  const last = demo.steps.length;
+  // Before any step: no way is lit, and the laptop's screen is empty. (The map is drawn with the page loaded, and a
+  // lesson's driver clears it when it starts; here the first rule does.)
+  const css: string[] = ['.home-trail{opacity:0;transition:opacity 200ms ease}', `${UI} #nm-page [data-part]{opacity:0}`];
+  // A group whose part is not on show is not a Tab stop. `visibility`, not `display`: it keeps its checked state.
+  const hidden = PARTS.flatMap((part) => ['step', 'answer'].filter((g) => !GROUPS_SHOWN[part].includes(g)).map((g) => `#demo-${part}:checked ~ .demo__in--${g}`));
+  css.push(`${hidden.join(',')}{visibility:hidden}`);
+  for (const part of PARTS) {
+    const id = `demo-${part}`;
+    css.push(`${when(id)} .demo__pane--${part}{display:${part === 'watch' ? 'contents' : 'block'}}`);
+    // The tab on show: taller, bold, joined to the card, and marked.
+    css.push(`${when(id)} .demo__parts label[for="${id}"]{z-index:1;height:calc(var(--tab) + 2px);border-bottom:0;background:var(--cs-card);color:var(--ink-strong);font-weight:700}`);
+    css.push(`${when(id)} .demo__parts label[for="${id}"]::before{display:block}`);
+    css.push(focus(id, -7));
+  }
+  for (const step of demo.steps) {
+    const id = `demo-s${step.n}`;
+    css.push(`${when(id)} .demo__say--${step.n}{display:block}`);
+    css.push(`${when(id)} .demo__next--${step.n}{display:inline-flex}`);
+    css.push(`${when(id)} .demo__row[for="${id}"]{border-color:var(--cs-edge);background:var(--cs-here-wash)}`);
+    css.push(`${when(id)} .demo__row[for="${id}"] .demo__n{--tile-bg:var(--cs-here);background:var(--cs-here);color:var(--cs-here-ink);border-color:var(--cs-edge)}`);
+    // The steps before the one you are on are done: a tick, drawn, in place of the number (which stays in the markup).
+    for (const done of demo.steps.filter((s) => s.n < step.n)) {
+      css.push(`${when(id)} .demo__row[for="demo-s${done.n}"] .demo__n{background:var(--cs-card);border-color:var(--cs-edge);color:var(--ink-strong);font-size:0}`);
+      css.push(`${when(id)} .demo__row[for="demo-s${done.n}"] .demo__n::after{display:block}`);
+    }
+    css.push(`${when(id)} .demo__row[for="${id}"] .demo__t{display:block}`);
+    css.push(focus(id));
+    // On a phone a row is display: contents and draws no ring, so its tile does.
+    css.push(`@media (max-width: 860px){#${id}:focus-visible ~ ${UI} .demo__row[for="${id}"] .demo__n{${ring(2)}}}`);
+    // The way the step's messages take lights up, and so does everything at work on it.
+    if (step.lights.trail) css.push(`${when('demo-watch', id)} .home-trail[data-step="${step.n}"]{opacity:.9}`);
+    css.push(`${step.lights.busy.map((busy) => `${when('demo-watch', id)} #${busy}`).join(',')}{opacity:1}`);
+  }
+  // The page on the laptop follows the lesson's own cues, and stays through Learn and Practice.
+  const lit = litSteps(demo.page, last);
+  const litWhen = (on: Lit): string[] => [...on.steps.map((n) => when('demo-watch', `demo-s${n}`)), ...on.parts.map((part) => when(`demo-${part}`))];
+  css.push(`${litWhen(lit.words).map((s) => `${s} #nm-page [data-part="text"]`).join(',')}{opacity:1!important}`);
+  css.push(`${litWhen(lit.pictures).map((s) => `${s} #nm-page [data-part="pic"]`).join(',')}{opacity:1!important}`);
+  demo.practice.options.forEach((option, i) => {
+    const id = `demo-a${i + 1}`;
+    css.push(`${when(id)} .demo__why--${i + 1}{display:block}`);
+    // An answer picked is pressed in. The right one's ring is filled with a tick; any other holds a dot.
+    css.push(`${when(id)} .demo__pick[for="${id}"]{border-color:var(--cs-edge);background:var(--cs-quiet);box-shadow:1px 1px 0 var(--cs-edge);transform:translate(2px,2px)}`);
+    if (option.right) {
+      css.push(`${when(id)} .demo__pick[for="${id}"]::before{border-color:var(--cs-done);background:var(--cs-done)}`);
+      css.push(`${when(id)} .demo__pick[for="${id}"]::after{left:19px;width:11px;height:6px;margin-top:-5px;border:solid var(--cs-card);border-width:0 0 2.5px 2.5px;transform:rotate(-45deg)}`);
+    } else {
+      css.push(`${when(id)} .demo__pick[for="${id}"]::after{left:20px;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--cs-edge)}`);
+    }
+    css.push(focus(id));
+  });
+  // A phone shows the drawing cropped to lesson 1's layer, its callouts in the key.
+  css.push(`@media (max-width: 860px){${cropCss(demo.crop)}}`);
+  return css.join('\n');
 }
 
 // ---------------------------------------------------------------- the basics, in order

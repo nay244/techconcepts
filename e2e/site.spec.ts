@@ -247,6 +247,11 @@ test.describe('desktop', () => {
       await page.keyboard.press('ArrowRight');
       await expect(page.locator('#demo-learn')).toBeChecked();
       await expect(d.locator('.demo__pane--learn')).toBeVisible();
+      // A group whose part is not on show is not offered: the answers are heard in Practice only (B20, case 29).
+      await expect(page.getByRole('radio', { name: /^Answer: / })).toHaveCount(0);
+      await page.locator('#demo-learn').focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('#demo-practice')).toBeChecked();
       await expect(page.getByRole('radio', { name: /^Answer: / })).toHaveCount(3);
     });
 
@@ -1571,7 +1576,7 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
   /** Case 22: the page is not wider than the window, closed and open. */
   async function noSideways(page: Page): Promise<void> {
     const wide = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    // The demo clips what overflows it, so the document never widens for the block: nothing in the block may reach past the demo's edge either.
+    // The card does not clip what overflows it (its cards beneath lie outside its box), so nothing in the block may reach past the card's edge: the document never widens for it.
     const clipped = () => page.evaluate(() => {
       const edge = document.querySelector('main .demo')!.getBoundingClientRect().right;
       return [...document.querySelectorAll('.demo__src a, .demo__src .stamp, .demo__src summary')].filter((el) => el.getBoundingClientRect().right > edge + 0.5).length;
@@ -1744,6 +1749,1154 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
       await d.locator('.demo__parts label', { hasText: 'Practice' }).click();
       await expect.poll(() => part(page, 'text')).toBe('1');
       await expect.poll(() => part(page, 'pic')).toBe('1');
+    });
+  });
+});
+
+// ---------------------------------------------------------------- B20: Home in the Card stack look (prototypes/d17-cases.md)
+// Each test names its case. Every window is set by the test itself (the phone project's 390 is not the spec's 375), and every
+// measure is taken after the fonts are ready and with the smooth scroll off.
+
+type B20Cfg = { width: number; height: number; scheme: 'light' | 'dark' };
+const B20_CFGS: B20Cfg[] = [
+  { width: 375, height: 812, scheme: 'light' },
+  { width: 375, height: 812, scheme: 'dark' },
+  { width: 1440, height: 900, scheme: 'light' },
+  { width: 1440, height: 900, scheme: 'dark' },
+];
+const EDGE = { light: 'rgb(18, 23, 27)', dark: 'rgb(198, 205, 209)' } as const;
+
+/** Home, with the fonts ready and no smooth scrolling to wait for. */
+async function b20Home(page: Page, scripts = true): Promise<void> {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  // A page with its scripts off cannot take a style tag: those tests wait for Home's smooth scroll to settle instead.
+  if (scripts) await page.addStyleTag({ content: 'html{scroll-behavior:auto !important}' });
+}
+/** A token's colour, resolved through a probe element (never by string-matching getPropertyValue). */
+const b20Tok = (page: Page, name: string): Promise<string> =>
+  page.evaluate((n) => {
+    const probe = document.createElement('i');
+    probe.style.color = `var(--${n})`;
+    document.body.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, name);
+const b20Css = (loc: Locator, prop: string, pseudo: string | null = null): Promise<string> =>
+  loc.evaluate((el, a) => getComputedStyle(el, a[1]).getPropertyValue(a[0]), [prop, pseudo] as const);
+const b20Rect = (loc: Locator) =>
+  loc.evaluate((el) => {
+    const b = el.getBoundingClientRect();
+    return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, width: b.width, height: b.height };
+  });
+/** Checks a radio by a script click: no focus ring, no scroll, a state to measure from. */
+const b20Pick = (page: Page, id: string): Promise<void> => page.evaluate((i) => (document.getElementById(i) as HTMLInputElement).click(), id);
+const b20Scroll = (page: Page, y: number): Promise<void> => page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
+/** Scrolls so `.demo`'s top is `at` pixels from the window's top. */
+const b20DemoAt = async (page: Page, at: number): Promise<void> => {
+  const top = await page.evaluate(() => document.querySelector('main .demo')!.getBoundingClientRect().top + window.scrollY);
+  await b20Scroll(page, top - at);
+};
+/** Waits for a scroll in flight to finish (a page with its scripts off has Home's smooth scroll on). */
+async function b20Settle(page: Page): Promise<void> {
+  let last = -1;
+  for (let i = 0; i < 40; i += 1) {
+    const now = await page.evaluate(() => window.scrollY);
+    if (now === last) return;
+    last = now;
+    await page.waitForTimeout(80);
+  }
+}
+const b20Sides = (loc: Locator, pseudo: string | null = null) =>
+  loc.evaluate(
+    (el, ps) => {
+      const cs = getComputedStyle(el, ps);
+      return (['Top', 'Right', 'Bottom', 'Left'] as const).map((s) => [cs.getPropertyValue(`border-${s.toLowerCase()}-width`), cs.getPropertyValue(`border-${s.toLowerCase()}-style`), cs.getPropertyValue(`border-${s.toLowerCase()}-color`)]);
+    },
+    pseudo,
+  );
+/** Every displayed `main .btn`: its height, borders, shadow and primary-ness. */
+const b20Buttons = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('main .btn')]
+      .filter((el) => el.getClientRects().length > 0)
+      .map((el) => {
+        const cs = getComputedStyle(el);
+        return { text: el.textContent!.trim(), primary: el.classList.contains('btn--primary'), height: el.getBoundingClientRect().height, borders: [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth], shadow: cs.boxShadow, inDemo: el.closest('.demo') !== null, inLeg: el.closest('.leg') !== null, inFacts: el.closest('.facts__grid') !== null, inClose: el.closest('.close__grid') !== null };
+      }),
+  );
+
+test.describe('B20: Home in the Card stack look', () => {
+  for (const cfg of B20_CFGS) {
+    const phone = cfg.width === 375;
+    test.describe(`${cfg.width}x${cfg.height}, ${cfg.scheme}`, () => {
+      test.use({ viewport: { width: cfg.width, height: cfg.height }, colorScheme: cfg.scheme, isMobile: false, hasTouch: false });
+
+      test('3: the header is the same on Home and on /about: the page’s look is scoped to the page', async ({ page }) => {
+        const read = async (path: string) => {
+          await page.goto(path);
+          await page.evaluate(() => document.fonts.ready);
+          return page.evaluate(() => {
+            const head = document.querySelector('.site-head')!;
+            const nav = head.querySelector('nav.site-nav')!;
+            const link = nav.querySelector('a[href="/glossary"]')!;
+            const start = head.querySelector('.wrap a.btn--primary')!;
+            const pick = (el: Element, props: string[]) => Object.fromEntries(props.map((p) => [p, getComputedStyle(el).getPropertyValue(p)]));
+            return {
+              head: pick(head, ['background-color', 'border-bottom-width', 'border-bottom-style', 'border-bottom-color']),
+              nav: pick(nav, ['border-top-width', 'border-top-color', 'border-top-left-radius', 'box-shadow', 'background-color']),
+              link: pick(link, ['border-top-left-radius', 'box-shadow', 'background-color', 'border-top-width']),
+              start: pick(start, ['background-color', 'border-top-left-radius', 'box-shadow', 'border-top-width', 'border-top-color', 'transform', 'font-size']),
+              startText: start.textContent,
+            };
+          });
+        };
+        const home = await read('/');
+        const about = await read('/about');
+        expect(home.startText).toBe('Start learning');
+        expect(home).toEqual(about);
+        // The nearest leak: a rule written as `.btn` inside :global(...) gives the header's button the page's offset edge.
+        expect(home.start['box-shadow']).toBe('none');
+        expect(home.start['border-top-width']).toBe('1px');
+      });
+
+      test('4: one ground from the header down: main is clear, and no rule is drawn above the opening', async ({ page }) => {
+        await b20Home(page);
+        const r = await page.evaluate(() => {
+          const rgb = (c: string): number[] => {
+            const m = /^rgba?\(([^)]+)\)$/.exec(c);
+            if (m !== null) return m[1]!.split(/[ ,/]+/).slice(0, 3).map(Number);
+            const s = /^color\(srgb ([^)]+)\)$/.exec(c)!;
+            return s[1]!.split(/[ /]+/).slice(0, 3).map((v) => Math.round(Number(v) * 255));
+          };
+          const head = document.querySelector('.site-head')!.getBoundingClientRect();
+          const h1 = document.querySelector('main h1')!.getBoundingClientRect();
+          const between = [...document.querySelectorAll('main *')].filter((el) => el.closest('svg') === null).filter((el) => {
+            const b = el.getBoundingClientRect();
+            return b.height > 0 && b.top >= head.bottom - 0.5 && b.bottom <= h1.top + 0.5;
+          });
+          return {
+            head: rgb(getComputedStyle(document.querySelector('.site-head')!).backgroundColor),
+            body: rgb(getComputedStyle(document.body).backgroundColor),
+            main: getComputedStyle(document.querySelector('main')!).backgroundColor,
+            between: between.map((el) => ({ tag: el.className, borders: ['Top', 'Right', 'Bottom', 'Left'].map((s) => getComputedStyle(el).getPropertyValue(`border-${s.toLowerCase()}-width`)), bg: getComputedStyle(el).backgroundColor })),
+            tryHead: getComputedStyle(document.querySelector('.try__head')!).borderTopWidth,
+          };
+        });
+        r.head.forEach((v, i) => expect(Math.abs(v - r.body[i]!), 'the header and the page share a ground').toBeLessThanOrEqual(1));
+        expect(r.main).toBe('rgba(0, 0, 0, 0)');
+        for (const el of r.between) {
+          expect(el.borders.every((w) => w === '0px'), `${el.tag} draws no rule`).toBe(true);
+          expect(el.bg).toBe('rgba(0, 0, 0, 0)');
+        }
+        expect(r.tryHead, 'no rule over “Try one”').toBe('0px');
+      });
+
+      test('5: a card has a 2px solid edge in the edge colour and a 10px corner; the demo’s top corners are square on a phone', async ({ page }) => {
+        await b20Home(page);
+        const edge = await b20Tok(page, 'cs-edge');
+        expect(edge).toBe(EDGE[cfg.scheme]);
+        const cards: [string, Locator, string | null][] = [
+          ['.demo::before', page.locator('main .demo'), '::before'],
+          ['.leg 1', page.locator('main .leg').nth(0), null],
+          ['.leg 2', page.locator('main .leg').nth(1), null],
+          ['.facts__grid', page.locator('main .facts__grid'), null],
+          ['.close__grid', page.locator('main .close__grid'), null],
+        ];
+        for (const [name, loc, pseudo] of cards) {
+          for (const side of await b20Sides(loc, pseudo)) expect(side, name).toEqual(['2px', 'solid', edge]);
+        }
+        const radii = (loc: Locator, pseudo: string | null = null) =>
+          loc.evaluate((el, ps) => { const cs = getComputedStyle(el, ps); return [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius]; }, pseudo);
+        expect(await radii(page.locator('main .demo'), '::before'), 'the demo card').toEqual(phone ? ['0px', '0px', '10px', '10px'] : ['10px', '10px', '10px', '10px']);
+        for (const i of [0, 1]) expect(await radii(page.locator('main .leg').nth(i)), `.leg ${i + 1}: the tab stands at the top-left`).toEqual(['0px', '10px', '10px', '10px']);
+        expect(await radii(page.locator('main .facts__grid'))).toEqual(['10px', '10px', '10px', '10px']);
+        expect(await radii(page.locator('main .close__grid'))).toEqual(['10px', '10px', '10px', '10px']);
+      });
+
+      test('6: two cards beneath the demo, one beneath each track, none beneath the facts and the close', async ({ page }) => {
+        await b20Home(page);
+        const demo = page.locator('main .demo');
+        const card = await b20Tok(page, 'cs-card');
+        const edge = await b20Tok(page, 'cs-edge');
+        const stack = phone ? 4 : 6;
+        expect(await b20Css(demo, 'box-shadow', '::before')).toBe(`${card} ${stack}px ${stack}px 0px -2px, ${edge} ${stack}px ${stack}px 0px 0px`);
+        const after = await demo.evaluate((el) => {
+          const cs = getComputedStyle(el, '::after');
+          return { display: cs.display, position: cs.position, image: cs.backgroundImage, right: parseFloat(cs.right), bottom: parseFloat(cs.bottom), border: cs.borderTopWidth, edge: cs.borderTopColor, zIndex: cs.zIndex };
+        });
+        expect(after.display).not.toBe('none');
+        expect(after.position).toBe('absolute');
+        expect(after.image.startsWith('conic-gradient(')).toBe(true);
+        expect(after.image).toContain(edge);
+        expect(after.image).toContain(card);
+        expect(after.border).toBe('2px');
+        expect(after.edge).toBe(edge);
+        // Its right and bottom edges lie 12px (1440) or 8px (375) beyond the card's: the grid area ends 2px inside the demo's right edge.
+        expect(after.right, 'right inset').toBe(-(2 * stack + 2));
+        expect(after.bottom, 'bottom inset').toBe(-2 * stack);
+        // The exposed strip is the demo's own to hit-test, not the next section's.
+        await b20DemoAt(page, 100);
+        const box = await b20Rect(demo);
+        const hit = await page.evaluate(([x, y]) => document.elementsFromPoint(x!, y!)[0]!.className, [box.right + 2 * stack - 3, box.top + box.height / 2] as const);
+        expect(hit).toContain('demo');
+        for (const side of ['overflow-x', 'overflow-y']) expect(await b20Css(demo, side), `the stack lies outside the demo's box: ${side}`).toBe('visible');
+        for (const i of [0, 1]) {
+          const leg = page.locator('main .leg').nth(i);
+          expect(await b20Css(leg, 'box-shadow')).toBe(`${card} ${stack}px ${stack}px 0px -2px, ${edge} ${stack}px ${stack}px 0px 0px`);
+          expect(await b20Css(leg, 'content', '::after'), 'no second card under a track').toBe('none');
+        }
+        for (const sel of ['main .facts__grid', 'main .close__grid']) expect(await b20Css(page.locator(sel), 'box-shadow'), sel).toBe('none');
+      });
+
+      test('6: the dithered card covers nothing: the real element is hit first at the scene, the first row, Next and the tabs', async ({ page }) => {
+        await b20Home(page);
+        await b20DemoAt(page, 70);
+        const probes: [string, string][] = [['.demo__scene', ''], ['.demo__row[for="demo-s1"] .demo__n', ''], ['.demo__next--1', ''], ['.demo__parts label[for="demo-learn"]', '']];
+        for (const [sel] of probes) {
+          const ok = await page.evaluate((s) => {
+            const el = document.querySelector(s)!;
+            const b = el.getBoundingClientRect();
+            const first = document.elementsFromPoint(b.left + b.width / 2, Math.min(b.top + b.height / 2, innerHeight - 4))[0]!;
+            return el === first || el.contains(first);
+          }, sel);
+          expect(ok, `${sel} is hit first`).toBe(true);
+        }
+      });
+
+      test('7: every button is at least 48px tall with a 2px border and a 3px offset edge; pressed it is 1px and moved 2px', async ({ page }) => {
+        await b20Home(page);
+        const check = async () => {
+          for (const b of await b20Buttons(page)) {
+            expect(b.height, `${b.text} is at least 48px tall`).toBeGreaterThanOrEqual(48);
+            expect(b.borders, `${b.text}'s border`).toEqual(['2px', '2px', '2px', '2px']);
+            expect(b.shadow, `${b.text}'s offset edge`).toMatch(/ 3px 3px 0px 0px$/);
+          }
+        };
+        await check();
+        expect((await b20Buttons(page)).map((b) => b.text)).toEqual(['Start with lesson 1: HTTP', 'See the tracks', 'Next step', 'Start with lesson 1: HTTP']);
+        await b20Pick(page, 'demo-learn');
+        await check();
+        expect((await b20Buttons(page)).map((b) => b.text)).toContain('Go to Practice');
+        await b20Pick(page, 'demo-watch');
+        // The hidden Next labels are not buttons on show: only one is displayed.
+        expect((await b20Buttons(page)).filter((b) => b.text === 'Next step')).toHaveLength(1);
+      });
+
+      test('7: a pressed button has the 1px shadow and has moved 2px, with and without reduced motion; the old scale is gone', async ({ page }) => {
+        for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+          await page.emulateMedia({ reducedMotion });
+          await b20Home(page);
+          for (const sel of ['main .demo__next:visible', 'main .open .btn--primary', 'main .open .btn:not(.btn--primary)']) {
+            const btn = page.locator(sel).first();
+            await btn.scrollIntoViewIfNeeded();
+            const box = (await btn.boundingBox())!;
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            await page.mouse.down();
+            await expect.poll(() => b20Css(btn, 'box-shadow'), { message: `${sel} pressed (${reducedMotion})` }).toMatch(/ 1px 1px 0px 0px$/);
+            await expect.poll(() => b20Css(btn, 'transform')).toBe('matrix(1, 0, 0, 1, 2, 2)');
+            // Let go away from the button, so nothing is clicked and the page stays.
+            await page.mouse.move(2, 2);
+            await page.mouse.up();
+            await expect.poll(() => b20Css(btn, 'transform')).toBe('none');
+            await expect.poll(() => b20Css(btn, 'box-shadow')).toMatch(/ 3px 3px 0px 0px$/);
+          }
+        }
+      });
+
+      test('8: one filled button showing per card, in every state of the demo', async ({ page }) => {
+        await b20Home(page);
+        const primaries = () => page.evaluate(() => {
+          const shown = [...document.querySelectorAll<HTMLElement>('main .btn--primary')].filter((el) => el.getClientRects().length > 0);
+          const count = (sel: string) => shown.filter((el) => el.closest(sel) !== null).length;
+          return { demo: count('.demo'), close: count('.close__grid'), legs: count('.leg'), facts: count('.facts__grid'), open: shown.filter((el) => el.closest('.open') !== null).length, plain: [...document.querySelectorAll<HTMLElement>('main .open .btn:not(.btn--primary)')].length };
+        });
+        const states: [string, string, number][] = [['demo-s1', '', 1], ['demo-s2', '', 1], ['demo-s3', '', 1], ['demo-s4', '', 1], ['demo-s5', '', 1], ['demo-learn', '', 1], ['demo-practice', '', 0]];
+        for (const [id, , want] of states) {
+          await b20Pick(page, id);
+          const p = await primaries();
+          expect(p.demo, `inside the demo at ${id}`).toBe(want);
+          expect(p.close).toBe(1);
+          expect(p.legs).toBe(0);
+          expect(p.facts).toBe(0);
+          expect(p.open, 'the opening has one filled button').toBe(1);
+          expect(p.plain, 'and one plain').toBe(1);
+        }
+      });
+
+      test('9: the tab on show is 52px tall, bold, joined to the card and marked; the others are 46px, 600, edged, and unmarked', async ({ page }) => {
+        await b20Home(page);
+        await b20DemoAt(page, 100);
+        const parts = ['watch', 'learn', 'practice'];
+        for (const on of parts) {
+          await b20Pick(page, `demo-${on}`);
+          const demoBox = await b20Rect(page.locator('main .demo'));
+          for (const part of parts) {
+            const label = page.locator(`main .demo__parts label[for="demo-${part}"]`);
+            const box = await b20Rect(label);
+            const shown = part === on;
+            expect(box.height, `${part} tab, ${on} on show`).toBeCloseTo(shown ? 52 : 46, 0);
+            expect(await b20Css(label, 'font-weight')).toBe(shown ? '700' : '600');
+            expect(await b20Css(label, 'border-bottom-width')).toBe(shown ? '0px' : '2px');
+            expect(await b20Css(label, 'display', '::before')).toBe(shown ? 'block' : 'none');
+            if (shown) {
+              expect(await b20Css(label, 'width', '::before')).toBe('9px');
+              expect(await b20Css(label, 'height', '::before')).toBe('9px');
+              // The card's top edge does not show under the tab on show.
+              const hit = await page.evaluate(([x, y]) => (document.elementFromPoint(x!, y!) as HTMLElement).closest('label')?.getAttribute('for'), [box.left + box.width / 2, box.bottom - 1] as const);
+              expect(hit).toBe(`demo-${part}`);
+            }
+            // Every tab stands on the card's top edge, overlapping it by 2px.
+            expect(box.bottom - demoBox.top, `${part} tab's foot`).toBeCloseTo(52, 0);
+          }
+        }
+      });
+
+      test('9: the tabs line up with the card: the first tab’s left edge is the scene’s rule (1440), or three equal tabs span the card (375)', async ({ page }) => {
+        await b20Home(page);
+        const tabs = await Promise.all([0, 1, 2].map((i) => b20Rect(page.locator('main .demo__parts label').nth(i))));
+        if (phone) {
+          const widths = tabs.map((t) => t.width);
+          for (const w of widths) expect(w).toBeCloseTo(widths[0]!, 0);
+          const demo = await b20Rect(page.locator('main .demo'));
+          expect(tabs[0]!.left, 'the first tab carries the card’s left edge up').toBeCloseTo(demo.left, 0);
+          expect(tabs[2]!.right, 'the last tab carries the right edge up').toBeCloseTo(demo.right, 0);
+          expect(Math.abs(tabs[1]!.left - tabs[0]!.right), 'neighbours share an edge').toBeLessThanOrEqual(2.5);
+        } else {
+          const scene = await b20Rect(page.locator('main .demo__scene'));
+          expect(Math.abs(tabs[0]!.left - (scene.right - 2)), 'the first tab’s left edge runs down into the rule').toBeLessThanOrEqual(1);
+        }
+      });
+
+      test('10: the step on show is the here chip on an edged, washed row; steps behind are ticked; steps ahead keep their number', async ({ page }) => {
+        await b20Home(page);
+        const here = await b20Tok(page, 'cs-here');
+        const hereInk = await b20Tok(page, 'cs-here-ink');
+        const card = await b20Tok(page, 'cs-card');
+        const edge = await b20Tok(page, 'cs-edge');
+        const done = await b20Tok(page, 'cs-done');
+        const wash = await b20Tok(page, 'cs-here-wash');
+        for (let n = 1; n <= 5; n += 1) {
+          await b20Pick(page, `demo-s${n}`);
+          for (let i = 1; i <= 5; i += 1) {
+            const chip = page.locator(`main .demo__row[for="demo-s${i}"] .demo__n`);
+            const row = page.locator(`main .demo__row[for="demo-s${i}"]`);
+            const label = `step ${i} with step ${n} on show`;
+            if (i === n) {
+              expect(await b20Css(chip, 'background-color'), `${label}: chip`).toBe(here);
+              expect(await b20Css(chip, 'color'), label).toBe(hereInk);
+              expect(await b20Css(chip, 'display', '::after'), label).toBe('none');
+              if (!phone) {
+                expect(await b20Css(row, 'border-top-color'), `${label}: row edge`).toBe(edge);
+                expect(await b20Css(row, 'background-color'), `${label}: row wash`).toBe(wash);
+              }
+            } else {
+              expect(await b20Css(chip, 'background-color'), label).toBe(card);
+              if (!phone) {
+                expect(await b20Css(row, 'border-top-color'), label).toBe('rgba(0, 0, 0, 0)');
+                expect(await b20Css(row, 'background-color'), label).toBe('rgba(0, 0, 0, 0)');
+              }
+              if (i < n) {
+                expect(await b20Css(chip, 'font-size'), `${label}: its number is hidden`).toBe('0px');
+                expect(await b20Css(chip, 'display', '::after'), label).toBe('block');
+                expect(await b20Css(chip, 'border-left-width', '::after')).toBe('3px');
+                expect(await b20Css(chip, 'border-bottom-width', '::after')).toBe('3px');
+                expect(await b20Css(chip, 'border-top-width', '::after')).toBe('0px');
+                expect(await b20Css(chip, 'border-left-color', '::after'), label).toBe(done);
+              } else {
+                expect(await b20Css(chip, 'font-size'), `${label}: its number shows`).toBe(phone ? '16px' : '14px');
+                expect(await b20Css(chip, 'display', '::after'), label).toBe('none');
+              }
+            }
+          }
+        }
+        // The washed row composites to the prototype's drawn colour on the card (light).
+        if (!phone && cfg.scheme === 'light') {
+          await b20Pick(page, 'demo-s1');
+          const m = /rgba\(176, 70, 23, ([\d.]+)\)/.exec(wash)!;
+          const a = Number(m[1]);
+          expect([176, 70, 23].map((c, i) => Math.round(c * a + [250, 251, 250][i]! * (1 - a)))).toEqual([243, 233, 227]);
+        }
+      });
+
+      test('11: a request has a 5px bar in the request colour and a response in the response colour; no other thing on the page has either', async ({ page }) => {
+        await b20Home(page);
+        const request = await b20Tok(page, 'cs-request');
+        const response = await b20Tok(page, 'cs-response');
+        expect(request).toBe(cfg.scheme === 'light' ? 'rgb(31, 99, 192)' : 'rgb(90, 169, 255)');
+        for (const n of [2, 3, 4, 5]) {
+          await b20Pick(page, `demo-s${n}`);
+          const bars = await page.locator(`main .demo__say--${n} li`).evaluateAll((els) => els.map((el) => [el.getAttribute('data-kind'), getComputedStyle(el).borderLeftWidth, getComputedStyle(el).borderLeftColor]));
+          expect(bars.length).toBeGreaterThanOrEqual(2);
+          for (const [kind, width, color] of bars) {
+            expect(width).toBe('5px');
+            expect(color, `${kind} bar`).toBe(kind === 'request' ? request : response);
+          }
+        }
+        // Every element in main, hidden ones too: only the 11 message bars carry either colour.
+        const hits = await page.evaluate(([a, b]) => {
+          const out: string[] = [];
+          for (const el of document.querySelectorAll('main *')) {
+            const cs = getComputedStyle(el);
+            const props: [string, string][] = [['color', cs.color], ['background-color', cs.backgroundColor], ['fill', cs.fill], ['stroke', cs.stroke], ['stop-color', cs.stopColor]];
+            if (cs.outlineStyle !== 'none') props.push(['outline-color', cs.outlineColor]);
+            for (const s of ['top', 'right', 'bottom', 'left']) if (parseFloat(cs.getPropertyValue(`border-${s}-width`)) > 0) props.push([`border-${s}-color`, cs.getPropertyValue(`border-${s}-color`)]);
+            for (const [p, v] of props) if (v === a || v === b) out.push(`${el.tagName.toLowerCase()}${el.getAttribute('data-kind') ? `[${el.getAttribute('data-kind')}]` : ''}.${(el.getAttribute('class') ?? '').toString()} ${p}`);
+          }
+          return out;
+        }, [request, response] as const);
+        expect(hits, hits.join('\n')).toHaveLength(11);
+        for (const h of hits) expect(h).toMatch(/^li\[(request|response)\]\.\s*border-left-color$/);
+      });
+
+      test('12: no link on Home is the blue link colour, and each is underlined in a visible colour', async ({ page }) => {
+        await b20Home(page);
+        const blue = await b20Tok(page, 'link');
+        const links = await page.evaluate(() =>
+          [...document.querySelectorAll<HTMLAnchorElement>('main a')].map((a) => {
+            const cs = getComputedStyle(a);
+            return { text: a.textContent!.trim().slice(0, 30), btn: a.classList.contains('btn'), color: cs.color, line: cs.textDecorationLine, decoration: cs.textDecorationColor, where: a.closest('.demo__pane') === null ? 'page' : 'pane' };
+          }),
+        );
+        expect(links.length).toBeGreaterThan(8);
+        for (const l of links) {
+          expect(l.color, `${l.text} is ink, not the link blue`).not.toBe(blue);
+          if (!l.btn) {
+            expect(l.line, `${l.text} is underlined`).toContain('underline');
+            expect(l.decoration, `${l.text}'s underline shows`).not.toBe('rgba(0, 0, 0, 0)');
+          }
+        }
+        // Hovering a track's title turns its underline to the link's own colour, not the orange.
+        await page.locator('main .leg h3 a').first().scrollIntoViewIfNeeded();
+        await page.locator('main .leg h3 a').first().hover();
+        const title = page.locator('main .leg h3 a').first();
+        await expect.poll(async () => (await b20Css(title, 'text-decoration-color')) === (await b20Css(title, 'color'))).toBe(true);
+      });
+
+      test('13: an answer picked is pressed in; the right one’s ring is filled with a tick, a wrong one’s holds a dot', async ({ page }) => {
+        await b20Home(page);
+        await b20Pick(page, 'demo-practice');
+        const card = await b20Tok(page, 'cs-card');
+        const quiet = await b20Tok(page, 'cs-quiet');
+        const edge = await b20Tok(page, 'cs-edge');
+        const done = await b20Tok(page, 'cs-done');
+        const pick = (n: number) => page.locator(`main .demo__pick[for="demo-a${n}"]`);
+        const feedback = (n: number) => page.locator(`main .demo__why--${n}`);
+        await pick(2).click();
+        await expect.poll(() => b20Css(pick(2), 'transform')).toBe('matrix(1, 0, 0, 1, 2, 2)');
+        expect(await b20Css(pick(2), 'box-shadow')).toBe(`${edge} 1px 1px 0px 0px`);
+        expect(await b20Css(pick(2), 'background-color')).toBe(quiet);
+        expect(await b20Css(pick(2), 'background-color', '::before'), 'a wrong answer’s ring is not green').toBe(card);
+        expect(await b20Css(pick(2), 'width', '::after')).toBe('8px');
+        expect(await b20Css(pick(2), 'height', '::after')).toBe('8px');
+        expect(await b20Css(pick(2), 'border-top-left-radius', '::after')).toBe('50%');
+        expect(await b20Css(pick(2), 'background-color', '::after')).toBe(edge);
+        expect(await b20Css(feedback(2), 'border-left-width')).toBe('5px');
+        expect(await b20Css(feedback(2), 'border-left-color')).toBe(edge);
+        expect(await b20Css(feedback(2), 'background-color')).toBe(quiet);
+        // The unpicked keep the offset edge and no transform.
+        for (const n of [1, 3]) {
+          expect(await b20Css(pick(n), 'box-shadow')).toBe(`${edge} 3px 3px 0px 0px`);
+          expect(await b20Css(pick(n), 'transform')).toBe('none');
+        }
+        await pick(1).click();
+        await expect.poll(() => b20Css(pick(1), 'transform')).toBe('matrix(1, 0, 0, 1, 2, 2)');
+        expect(await b20Css(pick(1), 'background-color', '::before')).toBe(done);
+        expect(await b20Css(pick(1), 'border-top-color', '::before')).toBe(done);
+        // The tick's 2.5px line is drawn at 2px on a screen of one pixel a pixel: a border is rounded down to whole device pixels.
+        expect(await b20Css(pick(1), 'border-left-width', '::after')).toBe('2px');
+        expect(await b20Css(pick(1), 'border-bottom-width', '::after')).toBe('2px');
+        expect(await b20Css(pick(1), 'border-left-color', '::after')).toBe(card);
+        expect(await b20Css(pick(1), 'transform', '::after')).not.toBe('none');
+        expect(await b20Css(feedback(1), 'border-left-color')).toBe(done);
+        expect(await b20Css(pick(2), 'transform'), 'the wrong one springs back').toBe('none');
+      });
+
+      test('14: every figure has no glow, no rings and no fade-in; the lit way is the here colour; the shared gradients are lit with it', async ({ page }) => {
+        await b20Home(page);
+        const card = await b20Tok(page, 'cs-card');
+        const here = await b20Tok(page, 'cs-here');
+        const figs = page.locator('main svg.lm-svg');
+        expect(await figs.count()).toBe(5);
+        const read = await figs.evaluateAll((els) => els.map((el) => { const cs = getComputedStyle(el); return [cs.getPropertyValue('--pool-op').trim(), cs.getPropertyValue('--halo-op').trim(), cs.animationName, cs.getPropertyValue('--fig-bg').trim()]; }));
+        for (const [pool, halo, anim] of read) { expect(pool).toBe('0'); expect(halo).toBe('0'); expect(anim).toBe('none'); }
+        // --fig-bg is the card's token, whatever it resolves to.
+        expect(await page.evaluate(() => { const i = document.createElement('i'); i.style.backgroundColor = 'var(--fig-bg)'; document.querySelector('main')!.append(i); const c = getComputedStyle(i).backgroundColor; i.remove(); return c; })).toBe(card);
+        for (const display of await page.locator('main .lm-orbit, main .nm-glow').evaluateAll((els) => els.map((el) => getComputedStyle(el).display))) expect(display).toBe('none');
+        expect(await page.locator('main .lm-orbit').count()).toBeGreaterThan(0);
+        expect(await page.locator('main .nm-glow').count()).toBeGreaterThan(0);
+        for (const filter of await page.locator('main .lm-led.on').evaluateAll((els) => els.map((el) => getComputedStyle(el).filter))) expect(filter).toBe('none');
+        // The anatomy tint wins over lumen.css in this theme (the dark one reads the media query or data-theme, whichever the browser took).
+        const tint = await figs.first().evaluate((el) => { const cs = getComputedStyle(el); const paper = document.createElement('i'); paper.style.color = 'var(--anatomy-paper)'; el.append(paper); const p = getComputedStyle(paper).color; paper.remove(); return { hi: cs.getPropertyValue('--anatomy-hi').trim(), face: cs.getPropertyValue('--anatomy-face').trim(), weight: parseFloat(cs.getPropertyValue('--anatomy-weight')), paper: p }; });
+        expect(tint).toEqual(cfg.scheme === 'light' ? { hi: '#12171b', face: '#fff', weight: 0.9, paper: card } : { hi: '#f3f5f6', face: '#1f2428', weight: 0.9, paper: card });
+        // The lit parts of the track covers and `inside` share the gradients in .lm-defs, outside main.
+        expect(await page.locator('.lm-defs stop.la').first().evaluate((el) => getComputedStyle(el).stopColor)).toBe(here);
+        if (!phone) {
+          await b20Pick(page, 'demo-s3');
+          const trail = page.locator('main .home-trail[data-step="3"]');
+          await expect.poll(() => b20Css(trail, 'stroke')).toBe(here);
+          expect(await b20Css(trail, 'stroke-width')).toBe('3.5px');
+          expect(await b20Css(trail, 'filter')).toBe('none');
+        }
+      });
+
+      test('14: the figures’ tint is the page’s own: a lesson page keeps its glow, its fade-in and its gradients', async ({ page }) => {
+        // Home's re-tint must not leak. (Run once per window; the lesson page is Patch's.)
+        await page.goto('/how-the-internet-works/what-is-http');
+        await page.evaluate(() => document.fonts.ready);
+        expect(await page.locator('.lm-defs stop.la').first().evaluate((el) => getComputedStyle(el).stopColor)).toBe(cfg.scheme === 'light' ? 'rgb(255, 196, 143)' : 'rgb(255, 211, 168)');
+        const lesson = page.locator('main svg.lm-svg').first();
+        expect(await lesson.evaluate((el) => getComputedStyle(el).animationName)).toBe('lm-draw-in');
+        expect(await page.locator('main .nm-trail').first().evaluate((el) => getComputedStyle(el).filter)).toContain('drop-shadow');
+        expect(await page.evaluate(() => getComputedStyle(document.querySelector('main')!).getPropertyValue('--fig-bg').trim())).toBe(cfg.scheme === 'light' ? '#eef1f1' : '#0d1012');
+      });
+    });
+  }
+});
+
+// ---- the colour of what is read, and the pairs §8 names ----
+
+/** rgb()/rgba()/color(srgb) as [r, g, b, a]. */
+const b20Parse = (c: string): [number, number, number, number] => {
+  const m = /^rgba?\(([^)]+)\)$/.exec(c);
+  if (m !== null) {
+    const v = m[1]!.split(/[ ,/]+/).map(Number);
+    return [v[0]!, v[1]!, v[2]!, v[3] ?? 1];
+  }
+  const s = /^color\(srgb ([^)]+)\)$/.exec(c)!;
+  const v = s[1]!.split(/[ /]+/).map(Number);
+  return [Math.round(v[0]! * 255), Math.round(v[1]! * 255), Math.round(v[2]! * 255), v[3] ?? 1];
+};
+const b20Lum = ([r, g, b]: number[]): number => {
+  const f = (v: number): number => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * f(r!) + 0.7152 * f(g!) + 0.0722 * f(b!);
+};
+const b20Ratio = (a: number[], b: number[]): number => {
+  const [hi, lo] = [b20Lum(a), b20Lum(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+};
+const b20Over = (fg: number[], bg: number[]): number[] => [0, 1, 2].map((i) => Math.round(fg[i]! * fg[3]! + bg[i]! * (1 - fg[3]!)));
+
+/**
+ * Every displayed, visible text of `main` outside the drawings, with its colour and the colour behind it: found by walking up
+ * and compositing, and inside the demo the card's paper (the card is a pseudo-element, so there is no element to find).
+ */
+const b20Texts = (page: Page, cardColor: string, groundColor: string) =>
+  page.evaluate(
+    ([card, ground]) => {
+      const parse = (c: string): number[] => {
+        const m = /^rgba?\(([^)]+)\)$/.exec(c);
+        if (m !== null) { const v = m[1]!.split(/[ ,/]+/).map(Number); return [v[0]!, v[1]!, v[2]!, v[3] ?? 1]; }
+        const s = /^color\(srgb ([^)]+)\)$/.exec(c)!;
+        const v = s[1]!.split(/[ /]+/).map(Number);
+        return [Math.round(v[0]! * 255), Math.round(v[1]! * 255), Math.round(v[2]! * 255), v[3] ?? 1];
+      };
+      const over = (fg: number[], bg: number[]): number[] => [0, 1, 2].map((i) => fg[i]! * fg[3]! + bg[i]! * (1 - fg[3]!)).concat([1]);
+      const lum = ([r, g, b]: number[]): number => { const f = (v: number): number => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r!) + 0.7152 * f(g!) + 0.0722 * f(b!); };
+      const backdrop = (el: Element): number[] => {
+        const layers: number[][] = [];
+        let base = parse(ground!);
+        for (let node: Element | null = el; node !== null; node = node.parentElement) {
+          if (node.classList.contains('demo')) { base = parse(card!); break; }
+          const bg = parse(getComputedStyle(node).backgroundColor);
+          if (bg[3]! > 0) layers.push(bg);
+          if (bg[3]! >= 1) { layers.pop(); base = bg; break; }
+        }
+        return layers.reduceRight((under, layer) => over(layer, under), base);
+      };
+      const out: { text: string; ratio: number; size: string }[] = [];
+      const seen = new Set<Element>();
+      const walker = document.createTreeWalker(document.querySelector('main')!, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
+        const el = n.parentElement!;
+        if (seen.has(el) || (n.textContent ?? '').trim() === '' || el.closest('svg, style, script') !== null) continue;
+        const cs = getComputedStyle(el);
+        if (el.getClientRects().length === 0 || cs.visibility === 'hidden' || cs.display === 'none') continue;
+        seen.add(el);
+        const bg = backdrop(el);
+        const fg = over(parse(cs.color), bg);
+        const [a, b] = [lum(fg), lum(bg)].sort((x, y) => y - x) as [number, number];
+        out.push({ text: (n.textContent ?? '').trim().slice(0, 40), ratio: (a + 0.05) / (b + 0.05), size: cs.fontSize });
+      }
+      return out;
+    },
+    [cardColor, groundColor] as const,
+  );
+
+test.describe('B20: contrast, sizes and the page at every width', () => {
+  for (const cfg of B20_CFGS) {
+    const phone = cfg.width === 375;
+    test.describe(`${cfg.width}x${cfg.height}, ${cfg.scheme}`, () => {
+      test.use({ viewport: { width: cfg.width, height: cfg.height }, colorScheme: cfg.scheme, isMobile: false, hasTouch: false });
+
+      test('16: every word on the page is at least 4.5:1 against what is behind it, in Watch, Learn and Practice with a wrong pick', async ({ page }) => {
+        await b20Home(page);
+        const card = await b20Tok(page, 'cs-card');
+        const ground = await b20Tok(page, 'ground');
+        const states: [string, () => Promise<void>][] = [
+          ['Watch, step 1', async () => undefined],
+          ['Watch, step 3', () => b20Pick(page, 'demo-s3')],
+          ['Learn', () => b20Pick(page, 'demo-learn')],
+          ['Practice, a wrong pick', async () => { await b20Pick(page, 'demo-practice'); await b20Pick(page, 'demo-a2'); }],
+        ];
+        for (const [name, set] of states) {
+          await set();
+          const texts = await b20Texts(page, card, ground);
+          expect(texts.length, name).toBeGreaterThan(20);
+          for (const t of texts) expect(t.ratio, `${name}: "${t.text}" (${t.size})`).toBeGreaterThanOrEqual(4.5);
+        }
+      });
+
+      test('16: the pairs of §8 hold their figures (to 0.05): the filled button, the sub-line, the chip, the marker, the tick, the bars and the edge', async ({ page }) => {
+        await b20Home(page);
+        const t = async (n: string) => b20Parse(await b20Tok(page, n));
+        const [cardColor, groundColor] = await Promise.all(['cs-card', 'ground'].map(t));
+        // A colour with some alpha is read as drawn: over the paper (the ground for the edge).
+        const drawn = async (n: string, under: number[]) => b20Over(await t(n), under);
+        const [act, actInk, here, muted, done, request, response] = await Promise.all(['cs-act', 'cs-act-ink', 'cs-here', 'muted', 'cs-done', 'cs-request', 'cs-response'].map((n) => drawn(n, cardColor!)));
+        const edge = await drawn('cs-edge', groundColor!);
+        const card = cardColor;
+        const ground = groundColor;
+        const row = b20Over(await t('cs-here-wash'), card!);
+        const light = cfg.scheme === 'light';
+        const want: [string, number, number][] = [
+          ['filled button: words on fill', b20Ratio(actInk!, act!), light ? 5.62 : 6.4],
+          ['step sub-line on the wash', b20Ratio(muted!, row), light ? 5.22 : 5.15],
+          ['here chip against its row', b20Ratio(here!, row), light ? 4.7 : 4.73],
+          ['here marker against its tab', b20Ratio(here!, card!), light ? 5.42 : 5.64],
+          ['done tick on paper', b20Ratio(done!, card!), light ? 4.64 : 9.17],
+          ['request bar on a card', b20Ratio(request!, card!), light ? 5.62 : 6.83],
+          ['response bar on a card', b20Ratio(response!, card!), light ? 7.12 : 7.34],
+          ['card edge on the ground', b20Ratio(edge!, ground!), light ? 14.51 : 11.59],
+        ];
+        for (const [name, got, figure] of want) expect(got, name).toBeGreaterThanOrEqual(figure - 0.05);
+      });
+
+      test('31 and 32: the demo’s height through its states, and the touch sizes', async ({ page }) => {
+        await b20Home(page);
+        const demo = page.locator('main .demo');
+        if (!phone) {
+          const heights: [string, number][] = [['demo-s1', 625], ['demo-s2', 685], ['demo-s3', 750], ['demo-s4', 762], ['demo-s5', 790], ['demo-learn', 745], ['demo-practice', 555]];
+          for (const [id, want] of heights) {
+            await b20Pick(page, id);
+            expect(Math.abs((await b20Rect(demo)).height - want), `${id}: ${want}`).toBeLessThanOrEqual(2);
+          }
+        } else {
+          await b20Pick(page, 'demo-watch');
+          await b20Pick(page, 'demo-s1');
+          for (let i = 0; i < 3; i += 1) expect(Math.abs((await b20Rect(page.locator('main .demo__parts label').nth(i))).height - (i === 0 ? 52 : 46)), `tab ${i}`).toBeLessThanOrEqual(0.5);
+          for (let i = 1; i <= 5; i += 1) expect(Math.abs((await b20Rect(page.locator(`main .demo__row[for="demo-s${i}"] .demo__n`))).height - 46), `tile ${i}`).toBeLessThanOrEqual(0.5);
+          expect((await b20Rect(page.locator('main .demo__next:visible'))).height).toBeGreaterThanOrEqual(48);
+          await b20Pick(page, 'demo-learn');
+          expect((await b20Rect(page.locator('main .demo__more > summary'))).height).toBeGreaterThanOrEqual(44);
+          await page.locator('main .demo__more > summary').click();
+          for (const h of await page.locator('main .demo__src a:visible').evaluateAll((a) => a.map((el) => el.getBoundingClientRect().height))) expect(h).toBeGreaterThanOrEqual(44);
+          await b20Pick(page, 'demo-practice');
+          for (let i = 1; i <= 3; i += 1) expect((await b20Rect(page.locator(`main .demo__pick[for="demo-a${i}"]`))).height, `answer ${i}`).toBeGreaterThanOrEqual(48);
+        }
+      });
+    });
+  }
+
+  for (const scheme of ['light', 'dark'] as const) {
+    for (const width of [320, 375, 768, 1440]) {
+      test.describe(`17: ${width}px wide, ${scheme}`, () => {
+        test.use({ viewport: { width, height: width === 1440 ? 900 : 800 }, colorScheme: scheme, isMobile: false, hasTouch: false });
+        test('there is no sideways scroll at the top and the foot of the page, in Watch, Learn with its sources open, and Practice', async ({ page }) => {
+          await b20Home(page);
+          const wide = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+          const sweep = async (name: string) => {
+            await b20Scroll(page, 0);
+            expect(await wide(), `${name}, top`).toBe(0);
+            await b20Scroll(page, 99999);
+            expect(await wide(), `${name}, foot`).toBe(0);
+          };
+          await sweep('Watch');
+          await b20Pick(page, 'demo-learn');
+          await page.locator('main .demo__more > summary').click();
+          await sweep('Learn, sources open');
+          if (width === 320) {
+            const edge = await page.evaluate(() => document.querySelector('main .demo')!.getBoundingClientRect().right);
+            const past = await page.evaluate((e) => [...document.querySelectorAll('.demo__src a, .demo__src .stamp, .demo__src summary')].filter((el) => el.getBoundingClientRect().right > e + 0.5).length, edge);
+            expect(past, 'nothing in the sources reaches past the card').toBe(0);
+          }
+          await b20Pick(page, 'demo-practice');
+          await b20Pick(page, 'demo-a1');
+          await sweep('Practice');
+        });
+      });
+    }
+  }
+
+  for (const width of [375, 390]) {
+    for (const scheme of ['light', 'dark'] as const) {
+      test.describe(`18: ${width}px, ${scheme}`, () => {
+        test.use({ viewport: { width, height: 844 }, colorScheme: scheme, isMobile: false, hasTouch: false });
+        test('every card’s edge is 14px from the screen’s and the first words inside it start at 32px', async ({ page }) => {
+          await b20Home(page);
+          const lefts = await page.evaluate(() => {
+            return {
+              demo: document.querySelector('main .demo')!.getBoundingClientRect().left,
+              legs: [...document.querySelectorAll('main .leg')].map((e) => e.getBoundingClientRect().left),
+              facts: document.querySelector('main .facts__grid')!.getBoundingClientRect().left,
+              close: document.querySelector('main .close__grid')!.getBoundingClientRect().left,
+              words: {
+                demo: document.querySelector('main .demo__key b')!.getBoundingClientRect().left,
+                legs: [...document.querySelectorAll('main .leg h3 a')].map((e) => e.getBoundingClientRect().left),
+                facts: document.querySelector('main .facts h2')!.getBoundingClientRect().left,
+                close: document.querySelector('main .close h2')!.getBoundingClientRect().left,
+              },
+            };
+          });
+          for (const x of [lefts.demo, ...lefts.legs, lefts.facts, lefts.close]) expect(Math.abs(x - 14)).toBeLessThanOrEqual(1);
+          for (const x of [lefts.words.demo, ...lefts.words.legs, lefts.words.facts, lefts.words.close]) expect(Math.abs(x - 32)).toBeLessThanOrEqual(1);
+        });
+      });
+    }
+  }
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test.describe(`19: 1440x900 at the top, ${scheme}`, () => {
+      test.use({ viewport: { width: 1440, height: 900 }, colorScheme: scheme, isMobile: false, hasTouch: false });
+      test('the tabs and at least 280px of the demo card are on screen', async ({ page }) => {
+        await b20Home(page);
+        const tab = await b20Rect(page.locator('main .demo__parts label').first());
+        const demo = await b20Rect(page.locator('main .demo'));
+        expect(await page.evaluate(() => scrollY)).toBe(0);
+        expect(tab.top).toBeGreaterThanOrEqual(69);
+        expect(tab.bottom).toBeLessThanOrEqual(900);
+        expect(900 - (demo.top + 50), 'the card on screen').toBeGreaterThanOrEqual(280);
+      });
+    });
+  }
+});
+
+// ---- D16's fixes in D17: the phone's key, the page that stays put, the keyboard ----
+
+test.describe('B20: the phone’s key and leaders, the drawn callouts (cases 20 and 21)', () => {
+  for (const scheme of ['light', 'dark'] as const) {
+    for (const size of [{ width: 375, height: 812, min: 0.55 }, { width: 320, height: 640, min: 0.46 }]) {
+      test.describe(`${size.width}px, ${scheme}`, () => {
+        test.use({ viewport: { width: size.width, height: size.height }, colorScheme: scheme, isMobile: false, hasTouch: false });
+
+        test('20: the key is ten texts at 12px or more in the drawing’s order, with four leaders; the drawn callouts are gone; the drawing is big enough', async ({ page }) => {
+          await b20Home(page);
+          const read = await page.evaluate(() => {
+            const shown = [...document.querySelectorAll<HTMLElement>('.demo__key b, .demo__key .demo__addr, .demo__key span:not(.demo__addr), .demo__key i')].filter((el) => !el.parentElement!.classList.contains('demo__addr') && el.getClientRects().length > 0);
+            const order = [...document.querySelectorAll('.demo__key .demo__call')].flatMap((c) => [...c.children].map((el) => el.textContent!.replace(/\s+/g, ' ').trim()));
+            return {
+              sizes: shown.map((el) => [el.textContent!.trim(), parseFloat(getComputedStyle(el).fontSize)] as const),
+              order,
+              calls: document.querySelectorAll('.demo__call').length,
+              leaders: [...document.querySelectorAll('.home-leads path')].filter((p) => p.getClientRects().length > 0).length,
+              drawn: [...document.querySelectorAll('.demo__scene .nm-call')].map((g) => getComputedStyle(g).display),
+              scale: document.querySelector('.demo__crop > svg')!.getBoundingClientRect().width / 685,
+              keyDisplay: [...document.querySelectorAll('.demo__key')].map((k) => getComputedStyle(k).display),
+            };
+          });
+          expect(read.order).toEqual(['Your laptop', '192.168.1.100', 'Wants example.net', 'DNS resolver', 'turns names into numbers', '192.0.2.53', 'The internet', 'routers pass messages along', 'Web server', '203.0.113.80 · port 80']);
+          expect(read.sizes.length).toBeGreaterThanOrEqual(10);
+          for (const [text, size12] of read.sizes) expect(size12, text).toBeGreaterThanOrEqual(12);
+          expect(read.calls).toBe(4);
+          expect(read.leaders).toBe(4);
+          expect(read.drawn.length).toBeGreaterThan(0);
+          for (const d of read.drawn) expect(d).toBe('none');
+          expect(read.scale, 'the drawing’s px a unit').toBeGreaterThanOrEqual(size.min);
+          for (const d of read.keyDisplay) expect(d).toBe('grid');
+        });
+
+        test('20: at each step every lit way, every busy part and the page on the laptop are inside the crop', async ({ page }) => {
+          test.skip(size.width === 320, 'measured at 375 (D16 check 4)');
+          await b20Home(page);
+          for (let n = 1; n <= 5; n += 1) {
+            await b20Pick(page, `demo-s${n}`);
+            await page.waitForTimeout(260);
+            const r = await page.evaluate(() => {
+              const crop = document.querySelector('.demo__crop')!.getBoundingClientRect();
+              // The busy parts are glows, which this look switches off (display: none): a part that draws nothing has no box to hold.
+              const lit = [...document.querySelectorAll<SVGGraphicsElement | HTMLElement>('.demo__crop .home-trail, .demo__crop [id*="busy"], .demo__crop #nm-page, .demo__crop .lm-body')].filter((el) => Number(getComputedStyle(el).opacity) > 0.5 && el.getClientRects().length > 0);
+              return { crop: [crop.left, crop.top, crop.right, crop.bottom], lit: lit.map((el) => { const b = el.getBoundingClientRect(); return [el.id || el.getAttribute('data-step') || el.getAttribute('class'), b.left, b.top, b.right, b.bottom] as const; }) };
+            });
+            expect(r.lit.length, `something is lit at step ${n}`).toBeGreaterThanOrEqual(n === 1 ? 1 : 2);
+            for (const [name, l, t, rr, bb] of r.lit) {
+              expect(l, `${name} at step ${n}`).toBeGreaterThanOrEqual(r.crop[0]! - 0.5);
+              expect(t, `${name} at step ${n}`).toBeGreaterThanOrEqual(r.crop[1]! - 0.5);
+              expect(rr, `${name} at step ${n}`).toBeLessThanOrEqual(r.crop[2]! + 0.5);
+              expect(bb, `${name} at step ${n}`).toBeLessThanOrEqual(r.crop[3]! + 0.5);
+            }
+          }
+        });
+
+        test('20: each leader lands on its label', async ({ page }) => {
+          await b20Home(page);
+          const r = await page.evaluate(() => {
+            const calls = [...document.querySelectorAll('.demo__call')].map((c) => { const b = c.getBoundingClientRect(); return { left: b.left, right: b.right, end: c.classList.contains('demo__call--end'), name: c.querySelector('b')!.textContent! }; });
+            const leaders = [...document.querySelectorAll('.home-leads path')].map((p) => { const b = p.getBoundingClientRect(); return b.left; });
+            return { calls, leaders };
+          });
+          expect(r.leaders).toHaveLength(4);
+          r.calls.forEach((c, i) => {
+            const x = r.leaders[i]!;
+            expect(x, `${c.name}'s leader`).toBeGreaterThanOrEqual(c.left - 0.5);
+            expect(x, `${c.name}'s leader`).toBeLessThanOrEqual(c.right + (c.end ? 8 : 0.5));
+          });
+        });
+      });
+    }
+  }
+
+  test.describe('1440: the key is off and the callouts are drawn, 12px or more', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      test(`20: the drawn callout names are at least 12px on screen (${scheme}), and the breakpoint is 860`, async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.emulateMedia({ colorScheme: scheme });
+        await b20Home(page);
+        const read = await page.evaluate(() => ({
+          key: [...document.querySelectorAll('.demo__key')].map((k) => getComputedStyle(k).display),
+          names: [...document.querySelectorAll<SVGTextElement>('.demo__scene .nm-call .nm-name')].filter((t) => ['Your laptop', 'DNS resolver', 'The internet', 'Web server'].includes(t.textContent!)).map((t) => ({ name: t.textContent, size: parseFloat(getComputedStyle(t).fontSize) * t.getScreenCTM()!.a, shown: getComputedStyle(t.closest('.nm-call')!).display })),
+        }));
+        expect(read.key).toEqual(['none', 'none']);
+        expect(read.names).toHaveLength(4);
+        for (const n of read.names) { expect(n.shown).not.toBe('none'); expect(n.size, n.name!).toBeGreaterThanOrEqual(12); }
+        for (const [width, key] of [[861, 'none'], [860, 'grid']] as const) {
+          await page.setViewportSize({ width, height: 900 });
+          expect(await page.evaluate(() => getComputedStyle(document.querySelector('.demo__key')!).display), `${width}px`).toBe(key);
+          expect(await page.evaluate(() => getComputedStyle(document.querySelector('.demo__scene .nm-call')!).display) === 'none', `${width}px: the drawn callouts`).toBe(key === 'grid');
+        }
+      });
+    }
+  });
+
+  test.describe('9: at 861 and above the tabs stand clear of the heading and its line', () => {
+    for (const width of [861, 960, 1024, 1280, 1920]) {
+      test(`the tabs do not touch “Try one” or its intro at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await b20Home(page);
+        const r = await page.evaluate(() => {
+          const box = (el: Element) => { const b = el.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; };
+          const range = (el: Element) => { const rg = document.createRange(); rg.selectNodeContents(el); return [...rg.getClientRects()].map((b) => ({ l: b.left, t: b.top, r: b.right, b: b.bottom })); };
+          return { tabs: [...document.querySelectorAll('.demo__parts label')].map(box), text: [...range(document.querySelector('.try__head h2')!), ...range(document.querySelector('.try__head p')!)], head: box(document.querySelector('.try__head')!), wrap: box(document.querySelector('.try')!) };
+        });
+        for (const tab of r.tabs) for (const t of r.text) expect(tab.l >= t.r || tab.r <= t.l || tab.t >= t.b || tab.b <= t.t, 'a tab overlaps the heading text').toBe(true);
+        expect(Math.round((r.head.r - r.head.l) / (r.wrap.r - r.wrap.l - 64) * 100)).toBeGreaterThanOrEqual(56);
+        expect(Math.round((r.head.r - r.head.l) / (r.wrap.r - r.wrap.l - 64) * 100)).toBeLessThanOrEqual(58);
+      });
+    }
+  });
+});
+
+test.describe('B20: a tap or a click moves nothing (cases 22 to 26)', () => {
+  /** A real pointer click at the middle of an element, not a locator click with its own scroll into view. */
+  const tapAt = async (page: Page, loc: Locator): Promise<void> => {
+    await b20Settle(page);
+    // Only an element out of the window (or under the header) is scrolled to: the taps of cases 22 to 26 are all on screen, so they move nothing.
+    await loc.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < 70 || r.bottom > innerHeight + 0.5) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    });
+    const b = (await loc.boundingBox())!;
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  };
+  const say = (page: Page) => page.locator('main .demo__say:visible');
+  const y = async (page: Page): Promise<number> => {
+    await b20Settle(page);
+    return page.evaluate(() => window.scrollY);
+  };
+
+  for (const width of [375, 390]) {
+    for (const scheme of ['light', 'dark'] as const) {
+      for (const scripts of [true, false]) {
+        if (!scripts && (width === 390 || scheme === 'dark')) continue;
+        test.describe(`${width}x812, ${scheme}${scripts ? '' : ', JavaScript off'}`, () => {
+          test.use({ viewport: { width, height: width === 375 ? 812 : 844 }, colorScheme: scheme, isMobile: false, hasTouch: false, javaScriptEnabled: scripts });
+
+          test('22: four Nexts, Learn, Practice, an answer and the Watch tab move the page not at all, and leave the narration and Next in view', async ({ page }) => {
+            const h = width === 375 ? 812 : 844;
+            await b20Home(page, scripts);
+            await b20DemoAt(page, 70);
+            const start = await y(page);
+            for (let i = 1; i <= 4; i += 1) {
+              await tapAt(page, page.locator('main .demo__next:visible'));
+              await expect(page.locator(`#demo-s${i + 1}`)).toBeChecked();
+              expect(await y(page), `after Next ${i}`).toBe(start);
+              const say1 = await b20Rect(say(page));
+              const next = await b20Rect(page.locator('main .demo__next:visible'));
+              expect(say1.top, `the narration after Next ${i}`).toBeGreaterThanOrEqual(69);
+              expect(say1.top).toBeLessThanOrEqual(h);
+              expect(next.top).toBeGreaterThanOrEqual(69);
+              expect(next.bottom).toBeLessThanOrEqual(h);
+            }
+            await tapAt(page, page.locator('main .demo__next:visible'));
+            await expect(page.locator('#demo-learn')).toBeChecked();
+            expect(await y(page), 'after Go to Learn').toBe(start);
+            await tapAt(page, page.locator('main .demo__next:visible'));
+            await expect(page.locator('#demo-practice')).toBeChecked();
+            expect(await y(page), 'after Go to Practice').toBe(start);
+            await tapAt(page, page.locator('main .demo__pick').nth(2));
+            await expect(page.locator('#demo-a3')).toBeChecked();
+            expect(await y(page), 'after the third answer').toBe(start);
+            await tapAt(page, page.locator('main .demo__parts label[for="demo-watch"]'));
+            await expect(page.locator('#demo-watch')).toBeChecked();
+            expect(await y(page), 'after the Watch tab').toBe(start);
+          });
+
+          test('23 and 24: a tile checks its step and moves nothing; Next with the narration under the header brings it back clear of it', async ({ page }) => {
+            const h = width === 375 ? 812 : 844;
+            await b20Home(page, scripts);
+            await b20DemoAt(page, 70);
+            const start = await y(page);
+            await tapAt(page, page.locator('main .demo__row[for="demo-s4"] .demo__n'));
+            await expect(page.locator('#demo-s4')).toBeChecked();
+            expect(await y(page)).toBe(start);
+            const top = (await b20Rect(say(page))).top;
+            expect(top).toBeGreaterThanOrEqual(69);
+            expect(top).toBeLessThanOrEqual(h);
+            // Back to step 1, the narration's top at y 40 (under the header), then Next.
+            await tapAt(page, page.locator('main .demo__row[for="demo-s1"] .demo__n'));
+            const say1 = await page.evaluate(() => document.querySelector('.demo__say--1')!.getBoundingClientRect().top + window.scrollY);
+            await b20Scroll(page, say1 - 40);
+            await tapAt(page, page.locator('main .demo__next:visible'));
+            await expect(page.locator('#demo-s2')).toBeChecked();
+            await b20Settle(page);
+            expect((await b20Rect(page.locator('main .demo__say--2'))).top, 'the new narration is clear of the header').toBeGreaterThanOrEqual(69);
+          });
+        });
+      }
+    }
+  }
+
+  for (const scheme of ['light', 'dark'] as const) {
+    test.describe(`25: 375x812, ${scheme}: Next sticks to the window's foot`, () => {
+      test.use({ viewport: { width: 375, height: 812 }, colorScheme: scheme, isMobile: false, hasTouch: false });
+      test('Watch’s Next and Learn’s Go to Practice are sticky with their bottom at 812 while the card’s end is below', async ({ page }) => {
+        await b20Home(page);
+        for (const part of ['watch', 'learn']) {
+          // At step 4 the card is 974px tall: its end is below the window with its middle at the window's.
+          if (part === 'watch') await b20Pick(page, 'demo-s4');
+          await b20Pick(page, `demo-${part}`);
+          const demoBox = await page.evaluate(() => { const b = document.querySelector('main .demo')!.getBoundingClientRect(); return b.top + scrollY + b.height / 2; });
+          await b20Scroll(page, demoBox - 406);
+          const nexts = page.locator(`main .demo__pane--${part} > .demo__nexts`);
+          expect(await b20Css(nexts, 'position'), part).toBe('sticky');
+          const box = await b20Rect(nexts);
+          expect(Math.abs(box.bottom - 812), `${part}: the bar's bottom`).toBeLessThanOrEqual(1);
+          expect((await b20Rect(page.locator('main .demo'))).bottom, 'the card goes on below the window').toBeGreaterThan(812);
+        }
+      });
+    });
+    test.describe(`26: 1440x900, ${scheme}: five Nexts move nothing, and Next is not sticky`, () => {
+      test.use({ viewport: { width: 1440, height: 900 }, colorScheme: scheme, isMobile: false, hasTouch: false });
+      test('four Next steps and Go to Learn leave scrollY where it was', async ({ page }) => {
+        await b20Home(page);
+        await b20DemoAt(page, 70);
+        const start = await y(page);
+        expect(await b20Css(page.locator('main .demo__pane--watch > .demo__nexts'), 'position')).toBe('static');
+        for (let i = 1; i <= 5; i += 1) {
+          await tapAt(page, page.locator('main .demo__next:visible'));
+          await expect(page.locator(i < 5 ? `#demo-s${i + 1}` : '#demo-learn')).toBeChecked();
+          expect(await y(page), `after Next ${i}`).toBe(start);
+        }
+      });
+    });
+  }
+});
+
+test.describe('B20: the keyboard (cases 27 to 30)', () => {
+  const tapAt = async (page: Page, loc: Locator): Promise<void> => {
+    await b20Settle(page);
+    // Only an element out of the window (or under the header) is scrolled to: the taps of cases 22 to 26 are all on screen, so they move nothing.
+    await loc.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < 70 || r.bottom > innerHeight + 0.5) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    });
+    const b = (await loc.boundingBox())!;
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  };
+  /** Where the focus is: an input's id, or a link's words. */
+  const where = (page: Page): Promise<string> => page.evaluate(() => { const el = document.activeElement as HTMLElement; return el.tagName === 'INPUT' ? el.id : (el.textContent ?? '').replace(/\s+/g, ' ').trim(); });
+  const tabs = async (page: Page, n: number, key = 'Tab'): Promise<string[]> => {
+    const out: string[] = [];
+    for (let i = 0; i < n; i += 1) { await page.keyboard.press(key); out.push(await where(page)); }
+    return out;
+  };
+  const visibleHints = (page: Page): Promise<string[]> => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.demo__hint')].filter((h) => getComputedStyle(h).display !== 'none').map((h) => h.className.replace('demo__hint ', '')));
+
+  const matrix: { width: number; height: number; scheme: 'light' | 'dark'; scripts: boolean }[] = [];
+  for (const [width, height] of [[375, 812], [1440, 900]] as const) for (const scheme of ['light', 'dark'] as const) for (const scripts of [true, false]) matrix.push({ width, height, scheme, scripts });
+
+  for (const m of matrix) {
+    const phone = m.width === 375;
+    test.describe(`${m.width}x${m.height}, ${m.scheme}${m.scripts ? '' : ', JavaScript off'}`, () => {
+      test.use({ viewport: { width: m.width, height: m.height }, colorScheme: m.scheme, isMobile: false, hasTouch: false, javaScriptEnabled: m.scripts });
+
+      test('27: Tab from “HTTP” stops only where something shows: the part, the checked step or answer, then the next link; Shift+Tab walks back', async ({ page }) => {
+        await b20Home(page, m.scripts);
+        const http = page.locator('main .try__head a');
+        const from = async (part: string) => {
+          await tapAt(page, page.locator(`main .demo__parts label[for="demo-${part}"]`));
+          await http.focus();
+        };
+        await from('watch');
+        expect(await tabs(page, 3)).toEqual(['demo-watch', 'demo-s1', 'How the Internet Works']);
+        expect(await tabs(page, 3, 'Shift+Tab')).toEqual(['demo-s1', 'demo-watch', 'HTTP']);
+        // A chosen step is the stop.
+        await tapAt(page, page.locator('main .demo__row[for="demo-s3"] .demo__n'));
+        await http.focus();
+        expect(await tabs(page, 2)).toEqual(['demo-watch', 'demo-s3']);
+        await from('learn');
+        expect(await tabs(page, 2)).toEqual(['demo-learn', 'Lesson 2: HTTPS']);
+        expect(await tabs(page, 2, 'Shift+Tab')).toEqual(['demo-learn', 'HTTP']);
+        await from('practice');
+        expect(await tabs(page, 3)).toEqual(['demo-practice', 'demo-a1', 'Open the whole lesson']);
+        expect(await tabs(page, 3, 'Shift+Tab')).toEqual(['demo-a1', 'demo-practice', 'HTTP']);
+        await tapAt(page, page.locator('main .demo__pick[for="demo-a2"]'));
+        await http.focus();
+        expect(await tabs(page, 2)).toEqual(['demo-practice', 'demo-a2']);
+      });
+
+      test('28: each radio stop rings what the reader sees, inside the window, with its own hint and no other', async ({ page }) => {
+        await b20Home(page, m.scripts);
+        const http = page.locator('main .try__head a');
+        const ringed = async (sel: string, offset: string) => {
+          // With scripts off the page's own smooth scroll is on: let a focus's scroll finish before measuring.
+          if (!m.scripts) await page.waitForTimeout(500);
+          const el = page.locator(sel);
+          expect(await b20Css(el, 'outline-style'), `${sel} is ringed`).toBe('solid');
+          expect(await b20Css(el, 'outline-offset'), `${sel}'s ring`).toBe(offset);
+          const box = await b20Rect(el);
+          expect(box.top, sel).toBeGreaterThanOrEqual(69);
+          expect(box.bottom, sel).toBeLessThanOrEqual(m.height);
+        };
+        const hintOnScreen = async (cls: string) => {
+          if (!m.scripts) await page.waitForTimeout(500);
+          expect(await visibleHints(page)).toEqual([cls]);
+          const box = await b20Rect(page.locator(`main .${cls.replace(' ', '.')}`));
+          expect(box.top, `${cls} below the header`).toBeGreaterThanOrEqual(69);
+          expect(box.bottom, `${cls} above the window's foot`).toBeLessThanOrEqual(m.height);
+        };
+        await http.focus();
+        expect(await visibleHints(page), 'no keyboard focus in the demo: no hint').toEqual([]);
+        await page.keyboard.press('Tab');
+        await ringed('main .demo__parts label[for="demo-watch"]', '-7px');
+        await hintOnScreen('demo__hint--part');
+        await page.keyboard.press('Tab');
+        await ringed(phone ? 'main .demo__row[for="demo-s1"] .demo__n' : 'main .demo__row[for="demo-s1"]', '2px');
+        await hintOnScreen('demo__hint--step');
+        await b20Scroll(page, 0);
+        await tapAt(page, page.locator('main .demo__parts label[for="demo-practice"]'));
+        await http.focus();
+        await page.keyboard.press('Tab');
+        await ringed('main .demo__parts label[for="demo-practice"]', '-7px');
+        await page.keyboard.press('Tab');
+        await ringed('main .demo__pick[for="demo-a1"]', '2px');
+        await hintOnScreen('demo__hint--answer');
+        // After a pointer click on a tab, a step and an option, no hint shows.
+        await tapAt(page, page.locator('main .demo__parts label[for="demo-watch"]'));
+        expect(await visibleHints(page)).toEqual([]);
+        await tapAt(page, page.locator('main .demo__row[for="demo-s2"] .demo__n'));
+        expect(await visibleHints(page)).toEqual([]);
+        await tapAt(page, page.locator('main .demo__parts label[for="demo-practice"]'));
+        await tapAt(page, page.locator('main .demo__pick[for="demo-a3"]'));
+        expect(await visibleHints(page)).toEqual([]);
+      });
+    });
+  }
+
+  for (const size of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
+    test.describe(`29 and 30: ${size.width}px`, () => {
+      test.use({ viewport: size, isMobile: false, hasTouch: false });
+
+      test('29: a screen reader is offered 5 steps and no answers in Watch, none of either in Learn, and 3 answers in Practice', async ({ page }) => {
+        await b20Home(page);
+        const counts = async () => [await page.getByRole('radio', { name: /^Watch, step / }).count(), await page.getByRole('radio', { name: /^Answer: / }).count()];
+        expect(await counts()).toEqual([5, 0]);
+        await b20Pick(page, 'demo-learn');
+        expect(await counts()).toEqual([0, 0]);
+        await b20Pick(page, 'demo-practice');
+        expect(await counts()).toEqual([0, 3]);
+      });
+
+      test('30: step 5 and a picked answer survive a change of part, and the page on the laptop stays drawn', async ({ page }) => {
+        await b20Home(page);
+        const part = (which: 'text' | 'pic') => page.locator(`main svg[data-figure="net-map"] #nm-page [data-part="${which}"]`).first().evaluate((el) => getComputedStyle(el).opacity);
+        await b20Pick(page, 'demo-s5');
+        await b20Pick(page, 'demo-practice');
+        await b20Pick(page, 'demo-a2');
+        await expect(page.locator('#demo-s5')).toBeChecked();
+        await expect.poll(() => part('text')).toBe('1');
+        await expect.poll(() => part('pic')).toBe('1');
+        await b20Pick(page, 'demo-watch');
+        await expect(page.locator('#demo-s5')).toBeChecked();
+        await b20Pick(page, 'demo-practice');
+        await expect(page.locator('#demo-a2')).toBeChecked();
+        await expect(page.locator('main .demo__why--2')).toBeVisible();
+        await expect(page.locator('#demo-s5')).toBeChecked();
+        await expect.poll(() => part('text')).toBe('1');
+        await expect.poll(() => part('pic')).toBe('1');
+      });
+    });
+  }
+});
+
+test.describe('B20: JavaScript off, and the theme paths (cases 5 and 33)', () => {
+  for (const size of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
+    test.describe(`33: ${size.width}px, scripts off`, () => {
+      test.use({ viewport: size, javaScriptEnabled: false, isMobile: false, hasTouch: false });
+      test('the demo steps, lights step 2’s way, shows Learn and answers a question', async ({ page }) => {
+        await page.goto('/');
+        const d = demo(page);
+        await d.locator('.demo__next:visible').click();
+        await expect(page.locator('#demo-s2')).toBeChecked();
+        await expect.poll(() => d.locator('.home-trail[data-step="2"]').evaluate((el) => getComputedStyle(el).opacity)).not.toBe('0');
+        await d.locator('.demo__parts label', { hasText: 'Learn' }).click();
+        await expect(d.locator('.demo__pane--learn')).toBeVisible();
+        await d.locator('.demo__parts label', { hasText: 'Practice' }).click();
+        await d.locator('.demo__pick').nth(0).click();
+        await expect(d.locator('.demo__why:visible')).toContainText('Right.');
+        expect(await b20Css(d.locator('.demo__pick').nth(0), 'background-color', '::before')).toBe(await b20Tok(page, 'cs-done'));
+      });
+    });
+  }
+
+  test.describe('5: the edge in the dark, on every path to it', () => {
+    test.describe('dark, JavaScript off: the media query alone', () => {
+      test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', javaScriptEnabled: false, isMobile: false, hasTouch: false });
+      test('the card edge and the figures’ tint are the dark ones', async ({ page }) => {
+        await page.goto('/');
+        expect(await page.evaluate(() => document.documentElement.hasAttribute('data-theme'))).toBe(false);
+        const edge = await b20Tok(page, 'cs-edge');
+        expect(edge).toBe(EDGE.dark);
+        for (const side of await b20Sides(page.locator('main .demo'), '::before')) expect(side).toEqual(['2px', 'solid', edge]);
+        const tint = await page.locator('main svg.lm-svg').first().evaluate((el) => { const cs = getComputedStyle(el); return [cs.getPropertyValue('--anatomy-hi').trim(), cs.getPropertyValue('--anatomy-face').trim(), cs.getPropertyValue('--anatomy-weight').trim()]; });
+        expect([tint[0], tint[1], parseFloat(tint[2]!)]).toEqual(['#f3f5f6', '#1f2428', 0.9]);
+        const paper = await page.locator('main svg.lm-svg').first().evaluate((el) => { const i = document.createElement('i'); i.style.color = 'var(--anatomy-paper)'; el.append(i); const c = getComputedStyle(i).color; i.remove(); return c; });
+        expect(paper).toBe(await b20Tok(page, 'cs-card'));
+      });
+    });
+    test.describe('light chosen while the system is dark', () => {
+      test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark', isMobile: false, hasTouch: false });
+      test('the edge is the light one', async ({ page }) => {
+        await page.goto('/');
+        await page.evaluate(() => localStorage.setItem('techconcepts:theme', 'light'));
+        await page.reload();
+        expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('light');
+        expect(await b20Tok(page, 'cs-edge')).toBe(EDGE.light);
+        for (const side of await b20Sides(page.locator('main .demo'), '::before')) expect(side).toEqual(['2px', 'solid', EDGE.light]);
+        const tint = await page.locator('main svg.lm-svg').first().evaluate((el) => getComputedStyle(el).getPropertyValue('--anatomy-hi').trim());
+        expect(tint).toBe('#12171b');
+      });
+    });
+    test.describe('dark chosen, JavaScript on', () => {
+      test.use({ viewport: { width: 1440, height: 900 }, colorScheme: 'light', isMobile: false, hasTouch: false });
+      test('the edge is the ink, the tint is the dark one', async ({ page }) => {
+        await page.goto('/');
+        await page.evaluate(() => localStorage.setItem('techconcepts:theme', 'dark'));
+        await page.reload();
+        expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark');
+        expect(await b20Tok(page, 'cs-edge')).toBe(EDGE.dark);
+        expect(await page.locator('main svg.lm-svg').first().evaluate((el) => getComputedStyle(el).getPropertyValue('--anatomy-hi').trim())).toBe('#f3f5f6');
+      });
     });
   });
 });

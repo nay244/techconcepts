@@ -8,7 +8,7 @@ import type { Lesson } from '../content/schema';
 import { CAFE_OPEN, groupsOf, PHONE_OPEN } from '../test/svg-groups';
 import { numberedSources } from '../lesson/sourceNumbers';
 import { lessonStamp } from './checked';
-import { foldSources, homeDemo, homeStops, leadText, litSteps, sourceName } from './home';
+import { CROP, cropCss, demoCss, foldSources, homeDemo, homeStops, leadText, litSteps, readKey, sourceName, viewBoxOf } from './home';
 
 // Lessons the registry hands out in place of the real ones, by slug; empty unless a test sets one.
 const swapped = vi.hoisted(() => new Map<string, unknown>());
@@ -239,7 +239,18 @@ test('a stamp that counts differently from the list makes the demo throw, naming
 
 test('the page’s words and pictures come from the lesson’s own cues', () => {
   expect(homeDemo('what-is-http').page).toEqual({ words: 5, pictures: 5 });
-  expect(homeDemo('what-is-pop3', 'what-is-tcp').page).toEqual({ words: 4, pictures: 4 });
+  // The same cues, moved to step 4 (a lesson that draws its page a step earlier, as POP3's does).
+  swapIn('what-is-http', (u) => {
+    const cues = u.steps[4]!.events.flatMap((e) => ('cues' in e ? e.cues ?? [] : [])).filter((c) => c.cue === 'page');
+    u.steps[4]!.events.forEach((e) => { if ('cues' in e && e.cues !== undefined) e.cues = e.cues.filter((c) => c.cue !== 'page'); });
+    const sent = u.steps[3]!.events.find((e) => e.type === 'message')!;
+    (sent as { cues?: unknown[] }).cues = [...((sent as { cues?: unknown[] }).cues ?? []), ...cues];
+  });
+  expect(homeDemo().page).toEqual({ words: 4, pictures: 4 });
+});
+
+test('a lesson whose map has no “Web server” callout cannot be Home’s demo: its page cues are read first, then the key throws, naming the callout (POP3 draws a mail server)', () => {
+  expect(() => homeDemo('what-is-pop3', 'what-is-tcp')).toThrow(/no "Web server" callout/);
 });
 
 test('What is HTTPS draws its words at step 6 and has no “full” cue, so it cannot be Home’s demo; the error names it', () => {
@@ -278,15 +289,193 @@ test('the page stays once drawn: lit from its step on, not at that step only, an
   });
 });
 
-test('D5’s rules on Home hold no colour value other than a token', () => {
+// ---------------------------------------------------------------- the Card stack look: no colour value but tokens (B20, case 15)
+
+/** What D5's rules matched, and the named colours too: transparent and currentColor are the only names allowed. */
+const NAMED = ('aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan ' +
+  'darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet ' +
+  'deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender ' +
+  'lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue ' +
+  'lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose ' +
+  'moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue ' +
+  'saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen').split(' ');
+const NAMED_RE = new RegExp(`(?<![\\w-])(${NAMED.join('|')})(?![\\w-])`, 'i');
+const HEX_RE = /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|hwb\(|lab\(|lch\(|oklab\(|oklch\(/;
+
+/** The colour values in some CSS or script: a hex, a colour function, or a named colour. Comments are not read. */
+function colourValues(text: string): string[] {
+  const bare = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
+  return bare.split('\n').flatMap((line) => [HEX_RE.exec(line)?.[0], NAMED_RE.exec(line)?.[1]].filter((v): v is string => v !== undefined));
+}
+
+/** The page's own text, with the two blocks that are allowed to hold colour values (the figure tint, the token block) cut out. */
+function pageWithoutBlocks(page: string): { rest: string; tokens: string; tint: string } {
+  const cut = (from: string, to: string): [string, string] => {
+    const a = page.indexOf(from);
+    const b = page.indexOf(to);
+    expect(a, `${from} opens the block`).toBeGreaterThan(-1);
+    expect(b, `${to} closes it`).toBeGreaterThan(a);
+    return [page.slice(a, b), page.slice(0, a) + page.slice(b + to.length)];
+  };
+  const [tokens, withoutTokens] = cut('TOKENS BEGIN', 'TOKENS END */');
+  const [tint, rest] = ((): [string, string] => {
+    const a = withoutTokens.indexOf('FIGURE TINT BEGIN');
+    const b = withoutTokens.indexOf('FIGURE TINT END */');
+    expect(a, 'the tint block opens').toBeGreaterThan(-1);
+    expect(b, 'and closes').toBeGreaterThan(a);
+    return [withoutTokens.slice(a, b), withoutTokens.slice(0, a) + withoutTokens.slice(b + 'FIGURE TINT END */'.length)];
+  })();
+  return { rest, tokens, tint };
+}
+
+test('Home’s stylesheet and its generated rules hold no colour value outside the token block and the figures’ tint block (case 15)', () => {
   const page = readFileSync('src/pages/index.astro', 'utf8');
-  const open = page.indexOf("/* ---- D5: Learn's foot");
-  const close = page.indexOf('/* ---- end of D5: Learn');
-  expect(open, 'the comment that opens D5’s rules').toBeGreaterThan(-1);
-  expect(close, 'the comment that closes them').toBeGreaterThan(open);
-  const rules = page.slice(open, close);
-  expect(rules).toContain('var(--link)');
-  expect(rules).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
+  const { rest, tokens, tint } = pageWithoutBlocks(page);
+  // The template's words are not CSS: only the frontmatter and the styles are read.
+  const code = rest.slice(0, rest.indexOf('<BaseLayout')) + rest.slice(rest.indexOf('<style>'));
+  expect(colourValues(code)).toEqual([]);
+  expect(colourValues(demoCss(homeDemo()))).toEqual([]);
+  // The two blocks are not empty: the tokens are all var(--…) (variant A adds no colour value to the site), the tint holds the figures' hexes.
+  expect(tokens).toContain('--cs-edge');
+  expect(colourValues(tokens)).toEqual([]);
+  expect(tint).toMatch(/--anatomy-hi: #12171b/);
+  expect(tint).toMatch(/--anatomy-hi: #f3f5f6/);
+  // Links are ink: Patch's blue link has no place on Home, and so the page holds none.
+  expect(page).not.toContain('var(--link)');
+  expect(demoCss(homeDemo())).not.toContain('var(--link)');
+});
+
+test('the colour-value scan can fail: a hex in a rule, a named colour, or a string in the generated rules is found', () => {
+  const page = readFileSync('src/pages/index.astro', 'utf8');
+  const seeded = (text: string): string[] => {
+    const { rest } = pageWithoutBlocks(text);
+    return colourValues(rest.slice(0, rest.indexOf('<BaseLayout')) + rest.slice(rest.indexOf('<style>')));
+  };
+  expect(seeded(page.replace('.leg {', '.leg {\n    color: #fff;'))).toEqual(['#fff']);
+  expect(seeded(page.replace('.leg {', '.leg {\n    color: rebeccapurple;'))).toEqual(['rebeccapurple']);
+  expect(seeded(page.replace("const css = demoCss(demo);", "const css = demoCss(demo) + 'a{color:rgb(1,2,3)}';"))).toEqual(['rgb(']);
+  expect(colourValues(`${demoCss(homeDemo())}\n.x{background:hsl(0 0% 0%)}`)).toEqual(['hsl(']);
+  // transparent and currentColor are not colours the scan objects to.
+  expect(colourValues('a{border-color:transparent;fill:currentColor}')).toEqual([]);
+});
+
+// ---------------------------------------------------------------- the generated state rules (B20)
+
+test('the right answer’s ring is filled by the data, not by the first label: the rule names the option that is right', () => {
+  const rightId = (css: string): string[] => [...css.matchAll(/#(demo-a\d):checked ~ \.demo__ui \.demo__pick\[for="demo-a\d"\]::before\{border-color:var\(--cs-done\)/g)].map((m) => m[1]!);
+  const dotId = (css: string): string[] => [...css.matchAll(/#(demo-a\d):checked ~ \.demo__ui \.demo__pick\[for="demo-a\d"\]::after\{left:20px/g)].map((m) => m[1]!);
+  const real = demoCss(homeDemo());
+  expect(rightId(real)).toEqual(['demo-a1']);
+  expect(dotId(real)).toEqual(['demo-a2', 'demo-a3']);
+  swapIn('what-is-http', (u) => { u.practice[0]!.answer = 2; });
+  const swappedCss = demoCss(homeDemo());
+  expect(rightId(swappedCss)).toEqual(['demo-a3']);
+  expect(dotId(swappedCss)).toEqual(['demo-a1', 'demo-a2']);
+});
+
+test('a group whose part is not on show is hidden by the generated rules, and the step on show is edged, the steps behind it ticked', () => {
+  const css = demoCss(homeDemo());
+  expect(css).toContain('#demo-watch:checked ~ .demo__in--answer,#demo-learn:checked ~ .demo__in--step,#demo-learn:checked ~ .demo__in--answer,#demo-practice:checked ~ .demo__in--step{visibility:hidden}');
+  // The tab on show, and the keyboard ring inside it.
+  expect(css).toContain('#demo-learn:checked ~ .demo__ui .demo__parts label[for="demo-learn"]{z-index:1;height:calc(var(--tab) + 2px);border-bottom:0;background:var(--cs-card);color:var(--ink-strong);font-weight:700}');
+  expect(css).toContain('#demo-learn:focus-visible ~ .demo__ui label[for="demo-learn"]{outline:2px solid var(--focus);outline-offset:-7px}');
+  // Step 3 on show: steps 1 and 2 are ticked and step 3 is not (a step is done when it is before the one on show).
+  const ticks = (n: number): string[] => [...css.matchAll(new RegExp(`#demo-s${n}:checked ~ \\.demo__ui \\.demo__row\\[for="demo-s(\\d)"\\] \\.demo__n::after\\{display:block\\}`, 'g'))].map((m) => m[1]!);
+  expect(ticks(1)).toEqual([]);
+  expect(ticks(3)).toEqual(['1', '2']);
+  expect(ticks(5)).toEqual(['1', '2', '3', '4']);
+  // The step on show sets the tile's own fill, so the order of two rules decides nothing.
+  expect(css).toContain('#demo-s2:checked ~ .demo__ui .demo__row[for="demo-s2"] .demo__n{--tile-bg:var(--cs-here);background:var(--cs-here);color:var(--cs-here-ink);border-color:var(--cs-edge)}');
+});
+
+// ---------------------------------------------------------------- the phone's key, crop and leaders (D16 §2.2, built in B20)
+
+/** The words of the four callouts as the drawing has them, by their first line, skipping empty texts. */
+function drawnCalls(svg: string): Map<string, string[]> {
+  const calls = new Map<string, string[]>();
+  for (const g of svg.matchAll(/<g class="nm-call">(.*?)<\/g>/g)) {
+    const texts = [...g[1]!.matchAll(/<text\b[^>]*>([^<]*)<\/text>/g)].map((t) => t[1]!).filter((t) => t !== '');
+    if (texts.length > 0) calls.set(texts[0]!, texts);
+  }
+  return calls;
+}
+
+test('the key is the drawing’s four callouts, word for word and in the bands of D16 §2.2.3, read from the drawn SVG', () => {
+  const { key, scene } = homeDemo();
+  const drawn = drawnCalls(scene);
+  const flat = (calls: { name: string; lines: { text: string }[] }[]): string[][] => calls.map((c) => [c.name, ...c.lines.map((l) => l.text)]);
+  expect(flat(key.above)).toEqual([drawn.get('Your laptop')!, drawn.get('DNS resolver')!]);
+  expect(flat(key.below)).toEqual([drawn.get('The internet')!, drawn.get('Web server')!]);
+  expect(key.above.map((c) => c.end)).toEqual([false, false]);
+  expect(key.below.map((c) => c.end)).toEqual([true, true]);
+  // The laptop's state is the lesson's own words, written into the drawing before the key reads it.
+  expect(drawn.get('Your laptop')).toContain('Wants example.net');
+  expect([...flat(key.above), ...flat(key.below)].flat()).toHaveLength(10);
+  expect(key.above[0]!.lines.map((l) => l.kind)).toEqual(['addr', 'state']);
+  expect(key.above[1]!.lines.map((l) => l.kind)).toEqual(['sub', 'addr']);
+});
+
+test('a drawing without one of the four callouts makes the key throw, naming it; the drawing’s own frame is unchanged', () => {
+  const { scene } = homeDemo();
+  for (const name of ['Your laptop', 'DNS resolver', 'The internet', 'Web server']) {
+    const without = scene.replace(new RegExp(`<g class="nm-call">(?:(?!</g>).)*>${name}</text>(?:(?!</g>).)*</g>`), '');
+    expect(without, `${name}'s callout was cut out`).not.toBe(scene);
+    expect(() => readKey(without), name).toThrow(new RegExp(`"${name}" callout`));
+  }
+  expect(() => readKey(scene)).not.toThrow();
+  // The frame the crop is measured against: net-map.test.ts pins it as well.
+  expect(viewBoxOf(scene)).toEqual({ x: -98, y: -60, w: 685, h: 378 });
+  expect(scene).toContain('viewBox="-98 -60 685 378"');
+});
+
+test('the crop holds every point of every lit way and every lead dot of lesson 1', () => {
+  const { scene, crop } = homeDemo();
+  expect(crop).toEqual({ x: -78, y: -22, w: 604, h: 232, view: { x: -98, y: -60, w: 685, h: 378 } });
+  expect(CROP).toEqual({ x: -78, y: -22, w: 604, h: 232 });
+  const inside = (x: number, y: number): boolean => x >= CROP.x && x <= CROP.x + CROP.w && y >= CROP.y && y <= CROP.y + CROP.h;
+  const trails = [...scene.matchAll(/<polyline class="nm-trail home-trail"[^>]* points="([^"]+)"/g)];
+  expect(trails).toHaveLength(4);
+  for (const t of trails) for (const pt of t[1]!.split(' ')) {
+    const [x, y] = pt.split(',').map(Number) as [number, number];
+    expect(inside(x, y), `trail point ${pt}`).toBe(true);
+  }
+  const dots = [...scene.matchAll(/<circle class="nm-lead-dot" cx="(-?[\d.]+)" cy="(-?[\d.]+)"/g)].map((m) => [Number(m[1]), Number(m[2])] as const);
+  expect(dots.length).toBeGreaterThanOrEqual(4);
+  const keyed = readKey(scene).dots;
+  for (const { cx, cy } of keyed) expect(inside(cx, cy), `lead dot ${cx},${cy}`).toBe(true);
+});
+
+test('the scene carries one set of leaders: four paths from each callout’s lead dot to the crop’s edge, and four dots', () => {
+  const { scene } = homeDemo();
+  expect(scene.match(/<g class="home-leads" aria-hidden="true">/g)).toHaveLength(1);
+  const leads = /<g class="home-leads" aria-hidden="true">(.*?)<\/g>/.exec(scene)![1]!;
+  const paths = [...leads.matchAll(/<path d="M(-?[\d.]+) (-?[\d.]+)V(-?[\d.]+)"\/>/g)].map((m) => ({ x: Number(m[1]), y: Number(m[2]), to: Number(m[3]) }));
+  const circles = [...leads.matchAll(/<circle cx="(-?[\d.]+)" cy="(-?[\d.]+)" r="3"\/>/g)].map((m) => [Number(m[1]), Number(m[2])]);
+  expect(paths).toHaveLength(4);
+  expect(circles).toHaveLength(4);
+  // Each starts at its own callout's dot (the laptop's and the resolver's end at the crop's top, the others at its foot).
+  const dotOf = (name: string): [number, number] => {
+    const g = [...scene.matchAll(/<g class="nm-call">(.*?)<\/g>/g)].find((c) => c[1]!.includes(`>${name}</text>`))![1]!;
+    const m = /class="nm-lead-dot" cx="(-?[\d.]+)" cy="(-?[\d.]+)"/.exec(g)!;
+    return [Number(m[1]), Number(m[2])];
+  };
+  const want: [string, number][] = [['Your laptop', -22], ['DNS resolver', -22], ['The internet', 210], ['Web server', 210]];
+  want.forEach(([name, to], i) => {
+    const [cx, cy] = dotOf(name);
+    expect(paths[i]!.x, `${name} x`).toBeCloseTo(cx, 1);
+    expect(paths[i]!.y, `${name} y`).toBeCloseTo(cy, 1);
+    expect(paths[i]!.to, `${name} ends at the crop's edge`).toBe(to);
+    expect(circles[i]).toEqual([paths[i]!.x, paths[i]!.y]);
+  });
+});
+
+test('the crop’s CSS is the crop’s numbers: its shape, the drawing wider than it, and shifted by the crop’s offset in the frame', () => {
+  const css = cropCss(homeDemo().crop);
+  expect(css).toContain('aspect-ratio:604 / 232');
+  expect(css).toContain('width:calc(100% * 685 / 604)');
+  expect(css).toContain('margin:calc(-100% * 38 / 604) 0 0 calc(-100% * 20 / 604)');
+  // Another crop gives other numbers: nothing in the rule is fixed but what the crop says.
+  expect(cropCss({ x: -50, y: 0, w: 500, h: 200, view: { x: -98, y: -60, w: 685, h: 378 } })).toContain('margin:calc(-100% * 60 / 500) 0 0 calc(-100% * 48 / 500)');
 });
 
 test('Home’s still map shows no name strip, no DROPPED mark and every part of the resolver (Router’s additions stay off other lessons)', () => {
