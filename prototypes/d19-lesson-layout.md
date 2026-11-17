@@ -1,17 +1,27 @@
 # D19: the Lesson page's layout, rearranged in Patch
 
-Unit D19 of job 19 (`plan.md`; direction 2.90 to 2.98). Drawn on Fable 5.2 by the owner's word (2.93). **Approved revision 2 (2.96), amended 2.97 and 2.98, 2026-11-17.**
+Unit D19 of job 19 (`plan.md`; direction 2.90 to 2.99). Drawn on Fable 5.2 by the owner's word (2.93). **Approved revision 2 (2.96), amended 2.97, 2.98 and 2.99, 2026-11-17.**
 
 - **Prototype:** `prototypes/d19-lesson-layout.html`. One file, no network. Both themes, every place of the DHCP lesson (Networking, lesson 9 of 20) and the 20-lesson track list. The yellow button at the bottom left ("D19: theme, states") switches theme, place and the timeline's stress cases, and prints the measures this spec quotes. The same switches work in the address: `?theme=light|dark&place=0..7|learn|practice|end&titles=dhcp|osi|tcp&keys=show&panel=open`.
 - **What is real in it.** The words, the figure at each step, the lease table, the log's rows, the Sequence view (a still of step 4) and the site's own CSS for those parts are copied from the built page by a script; nothing was retyped. The layout, the timeline, the track column, the forward button's words and the key line are D19's.
 - **What is not drawn:** the page with JavaScript off (§7), a lesson with more than one unit (none exists; §4.9), a phone on its side under 600px tall (unchanged: the stacked page).
+
+## Amendment 2.99: the track's name and the lesson's name change places
+
+The owner: "Only minor change to make is on the left column containing the lessons the header \"Tracks/ Networking Concepts\" switch with the \"DCHP Lesson \"x\" of \"x\"\"".
+
+- **The bar's first cell, over the track column, now reads "Tracks /" and the track's name** ("Networking Concepts"). "Tracks" links to `/tracks` and the track's name to its page. In the 68px bar they are two lines; in the one-line bar (under 890px tall) they are one line, the name at 15px, cut with an ellipsis only if a track's name were longer than the cell (neither is: 181px of 209px for "Networking Concepts").
+- **The head of the track column now reads the lesson's name ("DHCP"), the page's `h1`, and "Lesson 9 of 20" on its line.**
+- **The track's strip and "6 of 20 done" stay at the column's head, under the lesson's line.** The strip is one segment a lesson with this lesson's in orange, so it reads with "Lesson 9 of 20" above it and the list below it; and the one-line bar has no room for it.
+- **Measures:** the column's head is 72px, from 94px, so the list has 21px more: 476px at 1440×900 (it needs 476px with one part open). Nothing else moves; the timeline, the scene, the guide and the log are 2.98's.
+- **Under 1100px nothing changes.** There is no track column there, so the swap has nothing to swap with: the bar keeps the lesson's name (the `h1`) with "Step 4 of 5" on a phone, and the name alone on a tablet; the "9 of 20" button and the sheet are as they were, and the sheet's head already reads "Tracks /", the track's name, the strip and "6 of 20 done".
 
 ## Amendment 2.98: the explanation column rises into the freed cell
 
 The owner: "With the space cleared by the sources section, scale the Lesson explanation column to fill that space."
 
 - **The guide (the words, the lesson's table, the controls, the key line) now starts under the site's header**, where the bar's third cell stood. It is taller by the bar and its gap: 80px in a window 890px tall or more, 56px under that.
-- **The lesson's bar spans the track and the scene only** and has two cells: the lesson's name with "Lesson 9 of 20" over the track, and the timeline with its count over the scene.
+- **The lesson's bar spans the track and the scene only** and has two cells: over the track, the lesson's name with "Lesson 9 of 20" (since 2.99, the track's name), and the timeline with its count over the scene.
 - **The OSI badge heads the words.** It sits at the right of the kicker's line ("Watch · Step 4 of 5") where both fit: in Learn and Practice (a 516 to 560px column). In a Watch step and the Overview the column is 346 to 392px and the kicker and the badge together need 449px, so the badge takes a line of its own above the kicker (26px), on the 22 lessons that have one. Why there: the badge names the layer of what the words are about; the bar no longer reaches the guide; and the scene's head has no room for it beside a long scene title. Cutting it to its chips to save the line would drop the layer's name, which is the part a reader reads. On a phone the badge is not shown, as today.
 - **The timeline is 6px narrower** (776px at 1440, from 782): the bar's rule moved. Its three forms and their widths (§4.3) are unchanged, and at 1440×900 it still shows every name and the count. In the one-line bar it is 657px at 1280 and 477px at 1100, the same on every lesson (2.97 had 707px or 1,017px at 1280, by whether the lesson had a badge); 13 marks keep 34px at 1280 and close to 25px at 1100.
 - **A tablet on its side** follows the same rule while watching: the bar is over the scene (640px at 1024), the guide starts under the header. Its 13 marks close to 24px. In Learn and Practice the tablet's bar keeps the full width, as before: over a 484px scene 13 marks would not fit beside the name and the lessons button.
@@ -82,11 +92,11 @@ The brief's "685×326 on DHCP" is the 2026-11-10 measure (§7 of the direction d
 ┌ the site's header 69 ──────────────────────────────────────────────────────┐
 │ ◆ TechConcepts      [Tracks] Glossary  How a lesson works  Sources  About ☾ │
 ├ the lesson's bar 68 ───────────────────────────────┬ guide 389 × 807 ──────┤
-│ DHCP          │ ✓───✓───✓───✓───[4]┄┄┄5┄┄┄▪┄┄┄▪    Step 4 │ (the OSI badge)       │
-│ Lesson 9 of 20│ Over DHCP DHCP DHCP DHCP Lease Learn Prac   of 5 │ Watch · Step 4 of 5   │
+│ Tracks /      │ ✓───✓───✓───✓───[4]┄┄┄5┄┄┄▪┄┄┄▪    Step 4 │ (the OSI badge)       │
+│ Networking …  │ Over DHCP DHCP DHCP DHCP Lease Learn Prac   of 5 │ Watch · Step 4 of 5   │
 ├ track 232 ────┼ scene 771 × 550 ───────────────────┤ the words             │
-│ Tracks /      │ Network | Sequence          title  │                       │
-│ Networking …  │                                    │                       │
+│ DHCP  9 of 20 │ Network | Sequence          title  │                       │
+│ ▬▬▬ 6 of 20   │                                    │                       │
 │ parts,        │        the drawing                 │ the lesson's table    │
 │ lessons       │                                    │ 1×  ‹  Play all  ↻    │
 ├───────────────┴────────────────────────────────────┤ [Next: Lease Renewal] │
@@ -95,7 +105,7 @@ The brief's "685×326 on DHCP" is the 2026-11-10 measure (§7 of the direction d
 ```
 
 - **The header answers the owner's question:** from a lesson, Tracks, the Glossary, About and home are one press away.
-- **The bar's two cells stand over the track and the scene.** The lesson's name and "Lesson 9 of 20" sit over the track's list. The timeline sits over the scene and is as wide as it. The guide stands beside the bar, from the header down (2.98).
+- **The bar's two cells stand over the track and the scene.** "Tracks /" and the track's name sit over the track's column, whose head is the lesson's name and "Lesson 9 of 20" (2.99). The timeline sits over the scene and is as wide as it. The guide stands beside the bar, from the header down (2.98).
 - **The right column is a guide** from the header to the foot of the page: the OSI badge and the words, then the lesson's table, then job 15's controls in their order with the forward button on a line of its own, then the key line.
 - **The log runs under the track and the scene** (1015px), not under the words.
 
@@ -169,7 +179,8 @@ No token is added or changed; `src/styles/tokens.ts` and `src/art/lumen.css` are
 
 | Part | Type |
 |---|---|
-| Lesson's name in the bar | Atkinson Hyperlegible Next 700, 18px/1.15 (16px on a phone) |
+| Lesson's name | Atkinson Hyperlegible Next 700: 19px/1.15 at the head of the track column; 18px in the bar on a tablet on its side, 16px on a phone |
+| The track's name in the bar | Barlow Semi Condensed 700, 19px/1.15 (15px in the one-line bar); "Tracks /" 12.5px muted |
 | The site's header | unchanged: `SiteHeader.astro`'s own styles |
 | "Lesson 9 of 20" | Atkinson Hyperlegible Next 400, 13px muted |
 | Stop's name | Barlow Semi Condensed 600, 12.5px/1.12, centred, two lines at most |
@@ -201,7 +212,7 @@ No token is added or changed; `src/styles/tokens.ts` and `src/art/lumen.css` are
 
 One panel under the header, over the track and the scene (2.98), two cells with a rule between them. At 1100px and up:
 
-1. **Over the track** (the track's width and half the gap, 237px): the lesson's name as the page's `h1`; "Lesson 9 of 20".
+1. **Over the track** (the track's width and half the gap, 237px): "Tracks /" (a link to `/tracks`) and the track's name (a link to the track page). The lesson's name is not in the bar at this width: it heads the track column (§4.2).
 2. **Over the scene:** the timeline (§4.3).
 
 The guide stands beside the bar, from the header down; the bar does not reach over it.
@@ -211,24 +222,24 @@ The guide stands beside the bar, from the header down; the bar does not reach ov
 | | 890px tall or more | Under 890px tall |
 |---|---|---|
 | Height | 68px | 44px |
-| First cell | the name; under it "Lesson 9 of 20" | the name, then "Lesson 9 of 20", on one line |
+| First cell | "Tracks /"; under it the track's name | "Tracks /", then the track's name, on one line |
 | Timeline | names under the marks (§4.3's three forms) | marks, then the count and the current place's name, on one line |
 
 **The OSI badge** is not in the bar. It heads the words (§4.6).
 
 Gone from the bar since today: the mark and "TechConcepts" (the header's), the theme button (the header's), the crumbs "Tracks / Networking Concepts /" (the track column's head, and the header's Tracks), and the row of segments (the timeline is the segments, made pressable and named).
 
-**Under 1100px:** a button with a list icon and "9 of 20" (28px tall on a phone, 34px on a tablet), accessible name "All 20 lessons. This is lesson 9", opens the lessons sheet (§4.8); "Lesson 9 of 20" is hidden there. On a tablet on its side the bar is the 44px form, over the scene while watching and across the page in Learn and Practice. On a phone it is one line, 36px: the name, "Step 4 of 5" (or "Overview", "Learn", "Practice") and the button. On an upright tablet it is the same at 44px.
+**Under 1100px:** a button with a list icon and "9 of 20" (28px tall on a phone, 34px on a tablet), accessible name "All 20 lessons. This is lesson 9", opens the lessons sheet (§4.8); There is no track column, so the bar's first cell keeps the lesson's name, the page's `h1` at these widths (2.99 changes nothing here). On a tablet on its side the bar is the 44px form, over the scene while watching and across the page in Learn and Practice. On a phone it is one line, 36px: the name, "Step 4 of 5" (or "Overview", "Learn", "Practice") and the button. On an upright tablet it is the same at 44px.
 
 ### 4.2 The track's lessons (`nav`, labelled by the track's title)
 
 From the data "All N lessons" uses today (`Outline.tsx:124-155`: `entries`, `byPart`, `progress`, `currentKey`).
 
-- **Head, fixed:** "Tracks /" (a link to `/tracks`); the track's title (a link to the track page); a cable of one segment a lesson (5px tall: green done, orange this lesson, dashed ahead) and "6 of 20 done".
+- **Head, fixed** (72px): the lesson's name as the page's `h1` and, on its line, "Lesson 9 of 20"; under them a cable of one segment a lesson (5px tall: green done, orange this lesson, dashed ahead) and "6 of 20 done". The track's name and "Tracks /" are in the bar's cell straight above (2.99); the `nav` is still labelled by the track's title.
 - **Parts.** The part that holds this lesson is always open and its name is a heading, not a button. Every other part is a `<details>`, closed by default, with a chevron, its name and its count ("2 of 4"; "✓ 2 of 2" in green when all are done). A reader may open any; it is not remembered.
 - **Lesson rows:** number, title, status ("✓ Done", "In progress", or "Not ready yet" on a row that is not a link), 30px tall. The lesson on this page has `aria-current="page"`, the orange inset bar and tint, as in today's dialog.
 - **The list scrolls inside the column** when it must; the head stays. On load the current lesson is in view.
-- **Ruled, the 20-lesson column at 900 tall:** the list has 455px and needs 455px with one part open; with every part open it needs 944px and scrolls.
+- **Ruled, the 20-lesson column at 900 tall:** the list has 476px and needs 476px with one part open; with every part open it needs 944px and scrolls.
 - **States:** a lesson done, in progress, not started, not ready; a part complete; a part open or closed; hover; focus.
 
 ### 4.3 The timeline
@@ -300,7 +311,7 @@ Its head is 32px: the "Event log" tape and the legend; the controls have left it
 
 ### 4.8 The lessons sheet (under 1100px wide)
 
-A modal `<dialog>` from the bar's "9 of 20" button: full height, up to 448px wide, at the left edge. Its bar: "All 20 lessons" and a 44px "× Close". Under it, the same head and list as the track column, every part open, rows 44px tall. Escape, the Close button or a press on the backdrop closes it; focus returns to the button.
+A modal `<dialog>` from the bar's "9 of 20" button: full height, up to 448px wide, at the left edge. Its bar: "All 20 lessons" and a 44px "× Close". Under it, the track's head ("Tracks /", the track's name, the strip and "6 of 20 done": the head the column had before 2.99) and the same list as the track column, every part open, rows 44px tall. Escape, the Close button or a press on the backdrop closes it; focus returns to the button.
 
 ### 4.9 A lesson with more than one unit
 
@@ -369,11 +380,12 @@ The page keeps today's rules (`no-script.test.ts`): the note "This lesson needs 
 | In this lesson | the no-script list's heading | new |
 | This lesson | the timeline's `nav` label | kept (it was the outline's heading) |
 | Step 4 of 5; Overview; Learn; Practice | the timeline's end | kept (`placeLabel`), moved within the bar |
-| Lesson 9 of 20 | the bar, under the lesson's name | kept, moved one line down |
+| Lesson 9 of 20 | the head of the track column, beside the lesson's name | kept; moved from the bar (2.99) |
+| <the lesson's name> | the head of the track column (the `h1`) at 1100px and up; the bar under that | kept; moved from the bar at 1100px and up (2.99) |
 | OSI layer 7, Application | the head of the words, beside or above the kicker | kept; set in sentence case; moved from the bar (2.98) |
 | Checked <date>, <n> sources; Not checked yet, <n> sources | the bar; the Overview's first line on a phone | removed from the Lesson page (2.97) |
 | Checked <date>; Not checked yet | the foot of Learn, under "Sources" | removed from the Lesson page (2.97); the "Sources" heading and the list stay |
-| Tracks / | track column's head | moved from the bar |
+| Tracks /, <the track's name> | the bar's first cell at 1100px and up; the sheet's head under that | kept from today's crumbs; in the bar, not the column's head (2.99) |
 | All <N> lessons, × Close | the sheet's bar | kept from the dialog |
 | ✓ Done, In progress, Not ready yet | lesson rows | kept (`STATUS_WORDS`) |
 | TechConcepts; Tracks, Glossary, How a lesson works, Sources, About; Menu; Switch theme | the site's header | the header's own words, new to this page |
@@ -399,8 +411,8 @@ None at any size tried, with the header on: 1920×1080, 1440×900, 1440×889, 13
 **The rest.**
 
 - `src/lesson/console.css`: the grid (columns, rows, areas), the bar's two cells over the track and the scene and its two heights, the guide over all three rows (areas `'top top guide' 'track stage guide' 'low low guide'`; a tablet on its side `'top guide' 'stage guide' 'low low'` while watching), the timeline and its fill, the guide and its foot, the log's two heights, the phone and tablet blocks, the no-script and stacked rules for the new parts. Take the prototype's second `<style>` block as the reference for every number; its `data-mode` attribute stands for the page's own media queries (`console.css:1384` for the phone, `:1950` for the tablet on its side), and `data-short` stands for `(max-height: 889px)` at 1100px and up, and for the tablet on its side.
-- `src/lesson/TopBar.tsx`: the two cells; the OSI badge (`osiHeading`, the chips) leaves it for the head of the words (`Explanation.tsx`, beside `explain__kicker`; `TopBar.test.ts`'s badge tests move with it); the timeline in place of the segments (from `Outline`'s `Item`: the same targets, states and `onGo`); the crumbs leave; `topbar__where` becomes the line's end; the lessons button arrives; `holding` now drives the rule's fill between two marks (`topbar__fill`'s job), off under reduced motion as today. `TopBar.test.ts` follows.
-- `src/lesson/Outline.tsx` becomes the track's lessons (from `AllLessons` and `LessonLink`, which already hold the data and the row). The dialog stays as the sheet under 1100px. `Outline.test.tsx` follows.
+- `src/lesson/TopBar.tsx`: the two cells; the OSI badge (`osiHeading`, the chips) leaves it for the head of the words (`Explanation.tsx`, beside `explain__kicker`; `TopBar.test.ts`'s badge tests move with it); the timeline in place of the segments (from `Outline`'s `Item`: the same targets, states and `onGo`); the crumbs leave; `topbar__where` becomes the line's end; the lessons button arrives; `holding` now drives the rule's fill between two marks (`topbar__fill`'s job), off under reduced motion as today. `TopBar.test.ts` follows. At 1100px and up its first cell is today's two crumb links (`/tracks`, `trackUrl`) and holds no `h1` (2.99); under 1100px it holds the `h1` as before. One `h1` on the page at every width.
+- `src/lesson/Outline.tsx` becomes the track's lessons (from `AllLessons` and `LessonLink`, which already hold the data and the row). The dialog stays as the sheet under 1100px. `Outline.test.tsx` follows. Its head at 1100px and up is the lesson's `h1` and "Lesson N of M" (it needs `lesson.title`, `number` and `total`, which `TopBar` has today), then the strip; the sheet's head stays the track's.
 - `src/lesson/PlaybackControls.tsx` and `src/engine/playback.ts` (`forwardButton`): the words of §4.4, the full and short forms, the accessible name. `playback.test.ts` follows.
 - `src/lesson/LessonConsole.tsx`: where the parts mount (the controls in the guide at 900px and up, the bar at the foot on a phone; the timeline after the scene under 900px or upright); `TABS` loses Steps at every width, and `TABLET_SIDEWAYS` has no tabs left; the measured fit of the forward button's words on a tablet (a `ResizeObserver`, tried again after `document.fonts.ready`).
 - `src/lesson/LogPanel.tsx`: the controls leave its head at every width.
@@ -416,7 +428,7 @@ None at any size tried, with the header on: 1920×1080, 1440×900, 1440×889, 13
 | Spec | What changes |
 |---|---|
 | `site.spec.ts` | its header checks loop over the site's pages: the lesson pages join them, among the pages with no "Start learning" (`:392`), the theme button's checks (`:410-419`, `:975-976`: one `.site-head .theme-toggle`, hidden without script), the menu's (`:462-478`) and the header's place (`:126`, `:512`); the @phone "one screen with its tabs" check now has the header above the lesson, and the tab count is three (two for OSI Model); any check that a lesson shows "Checked" or "Not checked yet" is dropped for lesson pages and kept for the track page and About |
-| `lesson.spec.ts` | "one screen" with the header; the outline walk becomes a walk of the timeline's stops; on a phone it uses the stops row, not the Steps tab; the lesson page has one `main` |
+| `lesson.spec.ts` | "one screen" with the header; the outline walk becomes a walk of the timeline's stops; on a phone it uses the stops row, not the Steps tab; the lesson page has one `main`; any check that finds the lesson's `h1` in the bar finds it in the track column at 1100px and up |
 | `controls.spec.ts` | the row at 1440 is in the guide: four buttons on one line, the forward button under them; its words and `title`; the phone's x positions stay (12, 68, 124, 180, 236) and its y is unchanged (pinned at the foot) |
 | `reading.spec.ts` | words 516px at 1280 (was 480); the folded log is 45px (was 52); Learn's room 670px at 1440×900 (was 730); the words' panel now starts under the header, 80px higher than the scene's |
 | `tablet.spec.ts` | `.topbar__brand b` (`:128`, `:226`, `:355`) is gone: the header's `.brand b` shows at every width; 1024×768: no tabs, words 346×437, the bar over the scene, the 44px bar, the controls' row at the foot of the words; 768×1024: the header, the 44px bar, the stops row, three tabs, words 349px, the scene from 113px to 523px (was 52 to 462); its stamp-placement checks (the stamp in the bar at 761px and up, on the Overview's first line under that) become checks that the lesson page has no `.stamp` at any size |
@@ -456,7 +468,9 @@ Each can be tried on the prototype.
 **The lesson's bar and the timeline**
 
 12. At 1100px wide and up, in a window 890px tall or more, the bar is 68px with two cells and ends where the scene ends (1015px at 1440); its first cell is as wide as the track column within 6px. Under 890px tall it is 44px. The guide's panel starts 12px under the header at both heights.
-13. The bar holds the lesson's name as the `h1`, "Lesson 9 of 20" and the timeline; it holds no OSI badge, no stamp, no mark, no theme button, no crumb and no segments. The timeline is the same width on every lesson of a size (776px at 1440×900, 657px at 1280×800).
+13. At 1100px and up the bar holds "Tracks /" (a link to `/tracks`), the track's name (a link to the track page) and the timeline; it holds no lesson name, no "Lesson 9 of 20", no OSI badge, no stamp, no mark, no theme button and no segments. The timeline is the same width on every lesson of a size (776px at 1440×900, 657px at 1280×800).
+13b. At 1100px and up the track column's head holds the lesson's name as the page's only `h1`, "Lesson 9 of 20" on its line, and under them the strip and "6 of 20 done"; it holds no "Tracks /" and no track name. In the one-line bar "Tracks /" and the track's name are on one line and neither is cut for either track.
+13c. Under 1100px the bar holds the lesson's name as the page's only `h1`, and the sheet's head reads "Tracks /", the track's name, the strip and "6 of 20 done".
 13a. On a lesson whose unit names a layer the OSI badge is the first thing in the words: on the kicker's line in Learn and Practice at 1280 wide and up, on its own line above the kicker in a Watch step and the Overview, never cut. A lesson with no layer has no badge and no empty line. On a phone there is no badge.
 14. The timeline has one stop for every place, in order: 8 for DHCP, 13 for OSI Model. Exactly one has `aria-current="step"`. Stops before it show a tick; the rule is orange up to it and dashed after.
 15. At 1440×900 with DHCP every stop shows its name under its mark, no name is cut, and the line ends with "Step 4 of 5". At the Overview it ends with "Overview".
@@ -470,7 +484,7 @@ Each can be tried on the prototype.
 **The track**
 
 22. The track's list shows every part of the track and, in the open part, this lesson with `aria-current="page"`, the orange bar and its status. A done lesson reads "✓ Done"; one in progress reads "In progress".
-23. With one part open the 20-lesson list does not scroll at 1440×900. With every part open it scrolls inside the column and the head stays.
+23. With one part open the 20-lesson list does not scroll at 1440×900 (476px). With every part open it scrolls inside the column and the head stays.
 24. The part that holds this lesson cannot be closed. Every other part opens and closes with a press, and with Enter or Space.
 
 **The guide**
@@ -504,7 +518,8 @@ Each can be tried on the prototype.
 5a. The guide takes the bar's freed cell and starts under the header (2.98): the words gain 80px (56px in a short window) and nothing else moves.
 5b. The OSI badge heads the words and keeps its label: it names the layer of what the words say, and its own line costs 26px of the 80px gained, only on lessons that have a badge and only where the kicker's line cannot hold both.
 5c. On a tablet on its side the bar goes back to the full width in Learn and Practice: 13 marks do not fit over a 484px scene.
-6. "Lesson 9 of 20" stays in the bar, with the lesson's name and over the track's list: it is the lesson's place in the track.
+6. The track's name is in the bar over the track column, and the lesson's name with "Lesson 9 of 20" heads the column (the owner, 2.99). The strip and "6 of 20 done" stay under the lesson's line: the strip's orange segment is this lesson, and the one-line bar has no room for it.
+6a. Under 1100px the swap does not apply: there is no column, the bar keeps the lesson's name, and the sheet's head is already the track's.
 7. (Superseded by 5a and 5b: the cell over the guide is gone.)
 8. Stops are numbered squares on a rule: the reference's manner (one line, names under, the count at the end) in Patch's shapes; its circles, colours and words are not copied.
 9. Overview, Learn and Practice are stops with a dot, not numbers: only the Watch steps are numbered today, and "Step 4 of 5" must stay true.

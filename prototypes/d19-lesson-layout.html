@@ -931,6 +931,18 @@ body { display: block; overflow: hidden; }
 .pg__top .topbar__brand { flex: none; min-width: 0; padding: 0; border: 0; font-size: 22px; }
 .pg__top .topbar__brand b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .top__names { display: grid; gap: 5px; min-width: 0; }
+/* 2.99: at 1100px and up the bar's first cell names the track; the lesson's name heads the track's column. */
+.pg[data-mode='desk'] .top__names { display: none !important; }
+.top__trk { display: none; gap: 4px; min-width: 0; }
+.pg[data-mode='desk'] .top__trk { display: grid; }
+.top__trk .track__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg[data-mode='desk'][data-short] .top__trk { display: flex; align-items: baseline; gap: 6px; }
+.pg[data-mode='desk'][data-short] .top__trk .track__title { font-size: 15px; }
+.pg[data-mode='desk'][data-short] .top__trk .track__crumb { flex: none; }
+/* the head of the track's column: the lesson's name and its place, then the track's strip */
+.track__lesson { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; min-width: 0; }
+.track__lesson .top__name { font-size: 19px; white-space: normal; }
+.track__lesson .top__of { display: inline !important; }
 .top__name { margin: 0; overflow: hidden; color: var(--ink-strong); font: 700 18px/1.15 var(--sans); text-overflow: ellipsis; white-space: nowrap; }
 .top__of { color: var(--muted); font: 400 13px/1.2 var(--sans); white-space: nowrap; }
 .top__where { display: none; color: var(--muted); font: 500 12.5px/1 var(--mono); white-space: nowrap; }
@@ -1430,7 +1442,8 @@ function buildTop() {
   </header>`;
   $('#top').innerHTML = `
     <div class="top__lesson">
-      <div class="top__names"><h1 class="top__name">DHCP</h1><span class="top__of">Lesson 9 of 20</span><span class="top__where" id="where"></span></div>
+      <div class="top__trk"><p class="track__crumb"><a href="#">Tracks</a> /</p><p class="track__title"><a href="#">${TRACK.title}</a></p></div>
+      <div class="top__names"><h1 class="top__name">DHCP</h1><span class="top__where" id="where"></span></div>
     </div>
     <nav class="pg__tl" id="tl" aria-label="This lesson"></nav>
     <div class="top__facts">
@@ -1463,9 +1476,12 @@ function trackHtml({ sheet }) {
     return `<details class="part"><summary>${CHEV}<span class="part__name">${safe}</span>${count}</summary><ol>${items}</ol></details>`;
   }).join('');
   const cable = all.map((l) => `<i data-s="${l[2] === 'here' ? 'here' : l[1] === 'finished' ? 'done' : ''}"></i>`).join('');
+  // 2.99: the column's head is the lesson (the bar names the track); the sheet under 1100px keeps the track at its head.
+  const head = sheet
+    ? `<p class="track__crumb"><a href="#">Tracks</a> /</p><h2 class="track__title"><a href="#">${TRACK.title}</a></h2>`
+    : `<div class="track__lesson"><h1 class="top__name">DHCP</h1><span class="top__of">Lesson 9 of 20</span></div>`;
   return `<div class="track__head">
-      <p class="track__crumb"><a href="#">Tracks</a> /</p>
-      <h2 class="track__title"><a href="#">${TRACK.title}</a></h2>
+      ${head}
       <p class="track__got"><span class="cable" aria-hidden="true">${cable}</span><span>${done} of ${all.length} done</span></p>
     </div>
     <div class="track__list">${parts}</div>`;
