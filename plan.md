@@ -83,7 +83,7 @@ The track page, About, the Glossary and 404 in Card stack (later jobs, 2.84); th
 
 # Job 19: the Lesson page, its layout rearranged in Patch
 
-**Status: the owner said go, 2026-11-17 (direction 2.92); D19 is next.** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
+**Status: the owner said go, 2026-11-17 (direction 2.92); D19 is being drawn on Fable 5.2 (2.93).** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
 
 ## Inputs
 
@@ -118,7 +118,7 @@ The track page, About, the Glossary and 404 in Card stack (later jobs, 2.84); th
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
 | S21 | scout | scout (Haiku) | Done: `prototypes/s21-lesson-facts.md`. The orchestrator's comparison: `prototypes/s21-reference-designed-to-scale.md`. | |
-| D19 | design | designer (Opus 5.5) | `prototypes/d19-lesson-layout.html` and `.md`: two layouts in Patch, the states and widths of decision 7, the measures against today's, "For the builder" and acceptance checks as D18's spec has. | The orchestrator plays it in the browser at 375 and 1440, light and dark, and at the two tablets. |
+| D19 | design | designer (Fable 5.2, the owner's word, 2.93) | `prototypes/d19-lesson-layout.html` and `.md`: two layouts in Patch, the states and widths of decision 7, the measures against today's, "For the builder" and acceptance checks as D18's spec has. | The orchestrator plays it in the browser at 375 and 1440, light and dark, and at the two tablets. |
 | Gate | design | the owner | D19's prototype and spec. | The owner's words. |
 | B22–B23 spec | build | reviewer (Opus) | Holes and attack cases for D19, a keyboard walk both ways included, the cases only a browser can try marked: `prototypes/d19-cases.md`. | Holes with one answer closed as errata; taste back to `designer`. |
 | B22 | build | builder (Sonnet) | The timeline, the track column, the forward label and key line, the desktop layout; the tests that pin them changed once; each case a test. | `npm test`; `npm run build`; the lesson specs at d1440-dark. |
