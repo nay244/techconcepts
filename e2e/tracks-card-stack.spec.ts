@@ -607,6 +607,15 @@ test.describe('the page’s height (measured: 1,599 at 1440 and 2,368 at 375 wit
 });
 
 test.describe('keyboard focus never hides under the sticky header (E11)', () => {
+  test('the root scroll-padding-top is 80px on /tracks only', async ({ page }) => {
+    const padding = async (path: string) => {
+      await page.goto(path);
+      return page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingTop);
+    };
+    expect(await padding('/tracks')).toBe('80px');
+    for (const path of ['/', '/about', '/glossary', '/networking', '/networking/dhcp']) expect(await padding(path), path).toBe('auto');
+  });
+
   for (const [width, height] of [[320, 700], [375, 812], [390, 844], [1440, 900]] as const) {
     test(`walking Shift+Tab up from the footer at ${width}, every focused element in main is below the header`, async ({ browser }) => {
       const ctx = await browser.newContext({ viewport: { width, height } });
