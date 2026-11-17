@@ -185,7 +185,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   // (the panel's own scroll box only: the page and the guide never move).
   useEffect(() => {
     if (!tableInGuide || guideTable === null) return;
-    const row = guideTable.querySelector<HTMLElement>(MARKED_ROW);
+    const row = guideTable.querySelector<HTMLElement>(`${MARKED_ROW}, .rpanel__chip[data-known]`);
     const panel = row?.closest<HTMLElement>('.tpanel, .rpanel');
     if (row == null || panel == null) return;
     const r = row.getBoundingClientRect();

@@ -110,7 +110,8 @@ async function medianLine(page: Page, selector: string): Promise<{ median: numbe
 }
 
 /** Check 3: the unit's own check, the lead's line length. */
-for (const [size, low, high] of [[S1440, 62, 70], [S1280, 52, 60]] as const) {
+// The guide is 516px at 1280 (480 before D19), so the line runs about 8% longer there: 56 to 64 where it was 52 to 60.
+for (const [size, low, high] of [[S1440, 62, 70], [S1280, 56, 64]] as const) {
   test(`OSI Model's lead runs ${low} to ${high} characters a line at ${size.width} wide`, async ({ page }) => {
     await page.setViewportSize(size);
     await openAt(page, 'osi-model', 'learn');
