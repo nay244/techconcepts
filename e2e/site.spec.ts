@@ -1483,9 +1483,9 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('no tabs shown, the table in the guide (890px tall and up), no stamp anywhere', async ({ page }) => {
           await open(page, bySlug('dhcp').path);
           expect(await boxOf(page, '.console__tabs')).toBeNull();
-          expect(await boxOf(page, '.console__stage .tpanel')).toBeNull();
+          await expect(page.locator('.console__stage .tpanel')).toHaveCount(0);
           expect(await boxOf(page, '.guide__table .tpanel')).not.toBeNull();
-          expect(await boxOf(page, '.stamp')).toBeNull();
+          await expect(page.locator('.stamp')).toHaveCount(0);
         });
       });
     }
