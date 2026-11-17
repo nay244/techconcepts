@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { NET_MAP_BASE_PLACES, NET_MAP_BAY_COUNTS, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_ROUTERS, NET_MAP_TAG_MAX, plateSites } from '../art/scenes/net-map-layers';
+import { NET_MAP_BASE_PLACES, NET_MAP_BAY_COUNTS, NET_MAP_CONN_GRAMMAR, NET_MAP_LAYERS, NET_MAP_LINKS, NET_MAP_OPTIONAL, NET_MAP_ROUTERS, NET_MAP_TAG_MAX, plateSites } from '../art/scenes/net-map-layers';
 import { FIGURE_PARTS } from '../art/scenes/parts';
 import { POOL_READERS } from '../art/scenes/pool-parts';
 import type { FigureParts } from '../art/scenes/types';
@@ -87,7 +87,36 @@ interface UnitContext {
   issues: string[];
   /** The Switch figure only: the laptop has been moved to port 5 by an earlier frame of the unit. */
   laptopMoved?: boolean;
+  /** The step being checked (from 0), or -1 for the scene's own start: which starts have been settled by then (`partsAt`). */
+  step: number;
 }
+
+/** The parts a unit's starts have shown and hidden, as the driver keeps them: a hide wins over any show. */
+interface PartsAt {
+  shown: Set<string>;
+  hidden: Set<string>;
+}
+
+/**
+ * What the scene's start and the starts of steps 1 to `step + 1` (index 0 to `step`) have shown and hidden, in order.
+ * One reading for every visibility rule: a part is on the map when it is not hidden and, if it is an optional part, shown.
+ */
+function partsAt(u: Unit, step: number): PartsAt {
+  const parts: PartsAt = { shown: new Set(), hidden: new Set() };
+  const apply = (cues: Cue[] | undefined) => {
+    for (const { cue, arg } of cues ?? []) {
+      if (arg === undefined) continue;
+      if (cue === 'show') parts.shown.add(arg);
+      else if (cue === 'hide') parts.hidden.add(arg);
+    }
+  };
+  apply(u.scene.start);
+  for (let i = 0; i <= step && i < u.steps.length; i++) apply(u.steps[i]!.start);
+  return parts;
+}
+
+/** An optional part (phone, proxy, reverse) is on the map once shown and never hidden since. */
+const isShown = (p: PartsAt, part: string): boolean => p.shown.has(part) && !p.hidden.has(part);
 
 // ---------------------------------------------------------------- unit rules
 
@@ -108,6 +137,10 @@ function checkScene(c: UnitContext, at: string): void {
     if (!parts.layers.includes(layer)) issues.push(`${at}: layer "${layer}" is not one the ${figure} figure has.`);
   }
   checkStart(c, at);
+  // The forward proxy stands where the resolver does, so a map that draws it leaves the resolver off.
+  if (figure === 'net-map' && scene.layers.includes('proxies:proxy') && !scene.start.some((q) => q.cue === 'hide' && q.arg === 'resolver')) {
+    issues.push(`${at}: the layer "proxies:proxy" stands where the resolver does, so the scene's start must hide it (cue "hide resolver").`);
+  }
   if (parts.words !== undefined) {
     for (const word of parts.words) {
       if (!Object.hasOwn(scene.labels, word)) issues.push(`${at}: the scene's labels need "${word}" for the ${figure} figure.`);
@@ -166,19 +199,97 @@ function checkStart(c: UnitContext, at: string): void {
   }
   const where = `${at}: the scene's start`;
   checkCues(start, where, c, true);
+  // The café (VPN) takes the home plate's place, once per unit: it is not drawn with the phone, and its callout stands where the router's does.
+  if (start.some((q) => q.cue === 'show' && q.arg === 'cafe')) {
+    if (start.some((q) => q.cue === 'show' && q.arg === 'phone')) c.issues.push(`${where}: cues "show cafe" and "show phone" cannot go together; the café has no phone.`);
+    if (Object.hasOwn(c.unit.scene.labels, 'router')) c.issues.push(`${where}: cue "show cafe" draws the listener's callout where the home router's stands, and the scene's labels give "router".`);
+  }
   for (const { cue } of start) {
     if (STATUS_CUES.includes(cue)) c.issues.push(`${where}: cue "${cue}" sets the status, and a start may not; each step sets its own.`);
   }
 }
 
+/**
+ * A step's own start (net-map only): cues in place as the step begins, checked as a scene's start is: cues the figure has,
+ * no status, nothing that belongs to an event.
+ */
+function checkStepStart(c: UnitContext, at: string, step: Unit['steps'][number]): void {
+  if (step.start === undefined) return;
+  const where = `${at}, step "${step.id}": the step's start`;
+  if (c.figure !== 'net-map') {
+    c.issues.push(`${where} is a start, but the ${c.figure} figure takes no step start.`);
+    return;
+  }
+  checkCues(step.start, where, c, true);
+  if (step.start.some((q) => q.cue === 'show' && q.arg === 'cafe')) c.issues.push(`${where}: cue "show cafe" is for the scene's start; the café is a unit's start, not a step's.`);
+  for (const { cue } of step.start) {
+    if (STATUS_CUES.includes(cue)) c.issues.push(`${where}: cue "${cue}" sets the status, and a start may not; each step sets its own.`);
+  }
+}
+
+/**
+ * The network map's parts and connections in a start or an event (Proxies): `show proxy` and `hide proxy` need the layer
+ * that draws the forward proxy, `show reverse` and `hide direct` the layer that draws the site; the reverse proxy and the
+ * web server's own callout stand on one spot, so each shows only while the other is off; and a `conn` through a place
+ * runs between places one protocol has, none of its parts off the map at that moment.
+ */
+function checkMapCues(cues: Cue[], where: string, c: UnitContext, atStart: boolean): void {
+  const layers = c.unit.scene.layers;
+  const needs = (layer: string, cue: string, arg: string) => {
+    if (!layers.includes(layer)) c.issues.push(`${where}: cue "${cue} ${arg}" needs the layer "${layer}" in the scene.`);
+  };
+  for (const { cue, arg } of cues) {
+    if (!atStart) break;
+    if (cue === 'show' && arg === 'proxy') needs('proxies:proxy', cue, arg);
+    if (cue === 'hide' && arg === 'proxy') needs('proxies:proxy', cue, arg);
+    if (cue === 'show' && arg === 'reverse') needs('proxies:site', cue, arg);
+    if (cue === 'hide' && arg === 'direct') needs('proxies:site', cue, arg);
+  }
+  const now = partsAt(c.unit, c.step);
+  if (atStart && cues.some((q) => q.cue === 'show' && q.arg === 'reverse') && !now.hidden.has('direct')) {
+    c.issues.push(`${where}: cue "show reverse" draws the reverse proxy's callout where the web server's own stands; hide "direct" in the same start or an earlier one.`);
+  }
+  if (atStart && cues.some((q) => q.cue === 'hide' && q.arg === 'direct') && !isShown(now, 'reverse')) {
+    c.issues.push(`${where}: cue "hide direct" takes the web server's own callout away, and the reverse proxy's does not take its place; show "reverse" in the same start or an earlier one.`);
+  }
+  for (const { cue, arg } of cues) {
+    if (cue !== 'conn' || arg === undefined) continue;
+    const m = NET_MAP_CONN_GRAMMAR.exec(arg);
+    if (m === null) {
+      c.issues.push(`${where}: cue "conn ${arg}" needs "<open|seal|close> <from>>[<via>>]<to>[ data| tunnel]".`);
+      continue;
+    }
+    const via = m[3];
+    if (via === undefined) continue;
+    const [from, to] = [m[2]!, m[4]!];
+    const at = `${where}: cue "conn ${arg}"`;
+    if (via === from || via === to) c.issues.push(`${at} runs through "${via}", which is one of its two ends.`);
+    const protocols = [...new Set(c.unit.scene.layers.map((layer) => layer.split(':')[0]!))];
+    const placesOf = (protocol: string) => [
+      ...NET_MAP_BASE_PLACES,
+      ...Object.entries(NET_MAP_LAYERS).filter(([key]) => key.startsWith(`${protocol}:`)).flatMap(([, plate]) => plateSites(plate)),
+    ];
+    if (!protocols.some((protocol) => [from, via, to].every((place) => placesOf(protocol).includes(place)))) {
+      c.issues.push(`${at} needs "${from}", "${via}" and "${to}" all to be places the scene's layers draw for one protocol.`);
+    }
+    for (const part of [from, via, to]) {
+      if (NET_MAP_OPTIONAL.includes(part) && !isShown(now, part)) c.issues.push(`${at} runs through "${part}", which no start has shown by this step (cue "show ${part}").`);
+    }
+  }
+}
+
 function checkCues(cues: Cue[] | undefined, where: string, c: UnitContext, atStart = false): void {
+  if (c.figure === 'net-map') checkMapCues(cues ?? [], where, c, atStart);
   // `hide` is for a scene's start alone; `drop` is for an event alone, and one to an event.
-  if (!atStart && (cues ?? []).some((q) => q.cue === 'hide')) c.issues.push(`${where}: cue "hide" is for a scene's start; an event cannot hide a part.`);
-  if (!atStart && (cues ?? []).some((q) => q.cue === 'show')) c.issues.push(`${where}: cue "show" is for a scene's start; an event cannot show a part.`);
+  if (!atStart && (cues ?? []).some((q) => q.cue === 'hide')) c.issues.push(`${where}: cue "hide" is for a start (a scene's or a step's); an event cannot hide a part.`);
+  if (!atStart && (cues ?? []).some((q) => q.cue === 'show')) c.issues.push(`${where}: cue "show" is for a start (a scene's or a step's); an event cannot show a part.`);
   if (!atStart && (cues ?? []).some((q) => q.cue === 'frames')) c.issues.push(`${where}: cue "frames" is for a scene's start; an event cannot change the setup.`);
   if (atStart && (cues ?? []).some((q) => q.cue === 'drop')) c.issues.push(`${where}: cue "drop" is for an event; the start cannot drop a packet.`);
   if (atStart && (cues ?? []).some((q) => q.cue === 'park' || q.cue === 'unpark')) c.issues.push(`${where}: cues "park" and "unpark" are for an event; the start cannot park a tag.`);
   if ((cues ?? []).filter((q) => q.cue === 'drop').length > 1) c.issues.push(`${where}: an event has at most one "drop" cue.`);
+  // Only the café (VPN) has a listener.
+  const cafe = c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'cafe');
+  if (!cafe && (cues ?? []).some((q) => q.cue === 'listener')) c.issues.push(`${where}: cue "listener" needs the café, and the scene's start does not show it (cue "show cafe").`);
   for (const { cue, arg } of cues ?? []) {
     const type = Object.hasOwn(c.parts.cues, cue) ? c.parts.cues[cue] : undefined;
     if (type === undefined) c.issues.push(`${where}: cue "${cue}" is not one the ${c.figure} figure has.`);
@@ -274,15 +385,16 @@ function checkEvent(e: SceneEvent, at: string, c: UnitContext): void {
   place('is sent from', e.from);
   place('is sent to', e.to);
   if (e.via !== undefined) checkVia(e, where, c);
-  // A part the scene's start hides is not on the map, so no message can start or end there.
-  for (const { cue, arg } of c.unit.scene.start) {
-    if (cue === 'hide' && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which the scene's start hides.`);
+  // A part a start hides is not on the map, so no message can start or end there (the optional parts have their own rule below).
+  const parts = partsAt(c.unit, c.step);
+  for (const arg of parts.hidden) {
+    if (!NET_MAP_OPTIONAL.includes(arg) && (e.from === arg || e.to === arg)) issues.push(`${where} is sent to or from "${arg}", which a start hides.`);
   }
-  // On the network map, the phone is drawn only once the start shows it, and any other server only with a layer that draws it.
+  // On the network map, an optional part (the phone, a proxy) is drawn only once a start has shown it, and any other server only with a layer that draws it.
   if (figure === 'net-map') {
-    const shown = c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'phone');
     for (const [role, id] of [['sent from', e.from], ['sent to', e.to]] as const) {
-      if (id === 'phone' && !shown) issues.push(`${where} is ${role} "phone", which the scene's start does not show (cue "show phone").`);
+      if (id === 'phone' && !isShown(parts, 'phone')) issues.push(`${where} is ${role} "phone", which a start does not show (cue "show phone").`);
+      if ((id === 'proxy' || id === 'reverse') && !isShown(parts, id)) issues.push(`${where} is ${role} "${id}", which no start has shown by this step, or one has hidden it since (cue "show ${id}").`);
       if (NET_MAP_BASE_PLACES.includes(id)) continue;
       // A site several layers draw (the web server, the mail server) is on the map when any one of them is in the scene.
       const drawn = Object.entries(NET_MAP_LAYERS).filter(([, plate]) => plateSites(plate).includes(id)).map(([layer]) => layer);
@@ -356,7 +468,10 @@ function entryRouter(place: string): string | undefined {
   if (NET_MAP_ROUTERS.includes(place)) return place;
   if (place === 'resolver') return 'a';
   if (place === 'laptop' || place === 'router' || place === 'phone') return 'isp';
-  for (const plate of Object.values(NET_MAP_LAYERS)) if (plateSites(plate).includes(place)) return 'puck' in plate ? plate.puck : 'c';
+  for (const plate of Object.values(NET_MAP_LAYERS)) {
+    if (plate.kind === 'vpn' && place === plate.out) return plate.outPuck;
+    if (plateSites(plate).includes(place)) return 'puck' in plate ? plate.puck : 'c';
+  }
   return undefined;
 }
 
@@ -432,7 +547,8 @@ function readPark(arg: string | undefined, where: string, c: UnitContext): { pla
     if (!drawn.some((layer) => c.unit.scene.layers.includes(layer))) c.issues.push(`${at} needs a layer that draws the web server in the scene (${drawn.map((layer) => `"${layer}"`).join(', ')}).`);
   }
   if (place === 'laptop') {
-    if (c.unit.scene.start.some((q) => q.cue === 'show' && q.arg === 'phone')) c.issues.push(`${at}: the laptop's column lies where the phone does, and the scene's start shows the phone.`);
+    if (isShown(partsAt(c.unit, c.step), 'phone')) c.issues.push(`${at}: the laptop's column lies where the phone does, and a start shows the phone.`);
+    if (isShown(partsAt(c.unit, c.step), 'cafe')) c.issues.push(`${at}: the laptop's column lies where the café's listener does, and the scene's start shows the café.`);
     if (Object.hasOwn(c.unit.scene.labels, 'router')) c.issues.push(`${at}: the laptop's column lies under the home router's callout, and the scene's labels give "router".`);
   }
   return { place, bay, tag };
@@ -446,8 +562,9 @@ function readPark(arg: string | undefined, where: string, c: UnitContext): { pla
 function checkParks(c: UnitContext, at: string): void {
   const parked = new Map<string, Parked>();
   const taken = (place: string, bay: number): string | undefined => [...parked].find(([, p]) => p.place === place && p.bay === bay)?.[0];
-  for (const e of c.unit.steps.flatMap((s) => s.events)) {
+  for (const [e, step] of c.unit.steps.flatMap((s, i) => s.events.map((event) => [event, i] as const))) {
     if (e.type === 'table') continue;
+    c.step = step;
     const where = `${at}: ${e.type} "${e.id}"`;
     const cues = e.cues ?? [];
     const parks = cues.filter((q) => q.cue === 'park');
@@ -521,12 +638,15 @@ function checkUnit(l: Lesson, u: Unit, issues: string[]): void {
     logKeys: new Set(u.scene.log.columns.map((column) => column.key).filter((key) => key !== 'plain' && key !== '#')),
     tables: tablesOf(u),
     issues,
+    step: -1,
   };
   checkScene(c, at);
 
   // Events share one id space across the unit's steps.
   const owner = new Map<string, string>();
-  for (const step of u.steps) {
+  for (const [stepIndex, step] of u.steps.entries()) {
+    c.step = stepIndex;
+    checkStepStart(c, at, step);
     for (const e of step.events) {
       const first = owner.get(e.id);
       if (first !== undefined) {

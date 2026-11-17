@@ -24,10 +24,10 @@ test('a track with some lessons ready lists every lesson, and a figure for each 
     'How devices find each other and talk: addresses, switches and routers, the web, and the tools that protect and scale it.',
   );
   expect(card.entries).toHaveLength(20);
-  // The progress island reads the ready lessons' last positions, as the track page does.
-  expect(Object.keys(card.known)).toHaveLength(18);
+  // The progress island reads the ready lessons' last positions, as the track page does: all 20 are ready.
+  expect(Object.keys(card.known)).toHaveLength(20);
   // The shared lessons wear the tour's name tiles (the home track decides), at numbers 13 to 16.
-  expect(card.figures.map((f) => f.slot)).toEqual(['art1', 'art2', 'art3', 'art4', 'art5', 'art6', 'art7', 'art8', 'art9', 'art10', 'art11', 'art12', 'art13', 'art14', 'art15', 'art16', 'art17', 'art19']);
+  expect(card.figures.map((f) => f.slot)).toEqual(['art1', 'art2', 'art3', 'art4', 'art5', 'art6', 'art7', 'art8', 'art9', 'art10', 'art11', 'art12', 'art13', 'art14', 'art15', 'art16', 'art17', 'art18', 'art19', 'art20']);
   const readyNumbers = card.entries.filter((e) => e.available).map((e) => `art${e.number}`);
   expect(card.figures.map((f) => f.slot)).toEqual(readyNumbers);
   for (const { svg } of card.figures) expect(svg).toMatch(/^<svg/);

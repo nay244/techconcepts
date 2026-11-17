@@ -403,6 +403,33 @@ function switchSpot() {
   return figure("switch", "FIVE PORTS · MAC TABLE", out.join(""), "A switch with five numbered ports along its front. Cables are plugged into ports 1 to 4 and run to the edge of the plate; port 5 is free. The plug in port 2 is lit, and the light over port 2 is on.");
 }
 
+// Proxies: a go-between box, one cable in and one out. The way out is lit, and the request on it carries the box's own
+// address, 203.0.113.30, engraved in a window on the box's front. Nothing on the box opens or reads what it passes on.
+function proxiesSpot() {
+  const out = [], B = { x: -50, y: -40, w: 82, d: 62, r: 2.6 }, BZ = 2.4, BH = 32, F = B.y + B.d, R = B.x + B.w, PZ = BZ + 4.2, CZ = 1.9;
+  const inX = B.x + 14, outY = B.y + 16;
+  // The cable in, from the plate's back-left edge along the front and up into the box's front-left face; the cable out,
+  // from its front-right face to the plate's right edge.
+  const inPts = [[-112, 44, CZ], [inX, 44, CZ], [inX, F + 9, CZ], [inX, F + 4.4, PZ], [inX, F + 0.5, PZ]];
+  const outPts = [[R + 0.5, outY, PZ], [R + 4.4, outY, PZ], [R + 9, outY, CZ], [112, outY, CZ]];
+  out.push(tubeOf([inPts, outPts].flatMap((list) => tubePieces(list, 1.9, P, { maxLength: 16 }))));
+  out.push(`<path class="lm-beam" fill="none" d="${k.pathOf(outPts.map(([x, y, z]) => at([x, y, z + 1.9])))}"/>`);
+  // The box: a foot, a body with a seam, a port on each face for its cable.
+  out.push(S(k.slabOf({ x: B.x - 3, y: B.y - 3, w: B.w + 6, d: B.d + 6, r: 3 }, 0, BZ, P, 4, 0.5), { tone: "lo" }));
+  out.push(S(k.slabOf(B, BZ, BH - BZ, P, 4, 0.7), { tone: "hi", inner: L(k.sideSeam(B, BH - 4, P, 4), { tone: "faint" }) }));
+  out.push(onFaceY(F, rect("lm-void", inX - 3.4, PZ - 2.6, 6.8, 5.2, 0.8) + rect("lm-void", B.x + 34, BZ + 10, 38, 7, 0.8) + `<text class="lm-addr" x="${n1(B.x + 36.4)}" y="${n1(-(BZ + 12))}">203.0.113.30</text>`));
+  out.push(onFaceX(R, rect("lm-void", -(outY + 3.4), PZ - 2.6, 6.8, 5.2, 0.8)));
+  // On its top, two engraved arrows, one each way: it passes requests on and replies back.
+  const arrow = ([x0, y0], [x1, y1]) => { const dx = x1 - x0, dy = y1 - y0, n = Math.hypot(dx, dy), ux = dx / n, uy = dy / n, hd = 5; return [[[x0, y0], [x1, y1]], [[x1, y1], [x1 - ux * hd - uy * hd, y1 - uy * hd + ux * hd]], [[x1, y1], [x1 - ux * hd + uy * hd, y1 - uy * hd - ux * hd]]]; };
+  const C = [B.x + B.w / 2, B.y + B.d / 2];
+  out.push(lines([...arrow([C[0] - 20, C[1] + 2], [C[0] + 20, C[1] + 2]), ...arrow([C[0] + 20, C[1] - 8], [C[0] - 20, C[1] - 8])], BH, "mid"));
+  // The request on its way out, over the lit cable, with the proxy's address for the reply: the lit part.
+  const TG = { x: 62, y: outY - 6, w: 36, d: 11, r: 2 }, TZ = 25;
+  out.push(`<path class="lm-shadow" d="${k.planOutline({ x: TG.x + 3, y: TG.y + 2, w: TG.w - 4, d: TG.d - 2, r: 3 }, 0, P, 4)}"/>`);
+  out.push(S(k.slabOf(TG, TZ, 2.4, P, 3, 0.5), { tone: "hi", lit: true }) + onTopAt(TZ + 2.4, `<text class="lm-tagt" x="${TG.x + 3}" y="${TG.y + 7.4}">203.0.113.30</text>`));
+  return figure("proxies", "PASSES IT ON · OWN ADDRESS", out.join(""), "A box with one cable coming in and one going out, its address, 203.0.113.30, in a window on its front. The cable out is lit, and over it floats a lit tag with the same address, 203.0.113.30.");
+}
+
 // Load Balancers: one balancer in front, a pool of three servers behind it, cabled in a fan. Server B's lamps are red;
 // a lit request rides the cable to C.
 function loadBalancersSpot() {
@@ -435,10 +462,46 @@ function loadBalancersSpot() {
   return figure("load-balancers", "ONE ADDRESS · THREE SERVERS", out.join(""), "A load balancer at the front with one cable coming in, and behind it a pool of three servers, A, B and C, each cabled to it. Server B’s two lamps are red. A lit request rides the cable to server C.");
 }
 
-export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch', 'load-balancers'] as const;
+// VPN: a laptop on a small café plate, a sealed duct from it to a VPN server on a plate of its own, and an open cable
+// on from the server to a site's page. The duct is the lit part; nothing past the server is sealed, and there is no padlock.
+function vpnSpot() {
+  const out = [], CZ = 2.4, SZ = 2.4;
+  // The café: a small plate, the laptop on it, a cup on its saucer beside it.
+  const CP = { x: -108, y: -2, w: 68, d: 62, r: 4 };
+  out.push(S(k.slabOf(CP, 0, CZ, P, 4, 0.5), { tone: "mid", inner: L(k.sideSeam(CP, 1, P, 4), { tone: "faint" }) }));
+  const LB = { x: -102, y: 6, w: 42, d: 28, r: 3.5 }, LZ = CZ + 3.2, LH = 26;
+  out.push(S(k.slabOf(LB, CZ, 3.2, P, 5, 0.8), { tone: "hi" }));
+  let keys = "";
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 7; c++) keys += k.planOutline({ x: LB.x + 5 + c * 4.6, y: LB.y + 6 + r * 4.6, w: 3.6, d: 3.6, r: 0.6 }, LZ, P, 3);
+  out.push(L(keys, { tone: "lo" }));
+  const LID = { x: LB.x + 1, y: LB.y, w: LB.w - 2, d: 2.4, r: 1 };
+  out.push(S(k.slabOf(LID, LZ, LH, P, 3, 0.5), { tone: "hi" }));
+  out.push(onFaceY(LID.y + LID.d, rect("lm-void", LID.x + 3, LZ + 3, LID.w - 6, LH - 6, 0.8) + rect("lm-slot", LID.x + 6, LZ + LH - 9, 18, 1.4, 0.7) + rect("lm-slot", LID.x + 6, LZ + LH - 12.4, 24, 1.4, 0.7)));
+  out.push(S(k.cylinder(-50, 46, 6.4, CZ, 1, P, 32), { tone: "mid" }), S(k.cylinder(-50, 46, 3.8, CZ + 1, 6.4, P, 32), { tone: "hi" }));
+  out.push(L(k.onTop(k.circleRing(-50, 46, 3, 24), CZ + 7.4, P, true), { tone: "lo" }));
+  // The VPN server, on its plate at the back: one tall box, its drive bays, one light on.
+  const SP = { x: -2, y: -70, w: 52, d: 46, r: 4 }, R = { x: 8, y: -64, w: 30, d: 26, r: 2 }, RH = 44, RF = R.y + R.d;
+  out.push(S(k.slabOf(SP, 0, SZ, P, 4, 0.5), { tone: "mid", inner: L(k.sideSeam(SP, 1, P, 4), { tone: "faint" }) }));
+  out.push(S(k.slabOf(R, SZ, RH, P, 3, 0.6), { tone: "hi", inner: L(k.sideSeam(R, SZ + RH - 4, P, 3), { tone: "faint" }) }));
+  out.push(onFaceY(RF, [0, 1, 2, 3].map((i) => rect("lm-slot", R.x + 3.4, SZ + RH - 12 - i * 8, R.w - 12, 4, 0.6) + `<circle class="lm-led${i === 0 ? " on" : ""}" cx="${n1(R.x + R.w - 4.6)}" cy="${n1(-(SZ + RH - 10 - i * 8))}" r="1.1"/>`).join("")));
+  out.push(lines([0, 1, 2].map((i) => [[R.x + 5, R.y + 6 + i * 6], [R.x + R.w - 5, R.y + 6 + i * 6]]), SZ + RH));
+  // On from the server: an open cable to the right, and the site's page standing at its end, its lines plain to read.
+  out.push(tubeOf(tubePieces([[50, -38, 1.4], [86, -38, 1.4], [86, 22, 1.4]], 1.3, P, { maxLength: 14 })));
+  const PG = { x: 71, y: 24, w: 30, d: 3, r: 0.8 }, PZ = 2, PH = 40;
+  out.push(S(k.slabOf({ x: PG.x - 2, y: PG.y - 3, w: PG.w + 4, d: PG.d + 6, r: 1.4 }, 0, PZ, P, 3, 0.4), { tone: "mid" }));
+  out.push(S(k.slabOf(PG, PZ, PH, P, 3, 0.4), { tone: "hi" }));
+  out.push(onFaceY(PG.y + PG.d, rect("lm-inlay", PG.x + 3, PZ + PH - 8, PG.w - 6, 5, 1) + [0, 1, 2, 3, 4].map((i) => rect("lm-slot", PG.x + 3, PZ + PH - 14 - i * 5, PG.w - 6 - (i % 2) * 7, 1.6, 0.6)).join("")));
+  // The sealed duct, from the café plate's edge to the server plate's front, round one corner: the lit part.
+  const DW = 9, DH = 8, y0 = 22, xc = 14;
+  const duct = [[-40, y0 - DW / 2], [xc + DW / 2, y0 - DW / 2], [xc + DW / 2, -24], [xc - DW / 2, -24], [xc - DW / 2, y0 + DW / 2], [-40, y0 + DW / 2]].reverse();
+  out.push(S(k.extrude(duct, 0, DH, P, { convex: false, bevel: 0.6 }), { tone: "hi", lit: true }));
+  return figure("vpn", "SEALED TO THE VPN SERVER", out.join(""), "A laptop on a small café plate, a cup beside it. From the café, a lit, sealed duct runs to a VPN server standing on a plate of its own. From the server, a plain open cable runs on to a site’s page.");
+}
+
+export const SPOTS = ['watch', 'learn', 'practice', 'subnet', 'dhcp', 'firewall', 'osi', 'router', 'arp', 'ports', 'nat', 'ip-address', 'mac-address', 'tcp-udp', 'packets', 'switch', 'load-balancers', 'proxies', 'vpn'] as const;
 export type SpotKind = (typeof SPOTS)[number];
 
-const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot, 'load-balancers': loadBalancersSpot };
+const DRAW: Record<SpotKind, () => string> = { watch, learn, practice, subnet, dhcp, firewall, osi, router: routerSpot, arp: arpSpot, ports: portsSpot, nat: natSpot, 'ip-address': ipSpot, 'mac-address': macSpot, 'tcp-udp': tcpUdpSpot, packets: packetsSpot, switch: switchSpot, 'load-balancers': loadBalancersSpot, proxies: proxiesSpot, vpn: vpnSpot };
 
 /** A small figure, cropped close to its plate. */
 export const spot = (kind: SpotKind): string => DRAW[kind]();

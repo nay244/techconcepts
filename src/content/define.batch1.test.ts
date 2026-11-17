@@ -39,16 +39,16 @@ test('every lesson of the site still validates, DHCP’s phone messages with no 
 test('`show phone` on an event’s cues fails once: only a scene’s start shows a part', () => {
   const found = issues('nat', (l) => ((event(l, 's3-out').cues ??= []).push({ cue: 'show', arg: 'phone' })));
   expect(found).toHaveLength(1);
-  expect(found[0]).toContain('cue "show" is for a scene\'s start');
+  expect(found[0]).toContain('cue "show" is for a start (a scene\'s or a step\'s)');
 });
 
 test('`show resolver` and `hide phone` in a start each fail once, naming the one part the cue takes', () => {
   const show = issues('nat', (l) => (unit(l).scene.start = [{ cue: 'show', arg: 'resolver' }, { cue: 'show', arg: 'phone' }]));
   expect(show).toHaveLength(1);
-  expect(show[0]).toContain('cue "show" takes "phone", not "resolver"');
+  expect(show[0]).toContain('cue "show" takes "phone", "proxy", "reverse" or "cafe", not "resolver"');
   const hide = issues('ports', (l) => (unit(l).scene.start = [{ cue: 'hide', arg: 'phone' }]));
   expect(hide).toHaveLength(1);
-  expect(hide[0]).toContain('cue "hide" takes "resolver", not "phone"');
+  expect(hide[0]).toContain('cue "hide" takes "resolver", "proxy" or "direct", not "phone"');
 });
 
 test('`show` with no arg fails once', () => {
@@ -82,4 +82,23 @@ test('the message rules apply to the network map alone', () => {
   const found = checkStructure(lesson).join('\n');
   expect(found).not.toContain('does not show (cue "show phone")');
   expect(found).not.toContain('needs the layer');
+});
+
+// D15b: the café takes the home plate's place, so it is not drawn with the phone; only it has a listener, and the laptop's bays lie under it.
+test('`show cafe` passes alone, fails with `show phone`, and `listener` and `park laptop` each need it or fail with it', () => {
+  expect(issues('ports', (l) => (unit(l).scene.start = [...unit(l).scene.start, { cue: 'show', arg: 'cafe' }]))).toEqual([]);
+  const parked = issues('ports', (l) => {
+    unit(l).scene.start = [...unit(l).scene.start, { cue: 'show', arg: 'cafe' }];
+    unit(l).steps[0]!.events.find((e) => e.type === 'message')!.cues = [{ cue: 'park', arg: 'laptop 1 GET' }];
+  });
+  expect(parked.some((i) => i.includes("the laptop's column lies where the café's listener does"))).toBe(true);
+  const both = issues('nat', (l) => (unit(l).scene.start = [{ cue: 'show', arg: 'cafe' }, { cue: 'show', arg: 'phone' }]));
+  expect(both.some((i) => i.includes('"show cafe" and "show phone" cannot go together'))).toBe(true);
+  const listening = issues('nat', (l) => (unit(l).steps[0]!.events.find((e) => e.type === 'message')!.cues = [{ cue: 'listener', arg: 'reads' }]));
+  expect(listening.some((i) => i.includes('cue "listener" needs the café'))).toBe(true);
+  const odd = issues('nat', (l) => {
+    unit(l).scene.start = [{ cue: 'show', arg: 'cafe' }];
+    unit(l).steps[0]!.events.find((e) => e.type === 'message')!.cues = [{ cue: 'listener', arg: 'sees' }];
+  });
+  expect(odd.some((i) => i.includes('"listener"') && i.includes('sees'))).toBe(true);
 });

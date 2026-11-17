@@ -51,9 +51,9 @@ test('a note’s dropped glyph needs a legend entry that explains it', () => {
 });
 
 test('the cue `hide` takes only the resolver, and only at the start', () => {
-  expect(issues((l) => (unit(l).scene.start = [{ cue: 'hide', arg: 'a' }]))).toContain('cue "hide" takes "resolver", not "a"');
+  expect(issues((l) => (unit(l).scene.start = [{ cue: 'hide', arg: 'a' }]))).toContain('cue "hide" takes "resolver", "proxy" or "direct", not "a"');
   expect(issues((l) => (unit(l).scene.start = [{ cue: 'hide', arg: 'resolver' }, { cue: 'hide', arg: 'resolver' }]))).toBe('');
-  expect(issues((l) => (events(l).find((e) => e.id === 's5-drop') as { cues: unknown[] }).cues.push({ cue: 'hide', arg: 'resolver' }))).toContain('is for a scene\'s start');
+  expect(issues((l) => (events(l).find((e) => e.id === 's5-drop') as { cues: unknown[] }).cues.push({ cue: 'hide', arg: 'resolver' }))).toContain('is for a start (a scene\'s or a step\'s)');
 });
 
 test('the cue `drop` takes a router and goes on an event, once', () => {
@@ -64,6 +64,6 @@ test('the cue `drop` takes a router and goes on an event, once', () => {
 });
 
 test('a message to or from the hidden resolver fails', () => {
-  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { to: 'resolver' }))).toContain('which the scene\'s start hides');
-  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { from: 'resolver' }))).toContain('which the scene\'s start hides');
+  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { to: 'resolver' }))).toContain('which a start hides');
+  expect(issues((l) => Object.assign(events(l).find((e) => e.id === 's2-packet') as MessageEvent, { from: 'resolver' }))).toContain('which a start hides');
 });
