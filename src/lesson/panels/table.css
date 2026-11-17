@@ -49,6 +49,7 @@
   font: 400 12.5px/1 var(--sans);
 }
 
+/* A header wraps only when its table is wider than the panel (Proxies at 1280, direction 2.77). */
 .tpanel th {
   padding: 5px 10px;
   border-bottom: 1px solid var(--line);
@@ -57,7 +58,7 @@
   letter-spacing: 0.1em;
   text-align: start;
   text-transform: uppercase;
-  white-space: nowrap;
+  white-space: normal;
 }
 .tpanel td {
   padding: 5px 10px;
