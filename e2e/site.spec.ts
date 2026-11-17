@@ -1480,13 +1480,12 @@ test.describe('phone', { tag: '@phone' }, () => {
     for (const width of [1100, 1440]) {
       test.describe(`${width}px with scripts on: the page is as before`, () => {
         test.use({ viewport: { width, height: 900 }, isMobile: false, hasTouch: false });
-        test('no tabs shown, the table under the scene, the Overview’s stamp only in the top bar', async ({ page }) => {
+        test('no tabs shown, the table in the guide (890px tall and up), no stamp anywhere', async ({ page }) => {
           await open(page, bySlug('dhcp').path);
           expect(await boxOf(page, '.console__tabs')).toBeNull();
-          const scene = (await boxOf(page, '.console__scene'))!;
-          expect((await boxOf(page, '.console__stage .tpanel'))!.top).toBeGreaterThanOrEqual(scene.bottom);
-          expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
-          if (width === 1440) expect(await boxOf(page, '.console__top .stamp')).not.toBeNull();
+          expect(await boxOf(page, '.console__stage .tpanel')).toBeNull();
+          expect(await boxOf(page, '.guide__table .tpanel')).not.toBeNull();
+          expect(await boxOf(page, '.stamp')).toBeNull();
         });
       });
     }

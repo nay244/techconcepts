@@ -257,6 +257,8 @@ a.track__title > span {
    Every place of the lesson on one line: a mark a place on a rule, its name under it, the count at the end. */
 
 .timeline {
+  align-items: stretch;
+  align-self: stretch;
   flex: 1 1 0;
   min-width: 0;
   padding: 0 14px;
@@ -732,9 +734,12 @@ a.track__title > span {
   height: 9px;
   transition: transform 160ms var(--ease-out);
 }
-.part[open] > summary .part__chev,
-.part__head .part__chev {
+.part[open] > summary .part__chev {
   transform: rotate(90deg);
+}
+/* The part that holds this lesson cannot close, so it wears no open/close sign. */
+.part__head .part__chev {
+  display: none;
 }
 .part__name {
   flex: 1 1 auto;
@@ -1193,8 +1198,8 @@ a.outline__lesson:hover {
 /* In the guide the table is fitted as the phone fits it (words wrap, nothing scrolls sideways): three columns or fewer stay a
    table, and the rule list (Firewalls) is two lines a rule. */
 .guide__table .tpanel caption {
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 6px;
+  line-height: 1.2;
 }
 .guide__table .tpanel th,
 .guide__table .tpanel td {

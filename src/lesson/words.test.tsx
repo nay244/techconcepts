@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-// @ts-expect-error - no @types/node in this project; vitest runs under node
-import { execFileSync } from 'node:child_process';
 import { render } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 import { getEntries, getLesson, neighbors, type AvailableSummary } from '../content/registry';
@@ -16,16 +14,12 @@ import before from './words-at-210a9a5.json';
 /**
  * D19 case 11: the page rearranged changes no lesson word. `words-at-210a9a5.json` is the text of the words region (the
  * Explanation) of every ready lesson at every position, recorded on `revamp` at 210a9a5 before B22 changed anything, with the
- * stamp's text and the OSI badge's (which moved from the bar to the head of the words) taken out.
+ * stamp's text and the OSI badge's (which moved from the bar to the head of the words) taken out. The recording is the
+ * baseline: no `git diff` against a commit, which a shallow clone does not have.
  */
 const lessons = tracks.flatMap((track) =>
   getEntries(track.id).flatMap((entry) => (entry.available ? [{ key: `${track.id}/${entry.slug}`, track, entry, entries: getEntries(track.id) }] : [])),
 );
-
-test('(a) no file under src/content differs from revamp at 210a9a5', () => {
-  const diff = execFileSync('git', ['diff', '--stat', '210a9a5', '--', 'src/content'], { encoding: 'utf8' });
-  expect(diff).toBe('');
-});
 
 test.each(lessons.map((l) => [l.key, l] as const))('(b) %s: the words say what they said at every position', (key, { entry, entries, track }) => {
   const lesson = getLesson(entry.slug)!;

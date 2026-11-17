@@ -178,6 +178,12 @@ test('15: the bar is 1015×68 at (12, 81) at 1440×900 and ends where the scene 
   expect(Math.abs(top[0] + top[2] - (stage[0] + stage[2]))).toBeLessThanOrEqual(0.6);
   expect(Math.abs((await box(page, '.top__lesson'))[2] - 232)).toBeLessThanOrEqual(6);
   expect((await box(page, '.console__guide'))[1]).toBe(81);
+  // The timeline fills its cell: every stop 66px tall from y 82 (names form), and in Learn the marks are centred (y 115).
+  const stops = await page.locator('.tl__stop').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return [b.top, b.height]; }));
+  for (const [t, hh] of stops) { expect(Math.abs(t! - 82)).toBeLessThanOrEqual(0.6); expect(Math.abs(hh! - 66)).toBeLessThanOrEqual(0.6); }
+  await at(page, 1440, 900, DHCP, 6);
+  const mark = await box(page, '.tl__mark');
+  expect(Math.abs(mark[1] + mark[3] / 2 - 115)).toBeLessThanOrEqual(1);
   await at(page, 1280, 800, DHCP, 4);
   near(await box(page, '.console__top'), [12, 81, 896, 44], 'bar at 1280', 1);
   expect((await box(page, '.console__guide'))[1]).toBe(81);
@@ -451,6 +457,7 @@ test('30: the part holding this lesson is a heading and cannot be closed; every 
   await page.keyboard.press('Enter');
   await expect(page.locator('.track__nav [aria-current="page"]')).toBeVisible();
   const first = page.locator('.track__nav details').first();
+  await expect(here.locator('.part__chev')).toBeHidden();
   await first.locator('summary').click();
   await expect(first).toHaveJSProperty('open', true);
   await first.locator('summary').focus();
@@ -552,6 +559,15 @@ test('32: the lesson’s table is in the guide between the words and the control
   await at(page, 1440, 900, '/networking/load-balancers', 5);
   const lb = await page.locator('.guide__table .tpanel').evaluate((el) => ({ h: el.getBoundingClientRect().height }));
   expect(lb.h).toBeLessThanOrEqual(200.6);
+  // The row the step is about stays inside the capped panel (it scrolls into view).
+  await at(page, 1440, 900, '/networking/load-balancers', 2);
+  await expect(page.locator('.guide__table .tpanel [data-highlight]').first()).toBeVisible();
+  const inside = await page.evaluate(() => {
+    const panel = document.querySelector('.guide__table .tpanel')!.getBoundingClientRect();
+    const row = document.querySelector('.guide__table .tpanel [data-highlight]')!.getBoundingClientRect();
+    return row.top >= panel.top - 0.5 && row.bottom <= panel.bottom + 0.5;
+  });
+  expect(inside, 'the marked row is inside the table panel').toBe(true);
   await at(page, 1440, 900, '/networking/subnetting', 3);
   const bits = page.locator('.guide__table .bits');
   await expect(bits).toHaveCount(1);
@@ -567,7 +583,11 @@ test('32: the lesson’s table is in the guide between the words and the control
 
 test('33: the words’ room is at least 510px at DHCP step 4 and 660px in Learn at 1440×900, 560px at 1280×800; the words do not scroll', async ({ page }) => {
   await at(page, 1440, 900, DHCP, 4);
-  expect((await box(page, '.console__explain'))[3] - 40).toBeGreaterThanOrEqual(510 - 40);
+  expect((await box(page, '.console__explain'))[3]).toBeGreaterThanOrEqual(510);
+  // After step 4's run the lease is in the table: 150px with its caption, and the words keep 520px.
+  await expect(page.locator('.guide__table tr[data-highlight]')).toHaveCount(1, { timeout: 20_000 });
+  expect((await box(page, '.guide__table'))[3]).toBeCloseTo(150, 0);
+  expect((await box(page, '.console__explain'))[3]).toBeCloseTo(520, 0);
   expect(await page.locator('.console__explain').evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
   await at(page, 1440, 900, DHCP, 6);
   expect((await box(page, '.console__explain'))[3]).toBeGreaterThanOrEqual(660);
@@ -636,14 +656,15 @@ test('36: the forward button’s words are never cut and the button is inside th
   const lessons = await page.request.get('/networking').then(async (r) => [...(await r.text()).matchAll(/href="(\/(?:networking|how-the-internet-works)\/[a-z0-9-]+)"/g)].map((m) => m[1]!));
   const paths = [...new Set(lessons)].filter((p) => !/^\/(networking|how-the-internet-works)$/.test(p));
   expect(paths.length).toBeGreaterThan(10);
-  for (const [w, h] of [[1440, 900], [1100, 700]] as const) {
+  for (const [w, h] of [[1440, 900], [1280, 800], [1100, 700]] as const) {
     for (const path of paths) {
       await at(page, w, h, path);
       for (let i = 0; i < 16; i += 1) {
         const ok = await page.evaluate(() => {
           const b = document.querySelector('.cbtn--go')!.getBoundingClientRect();
           const l = document.querySelector('.go__label')!;
-          return { cut: l.scrollWidth > l.clientWidth + 0.5, inside: b.left >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
+          const lines = l.getBoundingClientRect().height / parseFloat(getComputedStyle(l).lineHeight);
+          return { cut: l.scrollWidth > l.clientWidth + 0.5 || lines > 2.05, inside: b.left >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
         });
         expect(ok, `${path} at ${w}, press ${i}`).toEqual({ cut: false, inside: true });
         const atEnd = await page.evaluate(() => (document.querySelector('.cbtn--go')!.getAttribute('aria-label') ?? '').startsWith('Next lesson'));
