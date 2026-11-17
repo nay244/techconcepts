@@ -739,7 +739,7 @@ a.track__title > span {
 }
 /* The part that holds this lesson cannot close, so it wears no open/close sign. */
 .part__head .part__chev {
-  display: none;
+  visibility: hidden;
 }
 .part__name {
   flex: 1 1 auto;

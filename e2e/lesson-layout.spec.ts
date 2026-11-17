@@ -458,6 +458,9 @@ test('30: the part holding this lesson is a heading and cannot be closed; every 
   await expect(page.locator('.track__nav [aria-current="page"]')).toBeVisible();
   const first = page.locator('.track__nav details').first();
   await expect(here.locator('.part__chev')).toBeHidden();
+  // Every part's name starts at the same x (the hidden chevron keeps its place).
+  const xs = await page.locator('.track__nav .part__name').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+  expect(new Set(xs)).toEqual(new Set([46]));
   await first.locator('summary').click();
   await expect(first).toHaveJSProperty('open', true);
   await first.locator('summary').focus();
