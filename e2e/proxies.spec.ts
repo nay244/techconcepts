@@ -19,15 +19,11 @@ const REVERSE_STEPS = [4, 5];
 
 onlyInDesktopDark(PATH);
 
-/** The outline's item for a step: 1 to 5 (index 0 is the Overview). */
-const stepItem = (page: Page, step: number) => page.locator('.console__outline .outline__list .outline__item').nth(step);
+/** The timeline's stop for a step: 1 to 5 (index 0 is the Overview). */
+const stepItem = (page: Page, step: number) => page.getByRole('navigation', { name: 'This lesson' }).getByRole('button').nth(step);
 
-/** The Steps tab, where the outline is at 375 (an outline click at 375 moves to the Explain tab, so each step is opened from it). */
-const stepsTab = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true });
 
-/** Opens a step from the outline, from the Steps tab at 375. */
 async function openStep(page: Page, step: number, phone: boolean): Promise<void> {
-  if (phone) await stepsTab(page).click();
   await stepItem(page, step).click();
   await expect(kicker(page)).toContainText(`Step ${step} of 5`);
 }

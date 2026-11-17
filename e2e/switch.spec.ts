@@ -90,7 +90,7 @@ test('15a: at 375 and 1440, light and dark, every step played and every step ope
   }
 });
 
-test('15c: the callouts are as large as §4.2 says: at 375 the MAC words are at least 6.6px and the names 6.0px, and at 1440 the drawing is 733 wide', async ({ page }) => {
+test('15c: the callouts are as large as §4.2 says: at 375 the MAC words are at least 6.6px and the names 6.0px, and at 1440 the drawing is 769 wide', async ({ page }) => {
   await page.setViewportSize(PHONE);
   await open(page, PATH);
   const phone = await calloutSizes(page);
@@ -98,7 +98,7 @@ test('15c: the callouts are as large as §4.2 says: at 375 the MAC words are at 
   expect(phone.name, 'the names at 375').toBeGreaterThanOrEqual(6.0);
   await page.setViewportSize(DESKTOP);
   const box = await figure(page).boundingBox();
-  expect(Math.round(box!.width), 'the drawing at 1440').toBe(733);
+  expect(Math.round(box!.width), 'the drawing at 1440').toBe(769);
 });
 
 test('16: the Networking track page shows the switch’s spot at stop 05, in both themes', async ({ page }) => {

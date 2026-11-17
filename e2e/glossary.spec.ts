@@ -407,7 +407,7 @@ test.describe('Learn with definitions', () => {
     await page.evaluate(() => localStorage.setItem('seed', '1'));
     await termButton(page, 'Ping').click();
     const before = await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
-    await page.getByRole('button', { name: 'Next step', exact: true }).click();
+    await page.getByRole('button', { name: 'Next: Practice', exact: true }).click();
     await expect(kicker(page)).not.toHaveText(/Learn$/);
     await page.getByRole('button', { name: 'Previous step', exact: true }).click();
     await expect(kicker(page)).toHaveText(/Learn$/);

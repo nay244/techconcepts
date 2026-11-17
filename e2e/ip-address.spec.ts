@@ -14,14 +14,14 @@ test('at 375 the Bits tab never scrolls sideways at any step, no label is cut, a
   expect(seen.figureHeight).toBeGreaterThan(265);
 });
 
-test('at 1440 the board never scrolls, no label is cut, the figure box keeps its 396, and the run ends on seven log rows (checks 21 and §4.2)', async ({ page }) => {
+test('at 1440 the board never scrolls, no label is cut, the figure box is 498 (the table has left the scene), and the run ends on seven log rows (checks 21 and §4.2)', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 30_000);
   const errors = collectErrors(page);
   const seen = await playWatched(page, PATH, DESKTOP, WATCH);
   expect(seen.panelY, 'the board scrolls').toBeLessThanOrEqual(0);
   expect(seen.panelX).toBeLessThanOrEqual(0);
   expect(seen.labelX, 'a label is cut').toBeLessThanOrEqual(0);
-  expect(seen.figureHeight).toBeGreaterThan(390);
+  expect(seen.figureHeight).toBeGreaterThan(496);
   expect(await page.locator('.log__legend li').allTextContents()).toEqual(['Address read', 'Sent', 'Broadcast']);
   expect(await logRows(page).count()).toBe(7);
   expect(errors).toEqual([]);

@@ -91,3 +91,22 @@ test('without JavaScript, the OSI figure shows its words', async () => {
   const text = words(doc.querySelector('svg[data-figure="osi"]'));
   for (const part of ['APPLICATION', 'PHYSICAL', 'Your laptop', 'passes it on', 'Web server', 'OSI REFERENCE MODEL · SEVEN LAYERS']) expect(text).toContain(part);
 });
+
+test.each(['dhcp', 'what-is-http'])('%s: one main, one #main after the bar and the track column, and the site’s header is the one banner (D19 case 50)', async (slug) => {
+  const doc = await lessonPage(slug);
+  expect(doc.querySelectorAll('main')).toHaveLength(1);
+  expect(doc.querySelectorAll('[id="main"]')).toHaveLength(1);
+  const before = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & 4);
+  const main = doc.querySelector('main#main')!;
+  expect(before(doc.querySelector('.console__top')!, main)).toBe(true);
+  expect(before(doc.querySelector('.console__track')!, main)).toBe(true);
+  expect(main.contains(doc.querySelector('.console__top'))).toBe(false);
+  expect(doc.querySelectorAll('header')).toHaveLength(1);
+  expect(doc.querySelector('header')!.classList.contains('site-head')).toBe(true);
+  expect(doc.querySelectorAll('footer')).toHaveLength(0);
+  expect(doc.querySelectorAll('h1')).toHaveLength(2);
+  // Both homes of the lesson's name are in the markup; the width's CSS shows one of them (E3).
+  expect([...doc.querySelectorAll('h1')].map((h) => h.textContent)).toEqual([...doc.querySelectorAll('h1')].map(() => getLesson(slug)!.title));
+  expect(doc.querySelector('.site-head a[aria-current="true"]')!.textContent).toBe('Tracks');
+  expect(doc.querySelectorAll('.site-head a.btn--primary')).toHaveLength(0);
+});

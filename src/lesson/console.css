@@ -1176,6 +1176,89 @@ a.outline__lesson:hover {
   }
 }
 
+/* In the guide the table is fitted as the phone fits it (words wrap, nothing scrolls sideways): three columns or fewer stay a
+   table, and the rule list (Firewalls) is two lines a rule. */
+.guide__table .tpanel caption {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.guide__table .tpanel th,
+.guide__table .tpanel td {
+  padding: 6px 8px;
+}
+.guide__table .tpanel th {
+  white-space: normal;
+}
+.guide__table .tpanel td {
+  overflow-wrap: break-word;
+}
+
+
+/* The rule list (Firewalls): a rule is two lines. Number, action, port and source across the first;
+   what the rule is for, and what the check found, on the second. */
+.guide__table .rpanel caption {
+  display: block;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  white-space: normal;
+}
+.guide__table .rpanel__table,
+.guide__table .rpanel__table thead,
+.guide__table .rpanel__table tbody {
+  display: block;
+}
+.guide__table .rpanel__table colgroup {
+  display: none;
+}
+.guide__table .rpanel__table tr {
+  display: grid;
+  grid-template-columns: 26px 72px 74px minmax(0, 1fr);
+  align-items: baseline;
+  border-bottom: 1px solid var(--line);
+}
+.guide__table .rpanel th,
+.guide__table .rpanel td {
+  padding: 6px 6px 3px;
+  border-bottom: 0;
+}
+.guide__table .rpanel td:first-child,
+.guide__table .rpanel th:first-child {
+  padding-inline-start: 10px;
+}
+.guide__table .rpanel thead th:nth-child(n + 5) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.guide__table .rpanel td.rpanel__prose {
+  grid-row: 2;
+  grid-column: 2 / 4;
+  padding-block: 0 7px;
+  overflow: visible;
+  white-space: normal;
+}
+.guide__table .rpanel td:last-child:not(.rpanel__empty) {
+  grid-row: 2;
+  grid-column: 4;
+  justify-self: end;
+  padding-block: 0 7px;
+  padding-inline-end: 10px;
+}
+.guide__table .rpanel td.rpanel__empty {
+  grid-column: 1 / -1;
+  text-align: start;
+}
+.guide__table .rpanel__conns {
+  margin-top: 14px;
+}
+.guide__table .rpanel__chip {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  white-space: normal;
+}
+
 /* The badge at the head of the words, on the kicker's line where both fit, else on a line above it. */
 .explain__head {
   display: flex;
@@ -1710,9 +1793,6 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
   .console[data-reading]:not([data-log='open']) :is(.log__scroll, .log__legend) {
     display: none;
-  }
-  .console[data-reading]:not([data-log='open']) .log__head {
-    border-bottom: 0;
   }
 }
 .log__legend {

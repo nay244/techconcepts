@@ -54,27 +54,27 @@ for (const size of [S1440, S1280]) {
 }
 
 /** Checks 2, 4 and 5. */
-test('the words column is 560px at 1440 and 480px at 1280 in Learn and Practice, and as before elsewhere', async ({ page }) => {
-  for (const [size, words, scene, before] of [[S1440, 560, 564, 389], [S1280, 480, 484, 348]] as const) {
+test('the guide is 560px at 1440 and 516px at 1280 in Learn and Practice (the scene 600 and 484), and as before elsewhere', async ({ page }) => {
+  for (const [size, words, scene, before] of [[S1440, 560, 600, 389], [S1280, 516, 484, 348]] as const) {
     await page.setViewportSize(size);
     for (const place of ['learn', 'practice'] as const) {
       await openAt(page, 'osi-model', place);
-      expect((await box(page, '.console__explain')).width, `${place} words at ${size.width}`).toBe(words);
+      expect((await box(page, '.console__guide')).width, `${place} guide at ${size.width}`).toBe(words);
       expect((await box(page, '.console__stage')).width, `${place} scene at ${size.width}`).toBe(scene);
     }
     // The Overview and a Watch step keep today's column.
     await open(page, pathOf('osi-model'));
-    expect((await box(page, '.console__explain')).width, `Overview at ${size.width}`).toBe(before);
+    expect((await box(page, '.console__guide')).width, `Overview at ${size.width}`).toBe(before);
     await nextButton(page).click();
     await expect(kicker(page)).toContainText('Step 1');
-    expect((await box(page, '.console__explain')).width, `Watch at ${size.width}`).toBe(before);
+    expect((await box(page, '.console__guide')).width, `Watch at ${size.width}`).toBe(before);
   }
 });
 
 test('at 1100×700 Learn keeps 348px for the words', async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 700 });
   await openAt(page, 'osi-model', 'learn');
-  expect((await box(page, '.console__explain')).width).toBe(348);
+  expect((await box(page, '.console__guide')).width).toBe(348);
 });
 
 /**
@@ -164,21 +164,23 @@ test('on a phone the page is one screen, and Practice shows its marks', async ({
 });
 
 /** Check 12. */
-for (const [size, explainHeight] of [[S1440, 730], [S1280, 550]] as const) {
+// The guide starts under the header and the folded log is 45px: the words have 670px at 1440×900, and at 1280×720 (the bar is one line) 490.
+for (const [size, explainHeight] of [[S1440, 670], [S1280, 490]] as const) {
   test(`the log starts folded in Learn and Practice at ${size.width}×${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
     for (const place of ['learn', 'practice'] as const) {
       await openAt(page, 'osi-model', place);
       await expect(page.locator('.log__scroll')).toBeHidden();
       await expect(page.locator('.log__legend')).toBeHidden();
-      expect((await box(page, '.console__log')).height).toBe(52);
+      expect((await box(page, '.console__log')).height).toBe(45);
       expect(await page.locator('.console__explain').evaluate((el) => el.clientHeight)).toBe(explainHeight);
     }
   });
 }
 
 /** Checks 13 and 14. */
-for (const [size, logHeight] of [[S1440, 234], [S1280, 200]] as const) {
+// The open log is the log's own height (165px at 900 tall; at 720 the one-line bar's 155px).
+for (const [size, logHeight] of [[S1440, 165], [S1280, 155]] as const) {
   test(`"Show log" opens the log to ${logHeight}px at ${size.height} tall, and it stays open across places`, async ({ page }) => {
     await page.setViewportSize(size);
     await openAt(page, 'dhcp', 'learn');
@@ -207,7 +209,7 @@ for (const [size, logHeight] of [[S1440, 234], [S1280, 200]] as const) {
 
     await button.click();
     await expect(button).toHaveText('Show log');
-    expect((await box(page, '.console__log')).height).toBe(52);
+    expect((await box(page, '.console__log')).height).toBe(45);
   });
 }
 
@@ -302,8 +304,8 @@ for (const size of [{ width: 768, height: 1024 }, { width: 899, height: 1200 }])
   });
 }
 
-/** Check 16. */
-test('the controls keep their place between a Watch step and Learn (the forward button at 1261 at 1440)', async ({ page }) => {
+/** Check 16, as E22 changes it: the foot widens to the left with the guide, so the forward button's right edge holds, not its left. */
+test('the controls keep their right edge between a Watch step and Learn (the forward button ends at 1411 at 1440; its left is 1056, then 885)', async ({ page }) => {
   await page.setViewportSize(S1440);
   await open(page, pathOf('osi-model'));
   await nextButton(page).click();
@@ -311,6 +313,8 @@ test('the controls keep their place between a Watch step and Learn (the forward 
   const watch = await box(page, '.console__controls .cbtn--go');
   await openAt(page, 'osi-model', 'learn');
   const learn = await box(page, '.console__controls .cbtn--go');
-  expect(learn.x).toBe(watch.x);
-  expect(learn.x).toBe(1261);
+  expect(learn.x + learn.width).toBe(watch.x + watch.width);
+  expect(learn.x + learn.width).toBe(1411);
+  expect(watch.x).toBe(1056);
+  expect(learn.x).toBe(885);
 });

@@ -16,13 +16,13 @@ test('at 375 the Table tab never scrolls sideways at any step, and the page neve
   expect(seen.figureHeight).toBeGreaterThan(265);
 });
 
-test('at 1440 the panel never scrolls, the figure box keeps 316, and the run ends with every verdict the table says and three log rows', async ({ page }) => {
+test('at 1440 the panel never scrolls, the figure box is 498, and the run ends with every verdict the table says and three log rows', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 30_000);
   const errors = collectErrors(page);
   const seen = await playWatched(page, PATH, DESKTOP, WATCH);
   expect(seen.panelY, 'the panel scrolls').toBeLessThanOrEqual(0);
   expect(seen.panelX).toBeLessThanOrEqual(0);
-  expect(seen.figureHeight).toBeGreaterThan(314);
+  expect(seen.figureHeight).toBeGreaterThan(496);
   const verdicts = await page.locator(`${FIGURE} .dh-v`).evaluateAll((els) => els.map((el) => [el.id, el.getAttribute('data-v'), el.textContent] as const));
   const byId = (id: string) => verdicts.find((v) => v[0] === id);
   expect(['router', 'laptop', 'phone', 'tv'].map((p) => byId(`dh-v-${p}`))).toEqual([

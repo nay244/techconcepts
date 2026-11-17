@@ -65,7 +65,8 @@ const stateOf = (stop: Locator) => stop.locator('.stop__k');
 /** Walks a lesson with the forward button to its last position, its last Practice ("Next lesson"), where it counts as finished. */
 async function finishLesson(page: Page, path: string): Promise<void> {
   await open(page, path);
-  for (let i = 0; i < 400 && (await nextButton(page).textContent()) !== 'Next lesson'; i += 1) {
+  // Stops at the last Practice: the kicker reads "Practice" and the forward button's name starts "Next lesson".
+  for (let i = 0; i < 400 && !(await position(page)).atEnd; i += 1) {
     await moveBy(page, () => nextButton(page).click());
   }
   await expect(kicker(page)).toContainText('Practice');
@@ -313,27 +314,26 @@ test.describe('desktop', () => {
   test('on a desktop the lesson shows its three parts at once, and the phone tabs are not there', async ({ page }) => {
     await open(page, LESSONS.find((l) => l.slug === 'dhcp')!.path);
     await expect(page.locator('.console__tabs')).toBeHidden();
-    await expect(page.locator('.console__outline')).toBeVisible();
+    await expect(page.locator('.console__track')).toBeVisible();
     await expect(page.locator('.console__explain')).toBeVisible();
     await expect(page.locator('.console__log')).toBeVisible();
   });
 
-  test('a checked lesson says so in its top bar, numbers its sources, and each claim opens the place it cites', async ({ page }) => {
+  test('the lesson page shows no stamp (2.97): its Learn numbers its sources, and each claim opens the place it cites', async ({ page }) => {
     const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
     await open(page, osi.path);
-    const stamp = page.locator('.console__top .stamp');
-    await expect(stamp).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, 6 sources$/);
-    await expect(stamp).toHaveAttribute('href', '/about#facts');
+    await expect(page.locator('.stamp')).toHaveCount(0);
+    await expect(page.locator('.console__top')).not.toContainText(/Checked|Not checked yet/);
 
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: 'Learn', exact: true }).click();
     await expect(kicker(page)).toHaveText('Learn');
     const words = page.locator('.console__explain');
-    // The sources are at the foot of Learn, in view without opening Go deeper, under the same stamp.
+    // The sources are at the foot of Learn, in view without opening Go deeper, with no stamp over them.
     const foot = words.locator('.explain__foot');
-    await expect(foot.locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(foot.locator('.stamp')).toHaveCount(0);
     const listed = foot.locator('ol.explain__sources > li');
     const count = await listed.count();
-    expect((await stamp.textContent())!).toContain(`, ${count} sources`);
+    expect(count).toBe(6);
     await expect(listed.first().getByRole('link')).toHaveAttribute('href', /^https:\/\/www\.itu\.int\//);
     // The first claim's number is 1, and it opens a page of that document, in a new tab.
     const marks = words.getByRole('link', { name: /^Source \d+: / });
@@ -369,13 +369,15 @@ test.describe('desktop', () => {
   });
 
   test('the header’s Tracks link and the footer’s All tracks link open /tracks on every page; Tracks is current on /tracks and the track pages', async ({ page }) => {
-    // Every page with the site header and footer; lessons have neither.
-    for (const { path } of SITE_PAGES) {
+    // Every page has the site header; a lesson has no footer (one screen) and is inside the Tracks section, so "true".
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       await expect(headerTracksLink(page), path).toHaveAttribute('href', '/tracks');
-      await expect(page.getByRole('contentinfo').getByRole('link', { name: 'All tracks', exact: true }), path).toHaveAttribute('href', '/tracks');
+      const isLesson = LESSONS.some((l) => l.path === path);
+      if (isLesson) await expect(page.getByRole('contentinfo'), path).toHaveCount(0);
+      else await expect(page.getByRole('contentinfo').getByRole('link', { name: 'All tracks', exact: true }), path).toHaveAttribute('href', '/tracks');
       // "page" only where the link is this very page; on a track page, inside the Tracks section, it is "true".
-      const current = path === '/tracks' ? 'page' : path === '/networking' || path === INTERNET_TRACK ? 'true' : null;
+      const current = path === '/tracks' ? 'page' : path === '/networking' || path === INTERNET_TRACK || isLesson ? 'true' : null;
       if (current) await expect(headerTracksLink(page), path).toHaveAttribute('aria-current', current);
       else await expect(headerTracksLink(page), path).not.toHaveAttribute('aria-current');
     }
@@ -385,16 +387,18 @@ test.describe('desktop', () => {
   });
 
   test('Start learning opens /tracks on Home, About and 404, and is absent on Tracks and the track pages; the footer lists How the Internet Works above Networking', async ({ page }) => {
-    const hasNoStart = ['/tracks', '/networking', INTERNET_TRACK];
-    for (const { path } of SITE_PAGES) {
+    const hasNoStart = ['/tracks', '/networking', INTERNET_TRACK, ...LESSONS.map((l) => l.path)];
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       if (hasNoStart.includes(path)) {
-        await expect(page.locator('.site-head a.btn--primary'), path).toHaveCount(0);
+        await expect(page.locator('.site-head a.btn--primary, #menu-panel a.btn--primary'), path).toHaveCount(0);
       } else {
         await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveText('Start learning');
         await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveAttribute('href', '/tracks');
         await expect(page.locator('#menu-panel a.btn--primary'), path).toHaveAttribute('href', '/tracks');
       }
+      // A lesson has no footer.
+      if (LESSONS.some((l) => l.path === path)) continue;
       const footer = page.getByRole('contentinfo');
       await expect(footer.getByRole('link', { name: 'How the Internet Works', exact: true }), path).toHaveAttribute('href', INTERNET_TRACK);
       const order = await footer.locator('a').evaluateAll((links) => links.map((a) => a.getAttribute('href')));
@@ -420,7 +424,7 @@ test.describe('desktop', () => {
   });
 
   test('the header links are Tracks, Glossary, How a lesson works, Sources and About, and the menu lists the same five', async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       const nav = page.getByRole('navigation', { name: 'Site', exact: true });
       await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About']);
@@ -434,7 +438,7 @@ test.describe('desktop', () => {
   });
 
   test('Glossary is current ("page") on /glossary and nowhere else', async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       const link = page.getByRole('navigation', { name: 'Site', exact: true }).getByRole('link', { name: 'Glossary', exact: true });
       if (path === '/glossary') await expect(link, path).toHaveAttribute('aria-current', 'page');
@@ -456,7 +460,7 @@ test.describe('desktop', () => {
   });
 
   test('the menu button takes over at 959px and the row of five shows at 960px, on every page', async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await page.setViewportSize({ width: 959, height: 800 });
       await open(page, path);
       await expect(page.locator('.menu-btn'), path).toBeVisible();
@@ -466,7 +470,7 @@ test.describe('desktop', () => {
       await expect(page.locator('.site-nav'), path).toBeVisible();
       for (const box of await page.locator('.site-nav a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(Math.round(box), path).toBe(32);
       const start = page.locator('.site-head .head-end a.btn--primary');
-      if (['/tracks', '/networking', INTERNET_TRACK].includes(path)) await expect(start, path).toHaveCount(0);
+      if (['/tracks', '/networking', INTERNET_TRACK, ...LESSONS.map((l) => l.path)].includes(path)) await expect(start, path).toHaveCount(0);
       else expect((await start.boundingBox())!.width, path).toBeGreaterThanOrEqual(122);
     }
   });
@@ -970,7 +974,7 @@ test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
   test("no page shows the header's theme toggle, which needs JavaScript to work", async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await page.goto(path);
       await expect(page.locator('.site-head .theme-toggle'), path).toHaveCount(1);
       await expect(page.locator('.site-head .theme-toggle'), path).toBeHidden();
