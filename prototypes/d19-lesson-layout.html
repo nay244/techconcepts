@@ -904,7 +904,7 @@ body { display: block; overflow: hidden; }
   display: grid; gap: 12px; height: 100vh; height: 100dvh; padding: 12px; overflow: hidden;
   grid-template-columns: var(--track) minmax(0, 1fr) var(--guide);
   grid-template-rows: 68px minmax(0, 1fr) auto;
-  grid-template-areas: 'top top top' 'track stage guide' 'low low guide';
+  grid-template-areas: 'top top guide' 'track stage guide' 'low low guide';
   color: var(--ink); font: 15px/1.5 var(--sans);
 }
 .pg :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -935,11 +935,16 @@ body { display: block; overflow: hidden; }
 .top__of { color: var(--muted); font: 400 13px/1.2 var(--sans); white-space: nowrap; }
 .top__where { display: none; color: var(--muted); font: 500 12.5px/1 var(--mono); white-space: nowrap; }
 /* over the guide: the OSI badge, when the unit names a layer; else the cell is empty and has no rule (2.97: no stamp) */
-.top__facts:not(:has(.top__osi:not([hidden]))) { border-color: transparent; }
-.pg[data-short][data-mode='desk'] .top__facts:not(:has(.top__osi:not([hidden]))) { display: none; }
-.top__facts { flex: 0 0 calc(var(--guide) + 6px); gap: 12px; padding: 0 14px 0 16px; border-inline-start: 1px solid var(--line); }
-.top__checked { display: grid; gap: 7px; flex: 1 1 auto; min-width: 0; justify-items: start; }
-.top__osi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* 2.98: the bar has two cells. The cell that stood over the guide is gone; the guide stands in its place. Under 1100px
+   the bar still ends with the lessons button. */
+.top__facts { flex: 0 0 auto; padding: 0 12px 0 0; }
+.pg[data-mode='desk'] .top__facts { display: none; }
+/* The OSI badge heads the words: on the kicker's line where both fit (Learn and Practice), on a line of its own above
+   the kicker where they do not (a Watch step's 387px column). */
+.explain__head { display: flex; flex-wrap: wrap-reverse; align-items: center; justify-content: space-between; gap: 8px 12px; margin: 0 0 10px; }
+.explain__head .explain__kicker { margin: 0; }
+.top__osi { display: flex; align-items: center; gap: 6px; min-width: 0; margin-inline-start: auto; }
+.pg[data-mode='phone'] .top__osi { display: none; }
 .top__osi p { margin: 0; color: var(--ink); font: 600 13.5px/1 var(--display); letter-spacing: .02em; white-space: nowrap; }
 .top__osi .topbar__chips { gap: 2px; }
 .top__osi .topbar__chips i { width: 16px; height: 18px; font-size: 10.5px; }
@@ -969,19 +974,14 @@ body { display: block; overflow: hidden; }
 .pg[data-short] .pg__low { height: clamp(155px, calc(26vh - 45px), 207px); }
 .pg[data-kind='reading']:not([data-log='open']) .pg__low { height: auto; }
 .pg[data-short] .top__names { display: flex; align-items: baseline; gap: 10px; }
-.pg[data-short] .top__checked { display: flex; align-items: center; gap: 16px; flex: 0 1 auto; }
-.pg[data-short] .top__facts { flex: 0 1 auto; }
 .pg[data-short] .tl { flex: 0 1 auto !important; }
 .pg[data-short] .tl li { flex: 0 1 auto !important; width: 34px; min-width: 24px; }
 .pg[data-short] .tl li::before, .pg[data-short] .tl li::after { top: 20px !important; }
 .pg[data-short] .tl__stop { padding-top: 10px !important; }
 .pg[data-short] .tl__name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.pg[data-short] .tl + .tl__end { display: flex !important; align-items: baseline; gap: 10px; flex: 1 1 0; align-self: center; overflow: hidden; padding-inline-start: 6px; }
+.pg[data-short] .tl + .tl__end { display: flex !important; align-items: baseline; gap: 10px; flex: 1 0 auto; align-self: center; overflow: hidden; padding-inline-start: 6px; }
 .pg[data-short] .tl__count { flex: none; }
-.pg[data-short] .tl + .tl__end .tl__now { display: block; }
-@media (max-width: 1099px) {
-  .pg[data-short] .top__osi p { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-}
+.pg[data-short] .tl + .tl__end .tl__now { display: block; flex: 1 1 0; width: 0; min-width: 0; }
 
 /* ---------------------------------------------------------------- the track's lessons (the left column; the sheet on a phone) */
 .pg__track { display: flex; flex-direction: column; overflow: hidden; }
@@ -1152,11 +1152,11 @@ body { display: block; overflow: hidden; }
 /* ================================================================ a tablet on its side: 900 to 1099 wide, 600 tall or more.
    No track column (the bar's button opens the lessons). The timeline stays in the bar, marks only. The five controls are one
    row at the foot of the words, at 44px. The lesson's table is under the scene. No tabs: the Steps tab's job is the bar's now. */
-.pg[data-mode='side'] { grid-template-columns: minmax(0, 1fr) 348px; grid-template-areas: 'top top' 'stage guide' 'low low'; }
-.pg[data-mode='side'][data-kind='reading'] { grid-template-columns: minmax(0, 1fr) max(348px, min(560px, 100vw - 520px)); }
+.pg[data-mode='side'] { grid-template-columns: minmax(0, 1fr) 348px; grid-template-areas: 'top guide' 'stage guide' 'low low'; }
+.pg[data-mode='side'][data-kind='reading'] { grid-template-columns: minmax(0, 1fr) max(348px, min(560px, 100vw - 520px)); grid-template-areas: 'top top' 'stage guide' 'low low'; }
+/* (In Learn and Practice the tablet's bar keeps the full width: over a 484px scene, 13 marks would not fit beside the name and the button.) */
 .pg[data-mode='side'] .pg__track { display: none; }
 .pg[data-mode='side'] .top__lesson { flex: 0 1 auto; }
-.pg[data-mode='side'] .top__facts { flex: 0 0 auto; }
 .pg[data-mode='side'] .top__lessons { display: inline-grid; height: 34px; }
 .pg[data-mode='side'] .top__of { display: none; }
 .pg[data-mode='side'] .cbtn { height: 44px; min-width: 44px; }
@@ -1182,7 +1182,7 @@ body { display: block; overflow: hidden; }
 .pg[data-mode='phone'] .top__lesson { flex: 1 1 0; padding: 0 12px; border: 0; }
 .pg[data-mode='phone'] .top__facts { flex: 0 0 auto; padding: 0 12px 0 0; border: 0; }
 .pg[data-mode='phone'] .pg__top .topbar__brand { font-size: 20px; }
-.pg[data-mode='phone'] :is(.top__of, .top__checked) { display: none; }
+.pg[data-mode='phone'] .top__of { display: none; }
 .pg[data-mode='phone'] .top__names { display: flex; align-items: baseline; gap: 10px; }
 .pg[data-mode='phone'] .top__name { font-size: 16px; line-height: 1.1; }
 .pg[data-mode='phone'] .top__where { display: block; }
@@ -1434,9 +1434,6 @@ function buildTop() {
     </div>
     <nav class="pg__tl" id="tl" aria-label="This lesson"></nav>
     <div class="top__facts">
-      <div class="top__checked">
-        <div class="top__osi" id="osi" hidden><p>OSI layer 6, Presentation</p><span class="topbar__chips" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7].map((l) => `<i${l === 6 ? ' data-on' : ''}>${l}</i>`).join('')}</span></div>
-      </div>
       <div class="topbar__tools">
         <button type="button" class="cbtn top__lessons" id="lessonsBtn" aria-haspopup="dialog" aria-label="All 20 lessons. This is lesson 9">${LIST}<span aria-hidden="true">9 of 20</span></button>
       </div>
@@ -1567,7 +1564,6 @@ function render() {
   // where
   const steps = P.filter((x) => x.kind === 'step').length;
   $('#where').textContent = p.kind === 'step' ? `Step ${p.n} of ${steps}` : p.name;
-  $('#osi').hidden = S.titles !== 'osi';
   // the scene, the table, the words, the log
   renderScene();
   const table = $('.tpanel', frag(CAP.stage[c]));
@@ -1587,6 +1583,13 @@ function render() {
     if (p.kind === 'practice') paintAnswers();
   }
   const kicker = $('.explain__kicker', words);
+  // 2.98: the OSI badge heads the words (shown here with OSI Model's timeline; DHCP names no layer)
+  if (kicker && S.titles === 'osi' && !$('.top__osi', words)) {
+    let head = kicker.closest('.explain__lead');
+    if (head) head.classList.add('explain__head');
+    else { head = document.createElement('div'); head.className = 'explain__head'; kicker.before(head); head.append(kicker); }
+    head.append(frag(`<div class="top__osi"><p>OSI layer 6, Presentation</p><span class="topbar__chips" aria-hidden="true">${[1, 2, 3, 4, 5, 6, 7].map((l) => `<i${l === 6 ? ' data-on' : ''}>${l}</i>`).join('')}</span></div>`));
+  }
   if (kicker && p.kind === 'step') kicker.textContent = `Watch · Step ${p.n} of ${steps}`;
   const title = $('.explain__title', words);
   if (title && p.kind === 'step' && S.titles !== 'dhcp') title.textContent = p.name;
