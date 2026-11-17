@@ -319,7 +319,7 @@ const focus = (id: string, offset = 2): string => `#${id}:focus-visible ~ ${UI} 
  * The demo's states, as CSS. The demo is three groups of radio buttons (the part, the step, the answer) that come before
  * its panel, so a checked button can show, hide and light things in the panel with the sibling selector alone. The
  * scene's own parts are switched the same way; where its driver would set an inline `opacity:0`, the rule is !important.
- * The looks (the colours) are tokens of the Card stack (src/pages/index.astro); the rules here decide only what shows.
+ * The looks (the colours) are tokens of the Card stack (src/styles/card-stack.css); the rules here decide only what shows.
  */
 export function demoCss(demo: HomeDemo): string {
   const last = demo.steps.length;

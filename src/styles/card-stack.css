@@ -1,0 +1,196 @@
+/* The Card stack's shared parts (prototypes/d17-home-card-stack.md, prototypes/d18-tracks-card-stack.md §3): cards with a
+   hard edge on Patch's ground. Imported by Home (src/pages/index.astro) and the Tracks page (src/pages/tracks.astro)
+   only. Every part is a `--cs-*` name, an opt-in `cs-` class, or scoped to `main`, so the file reaches neither the
+   header, nor the footer, nor a page that does not import it. */
+
+/* TOKENS BEGIN: the Card stack's own names, on :root. No Patch token is given a new value here, so the header
+   and the footer, which read only Patch's, do not change. The page's ground stays Patch's ground. Colour variant A:
+   Patch's own colours, so this block adds no colour value to the site. */
+:root {
+  /* construction */
+  --cs-edge: var(--ink-strong);
+  --cs-card: var(--card);
+  --cs-quiet: var(--tile);
+  --cs-hair: var(--line-strong);
+  --cs-r: 10px;
+  --cs-r-in: 8px;
+  --cs-off: 3px;
+  --cs-stack: 6px;
+  --cs-dither: conic-gradient(var(--cs-edge) 25%, var(--cs-card) 0) 0 0 / 2px 2px;
+  /* colour jobs: do this, you are here, done, a request, a response */
+  --cs-act: var(--accent);
+  --cs-act-ink: var(--accent-ink);
+  --cs-act-edge: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
+  --cs-here: var(--here);
+  --cs-here-ink: var(--here-ink);
+  --cs-here-wash: var(--here-soft);
+  --cs-done: var(--allowed);
+  --cs-done-text: var(--allowed-text);
+  --cs-request: var(--request);
+  --cs-response: var(--response);
+}
+/* In the dark the stack is drawn in light line, so every hard edge is the ink. */
+[data-theme='dark'] {
+  --cs-edge: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --cs-edge: var(--ink);
+  }
+}
+@media (max-width: 860px) {
+  :root {
+    --cs-stack: 4px;
+  }
+}
+/* TOKENS END */
+
+/* ---------- Buttons: a hard edge and a solid offset edge, pressed in when pressed. Scoped to main, so the
+   header's "Start learning" keeps Patch. ---------- */
+main .btn {
+  min-height: 48px;
+  padding: 0 22px;
+  border: 2px solid var(--cs-edge);
+  border-radius: var(--cs-r-in);
+  background: var(--cs-card);
+  box-shadow: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
+  color: var(--ink-strong);
+  font: 600 18px/1.2 var(--display);
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition:
+    transform 80ms var(--ease-out),
+    box-shadow 80ms var(--ease-out);
+}
+main .btn:hover {
+  background: var(--cs-quiet);
+}
+main .btn--primary {
+  background: var(--cs-act);
+  color: var(--cs-act-ink);
+  box-shadow: var(--cs-act-edge);
+}
+main .btn--primary:hover {
+  background: color-mix(in srgb, var(--cs-act) 88%, var(--cs-edge));
+}
+main .btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--cs-edge);
+}
+main .btn:focus-visible {
+  border-radius: var(--cs-r-in);
+}
+
+/* FIGURE TINT BEGIN: the site's own drawings, re-tinted for the cards (no figure is redrawn). The lit colour and the two
+   glows are set where the figures and their shared gradients (.lm-defs) are, so the header and the footer keep Patch's.
+   #main gives each rule its weight over src/art/lumen.css in any order. */
+main,
+.lm-defs {
+  --fig-bg: var(--cs-card);
+  --lit-a: var(--cs-here);
+  --lit-b: var(--cs-here);
+  --pool-op: 0;
+  --halo-op: 0;
+}
+#main .lm-svg {
+  --anatomy-paper: var(--cs-card);
+  --anatomy-face: #ffffff;
+  --anatomy-top: #ffffff;
+  --anatomy-shade-0: #c6cdd0;
+  --anatomy-shade-1: #dde2e3;
+  --anatomy-shade-2: #eef1f1;
+  --anatomy-shade-3: #ffffff;
+  --anatomy-hi: #12171b;
+  --anatomy-mid: #2b3238;
+  --anatomy-lo: #57626a;
+  --anatomy-faint: #a6aeb2;
+  --anatomy-weight: 0.9px;
+  animation: none;
+}
+[data-theme='dark'] #main .lm-svg {
+  --anatomy-face: #1f2428;
+  --anatomy-top: #262b30;
+  --anatomy-shade-0: #0c0f11;
+  --anatomy-shade-1: #121518;
+  --anatomy-shade-2: #171b1e;
+  --anatomy-shade-3: #1f2428;
+  --anatomy-hi: #f3f5f6;
+  --anatomy-mid: #c6cdd1;
+  --anatomy-lo: #949ea4;
+  --anatomy-faint: #4d565c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) #main .lm-svg {
+    --anatomy-face: #1f2428;
+    --anatomy-top: #262b30;
+    --anatomy-shade-0: #0c0f11;
+    --anatomy-shade-1: #121518;
+    --anatomy-shade-2: #171b1e;
+    --anatomy-shade-3: #1f2428;
+    --anatomy-hi: #f3f5f6;
+    --anatomy-mid: #c6cdd1;
+    --anatomy-lo: #949ea4;
+    --anatomy-faint: #4d565c;
+  }
+}
+#main .lm-led.on {
+  filter: none;
+}
+/* The dotted rings round a plate were the glow's edge; with no glow they go. */
+#main .lm-orbit {
+  display: none;
+}
+/* FIGURE TINT END */
+
+/* ---------- A card: paper with a hard edge, opt-in by class ---------- */
+.cs-card {
+  position: relative;
+  border: 2px solid var(--cs-edge);
+  border-radius: var(--cs-r);
+  background: var(--cs-card);
+}
+/* One card beneath: there is more behind this one. */
+.cs-card--beneath {
+  box-shadow:
+    var(--cs-stack) var(--cs-stack) 0 -2px var(--cs-card),
+    var(--cs-stack) var(--cs-stack) 0 0 var(--cs-edge);
+}
+/* Not there yet: the edge is dashed, and nothing lies beneath. */
+.cs-card--soon {
+  border-style: dashed;
+}
+/* The index tab on a card's top edge: the card's name. The card's top-left corner is square under it. */
+.cs-card:has(> .cs-tab) {
+  border-top-left-radius: 0;
+}
+.cs-tab {
+  position: absolute;
+  left: -2px;
+  bottom: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin: 0;
+  padding: 0 14px;
+  border: 2px solid var(--cs-edge);
+  border-bottom: 0;
+  border-radius: var(--cs-r-in) var(--cs-r-in) 0 0;
+  background: var(--cs-card);
+  color: var(--ink-strong);
+  font: 600 16px/1 var(--display);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.cs-card--soon > .cs-tab {
+  border-style: dashed;
+  color: var(--muted);
+}
+.cs-tab--here::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--cs-here);
+  box-shadow: 0 0 0 1.5px var(--cs-edge);
+}

@@ -18,6 +18,7 @@ import Stamp from '../components/Stamp';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../art/scenes/net-map.css';
 import '../components/site.css';
+import '../styles/card-stack.css';
 
 const start = startLesson();
 const demo = homeDemo();
@@ -326,48 +327,6 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
 </BaseLayout>
 
 <style>
-  /* TOKENS BEGIN: the Card stack's own names, on Home's :root. No Patch token is given a new value here, so the header
-     and the footer, which read only Patch's, do not change. The page's ground stays Patch's ground. Colour variant A:
-     Patch's own colours, so this block adds no colour value to the site. */
-  :global(:root) {
-    /* construction */
-    --cs-edge: var(--ink-strong);
-    --cs-card: var(--card);
-    --cs-quiet: var(--tile);
-    --cs-hair: var(--line-strong);
-    --cs-r: 10px;
-    --cs-r-in: 8px;
-    --cs-off: 3px;
-    --cs-stack: 6px;
-    --cs-dither: conic-gradient(var(--cs-edge) 25%, var(--cs-card) 0) 0 0 / 2px 2px;
-    /* colour jobs: do this, you are here, done, a request, a response */
-    --cs-act: var(--accent);
-    --cs-act-ink: var(--accent-ink);
-    --cs-act-edge: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
-    --cs-here: var(--here);
-    --cs-here-ink: var(--here-ink);
-    --cs-here-wash: var(--here-soft);
-    --cs-done: var(--allowed);
-    --cs-done-text: var(--allowed-text);
-    --cs-request: var(--request);
-    --cs-response: var(--response);
-  }
-  /* In the dark the stack is drawn in light line, so every hard edge is the ink. */
-  :global([data-theme='dark']) {
-    --cs-edge: var(--ink);
-  }
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme])) {
-      --cs-edge: var(--ink);
-    }
-  }
-  @media (max-width: 860px) {
-    :global(:root) {
-      --cs-stack: 4px;
-    }
-  }
-  /* TOKENS END */
-
   :global(html) {
     scroll-behavior: smooth;
   }
@@ -393,43 +352,8 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
   a:not(.btn) {
     text-decoration-thickness: 1.5px;
   }
-  a:focus-visible {
+  a:not(.btn):focus-visible {
     border-radius: 3px;
-  }
-
-  /* ---------- Buttons: a hard edge and a solid offset edge, pressed in when pressed ---------- */
-  .btn {
-    min-height: 48px;
-    padding: 0 22px;
-    border: 2px solid var(--cs-edge);
-    border-radius: var(--cs-r-in);
-    background: var(--cs-card);
-    box-shadow: var(--cs-off) var(--cs-off) 0 var(--cs-edge);
-    color: var(--ink-strong);
-    font: 600 18px/1.2 var(--display);
-    letter-spacing: 0.01em;
-    text-decoration: none;
-    transition:
-      transform 80ms var(--ease-out),
-      box-shadow 80ms var(--ease-out);
-  }
-  .btn:hover {
-    background: var(--cs-quiet);
-  }
-  .btn--primary {
-    background: var(--cs-act);
-    color: var(--cs-act-ink);
-    box-shadow: var(--cs-act-edge);
-  }
-  .btn--primary:hover {
-    background: color-mix(in srgb, var(--cs-act) 88%, var(--cs-edge));
-  }
-  .btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--cs-edge);
-  }
-  .btn:focus-visible {
-    border-radius: var(--cs-r-in);
   }
 
   /* ---------- The opening: the line on the desk, set large, and what to do about it ---------- */
@@ -1340,58 +1264,6 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
     }
   }
 
-  /* FIGURE TINT BEGIN: the site's own drawings, re-tinted for the cards (no figure is redrawn). The lit colour and the two
-     glows are set where the figures and their shared gradients (.lm-defs) are, so the header and the footer keep Patch's.
-     #main gives each rule its weight over src/art/lumen.css in any order. */
-  :global(main),
-  :global(.lm-defs) {
-    --fig-bg: var(--cs-card);
-    --lit-a: var(--cs-here);
-    --lit-b: var(--cs-here);
-    --pool-op: 0;
-    --halo-op: 0;
-  }
-  :global(#main .lm-svg) {
-    --anatomy-paper: var(--cs-card);
-    --anatomy-face: #ffffff;
-    --anatomy-top: #ffffff;
-    --anatomy-shade-0: #c6cdd0;
-    --anatomy-shade-1: #dde2e3;
-    --anatomy-shade-2: #eef1f1;
-    --anatomy-shade-3: #ffffff;
-    --anatomy-hi: #12171b;
-    --anatomy-mid: #2b3238;
-    --anatomy-lo: #57626a;
-    --anatomy-faint: #a6aeb2;
-    --anatomy-weight: 0.9px;
-    animation: none;
-  }
-  :global([data-theme='dark'] #main .lm-svg) {
-    --anatomy-face: #1f2428;
-    --anatomy-top: #262b30;
-    --anatomy-shade-0: #0c0f11;
-    --anatomy-shade-1: #121518;
-    --anatomy-shade-2: #171b1e;
-    --anatomy-shade-3: #1f2428;
-    --anatomy-hi: #f3f5f6;
-    --anatomy-mid: #c6cdd1;
-    --anatomy-lo: #949ea4;
-    --anatomy-faint: #4d565c;
-  }
-  @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme]) #main .lm-svg) {
-      --anatomy-face: #1f2428;
-      --anatomy-top: #262b30;
-      --anatomy-shade-0: #0c0f11;
-      --anatomy-shade-1: #121518;
-      --anatomy-shade-2: #171b1e;
-      --anatomy-shade-3: #1f2428;
-      --anatomy-hi: #f3f5f6;
-      --anatomy-mid: #c6cdd1;
-      --anatomy-lo: #949ea4;
-      --anatomy-faint: #4d565c;
-    }
-  }
   /* The lit way: a flat line in the "here" colour. No glow. */
   :global(#main .nm .nm-trail) {
     stroke: var(--cs-here);
@@ -1405,12 +1277,4 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
   :global(#main .nm .nm-glow) {
     display: none;
   }
-  :global(#main .lm-led.on) {
-    filter: none;
-  }
-  /* The dotted rings round a plate were the glow's edge; with no glow they go. */
-  :global(#main .lm-orbit) {
-    display: none;
-  }
-  /* FIGURE TINT END */
 </style>

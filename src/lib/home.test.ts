@@ -308,55 +308,69 @@ function colourValues(text: string): string[] {
   return bare.split('\n').flatMap((line) => [HEX_RE.exec(line)?.[0], NAMED_RE.exec(line)?.[1]].filter((v): v is string => v !== undefined));
 }
 
-/** The page's own text, with the two blocks that are allowed to hold colour values (the figure tint, the token block) cut out. */
-function pageWithoutBlocks(page: string): { rest: string; tokens: string; tint: string } {
-  const cut = (from: string, to: string): [string, string] => {
-    const a = page.indexOf(from);
-    const b = page.indexOf(to);
+/** The shared Card stack stylesheet: the two blocks that are allowed to hold colour values (the token block, the figures' tint block), and the rest of it. */
+function sharedWithoutBlocks(css: string): { rest: string; tokens: string; tint: string } {
+  const cut = (text: string, from: string, to: string): [string, string] => {
+    const a = text.indexOf(from);
+    const b = text.indexOf(to);
     expect(a, `${from} opens the block`).toBeGreaterThan(-1);
     expect(b, `${to} closes it`).toBeGreaterThan(a);
-    return [page.slice(a, b), page.slice(0, a) + page.slice(b + to.length)];
+    return [text.slice(a, b), text.slice(0, a) + text.slice(b + to.length)];
   };
-  const [tokens, withoutTokens] = cut('TOKENS BEGIN', 'TOKENS END */');
-  const [tint, rest] = ((): [string, string] => {
-    const a = withoutTokens.indexOf('FIGURE TINT BEGIN');
-    const b = withoutTokens.indexOf('FIGURE TINT END */');
-    expect(a, 'the tint block opens').toBeGreaterThan(-1);
-    expect(b, 'and closes').toBeGreaterThan(a);
-    return [withoutTokens.slice(a, b), withoutTokens.slice(0, a) + withoutTokens.slice(b + 'FIGURE TINT END */'.length)];
-  })();
+  const [tokens, withoutTokens] = cut(css, 'TOKENS BEGIN', 'TOKENS END */');
+  const [tint, rest] = cut(withoutTokens, 'FIGURE TINT BEGIN', 'FIGURE TINT END */');
   return { rest, tokens, tint };
 }
 
-test('Home’s stylesheet and its generated rules hold no colour value outside the token block and the figures’ tint block (case 15)', () => {
+/** Home's own code (the frontmatter and the styles; the template's words are not CSS). */
+const homeCode = (page: string): string => page.slice(0, page.indexOf('<BaseLayout')) + page.slice(page.indexOf('<style>'));
+
+test('Home’s stylesheet, the shared Card stack stylesheet and Home’s generated rules hold no colour value outside the token block and the figures’ tint block (case 15)', () => {
   const page = readFileSync('src/pages/index.astro', 'utf8');
-  const { rest, tokens, tint } = pageWithoutBlocks(page);
-  // The template's words are not CSS: only the frontmatter and the styles are read.
-  const code = rest.slice(0, rest.indexOf('<BaseLayout')) + rest.slice(rest.indexOf('<style>'));
-  expect(colourValues(code)).toEqual([]);
+  const shared = readFileSync('src/styles/card-stack.css', 'utf8');
+  const { rest, tokens, tint } = sharedWithoutBlocks(shared);
+  expect(page).not.toContain('TOKENS BEGIN');
+  expect(page).not.toContain('FIGURE TINT BEGIN');
+  expect(colourValues(homeCode(page))).toEqual([]);
+  expect(colourValues(rest)).toEqual([]);
   expect(colourValues(demoCss(homeDemo()))).toEqual([]);
   // The two blocks are not empty: the tokens are all var(--…) (variant A adds no colour value to the site), the tint holds the figures' hexes.
   expect(tokens).toContain('--cs-edge');
   expect(colourValues(tokens)).toEqual([]);
   expect(tint).toMatch(/--anatomy-hi: #12171b/);
   expect(tint).toMatch(/--anatomy-hi: #f3f5f6/);
-  // Links are ink: Patch's blue link has no place on Home, and so the page holds none.
+  // Links are ink: Patch's blue link has no place on Home, and so neither file holds one.
   expect(page).not.toContain('var(--link)');
+  expect(shared).not.toContain('var(--link)');
   expect(demoCss(homeDemo())).not.toContain('var(--link)');
 });
 
-test('the colour-value scan can fail: a hex in a rule, a named colour, or a string in the generated rules is found', () => {
+test('the colour-value scan can fail: a hex in a rule, a named colour, or a string in the generated rules is found, in Home’s file and in the shared one', () => {
   const page = readFileSync('src/pages/index.astro', 'utf8');
-  const seeded = (text: string): string[] => {
-    const { rest } = pageWithoutBlocks(text);
-    return colourValues(rest.slice(0, rest.indexOf('<BaseLayout')) + rest.slice(rest.indexOf('<style>')));
-  };
+  const shared = readFileSync('src/styles/card-stack.css', 'utf8');
+  const seeded = (text: string): string[] => colourValues(homeCode(text));
+  const seededShared = (text: string): string[] => colourValues(sharedWithoutBlocks(text).rest);
   expect(seeded(page.replace('.leg {', '.leg {\n    color: #fff;'))).toEqual(['#fff']);
   expect(seeded(page.replace('.leg {', '.leg {\n    color: rebeccapurple;'))).toEqual(['rebeccapurple']);
   expect(seeded(page.replace("const css = demoCss(demo);", "const css = demoCss(demo) + 'a{color:rgb(1,2,3)}';"))).toEqual(['rgb(']);
+  // The shared file's card, tab and button parts are scanned too: a hex in .cs-tab is found, one in the tint block is not.
+  expect(seededShared(shared.replace('.cs-tab {', '.cs-tab {\n  color: #fff;'))).toEqual(['#fff']);
+  expect(seededShared(shared)).toEqual([]);
   expect(colourValues(`${demoCss(homeDemo())}\n.x{background:hsl(0 0% 0%)}`)).toEqual(['hsl(']);
   // transparent and currentColor are not colours the scan objects to.
   expect(colourValues('a{border-color:transparent;fill:currentColor}')).toEqual([]);
+});
+
+test('Home no longer declares what moved to the shared Card stylesheet, and keeps its own rules', () => {
+  const page = readFileSync('src/pages/index.astro', 'utf8');
+  // One source for the tokens and the tint: the blocks moved, they were not copied.
+  expect(page).not.toMatch(/--cs-edge:/);
+  expect(page).not.toMatch(/--anatomy-hi:/);
+  // What stays Home's: the track cards' and the demo's own rules.
+  for (const rule of ['.leg {', '.leg__order {', '.nm-trail', '.nm-trail-edge', '.nm-glow']) expect(page, rule).toContain(rule);
+  // E5: a focused link keeps 3px corners unless it is a button, whose 8px the shared sheet gives.
+  expect(page).toContain('a:not(.btn):focus-visible');
+  expect(page).not.toMatch(/\n {2}a:focus-visible/);
 });
 
 // ---------------------------------------------------------------- the generated state rules (B20)
