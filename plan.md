@@ -4,15 +4,15 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 18: the Tracks page in the Card stack look
 
-**Status: planned, waiting for the owner's go** (direction 2.84, 2.85). The owner said "Now let's work on the Tracks page", and to whether Card stack replaces Patch: "Site-wide excluding our current Lesson's page." Numbers claimed on `revamp`: job 18, direction rows 2.84 to 2.89, S20, D18, B21, F18.
+**Status: the owner said go with the layout open ("Redesign the layout too", 2026-11-16, direction 2.86); D18 in design.** Planned under 2.84 and 2.85. The owner said "Now let's work on the Tracks page", and to whether Card stack replaces Patch: "Site-wide excluding our current Lesson's page." Numbers claimed on `revamp`: job 18, direction rows 2.84 to 2.89, S20, D18, B21, F18.
 
 ## Inputs
 
 | | |
 |---|---|
-| **The job** | `/tracks` in the Card stack look, on phone and desktop, light and dark, with today's sections, order and words, and a phone layout designed for the first time. Card stack's tokens and parts move out of Home's own stylesheet into one the two pages share, with Home unchanged. |
+| **The job** | `/tracks` redesigned in the Card stack look, its layout open (2.86), on phone and desktop, light and dark; two layouts drawn for the owner to choose between. Card stack's tokens and parts move out of Home's own stylesheet into one the two pages share, with Home unchanged. |
 | **Done means** | The owner has approved D18 at the design gate; B21 is merged into `revamp` with a build review of PASS (or PASS WITH FIXES, each "fixed when" run); Home looks the same before and after (screenshots at 375 and 1440, light and dark, compared); on `revamp`, `npm test`, `npm run build` and CI's end-to-end pass (`npx playwright test --grep-invert @visual --project=d1440-dark --project=phone`) pass; the page's height at 375 and 1440 and its gzipped size measured before and after and recorded; `docs/direction.md` §10 and §11 updated for the new Tracks page. Nothing pushed. |
-| **Budget** | 1.25 to 1.9 million subagent tokens of growth (estimate below), plus the scout's 0.15 million spent. A stop for the owner at 2.5 million. |
+| **Budget** | 1.55 to 2.2 million subagent tokens of growth (estimate below), plus the scout's 0.15 million spent. A stop for the owner at 2.8 million. |
 | **References** | `docs/direction.md` 2.80 to 2.85, §6 (Patch: the Lesson page, header and footer), §9 (Home and the Card stack look), §10 (the Tracks take not adopted, so not proposed again), §11; `prototypes/d17-home-card-stack.md` and `.html` (the look as approved) and `prototypes/d17-cases.md` (its errata); `prototypes/s20-tracks-facts.md` (the page's code, data, tests and what it shares); `src/pages/tracks.astro`, `src/components/hub/TrackPanelProgress.tsx`, `TrackStrip.tsx`, `hub.css`, `src/lib/tracks-page.ts`, `src/pages/index.astro:328-1416` (Card stack's styles, `--cs-*`). |
 
 ## What the scout found (S20)
@@ -27,8 +27,8 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 ## Decisions in this plan
 
 1. **The look is Card stack, variant A, as approved on Home** (2.82, 2.84): white cards with a hard 2px ink edge and the next card's edge beneath, index tabs, offset-edge buttons, Patch's colours one job each, the figures re-tinted, never redrawn. The header and footer stay as they are.
-2. **Today's sections, order and words are kept; the phone layout is designed.** The owner kept this layout (§10) and asked on Home for no whole layout change (2.80). The designer may rearrange inside a panel where it measures a gain (a shorter phone page, a clearer next step), and says what each change fixes. New or changed words are listed in the spec for the owner at the gate. Not proposed again: §10's "every track is a cable" take.
-3. **One design, D18.** A second variant only where the designer finds a question of taste it cannot settle (at most two, `CLAUDE.md`). The prototype shows every state the island has: a first visit, part way, a track finished, no JavaScript, and A+'s planned panel; at 375 and 1440, light and dark.
+2. **The layout is open** (the owner, 2.86; it replaces this plan's first ruling that today's layout was kept). What stays is what the page tells a reader: each track's name and who it is for, how far this browser has got, the way in (Start or Continue, the whole track), the lesson up next, A+ not ready yet, and the order to take the tracks in. The owner's rule of 2026-11-09 against listing every lesson here stands, and §10's "every track is a cable" take is not offered again. New or changed words are listed in the spec for the owner at the gate.
+3. **D18 draws two layouts**, both in Card stack, genuinely different in structure (the most `CLAUDE.md` allows without the owner's word); the owner picks one at the gate. Each shows every state the island has: a first visit, part way, a track finished, no JavaScript, and A+'s planned panel; at 375 and 1440, light and dark.
 4. **The page's weight is the designer's to rule on**: whether the up-next card keeps a figure for every lesson (34 today, the bulk of 213 KB), or shows something lighter. The builder measures before and after.
 5. **One shared Card stack stylesheet, built in B21** (2.84): the `--cs-*` tokens and the card, tab and button parts move out of `index.astro` into one file Home and Tracks import; nothing goes into `src/styles/tokens.ts`. Home must render the same: its tests unchanged, and screenshots before and after at 375 and 1440, light and dark.
 6. **The track page stays Patch.** `TrackStrip` and `hub.css` are shared with it, so Tracks' Card stack rules are scoped to Tracks, and the track page's tests and look do not change.
@@ -40,7 +40,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
 | S20 | scout | scout (Haiku) | Done: `prototypes/s20-tracks-facts.md`. | |
-| D18 | design | designer (Opus 5.5) | `prototypes/d18-tracks-card-stack.html` and `.md`: Tracks in Card stack, every state above, at 375 and 1440, light and dark, with "For the builder" and acceptance checks as D17's spec has; the page weight ruled. | The orchestrator looks at it in the browser at 375 and 1440, light and dark; the phone page measured against 3,335px. |
+| D18 | design | designer (Opus 5.5) | `prototypes/d18-tracks-card-stack.html` and `.md`: Tracks in Card stack, two layouts, every state above, at 375 and 1440, light and dark, with "For the builder" and acceptance checks as D17's spec has; the page weight ruled. | The orchestrator looks at it in the browser at 375 and 1440, light and dark; the phone page measured against 3,335px. |
 | Gate | design | the owner | D18's prototype and spec. | The owner's words. |
 | B21 spec | build | reviewer (Opus) | Holes and attack cases for D18: `prototypes/d18-cases.md`. | Holes with one right answer closed as errata; taste goes back to `designer`. |
 | B21 | build | builder (Sonnet) | First commit: the shared Card stack stylesheet, Home unchanged. Second: D18 in `tracks.astro` and the island's markup, with the tests that pin Tracks changed once and each case a test. | `npm test`; `npm run build`; `e2e/site.spec.ts` at d1440-dark and phone; Home's before-and-after screenshots. |
@@ -53,18 +53,18 @@ Order: D18; the gate; the spec review; B21; its review; F18.
 
 | Part | Growth, roughly |
 |---|---|
-| D18 (one page, five states, two widths, two themes) | 0.35 to 0.5 million |
+| D18 (two layouts, five states, two widths, two themes) | 0.65 to 0.8 million |
 | B21 spec review | 0.15 to 0.25 million |
 | B21: the shared stylesheet, `tracks.astro`, the island, the tests | 0.5 to 0.8 million |
 | B21 review, and the fixes | 0.25 to 0.35 million |
-| **Total** | **1.25 to 1.9 million** |
+| **Total** | **1.55 to 2.2 million** |
 
 ## When the work stops for the owner
 
 - The design gate.
 - A design that needs the header, the footer or the Lesson page to change, or a token other pages read.
 - A hole in the approved spec that needs taste and would change what the owner approved.
-- The job past 2.5 million tokens of growth.
+- The job past 2.8 million tokens of growth.
 - Anything `CLAUDE.md` says the owner keeps: push, merge to `main`, deploy, sign-ins, installs.
 
 A build unit that fails two reviews comes back to the orchestrator with both reports.
