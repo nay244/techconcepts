@@ -2900,3 +2900,17 @@ test.describe('B20: JavaScript off, and the theme paths (cases 5 and 33)', () =>
     });
   });
 });
+
+test.describe('B20: the cards’ shadow steps from 4px to 6px between 860 and 861px (case 6)', () => {
+  for (const [width, stack] of [[860, 4], [861, 6]] as const) {
+    test(`6: at ${width}px the demo’s card beneath shows ${stack}px, and so does a track’s`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await b20Home(page);
+      const card = await b20Tok(page, 'cs-card');
+      const edge = await b20Tok(page, 'cs-edge');
+      const want = `${card} ${stack}px ${stack}px 0px -2px, ${edge} ${stack}px ${stack}px 0px 0px`;
+      expect(await b20Css(page.locator('main .demo'), 'box-shadow', '::before')).toBe(want);
+      expect(await b20Css(page.locator('main .leg').first(), 'box-shadow')).toBe(want);
+    });
+  }
+});
