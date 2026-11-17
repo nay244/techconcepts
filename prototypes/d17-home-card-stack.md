@@ -1,15 +1,15 @@
-# D16: Home in the "Card stack" look
+# D17: Home in the "Card stack" look
 
-Job 16, design unit D16 (direction 2.75). The whole Home page, every section in today's order with every word kept, in the look the owner chose: "Let's build on the concept of Card Stack. Keep our current top navbar style and add a few color's so that it is not simply black and white", after "Calmer, more refined" and "Let's not do a whole layout change".
+Job 17, design unit D17 (direction 2.81). The whole Home page, every section in today's order with every word kept, in the look the owner chose: "Let's build on the concept of Card Stack. Keep our current top navbar style and add a few color's so that it is not simply black and white", after "Calmer, more refined" and "Let's not do a whole layout change".
 
-The prototype is `prototypes/d16-home-card-stack.html`. It is the built Home page (`dist/index.html`) with D15's markup and rules, then one `<style>` block headed "D16". It has no `<script>`, so it is also the JavaScript-off path. The dark bar at its top is the prototype's own: **A: Patch colours / B: Highlighter** and **Light / Dark**. The header's theme button and menu button are script on the site and are disabled here.
+The prototype is `prototypes/d17-home-card-stack.html`. It is the built Home page (`dist/index.html`) with D16's markup and rules, then one `<style>` block headed "D17". It has no `<script>`, so it is also the JavaScript-off path. The dark bar at its top is the prototype's own: **A: Patch colours / B: Highlighter** and **Light / Dark**. The header's theme button and menu button are script on the site and are disabled here.
 
 **Two colour variants, one design.** Everything but nine colour values is the same in A and B.
 
 - **A, Patch colours (recommended).** Orange is "here" and "do this", green is done, blue is a request, brown is a response: Patch's own values. The page's filled buttons match the header's, and the demo's colours are the lesson page's.
 - **B, Highlighter.** Ink does "do this" (the filled button is black, as in the chosen sketch), one flat yellow marks "here", and the three lesson meanings keep their hue in calmer values. It buys a quieter page, closer to the black-and-white sketch. It costs two things while the header stays Patch: the header's orange button becomes the only orange on the page, so "do this" has two looks; and a reader who opens the lesson from Home meets slightly different blues, browns and greens there.
 
-D15 is not built on its own: its three fixes are part of D16 (§7 measures them again).
+D16 is not built on its own: its three fixes are part of D17 (§7 measures them again).
 
 ## 1. The idea
 
@@ -91,9 +91,9 @@ Three families, the site's own, in Patch's roles. No new face: the header's Barl
 | Track tab | Barlow 600 | 16px | |
 | Small print (opening facts, counts, "Nothing is scored.") | Atkinson 400 | 15px | `--muted` |
 | Chip and tile numbers, message codes | Atkinson Hyperlegible Mono 700 | 14px (tile 16px); 13px | real data and numerals only |
-| The phone's key | as D15 §2.2.3 | 12px and 13px | unchanged |
+| The phone's key | as D16 §2.2.3 | 12px and 13px | unchanged |
 
-Labels are sentence case. The one exception is D15's: the phone key repeats the drawing's spaced capitals (open question 5).
+Labels are sentence case. The one exception is D16's: the phone key repeats the drawing's spaced capitals (open question 5).
 
 ## 4. Components and their states
 
@@ -137,9 +137,9 @@ Desktop, five rows: `grid-template-columns: 30px 1fr; gap: 12px; padding: 6px 10
 | Ahead | no edge, no fill | paper, ink number |
 | **On show** | `border-color: var(--cs-edge); background: var(--cs-here-wash)` | `background: var(--cs-here); color: var(--cs-here-ink)` |
 | Behind | no edge, no fill | paper, the number hidden (`font-size: 0`; it stays in the markup), a drawn tick: 13 × 7px, `border: solid var(--cs-done); border-width: 0 0 3px 3px`, rotated −45° |
-| Keyboard focus | 2px `--focus` ring, 2px out (D15) | |
+| Keyboard focus | 2px `--focus` ring, 2px out (D16) | |
 
-Phone, D15's strip of five tiles: each tile 46px tall (D15: 44), 8px apart, 8px corners, `2px solid var(--cs-edge)`, mono 700 16px. On show: `--cs-here` fill, `--cs-here-ink` number. Behind: paper, the tick. Ahead: paper, ink number. The step on show is named under the strip (D15). Focus rings the tile (D15).
+Phone, D16's strip of five tiles: each tile 46px tall (D16: 44), 8px apart, 8px corners, `2px solid var(--cs-edge)`, mono 700 16px. On show: `--cs-here` fill, `--cs-here-ink` number. Behind: paper, the tick. Ahead: paper, ink number. The step on show is named under the strip (D16). Focus rings the tile (D16).
 
 ### 4.5 Narration and messages
 
@@ -158,11 +158,11 @@ Each answer is a pressable card: `min-height: 48px; padding: 10px 14px 10px 46px
 | Not picked | paper, offset edge; hover `--cs-quiet` | empty ring |
 | Picked, not the right one | pressed in: `transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--cs-edge); background: var(--cs-quiet)` | an 8px ink dot in the ring |
 | Picked, right | pressed in, the same | the ring filled `--cs-done` with a paper tick |
-| Keyboard focus | 2px `--focus` ring, 2px out (D15) | |
+| Keyboard focus | 2px `--focus` ring, 2px out (D16) | |
 
 Feedback: `border-left: 5px solid var(--cs-edge)` (right: `--cs-done`), `--cs-quiet`, corners `2px 6px 6px 2px`, padding `10px 12px`. Its words already say "Right." or "Not quite.".
 
-### 4.8 Key hints (D15)
+### 4.8 Key hints (D16)
 
 Unchanged in words, place and behaviour. Look: `1px solid var(--cs-hair)`, 6px corners, `--cs-quiet`; each key `1.5px solid var(--cs-edge)` with a 3px foot, 4px corners, 22px.
 
@@ -190,15 +190,15 @@ Page height: 3,621px at 1440 (today 3,878) and 4,490px at 375 (today 4,439). No 
 
 ### The demo's grid
 
-D15's grid, with three rows added: the tabs' row above the card, and a 2px row at the card's top and foot that hold its edge.
+D16's grid, with three rows added: the tabs' row above the card, and a 2px row at the card's top and foot that hold its edge.
 
-- `.demo`: `isolation: isolate; padding: 0 2px; margin-right: 12px` (the stack's room), no border, no background, `overflow: visible` (D15's `clip` is not needed: nothing is clipped, and the sticky Next still sticks).
+- `.demo`: `isolation: isolate; padding: 0 2px; margin-right: 12px` (the stack's room), no border, no background, `overflow: visible` (D16's `clip` is not needed: nothing is clipped, and the sticky Next still sticks).
 - Desktop: columns `minmax(0, 1.5fr) minmax(300px, 1fr)`; rows `50px 2px auto auto auto auto 1fr 2px`; areas `'. parts' 'top top' 'scene hint' 'scene rows' 'scene keys' 'scene says' 'scene nexts' 'foot foot'`; `min-height: 555px`; `margin-top: -50px`, so the tabs stand beside the heading.
 - 860px and below: one column; rows `50px 2px auto auto auto auto auto auto 2px`; areas `'parts' 'top' 'hint' 'scene' 'rows' 'keys' 'says' 'nexts' 'foot'`; `margin: 0 -10px 0 -18px` (the card's edge is 14px from the screen's left edge; the words inside start at 32px, under the header's logo).
 - The card is `.demo::before`, a grid item from `top` to `foot` across all columns, `margin: 0 -2px`. The dithered card is `.demo::after`, absolutely placed in the same area.
 - The scene: paper, `padding: 12px 6px`, a 2px rule at its right (desktop) or under it (phone).
-- Learn and Practice panes: `grid-row: rows-start / nexts-end` as in D15; padding `20px 20px 22px` (phone `18px 16px 20px`).
-- The phone's sticky Next (D15): the card's foot, `border-top: 2px solid var(--cs-edge)`, paper, padding `10px 19px 13px 16px`, bottom corners 8px.
+- Learn and Practice panes: `grid-row: rows-start / nexts-end` as in D16; padding `20px 20px 22px` (phone `18px 16px 20px`).
+- The phone's sticky Next (D16): the card's foot, `border-top: 2px solid var(--cs-edge)`, paper, padding `10px 19px 13px 16px`, bottom corners 8px.
 
 ## 6. The figures
 
@@ -222,30 +222,30 @@ No figure is redrawn. All five (the scene, the two track drawings, `sources`, `i
 3. Three things switched off: the glow under a busy part (`.nm-glow`), the dotted rings round a plate (`.lm-orbit`, the old glow's edge), the lights' blur (`.lm-led.on { filter: none }`), and the drawings' fade-in on load (`.lm-svg { animation: none }`).
 4. Left as drawn: the screens, slots and vents that the figure sheet paints with fixed near-blacks (`.lm-void`, `.lm-slot`, `.lm-face`). On paper they are the drawing's solid blacks; in the dark they sit into the slate. They have no token.
 5. Not attempted: dither inside a figure. The drawings scale with the screen, and a 2px dither blurs to grey at 0.56px a unit on a phone; the side faces are flat greys instead.
-6. As D15: the plates' engraved words stay texture (about 2px on a phone).
+6. As D16: the plates' engraved words stay texture (about 2px on a phone).
 
-## 7. D15's three fixes, measured again in D16
+## 7. D16's three fixes, measured again in D17
 
 Chromium, headless, the prototype's bar hidden. "Today" is `dist/` on this branch.
 
 **A, the phone's scene is readable.**
 
-| | Today, 375 | D15, 375 | D16, 375 | D16, 320 | 1440 (today / D16) |
+| | Today, 375 | D16, 375 | D17, 375 | D17, 320 | 1440 (today / D17) |
 |---|---|---|---|---|---|
 | Drawing, px a unit | 0.434 (297px wide) | 0.621 | 0.555 (the crop is 335 × 129) | 0.464 | 1.048 / 1.052 |
 | Callout names | 5.0px | 12px, in the key | 12px, in the key | 12px | 12.1 / 12.1px, drawn |
 | Addresses | 5.4px | 12px | 12px | 12px | 13.1 / 13.1px |
 | Sub-lines | 5.6px | 13px | 13px | 13px | 13.6 / 13.7px |
 
-The drawing is 11% smaller than D15's because the card keeps its edges and 14px of desk each side (D15 ran the frame to the screen's edges). Every label is in the key at 12px or more, which is what A asked for.
+The drawing is 11% smaller than D16's because the card keeps its edges and 14px of desk each side (D16 ran the frame to the screen's edges). Every label is in the key at 12px or more, which is what A asked for.
 
 **B, a tap on a phone does not move the page away from the narration.** 375×812, the demo 70px from the top (tabs at y 70 to 122):
 
-| Tap | Today | D16: page moves | After it |
+| Tap | Today | D17: page moves | After it |
 |---|---|---|---|
 | Next step, 1→2, 2→3, 3→4, 4→5 | −482px (794 → 312), narration and Next off screen | 0px each | narration starts at y 560; Next at 751 to 799 |
 | A step tile, 1→4 | | 0px | step 4 checked; narration at 560 |
-| Go to Learn | | 0px (**D15's prototype moves 17px here**, below) | Learn's lead at 423 |
+| Go to Learn | | 0px (**D16's prototype moves 17px here**, below) | Learn's lead at 423 |
 | Go to Practice | | 0px | the question at 423 |
 | The third answer | | 0px | its feedback at 697 to 763 |
 | The Watch tab | | 0px | |
@@ -254,11 +254,11 @@ The drawing is 11% smaller than D15's because the card keeps its edges and 14px 
 
 The sticky Next: `position: sticky`, its bottom at the window's bottom (812) while the card's end (974) is below it.
 
-**One correction to D15.** D15 gave each anchor `scroll-margin-top: 88px`. Measured on D15's own prototype, "Go to Learn" with the tabs at y 70 moves the page 17px (the tabs settle at 88), though D15's table says 0. D16 sets `scroll-margin-top: 70px` on the three groups (the header is 69px), so nothing moves while the anchor is anywhere below the header.
+**One correction to D16.** D16 gave each anchor `scroll-margin-top: 88px`. Measured on D16's own prototype, "Go to Learn" with the tabs at y 70 moves the page 17px (the tabs settle at 88), though D16's table says 0. D17 sets `scroll-margin-top: 70px` on the three groups (the header is 69px), so nothing moves while the anchor is anywhere below the header.
 
 **C, Tab stops only where something shows, each ringed, with the hint.** The same at 375 and 1440, light and dark, and with JavaScript off:
 
-| Part on show | Today | D16 stops | Ringed | Hint shown |
+| Part on show | Today | D17 stops | Ringed | Hint shown |
 |---|---|---|---|---|
 | Watch | part, step, answer (nothing seen), then the tracks | part, step, then "How the Internet Works" | the tab (inside); the row (1440) or the tile (375) | part hint; step hint |
 | Learn | part, step, answer, then links | part, then "Lesson 2: HTTPS", the sources | the tab | part hint |
@@ -266,7 +266,7 @@ The sticky Next: `position: sticky`, its bottom at the window's bottom (812) whi
 
 Radios in the accessibility tree: 5 steps and 0 answers in Watch; 0 and 0 in Learn; 0 and 3 in Practice. No hint after a click. Step 5 and a picked answer stay checked through a change of part, and the page on the laptop stays drawn.
 
-**Sizes.** Tabs 46px and 52px; tiles 46px; rows 56px; every button 48px; answers 48px or more; the sources control 44px; on a phone each source link 44px (D5). The card with its tabs at 1440: Watch 625 / 685 / 750 / 762 / 790px by step, Learn 745, Practice 555 (today's frame: 585 / 638 / 674 / 686 / 710, 718, 503). At 375: 811 / 872 / 911 / 974 / 950, Learn 1,183, Practice 671 (today 875 at step 1). D15's check 14 (desktop heights as today) is replaced by these.
+**Sizes.** Tabs 46px and 52px; tiles 46px; rows 56px; every button 48px; answers 48px or more; the sources control 44px; on a phone each source link 44px (D5). The card with its tabs at 1440: Watch 625 / 685 / 750 / 762 / 790px by step, Learn 745, Practice 555 (today's frame: 585 / 638 / 674 / 686 / 710, 718, 503). At 375: 811 / 872 / 911 / 974 / 950, Learn 1,183, Practice 671 (today 875 at step 1). D16's check 14 (desktop heights as today) is replaced by these.
 
 ## 8. Contrast, measured from what is drawn
 
@@ -301,16 +301,16 @@ Every pair of words passes in all four. The two bold figures are B's cost in the
 
 - Kept: every word, the sections and their order, the header, the footer, the demo's mechanism (radios and CSS, no script), D5's sources block, the three type families, the figures, the 860px breakpoint, `--ground`.
 - Changed: panels become cards with a hard edge; the demo's flat tab strip becomes index tabs on the card; the tracks' cable becomes two cards with tabs; the facts band and the close band become one card each; buttons get a hard edge and an offset edge; done steps show a tick, not a green disc; the step on show is an edged row with a filled chip; answers are pressable cards with a ring; links are ink, not blue; the headline is 104px, not 132px; the rule under the opening goes; the figures lose their glow, rings, soft shadows and fade-in, and gain ink lines.
-- New words: none. (D15's three key hints are in.)
+- New words: none. (D16's three key hints are in.)
 
-**From D15**
+**From D16**
 
 - Kept: the grid as the frame with `display: contents`; the radios placed by grid area; the phone's crop, key and leaders; the strip of five tiles and the step named under it; the sticky Next; `visibility: hidden` for the groups not on show; the hints; the inset tab ring.
-- Changed: `scroll-margin-top` 88px → 70px (§7); the phone's frame keeps its side edges and sits 14px in (D15: edge to edge, no side borders), so the drawing is 335px wide, not 375; tiles 46px (44); `overflow: clip` dropped; the tab ring's inset −7px (−5); three grid rows added; D15's frame heights replaced (§7).
+- Changed: `scroll-margin-top` 88px → 70px (§7); the phone's frame keeps its side edges and sits 14px in (D16: edge to edge, no side borders), so the drawing is 335px wide, not 375; tiles 46px (44); `overflow: clip` dropped; the tab ring's inset −7px (−5); three grid rows added; D16's frame heights replaced (§7).
 
 ## 10. For the builder
 
-- **Markup: nothing beyond D15's.** D16 is CSS. The tabs' marker, the ticks, the answers' rings and the cards beneath are pseudo-elements.
+- **Markup: nothing beyond D16's.** D17 is CSS. The tabs' marker, the ticks, the answers' rings and the cards beneath are pseudo-elements.
 - **The prototype's `#main` prefix is the prototype's only.** It is there to win over the built page's rules. In `index.astro` the rules are written without it; rules that reach inside a figure need `:global`.
 - **Tokens** go on `:root` in Home's own stylesheet. The dark values go under the selectors Patch's dark tokens use (`[data-theme="dark"]`, and `prefers-color-scheme: dark` on `:root:not([data-theme])`); the prototype's `:root:has(#pt-dark:checked)` stands for both. Only the chosen variant is built: its column of §2.2. A adds no colour value to the site. B adds nine; they then belong in `src/styles/tokens.ts` with its contrast tests.
 - **The generated state rules** (`index.astro:41`) keep their selectors and get these declarations:
@@ -319,9 +319,9 @@ Every pair of words passes in all four. The two bold figures are B's cost in the
   - step on show, its row: `border-color: var(--cs-edge); background: var(--cs-here-wash)`; its chip: `--tile-bg: var(--cs-here); background: var(--cs-here); color: var(--cs-here-ink); border-color: var(--cs-edge)`;
   - steps behind, their chip: `background: var(--cs-card); border-color: var(--cs-edge); font-size: 0`, and `::after { display: block }` (was a green fill);
   - an answer picked: `border-color: var(--cs-edge); background: var(--cs-quiet); box-shadow: 1px 1px 0 var(--cs-edge); transform: translate(2px, 2px)`; the right answer (the one whose feedback has `data-right`) also gets the filled ring and tick, any other the dot (§4.7);
-  - step, tile and answer focus: as D15.
-- The exact CSS is the prototype's D16 block; where this document and that block differ, the block is right and this is an erratum.
-- Tests that pin today's look will move: any that read the tabs' inset line, the green disc, the cable's pseudo-elements, the facts band's background, the frame heights (D15's check 14), or `.demo`'s own border and `overflow`.
+  - step, tile and answer focus: as D16.
+- The exact CSS is the prototype's D17 block; where this document and that block differ, the block is right and this is an erratum.
+- Tests that pin today's look will move: any that read the tabs' inset line, the green disc, the cable's pseudo-elements, the facts band's background, the frame heights (D16's check 14), or `.demo`'s own border and `overflow`.
 
 ## 11. Acceptance checks
 
@@ -329,7 +329,7 @@ Every pair of words passes in all four. The two bold figures are B's cost in the
 
 *The look*
 
-1. **U** Home's HTML has the five sections in today's order, and its visible words are today's plus D15's three hints: nothing added, nothing removed.
+1. **U** Home's HTML has the five sections in today's order, and its visible words are today's plus D16's three hints: nothing added, nothing removed.
 2. **U** Home has exactly two `<script>` elements, as today.
 3. **B** The header's computed styles (ground, bottom border, the nav's inset line, the "Start learning" fill, both radii) equal those on `/tracks`.
 4. **B** `main`'s ground and the header's ground are the same colour; no element between the header and the opening draws a rule.
@@ -349,7 +349,7 @@ Every pair of words passes in all four. The two bold figures are B's cost in the
 18. **B** 375: each card's left edge is 14px from the screen's and the first words inside it start at 32px (±1px).
 19. **B** 1440×900 at the top of the page: the tabs and at least 280px of the demo card are on screen.
 
-*D15's fixes, in D16*
+*D16's fixes, in D17*
 
 20. **B** 375 and 320: every displayed text in `.demo__key` has a font size of 12px or more; `.nm-call` is not displayed; there are four key entries and four leaders. 1440: the key is not displayed, and the drawn callout names are 12px or more on screen.
 21. **U** The key's words are the drawing's callout words; the SVG's `viewBox` is `-98 -60 685 378`.
@@ -390,10 +390,10 @@ Every pair of words passes in all four. The two bold figures are B's cost in the
 
 ## 13. Open questions for the owner
 
-1. **Is this look for Home only, or does it replace Patch across the site?** Home only: Home is the cover and the lessons stay as they are; with A the colours and type are shared, so the step from Home to a lesson is a change of furniture, not of language. Across the site: the Lesson, Tracks, track, About, Glossary and 404 pages each need a design unit, and the header, which stays Patch for now, would then be the odd one out: its 1px lines and 4px corners would want the 2px edge and 8px corners, and "Start learning" the offset edge. Nothing in D16 forces that choice.
+1. **Is this look for Home only, or does it replace Patch across the site?** Home only: Home is the cover and the lessons stay as they are; with A the colours and type are shared, so the step from Home to a lesson is a change of furniture, not of language. Across the site: the Lesson, Tracks, track, About, Glossary and 404 pages each need a design unit, and the header, which stays Patch for now, would then be the odd one out: its 1px lines and 4px corners would want the 2px edge and 8px corners, and "Start learning" the offset edge. Nothing in D17 forces that choice.
 2. **A or B.** A is recommended: one orange for "do this" from the header down, and the demo's colours are the lesson's. B is calmer and nearer the sketch, at the two costs on the first page of this document, and with yellow that needs its ink edge to be seen (§8). The constraint that request, response and done "keep the same colours wherever they appear" is read here as "on the page"; if it means "the same as the lesson page", B's three calmer values go and B keeps Patch's.
 3. **The tracks' tabs look like the demo's tabs but are labels.** They are single, smaller and not bold. If that still reads as something to press, the alternative is the order words inside the card, above the title.
 4. **Links in ink, not Patch's blue,** on Home only. If the look stays Home's alone, links are blue on every other page.
-5. **Carried from D15:** the phone key's spaced capitals; the plates' engraved words as texture; a full-width Next between 600 and 860px.
-6. **Not in scope, still true:** between 861 and about 1,100px wide the drawing's own callouts are under 12px (9.7px at 960), as today. The phone's key could take over up to 1,023px; that moves D15's breakpoint and was not asked for.
+5. **Carried from D16:** the phone key's spaced capitals; the plates' engraved words as texture; a full-width Next between 600 and 860px.
+6. **Not in scope, still true:** between 861 and about 1,100px wide the drawing's own callouts are under 12px (9.7px at 960), as today. The phone's key could take over up to 1,023px; that moves D16's breakpoint and was not asked for.
 7. **The "And HTTPS?" note has no teal bar.** If the owner wants the lesson's "encrypted" colour on Home, it is one rule back.

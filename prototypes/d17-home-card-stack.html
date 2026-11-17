@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>D16 Home, card stack</title>
-<!-- D16 prototype (job 16): the whole Home page in the "Card stack" look. Built from the Home page as it is today
-     (dist/index.html) with D15's markup and rules, then the D16 look in the style block marked "D16".
+<title>D17 Home, card stack</title>
+<!-- D17 prototype (job 17): the whole Home page in the "Card stack" look. Built from the Home page as it is today
+     (dist/index.html) with D16's markup and rules, then the D17 look in the style block marked "D17".
      No script anywhere: the demo, the theme switch and the colour switch are radio buttons and CSS. -->
 <style>
 
@@ -130,7 +130,7 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
 </style>
 <style>
 
-/* ================= D15: what changes in Home's demo (src/pages/index.astro) =================
+/* ================= D16: what changes in Home's demo (src/pages/index.astro) =================
    Everything below is the change; the rules above it are the built page as it is today.
    A  phone figure: the drawing cropped to lesson 1's layer and opened to the screen's width; its callouts as a key at 12-13px.
    B  the radios anchored where the reader is looking; on a phone the narration sits under the figure and Next stays in view.
@@ -322,8 +322,8 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
 
 </style>
 <style>
-/* ================= D16: Home in the "Card stack" look =================
-   Everything below is D16. Above it: the built page as it is today, then D15's rules (kept: what they do still holds).
+/* ================= D17: Home in the "Card stack" look =================
+   Everything below is D17. Above it: the built page as it is today, then D16's rules (kept: what they do still holds).
    The header and the footer read none of this: they stay Patch. The page's ground stays Patch's ground, so the
    header, the page and the footer are one desk, and the cards lie on it.
    In the prototype every rule starts with #main so it wins over the built page's rules; the builder writes them
@@ -443,7 +443,7 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
     'scene says'
     'scene nexts'
     'foot  foot';
-  min-height: 555px;   /* D15's 503, the tabs' 50 and the two edges */
+  min-height: 555px;   /* D16's 503, the tabs' 50 and the two edges */
   padding: 0 2px;
   margin-right: calc(2 * var(--cs-stack));
   border: 0;
@@ -476,8 +476,8 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
   background: var(--cs-dither);
 }
 
-/* D15's anchors keep their places. Their top margin is the header's 69px and no more, so a tap moves nothing
-   while its anchor is anywhere below the header (D15's 88px moved the page 17px when the tabs sat just under it). */
+/* D16's anchors keep their places. Their top margin is the header's 69px and no more, so a tap moves nothing
+   while its anchor is anywhere below the header (D16's 88px moved the page 17px when the tabs sat just under it). */
 #main .demo__in { scroll-margin-top: 70px; }
 
 /* Index tabs, standing on the card's top edge. */
@@ -672,7 +672,7 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
 #main .demo__why[data-right] { border-left-color: var(--cs-done); }
 #main .demo__after { margin-top: 14px; font-size: 15px; }
 
-/* The key hints (D15): label tape, in this look's edge. */
+/* The key hints (D16): label tape, in this look's edge. */
 #main .demo__hint { border: 1px solid var(--cs-hair); border-radius: 6px; background: var(--cs-quiet); }
 #main .demo__hint kbd { border: 1.5px solid var(--cs-edge); border-bottom-width: 3px; border-radius: 4px; background: var(--cs-card); height: 22px; min-width: 22px; }
 
@@ -842,7 +842,7 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
   #main .demo__hint--part { margin: 12px 16px 12px; }
   #main .demo__hint--step { margin: 12px 16px 0; }
 
-  /* Next, kept in view (D15), as the card's foot. */
+  /* Next, kept in view (D16), as the card's foot. */
   #main .demo__nexts,
   #main .demo__pane--watch > .demo__nexts {
     margin: 16px 0 0;
@@ -941,7 +941,7 @@ body { background: var(--ground); }
 <input class="pt-in" type="radio" name="pt-var" id="pt-a" checked aria-label="Prototype: colours A, Patch">
 <input class="pt-in" type="radio" name="pt-var" id="pt-b" aria-label="Prototype: colours B, highlighter">
 <div class="pt-bar">
-  <b>D16 prototype</b>
+  <b>D17 prototype</b>
   <span class="pt-set"><span class="pt-theme"><label for="pt-a">A: Patch colours</label><label for="pt-b">B: Highlighter</label></span>
   <span class="pt-theme"><label for="pt-light">Light</label><label for="pt-dark">Dark</label></span></span>
 </div>

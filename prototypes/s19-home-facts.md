@@ -1,4 +1,4 @@
-# S18: Home's demo, facts for the Home design job (2026-11-15)
+# S19: Home's demo, facts for the Home design job (2026-11-15)
 
 Scout's report (Haiku 5.5), read-only, in the worktree `objective-taussig-eb7520` (branch `claude/objective-taussig-eb7520`). Paths are repo-relative. Every fact is path:line from the files as they stand. Nothing was edited, built or run. Pixel figures marked "computed" come from the CSS and the viewBox in the source, not from a browser.
 

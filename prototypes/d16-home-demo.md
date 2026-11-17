@@ -1,6 +1,6 @@
-# D15: Home's demo, readable and steady on a phone, honest to the keyboard
+# D16: Home's demo, readable and steady on a phone, honest to the keyboard
 
-Job 16, design unit D15. Findings A, B and C of the Home critique of 2026-11-15 (the owner's scope, "A, B and C"); E only where B's layout touches it. The prototype is `prototypes/d15-home-demo.html`: the built Home page (hero, the demo, the tracks) copied from `dist/index.html`, with the D15 changes in its last-but-one `<style>` block, headed "D15". It has no `<script>` at all, so it is also the JavaScript-off path. The dark bar at its top (Light / Dark) is the prototype's own theme switch and not part of the design.
+Job 17, design unit D16. Findings A, B and C of the Home critique of 2026-11-15 (the owner's scope, "A, B and C"); E only where B's layout touches it. The prototype is `prototypes/d16-home-demo.html`: the built Home page (hero, the demo, the tracks) copied from `dist/index.html`, with the D16 changes in its last-but-one `<style>` block, headed "D16". It has no `<script>` at all, so it is also the JavaScript-off path. The dark bar at its top (Light / Dark) is the prototype's own theme switch and not part of the design.
 
 One design, no variants: A has one good answer inside Home's container (below, "Decisions").
 
@@ -35,7 +35,7 @@ One design, no variants: A has one good answer inside Home's container (below, "
 - Generated CSS: `when('demo-watch') .demo__pane--watch{display:block}` becomes `{display:contents}`. Nothing else in the generated CSS changes form.
 - New class per radio group: `demo__in--part`, `demo__in--step`, `demo__in--answer` (or the builder selects by `name`; the spec's selectors use the classes).
 
-The exact CSS is the prototype's D15 block. The builder copies it into `index.astro`'s `<style>` (its selectors there drop the `.try` prefix the prototype needed to win over the built CSS), with these exceptions: the C rules (`visibility: hidden`) and the per-step rules are generated from `PARTS` and `demo.steps`, not written by hand; and the tabs' inset ring goes into the generated `focus()` rule for parts (`outline-offset: -5px`) instead of the prototype's `!important`.
+The exact CSS is the prototype's D16 block. The builder copies it into `index.astro`'s `<style>` (its selectors there drop the `.try` prefix the prototype needed to win over the built CSS), with these exceptions: the C rules (`visibility: hidden`) and the per-step rules are generated from `PARTS` and `demo.steps`, not written by hand; and the tabs' inset ring goes into the generated `focus()` rule for parts (`outline-offset: -5px`) instead of the prototype's `!important`.
 
 ### 2.2 A: the phone's figure (critique P1 "The phone demo scene is unreadable")
 
@@ -171,7 +171,7 @@ The arrows (← →, ↑ ↓) are `<kbd>` keys before the words. No other word i
 
 ## 8. JavaScript off
 
-Nothing in D15 needs script; the prototype has none. Every state in §3, the Tab order in §4 and the taps in §5 are the same with JavaScript off. `site.spec.ts:969-1012` and `:1665-1681` keep passing as written.
+Nothing in D16 needs script; the prototype has none. Every state in §3, the Tab order in §4 and the taps in §5 are the same with JavaScript off. `site.spec.ts:969-1012` and `:1665-1681` keep passing as written.
 
 ## 9. Measurements, before (today, `dist/` of `070cce6`) and after (the prototype)
 
@@ -233,7 +233,7 @@ Measured in the browser pane (Chromium), light theme unless said.
 19. **B, 1440×900:** the step `#demo-s5` stays checked through Learn and Practice, and the page on the laptop stays drawn (`site.spec.ts:1738-1760`, kept); a picked answer is still checked after Practice → Watch → Practice.
 20. **B, 375×812 and 1440×900, JavaScript off:** the demo steps, shows Learn and answers a question (`site.spec.ts:1001-1011`), and check 15's Tab stops hold.
 21. **B, 375×812:** the tabs (48px), the five tiles, Next and the three options are each ≥ 44px tall.
-22. **U:** `index.astro`'s D15 rules hold no colour value except tokens (as `home.test.ts:281-287` checks D5's).
+22. **U:** `index.astro`'s D16 rules hold no colour value except tokens (as `home.test.ts:281-287` checks D5's).
 23. **B, 375×812 and 1440×900, dark theme:** checks 2, 9 and 17 hold.
 
 ## 11. Tests that change (for the builder)
