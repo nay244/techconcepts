@@ -1124,3 +1124,7 @@ Planned on 2026-11-16 in a session of its own on Opus 5.5, started from the sess
 - **Give the spec review a keyboard walk in both directions at the drawn widths.** The cases named Shift+Tab under the header, but no test was written for it until the build review found the fault; a short card is where focus hides behind a sticky header without a scroll.
 - **A test that claims "arriving from X" must not reload.** The first build's test re-opened the page; the reviewer caught it. Briefs for the builder can say so.
 - **A background agent stopped by the session's end leaves no file.** Tell every reviewer to write its review in parts, as the analysts do; resuming it then loses nothing.
+
+# Job 19: the Lesson page
+
+Numbers claimed on `revamp` at plan time (2026-11-17): job 19, direction rows from 2.90, scout S21, design D19, build from B22, end F19.
