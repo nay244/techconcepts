@@ -1,6 +1,6 @@
 # D19: the Lesson page's layout, rearranged in Patch
 
-Unit D19 of job 19 (`plan.md`; direction 2.90 to 2.99). Drawn on Fable 5.2 by the owner's word (2.93). **Approved revision 2 (2.96), amended 2.97, 2.98 and 2.99, 2026-11-17.**
+Unit D19 of job 19 (`plan.md`; direction 2.90 to 2.99). Drawn on Fable 5.2 by the owner's word (2.93). **Approved revision 2 (2.96), amended 2.97, 2.98 and 2.99, 2026-11-17.** The spec review's five taste holes are answered in place (E22 to E26 in `prototypes/d19-cases.md`).
 
 - **Prototype:** `prototypes/d19-lesson-layout.html`. One file, no network. Both themes, every place of the DHCP lesson (Networking, lesson 9 of 20) and the 20-lesson track list. The yellow button at the bottom left ("D19: theme, states") switches theme, place and the timeline's stress cases, and prints the measures this spec quotes. The same switches work in the address: `?theme=light|dark&place=0..7|learn|practice|end&titles=dhcp|osi|tcp&keys=show&panel=open`.
 - **What is real in it.** The words, the figure at each step, the lease table, the log's rows, the Sequence view (a still of step 4) and the site's own CSS for those parts are copied from the built page by a script; nothing was retyped. The layout, the timeline, the track column, the forward button's words and the key line are D19's.
@@ -229,7 +229,7 @@ The guide stands beside the bar, from the header down; the bar does not reach ov
 
 Gone from the bar since today: the mark and "TechConcepts" (the header's), the theme button (the header's), the crumbs "Tracks / Networking Concepts /" (the track column's head, and the header's Tracks), and the row of segments (the timeline is the segments, made pressable and named).
 
-**Under 1100px:** a button with a list icon and "9 of 20" (28px tall on a phone, 34px on a tablet), accessible name "All 20 lessons. This is lesson 9", opens the lessons sheet (§4.8); There is no track column, so the bar's first cell keeps the lesson's name, the page's `h1` at these widths (2.99 changes nothing here). On a tablet on its side the bar is the 44px form, over the scene while watching and across the page in Learn and Practice. On a phone it is one line, 36px: the name, "Step 4 of 5" (or "Overview", "Learn", "Practice") and the button. On an upright tablet it is the same at 44px.
+**Under 1100px:** a button with a list icon and "9 of 20" (28px tall on a phone, 34px on a tablet), accessible name "9 of 20: all 20 lessons, this is lesson 9" (E23: it starts with the words shown), opens the lessons sheet (§4.8); There is no track column, so the bar's first cell keeps the lesson's name, the page's `h1` at these widths (2.99 changes nothing here). On a tablet on its side the bar is the 44px form, over the scene while watching and across the page in Learn and Practice. On a phone it is one line, 36px: the name, "Step 4 of 5" (or "Overview", "Learn", "Practice") and the button. On an upright tablet it is the same at 44px.
 
 ### 4.2 The track's lessons (`nav`, labelled by the track's title)
 
@@ -251,7 +251,7 @@ One `nav` labelled "This lesson", holding an `ol` of buttons, one a place, in or
 - **The rule** joins the marks at their middle, 2px: dashed in `line-strong` ahead, solid orange up to the current mark.
 - **The count** stands at the end: "Step 4 of 5" on a Watch step, else the place's name ("Overview", "Learn", "Practice"). It is `placeLabel`'s text, as the bar shows today.
 - **Accessible name of a stop:** "Step 4, DHCP Acknowledge", with ", done" when passed; the current stop has `aria-current="step"`; its `title` is its name.
-- **Pressing a stop** goes to that place, as an outline row does today. Focus stays on the pressed stop. The whole slot is the target (82×66 at 1440).
+- **Pressing a stop** goes to that place, as an outline row does today. On a phone and an upright tablet the stops row is not a tab: a press keeps the tab that is open, Log and Table included, as the forward and back buttons do (E25). Focus stays on the pressed stop. The whole slot is the target (82×66 at 1440).
 
 **The fill.** During "Play all", while a step holds before the next, the rule fills in orange from the current mark to the next one over the hold (2.6s at 1×, as `HOLD_MS`), left to right: first the current stop's half, then the next stop's. It is today's segment fill (`topbar__fill`, `holding`), on the rule. Not with reduced motion, as today. In the prototype a hold is 1.4s.
 
@@ -278,8 +278,9 @@ The button is job 15's: one `<button>`, orange, focus stays on it.
 | Practice | Next: Practice | Next: Practice |
 | the next lesson (from Practice) | Next lesson: Ports | Next lesson |
 | nothing (the track's last lesson, or none ready) | Next lesson, disabled, with today's reason in its `title` | the same |
+| another unit of the same lesson (from Practice; no lesson has one today) | Next: <the unit's name> | the same |
 
-- **Accessible name, always:** "Next: step 4, DHCP Acknowledge" (or the full form for the others). **`title`:** the same, with " (→)" inside a lesson.
+- **Accessible name (E23): it starts with the words the button shows** (WCAG 2.5.3), then adds what they leave out. Where the full form shows: "Next: DHCP Acknowledge, step 4". Where the short form shows: "Next: step 4, DHCP Acknowledge". "Next: Learn", "Next: Practice" and "Next lesson: Ports" are their own names; on a phone "Next lesson" is named "Next lesson: Ports". To another unit (E26): "Next: <the unit's name>, Overview". **`title`:** the name, with " (→)" inside a lesson.
 - **1100px and up:** the full form, always. The button is as wide as the guide less 32px (355px at 1440, 314px at 1280) and 40px tall; its words may take a second line (53px); they wrap between words and are never cut. The longest title on the site, "UDP: Packet Loss, No Retransmission" (35 characters), takes two lines.
 - **A tablet on its side** (the five controls are one row at the foot of the words; the forward button has what the four 44px buttons leave, 114px at 1024): one line, no chevron. The full form when it fits the button, else the short. Tried again when the place, the window or the fonts change. Measured at 1024: every step shows the short form ("Next: step 4"); "Next: Learn" and "Next: Practice" fit; in Learn and Practice the guide is wider and "Next lesson: Ports" fits.
 - **A phone (under 761px):** the short form, always, with no chevron: its room goes to the words. "Next: Practice" and "Next: step 10" fit 127px at 375, 112px at 360 and 96px at 320.
@@ -296,6 +297,7 @@ The guide is one panel, a column from the site's header to the foot of the page 
 - **The words begin with their head:** the kicker ("Watch · Step 4 of 5", "Overview", "Learn", "Practice") and, when the unit names a layer, the OSI badge (label, then the seven chips, 267px at its longest). They share a line, the kicker at the left and the badge at the right, when both fit; otherwise the badge is on a line of its own above the kicker, at the right (`flex-wrap: wrap-reverse`). Measured: one line in Learn and Practice at 1280 wide and up; two lines in a Watch step and the Overview at every width, costing 26px. It scrolls with the words. Not shown on a phone or an upright tablet, as today.
 
 - **The foot** is 135px: 12px, the row of speed, back, Play all and replay (34px), 8px, the forward button (40px), 8px, the key line (22px), 12px, and a rule above. The DOM order is job 15's: speed, back, play, replay, forward.
+- **In Learn and Practice the foot widens with the guide, to the left (E22).** Its right edge does not move. At 1440×900 the forward button is 355px wide from x 1056 in a Watch step and 526px wide from x 885 in Learn and Practice (314px from 937, and 482px from 769, at 1280×800): the button a reader pressed at the last step is still under the pointer at Learn, only longer. D1's check that the button's left edge holds still (`reading.spec.ts:303-316`) becomes a check that its right edge does.
 - **The table sits in the guide** while watching, in a window 890px tall or more (the owner's choice, 2.94). It is as tall as its content up to `clamp(120px, 24%, 200px)` of the guide (194px at 900 tall), then scrolls inside itself with the marked row in view. It takes the forms the page already has under 640px: three columns or fewer stay a table; four or more become entries (DHCP's lease is one entry of four lines, 150px with its caption); Firewalls' rules are two lines a rule; the bits board is the fitted one (302px).
 - **Under the scene instead,** as today: in Learn and Practice (D1: the scene and its table step aside together), in a window under 890px tall, and under 1100px wide. Under 890px the words of a short step would otherwise scroll (at 1280×800 there would be 420px for 452px of words).
 - OSI Model's message strip is not a table and stays under the scene at every size.
@@ -307,7 +309,7 @@ Under the track and the scene. Its height is today's less the header's share, so
 - window 890px tall or more: `clamp(131px, calc(26vh - 69px), 183px)` (today's `clamp(200px, 26vh, 252px)` less 69px): 165px at 900 tall.
 - under 890px tall, and a tablet on its side: `clamp(155px, calc(26vh - 45px), 207px)` (less 45px: the bar gave 24px): 163px at 800 tall, 155px at 768.
 
-Its head is 32px: the "Event log" tape and the legend; the controls have left it at every width. In Learn and Practice it folds to its head with "Show log" (45px with the button), as D1 folds it today. The table, its columns and its rows are unchanged; it scrolls to the newest row, as today.
+Its head is 32px: the "Event log" tape and the legend; the controls have left it at every width. In Learn and Practice it folds to its head with "Show log" (45px with the button), as D1 folds it today. The table, its columns and its rows are unchanged; it scrolls to the newest row, as today. **The row of column names stays at the top of the log while the rows scroll under it** (E24: `thead th { position: sticky; top: 0 }` on the panel's ground), at 761px and up; it takes no height, and it is what makes the rows counted here rows a reader can read under their names. On a phone the log is entries with no such row, as today.
 
 ### 4.8 The lessons sheet (under 1100px wide)
 
@@ -370,12 +372,13 @@ The page keeps today's rules (`no-script.test.ts`): the note "This lesson needs 
 |---|---|---|
 | Next: <step's title> / Next: step <n> / Next: Learn / Next: Practice | forward button | new; replaces "Next step" |
 | Next lesson: <lesson's title> ("Next lesson: Ports") | forward button at Practice, 761px and up | new (the owner's choice, 2.94); "Next lesson" stays on a phone and when disabled |
-| Next: step <n>, <title> | forward button's accessible name and `title` | new |
+| Next: <title>, step <n> (the full form showing); Next: step <n>, <title> (the short form showing) | forward button's accessible name and `title` | new (E23) |
+| Next: <the unit's name>; named "Next: <the unit's name>, Overview" | forward button at Practice when another unit follows (none today) | new (E26) |
 | Space play all or pause ← back → next | key line | D14 §9's line, "next step" shortened to "next" |
 | <n> of <N> done | track column's head and the sheet | new |
 | <n> of <N> (a part's count; "✓" before it when complete) | each part | new |
 | <n> of <N> | the bar's lessons button under 1100px | new |
-| All <N> lessons. This is lesson <n> | that button's accessible name | new |
+| <n> of <N>: all <N> lessons, this is lesson <n> | that button's accessible name | new (E23) |
 | Step <n>, <title>; ", done" | a stop's accessible name | new |
 | In this lesson | the no-script list's heading | new |
 | This lesson | the timeline's `nav` label | kept (it was the outline's heading) |
@@ -492,7 +495,10 @@ Each can be tried on the prototype.
 25. In a window 890px tall or more, while watching, the lesson's table is in the guide between the words and the controls, and scrolls inside itself past its cap. In Learn and Practice, under 890px tall and under 1100px wide it is under the scene.
 26. At 1440×900 the words' room at DHCP step 4 is at least 510px and the words do not scroll; in Learn it is at least 660px. At 1280×800 the words' room in a Watch step is at least 560px.
 27. The forward button is on a line of its own, 355×40 at 1440, and shows the full form at every place; "Next: UDP: Packet Loss, No Retransmission" takes two lines and is whole. At Practice it reads "Next lesson: Ports".
-28. The forward button's accessible name names the place at every place ("Next: step 4, DHCP Acknowledge").
+28. The forward button's accessible name starts with the words it shows and names the place at every place: "Next: DHCP Acknowledge, step 4" where the full form shows, "Next: step 4, DHCP Acknowledge" where the short form shows.
+28a. Between the last Watch step and Learn the forward button's right edge does not move (1411 at 1440×900); its left edge moves from 1056 to 885.
+28b. At 761px and up, with the log scrolled to its newest row, the column names are at the top of the log's scroll box.
+28c. On a phone, with the Log tab or the Table tab open, pressing a stop goes to that place and the same tab stays open.
 29. The forward button's words are never cut: at every place of every lesson, at 1440, 1280, 1100, 1024, 768, 375, 360 and 320 wide, the label's `scrollWidth` is at most its `clientWidth`, and the button is inside the window.
 30. Focus stays on the forward button through a walk from the Overview to Practice.
 31. →, ← and Space do what they do today.
@@ -501,7 +507,7 @@ Each can be tried on the prototype.
 
 **Under 1100px**
 
-34. The bar's button reads "9 of 20", opens the sheet with every part open, and Escape, Close and the backdrop close it with focus back on the button.
+34. The bar's button reads "9 of 20", is named "9 of 20: all 20 lessons, this is lesson 9", opens the sheet with every part open, and Escape, Close and the backdrop close it with focus back on the button.
 35. At 1024×768 there are no tabs; the bar is 44px with the timeline as marks, over the scene while watching; the five controls are one row of 44px buttons at the foot of the words; the words have 437px; the log's head holds no control. In Learn and Practice the bar is across the page.
 36. At 375×812 the header is 69px, the lesson's bar 36px, the scene 276px, the stops row 36px, the tabs (Explain, Log, Table) 44px, the controls 64px, and the words have 287px. Every stop is at least 24px wide and 35px tall with 13 places at 360px wide and up.
 37. On a phone the controls' x positions and sizes are today's (48px at 12, 68, 124, 180; the forward button 127×48 at 375).
@@ -534,6 +540,11 @@ Each can be tried on the prototype.
 18. The phone's stops row stays under the scene (§5).
 19. No new key: R for replay was ruled out in D14 and stays out.
 20. The sheet is today's dialog with the track column's content: one component, two homes.
+21. (E22) The controls' foot widens with the guide in Learn and Practice, as the approved prototype shows; its right edge and the button's right end hold still.
+22. (E23) An accessible name starts with the words on the button: a reader who says what they see presses it. The order of the name follows the form shown.
+23. (E24) The log's column names stay while its rows scroll: at 3.1 rows the names would otherwise be off screen whenever the log is at its newest row.
+24. (E25) A stop keeps the phone's open tab: the row is beside the tabs, not one of them, and moving a place should not also change what the reader chose to look at.
+25. (E26) A following unit is named like any other place: "Next: <the unit's name>".
 
 ## 13. Open questions for the owner
 
