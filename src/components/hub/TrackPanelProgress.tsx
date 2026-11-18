@@ -1,4 +1,4 @@
-import { UP_NEXT_KICKER, stripStates, stripWords, type UpNextKind } from '../../lib/hub';
+import { UP_NEXT_KICKER, stripStates, stripWords } from '../../lib/hub';
 import type { LessonSummary } from '../../content/registry';
 import '../site.css';
 import TrackStrip from './TrackStrip';
@@ -12,8 +12,6 @@ interface Props {
   trackUrl: string;
 }
 
-/** The small heading above the lesson up next. On this page a first visit says "First lesson": "Start here" is the first track's tab. */
-const KICKER: Record<UpNextKind, string> = { ...UP_NEXT_KICKER, start: 'First lesson' };
 /** The lesson's number chip: not started yet, you are here, done. */
 const CHIP = { start: 'ahead', next: 'here', 'done-so-far': 'done' } as const;
 
@@ -33,7 +31,7 @@ export default function TrackPanelProgress({ entries, known, trackUrl }: Props) 
       <TrackStrip states={stripStates(entries, data, current)} words={stripWords(entries, data)} />
       {next !== null && (
         <div className="upnext" data-kind={next.kind}>
-          <p className="upnext__k">{KICKER[next.kind]}</p>
+          <p className="upnext__k">{UP_NEXT_KICKER[next.kind]}</p>
           <p className="upnext__l">
             <span className="upnext__n" data-state={CHIP[next.kind]}>
               <span className="sr-only">Lesson </span>

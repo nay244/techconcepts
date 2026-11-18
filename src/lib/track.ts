@@ -120,3 +120,31 @@ export function cardPlaces(lesson: Lesson): CardPlace[] {
     }
   });
 }
+
+/**
+ * The parts as the track page's route draws them, and nothing more: a ready lesson without its `summary`, `meta`,
+ * `metaLabel` and `tags`, and each place without its `note`, none of which the page's islands read. The page's HTML
+ * carries each island's props, so what the islands do not draw is left out. The types still list those fields; the
+ * route never reads them.
+ */
+export function routeParts(parts: TrackPart[]): TrackPart[] {
+  const slim = parts.map((part) => ({
+    ...part,
+    lessons: part.lessons.map((lesson) => {
+      if (!lesson.ready) return lesson;
+      const { summary: _summary, meta: _meta, metaLabel: _metaLabel, tags: _tags, places, ...rest } = lesson;
+      return { ...rest, places: places.map(({ parts: marks }) => ({ parts: marks })) };
+    }),
+  }));
+  return slim as unknown as TrackPart[];
+}
+
+/** The entries as the page's islands read them: an available entry without its `summary`. */
+export function islandEntries(entries: LessonSummary[]): LessonSummary[] {
+  const slim = entries.map((entry) => {
+    if (!entry.available) return entry;
+    const { summary: _summary, ...rest } = entry;
+    return rest;
+  });
+  return slim as unknown as LessonSummary[];
+}

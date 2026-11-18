@@ -34,21 +34,16 @@ interface Props {
    */
   canonical?: string | null;
   /**
-   * Whether the layout renders the site footer after the page (default true). A split page turns it off and renders
-   * <SiteFooter /> itself, at the end of the part that scrolls.
+   * Whether the layout renders the site footer after the page (default true). The lesson page turns it off: it has no
+   * footer.
    */
   footer?: boolean;
-  /**
-   * A split page: a fixed card beside a route that scrolls on its own. Adds class="split" to the body, which on a large
-   * screen locks the window to one screen so only the route scrolls. Below that it is an ordinary page.
-   */
-  split?: boolean;
 }
 
 const SITE_NAME = 'TechConcepts';
 const DEFAULT_IMAGE = '/og-default.png';
 const DEFAULT_IMAGE_ALT = 'TechConcepts. See how technology really works. A home router with its lid lifted, one message lit on the board inside.';
-const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, main = true, current, overHero = false, canonical, footer = true, split = false } = Astro.props;
+const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, main = true, current, overHero = false, canonical, footer = true } = Astro.props;
 
 // Home passes the bare site name; every other page is "<page> · TechConcepts".
 const fullTitle = title === SITE_NAME ? SITE_NAME : `${title} · ${SITE_NAME}`;
@@ -95,7 +90,7 @@ const bootScript = `${themeBootScript}\ndocument.documentElement.classList.add("
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body class:list={{ split }}>
+  <body>
     <LumenDefs />
     <a class="skip-link" href="#main">Skip to content</a>
     {

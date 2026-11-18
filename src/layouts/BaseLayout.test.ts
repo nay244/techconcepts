@@ -1,5 +1,5 @@
-// BaseLayout's two layout props, checked in its rendered markup: `split` puts class="split" on the body, and
-// `footer={false}` leaves the footer to the page. The defaults keep the footer and add no class.
+// BaseLayout's layout props, checked in its rendered markup: `footer={false}` leaves the footer out, and `main={false}`
+// leaves its `<main>` to the page. The defaults keep the footer and the wrapper.
 import { getContainerRenderer } from '@astrojs/react/container-renderer';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { loadRenderers } from 'astro:container';
@@ -17,17 +17,13 @@ async function render(props: Record<string, unknown> = {}): Promise<Document> {
   return new JSDOM(html).window.document;
 }
 
-test('by default the footer follows the page and the body is not a split page', async () => {
+test('by default the footer follows the page and the body carries no class', async () => {
   const doc = await render();
   expect(doc.querySelector('footer')).not.toBeNull();
-  expect(doc.body.classList.contains('split')).toBe(false);
+  expect(doc.body.hasAttribute('class')).toBe(false);
 });
 
-test('split puts the split class on the body', async () => {
-  expect((await render({ split: true })).body.classList.contains('split')).toBe(true);
-});
-
-test('footer={false} leaves the footer to the page but keeps the header', async () => {
+test('footer={false} leaves the footer out but keeps the header', async () => {
   const doc = await render({ footer: false });
   expect(doc.querySelector('footer')).toBeNull();
   expect(doc.querySelector('.site-head')).not.toBeNull();
