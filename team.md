@@ -1239,3 +1239,11 @@ Planned on 2026-11-18 in a session of its own on Opus 5.5, started from the sess
 - **A builder that waits on its own background runs can sit silent.** B25's fixes were committed in an hour; the report never came, and nothing showed it for three hours. After sending fixes, check the branch's commits and `ps` for its runs within the hour, rather than waiting for the hand-back.
 - **Keep each end-to-end run's failure list.** A second run overwrote `test-results/.last-run.json`, so one failure of the first CI pass has no name. Use `--reporter=line` with the failure headers kept, or `--output` per run.
 - **Subagents could not write into the main folder** (the designer and the reviewer); they wrote into the session's worktree and the orchestrator copied the files across. Name that folder in the brief from the start.
+
+# Job 22: the Glossary and About in the Card stack look
+
+Planned on 2026-11-18 in job 21's session on Opus 5.5: the owner said "Lets do the Glossary and About in the same session"; the separate session's brief was refused by the auto-mode check, and the owner said "Run it here" (direction 2.110). Numbers claimed on `revamp` (c336e82): job 22, rows from 2.110, S23, D21, B26, B27, F22. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S23 | scout | Haiku | 1 | 234,657 | `prototypes/s23-glossary-about-facts.md` (8 parts; Part 8 measured by the orchestrator). Glossary: 105 entries, 110 definitions, 48 pointers, 20 letters, no script; About: 3 counts, 4 figures, one script. `glossary.spec.ts:143`: W's section too short for the sticky bar (its reading). Measured: Glossary 20,847 / 50,158px, 34.6 KB; About 4,826 / 6,883px, 51.6 KB, sideways scroll at 320–356px. |
