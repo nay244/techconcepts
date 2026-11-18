@@ -1216,3 +1216,26 @@ Planned on 2026-11-18 in a session of its own on Opus 5.5, started from the sess
 | B25 spec | reviewer | Opus | 1 | 249,582 | `prototypes/d20-cases.md`: 12 holes (11 one answer, 1 taste), 106 cases (67 end-to-end, 65 for a real browser; 35 unit; 4 build). Closed as E1–E11 by the orchestrator; T1 by the designer (continued, 646 tokens): E12, Tracks' faint square. |
 | B25 | builder | Sonnet | 1 | 426,358 | `job21/b25`: 1a53dd5 (the page, Route, no figures, `split` removed), 818c38d (unit tests), 9195e51 (a new end-to-end spec, the old pins changed once), 53baeef (the rail tie, waits). vitest 2,541 passed (173 files); build within budget; CI's e2e pass 1,144 passed, 3 skipped, only `glossary.spec.ts:143` failing; the new spec's 194 tests 1,940 of 1,940 at `--repeat-each=10` in `reduced-motion` and `d1440-dark`; 19 unit and 10 e2e mutations red; Home and Tracks 12 of 12 screenshots byte-identical. HIW / Networking: 1440 900 (an inner box) → 2,365 / 2,910px; 375 7,129 / 9,544 → 3,499 / 4,330px; 11.8 / 221.9 → 9.1 / 10.8 KB gzipped. Departures: the tie 22px (E4); the part count 12px after the name; `SiteFooter.astro`'s comment left stale. |
 | B25 review | reviewer | Opus | 1 | 249,011 | PASS WITH FIXES, no blocker; Home and Tracks byte-identical, confirmed. Five fixes: the white space before a part's count (heights off at five bands, Networking 390 4,278 against 4,305); three tests short of their cases (every lesson in progress at 700–1440; the 186px card at 375 and 768 with `transitionsDone`; `site.spec.ts:686`'s wait); the contrast test's pairs. Departures: the 22px tie accepted (follows E4); the stale `SiteFooter.astro` comment accepted for a later change. `.superpowers/job21/b25-review.md` in the worktree (not tracked). |
+| B25 fixes | builder (continued) | Sonnet | 1 | 14,347 (440,705 reported in all, less B25) | `76d2bcc`: the five fixes. Its report never came: it waited on test runs that had ended, until the owner asked three hours later. |
+| B25 fix check | orchestrator | Opus 5.5 | 1 | not counted | In the worktree: Networking 390×844 4,305px (fix 1), every height as the spec; the every-lesson-in-progress test red with the media widened to 700 (fix 2), the 186px card test red without `min-height: 2.9em` (fix 3), the contrast test red with the done square in `--cs-hair` (8 failed; fix 5), all green restored; `site.spec.ts`'s scroll test 10 of 10 at `reduced-motion`, `--trace=off --repeat-each=10` (fix 4). vitest 2,541; the two specs at three projects 966 passed, 4 skipped. **B25 done.** |
+| F21 | orchestrator | Opus 5.5 | 1 | not counted | `job21/b25` merged into `revamp` (`fdae9f9`). vitest 2,541 passed (173 files); build within budget on 42 pages (9.1 / 10.8 KB); CI's end-to-end pass: first run 2 failed (the record of which was overwritten by the next run), rerun 1,147 passed, 3 skipped, 1 failed, the held `glossary.spec.ts:143`; the three Card stack specs at `reduced-motion` 551 passed, 2 skipped. §11 rewritten. Nothing pushed. |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| scout | Haiku | 238,025 |
+| designer (D20, revision, T1) | Fable 5.2 (the owner's word, 2.103) | 431,893 |
+| reviewer (spec, build) | Opus | 498,593 |
+| builder (B25, fixes) | Sonnet | 440,705 |
+| **Total** | | **1,609,216** (estimate 1.3 to 2.15 million plus the scout's 0.24) |
+
+## Could go one model lower next time
+
+- B25's five fixes (a space, three tests extended, one wait) each came with its check named; a Haiku `builder` would have done.
+
+## What to do differently next time
+
+- **A builder that waits on its own background runs can sit silent.** B25's fixes were committed in an hour; the report never came, and nothing showed it for three hours. After sending fixes, check the branch's commits and `ps` for its runs within the hour, rather than waiting for the hand-back.
+- **Keep each end-to-end run's failure list.** A second run overwrote `test-results/.last-run.json`, so one failure of the first CI pass has no name. Use `--reporter=line` with the failure headers kept, or `--output` per run.
+- **Subagents could not write into the main folder** (the designer and the reviewer); they wrote into the session's worktree and the orchestrator copied the files across. Name that folder in the brief from the start.

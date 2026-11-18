@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 21: the track page in the Card stack look
 
-**Status: the owner said go with the layout open ("Go, layout open", 2026-11-18, direction 2.105); D20 approved as revision 1, Route with no lesson drawings, and frozen (2.106, 2.107); the spec review next.** Planned under 2.103 and 2.104. The owner, 2026-11-18: "Let's do the Track's page. For the design use Fable 5.2". The track page is `src/pages/[track]/index.astro`, served at `/how-the-internet-works` and `/networking`. Numbers claimed on `revamp` (fb02521, checked free): job 21, direction rows from 2.103, S22, D20, build from B25, F21.
+**Status: done (2026-11-18, direction 2.109).** The owner said go with the layout open (2.105); D20 approved as revision 1, Route with no lesson drawings (2.106, 2.107); errata E1–E12 (2.108); B25 built, PASS WITH FIXES, each fix checked; merged into `revamp` at `fdae9f9`. Planned under 2.103 and 2.104. The owner, 2026-11-18: "Let's do the Track's page. For the design use Fable 5.2". The track page is `src/pages/[track]/index.astro`, served at `/how-the-internet-works` and `/networking`. Numbers claimed on `revamp` (fb02521, checked free): job 21, direction rows from 2.103, S22, D20, build from B25, F21.
 
 ## Inputs
 
