@@ -83,7 +83,7 @@ The track page, About, the Glossary and 404 in Card stack (later jobs, 2.84); th
 
 # Job 19: the Lesson page, its layout rearranged in Patch
 
-**Status: D19 approved (2.96), amended at the owner's word (2.97 the stamp leaves, 2.98 the explanation column takes its cell, 2.99 the track's and the lesson's names change places) and frozen at the commit that records 2.99's design; the spec review closed as E1–E26 (2.100); B22 done on `job19/b22` (`bef8e25`, review 2 PASS WITH FIXES, its fix checked); B23 is building.** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
+**Status: done (2026-11-17, direction 2.101).** D19 approved (2.96), amended at the owner's word (2.97–2.99), frozen, and spec-reviewed (E1–E26). B22 and B23 were built, reviewed and merged into `revamp` (`fc8cfd5`), with E27–E31 added in the build. The full end-to-end run's six job 19 failures in `reduced-motion` were fixed (`b6f4245`). Left: twenty Home and Tracks tests that fail in `reduced-motion` since jobs 17 and 18, and the held `glossary.spec.ts:143`.** The owner said "let's plan out the Lesson page", asked for a comparison with a reference site (`prototypes/s21-reference-designed-to-scale.md`), then chose the scope (direction 2.90). Numbers claimed on `revamp` (1a6bd1a): job 19, rows from 2.90, S21, D19, B22 on, F19.
 
 ## Inputs
 

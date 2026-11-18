@@ -125,6 +125,7 @@ The owner's framing of the revamp: "We will be making improvements to the app fr
 | 2.98 | **The explanation column takes the bar's cell the stamp left** (**owner**, 2026-11-17: "With the space cleared by the sources section, scale the Lesson explanation column to fill that space"). **The orchestrator's reading:** "the sources section" is the stamp ("Checked …, N sources", 2.97), whose cell sat at the right of the lesson's bar over the guide column; the guide column (the step's words, the lesson's table, the controls, the key line) now rises to the site's header and takes that cell's height, and the bar with the lesson's name and the timeline spans only the track column and the scene. The OSI badge, which shared the cell, moves where the designer rules (the guide's head is the natural place). Where the bar is one line (under 890px tall) and on the tablets the same rule holds; the phone has no such cell and is unchanged. D19 is amended again by its designer (Fable 5.2, 2.93); the approval of 2.96 stands for the rest. | owner |
 | 2.99 | **The track's name and the lesson's name change places** (**owner**, 2026-11-17: "Only minor change to make is on the left column containing the lessons the header \"Tracks/ Networking Concepts\" switch with the \"DCHP Lesson \"x\" of \"x\"\""). The lesson bar's first cell, over the track column, now reads "Tracks / Networking Concepts" (the links to the Tracks page and the track's page), and the head of the track column reads the lesson's name with "Lesson 9 of 20". Where the track's progress strip ("6 of 20 done") goes is the designer's call. **The orchestrator's reading:** "only minor change" is the last change before the build; with it D19 (2.96, amended 2.97, 2.98, 2.99) is frozen and the spec review starts. | owner |
 | 2.100 | **D19's spec review: 26 holes closed, E1–E26** (2026-11-17; `prototypes/d19-cases.md`, 64 cases, 53 for a real browser). The orchestrator closed H1–H21 with the reviewer's measured answers (E1–E21: one `main` and one `banner` with the site's header, one `h1` shown by CSS, → keeps moving forward, the no-script style keeps the track's links, `scroll-padding-top: 69px`, the forward button 526px wide in Learn, the full list of end-to-end measures that change, the drawings recorded before the build and none allowed to shrink, among others). The designer (Fable 5.2, 2.93) answered H22–H26 (E22–E26): the controls widen with the guide in Learn and Practice, their right edge fixed (as the approved prototype shows); accessible names start with the visible words (WCAG 2.5.3); **the log's column names stay in view** (sticky, 0px: the one change a reader sees, which the owner was told of before the review); a stop on a phone keeps the open tab; "Next: <unit>" when another unit follows Practice. Next: B22. | orchestrator (Opus 5.5) |
+| 2.101 | **Job 19 built and merged into `revamp`** (2026-11-17). B22 (the header, the shared parts, 1100px and up) passed on its second review, with one fix checked. B23 (the phone and 761–1099px) passed on its second review, after a first FAIL whose blocker was keyboard focus under the open menu. Five errata were added in the build (`prototypes/d19-cases.md`): E27, OSI Model's 13 marks keep the bar full width at 900–1023px; E28, the menu closes when focus leaves the header; E29, the figure is 638×300 at 1024×768; E30, case 48's rule for boxes taller than the window; E31, case 41's backdrop leg at 1024 only. Departures accepted in B22: the log 2.93 rows at 1440×900 and 1.92 at 1280×800; a long "Next:" label wraps to two lines at 1280. The full end-to-end run then found six of the job's new tests failing only in the `reduced-motion` project; they were test faults, fixed in `b6f4245`. It also found twenty Home and Tracks tests failing there since jobs 17 and 18, which are left to a task of their own. §7 now opens with the page as built. | orchestrator (Opus 5.5) |
 | 2.9 | **On a phone the starting hypothesis is tabs over the lesson's regions, with the step controls pinned at the bottom**, from the earlier direction doc §6.3. It is tested with a throwaway prototype before it is built. | after Q5 |
 | 2.10 | **Carried-over decisions this revamp changes:** "desktop first" (see 1.3); the living-blueprint look and its illustration style; and the 2026-11-09 Home and track-page layouts (see 1.2). **Leaned on unchanged:** accuracy outranks speed, lesson count and polish; the beginner-first voice; Watch › Learn › Practice with Practice unscored; no Continue on Home or in the header; original art; no accounts, gamification or site search; translations deferred. | after Q8 |
 
@@ -263,6 +264,37 @@ The prototypes and screenshots are on this machine only, in the git-ignored `.su
 
 ## 7. What the prototype changed on the Lesson page, and what each change fixed
 
+### The Lesson page as built in job 19 (D19, 2026-11-17)
+
+This is the page today. The subsections after it record the layouts before it, and what each change then fixed. Where they differ, this one stands. The spec, with every measure, is `prototypes/d19-lesson-layout.md` (revision 2, amended 2.97–2.99). The spec review and errata E1–E31 are in `prototypes/d19-cases.md`.
+
+- **The site's header is on top at every width** (69px; Tracks current; no footer), so Tracks, the Glossary, About and home are one press from a lesson (2.95). Under 960px its menu lies over the lesson, and on the Lesson page it closes when focus leaves the header (E28).
+- **At 1100px and up**, three columns: the track (232px), the scene, and the guide (`clamp(348px, 27vw, 392px)`).
+  - **The lesson's bar** (68px; one line, 44px, under 890px tall) spans the track and the scene. Its first cell reads "Tracks / <track>". The rest is the timeline: one stop per place, numbered and named, the current one filled, passed ones ticked, the count at the end. Play all's progress fills it (2.94, 2.95, 2.99).
+  - **The track's column** is headed by the lesson's name with "Lesson 9 of 20", the progress strip and "6 of 20 done". Under the head are the track's parts and lessons. The part holding this lesson is open and cannot close.
+  - **The guide** runs from the header to the foot of the page (2.98). It holds:
+    - the OSI badge, then the words;
+    - the lesson's table, from 890px tall;
+    - the controls, with "Next: <place>" or "Next lesson: <name>";
+    - the key line (Space, ← →).
+  - **The log** runs under the track and the scene. Its column names stay in view (E24).
+  - **In Learn and Practice** the guide widens (560px from 1324 wide), and the controls keep their right edge (E22).
+- **At 1440×900 on DHCP** the drawing is 769×366, against 733×349 before. Over all 34 pages at their last Watch step, the median drawing is 769×424, against 629×347; no page's drawing is smaller (a test pins it, E17).
+  - The words have 520px beside the table, against 548. The log shows about 2.9 rows, against 4.6.
+- **From 900 to 1099px, on its side, 600px tall or more:**
+  - No track column. The bar is in its 44px form with a "9 of 20" button that opens the track's lessons in a sheet.
+  - While watching the bar sits over the scene, and the words sit beside the scene. A lesson with 10 places or more keeps the bar across the page under 1024px (E27).
+  - The five controls are one row at the foot of the words.
+  - The log runs across the foot.
+- **On a phone, and upright up to 1099px:**
+  - Top to bottom: the header, the bar (36px; 44 upright), the scene (34dvh; 40dvh upright), the stops row (36px; 40 upright), the tabs Explain, Log and Table (or Rules, or Bits), the words, and the controls pinned at the foot.
+  - The Steps tab is gone: the stops row does its job, and a stop keeps the open tab (E25). At 375×812 the words have 287px (372 before).
+- **The stamp is no longer on the Lesson page** (2.97). It stays on the track page and Home's demo.
+- **With JavaScript off**, the page keeps the stacked layout under the header. It shows the track's lessons as links and lists the places as text.
+- **Not done in this job:** the phone's figure labels (1.3–7.1px on DHCP), and the other items in `plan.md`'s "Not in this job".
+
+### Before job 19
+
 Each starts from the layout in 2.8.
 
 | Change | What it fixed |
@@ -311,7 +343,7 @@ The first prototype's "bigger scene" was a taller box around a smaller drawing; 
 
 Still to fix in the build: the scene moves up once, by 85px, when the first message opens the log.
 
-**Sources and the stamp, as built (2026-11-10).**
+**Sources and the stamp, as built (2026-11-10).** (Since 2.97 the stamp is not on the Lesson page; the rest stands.)
 
 - **The stamp says "Checked", not "Verified".** A checked lesson reads "Checked 8 Nov 2026, 6 sources"; one that has not been through the fact-check reads "Not checked yet, 2 sources". "Checked" is the word Home and About already use for the independent check, it pairs with "Not checked yet", and it claims what happened: a check on a date, which a reader can weigh. The date is the report's (`docs/fact-checks/<slug>.md`); the count is the lesson's listed sources.
 - **Where it shows.** In the lesson's top bar, at the end of the title line, linking to About's "Where the facts come from". At the foot of Learn, above the sources (date only). On every ready lesson's card on the track page (date only). Not on the small up-next cards (Tracks, the track page's side card, the end of a lesson): their job is what to open next.
