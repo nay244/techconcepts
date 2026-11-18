@@ -1201,3 +1201,11 @@ Started 2026-11-17 by the session that closed job 19, as a task of its own (`tea
 - **A wait must be proved without tracing.** Playwright's trace slows every step enough to hide a wait that is too short; a flaky-wait fix is checked with `--trace=off --repeat-each` before its review.
 - **Other `settledFrame` callers** (`site.spec.ts`, `lesson-layout.spec.ts`, `lesson-layout-small.spec.ts`) were not re-checked with tracing off; any that reads a style after a change may want `transitionsDone`.
 
+
+# Job 21: the track page in the Card stack look
+
+Planned on 2026-11-18 in a session of its own on Opus 5.5, started from the session that closed job 20. The owner: "Let's do the Track's page. For the design use Fable 5.2" (direction 2.103, 2.104). Numbers claimed on `revamp` (fb02521): job 21, rows from 2.103, S22, D20, B25, F21. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S22 | scout | Haiku | 1 | 238,025 | `prototypes/s22-track-page-facts.md` (8 parts; Part 8 measured by the orchestrator). Two islands, 14 + 20 lessons all ready, 6 parts each; 3 tests pin the page in Patch; 11 lesson specs read `/networking` through `checkCard`. Measured: 375 7,129 / 9,544px; 1440 one screen, the route box 3,861 / 5,018px; 11.8 / 221.9 KB gzipped, OSI Model's figure twice. |
