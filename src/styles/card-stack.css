@@ -1,6 +1,6 @@
 /* The Card stack's shared parts (prototypes/d17-home-card-stack.md, prototypes/d18-tracks-card-stack.md §3): cards with a
-   hard edge on Patch's ground. Imported by Home (src/pages/index.astro) and the Tracks page (src/pages/tracks.astro)
-   only. Every part is a `--cs-*` name, an opt-in `cs-` class, or scoped to `main`, so the file reaches neither the
+   hard edge on Patch's ground. Imported by Home (src/pages/index.astro), the Tracks page (src/pages/tracks.astro) and
+   the track page (src/pages/[track]/index.astro) only. Every part is a `--cs-*` name, an opt-in `cs-` class, or scoped to `main`, so the file reaches neither the
    header, nor the footer, nor a page that does not import it. */
 
 /* TOKENS BEGIN: the Card stack's own names, on :root. No Patch token is given a new value here, so the header

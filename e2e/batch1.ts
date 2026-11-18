@@ -81,15 +81,19 @@ export async function checkPhoneTable(page: Page, path: string): Promise<Seen> {
   return seen;
 }
 
-/** Case 24 on the track page: the lesson's card at its stop, with the spec's words. */
-export async function checkCard(page: Page, slug: string, stop: number, aria: string): Promise<void> {
+/**
+ * Case 24 on the track page: the lesson's card at its stop, once, at its place in the route, and with no drawing: the
+ * page draws no lesson figure (direction 2.106). The lesson's own spec checks its spot and its description where the
+ * spot is drawn, on the lesson page; `_aria` is kept so the callers need not change.
+ */
+export async function checkCard(page: Page, slug: string, stop: number, _aria: string): Promise<void> {
   await page.setViewportSize(DESKTOP);
   const errors = collectErrors(page);
   await page.goto('/networking');
   await hydrated(page);
   const card = lessonCard(page, slug);
   await expect(card).toHaveCount(1);
-  await expect(card.locator('svg[role="img"]')).toHaveAttribute('aria-label', aria);
+  await expect(card.locator('svg[role="img"]')).toHaveCount(0);
   const stops = page.locator('main .route li.stop');
   expect(await stops.evaluateAll((els, el) => els.indexOf(el as HTMLElement), await card.elementHandle())).toBe(stop - 1);
   expect(errors).toEqual([]);

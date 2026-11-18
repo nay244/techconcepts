@@ -52,7 +52,7 @@ describe('the track page', () => {
     expect(strip(container)).toBe(`0 of ${planned} lessons done · ${readyCount} ready`);
     expect(screen.queryByText('✓ Done')).toBeNull();
     expect(within(dhcpStop()).getByText('Not started')).toBeInTheDocument();
-    expect(within(container.querySelector('.side-now') as HTMLElement).getByText('Start here')).toBeInTheDocument();
+    expect(container.querySelector('.upnext .upnext__k')).toHaveTextContent(/^First lesson$/);
   });
 });
 

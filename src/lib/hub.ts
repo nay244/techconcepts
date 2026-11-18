@@ -102,9 +102,9 @@ export function lessonLine(entry: AvailableSummary): string {
   return `Lesson ${String(entry.number).padStart(2, '0')} · ${entry.subtitle}`;
 }
 
-/** The small heading above the up-next lesson. */
+/** The small heading above the up-next lesson. "Start here" is the first track's tab on Home and Tracks, so a first lesson says "First lesson". */
 export const UP_NEXT_KICKER: Record<UpNextKind, string> = {
-  start: 'Start here',
+  start: 'First lesson',
   next: 'Up next',
   'done-so-far': '✓ Done so far',
 };

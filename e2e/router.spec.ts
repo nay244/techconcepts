@@ -183,17 +183,14 @@ test('with reduced motion no candidate row animates; with motion it pulses (chec
   expect(await animationOf('no-preference')).toBe('tpanel-pulse');
 });
 
-test('the Networking track page shows Router’s spot at its stop with its description, and no card throws (check 24)', async ({ page }) => {
+test('the Networking track page lists Router at its stop with no drawing, and no card throws (check 24)', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
   const errors = collectErrors(page);
   await page.goto('/networking');
   await hydrated(page);
   const stop = lessonCard(page, 'router');
   await expect(stop).toHaveCount(1);
-  await expect(stop.locator('svg[role="img"]')).toHaveAttribute(
-    'aria-label',
-    'A round router where three cables meet, one coming in and two going out. A lit packet travels down one of the ways out. In front stands its routing table, three routes long, with the route it chose marked.',
-  );
+  await expect(stop.locator('svg[role="img"]')).toHaveCount(0);
   // It is the eighth stop of the route.
   const stops = page.locator('main .route li.stop');
   expect(await stops.evaluateAll((els, el) => els.indexOf(el as HTMLElement), await stop.elementHandle())).toBe(7);

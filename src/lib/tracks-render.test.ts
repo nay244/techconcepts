@@ -194,16 +194,16 @@ describe('the words: every text in main is the list written from §9', () => {
 });
 
 describe('the shared Card stack stylesheet', () => {
-  test('is imported by Home and the Tracks page and by nothing else', () => {
+  test('is imported by Home, the Tracks page and the track page, and by nothing else', () => {
     const importers = (execSync("grep -rlE \"import .*card-stack\\.css\" src || true", { encoding: 'utf8' }) as string)
       .split('\n')
       .filter((f) => f !== '' && !f.endsWith('.test.ts'))
       .sort();
-    expect(importers).toEqual(['src/pages/index.astro', 'src/pages/tracks.astro']);
+    expect(importers).toEqual(['src/pages/[track]/index.astro', 'src/pages/index.astro', 'src/pages/tracks.astro']);
   });
 
-  test('the page’s own rules reach nothing outside it: hub.css, the track page, the header and the footer are not in the page’s diff', () => {
-    const touched = (execSync('git diff --name-only e6441c2 -- src/components/hub/hub.css src/components/hub/TrackStrip.tsx src/components/hub/useUpNext.ts src/lib/hub.ts "src/pages/[track]/index.astro" src/styles/tokens.ts src/components/SiteHeader.astro src/components/SiteFooter.astro || true', { encoding: 'utf8' }) as string).trim();
+  test('the page’s own rules reach nothing outside it: the strip, the progress logic, the tokens, the header and the footer are not in the page’s diff', () => {
+    const touched = (execSync('git diff --name-only e6441c2 -- src/components/hub/TrackStrip.tsx src/components/hub/useUpNext.ts src/styles/tokens.ts src/components/SiteHeader.astro src/components/SiteFooter.astro || true', { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
   });
 

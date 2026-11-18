@@ -55,11 +55,9 @@ const routeStops = (page: Page) => page.locator('main .route .route-stage li.sto
 const readyStops = (page: Page) => page.locator('main .route li.stop:not(.stop--soon)');
 const soonStops = (page: Page) => page.locator('main .route li.stop--soon');
 const stageTitles = (page: Page) => page.locator('main .route .route-stage h2');
-/** The track page's scroll pane, which holds the route, the closing line and the footer. */
-const routeBox = (page: Page) => page.locator('main .routebox');
-/** The track page's side card: the strip's words and the up-next card's button. */
+/** The track page's side column: the strip's words and the up-next card's button. */
 const stripWords = (page: Page) => page.locator('main .side .strip__w');
-const sideButton = (page: Page) => page.locator('main .side .side-now__btn');
+const sideButton = (page: Page) => page.locator('main .side .upnext__btn');
 /** A stop's status words: Not started, In progress, ✓ Done or Not ready yet. */
 const stateOf = (stop: Locator) => stop.locator('.stop__k');
 
@@ -585,18 +583,18 @@ test.describe('desktop', () => {
   });
 
   test.describe('Track page', () => {
-    test('Track page: Networking lists 20 stops in its parts, all ready, OSI Model first with Start', async ({ page }) => {
+    test('Track page: Networking lists 20 stops in its parts, all ready, OSI Model first, the card says First lesson and Start', async ({ page }) => {
       await open(page, '/networking');
       await expect(page).toHaveTitle('Networking Concepts · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Networking Concepts');
-      // The last word of the title is in the accent.
-      await expect(page.locator('h1 em')).toHaveText('Concepts');
+      // No word of the title is picked out in a colour.
+      await expect(page.locator('h1 em')).toHaveCount(0);
 
       // Every lesson is a stop inside its part, and each part counts its own stops.
       await expect(routeStops(page)).toHaveCount(20);
       for (const stage of await page.locator('main .route .route-stage').all()) {
         const n = await stage.locator('li.stop').count();
-        await expect(stage.locator('.route-stage__head p')).toHaveText(`${n} ${n === 1 ? 'lesson' : 'lessons'}`);
+        await expect(stage.locator('.route-stage__count')).toHaveText(`${n} ${n === 1 ? 'lesson' : 'lessons'}`);
       }
       await expect(readyStops(page)).toHaveCount(20);
       await expect(readyStops(page).locator('h3')).toHaveText(['OSI Model', 'Packets', 'IP Address', 'MAC Address', 'Switch', 'ARP', 'Subnetting', 'Router', 'DHCP', 'Ports', 'TCP/UDP', 'NAT', 'DNS', 'HTTP', 'HTTPS', 'TLS/SSL', 'Firewalls', 'Proxies', 'Load Balancers', 'VPN']);
@@ -604,15 +602,14 @@ test.describe('desktop', () => {
       await expect(lessonCard(page, 'what-is-dns').locator('h3 a')).toHaveAttribute('href', '/networking/what-is-dns');
       await expect(soonStops(page)).toHaveCount(0);
 
-      // A first visit: OSI Model is the first ready stop, Not started, and its Start is the route's one primary button.
+      // A first visit: OSI Model is the first ready stop, Not started, and its name is its one link; the route has no button.
       const first = readyStops(page).first();
       await expect(first.locator('h3')).toHaveText('OSI Model');
       await expect(stateOf(first)).toHaveText('Not started');
-      await expect(first.locator('.stop__acts .btn')).toHaveText('Start');
-      await expect(first.locator('.stop__acts .btn')).toHaveAttribute('href', OSI_PATH);
-      await expect(first.locator('.stop__acts .btn')).toHaveClass(/\bbtn--primary\b/);
-      await expect(page.locator('main .route .btn--primary')).toHaveCount(1);
-      await expect(page.locator('main .side .side-now__k')).toHaveText('Start here');
+      await expect(first.locator('h3 a')).toHaveAttribute('href', OSI_PATH);
+      await expect(first.locator('a')).toHaveCount(1);
+      await expect(page.locator('main .route .btn')).toHaveCount(0);
+      await expect(page.locator('main .side .upnext__k')).toHaveText('First lesson');
       await expect(sideButton(page)).toHaveText('Start');
       await expect(sideButton(page)).toHaveAttribute('href', OSI_PATH);
       await expect(stripWords(page)).toHaveText('0 of 20 lessons done');
@@ -636,19 +633,22 @@ test.describe('desktop', () => {
       await expect(page.locator('main .route li.stop--soon .stamp')).toHaveCount(0);
     });
 
-    test('Track page: How the Internet Works has six parts and a name tile on each of 14 stops', async ({ page }) => {
+    test('Track page: How the Internet Works has six parts and 14 stops, none with a drawing', async ({ page }) => {
       await open(page, INTERNET_TRACK);
       await expect(page).toHaveTitle('How the Internet Works · TechConcepts');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('How the Internet Works');
-      await expect(page.locator('h1 em')).toHaveText('Works');
+      await expect(page.locator('h1 em')).toHaveCount(0);
       await expect(stageTitles(page)).toHaveText(INTERNET_PARTS);
 
       await expect(routeStops(page)).toHaveCount(14);
       await expect(soonStops(page)).toHaveCount(0);
-      for (const stop of await readyStops(page).all()) await expect(stop.locator('.stop__art svg.name-tile')).toHaveCount(1);
-      await expect(lessonCard(page, 'what-is-tls').locator('.name-tile')).toHaveAttribute('aria-label', 'Transport Layer Security (SSL is its old name)');
-      await expect(lessonCard(page, 'what-is-tls').locator('.nt-full')).toHaveCount(2);
-      // The side card starts with HTTP.
+      // No lesson drawing on the page (2.106): the only svg in a stop is the stamp's tick.
+      for (const stop of await readyStops(page).all()) {
+        await expect(stop.locator('svg:not(.stamp svg)')).toHaveCount(0);
+        await expect(stop.locator('svg')).toHaveCount(1);
+      }
+      await expect(page.locator('main svg.name-tile, main .nt-full')).toHaveCount(0);
+      // The side column starts with HTTP.
       await expect(sideButton(page)).toHaveText('Start');
       await expect(sideButton(page)).toHaveAttribute('href', START_PATH);
       await expect(stripWords(page)).toHaveText('0 of 14 lessons done');
@@ -658,40 +658,68 @@ test.describe('desktop', () => {
       await expect(page.locator('main .route__end a')).toHaveAttribute('href', '/networking');
     });
 
-    test("Track page: at 1440×900 the window does not scroll; the route scrolls to its last stop and the side card's button does not move", async ({ page }) => {
+    test("Track page: at 1440×900 the window scrolls to the last stop, and the up-next button stays on screen, clear of the header, and does not move once stuck", async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await open(page, '/networking');
-      const before = await sideButton(page).boundingBox();
-      expect(before, 'the side card has a button').not.toBeNull();
-      expect((await pageOverflow(page)).down, 'the page fits the window').toBe(0);
-      // The route is longer than its pane, so it has somewhere to scroll.
-      const pane = await routeBox(page).evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
-      expect(pane.scroll).toBeGreaterThan(pane.client);
-
-      // Wheel over the route until it reaches its end.
-      const box = (await routeBox(page).boundingBox())!;
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await expect
-        .poll(async () => {
-          await page.mouse.wheel(0, 1200);
-          return routeBox(page).evaluate((el) => Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1);
-        })
-        .toBe(true);
+      const buttonBox = async () => (await sideButton(page).boundingBox())!;
+      const headFoot = async () => (await page.locator('header.site-head').boundingBox())!.y + (await page.locator('header.site-head').boundingBox())!.height;
+      expect(await buttonBox(), 'the side column has a button').not.toBeNull();
+      // The window scrolls (the route no longer has a box of its own), and a wheel over the side column moves it.
+      expect((await pageOverflow(page)).down, 'the page is longer than the window').toBeGreaterThan(0);
+      await expect(page.locator('main .routebox')).toHaveCount(0);
+      expect(await page.evaluate(() => getComputedStyle(document.querySelector('main .side')!).position)).toBe('sticky');
+      const side = (await page.locator('main .side').boundingBox())!;
+      await page.mouse.move(side.x + 40, side.y + 200);
+      await page.mouse.wheel(0, 150);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await settledFrame(page);
+
+      // From the top to the end in steps of at most 150px: the button is wholly on screen below the header at every step,
+      // and from the first step past 16px until the last stop is in view its top does not change.
+      const max = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+      let stuck: number | null = null;
+      let last = false;
+      const steps = Array.from({ length: Math.ceil(max / 150) + 1 }, (_, i) => Math.min(i * 150, max));
+      for (const y of steps) {
+        await page.evaluate((to) => window.scrollTo(0, to), y);
+        await settledFrame(page);
+        await transitionsDone(page);
+        const box = await buttonBox();
+        const view = page.viewportSize()!;
+        expect(box.y, `y ${y}: top clear of the header`).toBeGreaterThanOrEqual((await headFoot()) - 1);
+        expect(box.y + box.height, `y ${y}: foot on screen`).toBeLessThanOrEqual(view.height);
+        const lastStopIn = await routeStops(page).last().evaluate((el) => el.getBoundingClientRect().bottom <= window.innerHeight);
+        if (y > 16 && !lastStopIn && !last) {
+          stuck ??= box.y;
+          expect(Math.abs(box.y - stuck), `y ${y}: the button has not moved`).toBeLessThanOrEqual(1);
+        }
+        if (lastStopIn) last = true;
+      }
+      expect(stuck, 'the button stuck at some step').not.toBeNull();
       await expect(routeStops(page).last()).toBeInViewport();
-      expect(await page.evaluate(() => window.scrollY)).toBe(0);
-      expect(await sideButton(page).boundingBox()).toEqual(before);
       await expect(page.locator('header.site-head')).toBeInViewport();
     });
 
-    test("Track page: at 1280×720 the side card's button is in view", async ({ page }) => {
-      await page.setViewportSize({ width: 1280, height: 720 });
-      for (const path of ['/networking', INTERNET_TRACK]) {
-        await open(page, path);
-        // On a short screen the card drops its figure, so its button fits.
-        await expect(page.locator('main .side .side-now__art'), path).toBeHidden();
-        await expect(sideButton(page), path).toBeInViewport({ ratio: 1 });
-        expect(await page.evaluate(() => window.scrollY), path).toBe(0);
+    test("Track page: where the screen is 700px tall the side column sticks; below that it scrolls with the page, and in one column it does not stick", async ({ page }) => {
+      const position = (size: { width: number; height: number }) =>
+        page.setViewportSize(size).then(() => open(page, '/networking')).then(() => page.evaluate(() => getComputedStyle(document.querySelector('main .side')!).position));
+      expect(await position({ width: 1440, height: 700 })).toBe('sticky');
+      expect(await position({ width: 1440, height: 699 })).toBe('static');
+      expect(await position({ width: 1024, height: 650 })).toBe('static');
+      expect(await position({ width: 1280, height: 720 })).toBe('sticky');
+      expect(await position({ width: 1023, height: 900 })).toBe('static');
+    });
+
+    test("Track page: at 1280×720 and 1024×700 the up-next button is in view, with no lesson drawing on the card", async ({ page }) => {
+      for (const size of [{ width: 1280, height: 720 }, { width: 1024, height: 700 }]) {
+        await page.setViewportSize(size);
+        for (const path of ['/networking', INTERNET_TRACK]) {
+          await open(page, path);
+          await expect(page.locator('main .side .side-now__art, main .side svg'), path).toHaveCount(0);
+          await expect(sideButton(page), path).toBeInViewport({ ratio: 1 });
+          expect(await page.evaluate(() => window.scrollY), path).toBe(0);
+        }
       }
     });
 
@@ -793,7 +821,11 @@ test.describe('desktop', () => {
     await open(page, '/networking');
     const card = lessonCard(page, 'dhcp');
     await expect(stateOf(card)).toHaveText('✓ Done');
-    await expect(card.locator('.stop__acts .btn')).toHaveText('Watch again');
+    // The stop's one link is the lesson's name, to the lesson as a finished lesson's record leads (the button is the card's, which goes on to the next lesson).
+    await expect(card.locator('a')).toHaveCount(1);
+    await expect(card.locator('h3 a')).toHaveAttribute('href', new RegExp(`^${dhcp!.path}(\\?step=\\d+)?$`));
+    await expect(card.locator('.btn')).toHaveCount(0);
+    await expect(sideButton(page)).toHaveText('Start');
     await expect(stripWords(page)).toHaveText('1 of 20 lessons done');
 
     await open(page, '/');
@@ -875,11 +907,9 @@ test.describe('desktop', () => {
     await expect(stateOf(lessonCard(page, 'what-is-udp'))).toHaveText('In progress');
     await expect(stateOf(lessonCard(page, 'what-is-ip'))).toHaveText('Not started');
     await expect(stripWords(page)).toHaveText('3 of 14 lessons done');
-    // The side card goes on where they were, and the route rings UDP's stop.
-    await expect(page.locator('main .side .side-now__t')).toHaveText('UDP');
-    // The side card was given only HTTP's name tile; UDP's is a copy of the one on UDP's stop.
-    await expect(page.locator('main .side .side-now__art svg.name-tile')).toHaveAttribute('aria-label', 'User Datagram Protocol');
-    await expect(lessonCard(page, 'what-is-udp').locator('.stop__art svg.name-tile')).toHaveAttribute('aria-label', 'User Datagram Protocol');
+    // The side card goes on where they were, and the route marks UDP's stop. The page draws no lesson figure.
+    await expect(page.locator('main .side .upnext__t')).toHaveText('UDP');
+    await expect(page.locator('main svg.name-tile')).toHaveCount(0);
     await expect(sideButton(page)).toHaveText('Continue');
     await expect(sideButton(page)).toHaveAttribute('href', '/how-the-internet-works/what-is-udp?step=4');
     await expect(lessonCard(page, 'what-is-udp')).toHaveClass(/\bstop--now\b/);
@@ -984,7 +1014,7 @@ test.describe('without JavaScript', () => {
     }
   });
 
-  test('every lesson is listed and the first ready one says Start', async ({ page }) => {
+  test('every lesson is listed, each with one link, and the first ready one says First lesson and Start', async ({ page }) => {
     await page.goto('/networking');
     // Each part, each stop and each ready lesson's link shows, with nothing left to filter or clear.
     expect(NETWORKING_LESSONS.length).toBeGreaterThan(0);
@@ -995,10 +1025,11 @@ test.describe('without JavaScript', () => {
       await expect(lessonCard(page, lesson.slug), lesson.title).toBeVisible();
       await expect(lessonCard(page, lesson.slug).locator('h3 a'), lesson.title).toHaveAttribute('href', lesson.path);
     }
-    // The server render is a first visit: the first ready stop and the side card both say Start.
+    // The server render is a first visit: the first ready stop's link and the side card's button go to the first lesson.
     const first = readyStops(page).first();
-    await expect(first.locator('.stop__acts .btn')).toHaveText('Start');
-    await expect(first.locator('.stop__acts .btn')).toHaveAttribute('href', NETWORKING_LESSONS[0]!.path);
+    await expect(first.locator('a')).toHaveCount(1);
+    await expect(first.locator('h3 a')).toHaveAttribute('href', NETWORKING_LESSONS[0]!.path);
+    await expect(page.locator('main .side .upnext__k')).toHaveText('First lesson');
     await expect(sideButton(page)).toHaveText('Start');
     await expect(sideButton(page)).toHaveAttribute('href', NETWORKING_LESSONS[0]!.path);
     // No control is left that cannot work.
