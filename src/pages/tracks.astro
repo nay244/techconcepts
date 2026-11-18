@@ -156,8 +156,9 @@ const art = (id: CoverId): string =>
   }
 
   /* How far this browser has got: one square a lesson. Hollow is not done, green is done, orange is up next. The
-     island's parts are the card's children (its wrapper is display: contents), and hub.css is not edited: the track
-     page keeps its own strip. A lesson that is not ready keeps hub.css's faint look: only the three states below are drawn here. */
+     island's parts are the card's children (its wrapper is display: contents). hub.css holds only the strip's base rules
+     and .wholetrack, and each page that shows the strip draws its own over them (the track page's are in
+     [track]/index.astro). A lesson that is not ready keeps hub.css's faint look: only the three states below are drawn here. */
   .tp :global(.strip) {
     display: flex;
     flex-wrap: wrap;

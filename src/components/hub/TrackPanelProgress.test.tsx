@@ -53,10 +53,10 @@ describe('TrackPanelProgress', () => {
     expect(document.querySelector('.strip__w')).toHaveTextContent(`0 of ${entries.length} lessons done`);
   });
 
-  test('"Start here" is not the box’s kicker: it is the first track’s tab, and the track page keeps it', () => {
+  test('"Start here" is not the box’s kicker: it is the first track’s tab, and the kicker\'s first-visit words are "First lesson" on every page', () => {
     render(panel());
     expect(box().textContent).not.toContain('Start here');
-    expect(UP_NEXT_KICKER.start).toBe('Start here');
+    expect(UP_NEXT_KICKER.start).toBe('First lesson');
   });
 
   test('the box is not a link and holds one filled button: no .next, .lift or .panel__cta, and the markup order is kicker, line, subtitle, way in', () => {

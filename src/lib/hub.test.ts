@@ -130,7 +130,7 @@ describe('actionLabel', () => {
 
 it('pins the status words and the up-next kickers', () => {
   expect(STATUS_WORDS).toEqual({ 'not-started': 'Not started', 'in-progress': 'In progress', done: '✓ Done', 'not-ready': 'Not ready yet' });
-  expect(UP_NEXT_KICKER).toEqual({ start: 'Start here', next: 'Up next', 'done-so-far': '✓ Done so far' });
+  expect(UP_NEXT_KICKER).toEqual({ start: 'First lesson', next: 'Up next', 'done-so-far': '✓ Done so far' });
 });
 
 describe('lessonLine', () => {
