@@ -1779,7 +1779,11 @@ const b20Rect = (loc: Locator) =>
     return { top: b.top, bottom: b.bottom, left: b.left, right: b.right, width: b.width, height: b.height };
   });
 /** Checks a radio by a script click: no focus ring, no scroll, a state to measure from. */
-const b20Pick = (page: Page, id: string): Promise<void> => page.evaluate((i) => (document.getElementById(i) as HTMLInputElement).click(), id);
+const b20Pick = async (page: Page, id: string): Promise<void> => {
+  await page.evaluate((i) => (document.getElementById(i) as HTMLInputElement).click(), id);
+  // With reduced motion a transition still lasts one frame (0.01ms): the change is drawn a frame after the click.
+  await settledFrame(page);
+};
 const b20Scroll = (page: Page, y: number): Promise<void> => page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
 /** Scrolls so `.demo`'s top is `at` pixels from the window's top. */
 const b20DemoAt = async (page: Page, at: number): Promise<void> => {
@@ -2231,6 +2235,8 @@ test.describe('B20: Home in the Card stack look', () => {
 
       test('14: the figures’ tint is the page’s own: a lesson page keeps its glow, its fade-in and its gradients', async ({ page }) => {
         // Home's re-tint must not leak. (Run once per window; the lesson page is Patch's.)
+        // The fade-in is what the page draws with motion allowed (it sets none under reduced motion): the test sets that itself.
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
         await page.goto('/how-the-internet-works/what-is-http');
         await page.evaluate(() => document.fonts.ready);
         expect(await page.locator('.lm-defs stop.la').first().evaluate((el) => getComputedStyle(el).stopColor)).toBe(cfg.scheme === 'light' ? 'rgb(255, 196, 143)' : 'rgb(255, 211, 168)');
@@ -2700,12 +2706,13 @@ test.describe('B20: the keyboard (cases 27 to 30)', () => {
     });
     const b = (await loc.boundingBox())!;
     await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await settledFrame(page);
   };
   /** Where the focus is: an input's id, or a link's words. */
   const where = (page: Page): Promise<string> => page.evaluate(() => { const el = document.activeElement as HTMLElement; return el.tagName === 'INPUT' ? el.id : (el.textContent ?? '').replace(/\s+/g, ' ').trim(); });
   const tabs = async (page: Page, n: number, key = 'Tab'): Promise<string[]> => {
     const out: string[] = [];
-    for (let i = 0; i < n; i += 1) { await page.keyboard.press(key); out.push(await where(page)); }
+    for (let i = 0; i < n; i += 1) { await page.keyboard.press(key); await settledFrame(page); out.push(await where(page)); }
     return out;
   };
   const visibleHints = (page: Page): Promise<string[]> => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.demo__hint')].filter((h) => getComputedStyle(h).display !== 'none').map((h) => h.className.replace('demo__hint ', '')));
@@ -2749,6 +2756,7 @@ test.describe('B20: the keyboard (cases 27 to 30)', () => {
         const ringed = async (sel: string, offset: string) => {
           // With scripts off the page's own smooth scroll is on: let a focus's scroll finish before measuring.
           if (!m.scripts) await page.waitForTimeout(500);
+          await settledFrame(page);
           const el = page.locator(sel);
           expect(await b20Css(el, 'outline-style'), `${sel} is ringed`).toBe('solid');
           expect(await b20Css(el, 'outline-offset'), `${sel}'s ring`).toBe(offset);
@@ -2758,6 +2766,7 @@ test.describe('B20: the keyboard (cases 27 to 30)', () => {
         };
         const hintOnScreen = async (cls: string) => {
           if (!m.scripts) await page.waitForTimeout(500);
+          await settledFrame(page);
           expect(await visibleHints(page)).toEqual([cls]);
           const box = await b20Rect(page.locator(`main .${cls.replace(' ', '.')}`));
           expect(box.top, `${cls} below the header`).toBeGreaterThanOrEqual(69);
@@ -2842,7 +2851,8 @@ test.describe('B20: JavaScript off, and the theme paths (cases 5 and 33)', () =>
         await d.locator('.demo__parts label', { hasText: 'Practice' }).click();
         await d.locator('.demo__pick').nth(0).click();
         await expect(d.locator('.demo__why:visible')).toContainText('Right.');
-        expect(await b20Css(d.locator('.demo__pick').nth(0), 'background-color', '::before')).toBe(await b20Tok(page, 'cs-done'));
+        const done = await b20Tok(page, 'cs-done');
+        await expect.poll(() => b20Css(d.locator('.demo__pick').nth(0), 'background-color', '::before')).toBe(done);
       });
     });
   }

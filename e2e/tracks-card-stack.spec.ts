@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 // @ts-expect-error - no @types/node in this project; the e2e files run under node
 import { gzipSync } from 'node:zlib';
-import { open, readyLessons, requireLessons } from './support';
+import { open, readyLessons, requireLessons, settledFrame } from './support';
 
 /**
  * The Tracks page in the Card stack, layout 1, Stack (job 18, B21; prototypes/d18-tracks-card-stack.md §11 and
@@ -341,6 +341,8 @@ for (const [w, h] of [
         const seen: string[] = [];
         for (let i = 0; i < 6; i += 1) {
           await page.keyboard.press('Tab');
+          // With reduced motion a transition still lasts one frame (0.01ms): the focused corner is drawn a frame after the focus.
+          await settledFrame(page);
           seen.push(
             await page.evaluate(() => {
               const el = document.activeElement as HTMLElement;
