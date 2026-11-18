@@ -537,7 +537,8 @@ const describeFocus = (page: Page) =>
     const region = within('.skip-link') || el.classList.contains('skip-link') ? 'skip' : within('.site-head') ? 'header' : within('.console__top') ? 'bar' : within('.console__track') ? 'track' : within('.timeline--row') ? 'row' : within('.console__tabs') ? 'tabs' : within('.console__stage') ? 'scene' : within('.console__explain') ? 'words' : within('.guide__table') ? 'table' : within('.console__controls') ? 'controls' : within('.console__log') ? 'log' : 'other';
     return {
       region,
-      key: `${region}:${el.tagName}:${el.getAttribute('aria-label') ?? el.textContent?.trim().slice(0, 30)}`,
+      // The Table tab says ", changed" once the step has put a row in the table: the same stop either way.
+      key: `${region}:${el.tagName}:${(el.getAttribute('aria-label') ?? el.textContent?.trim().slice(0, 30) ?? '').replace(/, changed$/, '')}`,
       inside: r.left >= -0.5 && r.right <= innerWidth + 0.5 && r.top >= -0.5 && r.bottom <= innerHeight + 0.5,
       top: r.top,
       bottom: r.bottom,
@@ -561,6 +562,8 @@ for (const [w, h, order] of [
       const pinned = w < 900 || h > w;
       for (let i = 0; i < 90; i += 1) {
         await page.keyboard.press('Tab');
+        // With reduced motion a transition still lasts one frame (0.01ms): the skip link is in place a frame after it takes focus.
+        await settledFrame(page);
         const f = await describeFocus(page);
         if (f.region === 'skip' && forward.length > 0) break;
         if (f.key.startsWith('other:BODY')) break;
@@ -584,6 +587,7 @@ for (const [w, h, order] of [
       const reverse: string[] = [];
       for (let i = 0; i < forward.length; i += 1) {
         await page.keyboard.press('Shift+Tab');
+        await settledFrame(page);
         reverse.push((await describeFocus(page)).key);
       }
       expect(reverse, `${path} ${place} at ${w}`).toEqual([...forward].reverse());

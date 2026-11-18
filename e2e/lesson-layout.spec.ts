@@ -363,6 +363,8 @@ test('25: one press to every place on DHCP, in order and in reverse; the kicker 
 });
 
 test('27: Play all at 2×: during the hold the rule between marks fills, and is solid when the next step arrives; paused, the fill goes; reduced motion draws none', async ({ page }) => {
+  // The fill is what the page draws with motion allowed: the test sets that itself (the reduced-motion project starts with it off).
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await at(page, 1440, 900, DHCP);
   const fills = () => page.evaluate(() => document.getAnimations().filter((a) => (a as CSSAnimation).animationName === 'tl-fill').map((a) => a.effect?.getComputedTiming().duration));
   await setSpeed(page, '2×');
@@ -832,6 +834,8 @@ for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
     const forward: string[] = [];
     for (let i = 0; i < 80; i += 1) {
       await page.keyboard.press('Tab');
+      // With reduced motion a transition still lasts one frame (0.01ms): the skip link is in place a frame after it takes focus.
+      await settledFrame(page);
       const f = await describeFocus(page);
       if (forward.includes(f.key) || f.key.startsWith('other:BODY')) break;
       forward.push(f.key);
@@ -852,6 +856,7 @@ for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
     await page.locator('.log__scroll').focus();
     const reverse: string[] = [];
     for (let i = 0; i < forward.length; i += 1) {
+      await settledFrame(page);
       const f = await describeFocus(page);
       reverse.push(f.key);
       expect(f.inside, f.key).toBe(true);
