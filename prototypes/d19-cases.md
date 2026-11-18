@@ -49,6 +49,7 @@ H22 to H26 went to the `designer` (Fable 5.2, direction 2.93); their answers are
 - **E24 (H24), by the designer.** The column names stay: `thead th { position: sticky; top: 0 }` on the panel's ground at 761px and up, 0px of height; case 49 stands. Visible, and only this: the names no longer scroll out of the log; the spec's 3.1 rows already counted them as on screen.
 - **E25 (H25), by the designer.** On a phone and an upright tablet a stop keeps the open tab (Log and Table included), as the forward and back buttons do. Not visible: the approved prototype does this.
 - **E26 (H26), by the designer.** When another unit follows Practice: "Next: <the unit's name>" in both forms, named "Next: <the unit's name>, Overview". Not visible: no lesson has a second unit.
+- **E27 (found in B23's build), by the orchestrator.** On a tablet on its side, 900 to 1023px wide, a lesson with 10 or more places keeps the bar the full width while watching, as Learn and Practice already do (`data-many`). Reason, measured by the builder: at 900×600 OSI Model's bar beside a 516px scene leaves 300px for the timeline, and 13 marks at case 23's 24px floor need 312px, so the last marks lay under the lessons button (the prototype shows the same overlap with its 77px "DHCP" name cell). The one answer that keeps every mark at 24px and none under the button is the full-width bar. Visible, and only this: at 900 to 1023px on OSI Model the guide starts 56px lower; at 1024px and up nothing changes.
 
 ## Attack cases
 
