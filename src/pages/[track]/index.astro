@@ -474,7 +474,8 @@ const slim = islandEntries(entries);
   }
 
   /* ---------- 700px and up: the rail. A line down the route, a filled square at each part, each lesson's number on
-     it, tied to its card. Offsets are from a stop's padding box, 58px in (56 of padding and the card's 2px edge). ---------- */
+     it, tied to its card. Offsets are from a stop's padding box, 58px in (56 of padding and the card's 2px edge); the tie
+     is 22px so that, with the chip 2px nearer the rail than drawn, it still runs from the chip to the card's edge. ---------- */
   @media (min-width: 700px) {
     .tk :global(.route) {
       position: relative;
@@ -512,7 +513,7 @@ const slim = islandEntries(entries);
       position: absolute;
       left: -24px;
       top: 50%;
-      width: 20px;
+      width: 22px;
       height: 2px;
       margin-top: -1px;
       background: var(--cs-edge);
