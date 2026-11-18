@@ -15,6 +15,12 @@ export interface TimelineProps {
   onGo(position: Position): void;
   /** During Play all's hold: the place it leads to, and how long the hold lasts. Null under reduced motion, or when nothing holds. */
   hold: { next: Position; ms: number } | null;
+  /**
+   * Which home this copy is in. The bar's copy (the default) shows from 900px wide on its side; the row's copy stands under
+   * the scene on a phone and an upright tablet. CSS shows exactly one of the two, so one is in the tab order at a time.
+   * The row's copy has no no-script list: the bar's has it.
+   */
+  home?: 'bar' | 'row';
 }
 
 interface Place {
@@ -60,12 +66,12 @@ function stopName(place: Place, done: boolean): string {
  *
  * Without JavaScript the interactive list is hidden and a plain list of the places' names stands in its place.
  */
-export function Timeline({ units, unitIndex, positions, position, slot, onGo, hold }: TimelineProps) {
+export function Timeline({ units, unitIndex, positions, position, slot, onGo, hold, home = 'bar' }: TimelineProps) {
   const unit = units[unitIndex]!;
   const places = placesOf(unit, positions);
   const hereName = slot.kind === 'step' ? unit.steps[slot.step - 1]!.title : null;
   return (
-    <div className="timeline" style={hold === null ? undefined : ({ '--hold': `${hold.ms}ms` } as CSSProperties)}>
+    <div className={home === 'row' ? 'timeline timeline--row' : 'timeline'} data-home={home} style={hold === null ? undefined : ({ '--hold': `${hold.ms}ms` } as CSSProperties)}>
       <nav className="timeline__nav" aria-label="This lesson">
         <ol className="tl">
           {places.map((place) => {
@@ -83,6 +89,7 @@ export function Timeline({ units, unitIndex, positions, position, slot, onGo, ho
                   aria-label={stopName(place, state === 'done')}
                   aria-current={state === 'current' ? 'step' : undefined}
                   title={place.name}
+                  data-target={place.target}
                   onClick={() => onGo(place.target)}
                 >
                   <span className="tl__mark" data-dot={place.number === undefined ? '' : undefined} aria-hidden="true">
@@ -103,17 +110,40 @@ export function Timeline({ units, unitIndex, positions, position, slot, onGo, ho
           </span>
         </p>
       </nav>
-      <noscript>
-        <div className="timeline__plain">
-          <h2 className="console__ptitle">In this lesson</h2>
-          <ol>
-            {places.map((place) => (
-              <li key={place.target}>{place.name}</li>
-            ))}
-          </ol>
-        </div>
-      </noscript>
+      {home === 'row' ? null : (
+        <noscript>
+          <div className="timeline__plain">
+            <h2 className="console__ptitle">In this lesson</h2>
+            <PlaceNames places={places} />
+          </div>
+        </noscript>
+      )}
     </div>
+  );
+}
+
+function PlaceNames({ places }: { places: Place[] }) {
+  return (
+    <ol>
+      {places.map((place) => (
+        <li key={place.target}>{place.name}</li>
+      ))}
+    </ol>
+  );
+}
+
+/**
+ * Without JavaScript, on the stacked page (under 1100px wide), the places' names as a plain list after the Overview's words, one
+ * a line, under "In this lesson". From 1100px the bar's middle cell holds the same list on one line, and CSS shows one of the two.
+ */
+export function StackedPlaces({ units, unitIndex, positions }: Pick<TimelineProps, 'units' | 'unitIndex' | 'positions'>) {
+  return (
+    <noscript>
+      <div className="timeline__stack">
+        <h2 className="console__ptitle">In this lesson</h2>
+        <PlaceNames places={placesOf(units[unitIndex]!, positions)} />
+      </div>
+    </noscript>
   );
 }
 

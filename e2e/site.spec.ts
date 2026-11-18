@@ -1054,7 +1054,10 @@ test.describe('phone', { tag: '@phone' }, () => {
       const b = el.getBoundingClientRect();
       return { top: Math.round(b.top), bottom: Math.round(b.bottom), height: Math.round(b.height) };
     });
-  const tab = (page: Page, name: 'Explain' | 'Steps' | 'Log' | 'Table' | 'Rules' | 'Bits') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
+  const tab = (page: Page, name: 'Explain' | 'Log' | 'Table' | 'Rules' | 'Bits') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
+
+  /** The row of stops under the scene (D19): a press goes to the place and keeps the tab that is open. */
+  const stop = (page: Page, name: string | RegExp) => page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name });
 
   for (const lesson of LESSONS) {
     test(`${lesson.path} fits one phone screen: the scene on top, the controls at the bottom, and no page scroll`, async ({ page }) => {
@@ -1068,9 +1071,10 @@ test.describe('phone', { tag: '@phone' }, () => {
       expect(overflow.down, 'the page is no taller than the screen').toBeLessThanOrEqual(1);
       expect(overflow.sideways, 'the page is no wider than the screen').toBeLessThanOrEqual(1);
 
-      // The scene is in the top half, at least a quarter of the screen tall.
+      // The scene is in the top half, at least a quarter of the screen tall; under the header (69px), the bar (36px) and the
+      // view switch (40px), so its top is at most 145px (D19).
       const scene = (await boxOf(page, '.console__scene'))!;
-      expect(scene.top).toBeLessThan(screen.height * 0.15);
+      expect(scene.top).toBeLessThanOrEqual(145);
       expect(scene.bottom).toBeLessThan(screen.height * 0.5);
       expect(scene.height).toBeGreaterThan(screen.height * 0.25);
       // Back, Play and Next are at the foot of the screen, each big enough for a thumb.
@@ -1080,37 +1084,33 @@ test.describe('phone', { tag: '@phone' }, () => {
       // One part shows under the tabs, the words first; the other two wait.
       await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
       expect(await boxOf(page, '.console__explain')).not.toBeNull();
-      expect(await boxOf(page, '.console__outline')).toBeNull();
+      expect(await boxOf(page, '.console__track')).toBeNull();
       expect(await boxOf(page, '.console__log')).toBeNull();
       await expect(kicker(page)).toBeVisible();
       expect(errors).toEqual([]);
     });
   }
 
-  test('a lesson on a phone: the tabs show the steps and the log, a step chosen returns to the words, and the scene never moves', async ({ page }) => {
+  test('a lesson on a phone: the tabs show the words, the log and the table, a stop goes to its place and keeps the tab, and the scene never moves', async ({ page }) => {
     const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
     await open(page, dhcp.path);
     const sceneAt = async () => (await boxOf(page, '.console__scene'))!.top;
     const top = await sceneAt();
-    // Three parts for every lesson, and a fourth for the lesson's own table (D2).
-    await expect(page.getByRole('group', { name: 'Show', exact: true }).getByRole('button')).toHaveText(['Explain', 'Steps', 'Log', 'Table']);
+    // Three parts for every lesson (the Steps tab's job is the stops row's), and a third for the lesson's own table (D2).
+    await expect(page.getByRole('group', { name: 'Show', exact: true }).getByRole('button')).toHaveText(['Explain', 'Log', 'Table']);
 
-    await tab(page, 'Steps').click();
-    expect(await boxOf(page, '.console__outline')).not.toBeNull();
-    expect(await boxOf(page, '.console__explain')).toBeNull();
-    expect(await sceneAt()).toBe(top);
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
-    // Choosing a step goes there and shows its words.
+    await stop(page, /^Step 2, DHCP Offer/).click();
     await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
     await expect(kicker(page)).toHaveText('Watch · Step 2 of 5');
-    await expect(page.locator('.topbar__where')).toBeVisible();
-    await expect(page.locator('.topbar__where')).toHaveText('Step 2 of 5');
+    await expect(page.locator('.top__where')).toBeVisible();
+    await expect(page.locator('.top__where')).toHaveText('Step 2 of 5');
+    expect(await sceneAt()).toBe(top);
 
     // Next works from the foot of the screen whichever part is showing, and the log fills.
     await tab(page, 'Log').click();
     expect(await boxOf(page, '.console__log')).not.toBeNull();
     await moveBy(page, () => nextButton(page).click());
-    await expect(page.locator('.topbar__where')).toHaveText('Step 3 of 5');
+    await expect(page.locator('.top__where')).toHaveText('Step 3 of 5');
     await expect(logRows(page).first()).toBeVisible();
     // A row is a stacked entry: its cells sit inside the screen's width, each with its column's name.
     const row = logRows(page).first();
@@ -1125,8 +1125,7 @@ test.describe('phone', { tag: '@phone' }, () => {
     const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
     await open(page, dhcp.path);
     const watching = (await boxOf(page, '.console__scene'))!.height;
-    await tab(page, 'Steps').click();
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await stop(page, 'Learn').click();
     await expect(kicker(page)).toHaveText('Learn');
     await expect.poll(async () => (await boxOf(page, '.console__scene'))!.height).toBeLessThan(watching * 0.7);
     const words = page.locator('.console__explain');
@@ -1136,16 +1135,14 @@ test.describe('phone', { tag: '@phone' }, () => {
     expect((await boxOf(page, '.console__controls'))!.bottom).toBe(page.viewportSize()!.height);
   });
 
-  test('a lesson on a phone: the stamp and the numbered sources are at the foot of Learn, with nothing wider than the screen', async ({ page }) => {
+  test('a lesson on a phone: no stamp at the foot of Learn; the numbered sources are, with nothing wider than the screen', async ({ page }) => {
     const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
     await open(page, osi.path);
-    // The compact top bar has no room for the stamp.
-    await expect(page.locator('.console__top .stamp')).toBeHidden();
-    await tab(page, 'Steps').click();
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await expect(page.locator('.stamp')).toHaveCount(0);
+    await stop(page, 'Learn').click();
     const foot = page.locator('.console__explain .explain__foot');
     await foot.scrollIntoViewIfNeeded();
-    await expect(foot.locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(page.locator('.stamp')).toHaveCount(0);
     await expect(foot.locator('ol.explain__sources > li').first()).toBeVisible();
     expect(await page.locator('.console__explain').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
@@ -1232,15 +1229,15 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('3: the fourth tab is named for the lesson’s own panel; OSI Model has three', async ({ page }) => {
           for (const [slug, last] of [['dhcp', 'Table'], ['firewalls', 'Rules'], ['subnetting', 'Bits']] as const) {
             await open(page, bySlug(slug).path);
-            await expect(names(page)).toHaveText(['Explain', 'Steps', 'Log', last]);
+            await expect(names(page)).toHaveText(['Explain', 'Log', last]);
           }
           await open(page, bySlug('osi-model').path);
-          await expect(names(page)).toHaveText(['Explain', 'Steps', 'Log']);
+          await expect(names(page)).toHaveText(['Explain', 'Log']);
         });
 
         test('4: each tab shows its part and only its part, and the scene does not move', async ({ page }) => {
           await open(page, bySlug('dhcp').path);
-          const parts = { Explain: '.console__explain', Steps: '.console__outline', Log: '.console__log', Table: '.tpanel' } as const;
+          const parts = { Explain: '.console__explain', Log: '.console__log', Table: '.tpanel' } as const;
           const sceneBox = async () => (await boxOf(page, '.console__scene'))!;
           const before = await sceneBox();
           for (const [name, shown] of Object.entries(parts)) {
@@ -1326,11 +1323,11 @@ test.describe('phone', { tag: '@phone' }, () => {
           await expect(table).toHaveAttribute('aria-pressed', 'true');
           await moveBy(page, () => nextButton(page).click());
           await expect(table).toHaveAttribute('aria-pressed', 'true');
-          // A step that has not changed the table has no mark; choosing a step in Steps returns to the words.
-          await tab(page, 'Steps').click();
-          await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
-          await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+          // A step that has not changed the table has no mark; pressing a stop goes there and keeps the tab that is open (E25).
+          await stop(page, /^Step 2, DHCP Offer/).click();
+          await expect(table).toHaveAttribute('aria-pressed', 'true');
           await expect(page.locator('.tab__mark')).toHaveCount(0);
+          await expect(kicker(page)).toHaveText('Watch · Step 2 of 5');
         });
 
         test('8: the Bits tab never shows the mark, however the board changes', async ({ page }) => {
@@ -1439,25 +1436,17 @@ test.describe('phone', { tag: '@phone' }, () => {
           }
         });
 
-        test('15: the stamp ends the Overview’s first line, and is not on a step', async ({ page }) => {
+        test('15: no stamp anywhere on the lesson (2.97): the Overview’s first line is the kicker alone', async ({ page }) => {
           for (const slug of ['osi-model', 'dhcp', 'firewalls', 'subnetting']) {
             await open(page, bySlug(slug).path);
-            const lead = page.locator('.console__explain .explain__lead');
-            const stamp = lead.locator('a.stamp');
-            await expect(stamp).toBeVisible();
-            const k = (await kicker(page).boundingBox())!;
-            const s = (await stamp.boundingBox())!;
-            expect(Math.abs(s.y + s.height / 2 - (k.y + k.height / 2)), `${slug}: one line`).toBeLessThan(8);
-            expect(s.x).toBeGreaterThan(k.x + k.width);
-            expect(s.x + s.width).toBeLessThanOrEqual(screen.width);
-            expect(s.height).toBeGreaterThanOrEqual(24);
-            expect(await stamp.textContent()).toMatch(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, \d+ sources?$/);
-            // Its words are the top bar's, which is in the page and hidden at this width.
-            expect(await stamp.textContent(), slug).toBe(await page.locator('.console__top .stamp').textContent());
-            await expect(stamp).toHaveAttribute('href', '/about#facts');
+            await expect(page.locator('.stamp'), slug).toHaveCount(0);
+            // The kicker is the first line's only word; the OSI badge is not shown on a phone.
+            await expect(kicker(page), slug).toHaveText('Overview');
+            await expect(page.locator('.console__explain .explain__osi:visible'), slug).toHaveCount(0);
+            await expect(page.locator('body'), slug).not.toContainText(/Checked \d|Not checked yet/);
           }
           await goTo(page, bySlug('dhcp').path, 2);
-          await expect(page.locator('.console__explain .stamp')).toHaveCount(0);
+          await expect(page.locator('.stamp')).toHaveCount(0);
         });
       });
     }
@@ -1466,14 +1455,14 @@ test.describe('phone', { tag: '@phone' }, () => {
   test.describe('D2 on a wider screen, and with scripts off', () => {
     test.describe('JavaScript off at 375px: the page is as before', () => {
       test.use({ viewport: { width: 375, height: 812 }, javaScriptEnabled: false });
-      test('no tabs, the table under the scene, no stamp in the Overview', async ({ page }) => {
+      test('no tabs, the table under the scene, no stamp anywhere', async ({ page }) => {
         await page.goto(bySlug('dhcp').path);
         expect(await boxOf(page, '.console__tabs')).toBeNull();
         await expect(page.locator('.console__stage .tpanel')).toBeVisible();
         const scene = (await boxOf(page, '.console__scene'))!;
         const table = (await boxOf(page, '.tpanel'))!;
         expect(table.top).toBeGreaterThanOrEqual(scene.bottom);
-        expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+        await expect(page.locator('.stamp')).toHaveCount(0);
       });
     });
     // 1024px has its own layout since B3 (tablet.spec.ts); the desktop starts at 1100px.

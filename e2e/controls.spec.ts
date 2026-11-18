@@ -235,6 +235,8 @@ for (const width of [375, 390]) {
           expect(b[4]!.w, where).toBe(width - 12 - 236);
           expect((await pageOverflow(page)).sideways, where).toBe(0);
           await expectUnclipped(page, where);
+          // No chevron on a phone: the words take its room (D19, 4.4).
+          expect(await nextButton(page).evaluate((el) => getComputedStyle(el.querySelector('svg')!).display), where).toBe('none');
           // The play button shows no words on a phone; its name is Play all or Pause.
           expect(await playButton(page).evaluate((el) => el.getBoundingClientRect().width), where).toBe(48);
           await expect(playButton(page)).toHaveAccessibleName('Play all');

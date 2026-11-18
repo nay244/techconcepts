@@ -526,8 +526,9 @@ a.track__title > span {
 .tl__end[data-plain] .tl__now {
   display: none !important;
 }
-/* The one-line bar (a window under 890px tall): the marks, then the count and the current place's name on one line. */
-@media (max-height: 889px) {
+/* The one-line bar (a window under 890px tall, and a tablet on its side at any height): the marks, then the count and the
+   current place's name on one line. */
+@media (max-height: 889px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
   .tl {
     flex: 0 1 auto !important;
   }
@@ -571,6 +572,14 @@ a.track__title > span {
   .tl__end[data-plain] .tl__now {
     display: none !important;
   }
+}
+/* Without JavaScript the stacked page lists the places after the Overview's words (below 1100px); the bar's cell has them above. */
+.timeline__stack {
+  display: none;
+}
+/* The row's copy of the timeline is for the phone layout (below); everywhere else the bar's copy is the one. */
+.timeline--row {
+  display: none;
 }
 /* Without JavaScript: the places' names as one plain line (the interactive list is hidden by the page's head). */
 .timeline__plain {
@@ -1859,6 +1868,7 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   height: 13px;
 }
 .cbtn--go {
+  position: relative;
   min-width: 152px;
   padding: 0 12px 0 16px;
   overflow: hidden;
@@ -1870,6 +1880,13 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   letter-spacing: 0.01em;
 }
 .go__label {
+  white-space: nowrap;
+}
+/* The full form's words, measured against the button's room on a tablet (PlaybackControls); never seen. */
+.go__measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
   white-space: nowrap;
 }
 
@@ -1991,6 +2008,36 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   .console__top > * {
     padding-block: 10px;
   }
+  /* Without JavaScript: the places are one a line after the Overview's words, not in the bar; the track's lessons are
+     links at the foot of the page (with JavaScript the bar's button opens them in the sheet). */
+  .console__top .timeline__plain {
+    display: none;
+  }
+  .timeline__stack {
+    display: block;
+    padding: 4px 22px 18px;
+  }
+  .timeline__stack ol {
+    display: grid;
+    gap: 3px;
+    margin: 8px 0 0;
+    padding: 0;
+    color: var(--ink);
+    font: 600 14px/1.4 var(--display);
+    list-style: none;
+  }
+  :root:not(.js) .console__track {
+    display: flex;
+    order: 9;
+  }
+  :root:not(.js) .track__lesson {
+    display: none;
+  }
+  :root:not(.js) .track__nav,
+  :root:not(.js) .track__list {
+    flex: none;
+    overflow: visible;
+  }
   /* No column here: the bar's first cell holds the lesson's name (the page's h1 at these widths) and the lessons button. */
   .console__track {
     display: none;
@@ -2040,7 +2087,9 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .console {
     --ph-top: calc(69px + 36px);
     --ph-stage: 34dvh;
-    --ph-tabs: 48px;
+    --ph-line: 36px;
+    --ph-tabs: 44px;
+    --ph-side: 0px;
     --ph-ctl: calc(64px + env(safe-area-inset-bottom));
     display: block;
     height: calc(100vh - 69px);
@@ -2083,7 +2132,7 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .top__name {
     font-size: 16px;
   }
-  :root.js .timeline {
+  :root.js .console__top .timeline {
     display: none;
   }
   :root.js .top__lessons {
@@ -2126,13 +2175,57 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     overflow: hidden;
   }
 
+  /* The stops row: the timeline's marks between the scene and the tabs (the owner's choice, 2.94). It stays under the scene,
+     in reach of the thumb and beside the tabs it works with. A stop is the row's width over the places (44px for 8, 27px
+     for 13 at 375), 35px tall; the names are for a screen reader. */
+  :root.js .timeline--row {
+    position: fixed;
+    inset: calc(var(--ph-top) + var(--ph-stage)) 0 auto;
+    z-index: 2;
+    display: flex;
+    height: var(--ph-line);
+    padding: 0 max(12px, var(--ph-side));
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+  }
+  :root.js .timeline--row .tl {
+    flex: 1 1 0 !important;
+  }
+  :root.js .timeline--row .tl li {
+    flex: 1 1 0 !important;
+    width: auto;
+    min-width: 0;
+  }
+  :root.js .timeline--row .tl__stop {
+    justify-content: center;
+    padding: 0 !important;
+  }
+  :root.js .timeline--row .tl__name {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  :root.js .timeline--row .tl li::before,
+  :root.js .timeline--row .tl li::after {
+    top: 17px !important;
+  }
+  :root.js .timeline--row .tl__mark {
+    width: 24px;
+    height: 24px;
+  }
+  :root.js .timeline--row .tl__end {
+    display: none !important;
+  }
+
   /* The tabs. */
   :root.js .console__tabs {
     display: grid;
     grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
     position: fixed;
-    inset: calc(var(--ph-top) + var(--ph-stage)) 0 auto;
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-line)) 0 auto;
     height: var(--ph-tabs);
     border-bottom: 1px solid var(--line-strong);
     background: var(--bg-soft);
@@ -2151,7 +2244,7 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .console__explain,
   :root.js .console__log {
     position: fixed;
-    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-tabs)) 0 var(--ph-ctl);
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-line) + var(--ph-tabs)) 0 var(--ph-ctl);
     max-height: none;
     overflow: auto;
   }
@@ -2296,14 +2389,15 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     padding: 0 10px 0 12px;
     font-size: 17px;
   }
-  /* Narrower than 375: the › goes first, and the words are centred. */
+  /* No chevron on a phone: the words ("Next: step 5") take its room. */
+  :root.js .console__controls .cbtn--go svg {
+    display: none;
+  }
+  /* Narrower than 375: the words are centred. */
   @media (max-width: 374px) {
     :root.js .console__controls .cbtn--go {
       justify-content: center;
       padding: 0 8px;
-    }
-    :root.js .console__controls .cbtn--go svg {
-      display: none;
     }
   }
   /* Narrower than 360: five 44px controls, 6px apart, words at 16px, so "Next lesson" still fits (96px at 320). */
@@ -2367,10 +2461,10 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .rpanel,
   :root.js .bits {
     position: fixed;
-    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-tabs)) 0 var(--ph-ctl);
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-line) + var(--ph-tabs)) 0 var(--ph-ctl);
     max-height: none;
     overflow: auto;
-    padding: 14px 14px 20px;
+    padding: 8px 14px 12px;
     border-top: 0;
     background: var(--card);
   }
@@ -2559,6 +2653,8 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .console {
     --ph-top: calc(69px + 44px);
     --ph-stage: 40dvh;
+    --ph-line: 40px;
+    --ph-tabs: 48px;
     --ph-col: 520px;
     --ph-side: max(22px, calc((100vw - var(--ph-col)) / 2));
   }
@@ -2573,6 +2669,17 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
   :root.js .top__lessons {
     height: 34px;
+  }
+  /* Room for Play all's words beside the icon, and for the forward button's full form when it fits. */
+  :root.js .console__controls .cbtn--alt {
+    width: auto;
+    padding: 0 14px;
+  }
+  :root.js .console__controls .cbtn--alt .cbtn__label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
   }
 }
 
@@ -2599,6 +2706,16 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
       'stage guide'
       'low low';
   }
+  /* A lesson of ten places or more (OSI Model has 13): from 900 to 1023px the scene is too narrow for its marks at 24px beside
+     the name and the button, so the bar keeps the full width while watching, as it does in Learn and Practice. */
+  @media (max-width: 1023px) {
+    :root.js .console[data-many] {
+      grid-template-areas:
+        'top top'
+        'stage guide'
+        'low low';
+    }
+  }
   :root.js .console__top {
     flex-wrap: nowrap;
     grid-area: top;
@@ -2624,6 +2741,7 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
   :root.js .console[data-reading] .log__fold {
     display: inline-grid;
+    height: 44px;
     margin-inline-start: auto;
   }
   :root.js .console[data-reading]:not([data-log='open']) :is(.log__scroll, .log__legend) {
@@ -2631,6 +2749,9 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
   :root.js .log__head {
     flex-wrap: nowrap;
+  }
+  :root.js .top__lesson {
+    flex: 0 1 auto;
   }
   :root.js .top__lesson .top__name {
     display: block;

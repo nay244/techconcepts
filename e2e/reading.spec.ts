@@ -227,11 +227,11 @@ test('the fold button is not shown at the Overview, on a Watch step or on a phon
   await page.setViewportSize({ width: 1024, height: 768 });
   await open(page, pathOf('dhcp'));
   await expect(page.locator('.log__fold')).toBeHidden();
-  expect((await box(page, '.console__explain')).width).toBe(348);
+  expect((await box(page, '.console__explain')).width).toBe(346);
   await nextButton(page).click();
   await expect(kicker(page)).toContainText('Step 1');
   await expect(page.locator('.log__fold')).toBeHidden();
-  expect((await box(page, '.console__log')).height).toBe(200);
+  expect((await box(page, '.console__log')).height).toBe(155);
   for (const place of ['learn', 'practice'] as const) {
     await openAt(page, 'dhcp', place);
     await expect(page.locator('.log__fold')).toBeVisible();
@@ -241,20 +241,21 @@ test('the fold button is not shown at the Overview, on a Watch step or on a phon
   await expect(page.locator('.log__fold')).toBeHidden();
 });
 
-/** B5: Learn and Practice on a tablet on its side get the desktop's reading layout. */
+/** B5, as D19 changes it (B23): Learn and Practice on a tablet on its side get the desktop's reading layout: no tabs, the bar across the page, the guide 380, 504 or 560px, the log folded to 55px. */
 for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024, height: 768 }, 504], [{ width: 1099, height: 800 }, 560]] as const) {
-  test(`at ${size.width}×${size.height} Learn and Practice have a ${words}px words column, the tabs on it and the log folded`, async ({ page }) => {
+  test(`at ${size.width}×${size.height} Learn and Practice have a ${words}px guide, no tabs and the log folded`, async ({ page }) => {
     await page.setViewportSize(size);
     for (const place of ['learn', 'practice'] as const) {
       await openAt(page, 'dhcp', place);
       const label = `${place} at ${size.width}`;
-      expect((await box(page, '.console__explain')).width, `${label}: words`).toBe(words);
+      expect((await box(page, '.console__guide')).width, `${label}: guide`).toBe(words);
+      expect((await box(page, '.console__explain')).width, `${label}: words`).toBe(words - 2);
       expect((await box(page, '.console__stage')).width, `${label}: scene`).toBeGreaterThanOrEqual(484);
-      const tabs = await box(page, '.console__tabs');
-      expect([tabs.x, tabs.y, tabs.width, tabs.height], `${label}: tabs`).toEqual([size.width - 12 - words, 92, words, 48]);
+      expect(await page.locator('.console__tabs').evaluate((el) => getComputedStyle(el).display), `${label}: no tabs`).toBe('none');
+      expect((await box(page, '.console__top')).width, `${label}: the bar is across the page`).toBe(size.width - 24);
       expect(await page.locator('.log__scroll').first().evaluate((el) => getComputedStyle(el).display), `${label}: rows folded`).toBe('none');
-      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(62);
-      expect(await page.locator('.log__head').first().evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).paddingBottom]), `${label}: head padding`).toEqual(['8px', '8px']);
+      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(55);
+      expect(await page.locator('.log__head').first().evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).paddingBottom]), `${label}: head padding`).toEqual(['4px', '4px']);
       expect(await pageOverflow(page), label).toEqual({ down: 0, sideways: 0 });
     }
     // No lesson table or rule list scrolls sideways: DHCP has a table (.tpanel), Firewalls a rule list (.rpanel).
@@ -269,24 +270,22 @@ for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024,
         expect(found.scrolling, `${slug} ${place} at ${size.width}: sideways scroll`).toEqual([]);
       }
     }
-    // Steps fills the words column, down to the folded log.
-    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true }).click();
-    const outline = await box(page, '.console__outline');
-    expect([outline.x, outline.width]).toEqual([size.width - 12 - words, words]);
+    // The guide runs from the bar's foot to the folded log.
+    const guide = await box(page, '.console__guide');
+    expect([guide.x, guide.width]).toEqual([size.width - 12 - words, words]);
     const log = await box(page, '.console__log');
-    expect(log.y - (outline.y + outline.height)).toBe(12);
-    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Explain', exact: true }).click();
+    expect(log.y - (guide.y + guide.height)).toBe(12);
 
     const button = page.getByRole('button', { name: /^(Show|Hide) log$/ });
     await expect(button).toHaveText('Show log');
     await button.click();
     await expect(button).toHaveText('Hide log');
     await expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect((await box(page, '.console__log')).height).toBe(Math.round(Math.max(200, size.height * 0.26)));
+    expect((await box(page, '.console__log')).height).toBe(Math.round(Math.min(207, Math.max(155, size.height * 0.26 - 45))));
     expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
     await button.click();
     await expect(button).toHaveText('Show log');
-    expect((await box(page, '.console__log')).height).toBe(62);
+    expect((await box(page, '.console__log')).height).toBe(55);
   });
 }
 

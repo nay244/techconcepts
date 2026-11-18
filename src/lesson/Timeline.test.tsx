@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test, vi } from 'vitest';
 import { liftedFixture, makeLesson } from '../content/test-fixtures';
 import { positionOf, slotsFor } from '../engine/timeline';
-import { Timeline, positionsOf } from './Timeline';
+import { StackedPlaces, Timeline, positionsOf } from './Timeline';
 
 const lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 const unit = lesson.units[0]!;
@@ -111,4 +111,17 @@ test('the page without JavaScript gets a plain list of the places in a <noscript
   expect(plain.match(/<li>/g)).toHaveLength(n + 3);
   expect(plain).toContain('<li>Overview</li>');
   expect(plain).toContain(`<li>${unit.steps[0]!.title}</li>`);
+});
+
+test('the row’s copy has no no-script list; the stacked list names every place once (B23)', () => {
+  const props = { units: lesson.units, unitIndex: 0, positions: positionsOf(lesson, 0, n), position: 0, slot: slotsFor(lesson)[0]!, onGo: () => undefined, hold: null };
+  const bar = renderToStaticMarkup(<Timeline {...props} />);
+  const row = renderToStaticMarkup(<Timeline {...props} home="row" />);
+  expect(bar).toContain('timeline__plain');
+  expect(row).not.toContain('timeline__plain');
+  expect(row).toContain('timeline timeline--row');
+  const stacked = renderToStaticMarkup(<StackedPlaces units={lesson.units} unitIndex={0} positions={props.positions} />);
+  expect(stacked).toContain('timeline__stack');
+  expect(stacked).toContain('In this lesson');
+  expect(stacked.match(/<li>/g)).toHaveLength(n + 3);
 });

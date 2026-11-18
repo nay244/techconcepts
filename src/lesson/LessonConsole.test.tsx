@@ -94,8 +94,8 @@ async function wait(ms: number): Promise<void> {
 const topBar = () => document.querySelector<HTMLElement>('.console__top')!;
 /** What the bar's timeline says the place is: "Overview", "Step 2 of 5", "Learn" or "Practice". */
 const place = () => topBar().querySelector('.tl__count')!.textContent;
-/** The timeline's stops: the buttons of the "This lesson" navigation. */
-const stop = (name: RegExp | string) => within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name });
+/** The timeline's stops: the buttons of the bar's "This lesson" navigation (the row under the scene is a second copy, shown by CSS in its own windows). */
+const stop = (name: RegExp | string) => within(within(topBar()).getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name });
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });
 const heading = () => within(explanation()).getByRole('heading', { level: 2 });
 const playButton = () => screen.getByRole('button', { name: /^(Play all|Pause)$/ });
@@ -723,4 +723,32 @@ test('at the Overview the log is not marked folded or open', () => {
   renderConsole();
   expect(root()).not.toHaveAttribute('data-reading');
   expect(root()).not.toHaveAttribute('data-log');
+});
+
+// ---------------------------------------------------------------- the timeline's two homes (D19, B23)
+
+test('the timeline has two homes, the bar’s and the row under the scene, each a list of every place; the row has no no-script list, and the stacked page lists the places once more after the words (case 63, H3)', () => {
+  const { container } = renderConsole();
+  const homes = [...container.querySelectorAll('.timeline')].map((t) => t.getAttribute('data-home'));
+  expect(homes).toEqual(['bar', 'row']);
+  const lists = screen.getAllByRole('navigation', { name: 'This lesson' });
+  expect(lists).toHaveLength(2);
+  expect(within(lists[0]!).getAllByRole('button')).toHaveLength(within(lists[1]!).getAllByRole('button').length);
+  // The row sits after the scene, before the tabs: the Tab order follows the screen on a phone.
+  const scene = container.querySelector('.console__stage')!;
+  const row = container.querySelector('.timeline--row')!;
+  const tabs = container.querySelector('.console__tabs')!;
+  expect(scene.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(row.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  // The stops carry their place, so a window that turns can hand focus to the same stop of the other copy.
+  expect(row.querySelector('.tl__stop')).toHaveAttribute('data-target', '0');
+});
+
+test('a stop of the row keeps the open tab and the place moves (E25)', async () => {
+  const { container } = renderConsole();
+  await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Log' }));
+  const row = container.querySelector<HTMLElement>('.timeline--row')!;
+  await user.click(within(row).getByRole('button', { name: /^Step 2, / }));
+  expect(container.querySelector('.console')).toHaveAttribute('data-tab', 'log');
+  expect(container.querySelector('.timeline--row [aria-current="step"]')).toHaveAccessibleName(/^Step 2, /);
 });

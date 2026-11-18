@@ -2,7 +2,7 @@ import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Panel } from '../content/schema';
-import { forwardButton, usePlayback } from '../engine/playback';
+import { forwardButton, holding, usePlayback } from '../engine/playback';
 import { appliedEvents, deriveState, parseStepParam, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
@@ -16,6 +16,7 @@ import { Outline } from './Outline';
 import { PlaybackControls } from './PlaybackControls';
 import type { Picks } from './Practice';
 import { ScenePanel } from './ScenePanel';
+import { StackedPlaces, Timeline, positionsOf } from './Timeline';
 import { TopBar } from './TopBar';
 import { stepAnnouncement } from './announce';
 import { useLessonShortcuts } from './useLessonShortcuts';
@@ -32,6 +33,9 @@ const TABS: readonly { id: Tab; label: string }[] = [
 
 /** The windows where the log and the table are always on screen and there are no tabs (console.css, "tablets"). */
 const TABLET_SIDEWAYS = '(min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px)';
+
+/** The windows where the timeline is a row under the scene (the phone layout and its grown form), not a part of the bar. */
+const TIMELINE_ROW = '(max-width: 760px), (max-width: 899px) and (min-height: 600px), (max-width: 1099px) and (orientation: portrait)';
 
 /** The fourth tab's name, by what the unit's panel is. The message strip (OSI Model) has none: it stays under the scene. */
 const PANEL_TAB: Partial<Record<Panel['type'], string>> = { table: 'Table', rules: 'Rules', bits: 'Bits' };
@@ -193,9 +197,39 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     if (r.top < p.top) panel.scrollTop -= p.top - r.top + 4;
     else if (r.bottom > p.bottom) panel.scrollTop += r.bottom - p.bottom + 4;
   });
-  // The forward button shows its short form wherever the guide has less than the full form's room (under 1100px wide).
-  const shortForward = useMediaQuery('(max-width: 1099px)');
+  // The forward button: the full words from 1100px wide, the short form on a phone, and under 1100px above that
+  // whichever fits the room the controls give it (PlaybackControls measures).
+  const phoneWidth = useMediaQuery('(max-width: 760px)');
+  const underDesktop = useMediaQuery('(max-width: 1099px)');
+  const forwardForm = phoneWidth ? 'short' : underDesktop ? 'fit' : 'full';
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // The timeline has two homes, the bar's and the row under the scene, and CSS shows one. When the window turns and the one
+  // that held focus is hidden, the same stop of the other takes it.
+  const rowHome = useMediaQuery(TIMELINE_ROW);
+  const stopFocus = useRef<string | null>(null);
+  const keepStopFocus = useCallback((e: { target: EventTarget; relatedTarget: EventTarget | null }, gained: boolean) => {
+    const stop = e.target instanceof HTMLElement ? e.target.closest<HTMLElement>('.tl__stop') : null;
+    if (stop === null) return;
+    if (gained) stopFocus.current = stop.dataset.target ?? null;
+    else if (e.relatedTarget !== null) stopFocus.current = null;
+  }, []);
+  useEffect(() => {
+    const forget = () => {
+      stopFocus.current = null;
+    };
+    document.addEventListener('pointerdown', forget);
+    return () => document.removeEventListener('pointerdown', forget);
+  }, []);
+  useEffect(() => {
+    const target = stopFocus.current;
+    const active = document.activeElement;
+    // The stop that held focus may still be the active element for a moment after CSS hid it (it has no boxes then).
+    const hidden = active instanceof HTMLElement && active.classList.contains('tl__stop') && active.getClientRects().length === 0;
+    if (target === null || (active !== null && active !== document.body && !hidden)) return;
+    const home = rowHome ? 'row' : 'bar';
+    consoleEl.current?.querySelector<HTMLElement>(`.timeline[data-home="${home}"] .tl__stop[data-target="${target}"]`)?.focus();
+  }, [rowHome]);
 
   // ---------------------------------------------------------------- in memory only
 
@@ -288,7 +322,16 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 
   return (
-    <div ref={consoleEl} className="console" data-tab={tab} data-reading={reading ? '' : undefined} data-log={reading && logOpen ? 'open' : undefined}>
+    <div
+      ref={consoleEl}
+      className="console"
+      data-tab={tab}
+      data-reading={reading ? '' : undefined}
+      data-many={unit.steps.length + 3 >= 10 ? '' : undefined}
+      data-log={reading && logOpen ? 'open' : undefined}
+      onFocus={(e) => keepStopFocus(e, true)}
+      onBlur={(e) => keepStopFocus(e, false)}
+    >
       <TopBar
         lesson={lesson}
         trackTitle={trackTitle}
@@ -328,6 +371,16 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           reducedMotion={reducedMotion}
           panelHome={tableInGuide ? guideTable : null}
         />
+        <Timeline
+          home="row"
+          units={lesson.units}
+          unitIndex={slot.unit}
+          positions={positionsOf(lesson, slot.unit, unit.steps.length)}
+          position={position}
+          slot={slot}
+          onGo={go}
+          hold={reducedMotion ? null : holding(state)}
+        />
         <div className="console__tabs" role="group" aria-label="Show">
           {tabs.map(({ id, label }) => {
             const marked = id === 'table' && tab !== 'table' && change !== null && change !== changeSeen;
@@ -357,9 +410,10 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
             definitions={definitions}
             onGo={go}
           />
+          <StackedPlaces units={lesson.units} unitIndex={slot.unit} positions={positionsOf(lesson, slot.unit, unit.steps.length)} />
           <div ref={setGuideTable} className="guide__table" />
           <div className="guide__foot">
-            <PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} forward={forward} short={shortForward} onForward={pressForward} />
+            <PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} forward={forward} form={forwardForm} onForward={pressForward} />
             <p className="keys">
               <kbd>Space</kbd>
               <span>play all or pause</span>

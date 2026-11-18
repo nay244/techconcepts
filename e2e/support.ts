@@ -225,6 +225,8 @@ export function clippingContainers(target: Locator): Promise<string[]> {
   return target.evaluate((el) => {
     const box = el.getBoundingClientRect();
     const clipped: string[] = [];
+    // A fixed box (the phone's pinned words) is placed by the window: the scroll boxes above it do not clip it.
+    for (let node: Element | null = el; node !== null; node = node.parentElement) if (getComputedStyle(node).position === 'fixed') return clipped;
     for (let node = el.parentElement; node !== null; node = node.parentElement) {
       const { overflowX, overflowY } = getComputedStyle(node);
       if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden' || value === 'clip')) continue;

@@ -69,6 +69,10 @@ test.each(['dhcp', 'what-is-http', 'osi-model'])('without JavaScript, %s says it
   // The timeline is a list to read: its names stand in a <noscript>, headed "In this lesson".
   expect(words(doc.querySelector('noscript .timeline__plain h2'))).toBe('In this lesson');
   expect(doc.querySelectorAll('noscript .timeline__plain li').length).toBeGreaterThan(3);
+  // The stacked page (under 1100px) lists them again, one a line, after the Overview's words, and the row's copy has no list.
+  expect(words(doc.querySelector('noscript .timeline__stack h2'))).toBe('In this lesson');
+  expect(doc.querySelectorAll('noscript .timeline__stack li').length).toBe(doc.querySelectorAll('noscript .timeline__plain li').length);
+  expect(doc.querySelector('.timeline--row noscript')).toBeNull();
 
   // The note stands where the log would say "Press Play", whose words are hidden.
   const idle = doc.querySelector('.console__log td[data-idle]')!;

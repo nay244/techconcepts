@@ -179,7 +179,7 @@ test('15: the bar is 1015×68 at (12, 81) at 1440×900 and ends where the scene 
   expect(Math.abs((await box(page, '.top__lesson'))[2] - 232)).toBeLessThanOrEqual(6);
   expect((await box(page, '.console__guide'))[1]).toBe(81);
   // The timeline fills its cell: every stop 66px tall from y 82 (names form), and in Learn the marks are centred (y 115).
-  const stops = await page.locator('.tl__stop').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return [b.top, b.height]; }));
+  const stops = await page.locator('.console__top .tl__stop').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return [b.top, b.height]; }));
   for (const [t, hh] of stops) { expect(Math.abs(t! - 82)).toBeLessThanOrEqual(0.6); expect(Math.abs(hh! - 66)).toBeLessThanOrEqual(0.6); }
   await at(page, 1440, 900, DHCP, 6);
   const mark = await box(page, '.tl__mark');
@@ -260,7 +260,7 @@ test('20: at 1440×900 the rule before the current mark is solid orange and afte
   await at(page, 1440, 900, DHCP, 4);
   const here = await page.evaluate(() => {
     const bg = (el: Element, pseudo: '::before' | '::after') => getComputedStyle(el, pseudo).backgroundImage;
-    const stops = [...document.querySelectorAll('.tl li')];
+    const stops = [...document.querySelectorAll('.console__top .tl li')];
     const probe = document.createElement('i');
     probe.style.color = 'var(--here)';
     document.body.append(probe);
@@ -281,43 +281,43 @@ test('21: at 1440×900 every stop’s name shows, whole, in at most two lines, a
     await at(page, 1440, 900, DHCP, step);
     // Learn and Practice show the marks (the scene is narrower there): the names are for the Overview and the steps.
     if (step <= 5) {
-    const names = await page.locator('.tl__name').evaluateAll((els) => els.map((el) => ({ w: el.getBoundingClientRect().width, clamped: el.scrollHeight > el.clientHeight + 1 })));
+    const names = await page.locator('.console__top .tl__name').evaluateAll((els) => els.map((el) => ({ w: el.getBoundingClientRect().width, clamped: el.scrollHeight > el.clientHeight + 1 })));
     for (const n of names) {
       expect(n.w).toBeGreaterThan(1);
       expect(n.clamped).toBe(false);
     }
     }
-    const count = await page.locator('.tl__count').innerText();
+    const count = await page.locator('.console__top .tl__count').innerText();
     expect(count).toBe(step === 0 ? 'Overview' : step <= 5 ? `Step ${step} of 5` : step === 6 ? 'Learn' : 'Practice');
   }
   await at(page, 1440, 900, WHAT_DHCP, 3);
-  expect(await page.locator('.tl__name').first().evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(1);
-  await expect(page.locator('.tl__end')).toBeHidden();
+  expect(await page.locator('.console__top .tl__name').first().evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(1);
+  await expect(page.locator('.console__top .tl__end')).toBeHidden();
 });
 
 test('22, 23: in the one-line bar the stops are marks on one line, then the count and the place’s name; 13 marks are 34px at 1280 and never under 24px; every stop is inside the timeline', async ({ page }) => {
   for (const [w, h] of [[1280, 800], [1366, 768]] as const) {
     await at(page, w, h, DHCP, 4);
-    const tops = await page.locator('.tl__stop').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
+    const tops = await page.locator('.console__top .tl__stop').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().top)));
     expect(new Set(tops).size).toBe(1);
-    expect(await page.locator('.tl__name').first().evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
-    await expect(page.locator('.tl__count')).toHaveText('Step 4 of 5');
-    await expect(page.locator('.tl__now')).toHaveText('DHCP Acknowledge');
+    expect(await page.locator('.console__top .tl__name').first().evaluate((el) => el.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+    await expect(page.locator('.console__top .tl__count')).toHaveText('Step 4 of 5');
+    await expect(page.locator('.console__top .tl__now')).toHaveText('DHCP Acknowledge');
   }
   await at(page, 1280, 800, DHCP, 0);
-  await expect(page.locator('.tl__count')).toHaveText('Overview');
-  await expect(page.locator('.tl__now')).toBeHidden();
+  await expect(page.locator('.console__top .tl__count')).toHaveText('Overview');
+  await expect(page.locator('.console__top .tl__now')).toBeHidden();
   for (const [w, h, min] of [[1440, 900, 34], [1280, 800, 29], [1100, 700, 24]] as const) {
     for (let step = 0; step <= 12; step += 4) {
       await at(page, w, h, OSI, step);
       const tl = await box(page, '.timeline__nav');
-      const stops = await page.locator('.tl__stop').evaluateAll((els) => els.map((el) => { const b = el.getBoundingClientRect(); return [b.left, b.right, b.width]; }));
+      const stops = await page.locator('.console__top .tl__stop').evaluateAll((els) => els.map((el) => { const b = el.getBoundingClientRect(); return [b.left, b.right, b.width]; }));
       for (const [l, r, wd] of stops) {
         expect(l, `inside at ${w}`).toBeGreaterThanOrEqual(tl[0] - 0.5);
         expect(r).toBeLessThanOrEqual(tl[0] + tl[2] + 0.5);
         expect(wd, `a stop at ${w}x${h} step ${step}`).toBeGreaterThanOrEqual(min - 0.6);
       }
-      await expect(page.locator('.tl__count')).toBeVisible();
+      await expect(page.locator('.console__top .tl__count')).toBeVisible();
     }
   }
 });
@@ -326,12 +326,12 @@ test('24: with TCP/UDP’s titles no name takes more than two lines, the bar sta
   for (const slug of ['tcp-udp', 'ip-address', 'nat', 'ports']) {
     await at(page, 1440, 900, `/networking/${slug}`);
     expect((await box(page, '.console__top'))[3]).toBe(68);
-    const lines = await page.locator('.tl__name').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight))));
+    const lines = await page.locator('.console__top .tl__name').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight))));
     for (const n of lines) expect(n).toBeLessThanOrEqual(2);
     expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
   }
   await at(page, 1440, 900, '/networking/tcp-udp');
-  const stops = page.locator('.tl__stop');
+  const stops = page.locator('.console__top .tl__stop');
   const titles = await stops.evaluateAll((els) => els.map((el) => el.getAttribute('title')));
   const long = titles.indexOf('UDP: Packet Loss, No Retransmission');
   expect(long).toBeGreaterThan(0);

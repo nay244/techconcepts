@@ -359,7 +359,7 @@ test('11: every hand move during a run stops it, and nothing moves on afterwards
     ['→', () => keyOnPage('{ArrowRight}')],
     ['←', () => keyOnPage('{ArrowLeft}')],
     ['Back', () => user.click(backButton())],
-    ['a stop of the timeline', () => user.click(within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name: /^Step 3, Table Lookup/ }))],
+    ['a stop of the timeline', () => user.click(within(screen.getAllByRole('navigation', { name: 'This lesson' })[0]!).getByRole('button', { name: /^Step 3, Table Lookup/ }))],
   ];
   for (const [name, move] of moves) {
     const view = render(consoleFor(DHCP));
@@ -502,7 +502,7 @@ test('14: a ?step= link and a press of a stop land complete under reduced motion
   const { unmount } = render(consoleFor(DHCP));
   await wait(0);
   expect(logRows()).toHaveLength(4);
-  await user.click(within(screen.getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name: /^Step 3, Table Lookup/ }));
+  await user.click(within(screen.getAllByRole('navigation', { name: 'This lesson' })[0]!).getByRole('button', { name: /^Step 3, Table Lookup/ }));
   expect(logRows()).toHaveLength(3);
   expect(vi.getTimerCount()).toBe(0);
   unmount();
