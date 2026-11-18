@@ -16,6 +16,7 @@ import {
   requireLessons,
   setSpeed,
   settledFrame,
+  transitionsDone,
   viewSwitch,
 } from './support';
 
@@ -1755,11 +1756,7 @@ const B20_CFGS: B20Cfg[] = [
 const EDGE = { light: 'rgb(18, 23, 27)', dark: 'rgb(198, 205, 209)' } as const;
 
 /** Home, with the fonts ready and no smooth scrolling to wait for. */
-const b20NoScripts = new WeakSet<Page>();
-/** A frame on, so a transition that lasts one frame (reduced motion) is done; a page with its scripts off has no frames to ask, so it waits the time of a few. */
-const b20Frame = (page: Page): Promise<void> => (b20NoScripts.has(page) ? page.waitForTimeout(100) : settledFrame(page));
 async function b20Home(page: Page, scripts = true): Promise<void> {
-  if (!scripts) b20NoScripts.add(page);
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
   // A page with its scripts off cannot take a style tag: those tests wait for Home's smooth scroll to settle instead.
@@ -1785,8 +1782,8 @@ const b20Rect = (loc: Locator) =>
 /** Checks a radio by a script click: no focus ring, no scroll, a state to measure from. */
 const b20Pick = async (page: Page, id: string): Promise<void> => {
   await page.evaluate((i) => (document.getElementById(i) as HTMLInputElement).click(), id);
-  // With reduced motion a transition still lasts one frame (0.01ms): the change is drawn a frame after the click.
-  await b20Frame(page);
+  // The change is drawn once its transitions have run (under reduced motion they are 0.01ms, but a value inherited down the tree starts them a frame at a time).
+  await transitionsDone(page);
 };
 const b20Scroll = (page: Page, y: number): Promise<void> => page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
 /** Scrolls so `.demo`'s top is `at` pixels from the window's top. */
@@ -2710,13 +2707,13 @@ test.describe('B20: the keyboard (cases 27 to 30)', () => {
     });
     const b = (await loc.boundingBox())!;
     await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-    await b20Frame(page);
+    await transitionsDone(page);
   };
   /** Where the focus is: an input's id, or a link's words. */
   const where = (page: Page): Promise<string> => page.evaluate(() => { const el = document.activeElement as HTMLElement; return el.tagName === 'INPUT' ? el.id : (el.textContent ?? '').replace(/\s+/g, ' ').trim(); });
   const tabs = async (page: Page, n: number, key = 'Tab'): Promise<string[]> => {
     const out: string[] = [];
-    for (let i = 0; i < n; i += 1) { await page.keyboard.press(key); await b20Frame(page); out.push(await where(page)); }
+    for (let i = 0; i < n; i += 1) { await page.keyboard.press(key); await transitionsDone(page); out.push(await where(page)); }
     return out;
   };
   const visibleHints = (page: Page): Promise<string[]> => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.demo__hint')].filter((h) => getComputedStyle(h).display !== 'none').map((h) => h.className.replace('demo__hint ', '')));
@@ -2760,7 +2757,7 @@ test.describe('B20: the keyboard (cases 27 to 30)', () => {
         const ringed = async (sel: string, offset: string) => {
           // With scripts off the page's own smooth scroll is on: let a focus's scroll finish before measuring.
           if (!m.scripts) await page.waitForTimeout(500);
-          await b20Frame(page);
+          await transitionsDone(page);
           const el = page.locator(sel);
           expect(await b20Css(el, 'outline-style'), `${sel} is ringed`).toBe('solid');
           expect(await b20Css(el, 'outline-offset'), `${sel}'s ring`).toBe(offset);
@@ -2770,7 +2767,7 @@ test.describe('B20: the keyboard (cases 27 to 30)', () => {
         };
         const hintOnScreen = async (cls: string) => {
           if (!m.scripts) await page.waitForTimeout(500);
-          await b20Frame(page);
+          await transitionsDone(page);
           expect(await visibleHints(page)).toEqual([cls]);
           const box = await b20Rect(page.locator(`main .${cls.replace(' ', '.')}`));
           expect(box.top, `${cls} below the header`).toBeGreaterThanOrEqual(69);

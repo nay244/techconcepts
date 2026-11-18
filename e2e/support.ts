@@ -85,6 +85,11 @@ export function settledFrame(page: Page): Promise<void> {
   return page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 }
 
+/** Waits, polling from Node (so it works with scripts off), until no CSS transition is running: a state change under reduced motion is drawn only then. */
+export async function transitionsDone(page: Page): Promise<void> {
+  await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a instanceof CSSTransition && a.playState === 'running').length), { intervals: [5, 10, 20] }).toBe(0);
+}
+
 /** How far the page itself overflows the window, down and sideways, in CSS pixels; 0 when it does not. */
 export async function pageOverflow(page: Page): Promise<{ down: number; sideways: number }> {
   await settledFrame(page);
