@@ -609,13 +609,13 @@ test.describe('the page’s height (measured: 1,599 at 1440 and 2,368 at 375 wit
 });
 
 test.describe('keyboard focus never hides under the sticky header (E11)', () => {
-  test('the root scroll-padding-top is 80px on /tracks, 69px on a lesson (the site header, E14), auto elsewhere', async ({ page }) => {
+  test('the root scroll-padding-top is 80px on /tracks and on both track pages, 69px on a lesson (the site header, E14), auto elsewhere', async ({ page }) => {
     const padding = async (path: string) => {
       await page.goto(path);
       return page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingTop);
     };
-    expect(await padding('/tracks')).toBe('80px');
-    for (const path of ['/', '/about', '/glossary', '/networking']) expect(await padding(path), path).toBe('auto');
+    for (const path of ['/tracks', '/networking', '/how-the-internet-works']) expect(await padding(path), path).toBe('80px');
+    for (const path of ['/', '/about', '/glossary']) expect(await padding(path), path).toBe('auto');
     expect(await padding('/networking/dhcp')).toBe('69px');
   });
 
@@ -773,27 +773,37 @@ for (const [vname, viewport] of VIEWS) {
   }
 }
 
-test.describe('the track page and the rest of the site are untouched', () => {
+test.describe('the track page wears the Card stack and the rest of the site is untouched', () => {
   test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false });
-  for (const colorScheme of ['light', 'dark'] as const) {
-    test(`/networking keeps its Patch strip and buttons (${colorScheme})`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme });
-      await open(page, '/networking');
-      const sq = await page.locator('main .strip__sq i').first().evaluate((el) => { const r = el.getBoundingClientRect(); return [r.width, r.height]; });
-      expect(sq).toEqual([9, 12]);
-      const w = await page.locator('main .strip__w').first().evaluate((el) => ({ font: getComputedStyle(el).fontFamily, size: getComputedStyle(el).fontSize }));
-      expect(w.font.toLowerCase()).toContain('mono');
-      expect(w.size).toBe('13px');
-      await expect(page.locator('main .side-now__k')).toHaveText('Start here');
-      const btn = await page.locator('main .btn').first().evaluate((el) => { const s = getComputedStyle(el); return { bw: s.borderTopWidth, shadow: s.boxShadow }; });
-      expect(btn.bw).not.toBe('2px');
-      expect(btn.shadow).not.toMatch(/3px 3px 0px 0px/);
-    });
+  for (const path of ['/networking', '/how-the-internet-works']) {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      test(`${path} wears the Card stack: 10px squares, 15px sans words, First lesson, the button's 2px edge and offset (${colorScheme})`, async ({ page }) => {
+        await page.emulateMedia({ colorScheme });
+        await open(page, path);
+        const sq = await page.locator('main .strip__sq i').first().evaluate((el) => { const r = el.getBoundingClientRect(); return [r.width, r.height]; });
+        expect(sq).toEqual([10, 10]);
+        const w = await page.locator('main .strip__w').first().evaluate((el) => ({ font: getComputedStyle(el).fontFamily, size: getComputedStyle(el).fontSize }));
+        expect(w.font.toLowerCase()).not.toContain('mono');
+        expect(w.font.toLowerCase()).toContain('atkinson hyperlegible next');
+        expect(w.size).toBe('15px');
+        await expect(page.locator('main .upnext__k')).toHaveText('First lesson');
+        await expect(page.locator('main')).not.toContainText(/Start here(?! if you are new to IT)/);
+        const btn = await page.locator('main .btn').first().evaluate((el) => { const s = getComputedStyle(el); return { bw: s.borderTopWidth, shadow: s.boxShadow }; });
+        expect(btn.bw).toBe('2px');
+        expect(btn.shadow).toMatch(/3px 3px 0px 0px/);
+      });
+    }
   }
-  for (const path of ['/networking', '/about', '/glossary', '/does-not-exist', '/networking/dhcp']) {
+  for (const path of ['/about', '/glossary', '/does-not-exist', '/networking/dhcp']) {
     test(`${path} does not read the Card stack's names`, async ({ page }) => {
       await page.goto(path);
       expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim())).toBe('');
+    });
+  }
+  for (const path of ['/networking', '/how-the-internet-works']) {
+    test(`${path} reads the Card stack's names`, async ({ page }) => {
+      await page.goto(path);
+      expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim())).not.toBe('');
     });
   }
 });

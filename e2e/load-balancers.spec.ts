@@ -174,12 +174,12 @@ test('E4: the lamps look the same in both themes, the health words change, and "
   }
 });
 
-test('E5: on /networking, stop 19 is Load Balancers, with its spot, its one-line sub and Start', async ({ page }) => {
+test('E5: on /networking, stop 19 is Load Balancers, with its one-line sub and Not started', async ({ page }) => {
   await checkCard(page, 'load-balancers', 19, ariaOf('load-balancers'));
   const card = lessonCard(page, 'load-balancers');
   await expect(card.locator('h3')).toHaveText('Load Balancers');
   await expect(card).toContainText(CARD_SUB);
-  await expect(card.locator('.stop__acts .btn')).toHaveText('Start');
+  await expect(card.locator('.stop__k')).toHaveText('Not started');
 });
 
 test.describe('without JavaScript', () => {
