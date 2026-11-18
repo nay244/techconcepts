@@ -162,3 +162,8 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 ## Not in this job
 
 The phone figures' label size and the Sequence view on a phone (the critique's P1, not chosen by the owner: "Phone figure fit to box" was offered and left out; it stays open for a job of its own), the Bits tab's change mark, the lesson's ending, the wrong answer's mark, Go deeper's expand-all, the HTTP up-next tile; search; Card stack on this page (2.84); the track page, About, the Glossary and 404 in Card stack; the header and footer; any lesson's words.
+
+# Job 20: the reduced-motion failures
+
+**Status: done (2026-11-17, direction 2.102).** A task of its own from job 19's session: twenty Home and Tracks end-to-end tests failed only in the `reduced-motion` project since jobs 17 and 18. For each, the page or the test is wrong: a read too early waits for the transition to end, a test of motion sets motion itself, a page fault is fixed in the page; no check weakened. One unit, B24 (builder, Sonnet, `.superpowers/wt/b24`, branch `job20/b24`, port 4490), with its build review (port 4491), then F20 on `revamp`. Done when `npx playwright test e2e/site.spec.ts e2e/tracks-card-stack.spec.ts --project=reduced-motion --project=d1440-dark`, `npx vitest run --maxWorkers=3` and `npm run build` pass. Widened at job 19's request to its case 47 walks.
+

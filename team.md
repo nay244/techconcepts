@@ -1180,3 +1180,24 @@ Planned on 2026-11-17 in a session of its own on Opus 5.5, started from the sess
 - **Run the `reduced-motion` project on a unit's new specs before its review.** CI's pass skips it, and six new tests failed only there; a builder's done-check that lists the projects a spec runs in would have caught them in B22.
 - **Twenty Home and Tracks tests fail in `reduced-motion` on `revamp`** since jobs 17 and 18, unseen for the same reason. They are a task of their own.
 - **A builder's second report can be refused by the harness.** Ask for one report per message, and check the branch's commits, not the report alone.
+
+# Job 20: the reduced-motion failures (B24)
+
+Started 2026-11-17 by the session that closed job 19, as a task of its own (`team.md` job 19, "What to do differently next time"; direction 2.101). Numbers: job 20, direction 2.102, B24, F20. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| B24 | builder | Sonnet | 1, then the review's fixes and one widening | 127,507 (all passes) | Branch `job20/b24`, test-only. `4e74048`, `ac7aedb`: 23 reduced-motion failures (per window and scheme) diagnosed: 20 reads in the frame a 0.01ms transition starts, 3 case 14 variants testing the lesson's fade-in, which reduced motion leaves out by design; no page fault, no expected value changed. `6d996cc`: review fixes (`transitionsDone` in `e2e/support.ts`; the docblock back on `b20Home`). `d144d74`: job 19's case 47 walks use it (asked by job 19's session: 5 of 36 failed on `revamp` with `--trace off`). |
+| B24 review | reviewer | Opus | 1 | 88,986 | PASS WITH FIXES, no blocker: the frame and 100 ms waits passed only because tracing adds delay (16 of 240 failed with `--trace=off`); one wait until no CSS transition runs; the misplaced docblock. No check weakened, no page fault hidden; case 14's `emulateMedia` loses nothing. `.superpowers/job20/b24-review.md` (not tracked). |
+| B24 fix check | orchestrator | Opus 5.5 | 1 | not counted | In the worktree, port 4490: the review's `--trace=off --repeat-each=15` run 450 passed; case 47 in both lesson specs, `reduced-motion` and `d1440-dark`, `--trace off --repeat-each=3`: 72 passed; `site.spec.ts` and `tracks-card-stack.spec.ts` at `reduced-motion` and `d1440-dark`: 700 passed, 4 skipped. **B24 done.** |
+| F20 | orchestrator | Opus 5.5 | 1 | not counted | `job20/b24` fast-forwarded into `revamp` (`d144d74`). On `revamp`: `npx vitest run --maxWorkers=3` 2,512 passed (172 files); `npm run build` "Every page is within budget (42 pages)". The end-to-end done-check ran on the same commits in the worktree (B24 fix check). Nothing pushed. |
+
+## Could go one model lower next time
+
+- The diagnosis needed a measured reason (why two frames were not enough), which the Opus review supplied; the fix itself (one helper, its callers) would have suited a Haiku `builder` once named.
+
+## What to do differently next time
+
+- **A wait must be proved without tracing.** Playwright's trace slows every step enough to hide a wait that is too short; a flaky-wait fix is checked with `--trace=off --repeat-each` before its review.
+- **Other `settledFrame` callers** (`site.spec.ts`, `lesson-layout.spec.ts`, `lesson-layout-small.spec.ts`) were not re-checked with tracing off; any that reads a style after a change may want `transitionsDone`.
+
