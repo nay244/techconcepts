@@ -762,7 +762,7 @@ test('40: in Learn and Practice at 1440×900 the words’ panel is 560px wide, a
 // ---------------------------------------------------------------- the log's column names (case 49)
 
 test('49: while the log is scrolled the column names stay at the top of its scroll box', async ({ page }) => {
-  for (const [w, h, path, step] of [[1440, 900, DHCP, 5], [1280, 800, DHCP, 5], [1366, 768, DHCP, 5], [1440, 900, HTTP, 3]] as const) {
+  for (const [w, h, path, step] of [[1440, 900, DHCP, 5], [1280, 800, DHCP, 5], [1366, 768, DHCP, 5], [1024, 768, DHCP, 5], [1440, 900, HTTP, 3]] as const) {
     await at(page, w, h, path, step);
     const r = await page.evaluate(async () => {
       const scroll = document.querySelector<HTMLElement>('.log__scroll')!;

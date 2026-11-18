@@ -26,7 +26,7 @@ export interface TopBarProps {
 
 const LIST_ICON = (
   <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false">
-    <path d="M2 3.5h10M2 7h10M2 10.5h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M2 3h1M5.5 3H12M2 7h1M5.5 7H12M2 11h1M5.5 11H12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
 

@@ -225,15 +225,17 @@ export function clippingContainers(target: Locator): Promise<string[]> {
   return target.evaluate((el) => {
     const box = el.getBoundingClientRect();
     const clipped: string[] = [];
-    // A fixed box (the phone's pinned words) is placed by the window: the scroll boxes above it do not clip it.
-    for (let node: Element | null = el; node !== null; node = node.parentElement) if (getComputedStyle(node).position === 'fixed') return clipped;
+    // A fixed box (the phone's pinned words) is placed by the window: it is checked, and the scroll boxes above it are not.
+    if (getComputedStyle(el).position === 'fixed') return clipped;
     for (let node = el.parentElement; node !== null; node = node.parentElement) {
-      const { overflowX, overflowY } = getComputedStyle(node);
-      if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden' || value === 'clip')) continue;
-      const room = node.getBoundingClientRect();
-      if (box.top < room.top - 0.5 || box.bottom > room.bottom + 0.5 || box.left < room.left - 0.5 || box.right > room.right + 0.5) {
-        clipped.push(node.className || node.tagName);
+      const { overflowX, overflowY, position } = getComputedStyle(node);
+      if ([overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden' || value === 'clip')) {
+        const room = node.getBoundingClientRect();
+        if (box.top < room.top - 0.5 || box.bottom > room.bottom + 0.5 || box.left < room.left - 0.5 || box.right > room.right + 0.5) {
+          clipped.push(node.className || node.tagName);
+        }
       }
+      if (position === 'fixed') break;
     }
     return clipped;
   });

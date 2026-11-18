@@ -614,3 +614,92 @@ for (const [w, h, js] of [[1024, 768, false], [375, 812, false], [1024, 599, tru
     });
   });
 }
+
+// ---------------------------------------------------------------- B23 review 1 (E28 to E31)
+
+for (const [w, h] of [[375, 812], [768, 1024]] as const) {
+  test(`47 menu open at ${w}×${h} (B1, E28): Tab from About into the lesson closes the menu, and every focused element hit-tests to itself`, async ({ page }) => {
+    await at(page, w, h, DHCP, 4);
+    await page.locator('#menu').click();
+    const panel = page.locator('#menu-panel');
+    await expect(panel).toBeVisible();
+    await panel.getByRole('link', { name: 'About' }).focus();
+    for (let i = 0; i < 5; i += 1) {
+      await page.keyboard.press('Tab');
+      await expect(panel, `after Tab ${i + 1} the panel is closed`).toBeHidden();
+      const f = await describeFocus(page);
+      expect(f.hit, `Tab ${i + 1}: ${f.key} is covered`).toBe(true);
+      expect(f.region, `Tab ${i + 1}`).not.toBe('header');
+    }
+    // As on every page, Escape and a second press still close it.
+    await page.locator('#menu').click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+  });
+}
+
+test('47 (F1): clippingContainers names the fixed panel that cuts a link, and not the boxes above it', async ({ page }) => {
+  await at(page, 375, 812, DHCP, 6);
+  const link = page.locator('.console__explain a[href]').last();
+  await page.evaluate(() => {
+    const panel = document.querySelector<HTMLElement>('.console__explain')!;
+    const a = [...panel.querySelectorAll<HTMLElement>('a[href]')].at(-1)!;
+    panel.scrollTop = 0;
+    const r = a.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    panel.scrollTop += r.top + r.height / 2 - p.bottom;
+  });
+  await settledFrame(page);
+  const cut = await page.evaluate(() => {
+    const a = [...document.querySelectorAll<HTMLElement>('.console__explain a[href]')].at(-1)!.getBoundingClientRect();
+    const p = document.querySelector<HTMLElement>('.console__explain')!.getBoundingClientRect();
+    return a.top < p.bottom && a.bottom > p.bottom;
+  });
+  expect(cut, 'the link straddles the panel’s bottom edge').toBe(true);
+  expect(await clippingContainers(link)).toEqual(['console__panel console__explain']);
+});
+
+test('F2: the table’s panel keeps 14px over its caption on a phone; the rules panel pads less', async ({ page }) => {
+  await at(page, 375, 812, DHCP, 4);
+  await tabsGroup(page).getByRole('button', { name: /^Table/ }).click();
+  const gap = await page.evaluate(() => document.querySelector('.tpanel caption')!.getBoundingClientRect().top - document.querySelector('.tpanel')!.getBoundingClientRect().top);
+  expect(Math.abs(gap - 14)).toBeLessThanOrEqual(0.5);
+});
+
+const LIST_PATH = 'M2 3h1M5.5 3H12M2 7h1M5.5 7H12M2 11h1M5.5 11H12';
+for (const [w, h] of [[375, 812], [768, 1024], [1024, 768]] as const) {
+  test(`41 (F3) at ${w}×${h}: the lessons button is centred in the bar, 12px inside its right end, in Atkinson Hyperlegible Next, with the prototype’s list icon`, async ({ page }) => {
+    await at(page, w, h, DHCP, 4);
+    const m = await page.evaluate(() => {
+      const b = document.querySelector<HTMLElement>('.top__lessons')!.getBoundingClientRect();
+      const bar = document.querySelector<HTMLElement>('.console__top')!.getBoundingClientRect();
+      const el = document.querySelector<HTMLElement>('.top__lessons')!;
+      return {
+        centre: b.top + b.height / 2 - (bar.top + bar.height / 2),
+        right: bar.right - b.right,
+        font: getComputedStyle(el).fontFamily,
+        path: el.querySelector('svg path')!.getAttribute('d'),
+      };
+    });
+    expect(Math.abs(m.centre), 'vertical centre').toBeLessThanOrEqual(1);
+    expect(Math.abs(m.right - 12), 'right edge').toBeLessThanOrEqual(1);
+    expect(m.font).toMatch(/^"?Atkinson Hyperlegible Next/);
+    expect(m.path).toBe(LIST_PATH);
+  });
+}
+
+test('E27 at its edges: OSI Model’s bar is the full width while watching up to 1023px and over the scene from 1024px', async ({ page }) => {
+  for (const [w, h, full] of [[959, 700, true], [1023, 768, true], [1024, 768, false]] as const) {
+    await at(page, w, h, OSI, 4);
+    const bar = await box(page, '.console__top');
+    const guide = await box(page, '.console__guide');
+    if (full) {
+      near(bar, [12, 81, w - 24, 44], `bar at ${w}`);
+      expect(Math.abs(guide[1] - 137), `guide's top at ${w}`).toBeLessThanOrEqual(0.6);
+    } else {
+      expect(Math.abs(bar[2] - 640), 'bar at 1024').toBeLessThanOrEqual(0.6);
+      expect(Math.abs(guide[1] - 81), `guide's top at ${w}`).toBeLessThanOrEqual(0.6);
+    }
+  }
+});
