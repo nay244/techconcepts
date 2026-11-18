@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { clippingContainers, kicker, moveBy, nextButton, open, pageOverflow, position, readyLessons, requireLessons, settledFrame } from './support';
+import { clippingContainers, kicker, moveBy, nextButton, open, pageOverflow, position, readyLessons, requireLessons, settledFrame, transitionsDone } from './support';
 
 /**
  * D19 (B23): the Lesson page on a phone and from 761px to 1099px wide. Each test names the case of
@@ -562,8 +562,8 @@ for (const [w, h, order] of [
       const pinned = w < 900 || h > w;
       for (let i = 0; i < 90; i += 1) {
         await page.keyboard.press('Tab');
-        // With reduced motion a transition still lasts one frame (0.01ms): the skip link is in place a frame after it takes focus.
-        await settledFrame(page);
+        // The skip link is in place once its transition (0.01ms under reduced motion, a frame at a time down the tree) has run.
+        await transitionsDone(page);
         const f = await describeFocus(page);
         if (f.region === 'skip' && forward.length > 0) break;
         if (f.key.startsWith('other:BODY')) break;
@@ -587,7 +587,7 @@ for (const [w, h, order] of [
       const reverse: string[] = [];
       for (let i = 0; i < forward.length; i += 1) {
         await page.keyboard.press('Shift+Tab');
-        await settledFrame(page);
+        await transitionsDone(page);
         reverse.push((await describeFocus(page)).key);
       }
       expect(reverse, `${path} ${place} at ${w}`).toEqual([...forward].reverse());

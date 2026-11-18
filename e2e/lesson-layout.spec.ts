@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { kicker, nextButton, open, pageOverflow, setSpeed, settledFrame } from './support';
+import { kicker, nextButton, open, pageOverflow, setSpeed, settledFrame, transitionsDone } from './support';
 
 /**
  * D19 (B22): the Lesson page rearranged, at 1100px wide and up. Each test names the case of prototypes/d19-cases.md it
@@ -834,8 +834,8 @@ for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
     const forward: string[] = [];
     for (let i = 0; i < 80; i += 1) {
       await page.keyboard.press('Tab');
-      // With reduced motion a transition still lasts one frame (0.01ms): the skip link is in place a frame after it takes focus.
-      await settledFrame(page);
+      // The skip link is in place once its transition (0.01ms under reduced motion, a frame at a time down the tree) has run.
+      await transitionsDone(page);
       const f = await describeFocus(page);
       if (forward.includes(f.key) || f.key.startsWith('other:BODY')) break;
       forward.push(f.key);
@@ -856,7 +856,7 @@ for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
     await page.locator('.log__scroll').focus();
     const reverse: string[] = [];
     for (let i = 0; i < forward.length; i += 1) {
-      await settledFrame(page);
+      await transitionsDone(page);
       const f = await describeFocus(page);
       reverse.push(f.key);
       expect(f.inside, f.key).toBe(true);
