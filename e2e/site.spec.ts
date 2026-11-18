@@ -65,7 +65,8 @@ const stateOf = (stop: Locator) => stop.locator('.stop__k');
 /** Walks a lesson with the forward button to its last position, its last Practice ("Next lesson"), where it counts as finished. */
 async function finishLesson(page: Page, path: string): Promise<void> {
   await open(page, path);
-  for (let i = 0; i < 400 && (await nextButton(page).textContent()) !== 'Next lesson'; i += 1) {
+  // Stops at the last Practice: the kicker reads "Practice" and the forward button's name starts "Next lesson".
+  for (let i = 0; i < 400 && !(await position(page)).atEnd; i += 1) {
     await moveBy(page, () => nextButton(page).click());
   }
   await expect(kicker(page)).toContainText('Practice');
@@ -313,27 +314,26 @@ test.describe('desktop', () => {
   test('on a desktop the lesson shows its three parts at once, and the phone tabs are not there', async ({ page }) => {
     await open(page, LESSONS.find((l) => l.slug === 'dhcp')!.path);
     await expect(page.locator('.console__tabs')).toBeHidden();
-    await expect(page.locator('.console__outline')).toBeVisible();
+    await expect(page.locator('.console__track')).toBeVisible();
     await expect(page.locator('.console__explain')).toBeVisible();
     await expect(page.locator('.console__log')).toBeVisible();
   });
 
-  test('a checked lesson says so in its top bar, numbers its sources, and each claim opens the place it cites', async ({ page }) => {
+  test('the lesson page shows no stamp (2.97): its Learn numbers its sources, and each claim opens the place it cites', async ({ page }) => {
     const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
     await open(page, osi.path);
-    const stamp = page.locator('.console__top .stamp');
-    await expect(stamp).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, 6 sources$/);
-    await expect(stamp).toHaveAttribute('href', '/about#facts');
+    await expect(page.locator('.stamp')).toHaveCount(0);
+    await expect(page.locator('.console__top')).not.toContainText(/Checked|Not checked yet/);
 
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: 'Learn', exact: true }).click();
     await expect(kicker(page)).toHaveText('Learn');
     const words = page.locator('.console__explain');
-    // The sources are at the foot of Learn, in view without opening Go deeper, under the same stamp.
+    // The sources are at the foot of Learn, in view without opening Go deeper, with no stamp over them.
     const foot = words.locator('.explain__foot');
-    await expect(foot.locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(foot.locator('.stamp')).toHaveCount(0);
     const listed = foot.locator('ol.explain__sources > li');
     const count = await listed.count();
-    expect((await stamp.textContent())!).toContain(`, ${count} sources`);
+    expect(count).toBe(6);
     await expect(listed.first().getByRole('link')).toHaveAttribute('href', /^https:\/\/www\.itu\.int\//);
     // The first claim's number is 1, and it opens a page of that document, in a new tab.
     const marks = words.getByRole('link', { name: /^Source \d+: / });
@@ -369,13 +369,15 @@ test.describe('desktop', () => {
   });
 
   test('the header’s Tracks link and the footer’s All tracks link open /tracks on every page; Tracks is current on /tracks and the track pages', async ({ page }) => {
-    // Every page with the site header and footer; lessons have neither.
-    for (const { path } of SITE_PAGES) {
+    // Every page has the site header; a lesson has no footer (one screen) and is inside the Tracks section, so "true".
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       await expect(headerTracksLink(page), path).toHaveAttribute('href', '/tracks');
-      await expect(page.getByRole('contentinfo').getByRole('link', { name: 'All tracks', exact: true }), path).toHaveAttribute('href', '/tracks');
+      const isLesson = LESSONS.some((l) => l.path === path);
+      if (isLesson) await expect(page.getByRole('contentinfo'), path).toHaveCount(0);
+      else await expect(page.getByRole('contentinfo').getByRole('link', { name: 'All tracks', exact: true }), path).toHaveAttribute('href', '/tracks');
       // "page" only where the link is this very page; on a track page, inside the Tracks section, it is "true".
-      const current = path === '/tracks' ? 'page' : path === '/networking' || path === INTERNET_TRACK ? 'true' : null;
+      const current = path === '/tracks' ? 'page' : path === '/networking' || path === INTERNET_TRACK || isLesson ? 'true' : null;
       if (current) await expect(headerTracksLink(page), path).toHaveAttribute('aria-current', current);
       else await expect(headerTracksLink(page), path).not.toHaveAttribute('aria-current');
     }
@@ -385,16 +387,18 @@ test.describe('desktop', () => {
   });
 
   test('Start learning opens /tracks on Home, About and 404, and is absent on Tracks and the track pages; the footer lists How the Internet Works above Networking', async ({ page }) => {
-    const hasNoStart = ['/tracks', '/networking', INTERNET_TRACK];
-    for (const { path } of SITE_PAGES) {
+    const hasNoStart = ['/tracks', '/networking', INTERNET_TRACK, ...LESSONS.map((l) => l.path)];
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       if (hasNoStart.includes(path)) {
-        await expect(page.locator('.site-head a.btn--primary'), path).toHaveCount(0);
+        await expect(page.locator('.site-head a.btn--primary, #menu-panel a.btn--primary'), path).toHaveCount(0);
       } else {
         await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveText('Start learning');
         await expect(page.locator('.site-head .head-end a.btn--primary'), path).toHaveAttribute('href', '/tracks');
         await expect(page.locator('#menu-panel a.btn--primary'), path).toHaveAttribute('href', '/tracks');
       }
+      // A lesson has no footer.
+      if (LESSONS.some((l) => l.path === path)) continue;
       const footer = page.getByRole('contentinfo');
       await expect(footer.getByRole('link', { name: 'How the Internet Works', exact: true }), path).toHaveAttribute('href', INTERNET_TRACK);
       const order = await footer.locator('a').evaluateAll((links) => links.map((a) => a.getAttribute('href')));
@@ -420,7 +424,7 @@ test.describe('desktop', () => {
   });
 
   test('the header links are Tracks, Glossary, How a lesson works, Sources and About, and the menu lists the same five', async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       const nav = page.getByRole('navigation', { name: 'Site', exact: true });
       await expect(nav.getByRole('link'), path).toHaveText(['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About']);
@@ -434,7 +438,7 @@ test.describe('desktop', () => {
   });
 
   test('Glossary is current ("page") on /glossary and nowhere else', async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await open(page, path);
       const link = page.getByRole('navigation', { name: 'Site', exact: true }).getByRole('link', { name: 'Glossary', exact: true });
       if (path === '/glossary') await expect(link, path).toHaveAttribute('aria-current', 'page');
@@ -456,7 +460,7 @@ test.describe('desktop', () => {
   });
 
   test('the menu button takes over at 959px and the row of five shows at 960px, on every page', async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await page.setViewportSize({ width: 959, height: 800 });
       await open(page, path);
       await expect(page.locator('.menu-btn'), path).toBeVisible();
@@ -466,7 +470,7 @@ test.describe('desktop', () => {
       await expect(page.locator('.site-nav'), path).toBeVisible();
       for (const box of await page.locator('.site-nav a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(Math.round(box), path).toBe(32);
       const start = page.locator('.site-head .head-end a.btn--primary');
-      if (['/tracks', '/networking', INTERNET_TRACK].includes(path)) await expect(start, path).toHaveCount(0);
+      if (['/tracks', '/networking', INTERNET_TRACK, ...LESSONS.map((l) => l.path)].includes(path)) await expect(start, path).toHaveCount(0);
       else expect((await start.boundingBox())!.width, path).toBeGreaterThanOrEqual(122);
     }
   });
@@ -727,8 +731,10 @@ test.describe('desktop', () => {
   test.describe('lessons Networking shares with the tour', () => {
     test('a shared lesson under /networking/ counts in Networking: Lesson 13 of 20, the tour copy 6 of 14', async ({ page }) => {
       await open(page, '/networking/what-is-dns');
+      // At 1440 the lesson's place is the track column's head, and the track's lessons are the column (no "All 20 lessons" button).
       await expect(page.getByText('Lesson 13 of 20', { exact: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'All 20 lessons' }).first()).toBeVisible();
+      await expect(page.locator('.console__track nav [aria-current="page"]')).toContainText('DNS');
+      await expect(page.getByRole('link', { name: /Tracks/ }).first()).toBeVisible();
       await expect(page.locator('a[href="/networking"]').first()).toBeVisible();
       await open(page, '/how-the-internet-works/what-is-dns');
       await expect(page.getByText('Lesson 6 of 14', { exact: true })).toBeVisible();
@@ -970,7 +976,7 @@ test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
   test("no page shows the header's theme toggle, which needs JavaScript to work", async ({ page }) => {
-    for (const { path } of SITE_PAGES) {
+    for (const { path } of ALL_PAGES) {
       await page.goto(path);
       await expect(page.locator('.site-head .theme-toggle'), path).toHaveCount(1);
       await expect(page.locator('.site-head .theme-toggle'), path).toBeHidden();
@@ -1048,7 +1054,10 @@ test.describe('phone', { tag: '@phone' }, () => {
       const b = el.getBoundingClientRect();
       return { top: Math.round(b.top), bottom: Math.round(b.bottom), height: Math.round(b.height) };
     });
-  const tab = (page: Page, name: 'Explain' | 'Steps' | 'Log' | 'Table' | 'Rules' | 'Bits') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
+  const tab = (page: Page, name: 'Explain' | 'Log' | 'Table' | 'Rules' | 'Bits') => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name, exact: true });
+
+  /** The row of stops under the scene (D19): a press goes to the place and keeps the tab that is open. */
+  const stop = (page: Page, name: string | RegExp) => page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name });
 
   for (const lesson of LESSONS) {
     test(`${lesson.path} fits one phone screen: the scene on top, the controls at the bottom, and no page scroll`, async ({ page }) => {
@@ -1062,9 +1071,10 @@ test.describe('phone', { tag: '@phone' }, () => {
       expect(overflow.down, 'the page is no taller than the screen').toBeLessThanOrEqual(1);
       expect(overflow.sideways, 'the page is no wider than the screen').toBeLessThanOrEqual(1);
 
-      // The scene is in the top half, at least a quarter of the screen tall.
+      // The scene is in the top half, at least a quarter of the screen tall; under the header (69px), the bar (36px) and the
+      // view switch (40px), so its top is at most 145px (D19).
       const scene = (await boxOf(page, '.console__scene'))!;
-      expect(scene.top).toBeLessThan(screen.height * 0.15);
+      expect(scene.top).toBeLessThanOrEqual(145);
       expect(scene.bottom).toBeLessThan(screen.height * 0.5);
       expect(scene.height).toBeGreaterThan(screen.height * 0.25);
       // Back, Play and Next are at the foot of the screen, each big enough for a thumb.
@@ -1074,37 +1084,33 @@ test.describe('phone', { tag: '@phone' }, () => {
       // One part shows under the tabs, the words first; the other two wait.
       await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
       expect(await boxOf(page, '.console__explain')).not.toBeNull();
-      expect(await boxOf(page, '.console__outline')).toBeNull();
+      expect(await boxOf(page, '.console__track')).toBeNull();
       expect(await boxOf(page, '.console__log')).toBeNull();
       await expect(kicker(page)).toBeVisible();
       expect(errors).toEqual([]);
     });
   }
 
-  test('a lesson on a phone: the tabs show the steps and the log, a step chosen returns to the words, and the scene never moves', async ({ page }) => {
+  test('a lesson on a phone: the tabs show the words, the log and the table, a stop goes to its place and keeps the tab, and the scene never moves', async ({ page }) => {
     const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
     await open(page, dhcp.path);
     const sceneAt = async () => (await boxOf(page, '.console__scene'))!.top;
     const top = await sceneAt();
-    // Three parts for every lesson, and a fourth for the lesson's own table (D2).
-    await expect(page.getByRole('group', { name: 'Show', exact: true }).getByRole('button')).toHaveText(['Explain', 'Steps', 'Log', 'Table']);
+    // Three parts for every lesson (the Steps tab's job is the stops row's), and a third for the lesson's own table (D2).
+    await expect(page.getByRole('group', { name: 'Show', exact: true }).getByRole('button')).toHaveText(['Explain', 'Log', 'Table']);
 
-    await tab(page, 'Steps').click();
-    expect(await boxOf(page, '.console__outline')).not.toBeNull();
-    expect(await boxOf(page, '.console__explain')).toBeNull();
-    expect(await sceneAt()).toBe(top);
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
-    // Choosing a step goes there and shows its words.
+    await stop(page, /^Step 2, DHCP Offer/).click();
     await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
     await expect(kicker(page)).toHaveText('Watch · Step 2 of 5');
-    await expect(page.locator('.topbar__where')).toBeVisible();
-    await expect(page.locator('.topbar__where')).toHaveText('Step 2 of 5');
+    await expect(page.locator('.top__where')).toBeVisible();
+    await expect(page.locator('.top__where')).toHaveText('Step 2 of 5');
+    expect(await sceneAt()).toBe(top);
 
     // Next works from the foot of the screen whichever part is showing, and the log fills.
     await tab(page, 'Log').click();
     expect(await boxOf(page, '.console__log')).not.toBeNull();
     await moveBy(page, () => nextButton(page).click());
-    await expect(page.locator('.topbar__where')).toHaveText('Step 3 of 5');
+    await expect(page.locator('.top__where')).toHaveText('Step 3 of 5');
     await expect(logRows(page).first()).toBeVisible();
     // A row is a stacked entry: its cells sit inside the screen's width, each with its column's name.
     const row = logRows(page).first();
@@ -1119,8 +1125,7 @@ test.describe('phone', { tag: '@phone' }, () => {
     const dhcp = LESSONS.find((l) => l.slug === 'dhcp')!;
     await open(page, dhcp.path);
     const watching = (await boxOf(page, '.console__scene'))!.height;
-    await tab(page, 'Steps').click();
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await stop(page, 'Learn').click();
     await expect(kicker(page)).toHaveText('Learn');
     await expect.poll(async () => (await boxOf(page, '.console__scene'))!.height).toBeLessThan(watching * 0.7);
     const words = page.locator('.console__explain');
@@ -1130,16 +1135,14 @@ test.describe('phone', { tag: '@phone' }, () => {
     expect((await boxOf(page, '.console__controls'))!.bottom).toBe(page.viewportSize()!.height);
   });
 
-  test('a lesson on a phone: the stamp and the numbered sources are at the foot of Learn, with nothing wider than the screen', async ({ page }) => {
+  test('a lesson on a phone: no stamp at the foot of Learn; the numbered sources are, with nothing wider than the screen', async ({ page }) => {
     const osi = LESSONS.find((l) => l.slug === 'osi-model')!;
     await open(page, osi.path);
-    // The compact top bar has no room for the stamp.
-    await expect(page.locator('.console__top .stamp')).toBeHidden();
-    await tab(page, 'Steps').click();
-    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+    await expect(page.locator('.stamp')).toHaveCount(0);
+    await stop(page, 'Learn').click();
     const foot = page.locator('.console__explain .explain__foot');
     await foot.scrollIntoViewIfNeeded();
-    await expect(foot.locator('.stamp')).toHaveText(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(page.locator('.stamp')).toHaveCount(0);
     await expect(foot.locator('ol.explain__sources > li').first()).toBeVisible();
     expect(await page.locator('.console__explain').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     expect((await pageOverflow(page)).down).toBeLessThanOrEqual(1);
@@ -1226,15 +1229,15 @@ test.describe('phone', { tag: '@phone' }, () => {
         test('3: the fourth tab is named for the lesson’s own panel; OSI Model has three', async ({ page }) => {
           for (const [slug, last] of [['dhcp', 'Table'], ['firewalls', 'Rules'], ['subnetting', 'Bits']] as const) {
             await open(page, bySlug(slug).path);
-            await expect(names(page)).toHaveText(['Explain', 'Steps', 'Log', last]);
+            await expect(names(page)).toHaveText(['Explain', 'Log', last]);
           }
           await open(page, bySlug('osi-model').path);
-          await expect(names(page)).toHaveText(['Explain', 'Steps', 'Log']);
+          await expect(names(page)).toHaveText(['Explain', 'Log']);
         });
 
         test('4: each tab shows its part and only its part, and the scene does not move', async ({ page }) => {
           await open(page, bySlug('dhcp').path);
-          const parts = { Explain: '.console__explain', Steps: '.console__outline', Log: '.console__log', Table: '.tpanel' } as const;
+          const parts = { Explain: '.console__explain', Log: '.console__log', Table: '.tpanel' } as const;
           const sceneBox = async () => (await boxOf(page, '.console__scene'))!;
           const before = await sceneBox();
           for (const [name, shown] of Object.entries(parts)) {
@@ -1320,11 +1323,11 @@ test.describe('phone', { tag: '@phone' }, () => {
           await expect(table).toHaveAttribute('aria-pressed', 'true');
           await moveBy(page, () => nextButton(page).click());
           await expect(table).toHaveAttribute('aria-pressed', 'true');
-          // A step that has not changed the table has no mark; choosing a step in Steps returns to the words.
-          await tab(page, 'Steps').click();
-          await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Offer/ }).click();
-          await expect(tab(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+          // A step that has not changed the table has no mark; pressing a stop goes there and keeps the tab that is open (E25).
+          await stop(page, /^Step 2, DHCP Offer/).click();
+          await expect(table).toHaveAttribute('aria-pressed', 'true');
           await expect(page.locator('.tab__mark')).toHaveCount(0);
+          await expect(kicker(page)).toHaveText('Watch · Step 2 of 5');
         });
 
         test('8: the Bits tab never shows the mark, however the board changes', async ({ page }) => {
@@ -1433,25 +1436,17 @@ test.describe('phone', { tag: '@phone' }, () => {
           }
         });
 
-        test('15: the stamp ends the Overview’s first line, and is not on a step', async ({ page }) => {
+        test('15: no stamp anywhere on the lesson (2.97): the Overview’s first line is the kicker alone', async ({ page }) => {
           for (const slug of ['osi-model', 'dhcp', 'firewalls', 'subnetting']) {
             await open(page, bySlug(slug).path);
-            const lead = page.locator('.console__explain .explain__lead');
-            const stamp = lead.locator('a.stamp');
-            await expect(stamp).toBeVisible();
-            const k = (await kicker(page).boundingBox())!;
-            const s = (await stamp.boundingBox())!;
-            expect(Math.abs(s.y + s.height / 2 - (k.y + k.height / 2)), `${slug}: one line`).toBeLessThan(8);
-            expect(s.x).toBeGreaterThan(k.x + k.width);
-            expect(s.x + s.width).toBeLessThanOrEqual(screen.width);
-            expect(s.height).toBeGreaterThanOrEqual(24);
-            expect(await stamp.textContent()).toMatch(/^Checked \d{1,2} [A-Z][a-z]{2} \d{4}, \d+ sources?$/);
-            // Its words are the top bar's, which is in the page and hidden at this width.
-            expect(await stamp.textContent(), slug).toBe(await page.locator('.console__top .stamp').textContent());
-            await expect(stamp).toHaveAttribute('href', '/about#facts');
+            await expect(page.locator('.stamp'), slug).toHaveCount(0);
+            // The kicker is the first line's only word; the OSI badge is not shown on a phone.
+            await expect(kicker(page), slug).toHaveText('Overview');
+            await expect(page.locator('.console__explain .explain__osi:visible'), slug).toHaveCount(0);
+            await expect(page.locator('body'), slug).not.toContainText(/Checked \d|Not checked yet/);
           }
           await goTo(page, bySlug('dhcp').path, 2);
-          await expect(page.locator('.console__explain .stamp')).toHaveCount(0);
+          await expect(page.locator('.stamp')).toHaveCount(0);
         });
       });
     }
@@ -1460,27 +1455,26 @@ test.describe('phone', { tag: '@phone' }, () => {
   test.describe('D2 on a wider screen, and with scripts off', () => {
     test.describe('JavaScript off at 375px: the page is as before', () => {
       test.use({ viewport: { width: 375, height: 812 }, javaScriptEnabled: false });
-      test('no tabs, the table under the scene, no stamp in the Overview', async ({ page }) => {
+      test('no tabs, the table under the scene, no stamp anywhere', async ({ page }) => {
         await page.goto(bySlug('dhcp').path);
         expect(await boxOf(page, '.console__tabs')).toBeNull();
         await expect(page.locator('.console__stage .tpanel')).toBeVisible();
         const scene = (await boxOf(page, '.console__scene'))!;
         const table = (await boxOf(page, '.tpanel'))!;
         expect(table.top).toBeGreaterThanOrEqual(scene.bottom);
-        expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+        await expect(page.locator('.stamp')).toHaveCount(0);
       });
     });
     // 1024px has its own layout since B3 (tablet.spec.ts); the desktop starts at 1100px.
     for (const width of [1100, 1440]) {
       test.describe(`${width}px with scripts on: the page is as before`, () => {
         test.use({ viewport: { width, height: 900 }, isMobile: false, hasTouch: false });
-        test('no tabs shown, the table under the scene, the Overview’s stamp only in the top bar', async ({ page }) => {
+        test('no tabs shown, the table in the guide (890px tall and up), no stamp anywhere', async ({ page }) => {
           await open(page, bySlug('dhcp').path);
           expect(await boxOf(page, '.console__tabs')).toBeNull();
-          const scene = (await boxOf(page, '.console__scene'))!;
-          expect((await boxOf(page, '.console__stage .tpanel'))!.top).toBeGreaterThanOrEqual(scene.bottom);
-          expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
-          if (width === 1440) expect(await boxOf(page, '.console__top .stamp')).not.toBeNull();
+          await expect(page.locator('.console__stage .tpanel')).toHaveCount(0);
+          expect(await boxOf(page, '.guide__table .tpanel')).not.toBeNull();
+          await expect(page.locator('.stamp')).toHaveCount(0);
         });
       });
     }
@@ -1510,18 +1504,19 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
   const heightOf = async (locator: Locator): Promise<number> => (await locator.boundingBox())!.height;
 
   /** The links at the foot of the lesson's own Learn part, read in a window of its own with scripts on. */
-  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; labels: string[]; stamp: string; top: string }> {
+  async function lessonFoot(page: Page): Promise<{ hrefs: string[]; labels: string[] }> {
     const context = await page.context().browser()!.newContext({ viewport: { width: 1440, height: 900 } });
     const lesson = await context.newPage();
     try {
       await open(lesson, `${new URL(page.url()).origin}${HTTP_PATH}`);
-      const top = squash(await lesson.locator('.console__top .stamp').innerText());
-      await lesson.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^What happened and why/ }).click();
+      // The lesson page shows no stamp (2.97): only the sources are compared with Home's block.
+      await lesson.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: 'Learn', exact: true }).click();
       await expect(kicker(lesson)).toHaveText('Learn');
       const items = lesson.locator('.console__explain .explain__foot ol.explain__sources > li');
       const hrefs = await items.locator('a').evaluateAll((links) => links.map((a) => (a as HTMLAnchorElement).href));
       const labels = await items.locator('a').evaluateAll((links) => links.map((a) => a.firstChild?.textContent ?? ''));
-      return { hrefs, labels, stamp: squash(await lesson.locator('.console__explain .explain__foot .stamp').innerText()), top };
+      expect(await lesson.locator('.stamp').count()).toBe(0);
+      return { hrefs, labels };
     } finally {
       await context.close();
     }
@@ -1622,8 +1617,6 @@ test.describe('H1: Home’s Learn part, the lesson’s stamp and sources, and th
           const hrefs = await links.evaluateAll((a) => a.map((el) => (el as HTMLAnchorElement).href));
           expect(hrefs).toEqual(foot.hrefs);
           expect(hrefs).toHaveLength(20);
-          expect(foot.top).toBe(STAMP);
-          expect(foot.stamp.startsWith('Checked 11 Nov 2026')).toBe(true);
           expect(await links.evaluateAll((a) => a.map((el) => el.getAttribute('title')))).toEqual(foot.labels);
           expect(await links.last().getAttribute('title')).toMatch(/^RFC 6335: /);
           expect(await links.evaluateAll((a) => a.filter((el) => el.hasAttribute('target')).length)).toBe(0);

@@ -1,13 +1,12 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import '../components/site.css';
-import { Stamp } from '../components/Stamp';
 import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
 import type { Citation } from '../content/sources';
 import { positionOf, type Position, type Slot } from '../engine/timeline';
 import type { LessonDefinition } from '../lib/glossary';
 import { lessonLine, UP_NEXT_KICKER } from '../lib/hub';
-import type { LessonStamp } from '../lib/stamp';
+import { OsiBadge, osiHeading } from './OsiBadge';
 import { wrapAtDots } from '../lib/wrapAtDots';
 import { placeLabel } from './placeLabel';
 import { Practice, questionsTitle, type Picks } from './Practice';
@@ -35,8 +34,6 @@ export interface ExplanationProps {
   number: number;
   total: number;
   trackUrl: string;
-  /** Whether the lesson has been fact-checked, and when: shown with Learn's sources. */
-  stamp: LessonStamp;
   /**
    * The glossary's definition for each of this lesson's terms that has one, by term id (`definitionsFor`). A term with no
    * key is drawn as it always was.
@@ -105,18 +102,15 @@ function Paragraphs({ items, numbers }: { items: Paragraph[]; numbers: Numbers }
 }
 
 /**
- * Learn's last part: whether the lesson has been checked, then its sources. A cited lesson's list is numbered, to
+ * Learn's last part: its sources. A cited lesson's list is numbered, to
  * match the numbers after its claims; a lesson that cites nothing yet lists its sources without numbers.
  */
-function Sources({ sources, numbered, stamp }: { sources: Source[]; numbered: boolean; stamp: LessonStamp }) {
+function Sources({ sources, numbered }: { sources: Source[]; numbered: boolean }) {
   if (sources.length === 0) return null;
   const List = numbered ? 'ol' : 'ul';
   return (
     <div className="explain__foot">
       <h3 className="explain__label">Sources</h3>
-      <p className="explain__stamp">
-        <Stamp stamp={stamp} sources={false} href="/about#facts" />
-      </p>
       <List className="explain__sources">
         {sources.map((source) => (
           <li key={source.url}>
@@ -243,8 +237,11 @@ function EndRow({ lesson, unit, next, nextFigure, number, total, trackUrl, onJum
  * they left it from one position to the next.
  */
 export function Explanation(props: ExplanationProps) {
-  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, stamp, definitions, onGo, picked, onPick, panelRef } = props;
+  const { lesson, position, slot, unit, resume, next, nextFigure, number, total, trackUrl, definitions, onGo, picked, onPick, panelRef } = props;
   const { list: sources, numberOf: numbers } = numberedSources(unit);
+  // A unit that spans layers names none, so it shows no badge.
+  const layers = unit.osi === 'spans' ? [] : unit.osi.layers;
+  const osi = osiHeading(layers, { named: lesson.units.length === 1 });
   const [deeperOpen, setDeeperOpen] = useState(false);
   // The terms whose definition is open: in memory for as long as the lesson is open, saved nowhere.
   const [openDefs, setOpenDefs] = useState<ReadonlySet<string>>(new Set());
@@ -373,7 +370,7 @@ export function Explanation(props: ExplanationProps) {
           <Paragraphs items={learn.deep} numbers={numbers} />
           <Facts facts={learn.facts} numbers={numbers} />
         </GoDeeper>
-        <Sources sources={sources} numbered={numbers.size > 0} stamp={stamp} />
+        <Sources sources={sources} numbered={numbers.size > 0} />
       </>
     );
   } else {
@@ -389,15 +386,10 @@ export function Explanation(props: ExplanationProps) {
 
   return (
     <section ref={panel} className="console__panel console__explain" aria-label="Explanation" tabIndex={0}>
-      {slot.kind === 'overview' ? (
-        // The stamp is the first thing a phone shows of the lesson; the top bar has no room for it there (console.css).
-        <div className="explain__lead">
-          <p className="explain__kicker">{kicker(lesson, unit, slot)}</p>
-          <Stamp stamp={stamp} href="/about#facts" />
-        </div>
-      ) : (
+      <div className="explain__head">
         <p className="explain__kicker">{kicker(lesson, unit, slot)}</p>
-      )}
+        {osi === null ? null : <OsiBadge heading={osi} layers={layers} />}
+      </div>
       {body}
     </section>
   );

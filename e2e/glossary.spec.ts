@@ -407,7 +407,7 @@ test.describe('Learn with definitions', () => {
     await page.evaluate(() => localStorage.setItem('seed', '1'));
     await termButton(page, 'Ping').click();
     const before = await page.evaluate(() => JSON.stringify(Object.entries(localStorage).sort()));
-    await page.getByRole('button', { name: 'Next step', exact: true }).click();
+    await page.getByRole('button', { name: 'Next: Practice', exact: true }).click();
     await expect(kicker(page)).not.toHaveText(/Learn$/);
     await page.getByRole('button', { name: 'Previous step', exact: true }).click();
     await expect(kicker(page)).toHaveText(/Learn$/);
@@ -480,7 +480,8 @@ test.describe('Learn with definitions', () => {
     await learn(page);
     for (const b of await terms(page).getByRole('button').all()) await b.click();
     await expect(terms(page).getByRole('button', { expanded: true })).toHaveCount(9);
-    const links = await page.locator('a').evaluateAll((as) => as.map((a) => {
+    // The console's links: the site's header, over it, has a Glossary link of its own.
+    const links = await page.locator('.console a').evaluateAll((as) => as.map((a) => {
       const u = new URL(a.getAttribute('href') ?? '', location.href);
       return { href: a.getAttribute('href'), origin: u.origin === location.origin, path: u.pathname };
     }));

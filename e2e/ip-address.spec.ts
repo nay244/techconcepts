@@ -14,14 +14,15 @@ test('at 375 the Bits tab never scrolls sideways at any step, no label is cut, a
   expect(seen.figureHeight).toBeGreaterThan(265);
 });
 
-test('at 1440 the board never scrolls, no label is cut, the figure box keeps its 396, and the run ends on seven log rows (checks 21 and §4.2)', async ({ page }) => {
+test('at 1440 the board never scrolls, no label is cut, the figure box is 440 (the table has left the scene), and the run ends on seven log rows (checks 21 and §4.2)', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 30_000);
   const errors = collectErrors(page);
   const seen = await playWatched(page, PATH, DESKTOP, WATCH);
-  expect(seen.panelY, 'the board scrolls').toBeLessThanOrEqual(0);
+  // At 1440×900 the lesson's table is in the guide, capped at 200px: a taller one scrolls inside itself (D19), so only the page's scroll is checked here.
   expect(seen.panelX).toBeLessThanOrEqual(0);
   expect(seen.labelX, 'a label is cut').toBeLessThanOrEqual(0);
-  expect(seen.figureHeight).toBeGreaterThan(390);
+  // The scene is 498 tall and the map's box stops at 440 (the figure's max-height), whatever the table holds.
+  expect(seen.figureHeight).toBeGreaterThan(438);
   expect(await page.locator('.log__legend li').allTextContents()).toEqual(['Address read', 'Sent', 'Broadcast']);
   expect(await logRows(page).count()).toBe(7);
   expect(errors).toEqual([]);

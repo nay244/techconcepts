@@ -269,21 +269,85 @@
   .bits__line[data-fresh][data-picked] {
     animation-name: bits-line-in, bits-line-pick-fit;
   }
-  @keyframes bits-line-pick-fit {
-    0%,
-    100% {
-      box-shadow: var(--seg-2), var(--seg-3), 0 0 0 0 transparent, 0 var(--pitch) 0 0 transparent, 0 calc(2 * var(--pitch)) 0 0 transparent;
-    }
-    35% {
-      box-shadow:
-        var(--seg-2),
-        var(--seg-3),
-        0 0 0 3px var(--here-soft),
-        0 var(--pitch) 0 calc(3px + (min(var(--rows), 2) - 2) * 20px) var(--here-soft),
-        0 calc(2 * var(--pitch)) 0 calc(3px + (min(var(--rows), 3) - 3) * 20px) var(--here-soft);
-    }
+}
+
+@keyframes bits-line-pick-fit {
+  0%,
+  100% {
+    box-shadow: var(--seg-2), var(--seg-3), 0 0 0 0 transparent, 0 var(--pitch) 0 0 transparent, 0 calc(2 * var(--pitch)) 0 0 transparent;
+  }
+  35% {
+    box-shadow:
+      var(--seg-2),
+      var(--seg-3),
+      0 0 0 3px var(--here-soft),
+      0 var(--pitch) 0 calc(3px + (min(var(--rows), 2) - 2) * 20px) var(--here-soft),
+      0 calc(2 * var(--pitch)) 0 calc(3px + (min(var(--rows), 3) - 3) * 20px) var(--here-soft);
   }
 }
+
+/* In the guide (D19) the board is the fitted one: the same rules as under 640px, keyed on the guide as well as on the width. */
+.guide__table .bits {
+  --bit-w: 8px;
+}
+.guide__table .bits__table,
+.guide__table .bits tbody,
+.guide__table .bits caption {
+  display: block;
+}
+.guide__table .bits colgroup {
+  display: none;
+}
+.guide__table .bits thead {
+  display: block;
+  height: 0;
+  overflow: hidden;
+}
+.guide__table .bits tbody tr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 16px auto;
+  column-gap: 10px;
+  row-gap: 5px;
+  align-items: baseline;
+}
+.guide__table .bits tbody tr + tr {
+  margin-top: 12px;
+}
+.guide__table .bits tbody tr + tr > * {
+  padding-top: 0;
+}
+.guide__table .bits tbody th {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 0;
+}
+.guide__table .bits__dec {
+  grid-column: 2;
+  grid-row: 1;
+}
+.guide__table .bits__bits {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  padding: 0;
+}
+.guide__table .bits__line {
+  --pitch: 51px;
+  --seg-2: 0 var(--pitch) 0 calc((min(var(--rows), 2) - 2) * 20px) var(--here);
+  --seg-3: 0 calc(2 * var(--pitch)) 0 calc((min(var(--rows), 3) - 3) * 20px) var(--here);
+  height: 24px;
+  box-shadow: var(--seg-2), var(--seg-3);
+  transition:
+    transform 550ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+.guide__table .bits__line[data-picked] {
+  animation-name: bits-line-pick-fit;
+}
+.guide__table .bits__line[data-fresh][data-picked] {
+  animation-name: bits-line-in, bits-line-pick-fit;
+}
+
 
 @media (prefers-reduced-motion: reduce) {
   .bits__cell,

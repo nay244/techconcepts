@@ -102,7 +102,7 @@ export const kicker = (page: Page): Locator => page.locator('.console__explain .
 export const playButton = (page: Page): Locator => page.locator('.console__controls .cbtn--alt');
 /** The replay icon: it plays the current step again. */
 export const replayButton = (page: Page): Locator => page.locator('.console__controls .cbtn--replay');
-/** The forward button, the orange one: "Next step" inside the lesson, "Next lesson" at the last Practice. */
+/** The forward button, the orange one: it names its place ("Next: <place>", "Next lesson: <name>"; "Next lesson" on a phone and when disabled). */
 export const nextButton = (page: Page): Locator => page.locator('.console__controls .cbtn--go');
 export const speedButton = (page: Page): Locator => page.locator('.console__controls .cbtn--speed');
 export const viewSwitch = (page: Page): Locator => page.getByRole('group', { name: 'View', exact: true });
@@ -150,7 +150,10 @@ export async function position(page: Page, leaving?: string): Promise<Position> 
       sideways: Math.max(0, root.scrollWidth - window.innerWidth),
       viewSwitches: document.querySelectorAll('[role="group"][aria-label="View"]').length,
       atStart: disabled('Previous step'),
-      atEnd: document.querySelector('.console__controls .cbtn--go')?.textContent === 'Next lesson',
+      // The lesson's last Practice: the kicker reads "Practice" and the forward button's name starts "Next lesson".
+      atEnd:
+        /(^|· )Practice$/.test(kickerText()) &&
+        (document.querySelector('.console__controls .cbtn--go')?.getAttribute('aria-label') ?? '').startsWith('Next lesson'),
     };
   }, leaving ?? null);
 }
@@ -181,9 +184,9 @@ export async function setSpeed(page: Page, speed: '0.5×' | '1×' | '1.5×' | '2
   await expect(speedButton(page)).toHaveText(speed);
 }
 
-/** How many Watch steps the current unit has: the top bar draws one segment per step in its first group. */
+/** How many Watch steps the current unit has: the timeline has one stop a step, named "Step n, <title>". */
 export function stepCount(page: Page): Promise<number> {
-  return page.locator('.topbar__segments .topbar__group').first().locator('.topbar__step').count();
+  return page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Step \d+, / }).count();
 }
 
 /**
@@ -222,13 +225,17 @@ export function clippingContainers(target: Locator): Promise<string[]> {
   return target.evaluate((el) => {
     const box = el.getBoundingClientRect();
     const clipped: string[] = [];
+    // A fixed box (the phone's pinned words) is placed by the window: it is checked, and the scroll boxes above it are not.
+    if (getComputedStyle(el).position === 'fixed') return clipped;
     for (let node = el.parentElement; node !== null; node = node.parentElement) {
-      const { overflowX, overflowY } = getComputedStyle(node);
-      if (![overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden' || value === 'clip')) continue;
-      const room = node.getBoundingClientRect();
-      if (box.top < room.top - 0.5 || box.bottom > room.bottom + 0.5 || box.left < room.left - 0.5 || box.right > room.right + 0.5) {
-        clipped.push(node.className || node.tagName);
+      const { overflowX, overflowY, position } = getComputedStyle(node);
+      if ([overflowX, overflowY].some((value) => value === 'auto' || value === 'scroll' || value === 'hidden' || value === 'clip')) {
+        const room = node.getBoundingClientRect();
+        if (box.top < room.top - 0.5 || box.bottom > room.bottom + 0.5 || box.left < room.left - 0.5 || box.right > room.right + 0.5) {
+          clipped.push(node.className || node.tagName);
+        }
       }
+      if (position === 'fixed') break;
     }
     return clipped;
   });

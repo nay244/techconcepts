@@ -44,9 +44,9 @@ const BEHAVIOUR_PROJECTS = new Set(['d1440-dark', 'reduced-motion']);
 const behaviourOnly = (projectName: string): void =>
   test.skip(!BEHAVIOUR_PROJECTS.has(projectName), 'Playback behaviour is checked in d1440-dark and reduced-motion.');
 
-/** How many units the lesson has: a lesson of many lists one outline row per unit, a lesson of one lists its parts. */
+/** How many units the lesson has: a lesson of many lists one row per unit in the track column's unit list; a lesson of one has no such list. */
 async function unitCount(page: Page): Promise<number> {
-  return Math.max(1, await page.locator('.console__outline .outline__unit').count());
+  return Math.max(1, await page.locator('.track__units .outline__unit').count());
 }
 
 /** Plays all of the current unit at 2× (Play all runs from the unit's first step), and waits for the run to end on its last step. */
@@ -102,30 +102,30 @@ for (const lesson of LESSONS) {
       expect(errors).toEqual([]);
     });
 
-    test('the outline reaches every place, and so does the next button, in the same order', async ({ page }) => {
+    test('the timeline reaches every place, and so does the next button, in the same order', async ({ page }) => {
       const errors = collectErrors(page);
       await open(page, lesson.path);
-      const outline = page.locator('.console__outline');
-      const units = outline.locator('.outline__unit');
+      const stops = page.getByRole('navigation', { name: 'This lesson' }).getByRole('button');
+      const units = page.locator('.track__units .outline__unit');
       const unitTotal = await units.count();
 
       const visited = [(await kicker(page).textContent()) ?? ''];
-      /** Clicks each place of the open unit after its Overview, which is where the walk already is. */
-      const clickParts = async (items: ReturnType<Page['locator']>): Promise<void> => {
-        const count = await items.count();
-        await expect(items.first()).toHaveAttribute('aria-current', 'step');
+      /** Presses each stop of the open unit after its Overview, which is where the walk already is. */
+      const pressStops = async (): Promise<void> => {
+        const count = await stops.count();
+        await expect(stops.first()).toHaveAttribute('aria-current', 'step');
         for (let i = 1; i < count; i += 1) {
-          visited.push((await moveBy(page, () => items.nth(i).click())).kicker);
-          await expect(items.nth(i)).toHaveAttribute('aria-current', 'step');
+          visited.push((await moveBy(page, () => stops.nth(i).click())).kicker);
+          await expect(stops.nth(i)).toHaveAttribute('aria-current', 'step');
         }
       };
       if (unitTotal === 0) {
-        await clickParts(outline.locator('.outline__list .outline__item'));
+        await pressStops();
       } else {
         for (let u = 0; u < unitTotal; u += 1) {
           if (u > 0) visited.push((await moveBy(page, () => units.nth(u).click())).kicker);
           await expect(units.nth(u)).toHaveAttribute('aria-current', 'true');
-          await clickParts(outline.locator('.outline__parts .outline__item'));
+          await pressStops();
         }
       }
       expect(expectLessonShape(visited)).toBe(Math.max(1, unitTotal));
@@ -149,10 +149,10 @@ for (const lesson of LESSONS) {
       await expect(logRows(page)).toHaveCount(0);
       await playAll(page);
       await expect(kicker(page)).toContainText(`Step ${steps} of ${steps}`);
-      // Every step's segment is passed, and the last is current.
-      const segments = page.locator('.topbar__segments .topbar__group').first().locator('.topbar__step');
-      for (let i = 0; i < steps - 1; i += 1) await expect(segments.nth(i)).toHaveAttribute('data-state', 'done');
-      await expect(segments.nth(steps - 1)).toHaveAttribute('data-state', 'current');
+      // Every step's stop is passed, and the last is current.
+      const stops = page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Step \d+, / });
+      for (let i = 0; i < steps - 1; i += 1) await expect(stops.nth(i)).toHaveAccessibleName(/, done$/);
+      await expect(stops.nth(steps - 1)).toHaveAttribute('aria-current', 'step');
       // MAC Address's steps 2 and 3 send no frame: its log has three rows for five steps (D12 §3.2). Switch's step 2
       // only writes the table (s2-add), so its log has four rows for five steps (src/content/lessons/switch.ts).
       const rows = lesson.path.endsWith('/mac-address') ? 3 : lesson.path.endsWith('/switch') ? 4 : steps;
@@ -181,10 +181,9 @@ for (const lesson of LESSONS) {
       await expect.poll(() => explanation.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
       expect(await overflowAt(page, 'Learn, Go deeper open')).toBeNull();
 
-      // The track's whole list, open over the console, does not make the page scroll either.
-      await page.getByRole('button', { name: /^All \d+ lessons$/ }).click();
-      await expect(page.getByRole('dialog', { name: /^All \d+ lessons$/ })).toBeVisible();
-      expect(await overflowAt(page, 'All lessons open')).toBeNull();
+      // At 1100px and up the track's lessons are the column (no sheet, no button); under it the lessons button opens the
+      // sheet, which does not make the page scroll (B23 tunes that range; the sheet is the same component).
+      await expect(page.getByRole('button', { name: /^\d+ of \d+: all \d+ lessons/ })).toBeHidden();
     });
 
     test(`the Network / Sequence switch is ${NO_SEQUENCE.has(lesson.slug) ? 'hidden' : 'there, and switching views mid-run and back leaves the scene settled'}`, async ({
@@ -427,17 +426,16 @@ test.describe('without JavaScript', () => {
       await expect(note, where).toBeVisible();
       await expect(note, where).toHaveText('This lesson needs JavaScript to play.');
       await expect(page.locator('.console__log .log__idle-words'), where).toBeHidden();
-      // No button works without JavaScript, so none shows: the theme and view switches, playback, the outline's places.
+      // No button works without JavaScript, so none shows: the theme and view switches, playback, the timeline's stops.
       await expect(page.locator('button:visible'), where).toHaveCount(0);
-      // The outline goes whole, so no empty "This lesson" landmark is left, but it keeps its cell in the grid.
-      const outline = page.locator('nav.console__outline');
-      await expect(outline, where).toBeHidden();
-      await expect(page.getByRole('navigation', { name: /^(This lesson|\d+ protocols)$/ }), where).toHaveCount(0);
-      expect((await outline.boundingBox())?.width ?? 0, `${where}: the outline's cell`).toBeGreaterThan(100);
+      // The timeline's buttons go and no "This lesson" landmark is left; the track column stays, its lessons being links.
+      await expect(page.getByRole('navigation', { name: 'This lesson' }), where).toHaveCount(0);
+      await expect(page.locator('.console__track nav a:visible'), where).not.toHaveCount(0);
+      expect((await page.locator('.console__track').boundingBox())?.width ?? 0, `${where}: the track column's cell`).toBeGreaterThan(100);
       // The Overview's words, the figure and the way back to the track stay.
       await expect(page.locator('.console__explain .explain__title'), where).toBeVisible();
       await expect(page.locator('.console__stage svg[data-figure]'), where).toBeVisible();
-      await expect(page.locator('.topbar__crumb a:last-of-type'), where).toBeVisible();
+      await expect(page.locator('.top__trk a').last(), where).toBeVisible();
       // The page does not scroll. (Measured at once: with JavaScript off no frame callback runs, so overflowAt cannot wait.)
       const overflow = await page.evaluate(() => {
         const root = document.scrollingElement ?? document.documentElement;

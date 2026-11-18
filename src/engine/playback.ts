@@ -134,13 +134,27 @@ export function playButton(s: PlaybackState): { words: 'Play all' | 'Pause'; ico
 
 /** What the lesson's end looks like from the page: the next ready lesson, if any, and this lesson's number among the track's total. */
 export interface LessonEnd {
-  next: { url: string } | null;
+  next: { url: string; title: string } | null;
   number: number;
   total: number;
 }
 
+/** The words the forward button can show: the full form where there is room, the short form where there is not. */
+export interface ForwardWords {
+  full: string;
+  short: string;
+}
+
 export interface ForwardButton {
-  words: 'Next step' | 'Next lesson';
+  /** What it says in each form. */
+  words: ForwardWords;
+  /**
+   * Its accessible name, which starts with the words shown (WCAG 2.5.3) and adds what they leave out: "Next: DHCP
+   * Acknowledge, step 4" under the full form, "Next: step 4, DHCP Acknowledge" under the short one.
+   */
+  names: ForwardWords;
+  /** Its tooltip: the name, with " (→)" where the key does the same; the reason when it is disabled. */
+  titles: ForwardWords;
   /** Nothing to go to: the button stays in its slot and does nothing. */
   disabled: boolean;
   /** The next lesson's address, at Practice when one is ready. */
@@ -149,21 +163,48 @@ export interface ForwardButton {
   reason?: string;
 }
 
+const same = (text: string): ForwardWords => ({ full: text, short: text });
+
 /**
- * The forward button's words and what it leads to. "Next step" everywhere inside the lesson, to a following
- * unit's Overview included; "Next lesson" at the last Practice: to the next ready lesson, or disabled, with its reason.
+ * The forward button's words and what it leads to: the place it goes to, named ("Next: DHCP Acknowledge", "Next:
+ * step 4" where there is less room, "Next: Learn", "Next: Practice"); at the last Practice "Next lesson: Ports", to the
+ * next ready lesson, or disabled with its reason. A following unit is named like any other place (no lesson has one).
+ * → does what the button does wherever `href` is undefined and it is not disabled.
  */
 export function forwardButton(lesson: Lesson, s: PlaybackState, end: LessonEnd): ForwardButton {
-  const slot = slotsFor(lesson)[s.position];
-  if (slot === undefined || slot.kind !== 'practice' || lesson.units[slot.unit + 1] !== undefined) {
-    return { words: 'Next step', disabled: false };
+  const slots = slotsFor(lesson);
+  const target = slots[s.position + 1];
+  if (target !== undefined) {
+    const unit = lesson.units[target.unit]!;
+    let words: ForwardWords;
+    let names: ForwardWords;
+    if (target.kind === 'step') {
+      const title = unit.steps[target.step - 1]!.title;
+      words = { full: `Next: ${title}`, short: `Next: step ${target.step}` };
+      names = { full: `Next: ${title}, step ${target.step}`, short: `Next: step ${target.step}, ${title}` };
+    } else if (target.kind === 'learn') {
+      words = same('Next: Learn');
+      names = words;
+    } else if (target.kind === 'practice') {
+      words = same('Next: Practice');
+      names = words;
+    } else {
+      words = same(`Next: ${unit.name}`);
+      names = same(`Next: ${unit.name}, Overview`);
+    }
+    return { words, names, titles: { full: `${names.full} (→)`, short: `${names.short} (→)` }, disabled: false };
   }
-  if (end.next !== null) return { words: 'Next lesson', disabled: false, href: end.next.url };
-  return {
-    words: 'Next lesson',
-    disabled: true,
-    reason: end.number === end.total ? 'There is no next lesson: this is the track’s last.' : 'No next lesson is ready yet.',
-  };
+  if (end.next !== null) {
+    return {
+      words: { full: `Next lesson: ${end.next.title}`, short: 'Next lesson' },
+      names: same(`Next lesson: ${end.next.title}`),
+      titles: same(`Next lesson: ${end.next.title}`),
+      disabled: false,
+      href: end.next.url,
+    };
+  }
+  const reason = end.number === end.total ? 'There is no next lesson: this is the track’s last.' : 'No next lesson is ready yet.';
+  return { words: same('Next lesson'), names: same('Next lesson'), titles: same(reason), disabled: true, reason };
 }
 
 /** Whether the reader has asked for reduced motion, right now. False where `matchMedia` is missing. */

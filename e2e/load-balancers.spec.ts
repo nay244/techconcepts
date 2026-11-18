@@ -93,24 +93,26 @@ const paint = (page: Page) =>
     healthText: [...document.querySelectorAll<SVGElement>('svg[data-figure="pool"] .pl-health-t')].map((el) => getComputedStyle(el).fill),
   }));
 
-test('E1: at 1440 the stage is 733 wide and 347 tall (±4) at every step, the table never scrolls, and the run ends with 19 log rows', async ({ page }) => {
+test('E1: at 1440 the stage is 769 wide and 498 tall (±4) at every step, the table is in the guide (it may scroll inside its cap), and the run ends with 19 log rows', async ({ page }) => {
   test.setTimeout(600_000);
   for (const colorScheme of ['dark', 'light'] as const) {
     await page.setViewportSize(DESKTOP);
     await page.emulateMedia({ colorScheme });
     await open(page, PATH);
-    // At 1440 the console shows the table beside the figure, with no tab to open.
-    await expect(page.locator('.tpanel')).toBeVisible();
+    // At 1440×900 the lesson's table is in the guide, under the words, with no tab to open.
+    await expect(page.locator('.guide__table .tpanel')).toBeVisible();
     await watchStage(page);
     await watchPanel(page);
     await playToEnd(page);
     const sized = await stageSeen(page);
-    expect(Math.round(sized.minW), `the stage's width at 1440 ${colorScheme}`).toBe(733);
-    expect(Math.round(sized.maxW), `the stage's width at 1440 ${colorScheme}`).toBe(733);
-    expect(sized.minH, `the stage's height at 1440 ${colorScheme}`).toBeGreaterThanOrEqual(343);
-    expect(sized.maxH, `the stage's height at 1440 ${colorScheme}`).toBeLessThanOrEqual(351);
+    expect(Math.round(sized.minW), `the stage's width at 1440 ${colorScheme}`).toBe(769);
+    expect(Math.round(sized.maxW), `the stage's width at 1440 ${colorScheme}`).toBe(769);
+    expect(sized.minH, `the stage's height at 1440 ${colorScheme}`).toBeGreaterThanOrEqual(494);
+    expect(sized.maxH, `the stage's height at 1440 ${colorScheme}`).toBeLessThanOrEqual(502);
     const seen = await watched(page);
-    expect(seen.overflowY, `the table scrolls down at 1440 ${colorScheme}`).toBeLessThanOrEqual(0);
+    // The guide caps the table at 200px; a taller one scrolls inside itself, and the page never does.
+    expect(seen.pageSideways, `the page scrolls sideways at 1440 ${colorScheme}`).toBeLessThanOrEqual(0);
+    expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
     await expect(page.locator('.log__table tbody tr:not(:has(.log__idle))')).toHaveCount(19);
   }
 });

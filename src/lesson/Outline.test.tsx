@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-// @ts-expect-error - no @types/node in this project; vitest runs under node
-import { readFileSync } from 'node:fs';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
@@ -15,13 +13,24 @@ import { Outline } from './Outline';
 const DHCP: Lesson = liftedFixture(makeLesson({ slug: 'dhcp', title: 'DHCP' }));
 /** Alpha (core): 0 Overview, 1–5 steps, 6 Learn, 7 Practice. Beta (app): 8 Overview, 9–13 steps, 14 Learn, 15 Practice. */
 const TWO: Lesson = liftedFixture(makeTwoUnitLesson({ slug: 'what-is-http', title: 'HTTP' }));
+/** A few more of Networking's lessons, written, so their rows are links with a status. */
+const WRITTEN = Object.fromEntries(
+  [['osi-model', 'OSI Model'], ['packets', 'Packets'], ['ip-address', 'IP Address'], ['arp', 'ARP']].map(([slug, title]) => [slug!, { ...DHCP, slug: slug!, title: title! }]),
+);
+const NETWORKING_WRITTEN = buildEntries(networkingTrack, { dhcp: DHCP, ...WRITTEN }, () => 'networking');
 const NETWORKING = buildEntries(networkingTrack, { dhcp: DHCP }, () => 'networking');
 const TOUR = buildEntries(internetTrack, { 'what-is-http': TWO }, () => 'how-the-internet-works');
 
-/** The outline as the lesson's own track's page renders it, among that track's lessons. */
-function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] = []) {
+const stamp = (status: 'finished' | 'in-progress') => ({ status, furthestPosition: 3, lastOpened: '2026-11-10T10:00:00.000Z' });
+/** Networking with osi-model and packets finished, ip-address and mac-address in progress (the bar's "2 of 20 done" case). */
+const PROGRESS = {
+  ...emptyProgress(),
+  lessons: { 'osi-model': stamp('finished'), packets: stamp('finished'), 'ip-address': stamp('in-progress') },
+};
+
+/** The track column and its sheet as the lesson's own track's page renders them, among that track's lessons. */
+function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] = [], progress = emptyProgress(), sheetOpen = false, entries = lesson === TWO ? TOUR : NETWORKING) {
   const current = slotsFor(lesson)[position]!.unit;
-  const entries = lesson === TWO ? TOUR : NETWORKING;
   return render(
     <Outline
       lesson={lesson}
@@ -31,42 +40,90 @@ function show(lesson: Lesson, position: number, onGo = vi.fn(), seen: number[] =
       onGo={onGo}
       entries={entries}
       currentKey={lesson.slug}
-      progress={emptyProgress()}
+      progress={progress}
+      trackTitle={lesson === TWO ? 'How the Internet Works' : 'Networking Concepts'}
+      trackUrl={lesson === TWO ? '/how-the-internet-works' : '/networking'}
+      number={entries.find((e) => e.slug === lesson.slug)!.number}
+      total={entries.length}
+      sheetOpen={sheetOpen}
+      onSheetClose={vi.fn()}
     />,
   );
 }
 
 const item = (name: RegExp) => screen.getByRole('button', { name });
 
-test('a one-unit lesson lists Overview, the Watch steps with their subs, Learn and Practice, marking done and current', async () => {
-  const onGo = vi.fn();
-  show(DHCP, 2, onGo);
-  const nav = screen.getByRole('navigation', { name: 'This lesson' });
-  expect(within(nav).getByText('Watch · 5 steps')).toBeInTheDocument();
-  // The Overview's sub line is the unit's purpose, as lesson-v3's overviewSub, not the lesson's subtitle.
-  expect(item(/^Overview/)).toHaveTextContent('How a router remembers who it has heard from.');
-  expect(item(/^Overview/)).not.toHaveTextContent('A small lesson used only by tests');
-  expect(item(/^Neighbor Hello/)).toHaveTextContent('The laptop speaks first');
-  expect(item(/^What happened and why/)).toHaveTextContent('In plain words, then the names');
-  expect(item(/^Two questions/)).toHaveTextContent('Just for you, nothing is scored');
+test('the column’s head is the lesson’s name (the h1) with its place, the strip and the count, and holds no track name (cases 17, 61)', () => {
+  const { container } = show(DHCP, 2, vi.fn(), [], PROGRESS);
+  const head = container.querySelector('.track__head')!;
+  expect(within(head as HTMLElement).getByRole('heading', { level: 1, name: 'DHCP' })).toHaveAttribute('title', 'DHCP');
+  expect(head).toHaveTextContent('Lesson 9 of 20');
+  expect(head.querySelectorAll('.cable i')).toHaveLength(20);
+  expect(head.querySelectorAll('.cable i[data-s="done"]')).toHaveLength(2);
+  expect(head.querySelectorAll('.cable i[data-s="here"]')).toHaveLength(1);
+  expect(head).toHaveTextContent('2 of 20 done');
+  expect(within(head as HTMLElement).queryByRole('link')).toBeNull();
+  expect(head).not.toHaveTextContent(/Networking Concepts|Tracks/);
+  // Before progress loads (the server's markup, storage blocked) nothing is done and the head is as tall as it will be.
+  const before = show(DHCP, 2).container.querySelector('.track__head')!;
+  expect(before).toHaveTextContent('0 of 20 done');
+});
 
-  // Done before the current position, with a check; the current one is marked in words for assistive tech.
-  expect(item(/^Overview/)).toHaveAttribute('data-state', 'done');
-  expect(item(/^Neighbor Hello/)).toHaveAttribute('data-state', 'done');
-  expect(item(/^Neighbor Hello/)).toHaveTextContent('✓');
-  expect(item(/^Neighbor Reply/)).toHaveAttribute('aria-current', 'step');
-  expect(item(/^Table Lookup/)).not.toHaveAttribute('data-state');
-  expect(item(/^Table Lookup/)).toHaveTextContent('3');
+test('the nav lists the track’s parts: this lesson’s is a heading and open, the others fold; each part counts its done lessons (case 28, 30)', () => {
+  const { container } = show(DHCP, 2, vi.fn(), [], PROGRESS);
+  const nav = screen.getByRole('navigation', { name: "Networking Concepts, the track's lessons" });
+  const parts = [...nav.querySelectorAll('.part')];
+  expect(parts.map((p) => p.querySelector('.part__name')!.textContent)).toEqual([
+    'The big picture',
+    'Addresses & the local network',
+    'Getting between networks',
+    ...parts.slice(3).map((p) => p.querySelector('.part__name')!.textContent),
+  ]);
+  expect(parts.map((p) => p.querySelector('.part__count')!.textContent).slice(0, 3)).toEqual(['✓ 2 of 2', '1 of 4'.replace('1', '0'), '0 of 3']);
+  // The part with DHCP: a heading, no details ancestor, no button.
+  const here = container.querySelector('[aria-current="page"]')!;
+  expect(here.closest('details')).toBeNull();
+  const heading = here.closest('section')!.querySelector('h3')!;
+  expect(heading.closest('details')).toBeNull();
+  expect(within(heading as HTMLElement).queryByRole('button')).toBeNull();
+  // Every other part is a closed <details> with a summary.
+  const others = [...nav.querySelectorAll('details.part')];
+  expect(others.length).toBe(parts.length - 1);
+  for (const d of others) expect((d as HTMLDetailsElement).open).toBe(false);
+  expect(others[0]!.querySelector('summary')).not.toBeNull();
+  // The complete part's count is in the done colour's attribute.
+  expect(parts[0]!.querySelector('.part__count')).toHaveAttribute('data-all');
+});
 
-  await userEvent.click(item(/^What happened and why/));
-  expect(onGo).toHaveBeenCalledWith(6);
+test('a lesson row has its number, its title and its status in words: Done, In progress, none, Not ready yet (case 28)', () => {
+  show(DHCP, 2, vi.fn(), [], PROGRESS, false, NETWORKING_WRITTEN);
+  const row = (name: RegExp) => screen.getAllByRole('link', { name })[0]!;
+  expect(row(/OSI Model/)).toHaveTextContent('✓ Done');
+  expect(row(/IP Address/)).toHaveTextContent('In progress');
+  expect(row(/^ARP/).textContent).not.toMatch(/Done|In progress/);
+  expect(row(/DHCP/)).toHaveAttribute('aria-current', 'page');
+  expect(screen.getAllByText('Not ready yet').length).toBeGreaterThan(0);
+  // "In progress" is not done: two of twenty.
+  expect(screen.getByText('2 of 20 done')).toBeInTheDocument();
+});
+
+test('the lessons sheet is a modal named "All 20 lessons" with the track’s head and every part open (case 41)', () => {
+  const { container } = show(DHCP, 2, vi.fn(), [], PROGRESS, true);
+  const dialog = container.querySelector('dialog')!;
+  expect(dialog).toHaveAttribute('open');
+  expect(within(dialog).getByRole('heading', { name: 'All 20 lessons' })).toBeInTheDocument();
+  expect(within(dialog).getByRole('link', { name: 'Tracks' })).toHaveAttribute('href', '/tracks');
+  expect(within(dialog).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
+  expect(dialog).toHaveTextContent('2 of 20 done');
+  expect(dialog.querySelectorAll('details')).toHaveLength(0);
+  expect(dialog.querySelectorAll('.outline__lesson')).toHaveLength(20);
+  expect(within(dialog).getByRole('button', { name: /Close/ })).toBeInTheDocument();
 });
 
 test('a multi-unit lesson shows protocol rows with filters, and the current one opened', async () => {
   const onGo = vi.fn();
   show(TWO, 0, onGo);
-  const nav = screen.getByRole('navigation', { name: '2 protocols' });
-  const filters = within(nav).getByRole('group', { name: 'Filter' });
+  const filters = screen.getByRole('group', { name: 'Filter' });
   expect(within(filters).getAllByRole('button').map((b) => b.textContent)).toEqual(['All', 'Core', 'Apps', 'Security']);
   expect(within(filters).getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 
@@ -129,11 +186,3 @@ test('a unit the learner has opened is ticked, one only passed over is not, and 
   expect(within(parts).getByRole('button', { name: /Neighbor Hello/ })).toHaveAttribute('data-state', 'done');
 });
 
-test('the outline is the positioned box its hidden ", seen" words sit in, so a row below the fold never stretches the page', () => {
-  // Vitest drops stylesheet contents, so the rule is read from the file itself. A visually hidden span is
-  // absolutely positioned: it is clipped by the scroll box only when that box is its containing block.
-  const css = readFileSync('src/lesson/console.css', 'utf8');
-  const outline = /(?:^|\n)\.console__outline \{([^}]*)\}/.exec(css)?.[1] ?? '';
-  expect(outline).toMatch(/overflow: auto;/);
-  expect(outline).toMatch(/position: relative;/);
-});

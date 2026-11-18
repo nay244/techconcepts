@@ -18,18 +18,38 @@
    --blocked, and say so in words too. */
 
 .console {
+  --track: 232px;
+  --guide: clamp(348px, 27vw, 392px);
   display: grid;
-  grid-template-columns: 268px minmax(0, 1fr);
-  grid-template-rows: 68px minmax(0, 1fr);
+  grid-template-columns: var(--track) minmax(0, 1fr) var(--guide);
+  grid-template-rows: 68px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'top top guide'
+    'track stage guide'
+    'low low guide';
   gap: 12px;
-  height: 100vh;
-  height: 100dvh;
+  /* The site's header (69px with its rule) stands over the page, so the console is the window less that. */
+  height: calc(100vh - 69px);
+  height: calc(100dvh - 69px);
   padding: 12px;
   overflow: hidden;
   /* No background of its own: the body's blueprint dot grid (global.css) shows
      between the panels, as on every other page. */
   color: var(--ink);
   font: 15px/1.5 var(--sans);
+}
+
+/* The site's header is sticky and 69px tall: a focused element scrolled into view on the stacked page (JavaScript off under
+   1100px, a phone on its side) is never left under it. Where the page does not scroll this changes nothing. */
+:root:has(.console) {
+  scroll-padding-top: 69px;
+}
+/* The one rule the Lesson page adds to the header: its open menu (under 960px) lies over the lesson, so the one-screen page does not grow. */
+body:has(.console) .site-head .menu-panel {
+  position: absolute;
+  inset: 100% 0 auto;
+  background: var(--ground);
+  border-bottom: 1px solid var(--line-strong);
 }
 
 :where(.console) button {
@@ -60,28 +80,28 @@
   white-space: nowrap;
 }
 
+/* The island's <main> holds the scene, the guide and the log; the bar and the track column stand before it, so the skip link
+   lands past the bar's stops. Its children are the console grid's own items. */
 .console__main {
-  grid-column: 2;
-  grid-row: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(348px, 27vw, 392px);
-  grid-template-rows: minmax(0, 1fr) clamp(200px, 26vh, 252px);
-  gap: 12px;
-  min-width: 0;
-  min-height: 0;
+  display: contents;
 }
 
-/* Reading Learn or Practice on a desktop, or a tablet on its side with the outline in a tab: the words take 560px, never leaving the scene under 484px (the 12px gap
+/* A window under 890px tall: the bar is one line (44px), and the log gives up the 24px the bar gave. */
+@media (max-height: 889px) {
+  .console {
+    grid-template-rows: 44px minmax(0, 1fr) auto;
+  }
+}
+
+/* Reading Learn or Practice on a desktop: the guide takes 560px, never leaving the scene under 484px (the 12px gap
    makes 496px), and the title may take two lines in the scene's head. Up to 1148px the words keep 348px. */
-@media (min-width: 1100px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
-  .console[data-reading] .console__main {
-    grid-template-columns: minmax(0, 1fr) max(348px, min(560px, 100% - 496px));
-  }
-  .console[data-reading] .stage__title {
-    white-space: normal;
-    text-align: end;
-    text-wrap: balance;
-  }
+.console[data-reading] {
+  --guide: max(348px, min(560px, 100vw - 764px));
+}
+.console[data-reading] .stage__title {
+  white-space: normal;
+  text-align: end;
+  text-wrap: balance;
 }
 
 /* ---------------------------------------------------------------- buttons */
@@ -120,10 +140,12 @@
   height: 14px;
 }
 
-/* ---------------------------------------------------------------- top bar */
+/* ---------------------------------------------------------------- the lesson's bar
+   68px (44px in a window under 890px tall) under the site's header, over the track and the scene: "Tracks /" and the
+   track's name over the track column, the timeline over the scene. The guide stands beside it, from the header down. */
 
 .console__top {
-  grid-column: 1 / -1;
+  grid-area: top;
   display: flex;
   align-items: stretch;
   position: relative;
@@ -131,176 +153,456 @@
 }
 .console__top > * {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0 clamp(12px, 1.25vw, 18px);
-  border-inline-end: 1px solid var(--line);
-}
-
-.topbar__brand {
   flex-direction: row;
   align-items: center;
-  /* The same lockup as the site header's (docs/direction.md §8). */
-  gap: 0.36em;
-  min-width: 252px;
-  color: var(--ink-strong);
-  font: 700 22px/1 var(--display);
-  letter-spacing: 0.005em;
-  text-decoration: none;
-}
-.topbar__brand b {
-  display: block;
-  font: inherit;
-}
-.topbar__brand .logo {
-  flex: none;
-  width: 1.3em;
-  height: 1.3em;
-}
-
-/* It takes the bar's spare room, so the OSI chips sit beside the theme button.
-   It gives way first when the bar is short of room, down to 340px, so the
-   blocks after it (the theme button last) are never pushed out of sight. */
-.topbar__now {
-  flex: 1 1 auto;
-  gap: 6px;
-  min-width: 340px;
-}
-/* One line: the track, the lesson's title, which ends in an ellipsis when it
-   has to (its whole text stays in the heading and its title), and the number. */
-.topbar__crumb {
-  display: flex;
-  align-items: baseline;
   min-width: 0;
-  color: var(--ink-strong);
-  font: 500 14px/1.2 var(--sans);
-  white-space: nowrap;
 }
-.topbar__crumb > * {
-  flex: none;
+/* Over the track: as wide as the column and half the gap, so the rule stands where the scene begins. */
+.top__lesson {
+  flex: 0 0 calc(var(--track) + 5px);
+  gap: 12px;
+  padding: 0 14px;
+  border-inline-end: 1px solid var(--line);
 }
-.topbar__crumb a,
-.topbar__crumb > span {
-  color: var(--muted);
-  text-decoration: none;
-}
-/* The "/" between the crumbs: 9px each side, quieter than the links. */
-.topbar__crumb > span {
-  margin-inline: 9px;
-  opacity: 0.55;
-}
-.topbar__crumb a:hover {
-  text-decoration: underline;
-}
-.topbar__crumb > h1 {
-  flex: 0 1 auto;
-  min-width: 0;
+.top__name {
   margin: 0;
   overflow: hidden;
-  color: inherit;
-  font: inherit;
+  color: var(--ink-strong);
+  font: 700 18px/1.15 var(--sans);
   text-overflow: ellipsis;
-  /* The site's headings balance their lines, which would let the title wrap here. */
   white-space: nowrap;
 }
-.topbar__crumb em {
-  margin-inline-start: 10px;
+.top__of {
   color: var(--muted);
-  font-size: 13px;
-  font-style: normal;
+  font: 400 13px/1.2 var(--sans);
+  white-space: nowrap;
 }
-/* The lesson's stamp, at the far end of the line. A checked one keeps its stronger ink. */
-.topbar__crumb .stamp {
-  margin-inline-start: auto;
-  padding-inline-start: 18px;
-  font-size: 13.5px;
-}
-.topbar__crumb .stamp[data-checked] {
-  color: var(--ink);
-}
-
-.topbar__steps,
-.topbar__segments,
-.topbar__group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.topbar__group + .topbar__group {
-  margin-inline-start: 6px;
-}
-.topbar__step {
-  position: relative;
-  overflow: hidden;
-  width: 26px;
-  height: 5px;
-  border: 1px solid var(--line-strong);
-  border-radius: 1px;
-}
-.topbar__group:not(:first-child) .topbar__step {
-  width: 18px;
-}
-.topbar__step[data-state='done'] {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-.topbar__step[data-state='current'] {
-  border-color: var(--here);
-  background: var(--here);
-}
-/* During a hold, the next step's segment fills over the hold's length. */
-.topbar__fill {
-  position: absolute;
-  inset: 0;
-  background: var(--here);
-  transform-origin: left center;
-  animation: topbar-fill linear forwards;
-}
-@keyframes topbar-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-.topbar__where {
-  margin-inline-start: 8px;
+.top__where {
+  display: none;
   color: var(--muted);
   font: 500 12.5px/1 var(--mono);
   white-space: nowrap;
 }
+/* From 1100px the lesson's name heads the track column; the bar's copy is for the widths with no column. */
+.top__lesson .top__name {
+  display: none;
+}
+.top__trk {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+}
+.track__crumb {
+  color: var(--muted);
+  font: 400 12.5px/1.2 var(--sans);
+}
+.track__crumb a {
+  color: inherit;
+  text-decoration: none;
+}
+.track__crumb a:hover {
+  text-decoration: underline;
+}
+.track__title {
+  min-width: 0;
+  font: 700 19px/1.15 var(--display);
+  letter-spacing: 0.005em;
+}
+a.track__title {
+  display: block;
+  color: var(--ink-strong);
+  text-decoration: none;
+}
+a.track__title:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* The ellipsis is on the inner span, so the link's focus ring is whole. */
+a.track__title > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-height: 889px) {
+  .top__trk {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .top__trk .track__title {
+    font-size: 15px;
+  }
+  .top__trk .track__crumb {
+    flex: none;
+  }
+}
+/* Under 1100px: no column, so a button names this lesson's place in the track and opens the sheet. */
+.top__lessons {
+  display: none;
+  flex: none;
+  gap: 7px;
+  height: 40px;
+  padding: 0 10px;
+  font: 500 12.5px/1 var(--sans);
+  white-space: nowrap;
+  align-self: center;
+  margin-inline-end: 12px;
+}
+.top__lessons svg {
+  width: 14px;
+  height: 14px;
+}
 
-.topbar__osi {
-  gap: 6px;
+/* ---------------------------------------------------------------- the timeline
+   Every place of the lesson on one line: a mark a place on a rule, its name under it, the count at the end. */
+
+.timeline {
+  align-items: stretch;
+  align-self: stretch;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 14px;
 }
-.topbar__chips {
+.timeline__nav {
   display: flex;
-  gap: 3px;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+  container-type: inline-size;
 }
-.topbar__chips i {
+.tl {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tl li {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+/* The rule: dashed ahead, orange as far as the reader has got. */
+.tl li::before,
+.tl li::after {
+  content: '';
+  position: absolute;
+  top: 17px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 5px, transparent 5px 9px);
+}
+.tl li::before {
+  left: 0;
+  right: 50%;
+}
+.tl li::after {
+  left: 50%;
+  right: 0;
+}
+.tl li:first-child::before,
+.tl li:last-child::after {
+  content: none;
+}
+.tl li[data-state='done']::before,
+.tl li[data-state='done']::after,
+.tl li[data-state='current']::before {
+  background: var(--here);
+}
+/* Play all: while a step holds, the rule fills from the current mark to the next (not with reduced motion). */
+.tl li[data-fill]::after,
+.tl li[data-fill-next]::before {
+  background:
+    linear-gradient(var(--here), var(--here)) left / 0 100% no-repeat,
+    repeating-linear-gradient(90deg, var(--line-strong) 0 5px, transparent 5px 9px);
+  animation: tl-fill calc(var(--hold, 2600ms) / 2) linear forwards;
+}
+.tl li[data-fill-next]::before {
+  animation-delay: calc(var(--hold, 2600ms) / 2);
+}
+@keyframes tl-fill {
+  to {
+    background-size: 100% 100%, auto;
+  }
+}
+.tl__stop {
+  appearance: none;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 0 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tl__stop:hover .tl__mark {
+  border-color: var(--ink);
+  color: var(--ink-strong);
+}
+.tl__mark {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--line-strong);
-  border-radius: 2px;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--card);
   color: var(--muted);
   font: 700 11px/1 var(--mono);
-  font-style: normal;
 }
-.topbar__chips i[data-on] {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
+.tl__mark[data-dot]::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: currentColor;
 }
-
-.topbar__tools {
-  flex-direction: row;
+.tl li[data-state='done'] .tl__mark {
+  border-color: var(--allowed);
+  color: var(--allowed-text);
+}
+.tl li[data-state='done'] .tl__mark[data-dot]::before {
+  content: none;
+}
+.tl li[data-state='current'] .tl__mark,
+.tl li[data-state='current'] .tl__stop:hover .tl__mark {
+  border-color: var(--here);
+  background: var(--here);
+  color: var(--here-ink);
+}
+.tl__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--muted);
+  font: 600 12.5px/1.12 var(--display);
+  letter-spacing: 0.01em;
+  text-align: center;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+.tl li[data-state='done'] .tl__name {
+  color: var(--ink);
+}
+.tl li[data-state='current'] .tl__name {
+  color: var(--ink-strong);
+}
+/* The end of the line: the count, and (when the stops are marks only) the name of the place the reader is in. */
+.tl__end {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-width: 0;
+  margin: 0;
+  padding-inline-start: 2px;
+}
+.tl__count {
+  color: var(--muted);
+  font: 500 12.5px/1 var(--mono);
+  white-space: nowrap;
+}
+.tl__now {
+  display: none;
+  overflow: hidden;
+  color: var(--ink-strong);
+  font: 600 14px/1.15 var(--display);
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A name needs 80px. The count gives up its room first: it shows with eight places or fewer in a line of 740px or more. */
+.tl:has(> li:nth-child(9)) + .tl__end {
+  display: none;
+}
+@container (max-width: 739.98px) {
+  .tl + .tl__end {
+    display: none;
+  }
+}
+/* Marks only, with the count and the current place's name at the end: ten places or more (OSI Model has 13); nine
+   places in a line under 712px; any count under 632px (Learn and Practice, where the scene is narrower). */
+.tl:has(> li:nth-child(10)) {
+  flex: 0 1 auto;
+}
+.tl:has(> li:nth-child(10)) li {
+  flex: 0 0 34px;
+}
+.tl:has(> li:nth-child(10)) .tl__name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.tl:has(> li:nth-child(10)) .tl__stop {
+  padding-top: 22px;
+}
+.tl:has(> li:nth-child(10)) li::before,
+.tl:has(> li:nth-child(10)) li::after {
+  top: 32px;
+}
+.tl:has(> li:nth-child(10)) + .tl__end {
+  display: grid;
+  flex: 1 1 0;
+  padding-inline-start: 6px;
+}
+.tl:has(> li:nth-child(10)) + .tl__end .tl__now {
+  display: block;
+}
+@container (max-width: 711.98px) {
+  .tl:has(> li:nth-child(9)) {
+    flex: 0 1 auto;
+  }
+  .tl:has(> li:nth-child(9)) li {
+    flex: 0 0 34px;
+  }
+  .tl:has(> li:nth-child(9)) .tl__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tl:has(> li:nth-child(9)) .tl__stop {
+    padding-top: 22px;
+  }
+  .tl:has(> li:nth-child(9)) li::before,
+  .tl:has(> li:nth-child(9)) li::after {
+    top: 32px;
+  }
+  .tl:has(> li:nth-child(9)) + .tl__end {
+    display: grid;
+    flex: 1 1 0;
+    padding-inline-start: 6px;
+  }
+  .tl:has(> li:nth-child(9)) + .tl__end .tl__now {
+    display: block;
+  }
+}
+@container (max-width: 631.98px) {
+  .tl {
+    flex: 0 1 auto;
+  }
+  .tl li {
+    flex: 0 0 34px;
+  }
+  .tl .tl__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tl .tl__stop {
+    padding-top: 22px;
+  }
+  .tl li::before,
+  .tl li::after {
+    top: 32px;
+  }
+  .tl + .tl__end {
+    display: grid;
+    flex: 1 1 0;
+    padding-inline-start: 6px;
+  }
+  .tl + .tl__end .tl__now {
+    display: block;
+  }
+}
+.tl__end[data-plain] .tl__now {
+  display: none !important;
+}
+/* The one-line bar (a window under 890px tall, and a tablet on its side at any height): the marks, then the count and the
+   current place's name on one line. */
+@media (max-height: 889px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
+  .tl {
+    flex: 0 1 auto !important;
+  }
+  .tl li {
+    flex: 0 1 auto !important;
+    width: 34px;
+    min-width: 24px;
+  }
+  .tl li::before,
+  .tl li::after {
+    top: 20px !important;
+  }
+  .tl__stop {
+    padding-top: 10px !important;
+  }
+  .tl__name {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tl + .tl__end {
+    display: flex !important;
+    align-items: baseline;
+    gap: 10px;
+    flex: 1 0 auto !important;
+    align-self: center;
+    overflow: hidden;
+    padding-inline-start: 6px;
+  }
+  .tl__count {
+    flex: none;
+  }
+  .tl + .tl__end .tl__now {
+    display: block;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+  }
+  .tl__end[data-plain] .tl__now {
+    display: none !important;
+  }
+}
+/* Without JavaScript the stacked page lists the places after the Overview's words (below 1100px); the bar's cell has them above. */
+.timeline__stack {
+  display: none;
+}
+/* The row's copy of the timeline is for the phone layout (below); everywhere else the bar's copy is the one. */
+.timeline--row {
+  display: none;
+}
+/* Without JavaScript: the places' names as one plain line (the interactive list is hidden by the page's head). */
+.timeline__plain {
+  display: flex;
+  flex: 1 1 0;
   align-items: center;
-  gap: 8px;
-  margin-inline-start: auto;
-  border-inline-end: 0;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+.timeline__plain ol {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 600 13px/1.2 var(--display);
+  list-style: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* A segmented switch: the outline's filters, and the scene's views. */
@@ -329,25 +631,149 @@
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
-/* ---------------------------------------------------------------- outline */
+/* ---------------------------------------------------------------- the track column
+   The lesson's name and place at its head (fixed), the track's strip, then the track's lessons by part (scrolling inside
+   the column). The same list is the lessons sheet under 1100px. */
 
-/* Positioned, so the visually hidden ", seen" on a row below the fold is clipped with the row and never
-   stretches the page. */
-.console__outline {
-  position: relative;
-  grid-column: 1;
-  grid-row: 2;
+.console__track {
+  grid-area: track;
   display: flex;
   flex-direction: column;
-  padding: 16px 12px;
-  overflow: auto;
+  overflow: hidden;
 }
-.outline__head {
-  padding: 0 8px 12px;
+.track__head {
+  flex: none;
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.track__lesson {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  min-width: 0;
+}
+.track__lesson .top__name {
+  font-size: 19px;
+  white-space: normal;
+}
+.track__crumb {
+  margin: 0;
+}
+.track__title {
+  margin: 0;
+}
+.track__got {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font: 400 12.5px/1.2 var(--sans);
+  white-space: nowrap;
+}
+/* The cable: one segment a lesson, green when done, orange for this one, dashed when ahead. */
+.cable {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+.cable i {
+  flex: 1 1 0;
+  height: 5px;
+  border-radius: 1px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 3px, transparent 3px 5px);
+}
+.cable i[data-s='done'] {
+  background: var(--allowed);
+}
+.cable i[data-s='here'] {
+  background: var(--here);
+}
+.track__units {
+  flex: none;
+  padding: 10px 8px 0;
+}
+.track__nav {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+}
+.track__list {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 8px 12px;
+}
+.part {
+  margin: 0;
+}
+.part > summary,
+.part__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin: 0;
+  padding: 8px 8px 6px;
+  border-radius: 3px;
+  color: var(--ink);
+  font: 600 14px/1.2 var(--display);
+  letter-spacing: 0.01em;
+  list-style: none;
+}
+.part > summary {
+  cursor: pointer;
+}
+.part > summary::-webkit-details-marker {
+  display: none;
+}
+.part > summary:hover {
+  background: var(--tile);
+  color: var(--ink-strong);
+}
+.part__head {
+  color: var(--ink-strong);
+}
+.part__chev {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  transition: transform 160ms var(--ease-out);
+}
+.part[open] > summary .part__chev {
+  transform: rotate(90deg);
+}
+/* The part that holds this lesson cannot close, so it wears no open/close sign. */
+.part__head .part__chev {
+  visibility: hidden;
+}
+.part__name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.part__count {
+  flex: none;
+  color: var(--muted);
+  font: 500 11.5px/1 var(--mono);
+  white-space: nowrap;
+}
+.part__count[data-all] {
+  color: var(--allowed-text);
+}
+.part ol {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
 }
 .outline__list,
-.outline__parts,
-.outline__part ol {
+.outline__parts {
   display: grid;
   gap: 2px;
   margin: 0;
@@ -361,7 +787,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
-
+/* A lesson of many units: one row per unit, the current one opened (its places, as a list of buttons). */
 .outline__item {
   display: grid;
   grid-template-columns: 22px 1fr;
@@ -400,11 +826,6 @@
   color: var(--ink-strong);
   font: 700 14px/1.3 var(--sans);
 }
-.outline__sub {
-  grid-column: 2;
-  color: var(--muted);
-  font: 400 13px/1.35 var(--sans);
-}
 .outline__item[data-state='done'] .outline__mark {
   border-color: var(--allowed);
   color: var(--allowed-text);
@@ -420,29 +841,6 @@
   border-color: var(--here);
   color: var(--here);
   box-shadow: 0 0 0 3px var(--here-soft);
-}
-
-.console__outline hr {
-  margin: 14px 8px;
-  border: 0;
-  border-top: 1px solid var(--line);
-}
-.outline__all {
-  padding: 8px;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: 500 14px/1 var(--sans);
-  text-align: start;
-  cursor: pointer;
-}
-
-/* A lesson of many units: one row per unit, the current one opened. */
-.console__outline[data-units='many'] {
-  padding: 14px 10px;
-}
-.console__outline[data-units='many'] .outline__head {
-  padding: 0 8px 10px;
 }
 .outline__filters {
   display: flex;
@@ -524,45 +922,10 @@
   font-size: 10.5px;
 }
 
-/* All 20 lessons */
-.outline__dialog {
-  width: min(28rem, 92vw);
-  max-height: min(40rem, 88vh);
-  padding: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 3px;
-  background: var(--card);
-  color: var(--ink);
-  box-shadow: var(--shadow-lg);
-}
-.outline__dialog::backdrop {
-  background: rgb(0 0 0 / 0.5);
-}
-.outline__dialog-body {
-  padding: 16px 18px 20px;
-}
-.outline__dialog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-.outline__dialog h2 {
-  margin: 0;
-  color: var(--ink-strong);
-  font: 700 18px/1.2 var(--sans);
-}
-.outline__part h3 {
-  margin: 14px 0 6px;
-  color: var(--muted);
-  font: 700 11px/1.2 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
+/* A lesson row: its number, its title, its status in words. */
 .outline__lesson {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: baseline;
   gap: 8px;
   padding: 6px 8px;
@@ -593,12 +956,58 @@ a.outline__lesson:hover {
 .outline__lesson-status[data-status='finished'] {
   color: var(--allowed-text);
 }
+.outline__lesson-status[data-status='in-progress'] {
+  color: var(--ink);
+}
+
+/* The lessons sheet (under 1100px wide): a modal at the left edge, the track's head and the same parts, every one open. */
+.sheet {
+  width: min(28rem, 100vw);
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0 auto 0 0;
+  padding: 0;
+  border: 0;
+  border-inline-end: 1px solid var(--line-strong);
+  background: var(--card);
+  color: var(--ink);
+}
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+.sheet__body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.sheet__bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet__bar h2 {
+  margin: 0;
+  color: var(--ink-strong);
+  font: 700 18px/1.2 var(--sans);
+}
+.sheet .cbtn {
+  height: 44px;
+  padding: 0 14px;
+}
+.sheet .outline__lesson {
+  min-height: 44px;
+  align-items: center;
+}
 
 /* ---------------------------------------------------------------- scene box */
 
 .console__stage {
-  grid-column: 1;
-  grid-row: 1;
+  grid-area: stage;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -652,10 +1061,279 @@ a.outline__lesson:hover {
    clipped with the panel and never stretches the page. */
 .console__explain {
   position: relative;
-  grid-column: 2;
-  grid-row: 1;
   overflow: auto;
   padding: 20px 22px 24px;
+}
+
+/* ---------------------------------------------------------------- the guide
+   One panel from the site's header to the foot of the page, beside the bar, the track and the scene: the words (they
+   scroll inside), the lesson's table while watching in a tall window, then the foot: the controls and the key line. */
+
+.console__guide {
+  grid-area: guide;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.console__guide > .console__explain {
+  flex: 1 1 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.guide__table {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  min-height: 0;
+  max-height: clamp(120px, 24%, 200px);
+}
+.guide__table:empty {
+  display: none;
+}
+.guide__table :is(.tpanel, .rpanel, .bits) {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  padding: 10px 16px 12px;
+}
+/* In the guide a table of four columns or more is the phone's entry form (D2): one entry a row, each value under its name. */
+.guide__table .tpanel__table:has(thead th:nth-child(4)),
+.guide__table .tpanel__table:has(thead th:nth-child(4)) :is(tbody, tr, caption) {
+  display: block;
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) tbody {
+  border-top: 1px solid var(--line);
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) tr {
+  border-bottom: 1px solid var(--line);
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) td[data-label] {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: baseline;
+  padding: 2px 8px 2px 11px;
+  border-bottom: 0;
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) td[data-label]:first-child {
+  padding-top: 8px;
+  color: var(--ink-strong);
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) td[data-label]:last-child {
+  padding-bottom: 8px;
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) td[data-label]::before {
+  content: attr(data-label);
+  color: var(--muted);
+  font: 600 12.5px/1.4 var(--display);
+  letter-spacing: 0.02em;
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) tr[data-highlight] > td {
+  background-image: linear-gradient(var(--selected), var(--selected));
+  background-repeat: no-repeat;
+  background-size: 3px 100%;
+}
+.guide__table .tpanel__table:has(thead th:nth-child(4)) td.tpanel__empty {
+  display: block;
+  padding: 12px 8px;
+  text-align: start;
+}
+.guide__foot {
+  display: grid;
+  flex: none;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+}
+@media (min-width: 1100px) {
+  /* The row of job 15, in its order, with the forward button on a line of its own, as wide as the words. */
+  .guide__foot .console__controls {
+    flex-wrap: wrap;
+    margin: 0;
+  }
+  .guide__foot .cbtn--go {
+    flex: 1 0 100%;
+    height: auto;
+    min-height: 40px;
+    padding-block: 7px;
+  }
+  .guide__foot .go__label {
+    line-height: 1.15;
+    text-align: start;
+    text-wrap: balance;
+    white-space: normal;
+  }
+}
+/* The keys, named (D14 §9's line): only where a mouse and a keyboard are likely. */
+.keys {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+  color: var(--muted);
+  font: 400 13px/1.2 var(--sans);
+}
+.keys kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--tile);
+  color: var(--ink-strong);
+  font: 500 11.5px/1 var(--mono);
+}
+.keys span {
+  margin-inline-end: 6px;
+}
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+  .keys {
+    display: flex;
+  }
+}
+
+/* In the guide the table is fitted as the phone fits it (words wrap, nothing scrolls sideways): three columns or fewer stay a
+   table, and the rule list (Firewalls) is two lines a rule. */
+.guide__table .tpanel caption {
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+.guide__table .tpanel th,
+.guide__table .tpanel td {
+  padding: 6px 8px;
+}
+.guide__table .tpanel th {
+  white-space: normal;
+}
+.guide__table .tpanel td {
+  overflow-wrap: break-word;
+}
+
+
+/* The rule list (Firewalls): a rule is two lines. Number, action, port and source across the first;
+   what the rule is for, and what the check found, on the second. */
+.guide__table .rpanel caption {
+  display: block;
+  margin-bottom: 8px;
+  line-height: 1.5;
+  white-space: normal;
+}
+.guide__table .rpanel__table,
+.guide__table .rpanel__table thead,
+.guide__table .rpanel__table tbody {
+  display: block;
+}
+.guide__table .rpanel__table colgroup {
+  display: none;
+}
+.guide__table .rpanel__table tr {
+  display: grid;
+  grid-template-columns: 26px 72px 74px minmax(0, 1fr);
+  align-items: baseline;
+  border-bottom: 1px solid var(--line);
+}
+.guide__table .rpanel th,
+.guide__table .rpanel td {
+  padding: 6px 6px 3px;
+  border-bottom: 0;
+}
+.guide__table .rpanel td:first-child,
+.guide__table .rpanel th:first-child {
+  padding-inline-start: 10px;
+}
+.guide__table .rpanel thead th:nth-child(n + 5) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.guide__table .rpanel td.rpanel__prose {
+  grid-row: 2;
+  grid-column: 2 / 4;
+  padding-block: 0 7px;
+  overflow: visible;
+  white-space: normal;
+}
+.guide__table .rpanel td:last-child:not(.rpanel__empty) {
+  grid-row: 2;
+  grid-column: 4;
+  justify-self: end;
+  padding-block: 0 7px;
+  padding-inline-end: 10px;
+}
+.guide__table .rpanel td.rpanel__empty {
+  grid-column: 1 / -1;
+  text-align: start;
+}
+.guide__table .rpanel__conns {
+  margin-top: 14px;
+}
+.guide__table .rpanel__chip {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  white-space: normal;
+}
+
+/* The badge at the head of the words, on the kicker's line where both fit, else on a line above it. */
+.explain__head {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 0 0 10px;
+}
+.explain__head .explain__kicker {
+  margin: 0;
+}
+.explain__osi {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+.explain__osi p {
+  margin: 0;
+  color: var(--ink);
+  font: 600 13.5px/1 var(--display);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.explain__chips {
+  display: flex;
+  gap: 2px;
+}
+.explain__chips i {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  color: var(--muted);
+  font: 700 10.5px/1 var(--mono);
+  font-style: normal;
+}
+.explain__chips i[data-on] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
 }
 .explain__kicker {
   margin: 0 0 10px;
@@ -663,9 +1341,6 @@ a.outline__lesson:hover {
   font: 700 11.5px/1.2 var(--mono);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-.explain__lead .stamp {
-  display: none;
 }
 .explain__title {
   margin: 0 0 6px;
@@ -825,9 +1500,6 @@ a.outline__lesson:hover {
   margin: 0 0 16px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
-}
-.explain__stamp {
-  margin: 0 0 10px;
 }
 .explain__sources {
   margin: 0;
@@ -1114,17 +1786,24 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
 /* ---------------------------------------------------------------- log */
 
 .console__log {
-  grid-column: 1 / -1;
-  grid-row: 2;
+  grid-area: low;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Today's log, less the header's 69px (the bar's 24px of the 69 in a window under 890px tall) the scene's panel is as tall as before. */
+  height: clamp(131px, calc(26vh - 69px), 183px);
+}
+@media (max-height: 889px) {
+  .console__log {
+    height: clamp(155px, calc(26vh - 45px), 207px);
+  }
 }
 .log__head {
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 8px 14px;
+  min-height: 32px;
+  padding: 4px 14px;
   border-bottom: 1px solid var(--line);
 }
 /* The log folds to its head while a desktop reader is in Learn or Practice; the button brings the rows back. */
@@ -1134,18 +1813,16 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   padding: 0 12px;
   white-space: nowrap;
 }
-@media (min-width: 1100px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
+@media (min-width: 1100px) {
   .console[data-reading] .log__fold {
     display: inline-grid;
+    margin-inline-start: auto;
   }
-  .console[data-reading]:not([data-log='open']) .console__main {
-    grid-template-rows: minmax(0, 1fr) auto;
+  .console[data-reading]:not([data-log='open']) .console__log {
+    height: auto;
   }
   .console[data-reading]:not([data-log='open']) :is(.log__scroll, .log__legend) {
     display: none;
-  }
-  .console[data-reading]:not([data-log='open']) .log__head {
-    border-bottom: 0;
   }
 }
 .log__legend {
@@ -1176,7 +1853,6 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   flex: none;
   align-items: center;
   gap: 6px;
-  margin-inline-start: auto;
 }
 .cbtn--speed {
   min-width: 52px;
@@ -1194,6 +1870,7 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   height: 13px;
 }
 .cbtn--go {
+  position: relative;
   min-width: 152px;
   padding: 0 12px 0 16px;
   overflow: hidden;
@@ -1207,28 +1884,12 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
 .go__label {
   white-space: nowrap;
 }
-/* The log head is a size container in every desktop layout: when it is narrow, the play button drops its words and
-   keeps its icon (its name stays "Play all" or "Pause"), so the legend is never pushed onto the controls. */
-@media (min-width: 1100px), (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
-  :root.js .log__head {
-    container-type: inline-size;
-  }
-}
-@container (max-width: 829.98px) {
-  .console__controls .cbtn--alt {
-    width: 36px;
-    min-width: 36px;
-    padding: 0;
-    justify-content: center;
-  }
-  .console__controls .cbtn--alt .cbtn__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+/* The full form's words, measured against the button's room on a tablet (PlaybackControls); never seen. */
+.go__measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .log__scroll {
@@ -1244,6 +1905,10 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   table-layout: fixed;
 }
 .log__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--card);
   padding: 7px 10px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
@@ -1318,11 +1983,6 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .topbar__fill {
-    display: none;
-  }
-}
 
 /* ---------------------------------------------------------------- narrow screens
    Below 1100 px the panels stack and the page scrolls, so everything still loads and can be reached. This is the page
@@ -1332,9 +1992,17 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   .console {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
+    grid-template-areas: none;
     height: auto;
-    min-height: 100vh;
+    min-height: calc(100vh - 69px);
     overflow: visible;
+  }
+  .console__top,
+  .console__track,
+  .console__stage,
+  .console__guide,
+  .console__log {
+    grid-area: auto;
   }
   .console__top {
     flex-wrap: wrap;
@@ -1342,25 +2010,61 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   .console__top > * {
     padding-block: 10px;
   }
-  .console__outline,
-  .console__main {
-    grid-column: 1;
-    grid-row: auto;
+  /* Without JavaScript: the places are one a line after the Overview's words, not in the bar; the track's lessons are
+     links at the foot of the page (with JavaScript the bar's button opens them in the sheet). */
+  .console__top .timeline__plain {
+    display: none;
   }
-  .console__main {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
+  .timeline__stack {
+    display: block;
+    padding: 4px 22px 18px;
   }
-  .console__stage,
-  .console__explain,
-  .console__log {
-    grid-column: 1;
-    grid-row: auto;
+  .timeline__stack ol {
+    display: grid;
+    gap: 3px;
+    margin: 8px 0 0;
+    padding: 0;
+    color: var(--ink);
+    font: 600 14px/1.4 var(--display);
+    list-style: none;
+  }
+  :root:not(.js) .console__track {
+    display: flex;
+    order: 9;
+  }
+  :root:not(.js) .track__lesson {
+    display: none;
+  }
+  :root:not(.js) .track__nav,
+  :root:not(.js) .track__list {
+    flex: none;
+    overflow: visible;
+  }
+  /* No column here: the bar's first cell holds the lesson's name (the page's h1 at these widths) and the lessons button. */
+  .console__track {
+    display: none;
+  }
+  .top__lesson {
+    flex: 1 1 auto;
+    border-inline-end: 0;
+  }
+  .top__lesson .top__name {
+    display: block;
+  }
+  .top__trk {
+    display: none;
+  }
+  .top__lessons {
+    display: inline-grid;
   }
   .console__stage {
     min-height: 320px;
   }
+  .console__guide {
+    display: block;
+  }
   .console__log {
+    height: auto;
     max-height: 70vh;
   }
   .log__head {
@@ -1383,13 +2087,15 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
    layout above, where everything can still be reached by scrolling. */
 @media (max-width: 760px), (max-width: 899px) and (min-height: 600px), (max-width: 1099px) and (orientation: portrait) {
   :root.js .console {
-    --ph-top: 52px;
+    --ph-top: calc(69px + 36px);
     --ph-stage: 34dvh;
-    --ph-tabs: 48px;
+    --ph-line: 36px;
+    --ph-tabs: 44px;
+    --ph-side: 0px;
     --ph-ctl: calc(64px + env(safe-area-inset-bottom));
     display: block;
-    height: 100vh;
-    height: 100dvh;
+    height: calc(100vh - 69px);
+    height: calc(100dvh - 69px);
     min-height: 0;
     padding: 0;
     overflow: hidden;
@@ -1407,9 +2113,9 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   /* The top bar: the mark, the lesson's name and where you are in it, and the theme button. */
   :root.js .console__top {
     position: fixed;
-    inset: 0 0 auto;
+    inset: 69px 0 auto;
     flex-wrap: nowrap;
-    height: var(--ph-top);
+    height: calc(var(--ph-top) - 69px);
     border-bottom: 1px solid var(--line-strong);
   }
   :root.js .console__top > * {
@@ -1417,21 +2123,30 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     padding-inline: 12px;
     border-inline-end: 0;
   }
-  :root.js .topbar__brand {
-    min-width: 0;
-    padding-inline-end: 0;
+  /* The bar: the lesson's name and where you are in it, and the lessons button; the timeline waits for the stops row. */
+  :root.js .top__lesson {
+    flex: 1 1 0;
+    gap: 10px;
   }
-  :root.js .topbar__brand b,
-  :root.js .topbar__crumb > a,
-  :root.js .topbar__crumb > span,
-  :root.js .topbar__crumb > em,
-  :root.js .topbar__osi {
+  :root.js .top__where {
+    display: block;
+  }
+  :root.js .top__name {
+    font-size: 16px;
+  }
+  :root.js .console__top .timeline {
     display: none;
   }
-  :root.js .topbar__now {
-    flex: 1 1 0;
-    gap: 4px;
-    min-width: 0;
+  :root.js .top__lessons {
+    height: 28px;
+    padding: 0 8px;
+  }
+  :root.js .explain__osi {
+    display: none;
+  }
+  :root.js .console__guide,
+  :root.js .guide__foot {
+    display: contents;
   }
 
   /* The scene. It scrolls nowhere: the lesson's table, when it has one, has a tab of its own (below). */
@@ -1462,13 +2177,57 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     overflow: hidden;
   }
 
+  /* The stops row: the timeline's marks between the scene and the tabs (the owner's choice, 2.94). It stays under the scene,
+     in reach of the thumb and beside the tabs it works with. A stop is the row's width over the places (44px for 8, 27px
+     for 13 at 375), 35px tall; the names are for a screen reader. */
+  :root.js .timeline--row {
+    position: fixed;
+    inset: calc(var(--ph-top) + var(--ph-stage)) 0 auto;
+    z-index: 2;
+    display: flex;
+    height: var(--ph-line);
+    padding: 0 max(12px, var(--ph-side));
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+  }
+  :root.js .timeline--row .tl {
+    flex: 1 1 0 !important;
+  }
+  :root.js .timeline--row .tl li {
+    flex: 1 1 0 !important;
+    width: auto;
+    min-width: 0;
+  }
+  :root.js .timeline--row .tl__stop {
+    justify-content: center;
+    padding: 0 !important;
+  }
+  :root.js .timeline--row .tl__name {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  :root.js .timeline--row .tl li::before,
+  :root.js .timeline--row .tl li::after {
+    top: 17px !important;
+  }
+  :root.js .timeline--row .tl__mark {
+    width: 24px;
+    height: 24px;
+  }
+  :root.js .timeline--row .tl__end {
+    display: none !important;
+  }
+
   /* The tabs. */
   :root.js .console__tabs {
     display: grid;
     grid-auto-columns: minmax(0, 1fr);
     grid-auto-flow: column;
     position: fixed;
-    inset: calc(var(--ph-top) + var(--ph-stage)) 0 auto;
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-line)) 0 auto;
     height: var(--ph-tabs);
     border-bottom: 1px solid var(--line-strong);
     background: var(--bg-soft);
@@ -1484,15 +2243,13 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   }
 
   /* The three parts share the space between the tabs and the controls; each scrolls inside itself. */
-  :root.js .console__outline,
   :root.js .console__explain,
   :root.js .console__log {
     position: fixed;
-    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-tabs)) 0 var(--ph-ctl);
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-line) + var(--ph-tabs)) 0 var(--ph-ctl);
     max-height: none;
     overflow: auto;
   }
-  :root.js .console:not([data-tab='steps']) .console__outline,
   :root.js .console:not([data-tab='explain']) .console__explain {
     display: none;
   }
@@ -1587,11 +2344,6 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     animation: none;
   }
 
-  /* The top bar says where you are in words; the row of segments does not fit beside them. */
-  :root.js .topbar__segments {
-    display: none;
-  }
-
   /* Back, Play and Next, at the bottom whatever is showing. */
   :root.js .console__controls {
     visibility: visible;
@@ -1639,14 +2391,15 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     padding: 0 10px 0 12px;
     font-size: 17px;
   }
-  /* Narrower than 375: the › goes first, and the words are centred. */
+  /* No chevron on a phone: the words ("Next: step 5") take its room. */
+  :root.js .console__controls .cbtn--go svg {
+    display: none;
+  }
+  /* Narrower than 375: the words are centred. */
   @media (max-width: 374px) {
     :root.js .console__controls .cbtn--go {
       justify-content: center;
       padding: 0 8px;
-    }
-    :root.js .console__controls .cbtn--go svg {
-      display: none;
     }
   }
   /* Narrower than 360: five 44px controls, 6px apart, words at 16px, so "Next lesson" still fits (96px at 320). */
@@ -1710,12 +2463,16 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .rpanel,
   :root.js .bits {
     position: fixed;
-    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-tabs)) 0 var(--ph-ctl);
+    inset: calc(var(--ph-top) + var(--ph-stage) + var(--ph-line) + var(--ph-tabs)) 0 var(--ph-ctl);
     max-height: none;
     overflow: auto;
     padding: 14px 14px 20px;
     border-top: 0;
     background: var(--card);
+  }
+  /* Firewalls' rule list is two lines a rule and needs the room: its panel pads less (the table keeps the prototype's 14px). */
+  :root.js .rpanel {
+    padding: 8px 14px 12px;
   }
   :root.js .console:not([data-tab='table']) :is(.tpanel, .rpanel, .bits) {
     display: none;
@@ -1867,27 +2624,6 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
     row-gap: 4px;
     white-space: normal;
   }
-
-  /* --- The stamp, at the end of the Overview's first line ------------------------------------------ */
-  :root.js .explain__lead {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 6px 12px;
-    margin: 0 0 10px;
-  }
-  :root.js .explain__lead .explain__kicker {
-    margin: 0;
-  }
-  /* 13.5px, as in the top bar. The padding makes the link 31px tall to the finger without moving the line. */
-  :root.js .explain__lead .stamp {
-    display: inline-flex;
-    flex: none;
-    margin-block: -7px;
-    padding-block: 7px;
-    font-size: 13.5px;
-  }
 }
 
 /* ---------------------------------------------------------------- tablets (docs/direction.md §7; prototypes/d3-lesson-tablet.md)
@@ -1921,15 +2657,15 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   /* The scene takes more of a taller screen. The words, the outline, the log and the controls share one centred
      column, narrow enough to read. */
   :root.js .console {
+    --ph-top: calc(69px + 44px);
     --ph-stage: 40dvh;
+    --ph-line: 40px;
+    --ph-tabs: 48px;
     --ph-col: 520px;
     --ph-side: max(22px, calc((100vw - var(--ph-col)) / 2));
   }
   :root.js .console__explain {
     padding-inline: var(--ph-side);
-  }
-  :root.js .console__outline {
-    padding-inline: calc(var(--ph-side) - 8px);
   }
   :root.js .console__log {
     padding-inline: calc(var(--ph-side) - 14px);
@@ -1937,132 +2673,133 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
   :root.js .console__controls {
     padding-inline: var(--ph-side);
   }
-  /* The top bar has room again for the two things the phone drops for want of it. */
-  :root.js .topbar__segments {
-    display: flex;
+  :root.js .top__lessons {
+    height: 34px;
   }
-  :root.js .topbar__crumb > a.stamp {
-    display: inline-flex;
+  /* Room for Play all's words beside the icon, and for the forward button's full form when it fits. */
+  :root.js .console__controls .cbtn--alt {
+    width: auto;
+    padding: 0 14px;
+  }
+  :root.js .console__controls .cbtn--alt .cbtn__label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
   }
 }
 
-/* 900 to 1099px wide, on its side, at least 600px tall: the desktop layout with the outline folded into a tab. */
+/* 900 to 1099px wide, on its side, at least 600px tall: the desktop layout with no track column (the bar's button opens
+   the lessons), the bar over the scene while watching, the controls one row at the foot of the words. B23 tunes it. */
 @media (min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px) {
   :root.js .console {
-    --mid-words: 348px;
-    --mid-tabs: 48px;
-    --mid-log: clamp(200px, 26vh, 252px);
-    position: relative;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 68px minmax(0, 1fr);
-    height: 100vh;
-    height: 100dvh;
+    grid-template-columns: minmax(0, 1fr) 348px;
+    grid-template-rows: 44px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'top guide'
+      'stage guide'
+      'low low';
+    height: calc(100vh - 69px);
+    height: calc(100dvh - 69px);
     min-height: 0;
+    padding: 12px;
     overflow: hidden;
+  }
+  :root.js .console[data-reading] {
+    grid-template-columns: minmax(0, 1fr) max(348px, min(560px, 100vw - 520px));
+    grid-template-areas:
+      'top top'
+      'stage guide'
+      'low low';
+  }
+  /* A lesson of ten places or more (OSI Model has 13): from 900 to 1023px the scene is too narrow for its marks at 24px beside
+     the name and the button, so the bar keeps the full width while watching, as it does in Learn and Practice. */
+  @media (max-width: 1023px) {
+    :root.js .console[data-many] {
+      grid-template-areas:
+        'top top'
+        'stage guide'
+        'low low';
+    }
   }
   :root.js .console__top {
     flex-wrap: nowrap;
+    grid-area: top;
   }
   :root.js .console__top > * {
     padding-block: 0;
   }
-  :root.js .topbar__brand {
-    min-width: 0;
-  }
-  /* The bar is 268px narrower than the narrowest desktop's. The lesson's name stays whole: the brand's word, the
-     "Tracks" crumb and the lesson's number give way. */
-  :root.js .topbar__brand b,
-  :root.js .topbar__crumb > a:first-child,
-  :root.js .topbar__crumb > a:first-child + span,
-  :root.js .topbar__crumb > em {
-    display: none;
-  }
-  /* Learn and Practice take D1's words column: 380px at 900 wide, 504px at 1024, 560px from 1080. */
-  :root.js .console[data-reading] {
-    --mid-words: max(348px, min(560px, 100vw - 24px - 496px));
-  }
-  /* Folded, the log is its head and nothing more: 8px, the 44px buttons, 8px and the panel's 1px borders. The outline
-     above it follows. */
-  :root.js .console[data-reading]:not([data-log='open']) {
-    --mid-log: 62px;
-  }
-  :root.js .console__main {
-    grid-column: 1;
-    grid-row: 2;
-    grid-template-columns: minmax(0, 1fr) var(--mid-words);
-    grid-template-rows: minmax(0, 1fr) var(--mid-log);
-  }
   :root.js .console__stage {
-    grid-column: 1;
-    grid-row: 1;
+    grid-area: stage;
     min-height: 0;
   }
-  :root.js .console__explain {
-    grid-column: 2;
-    grid-row: 1;
-    margin-top: var(--mid-tabs);
-    border-top-width: 0;
-    border-start-start-radius: 0;
-    border-start-end-radius: 0;
+  :root.js .console__guide {
+    display: flex;
+    grid-area: guide;
   }
   :root.js .console__log {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    grid-area: low;
+    height: clamp(155px, calc(26vh - 45px), 207px);
     max-height: none;
+  }
+  :root.js .console[data-reading]:not([data-log='open']) .console__log {
+    height: auto;
+  }
+  :root.js .console[data-reading] .log__fold {
+    display: inline-grid;
+    height: 44px;
+    margin-inline-start: auto;
+  }
+  :root.js .console[data-reading]:not([data-log='open']) :is(.log__scroll, .log__legend) {
+    display: none;
   }
   :root.js .log__head {
     flex-wrap: nowrap;
   }
-  /* A tablet on its side is the usual screen here: Back, Play and Next are sized for a finger. */
+  :root.js .top__lesson {
+    flex: 0 1 auto;
+  }
+  :root.js .top__lesson .top__name {
+    display: block;
+  }
+  :root.js .top__lessons {
+    display: inline-grid;
+    height: 34px;
+  }
+  /* The five controls are one row at the foot of the words, 44px each. */
+  :root.js .guide__foot .console__controls {
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
   :root.js .console__controls .cbtn {
     height: 44px;
     min-width: 44px;
   }
-  :root.js .console__controls .cbtn--speed {
-    min-width: 52px;
-  }
   :root.js .console__controls .cbtn--alt {
-    min-width: 118px;
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  :root.js .console__controls .cbtn--alt .cbtn__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   :root.js .console__controls .cbtn--go {
-    min-width: 152px;
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding: 0 8px;
   }
-
-  /* The tabs sit on top of the words' column: Explain and Steps. The log and the lesson's table are on show under
-     both, so they need no tab. */
-  :root.js .console__tabs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    position: absolute;
-    top: 92px;
-    right: 12px;
-    width: var(--mid-words);
-    height: var(--mid-tabs);
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-bottom-color: var(--line-strong);
-    border-radius: var(--r-tile) var(--r-tile) 0 0;
-    background: var(--bg-soft);
-  }
-  :root.js .console__tabs button:nth-child(n + 3) {
+  :root.js .console__controls .cbtn--go svg {
     display: none;
   }
-  /* The row clips its corners, so the usual ring (2px outside) would be cut to a line: draw it inside. */
-  :root.js .console__tabs button:focus-visible {
-    outline-offset: -3px;
-  }
-  :root.js .console__outline {
-    position: absolute;
-    top: calc(92px + var(--mid-tabs));
-    right: 12px;
-    bottom: calc(24px + var(--mid-log));
-    width: var(--mid-words);
-    border-top-width: 0;
-    border-start-start-radius: 0;
-    border-start-end-radius: 0;
-  }
-  :root.js .console:not([data-tab='steps']) .console__outline,
-  :root.js .console[data-tab='steps'] .console__explain {
+  :root.js .console__tabs {
     display: none;
   }
 }

@@ -1,4 +1,4 @@
-import type { Dispatch } from 'react';
+import { useLayoutEffect, useRef, useState, type Dispatch } from 'react';
 import type { Lesson, Unit } from '../content/schema';
 import { canReplay, playButton, SPEEDS, type ForwardButton, type PlaybackAction, type PlaybackState } from '../engine/playback';
 
@@ -10,7 +10,13 @@ export interface PlaybackControlsProps {
   unit: Unit;
   /** What the forward button reads and leads to (`forwardButton`). */
   forward: ForwardButton;
-  /** Presses the forward button: the console knows where "Next step" and "Next lesson" lead. */
+  /**
+   * Which form the forward button shows: the full words ("Next: DHCP Acknowledge", from 1100px wide), the short form
+   * ("Next: step 4", a phone), or whichever fits its room (761 to 1099px wide): measured against the button, tried
+   * again when its width or the fonts change.
+   */
+  form: 'full' | 'short' | 'fit';
+  /** Presses the forward button: the console knows where it leads. */
   onForward(): void;
 }
 
@@ -36,22 +42,43 @@ function Icon({ name }: { name: keyof typeof ICON }) {
 }
 
 /**
- * The log header's controls, left to right: the speed button, Back, the play
+ * The controls at the foot of the guide, left to right: the speed button, Back, the play
  * button (Play all, or Pause while a run is going), the replay icon, and the
- * forward button, the only orange one: "Next step" inside the lesson, "Next
- * lesson" at its end. The speed button shows the speed and names the next one.
+ * forward button, the only orange one: it names the place it goes to ("Next:
+ * DHCP Acknowledge", "Next lesson: Ports"). The speed button shows the speed and names the next one.
  * Presentational: the console owns what the forward button does and the keys.
  *
  * Every button that can have nothing to do says `aria-disabled` rather than
  * `disabled`: a disabled button drops its focus to the page, and these are
  * pressed again and again, so the one in hand keeps the focus and does nothing.
  */
-export function PlaybackControls({ lesson, state, dispatch, unit, forward, onForward }: PlaybackControlsProps) {
+export function PlaybackControls({ lesson, state, dispatch, unit, forward, form: mode, onForward }: PlaybackControlsProps) {
   const atStart = state.position === 0;
   const play = playButton(state);
   const noSteps = unit.steps.length === 0;
   const replayable = canReplay(lesson, state);
   const nextSpeed = SPEEDS[(SPEEDS.indexOf(state.speed) + 1) % SPEEDS.length];
+  const go = useRef<HTMLButtonElement>(null);
+  const measure = useRef<HTMLSpanElement>(null);
+  const [fits, setFits] = useState(true);
+  const fullWords = forward.words.full;
+  useLayoutEffect(() => {
+    if (mode !== 'fit') return;
+    const check = () => {
+      const button = go.current;
+      const full = measure.current;
+      if (button === null || full === null) return;
+      const style = getComputedStyle(button);
+      const room = button.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      setFits(full.getBoundingClientRect().width <= room + 0.5);
+    };
+    check();
+    const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check);
+    if (go.current !== null) watch?.observe(go.current);
+    void document.fonts?.ready.then(check);
+    return () => watch?.disconnect();
+  }, [mode, fullWords]);
+  const form = mode === 'short' || (mode === 'fit' && !fits) ? 'short' : 'full';
   const speedLabel = `Speed ${state.speed}×. Click for ${nextSpeed}×`;
 
   return (
@@ -106,15 +133,22 @@ export function PlaybackControls({ lesson, state, dispatch, unit, forward, onFor
         <Icon name="replay" />
       </button>
       <button
+        ref={go}
         type="button"
         className="cbtn cbtn--go"
-        title={forward.disabled ? forward.reason : forward.words === 'Next step' ? 'Next step (→)' : 'Next lesson'}
+        aria-label={forward.names[form]}
+        title={forward.titles[form]}
         aria-disabled={forward.disabled}
         onClick={() => {
           if (!forward.disabled) onForward();
         }}
       >
-        <span className="go__label">{forward.words}</span>
+        <span className="go__label">{forward.words[form]}</span>
+        {mode === 'fit' ? (
+          <span ref={measure} className="go__measure" aria-hidden="true">
+            {fullWords}
+          </span>
+        ) : null}
         <Icon name="next" />
       </button>
     </div>

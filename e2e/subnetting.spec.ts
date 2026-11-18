@@ -103,17 +103,21 @@ function shadowsOf(value: string): number[][] {
 }
 const overlaps = (a: Box, b: Box): boolean => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
-test('at 375 the Bits tab never scrolls, the line is a segment in each shown row’s bits between the right two bits, and the column headers stay', async ({ page }) => {
-  test.setTimeout(RUN_TIMEOUT + 60_000);
+/**
+ * The fitted board's line: a segment in each shown row's bits between the right two bits, with copies 51px down for the
+ * other rows, and the column headers kept. It is the board under 640px (the Bits tab on a phone) and the board in the
+ * guide at 1100px and up (D19): 8px cells, 302px wide.
+ */
+async function checkFittedBoard(page: Page, size: { width: number; height: number }, showBoard: () => Promise<void>): Promise<void> {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize(PHONE);
+  await page.setViewportSize(size);
   await open(page, PATH);
-  await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: /^Bits/ }).click();
+  await showBoard();
   await expect(page.locator('.bits')).toBeVisible();
   await watchBits(page, 200);
   const seen = await playAll(page);
 
-  expect(seen.scrollX, 'the Bits tab scrolls sideways').toBeLessThanOrEqual(0);
+  expect(seen.scrollX, 'the board scrolls sideways').toBeLessThanOrEqual(0);
   expect(seen.pageSideways, 'the page scrolls sideways').toBeLessThanOrEqual(0);
   expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
   // Every kind of board the lesson draws was measured: the /24, /26 and /30 lines, over one, two and three rows.
@@ -147,30 +151,17 @@ test('at 375 the Bits tab never scrolls, the line is a segment in each shown row
   // H9: the three column headers are still in the page's accessibility tree.
   await expect(page.locator('.bits').getByRole('columnheader')).toHaveCount(3);
   await expect(page.locator('.bits').getByRole('table')).toHaveCount(1);
+}
+
+test('at 375 the Bits tab never scrolls, the line is a segment in each shown row’s bits between the right two bits, and the column headers stay', async ({ page }) => {
+  test.setTimeout(RUN_TIMEOUT + 60_000);
+  await checkFittedBoard(page, PHONE, () => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: /^Bits/ }).click());
 });
 
-test('at 1440 the line is where it always was: 93 px an octet and 11 px a bit, 22 px a row and 2 over, at /24, /26 and /30', async ({ page }) => {
+test('at 1440 the board is the fitted one in the guide: the line is a segment in each shown row’s bits, 24px, with its copies 51px down, at /24, /26 and /30', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 60_000);
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize(DESKTOP);
-  await open(page, PATH);
-  await expect(page.locator('.bits')).toBeVisible();
-  await watchBits(page, 200);
-  const seen = await playAll(page);
-  expect([...new Set(seen.samples.map((s) => s.after))].sort()).toEqual([24, 26, 30]);
-  expect([...new Set(seen.samples.map((s) => s.rows))].sort()).toEqual([1, 2, 3]);
-  for (const s of seen.samples) {
-    const octets = Math.floor(s.after / 8);
-    const bits = s.after % 8;
-    // The values recorded before the change: past whole octets of 93 px and bits of 11 px, in the middle of the gap there.
-    const was = s.cellsLeft + octets * 93 + bits * 11 - 3 + 2.5 * Math.min(bits, 1) - 1;
-    expect(s.line.left, `/${s.after}`).toBeCloseTo(was, 1);
-    expect(s.line.height, `/${s.after} over ${s.rows} rows`).toBeCloseTo(s.rows * 22 + 2, 1);
-    const centre = s.line.left + s.line.width / 2;
-    expect(centre).toBeGreaterThanOrEqual(s.cells[s.after - 1]!.right - 0.01);
-    expect(centre).toBeLessThanOrEqual(s.cells[s.after]!.left + 0.01);
-    // No copies at this width: the one line.
-    expect(s.shadow).toBe('none');
-    expect(s.cells[1]!.left - s.cells[0]!.left).toBeCloseTo(11, 1);
-  }
+  await checkFittedBoard(page, DESKTOP, async () => {
+    await expect(page.locator('.guide__table .bits')).toBeVisible();
+    expect((await page.locator('.guide__table .bits').boundingBox())!.width).toBeGreaterThan(300);
+  });
 });

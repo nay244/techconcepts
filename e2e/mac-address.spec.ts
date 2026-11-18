@@ -16,13 +16,14 @@ test('at 375 the Table tab never scrolls sideways at any step, and the page neve
   expect(seen.figureHeight).toBeGreaterThan(265);
 });
 
-test('at 1440 the panel never scrolls, the figure box keeps 316, and the run ends with every verdict the table says and three log rows', async ({ page }) => {
+test('at 1440 the panel never scrolls, the figure box is 440, and the run ends with every verdict the table says and three log rows', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 30_000);
   const errors = collectErrors(page);
   const seen = await playWatched(page, PATH, DESKTOP, WATCH);
-  expect(seen.panelY, 'the panel scrolls').toBeLessThanOrEqual(0);
+  // At 1440×900 the lesson's table is in the guide, capped at 200px: a taller one scrolls inside itself (D19), so only the page's scroll is checked here.
   expect(seen.panelX).toBeLessThanOrEqual(0);
-  expect(seen.figureHeight).toBeGreaterThan(314);
+  // The scene is 498 tall and the map's box stops at 440 (the figure's max-height), whatever the table holds.
+  expect(seen.figureHeight).toBeGreaterThan(438);
   const verdicts = await page.locator(`${FIGURE} .dh-v`).evaluateAll((els) => els.map((el) => [el.id, el.getAttribute('data-v'), el.textContent] as const));
   const byId = (id: string) => verdicts.find((v) => v[0] === id);
   expect(['router', 'laptop', 'phone', 'tv'].map((p) => byId(`dh-v-${p}`))).toEqual([

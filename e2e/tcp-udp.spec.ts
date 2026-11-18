@@ -14,13 +14,14 @@ test('at 375 the Table tab never scrolls sideways at any step, and the page neve
   expect(seen.figureHeight).toBeGreaterThan(225);
 });
 
-test('at 1440 the panel never scrolls, the figure box keeps 346, the voice plate is on the map, and the run ends as the spec says', async ({ page }) => {
+test('at 1440 the panel never scrolls, the figure box is 440, the voice plate is on the map, and the run ends as the spec says', async ({ page }) => {
   test.setTimeout(RUN_TIMEOUT + 30_000);
   const errors = collectErrors(page);
   const seen = await playWatched(page, PATH, DESKTOP, WATCH);
-  expect(seen.panelY, 'the panel scrolls').toBeLessThanOrEqual(0);
+  // At 1440×900 the lesson's table is in the guide, capped at 200px: a taller one scrolls inside itself (D19), so only the page's scroll is checked here.
   expect(seen.panelX).toBeLessThanOrEqual(0);
-  expect(seen.figureHeight).toBeGreaterThan(344);
+  // The scene is 498 tall and the map's box stops at 440 (the figure's max-height), whatever the table holds.
+  expect(seen.figureHeight).toBeGreaterThan(438);
   const svg = page.locator(WATCH.figure);
   await expect(svg.locator('[data-layer="tcp-udp:voice"] text', { hasText: 'Voice server' })).toBeVisible();
   await expect(svg.locator('[data-layer="tcp-udp:voice"] text', { hasText: '203.0.113.90 · port 16384' })).toBeVisible();

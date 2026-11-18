@@ -17,13 +17,10 @@ const ariaOf = (kind: Parameters<typeof spot>[0]): string => spot(kind).match(/a
 
 onlyInDesktopDark(PATH);
 
-/** The outline's item for a step: 1 to 5 (index 0 is the Overview). */
-const stepItem = (page: Page, step: number) => page.locator('.console__outline .outline__list .outline__item').nth(step);
-const stepsTab = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true });
+/** The timeline's stop for a step: 1 to 5 (index 0 is the Overview). */
+const stepItem = (page: Page, step: number) => page.getByRole('navigation', { name: 'This lesson' }).getByRole('button').nth(step);
 
-/** Opens a step from the outline, from the Steps tab at 375 (an outline click there moves to the Explain tab). */
-async function openStep(page: Page, step: number, phone: boolean): Promise<void> {
-  if (phone) await stepsTab(page).click();
+async function openStep(page: Page, step: number): Promise<void> {
   await stepItem(page, step).click();
   await expect(kicker(page)).toContainText(`Step ${step} of 5`);
 }
@@ -54,7 +51,7 @@ test('30: at 1440 and 375, in both themes, every step opened never scrolls the p
       await page.emulateMedia({ colorScheme: scheme });
       await open(page, PATH);
       for (const step of [1, 2, 3, 4, 5]) {
-        await openStep(page, step, size === PHONE);
+        await openStep(page, step);
         await expect.poll(async () => (await pageOverflow(page)).sideways, `${size.width} ${scheme}, step ${step}`).toBe(0);
       }
     }
@@ -99,11 +96,11 @@ test('30b: at 375 in the Table tab, the mark word sits under the row’s name, n
 test('31: the listener’s head and body: step 1 both hidden, step 2 both shown, step 4 head shown and body hidden', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
   await open(page, PATH);
-  await openStep(page, 1, false);
+  await openStep(page, 1);
   expect(await hearOpacity(page)).toEqual({ head: '0', body: '0' });
-  await openStep(page, 2, false);
+  await openStep(page, 2);
   expect(await hearOpacity(page)).toEqual({ head: '1', body: '1' });
-  await openStep(page, 4, false);
+  await openStep(page, 4);
   expect(await hearOpacity(page)).toEqual({ head: '1', body: '0' });
 });
 
@@ -111,7 +108,7 @@ test('32: under reduced motion the listener’s parts and its glow do not fade',
   await page.setViewportSize(DESKTOP);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await open(page, PATH);
-  await openStep(page, 2, false);
+  await openStep(page, 2);
   const durations = await page.evaluate(() =>
     [...document.querySelectorAll<SVGElement>('.nm-hear-head, .nm-hear-body, .nm-glow')].map((el) => getComputedStyle(el).transitionDuration),
   );
@@ -124,7 +121,7 @@ test('33: the band at step 3 is 7 units wide with no vector-effect, at 0.42 opac
   for (const size of [DESKTOP, PHONE]) {
     await page.setViewportSize(size);
     await open(page, PATH);
-    await openStep(page, 3, size === PHONE);
+    await openStep(page, 3);
     const band = await page.evaluate(() => {
       const el = document.querySelector<SVGPolylineElement>('svg[data-figure="net-map"] .nm-conn.tunnel.sealed')!;
       const style = getComputedStyle(el);
@@ -150,7 +147,7 @@ test('33: the band at step 3 is 7 units wide with no vector-effect, at 0.42 opac
 test('34: the tunnel ends at the server: the out cable’s midpoint pixel is the same at step 1 and step 3, the in cable’s is not', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
   await open(page, PATH);
-  await openStep(page, 3, false);
+  await openStep(page, 3);
   const at = await page.evaluate(() => {
     const svg = document.querySelector<SVGSVGElement>('svg[data-figure="net-map"]')!;
     const box = svg.getBoundingClientRect();
@@ -166,9 +163,9 @@ test('34: the tunnel ends at the server: the out cable’s midpoint pixel is the
     return { out: onScreen(out, out.getTotalLength() / 2), in: onScreen(band, band.getTotalLength() / 2) };
   });
   const shot = async () => figure(page).screenshot();
-  await openStep(page, 1, false);
+  await openStep(page, 1);
   const after1 = await shot();
-  await openStep(page, 3, false);
+  await openStep(page, 3);
   const after3 = await shot();
   const [outBefore, outAfter, inBefore, inAfter] = await page.evaluate(
     async ({ shots, at }) => {
@@ -197,7 +194,7 @@ test('34: the tunnel ends at the server: the out cable’s midpoint pixel is the
 test('35: the callout “Someone listening” clears the other callouts, lies left of “The internet” and below the café plate', async ({ page }) => {
   await page.setViewportSize(DESKTOP);
   await open(page, PATH);
-  await openStep(page, 1, false);
+  await openStep(page, 1);
   const listening = await calloutNamed(page, 'Someone listening');
   const internet = await calloutNamed(page, 'The internet');
   expect(listening).not.toBeNull();
@@ -230,7 +227,7 @@ test('36: mid-ride on step 3’s ESP, the point at a tag’s centre is inside th
   test.setTimeout(RUN_TIMEOUT);
   await page.setViewportSize(DESKTOP);
   await open(page, PATH);
-  await openStep(page, 3, false);
+  await openStep(page, 3);
   await page.evaluate(() => {
     const seen: { hits: number; inTags: number } = { hits: 0, inTags: 0 };
     (window as unknown as { __tags: typeof seen }).__tags = seen;
@@ -257,7 +254,7 @@ test('37: step 5 played to its end: the lock turns on only when the last ride la
   test.setTimeout(RUN_TIMEOUT);
   await page.setViewportSize(DESKTOP);
   await open(page, PATH);
-  await openStep(page, 5, false);
+  await openStep(page, 5);
   await page.evaluate(() => {
     const seen: { early: boolean; sawOn: boolean } = { early: false, sawOn: false };
     (window as unknown as { __lock: typeof seen }).__lock = seen;
@@ -287,7 +284,7 @@ test('38: the sealed band’s centre pixel differs from the plate beside it, in 
   for (const scheme of ['dark', 'light'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await open(page, PATH);
-    await openStep(page, 3, false);
+    await openStep(page, 3);
     const point = await page.evaluate(() => {
       const el = document.querySelector<SVGPolylineElement>('svg[data-figure="net-map"] .nm-conn.tunnel.sealed')!;
       const at = el.getPointAtLength(el.getTotalLength() / 2);
@@ -319,7 +316,7 @@ test('39: VPN has no Network / Sequence switch and no OSI chip, at the overview 
   await open(page, PATH);
   await expect(viewSwitch(page)).toHaveCount(0);
   await expect(page.locator('.topbar__osi')).toHaveCount(0);
-  await openStep(page, 3, false);
+  await openStep(page, 3);
   await expect(viewSwitch(page)).toHaveCount(0);
   await expect(page.locator('.topbar__osi')).toHaveCount(0);
 });

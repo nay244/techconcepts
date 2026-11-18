@@ -54,27 +54,27 @@ for (const size of [S1440, S1280]) {
 }
 
 /** Checks 2, 4 and 5. */
-test('the words column is 560px at 1440 and 480px at 1280 in Learn and Practice, and as before elsewhere', async ({ page }) => {
-  for (const [size, words, scene, before] of [[S1440, 560, 564, 389], [S1280, 480, 484, 348]] as const) {
+test('the guide is 560px at 1440 and 516px at 1280 in Learn and Practice (the scene 600 and 484), and as before elsewhere', async ({ page }) => {
+  for (const [size, words, scene, before] of [[S1440, 560, 600, 389], [S1280, 516, 484, 348]] as const) {
     await page.setViewportSize(size);
     for (const place of ['learn', 'practice'] as const) {
       await openAt(page, 'osi-model', place);
-      expect((await box(page, '.console__explain')).width, `${place} words at ${size.width}`).toBe(words);
+      expect((await box(page, '.console__guide')).width, `${place} guide at ${size.width}`).toBe(words);
       expect((await box(page, '.console__stage')).width, `${place} scene at ${size.width}`).toBe(scene);
     }
     // The Overview and a Watch step keep today's column.
     await open(page, pathOf('osi-model'));
-    expect((await box(page, '.console__explain')).width, `Overview at ${size.width}`).toBe(before);
+    expect((await box(page, '.console__guide')).width, `Overview at ${size.width}`).toBe(before);
     await nextButton(page).click();
     await expect(kicker(page)).toContainText('Step 1');
-    expect((await box(page, '.console__explain')).width, `Watch at ${size.width}`).toBe(before);
+    expect((await box(page, '.console__guide')).width, `Watch at ${size.width}`).toBe(before);
   }
 });
 
 test('at 1100×700 Learn keeps 348px for the words', async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 700 });
   await openAt(page, 'osi-model', 'learn');
-  expect((await box(page, '.console__explain')).width).toBe(348);
+  expect((await box(page, '.console__guide')).width).toBe(348);
 });
 
 /**
@@ -110,7 +110,8 @@ async function medianLine(page: Page, selector: string): Promise<{ median: numbe
 }
 
 /** Check 3: the unit's own check, the lead's line length. */
-for (const [size, low, high] of [[S1440, 62, 70], [S1280, 52, 60]] as const) {
+// The guide is 516px at 1280 (480 before D19), so the line runs about 8% longer there: 56 to 64 where it was 52 to 60.
+for (const [size, low, high] of [[S1440, 62, 70], [S1280, 56, 64]] as const) {
   test(`OSI Model's lead runs ${low} to ${high} characters a line at ${size.width} wide`, async ({ page }) => {
     await page.setViewportSize(size);
     await openAt(page, 'osi-model', 'learn');
@@ -164,21 +165,23 @@ test('on a phone the page is one screen, and Practice shows its marks', async ({
 });
 
 /** Check 12. */
-for (const [size, explainHeight] of [[S1440, 730], [S1280, 550]] as const) {
+// The guide starts under the header and the folded log is 45px: the words have 670px at 1440×900, and at 1280×720 (the bar is one line) 490.
+for (const [size, explainHeight] of [[S1440, 670], [S1280, 490]] as const) {
   test(`the log starts folded in Learn and Practice at ${size.width}×${size.height}`, async ({ page }) => {
     await page.setViewportSize(size);
     for (const place of ['learn', 'practice'] as const) {
       await openAt(page, 'osi-model', place);
       await expect(page.locator('.log__scroll')).toBeHidden();
       await expect(page.locator('.log__legend')).toBeHidden();
-      expect((await box(page, '.console__log')).height).toBe(52);
+      expect((await box(page, '.console__log')).height).toBe(45);
       expect(await page.locator('.console__explain').evaluate((el) => el.clientHeight)).toBe(explainHeight);
     }
   });
 }
 
 /** Checks 13 and 14. */
-for (const [size, logHeight] of [[S1440, 234], [S1280, 200]] as const) {
+// The open log is the log's own height (165px at 900 tall; at 720 the one-line bar's 155px).
+for (const [size, logHeight] of [[S1440, 165], [S1280, 155]] as const) {
   test(`"Show log" opens the log to ${logHeight}px at ${size.height} tall, and it stays open across places`, async ({ page }) => {
     await page.setViewportSize(size);
     await openAt(page, 'dhcp', 'learn');
@@ -207,7 +210,7 @@ for (const [size, logHeight] of [[S1440, 234], [S1280, 200]] as const) {
 
     await button.click();
     await expect(button).toHaveText('Show log');
-    expect((await box(page, '.console__log')).height).toBe(52);
+    expect((await box(page, '.console__log')).height).toBe(45);
   });
 }
 
@@ -224,11 +227,11 @@ test('the fold button is not shown at the Overview, on a Watch step or on a phon
   await page.setViewportSize({ width: 1024, height: 768 });
   await open(page, pathOf('dhcp'));
   await expect(page.locator('.log__fold')).toBeHidden();
-  expect((await box(page, '.console__explain')).width).toBe(348);
+  expect((await box(page, '.console__explain')).width).toBe(346);
   await nextButton(page).click();
   await expect(kicker(page)).toContainText('Step 1');
   await expect(page.locator('.log__fold')).toBeHidden();
-  expect((await box(page, '.console__log')).height).toBe(200);
+  expect((await box(page, '.console__log')).height).toBe(155);
   for (const place of ['learn', 'practice'] as const) {
     await openAt(page, 'dhcp', place);
     await expect(page.locator('.log__fold')).toBeVisible();
@@ -238,20 +241,21 @@ test('the fold button is not shown at the Overview, on a Watch step or on a phon
   await expect(page.locator('.log__fold')).toBeHidden();
 });
 
-/** B5: Learn and Practice on a tablet on its side get the desktop's reading layout. */
+/** B5, as D19 changes it (B23): Learn and Practice on a tablet on its side get the desktop's reading layout: no tabs, the bar across the page, the guide 380, 504 or 560px, the log folded to 55px. */
 for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024, height: 768 }, 504], [{ width: 1099, height: 800 }, 560]] as const) {
-  test(`at ${size.width}×${size.height} Learn and Practice have a ${words}px words column, the tabs on it and the log folded`, async ({ page }) => {
+  test(`at ${size.width}×${size.height} Learn and Practice have a ${words}px guide, no tabs and the log folded`, async ({ page }) => {
     await page.setViewportSize(size);
     for (const place of ['learn', 'practice'] as const) {
       await openAt(page, 'dhcp', place);
       const label = `${place} at ${size.width}`;
-      expect((await box(page, '.console__explain')).width, `${label}: words`).toBe(words);
+      expect((await box(page, '.console__guide')).width, `${label}: guide`).toBe(words);
+      expect((await box(page, '.console__explain')).width, `${label}: words`).toBe(words - 2);
       expect((await box(page, '.console__stage')).width, `${label}: scene`).toBeGreaterThanOrEqual(484);
-      const tabs = await box(page, '.console__tabs');
-      expect([tabs.x, tabs.y, tabs.width, tabs.height], `${label}: tabs`).toEqual([size.width - 12 - words, 92, words, 48]);
+      expect(await page.locator('.console__tabs').evaluate((el) => getComputedStyle(el).display), `${label}: no tabs`).toBe('none');
+      expect((await box(page, '.console__top')).width, `${label}: the bar is across the page`).toBe(size.width - 24);
       expect(await page.locator('.log__scroll').first().evaluate((el) => getComputedStyle(el).display), `${label}: rows folded`).toBe('none');
-      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(62);
-      expect(await page.locator('.log__head').first().evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).paddingBottom]), `${label}: head padding`).toEqual(['8px', '8px']);
+      expect((await box(page, '.console__log')).height, `${label}: log`).toBe(55);
+      expect(await page.locator('.log__head').first().evaluate((el) => [getComputedStyle(el).paddingTop, getComputedStyle(el).paddingBottom]), `${label}: head padding`).toEqual(['4px', '4px']);
       expect(await pageOverflow(page), label).toEqual({ down: 0, sideways: 0 });
     }
     // No lesson table or rule list scrolls sideways: DHCP has a table (.tpanel), Firewalls a rule list (.rpanel).
@@ -266,24 +270,22 @@ for (const [size, words] of [[{ width: 900, height: 700 }, 380], [{ width: 1024,
         expect(found.scrolling, `${slug} ${place} at ${size.width}: sideways scroll`).toEqual([]);
       }
     }
-    // Steps fills the words column, down to the folded log.
-    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true }).click();
-    const outline = await box(page, '.console__outline');
-    expect([outline.x, outline.width]).toEqual([size.width - 12 - words, words]);
+    // The guide runs from the bar's foot to the folded log.
+    const guide = await box(page, '.console__guide');
+    expect([guide.x, guide.width]).toEqual([size.width - 12 - words, words]);
     const log = await box(page, '.console__log');
-    expect(log.y - (outline.y + outline.height)).toBe(12);
-    await page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Explain', exact: true }).click();
+    expect(log.y - (guide.y + guide.height)).toBe(12);
 
     const button = page.getByRole('button', { name: /^(Show|Hide) log$/ });
     await expect(button).toHaveText('Show log');
     await button.click();
     await expect(button).toHaveText('Hide log');
     await expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect((await box(page, '.console__log')).height).toBe(Math.round(Math.max(200, size.height * 0.26)));
+    expect((await box(page, '.console__log')).height).toBe(Math.round(Math.min(207, Math.max(155, size.height * 0.26 - 45))));
     expect(await pageOverflow(page)).toEqual({ down: 0, sideways: 0 });
     await button.click();
     await expect(button).toHaveText('Show log');
-    expect((await box(page, '.console__log')).height).toBe(62);
+    expect((await box(page, '.console__log')).height).toBe(55);
   });
 }
 
@@ -302,8 +304,8 @@ for (const size of [{ width: 768, height: 1024 }, { width: 899, height: 1200 }])
   });
 }
 
-/** Check 16. */
-test('the controls keep their place between a Watch step and Learn (the forward button at 1261 at 1440)', async ({ page }) => {
+/** Check 16, as E22 changes it: the foot widens to the left with the guide, so the forward button's right edge holds, not its left. */
+test('the controls keep their right edge between a Watch step and Learn (the forward button ends at 1411 at 1440; its left is 1056, then 885)', async ({ page }) => {
   await page.setViewportSize(S1440);
   await open(page, pathOf('osi-model'));
   await nextButton(page).click();
@@ -311,6 +313,8 @@ test('the controls keep their place between a Watch step and Learn (the forward 
   const watch = await box(page, '.console__controls .cbtn--go');
   await openAt(page, 'osi-model', 'learn');
   const learn = await box(page, '.console__controls .cbtn--go');
-  expect(learn.x).toBe(watch.x);
-  expect(learn.x).toBe(1261);
+  expect(learn.x + learn.width).toBe(watch.x + watch.width);
+  expect(learn.x + learn.width).toBe(1411);
+  expect(watch.x).toBe(1056);
+  expect(learn.x).toBe(885);
 });

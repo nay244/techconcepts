@@ -2,12 +2,11 @@ import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Panel } from '../content/schema';
-import { forwardButton, usePlayback } from '../engine/playback';
+import { forwardButton, holding, usePlayback } from '../engine/playback';
 import { appliedEvents, deriveState, parseStepParam, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
 import type { LessonDefinition } from '../lib/glossary';
-import type { LessonStamp } from '../lib/stamp';
 import { recordVisit, resumePosition } from '../progress/store';
 import { useProgress } from '../progress/useProgress';
 import { DRIVERS } from '../scenes/drivers';
@@ -17,22 +16,26 @@ import { Outline } from './Outline';
 import { PlaybackControls } from './PlaybackControls';
 import type { Picks } from './Practice';
 import { ScenePanel } from './ScenePanel';
+import { StackedPlaces, Timeline, positionsOf } from './Timeline';
 import { TopBar } from './TopBar';
 import { stepAnnouncement } from './announce';
 import { useLessonShortcuts } from './useLessonShortcuts';
+import { useMediaQuery } from './useMediaQuery';
 import { useReducedMotion } from './useReducedMotion';
 import './console.css';
 
-/** What a phone shows under the scene: the words, the lesson's outline, the event log, or the lesson's own table. */
-type Tab = 'explain' | 'steps' | 'log' | 'table';
+/** What a phone shows under the scene: the words, the event log, or the lesson's own table. */
+type Tab = 'explain' | 'log' | 'table';
 const TABS: readonly { id: Tab; label: string }[] = [
   { id: 'explain', label: 'Explain' },
-  { id: 'steps', label: 'Steps' },
   { id: 'log', label: 'Log' },
 ];
 
-/** The windows where the tabs are Explain and Steps only (console.css, "tablets"). */
+/** The windows where the log and the table are always on screen and there are no tabs (console.css, "tablets"). */
 const TABLET_SIDEWAYS = '(min-width: 900px) and (max-width: 1099px) and (orientation: landscape) and (min-height: 600px)';
+
+/** The windows where the timeline is a row under the scene (the phone layout and its grown form), not a part of the bar. */
+const TIMELINE_ROW = '(max-width: 760px), (max-width: 899px) and (min-height: 600px), (max-width: 1099px) and (orientation: portrait)';
 
 /** The fourth tab's name, by what the unit's panel is. The message strip (OSI Model) has none: it stays under the scene. */
 const PANEL_TAB: Partial<Record<Panel['type'], string>> = { table: 'Table', rules: 'Rules', bits: 'Bits' };
@@ -71,8 +74,6 @@ export interface LessonConsoleProps {
   nextFigure: string | null;
   /** Every entry of the track, in order. */
   entries: LessonSummary[];
-  /** Whether the lesson has been fact-checked, and when; and how many sources it lists (`lessonStamp`). */
-  stamp: LessonStamp;
   /** The glossary's definitions for this lesson's terms, by term id (`definitionsFor`); left out, no term has one. */
   definitions?: Record<string, LessonDefinition>;
   /** The scene's figure, drawn at build time (the page's named slot). */
@@ -97,20 +98,20 @@ function FinishedMarker() {
 }
 
 /**
- * The lesson page: the top bar, the outline, the scene, the explanation and
- * the log with its playback controls, all driven by one playback state. It
+ * The lesson page: the lesson's bar with its timeline, the track's lessons, the scene, the guide (the explanation, the
+ * lesson's table, the playback controls) and the log, all driven by one playback state. It
  * renders the Overview first, as the server did, and only then follows a
  * `?step=` link. Every move is recorded as progress; Practice is never saved.
  *
- * Keys (`useLessonShortcuts`): Space plays all or pauses, → does what the forward button does while it reads "Next step", ← goes back. A polite
+ * Keys (`useLessonShortcuts`): Space plays all or pauses, → does what the forward button does wherever it stays in the lesson, ← goes back. A polite
  * live region says each step's title and, as it plays, its latest message,
  * then any table changes since (`stepAnnouncement`).
  *
  * Two things live in memory only, for as long as the page is open: the units
- * the learner has opened (the outline ticks them) and the Practice picks, per
+ * the learner has opened (a many-unit lesson's list ticks them) and the Practice picks, per
  * unit, so a visit elsewhere does not clear them.
  */
-export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, stamp, definitions, figure, figureData, navigate = (url) => window.location.assign(url) }: LessonConsoleProps) {
+export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, definitions, figure, figureData, navigate = (url) => window.location.assign(url) }: LessonConsoleProps) {
   // Each event waits as long as the figure's driver takes to play it.
   const [state, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
   const { position, eventIndex } = state;
@@ -134,7 +135,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   // ---------------------------------------------------------------- the phone's tabs
 
   // On a phone, and on a tablet upright or under 900px wide, the scene stays put and one part shows under it
-  // (console.css). On a tablet on its side only Explain and Steps are tabs; the log and the table are always on show,
+  // (console.css). On a tablet on its side there are no tabs; the log and the table are always on show,
   // so a chosen Log or Table shows the explanation there. From 1100px the buttons are hidden and this state changes
   // nothing.
   const consoleEl = useRef<HTMLDivElement>(null);
@@ -153,7 +154,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     consoleEl.current?.querySelector(MARKED_ROW)?.scrollIntoView?.({ block: 'nearest' });
   }, [tab, change]);
   // On a tablet on its side (900 to 1099px wide) the log and the lesson's table are on screen with the scene, so its
-  // tabs are Explain and Steps only: a reader who arrives with another one chosen (by turning the screen) lands on Explain.
+  // tabs are not shown: a reader who arrives with another one chosen (by turning the screen) lands on Explain.
   useEffect(() => {
     const sideways = window.matchMedia?.(TABLET_SIDEWAYS);
     if (!sideways) return;
@@ -165,7 +166,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     return () => sideways.removeEventListener('change', settle);
   }, []);
   const tabs = panelTab === undefined ? TABS : [...TABS, { id: 'table' as const, label: panelTab }];
-  /** Going to a place from the Steps tab shows the words for it. */
+  /** Going to a following unit's Overview shows the words for it. */
   const goFromOutline = useCallback(
     (target: Position) => {
       go(target);
@@ -175,6 +176,73 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   );
   /** Learn and Practice are for reading: the phone gives the words more of the screen. */
   const reading = slot.kind === 'learn' || slot.kind === 'practice';
+
+  // ---------------------------------------------------------------- where the lesson's table is
+
+  // In a window 1100px wide and 890px tall or more, while watching, the lesson's table stands in the guide, between the
+  // words and the controls (the scene's drawing then has the whole scene). Elsewhere it stays under the scene. The server
+  // and the first render say "under the scene", as does the page without JavaScript.
+  const [guideTable, setGuideTable] = useState<HTMLElement | null>(null);
+  const roomForTable = useMediaQuery('(min-width: 1100px) and (min-height: 890px)');
+  const tableInGuide = roomForTable && (slot.kind === 'overview' || slot.kind === 'step') && unit.scene.panel?.type !== 'labels';
+  // In the guide the table is capped and scrolls inside itself, so the row the step is about is brought into its view
+  // (the panel's own scroll box only: the page and the guide never move).
+  useEffect(() => {
+    if (!tableInGuide || guideTable === null) return;
+    const row = guideTable.querySelector<HTMLElement>(`${MARKED_ROW}, .rpanel__chip[data-known]`);
+    const panel = row?.closest<HTMLElement>('.tpanel, .rpanel');
+    if (row == null || panel == null) return;
+    const r = row.getBoundingClientRect();
+    const p = panel.getBoundingClientRect();
+    if (r.top < p.top) panel.scrollTop -= p.top - r.top + 4;
+    else if (r.bottom > p.bottom) panel.scrollTop += r.bottom - p.bottom + 4;
+  });
+  // The forward button: the full words from 1100px wide, the short form on a phone, and under 1100px above that
+  // whichever fits the room the controls give it (PlaybackControls measures).
+  const phoneWidth = useMediaQuery('(max-width: 760px)');
+  const underDesktop = useMediaQuery('(max-width: 1099px)');
+  const forwardForm = phoneWidth ? 'short' : underDesktop ? 'fit' : 'full';
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  // The timeline has two homes, the bar's and the row under the scene, and CSS shows one. When the window turns and the one
+  // that held focus is hidden, the same stop of the other takes it.
+  const rowHome = useMediaQuery(TIMELINE_ROW);
+  const stopFocus = useRef<string | null>(null);
+  const keepStopFocus = useCallback((e: { target: EventTarget; relatedTarget: EventTarget | null }, gained: boolean) => {
+    const stop = e.target instanceof HTMLElement ? e.target.closest<HTMLElement>('.tl__stop') : null;
+    if (stop === null) return;
+    if (gained) stopFocus.current = stop.dataset.target ?? null;
+    else if (e.relatedTarget !== null) stopFocus.current = null;
+  }, []);
+  // The header's open menu (under 960px) lies over the lesson on this page, so it closes when focus leaves the header
+  // (Tab past its last link): focus never lands on a part of the lesson under the panel (E28). SiteHeader's own rules
+  // (Escape, a link, a second press) are as on every page.
+  useEffect(() => {
+    const closeMenu = (e: FocusEvent) => {
+      const menu = document.getElementById('menu');
+      if (menu?.getAttribute('aria-expanded') !== 'true') return;
+      if (e.target instanceof Element && e.target.closest('.site-head') !== null) return;
+      menu.click();
+    };
+    document.addEventListener('focusin', closeMenu);
+    return () => document.removeEventListener('focusin', closeMenu);
+  }, []);
+  useEffect(() => {
+    const forget = () => {
+      stopFocus.current = null;
+    };
+    document.addEventListener('pointerdown', forget);
+    return () => document.removeEventListener('pointerdown', forget);
+  }, []);
+  useEffect(() => {
+    const target = stopFocus.current;
+    const active = document.activeElement;
+    // The stop that held focus may still be the active element for a moment after CSS hid it (it has no boxes then).
+    const hidden = active instanceof HTMLElement && active.classList.contains('tl__stop') && active.getClientRects().length === 0;
+    if (target === null || (active !== null && active !== document.body && !hidden)) return;
+    const home = rowHome ? 'row' : 'bar';
+    consoleEl.current?.querySelector<HTMLElement>(`.timeline[data-home="${home}"] .tl__stop[data-target="${target}"]`)?.focus();
+  }, [rowHome]);
 
   // ---------------------------------------------------------------- in memory only
 
@@ -196,8 +264,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     [unit.id],
   );
 
-  // The forward button, and → with it while it reads "Next step". At the last Practice "Next lesson" opens the next
-  // lesson, or does nothing when there is none; a key never leaves the page.
+  // The forward button, and → with it wherever the button stays in the lesson. At the last Practice "Next lesson" opens
+  // the next lesson, or does nothing when there is none; a key never leaves the page.
   const forward = forwardButton(lesson, state, { next, number: entry.number, total });
   const pressForward = () => {
     if (forward.disabled) return;
@@ -212,7 +280,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   useLessonShortcuts({
     toggle: () => dispatch({ type: 'toggle' }),
     next: () => {
-      if (forward.words === 'Next step') pressForward();
+      if (forward.href === undefined && !forward.disabled) pressForward();
     },
     prev: () => dispatch({ type: 'prev' }),
   });
@@ -267,18 +335,28 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
 
   return (
-    <div ref={consoleEl} className="console" data-tab={tab} data-reading={reading ? '' : undefined} data-log={reading && logOpen ? 'open' : undefined}>
+    <div
+      ref={consoleEl}
+      className="console"
+      data-tab={tab}
+      data-reading={reading ? '' : undefined}
+      data-many={unit.steps.length + 3 >= 10 ? '' : undefined}
+      data-log={reading && logOpen ? 'open' : undefined}
+      onFocus={(e) => keepStopFocus(e, true)}
+      onBlur={(e) => keepStopFocus(e, false)}
+    >
       <TopBar
         lesson={lesson}
         trackTitle={trackTitle}
         trackUrl={trackUrl}
         number={entry.number}
         total={total}
-        stamp={stamp}
         state={state}
         slot={slot}
         unit={unit}
         reducedMotion={reducedMotion}
+        onGo={go}
+        onOpenLessons={() => setSheetOpen(true)}
       />
       <Outline
         lesson={lesson}
@@ -289,18 +367,13 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         entries={entries}
         currentKey={entry.key}
         progress={progress.data}
+        trackTitle={trackTitle}
+        trackUrl={trackUrl}
+        number={entry.number}
+        total={total}
+        sheetOpen={sheetOpen}
+        onSheetClose={() => setSheetOpen(false)}
       />
-      <div className="console__tabs" role="group" aria-label="Show">
-        {tabs.map(({ id, label }) => {
-          const marked = id === 'table' && tab !== 'table' && change !== null && change !== changeSeen;
-          return (
-            <button key={id} type="button" aria-pressed={tab === id} aria-label={marked ? `${label}, changed` : undefined} onClick={() => setTab(id)}>
-              {label}
-              {marked ? <span className="tab__mark" aria-hidden="true" /> : null}
-            </button>
-          );
-        })}
-      </div>
       <main id="main" className="console__main">
         <ScenePanel
           unit={unit}
@@ -309,32 +382,67 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
           derived={derived}
           playback={state}
           reducedMotion={reducedMotion}
+          panelHome={tableInGuide ? guideTable : null}
         />
-        <Explanation
-          lesson={lesson}
+        <Timeline
+          home="row"
+          units={lesson.units}
+          unitIndex={slot.unit}
+          positions={positionsOf(lesson, slot.unit, unit.steps.length)}
           position={position}
           slot={slot}
-          unit={unit}
-          panelRef={explanation}
-          picked={unitPicks}
-          onPick={pick}
-          resume={resume}
-          next={next}
-          nextFigure={nextFigure}
-          number={entry.number}
-          total={total}
-          trackUrl={trackUrl}
-          stamp={stamp}
-          definitions={definitions}
           onGo={go}
+          hold={reducedMotion ? null : holding(state)}
         />
+        <div className="console__tabs" role="group" aria-label="Show">
+          {tabs.map(({ id, label }) => {
+            const marked = id === 'table' && tab !== 'table' && change !== null && change !== changeSeen;
+            return (
+              <button key={id} type="button" aria-pressed={tab === id} aria-label={marked ? `${label}, changed` : undefined} onClick={() => setTab(id)}>
+                {label}
+                {marked ? <span className="tab__mark" aria-hidden="true" /> : null}
+              </button>
+            );
+          })}
+        </div>
+        <div className="console__panel console__guide">
+          <Explanation
+            lesson={lesson}
+            position={position}
+            slot={slot}
+            unit={unit}
+            panelRef={explanation}
+            picked={unitPicks}
+            onPick={pick}
+            resume={resume}
+            next={next}
+            nextFigure={nextFigure}
+            number={entry.number}
+            total={total}
+            trackUrl={trackUrl}
+            definitions={definitions}
+            onGo={go}
+          />
+          <StackedPlaces units={lesson.units} unitIndex={slot.unit} positions={positionsOf(lesson, slot.unit, unit.steps.length)} />
+          <div ref={setGuideTable} className="guide__table" />
+          <div className="guide__foot">
+            <PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} forward={forward} form={forwardForm} onForward={pressForward} />
+            <p className="keys">
+              <kbd>Space</kbd>
+              <span>play all or pause</span>
+              <kbd>←</kbd>
+              <span>back</span>
+              <kbd>→</kbd>
+              <span>next</span>
+            </p>
+          </div>
+        </div>
         <LogPanel
           log={unit.scene.log}
           rows={derived.log}
           idle={idle}
           fresh={fresh?.eventId ?? null}
           fold={{ open: logOpen, onToggle: toggleLog }}
-          controls={<PlaybackControls lesson={lesson} state={state} dispatch={dispatch} unit={unit} forward={forward} onForward={pressForward} />}
         />
       </main>
       <p className="sr-only" aria-live="polite" data-announce="">

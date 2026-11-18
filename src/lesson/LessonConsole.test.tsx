@@ -9,7 +9,6 @@ import type { Lesson, SceneEvent } from '../content/schema';
 import { liftedFixture, makeLesson, makeUnit, makeUnitWithTwoTableChanges } from '../content/test-fixtures';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import { HOLD_MS } from '../engine/playback';
-import { THEME_KEY } from '../lib/theme';
 import { PROGRESS_KEY } from '../progress/store';
 import { seedProgress, type SeedLesson } from '../test/progress';
 import LessonConsole from './LessonConsole';
@@ -67,7 +66,6 @@ function consoleFor(lesson: Lesson = DHCP, figureData?: unknown) {
       next={neighbors(entries, lesson.slug).next}
       nextFigure={neighbors(entries, lesson.slug).next === null ? null : '<svg class="stub-figure" viewBox="0 0 4 3"></svg>'}
       entries={entries}
-      stamp={{ checked: null, sources: 2 }}
       figureData={figureData}
     />
   );
@@ -92,12 +90,17 @@ async function wait(ms: number): Promise<void> {
   });
 }
 
-const topBar = () => screen.getByRole('banner');
+/** The lesson's bar: a div, not a landmark (the site's header is the page's one banner). */
+const topBar = () => document.querySelector<HTMLElement>('.console__top')!;
+/** What the bar's timeline says the place is: "Overview", "Step 2 of 5", "Learn" or "Practice". */
+const place = () => topBar().querySelector('.tl__count')!.textContent;
+/** The timeline's stops: the buttons of the bar's "This lesson" navigation (the row under the scene is a second copy, shown by CSS in its own windows). */
+const stop = (name: RegExp | string) => within(within(topBar()).getByRole('navigation', { name: 'This lesson' })).getByRole('button', { name });
 const explanation = () => screen.getByRole('region', { name: 'Explanation' });
 const heading = () => within(explanation()).getByRole('heading', { level: 2 });
 const playButton = () => screen.getByRole('button', { name: /^(Play all|Pause)$/ });
-/** The forward button: the orange one, "Next step" or "Next lesson". */
-const forwardButton = () => screen.getByRole('button', { name: /^Next (step|lesson)$/ });
+/** The forward button: the orange one, "Next: <place>" or "Next lesson". */
+const forwardButton = () => screen.getByRole('button', { name: /^Next(:| lesson)/ });
 /** The log's rows, without its header row. A lone "nothing yet" row counts as none. */
 function logRows(): HTMLElement[] {
   const table = within(screen.getByRole('region', { name: 'Event log' })).getByRole('table');
@@ -151,24 +154,28 @@ test('renders the Overview first, then follows ?step= after mount', async () => 
   container.remove();
 });
 
-test('the top bar says Step 2 of 5, never the step title', async () => {
+test('the bar says Step 2 of 5 at the line’s end, never the step title there, and holds the track and the timeline', async () => {
   renderConsole();
-  expect(within(topBar()).getByText('Overview')).toBeInTheDocument();
+  expect(place()).toBe('Overview');
   await user.keyboard('{ArrowRight}{ArrowRight}');
   expect(heading()).toHaveTextContent('Neighbor Reply');
-  expect(within(topBar()).getByText('Step 2 of 5')).toBeInTheDocument();
-  expect(within(topBar()).queryByText(/Neighbor Reply/)).toBeNull();
-  // Breadcrumb, lesson number and the unit's OSI layer.
-  expect(within(topBar()).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
+  expect(place()).toBe('Step 2 of 5');
+  expect(topBar().querySelector('.tl__count')!.textContent).not.toMatch(/Neighbor Reply/);
+  // The bar: "Tracks /" and the track's name; the lesson's name, its number and the OSI layer are not its words any more.
   expect(within(topBar()).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
-  expect(within(topBar()).getByText('Lesson 9 of 20')).toBeInTheDocument();
-  expect(within(topBar()).getByText('OSI layer 2, Data link')).toBeInTheDocument();
+  expect(within(topBar()).getByRole('link', { name: 'Tracks' })).toHaveAttribute('href', '/tracks');
+  expect(topBar()).not.toHaveTextContent(/Lesson 9 of 20|OSI layer/);
+  // The words carry the OSI badge; the track column's head carries the lesson's name and its place.
+  expect(within(explanation()).getByText('OSI layer 2, Data link')).toBeInTheDocument();
+  const head = document.querySelector<HTMLElement>('.track__head')!;
+  expect(within(head).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
+  expect(head).toHaveTextContent('Lesson 9 of 20');
 });
 
-test('a lesson of many units gives its OSI layer by number only, so its long title fits the bar', () => {
+test('a lesson of many units gives its OSI layer by number only, so its long title fits', () => {
   renderConsole(THREE);
-  expect(within(topBar()).getByText('OSI layer 2')).toBeInTheDocument();
-  expect(within(topBar()).queryByText(/Data link/)).toBeNull();
+  expect(within(explanation()).getByText('OSI layer 2')).toBeInTheDocument();
+  expect(within(explanation()).queryByText(/Data link/)).toBeNull();
 });
 
 test('the empty log says the unit’s words at the Overview, and a quiet step says its own', async () => {
@@ -192,14 +199,14 @@ test('the empty log says the unit’s words at the Overview, and a quiet step sa
   // Lesson 1's way: only the quiet first step has words, so the Overview keeps the console's own.
   const quiet = render(consoleFor(withIdle({}, 'Nothing on the network yet.')));
   expect(idle()).toBe('Nothing has happened yet. Press Play to start.');
-  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  await user.click(forwardButton());
   expect(idle()).toBe('Nothing on the network yet.');
   quiet.unmount();
 
   // Subnetting's and Firewalls' way: the log has words of its own, from the Overview on.
   render(consoleFor(withIdle({ idle: 'Nothing has reached the firewall yet.' }, undefined)));
   expect(idle()).toBe('Nothing has reached the firewall yet.');
-  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  await user.click(forwardButton());
   expect(idle()).toBe('Nothing has reached the firewall yet.');
 });
 
@@ -222,12 +229,12 @@ test('ArrowRight walks Overview → steps → Learn → Practice and records pro
 
   await user.keyboard('{ArrowRight}');
   expect(heading()).toHaveTextContent('What happened and why');
-  expect(within(topBar()).getByText('Learn')).toBeInTheDocument();
+  expect(place()).toBe('Learn');
   expect(stored().lessons[KEY]).toMatchObject({ status: 'in-progress', furthestPosition: 6 });
 
   await user.keyboard('{ArrowRight}');
   expect(heading()).toHaveTextContent('Two questions');
-  expect(within(topBar()).getByText('Practice')).toBeInTheDocument();
+  expect(place()).toBe('Practice');
   expect(stored().lessons[KEY]).toMatchObject({ status: 'finished', furthestPosition: 7 });
 
   // ← goes back, and the lesson stays finished.
@@ -272,7 +279,7 @@ test('Play all runs the steps: the log fills step by step and the button says Pa
   expect(heading()).toHaveTextContent('Retransmission');
   expect(logRows()).toHaveLength(5);
   expect(playButton()).toHaveAccessibleName('Play all');
-  expect(forwardButton()).toHaveAccessibleName('Next step');
+  expect(forwardButton()).toHaveAccessibleName('Next: Learn');
 });
 
 test('each event waits as long as the figure’s driver takes to play it', async () => {
@@ -404,59 +411,48 @@ test('two table changes in a row are both announced, in order', async () => {
 test('a jump announces no table change, as it announces no message: only where it lands', async () => {
   renderConsole();
   const live = document.querySelector('[aria-live="polite"][data-announce]')!;
-  const outline = screen.getByRole('navigation', { name: 'This lesson' });
   // Lost Message comes after both of the table's changes (Neighbor Reply's add and Table Lookup's match).
-  await user.click(within(outline).getByRole('button', { name: /^Lost Message/ }));
+  await user.click(stop(/^Step 4, Lost Message/));
   expect(live).toHaveTextContent(/^Lost Message\.?$/);
-  await user.click(within(outline).getByRole('button', { name: /^Neighbor Reply/ }));
+  await user.click(stop(/^Step 2, Neighbor Reply/));
   expect(live).toHaveTextContent(/^Neighbor Reply\.?$/);
-  await user.click(within(outline).getByRole('button', { name: /^Table Lookup/ }));
+  await user.click(stop(/^Step 3, Table Lookup/));
   expect(live).toHaveTextContent(/^Table Lookup\.?$/);
-  await user.click(within(outline).getByRole('button', { name: /^What happened and why/ }));
+  await user.click(stop('Learn'));
   expect(live).toHaveTextContent(/^Learn$/);
 });
 
-test('the theme button switches and saves the theme', async () => {
-  renderConsole();
-  const button = within(topBar()).getByRole('button', { name: /theme/i });
-  expect(button).toHaveAccessibleName('Switch to light theme');
-  await user.click(button);
-  expect(document.documentElement.dataset.theme).toBe('light');
-  expect(window.localStorage.getItem(THEME_KEY)).toBe('light');
-  expect(button).toHaveAccessibleName('Switch to dark theme');
-  expect(within(topBar()).queryByRole('group', { name: 'Theme' })).toBeNull();
-});
-
-test('the top bar has no track progress', () => {
+test('the bar has no theme button, mark or track progress: the site’s header has the first two (case 4)', () => {
   save({ status: 'finished', furthestPosition: 7 });
   renderConsole();
+  expect(within(topBar()).queryByRole('button', { name: /theme/i })).toBeNull();
+  expect(topBar().querySelector('.logo, .topbar__brand')).toBeNull();
   expect(within(topBar()).queryByText(/lessons done|complete/)).toBeNull();
   expect(within(topBar()).queryByText('Track progress')).toBeNull();
 });
 
-test('the breadcrumb is Tracks / <track> / <lesson>', () => {
+test('the bar’s first cell is "Tracks / <track>", the lesson’s name heads the track column (2.99), and there is one banner-free bar', () => {
   renderConsole();
-  const crumb = topBar().querySelector('.topbar__crumb')!;
-  expect(within(topBar()).getByRole('link', { name: 'Tracks' })).toHaveAttribute('href', '/tracks');
-  expect(within(topBar()).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
-  expect(within(crumb as HTMLElement).getByRole('heading', { level: 1, name: 'DHCP' })).toBeInTheDocument();
-  expect(crumb.textContent).toMatch(/^Tracks\s*\/\s*Networking Concepts\s*\/\s*DHCP/);
+  const trk = topBar().querySelector('.top__trk')!;
+  expect(within(trk as HTMLElement).getByRole('link', { name: 'Tracks' })).toHaveAttribute('href', '/tracks');
+  expect(within(trk as HTMLElement).getByRole('link', { name: 'Networking Concepts' })).toHaveAttribute('href', '/networking');
+  expect(trk.textContent).toMatch(/^Tracks\s*\/\s*Networking Concepts$/);
+  expect(screen.queryByRole('banner')).toBeNull();
   expect(within(topBar()).queryByText('See how technology works')).toBeNull();
 });
 
-test('the outline moves the lesson, and All 20 lessons opens the track list in a dialog', async () => {
+test('the timeline moves the lesson, and the lessons button opens the track list in a dialog', async () => {
   renderConsole();
-  const outline = screen.getByRole('navigation', { name: 'This lesson' });
-  await user.click(within(outline).getByRole('button', { name: /^Table Lookup/ }));
+  await user.click(stop(/^Step 3, Table Lookup/));
   expect(heading()).toHaveTextContent('Table Lookup');
-  expect(within(outline).getByRole('button', { name: /^Table Lookup/ })).toHaveAttribute('aria-current', 'step');
+  expect(stop(/^Step 3, Table Lookup/)).toHaveAttribute('aria-current', 'step');
 
-  await user.click(within(outline).getByRole('button', { name: 'All 20 lessons' }));
+  await user.click(within(topBar()).getByRole('button', { name: '9 of 20: all 20 lessons, this is lesson 9' }));
   const dialog = screen.getByRole('dialog', { name: 'All 20 lessons' });
   expect(within(dialog).getByRole('link', { name: /Firewalls/ })).toHaveAttribute('href', '/networking/firewalls');
   expect(within(dialog).getByRole('link', { name: /DHCP/ })).toHaveAttribute('aria-current', 'page');
   expect(within(dialog).getAllByText('Not ready yet')).toHaveLength(18);
-  await user.click(within(dialog).getByRole('button', { name: 'Close' }));
+  await user.click(within(dialog).getByRole('button', { name: /Close/ }));
   expect(dialog).not.toHaveAttribute('open');
 });
 
@@ -492,7 +488,7 @@ test('the forward button keeps its focus as its words change, and Next lesson is
   window.history.replaceState({}, '', '/networking/firewalls?step=6');
   renderConsole(FIREWALLS);
   const forward = forwardButton();
-  expect(forward).toHaveAccessibleName('Next step');
+  expect(forward).toHaveAccessibleName('Next: Practice');
   await user.click(forward);
   expect(heading()).toHaveTextContent('Two questions');
   // The same element, now "Next lesson", disabled: the last ready lesson. It keeps the focus and does nothing.
@@ -520,9 +516,9 @@ test('the forward button keeps its focus as its words change, and Next lesson is
   expect(previous).toHaveFocus();
 });
 
-test('the outline ticks only the units the learner has opened on this page', async () => {
+test('a many-unit lesson’s unit list ticks only the units the learner has opened on this page', async () => {
   const { unmount } = renderConsole(THREE);
-  const outline = screen.getByRole('navigation', { name: '3 protocols' });
+  const outline = document.querySelector<HTMLElement>('.track__units')!;
   const row = (name: string) => within(outline).getByRole('button', { name: new RegExp(`^${name} `) });
 
   // Straight from Alpha to Gamma: Alpha is ticked, Beta, passed over, is not.
@@ -559,7 +555,7 @@ test('Practice picks are still there after a visit elsewhere, are gone on reload
 
   await user.click(screen.getByRole('button', { name: 'Previous step' }));
   expect(heading()).toHaveTextContent('What happened and why');
-  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  await user.click(forwardButton());
   expect(heading()).toHaveTextContent('Two questions');
   expect(option()).toHaveAttribute('aria-pressed', 'true');
   expect(within(explanation()).getByText('Not quite.', { selector: 'b' })).toBeInTheDocument();
@@ -579,17 +575,17 @@ test('Practice picks are still there after a visit elsewhere, are gone on reload
 
 // ---------------------------------------------------------------- the phone's tabs
 
-test('the console offers Explain, Steps and Log as a group of buttons, with Explain showing first, and the lesson\'s table as a fourth', () => {
+test('the console offers Explain and Log as a group of buttons, with Explain showing first, and the lesson\'s table as a third', () => {
   const { container } = renderConsole();
   const show = screen.getByRole('group', { name: 'Show' });
   const buttons = within(show).getAllByRole('button');
-  expect(buttons.map((b) => b.textContent)).toEqual(['Explain', 'Steps', 'Log', 'Table']);
-  expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false']);
+  expect(buttons.map((b) => b.textContent)).toEqual(['Explain', 'Log', 'Table']);
+  expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
   // The console says which is showing, for the phone layout's CSS to act on.
   expect(container.querySelector('.console')).toHaveAttribute('data-tab', 'explain');
 });
 
-test('the fourth tab is named for the unit\'s panel, and a unit with the message strip has three tabs', () => {
+test('the fourth tab is named for the unit\'s panel, and a unit with the message strip has two tabs', () => {
   const withPanel = (panel: unknown): Lesson => {
     const lesson = structuredClone(DHCP);
     (lesson.units[0]!.scene as { panel: unknown }).panel = panel;
@@ -597,10 +593,10 @@ test('the fourth tab is named for the unit\'s panel, and a unit with the message
   };
   const names = () => within(screen.getByRole('group', { name: 'Show' })).getAllByRole('button').map((b) => b.textContent);
   const { unmount } = render(consoleFor(withPanel({ type: 'labels' })));
-  expect(names()).toEqual(['Explain', 'Steps', 'Log']);
+  expect(names()).toEqual(['Explain', 'Log']);
   unmount();
   render(consoleFor(withPanel(null)));
-  expect(names()).toEqual(['Explain', 'Steps', 'Log']);
+  expect(names()).toEqual(['Explain', 'Log']);
 });
 
 test('the Table tab is marked when the step has changed the table and the reader has not looked, and the mark goes when they do', async () => {
@@ -626,7 +622,7 @@ test('the Table tab is marked when the step has changed the table and the reader
 
   // Back and Next keep the tab the reader chose.
   await user.click(tab());
-  await user.click(screen.getByRole('button', { name: 'Next step' }));
+  await user.click(forwardButton());
   expect(consoleEl).toHaveAttribute('data-tab', 'table');
 });
 
@@ -652,7 +648,7 @@ test.each([
   expect(container.querySelector('.tab__mark')).toBeNull();
 });
 
-test('choosing a tab marks it and the console; choosing a place in Steps goes there and returns to Explain', async () => {
+test('choosing a tab marks it and the console; pressing a stop goes there and keeps the tab (E25)', async () => {
   const { container } = renderConsole();
   const consoleEl = container.querySelector('.console')!;
   const tab = (name: string) => within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name });
@@ -662,13 +658,11 @@ test('choosing a tab marks it and the console; choosing a place in Steps goes th
   expect(tab('Log')).toHaveAttribute('aria-pressed', 'true');
   expect(tab('Explain')).toHaveAttribute('aria-pressed', 'false');
 
-  await user.click(tab('Steps'));
-  expect(consoleEl).toHaveAttribute('data-tab', 'steps');
-  const outline = screen.getByRole('navigation', { name: 'This lesson' });
-  await user.click(within(outline).getAllByRole('button')[2]!);
-  // The place changed, and the words for it are what shows.
-  expect(consoleEl).toHaveAttribute('data-tab', 'explain');
-  expect(tab('Explain')).toHaveAttribute('aria-pressed', 'true');
+  await user.click(stop(/^Step 2, /));
+  // The place changed, and the tab the reader chose stays, as it does for the forward and back buttons.
+  expect(consoleEl).toHaveAttribute('data-tab', 'log');
+  expect(tab('Log')).toHaveAttribute('aria-pressed', 'true');
+  await user.click(tab('Explain'));
   expect(screen.getByText(/^Watch · Step 2 of \d+$/)).toBeInTheDocument();
 });
 
@@ -676,10 +670,9 @@ test('the console says when the learner is reading, so the phone can give the wo
   const { container } = renderConsole();
   const consoleEl = container.querySelector('.console')!;
   expect(consoleEl).not.toHaveAttribute('data-reading');
-  const outline = screen.getByRole('navigation', { name: 'This lesson' });
-  await user.click(within(outline).getByRole('button', { name: /^What happened and why/ }));
+  await user.click(stop('Learn'));
   expect(consoleEl).toHaveAttribute('data-reading', '');
-  await user.click(within(outline).getAllByRole('button')[1]!);
+  await user.click(stop(/^Step 1, /));
   expect(consoleEl).not.toHaveAttribute('data-reading');
 });
 
@@ -714,14 +707,14 @@ test('the log stays as the reader left it across Learn, Practice and Watch', asy
   renderConsole();
   await user.click(foldButton());
   const go = (name: string) => user.click(screen.getByRole('button', { name }));
-  await go('Next step');
+  await go('Next: Practice');
   expect(heading()).toHaveTextContent(/question/i);
   expect(root()).toHaveAttribute('data-log', 'open');
   await go('Previous step');
   await go('Previous step');
   expect(root()).not.toHaveAttribute('data-reading');
   expect(root()).not.toHaveAttribute('data-log');
-  await go('Next step');
+  await go('Next: Learn');
   expect(heading()).toHaveTextContent('What happened and why');
   expect(root()).toHaveAttribute('data-log', 'open');
 });
@@ -730,4 +723,32 @@ test('at the Overview the log is not marked folded or open', () => {
   renderConsole();
   expect(root()).not.toHaveAttribute('data-reading');
   expect(root()).not.toHaveAttribute('data-log');
+});
+
+// ---------------------------------------------------------------- the timeline's two homes (D19, B23)
+
+test('the timeline has two homes, the bar’s and the row under the scene, each a list of every place; the row has no no-script list, and the stacked page lists the places once more after the words (case 63, H3)', () => {
+  const { container } = renderConsole();
+  const homes = [...container.querySelectorAll('.timeline')].map((t) => t.getAttribute('data-home'));
+  expect(homes).toEqual(['bar', 'row']);
+  const lists = screen.getAllByRole('navigation', { name: 'This lesson' });
+  expect(lists).toHaveLength(2);
+  expect(within(lists[0]!).getAllByRole('button')).toHaveLength(within(lists[1]!).getAllByRole('button').length);
+  // The row sits after the scene, before the tabs: the Tab order follows the screen on a phone.
+  const scene = container.querySelector('.console__stage')!;
+  const row = container.querySelector('.timeline--row')!;
+  const tabs = container.querySelector('.console__tabs')!;
+  expect(scene.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(row.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  // The stops carry their place, so a window that turns can hand focus to the same stop of the other copy.
+  expect(row.querySelector('.tl__stop')).toHaveAttribute('data-target', '0');
+});
+
+test('a stop of the row keeps the open tab and the place moves (E25)', async () => {
+  const { container } = renderConsole();
+  await user.click(within(screen.getByRole('group', { name: 'Show' })).getByRole('button', { name: 'Log' }));
+  const row = container.querySelector<HTMLElement>('.timeline--row')!;
+  await user.click(within(row).getByRole('button', { name: /^Step 2, / }));
+  expect(container.querySelector('.console')).toHaveAttribute('data-tab', 'log');
+  expect(container.querySelector('.timeline--row [aria-current="step"]')).toHaveAccessibleName(/^Step 2, /);
 });

@@ -2,9 +2,11 @@ import { expect, test, type Page } from '@playwright/test';
 import { collectErrors, hydrated, pageOverflow, settledFrame } from './support';
 
 /**
- * The lesson between 761px and 1099px wide (prototypes/d3-lesson-tablet.md, acceptance checks 1 to 22): an upright
- * window or one under 900px wide gets the phone layout, grown; a window on its side from 900px gets the desktop
- * layout with the outline folded into a tab; under 600px tall, or without JavaScript, the page stays stacked.
+ * The lesson between 761px and 1099px wide (prototypes/d3-lesson-tablet.md, acceptance checks 1 to 22, as D19 changes them,
+ * prototypes/d19-lesson-layout.md and d19-cases.md): an upright window or one under 900px wide gets the phone layout,
+ * grown (the header, the bar, the scene, the stops row, three tabs, the words, the controls); a window on its side from
+ * 900px gets the desktop layout with no track column, no tabs, the bar over the scene and the controls one row at the foot
+ * of the words; under 600px tall, or without JavaScript, the page stays stacked.
  *
  * The spec sets each window size and theme itself, so it runs in one project (`tablet`; playwright.config.ts has
  * the others ignore it). Sizes are within 1px.
@@ -71,13 +73,13 @@ for (const theme of THEMES) {
       await noPageScroll(page);
       expect(await inView(page, '.console__scene')).toBe(true);
       expect(await inView(page, '.console__controls')).toBe(true);
-      expectBox(await boxOf(page, '.console__stage'), [0, 52, 768, 410], 'the stage');
+      expectBox(await boxOf(page, '.console__stage'), [0, 113, 768, 410], 'the stage');
       const svg = await svgBox(page);
       expect(Math.round(svg!.w)).toBe(768);
       expect(Math.abs(svg!.h - 369)).toBeLessThanOrEqual(1);
-      // DHCP has a table of its own: a fourth tab (D2).
-      expect(await visibleTabs(page)).toEqual(['Explain', 'Steps', 'Log', 'Table']);
-      expect(await shown(page, '.console__outline')).toBe(false);
+      // DHCP has a table of its own: a third tab (D2); the Steps tab's job is the stops row's (D19).
+      expect(await visibleTabs(page)).toEqual(['Explain', 'Log', 'Table']);
+      expect(await shown(page, '.console__track')).toBe(false);
       expect(await shown(page, '.console__log')).toBe(false);
       expect(await shown(page, '.console__explain')).toBe(true);
       expect(errors).toEqual([]);
@@ -121,34 +123,40 @@ for (const theme of THEMES) {
       for (const b of buttons) expect(b.height).toBe(48);
     });
 
-    test('6 at 768x1024: the top bar shows the segments and the stamp, and not the brand word, the OSI chips or the crumbs', async ({ page }) => {
+    test('6 at 768x1024: the bar holds the h1, the place and the lessons button; the header’s brand word shows; no stamp, no OSI badge', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [768, 1024], theme);
-      expect(await shown(page, '.topbar__segments')).toBe(true);
-      expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
-      expect(await shown(page, '.topbar__brand b')).toBe(false);
-      expect(await shown(page, '.topbar__osi')).toBe(false);
-      expect(await shown(page, '.topbar__crumb > a[href="/tracks"]')).toBe(false);
-      expect(await shown(page, '.topbar__crumb > a:not([href="/tracks"]):not(.stamp)')).toBe(false);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+      expect(await shown(page, '.console__top h1')).toBe(true);
+      expect(await shown(page, '.console__top .top__where')).toBe(true);
+      expect(await shown(page, '.console__top .top__lessons')).toBe(true);
+      expect(await shown(page, '.site-head .brand b')).toBe(true);
+      expect(await shown(page, '.console__top .tl')).toBe(false);
+      expect(await shown(page, '.timeline--row .tl')).toBe(true);
+      expect(await page.locator('.stamp').count()).toBe(0);
+      expect(await shown(page, '.explain__osi')).toBe(false);
+      await openAt(page, '/networking/firewalls?step=2', [768, 1024], theme);
+      expect(await shown(page, '.explain__osi')).toBe(false);
     });
 
-    test('7 at 768x1024: Steps shows the outline, a step chosen shows its words, Log shows the log', async ({ page }) => {
+    test('7 at 768x1024: a stop shows its place’s words, Log shows the log', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [768, 1024], theme);
-      await tabButton(page, 'Steps').click();
-      expect(await shown(page, '.console__outline')).toBe(true);
-      expect(await shown(page, '.console__explain')).toBe(false);
-      await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^DHCP Request/ }).click();
+      await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Step 3, DHCP Request/ }).click();
       await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
       expect(await shown(page, '.console__explain')).toBe(true);
       await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Watch · Step 3 of 5');
       await tabButton(page, 'Log').click();
       await expect.poll(() => shown(page, '.console__log')).toBe(true);
       expect(await shown(page, '.console__explain')).toBe(false);
+      // A stop keeps the tab that is open (E25), as Next and Back do.
+      await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Step 4, DHCP Acknowledge/ }).click();
+      await expect(tabButton(page, 'Log')).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('.top__where')).toHaveText('Step 4 of 5');
     });
 
     test('8 at 768x1024 in Learn: no page scroll, the scene is 184px tall, the scene and the controls are in view', async ({ page }) => {
       await openAt(page, `${DHCP}?step=6`, [768, 1024], theme);
       await noPageScroll(page);
-      expect(Math.abs((await boxOf(page, '.console__stage'))!.h - 184)).toBeLessThanOrEqual(1);
+      expectBox(await boxOf(page, '.console__stage'), [0, 113, 768, 184], 'the stage in Learn');
       expect(await inView(page, '.console__scene')).toBe(true);
       expect(await inView(page, '.console__controls')).toBe(true);
     });
@@ -158,13 +166,13 @@ for (const theme of THEMES) {
       [[899, 1200], undefined],
       [[1024, 1366], [1024, 505]],
     ] as const) {
-      test(`9 at ${size.join('x')}: one screen, three tabs shown, the outline and the log not`, async ({ page }) => {
+      test(`9 at ${size.join('x')}: one screen, three tabs shown, the track and the log not`, async ({ page }) => {
         await openAt(page, `${DHCP}?step=2`, [size[0], size[1]], theme);
         await noPageScroll(page);
         expect(await inView(page, '.console__scene')).toBe(true);
         expect(await inView(page, '.console__controls')).toBe(true);
-        expect((await visibleTabs(page)).slice(0, 3)).toEqual(['Explain', 'Steps', 'Log']);
-        expect(await shown(page, '.console__outline')).toBe(false);
+        expect(await visibleTabs(page)).toEqual(['Explain', 'Log', 'Table']);
+        expect(await shown(page, '.console__track')).toBe(false);
         expect(await shown(page, '.console__log')).toBe(false);
         expect(await shown(page, '.console__explain')).toBe(true);
         if (drawing !== undefined) {
@@ -175,79 +183,90 @@ for (const theme of THEMES) {
       });
     }
 
-    // ---------------------------------------------------------------- Layout 2: the desktop layout, the outline in a tab
+    // ---------------------------------------------------------------- Layout 2: the desktop layout, no track column and no tabs
 
-    test('10, 11, 12 at 1024x768: one screen; the panels where the design puts them; two tabs', async ({ page }) => {
+    test('10, 11, 12 at 1024x768: one screen; the panels where D19 puts them; no tabs; the bar over the scene', async ({ page }) => {
       const errors = collectErrors(page);
       await openAt(page, `${DHCP}?step=2`, [1024, 768], theme);
       await noPageScroll(page);
       expect(await inView(page, '.console__scene')).toBe(true);
       expect(await inView(page, '.console__controls')).toBe(true);
-      expectBox(await boxOf(page, '.console__stage'), [12, 92, 640, 452], 'the stage');
-      expectBox(await boxOf(page, '.console__explain'), [664, 140, 348, 404], 'the explanation');
-      expectBox(await boxOf(page, '.console__log'), [12, 556, 1000, 200], 'the log');
-      const svg = await svgBox(page);
-      expect(Math.abs(svg!.w - 638)).toBeLessThanOrEqual(1);
-      expect(Math.abs(svg!.h - 300)).toBeLessThanOrEqual(1);
-      expectBox(await boxOf(page, '.console__tabs'), [664, 92, 348, 48], 'the tabs');
-      expect(await visibleTabs(page)).toEqual(['Explain', 'Steps']);
-      await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
-      expect(await shown(page, '.console__outline')).toBe(false);
+      expectBox(await boxOf(page, '.console__top'), [12, 81, 640, 44], 'the bar');
+      expectBox(await boxOf(page, '.console__stage'), [12, 137, 640, 452], 'the stage');
+      expectBox(await boxOf(page, '.console__guide'), [664, 81, 348, 508], 'the guide');
+      expectBox(await boxOf(page, '.console__explain'), [665, 82, 346, 437], 'the words');
+      expectBox(await boxOf(page, '.console__log'), [12, 601, 1000, 155], 'the log');
+      // The drawing's box is 638 wide and, once the step has put its row in the table under the scene, 300px tall as the prototype
+      // measures it (the spec's 304 is the box before the table has its row); it never gets smaller than today's 638 x 300.
+      await expect.poll(async () => Math.round((await svgBox(page))!.h)).toBe(300);
+      expect(Math.round((await svgBox(page))!.w)).toBe(638);
+      expect(await shown(page, '.console__tabs')).toBe(false);
+      expect(await visibleTabs(page)).toEqual([]);
+      expect(await shown(page, '.console__track')).toBe(false);
+      await expect(page.locator('.log__head button:visible')).toHaveCount(0);
       expect(errors).toEqual([]);
     });
 
-    test('13 at 1024x768: Steps shows the outline in the explanation\'s place; a step chosen returns to the words', async ({ page }) => {
+    test('13 at 1024x768: a stop in the bar goes to its place and the words stay', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [1024, 768], theme);
-      await tabButton(page, 'Steps').click();
-      expectBox(await boxOf(page, '.console__outline'), [664, 140, 348, 404], 'the outline');
-      expect(await shown(page, '.console__explain')).toBe(false);
       for (const part of ['.console__log', '.console__scene', '.console__controls']) expect(await inView(page, part)).toBe(true);
-      await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Lease Renewal/ }).click();
-      await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+      await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Step 5, Lease Renewal/ }).click();
       expect(await shown(page, '.console__explain')).toBe(true);
       await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Watch · Step 5 of 5');
     });
 
-    test('14 at 1024x768: Back, Play, Next and the speed button are 44px tall and at least 44px wide', async ({ page }) => {
+    test('14 at 1024x768: the five controls are one row at the foot of the words, 44px tall, Play all icon-only, the forward button the rest', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [1024, 768], theme);
-      const sizes = await page.locator('.console__controls .cbtn').evaluateAll((all) => all.map((b) => b.getBoundingClientRect()).map((r) => ({ w: r.width, h: r.height })));
-      expect(sizes.length).toBeGreaterThanOrEqual(4);
+      const sizes = await page.locator('.console__controls .cbtn').evaluateAll((all) => all.map((b) => b.getBoundingClientRect()).map((r) => ({ x: r.x, y: r.y, w: r.width, h: r.height })));
+      expect(sizes).toHaveLength(5);
       for (const s of sizes) {
         expect(Math.round(s.h)).toBe(44);
         expect(s.w).toBeGreaterThanOrEqual(43.5);
+        expect(s.y).toBe(sizes[0]!.y);
       }
+      expect(Math.round(sizes[2]!.w), 'Play all is icon-only').toBe(44);
+      expect(Math.round(sizes[4]!.w), 'the forward button has what the four leave').toBe(114);
+      expect(Math.round(sizes[4]!.x)).toBe(881);
+      // The row is at the foot of the words, under them.
+      const words = (await boxOf(page, '.console__explain'))!;
+      expect(sizes[0]!.y).toBeGreaterThanOrEqual(words.y + words.h - 1);
     });
 
     for (const width of [1024, 900]) {
-      test(`15 at ${width}x768: the lesson's name is whole, and the brand word, "Tracks" and the number give way`, async ({ page }) => {
+      test(`15 at ${width}x768: the lesson's name is whole in the bar, the brand word shows in the header, and the bar has no number, no track link and no stamp; the marks show`, async ({ page }) => {
+        for (const path of [DHCP, '/networking/load-balancers', '/networking/mac-address', '/networking/osi-model']) {
+          await openAt(page, `${path}?step=2`, [width, 768], theme);
+          const h1 = await page.getByRole('heading', { level: 1 }).evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
+          expect(h1.scroll, path).toBeLessThanOrEqual(h1.client);
+        }
         await openAt(page, `${DHCP}?step=2`, [width, 768], theme);
-        const h1 = await page.locator('.topbar__crumb h1').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth }));
-        expect(h1.scroll).toBeLessThanOrEqual(h1.client);
-        expect(await shown(page, '.topbar__brand b')).toBe(false);
-        expect(await shown(page, '.topbar__crumb > a[href="/tracks"]')).toBe(false);
-        expect(await shown(page, '.topbar__crumb > em')).toBe(false);
-        expect(await shown(page, '.topbar__crumb > a[href*="networking"]')).toBe(true);
-        expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
-        expect(await shown(page, '.topbar__segments')).toBe(true);
-        // DHCP spans layers since batch 5, so it has no OSI chips; Firewalls (layers 3 and 4) shows them at this width.
-        expect(await shown(page, '.topbar__osi')).toBe(false);
+        expect(await shown(page, '.site-head .brand b')).toBe(true);
+        expect(await shown(page, '.console__top a[href="/tracks"]')).toBe(false);
+        expect(await shown(page, '.console__top .top__of')).toBe(false);
+        expect(await page.locator('.stamp').count()).toBe(0);
+        expect(await shown(page, '.console__top .tl')).toBe(true);
+        // DHCP spans layers, so it has no badge; Firewalls (layers 3 and 4) has one at the head of the words while watching.
+        expect(await shown(page, '.explain__osi')).toBe(false);
         await openAt(page, '/networking/firewalls?step=2', [width, 768], theme);
-        expect(await shown(page, '.topbar__osi')).toBe(true);
+        expect(await shown(page, '.explain__osi')).toBe(true);
+        const badge = (await boxOf(page, '.explain__osi'))!;
+        const words = (await boxOf(page, '.console__explain'))!;
+        expect(badge.y, 'the badge is the first thing in the words').toBeLessThan(words.y + 40);
       });
     }
 
     for (const step of [6, 7]) {
       // Learn and Practice have D1's words column here: 504px, the tabs on it at the same right edge.
-      test(`16 at 1024x768, ?step=${step}: one screen, two tabs, the words 504px wide`, async ({ page }) => {
+      test(`16 at 1024x768, ?step=${step}: one screen, no tabs, the words 504px wide, the bar across the page`, async ({ page }) => {
         await openAt(page, `${DHCP}?step=${step}`, [1024, 768], theme);
         await noPageScroll(page);
         expect(await inView(page, '.console__scene')).toBe(true);
         expect(await inView(page, '.console__controls')).toBe(true);
-        expect(await visibleTabs(page)).toEqual(['Explain', 'Steps']);
-        expectBox(await boxOf(page, '.console__tabs'), [508, 92, 504, 48], 'the tabs');
-        expect(Math.round((await boxOf(page, '.console__explain'))!.w)).toBe(504);
-        await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
-        expect(await shown(page, '.console__outline')).toBe(false);
+        expect(await visibleTabs(page)).toEqual([]);
+        expect(await shown(page, '.console__tabs')).toBe(false);
+        expectBox(await boxOf(page, '.console__top'), [12, 81, 1000, 44], 'the bar across the page');
+        expect(Math.round((await boxOf(page, '.console__guide'))!.w)).toBe(504);
+        expect(Math.round((await boxOf(page, '.console__explain'))!.y)).toBe(138);
       });
     }
 
@@ -255,87 +274,66 @@ for (const theme of THEMES) {
       [900, 700],
       [1099, 800],
     ] as const) {
-      test(`17 at ${size.join('x')}: one screen, two tabs`, async ({ page }) => {
+      test(`17 at ${size.join('x')}: one screen, no tabs`, async ({ page }) => {
         await openAt(page, `${DHCP}?step=2`, [size[0], size[1]], theme);
         await noPageScroll(page);
         expect(await inView(page, '.console__scene')).toBe(true);
         expect(await inView(page, '.console__controls')).toBe(true);
-        expect(await visibleTabs(page)).toEqual(['Explain', 'Steps']);
-        // The words column is 348px wide, against the window's right edge less 12px.
-        expectBox(await boxOf(page, '.console__tabs'), [size[0] - 12 - 348, 92, 348, 48], 'the tabs');
-        await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
-        expect(await shown(page, '.console__outline')).toBe(false);
+        expect(await shown(page, '.console__tabs')).toBe(false);
+        // The guide is 348px wide, against the window's right edge less 12px, from the header down.
+        const guide = (await boxOf(page, '.console__guide'))!;
+        expectBox(guide, [size[0] - 12 - 348, 81, 348, guide.h], 'the guide');
       });
     }
 
-    test('18: Log (or Table) chosen upright, then turned on its side: the explanation is shown and Explain is pressed', async ({ page }) => {
+    test('18: Log (or Table) chosen upright, then turned on its side: the words are shown (no tabs there); turned back, Explain is pressed', async ({ page }) => {
       for (const chosen of ['Log', 'Table']) {
         await openAt(page, `${DHCP}?step=2`, [768, 1024], theme);
         await tabButton(page, chosen).click();
         await expect(tabButton(page, chosen)).toHaveAttribute('aria-pressed', 'true');
         await page.setViewportSize({ width: 1024, height: 768 });
-        await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
+        expect(await shown(page, '.console__tabs')).toBe(false);
         expect(await shown(page, '.console__explain')).toBe(true);
         // And the table is on screen, under the scene, as on a desktop.
         expect(await inView(page, '.tpanel')).toBe(true);
+        await page.setViewportSize({ width: 768, height: 1024 });
+        await expect(tabButton(page, 'Explain')).toHaveAttribute('aria-pressed', 'true');
       }
     });
 
-    test('focus at 1024x768: the ring of Explain and of Steps is drawn, and inside the tab row', async ({ page }) => {
+    test('focus at 1024x768: the ring of a stop is drawn, and no box with overflow cuts the 4px it is drawn out to', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [1024, 768], theme);
-      for (const name of ['Explain', 'Steps']) {
-        await tabButton(page, name).focus();
+      for (const name of [/^Step 2, /, /^Step 4, /]) {
+        const stop = page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name });
+        await stop.focus();
         await page.keyboard.press('Shift+Tab');
         await page.keyboard.press('Tab');
-        await expect(tabButton(page, name)).toBeFocused();
-        await expect.poll(() => tabButton(page, name).evaluate((el) => getComputedStyle(el).outlineOffset)).toBe('-3px');
-        const r = await tabButton(page, name).evaluate((el) => {
+        await expect(stop).toBeFocused();
+        const r = await stop.evaluate((el) => {
           const s = getComputedStyle(el);
           const b = el.getBoundingClientRect();
-          const row = el.parentElement!.getBoundingClientRect();
-          const offset = parseFloat(s.outlineOffset);
-          const width = parseFloat(s.outlineWidth);
-          return {
-            focused: document.activeElement === el,
-            style: s.outlineStyle,
-            width,
-            // The ring's outer edge, from the button's box and the computed offset.
-            left: b.left - offset - width,
-            right: b.right + offset + width,
-            top: b.top - offset - width,
-            bottom: b.bottom + offset + width,
-            row: { left: row.left, right: row.right, top: row.top, bottom: row.bottom },
-          };
+          const ring = { l: b.left - 4, t: b.top - 4, r: b.right + 4, b: b.bottom + 4 };
+          const cut: string[] = [];
+          for (let a = el.parentElement; a; a = a.parentElement) {
+            const o = getComputedStyle(a);
+            if (o.overflowX === 'visible' && o.overflowY === 'visible') continue;
+            const c = a.getBoundingClientRect();
+            if (ring.l < c.left - 0.5 || ring.r > c.right + 0.5 || ring.t < c.top - 0.5 || ring.b > c.bottom + 0.5) cut.push(`${a.tagName}.${a.className}`);
+          }
+          return { style: s.outlineStyle, width: parseFloat(s.outlineWidth), cut };
         });
-        expect(r.focused, `${name} has focus`).toBe(true);
         expect(r.style, `${name}'s outline`).not.toBe('none');
-        expect(r.width).toBeGreaterThan(0);
-        expect(r.left, `${name}: ring inside the row, left`).toBeGreaterThanOrEqual(r.row.left - 1);
-        expect(r.right, `${name}: ring inside the row, right`).toBeLessThanOrEqual(r.row.right + 1);
-        expect(r.top, `${name}: ring inside the row, top`).toBeGreaterThanOrEqual(r.row.top - 1);
-        expect(r.bottom, `${name}: ring inside the row, bottom`).toBeLessThanOrEqual(r.row.bottom + 1);
+        expect(r.width).toBeGreaterThanOrEqual(2);
+        expect(r.cut, `${name}: the ring is whole`).toEqual([]);
       }
     });
 
-    test('Overview at 768x1024: the stamp is on the kicker\'s line and in the top bar, with the same words', async ({ page }) => {
-      await openAt(page, DHCP, [768, 1024], theme);
-      const lead = await boxOf(page, '.explain__lead .stamp');
-      const kicker = await boxOf(page, '.explain__lead .explain__kicker');
-      expect(lead, 'the stamp in the Overview is shown').not.toBeNull();
-      expect(kicker).not.toBeNull();
-      const mid = lead!.y + lead!.h / 2;
-      expect(mid).toBeGreaterThanOrEqual(kicker!.y - 1);
-      expect(mid).toBeLessThanOrEqual(kicker!.y + kicker!.h + 1);
-      expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
-      const words = async (sel: string) => ((await page.locator(sel).first().textContent()) ?? '').replace(/\s+/g, ' ').trim();
-      expect(await words('.explain__lead .stamp')).toBe(await words('.topbar__crumb .stamp'));
-      expect(await words('.topbar__crumb .stamp')).not.toBe('');
-    });
-
-    test('Overview at 1024x768: the stamp is in the top bar and not on the first line', async ({ page }) => {
-      await openAt(page, DHCP, [1024, 768], theme);
-      expect(await shown(page, '.topbar__crumb .stamp')).toBe(true);
-      expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+    test('Overview at 768x1024 and at 1024x768: the lesson page has no stamp anywhere (D19, 2.97)', async ({ page }) => {
+      for (const size of [[768, 1024], [1024, 768]] as const) {
+        await openAt(page, DHCP, [size[0], size[1]], theme);
+        expect(await page.locator('.stamp').count(), `at ${size.join('x')}`).toBe(0);
+        await expect(page.locator('body')).not.toContainText(/Checked \d|Not checked yet/);
+      }
     });
 
     // ---------------------------------------------------------------- the edges
@@ -343,16 +341,16 @@ for (const theme of THEMES) {
     test('19: 760x1024 is the phone layout as it was, and 1100x800 the desktop layout', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [760, 1024], theme);
       await noPageScroll(page);
-      // 34% of the window, not the grown 40%; the stamp and the segments stay out of the bar.
-      expect(Math.abs((await boxOf(page, '.console__stage'))!.h - Math.round(1024 * 0.34))).toBeLessThanOrEqual(1);
-      expect(await shown(page, '.topbar__segments')).toBe(false);
-      expect(await shown(page, '.topbar__crumb .stamp')).toBe(false);
-      expect(await visibleTabs(page)).toHaveLength(4);
+      // 34% of the window, not the grown 40%, from y 105 (the 36px bar); the stops row is shown, three tabs, no stamp.
+      expectBox(await boxOf(page, '.console__stage'), [0, 105, 760, Math.round(1024 * 0.34)], 'the stage');
+      expect(await shown(page, '.timeline--row .tl')).toBe(true);
+      expect(await page.locator('.stamp').count()).toBe(0);
+      expect(await visibleTabs(page)).toHaveLength(3);
       await openAt(page, `${DHCP}?step=2`, [1100, 800], theme);
       expect(await shown(page, '.console__tabs')).toBe(false);
-      expect(await shown(page, '.console__outline')).toBe(true);
+      expect(await shown(page, '.console__track')).toBe(true);
       expect(await shown(page, '.console__log')).toBe(true);
-      expect(await shown(page, '.topbar__brand b')).toBe(true);
+      expect(await shown(page, '.site-head .brand b')).toBe(true);
     });
 
     for (const size of [
@@ -366,14 +364,14 @@ for (const theme of THEMES) {
       });
     }
 
-    test('20 at 1024x599: the stacked page, the table under the scene, no stamp on the Overview\'s first line', async ({ page }) => {
+    test('20 at 1024x599: the stacked page, the table under the scene, no stamp', async ({ page }) => {
       await openAt(page, DHCP, [1024, 599], theme);
       expect(await shown(page, '.console__tabs')).toBe(false);
       const scene = (await boxOf(page, '.console__scene'))!;
       const table = (await boxOf(page, '.console__stage .tpanel'))!;
       expect(table, 'the lesson\'s table is shown').not.toBeNull();
       expect(table.y).toBeGreaterThanOrEqual(scene.y + scene.h - 1);
-      expect(await boxOf(page, '.explain__lead .stamp')).toBeNull();
+      expect(await page.locator('.stamp').count()).toBe(0);
     });
 
     for (const size of [

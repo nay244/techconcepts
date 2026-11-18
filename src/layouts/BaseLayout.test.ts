@@ -32,3 +32,15 @@ test('footer={false} leaves the footer to the page but keeps the header', async 
   expect(doc.querySelector('footer')).toBeNull();
   expect(doc.querySelector('.site-head')).not.toBeNull();
 });
+
+test('by default the layout wraps the page in one <main id="main">; main={false} leaves its wrapper out and keeps the header (D19 case 50)', async () => {
+  const wrapped = await render();
+  expect(wrapped.querySelectorAll('main')).toHaveLength(1);
+  expect(wrapped.querySelector('main#main p')).not.toBeNull();
+  const own = await render({ main: false });
+  expect(own.querySelectorAll('main')).toHaveLength(0);
+  expect(own.querySelector('#main')).toBeNull();
+  expect(own.querySelector('.site-head')).not.toBeNull();
+  // The skip link still points at #main: the page marks its own.
+  expect(own.querySelector('a.skip-link')!.getAttribute('href')).toBe('#main');
+});

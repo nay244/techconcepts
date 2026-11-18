@@ -19,15 +19,11 @@ const REVERSE_STEPS = [4, 5];
 
 onlyInDesktopDark(PATH);
 
-/** The outline's item for a step: 1 to 5 (index 0 is the Overview). */
-const stepItem = (page: Page, step: number) => page.locator('.console__outline .outline__list .outline__item').nth(step);
+/** The timeline's stop for a step: 1 to 5 (index 0 is the Overview). */
+const stepItem = (page: Page, step: number) => page.getByRole('navigation', { name: 'This lesson' }).getByRole('button').nth(step);
 
-/** The Steps tab, where the outline is at 375 (an outline click at 375 moves to the Explain tab, so each step is opened from it). */
-const stepsTab = (page: Page) => page.getByRole('group', { name: 'Show', exact: true }).getByRole('button', { name: 'Steps', exact: true });
 
-/** Opens a step from the outline, from the Steps tab at 375. */
-async function openStep(page: Page, step: number, phone: boolean): Promise<void> {
-  if (phone) await stepsTab(page).click();
+async function openStep(page: Page, step: number): Promise<void> {
   await stepItem(page, step).click();
   await expect(kicker(page)).toContainText(`Step ${step} of 5`);
 }
@@ -92,7 +88,7 @@ test('14 at 375: from the Steps tab, the outline shows the same proxy and revers
   await page.setViewportSize(PHONE);
   await open(page, PATH);
   for (const step of [1, 2, 3, 4, 5]) {
-    await openStep(page, step, true);
+    await openStep(page, step);
     await expect.poll(() => shown(page), `step ${step} at 375`).toEqual({ proxy: PROXY_STEPS.includes(step) ? 5 : 0, reverse: REVERSE_STEPS.includes(step) ? 3 : 0 });
   }
 });
@@ -107,7 +103,7 @@ for (const [name, size] of [['1440 × 900', DESKTOP], ['375 × 812', PHONE]] as 
       await open(page, PATH);
       const phone = size === PHONE;
       for (const step of [1, 2, 3, 4, 5]) {
-        await openStep(page, step, phone);
+        await openStep(page, step);
         await expect.poll(async () => (await pageOverflow(page)).sideways, `step ${step} sideways`).toBe(0);
         // The two pairs the design names: the forward proxy's callout against the internet's, the reverse proxy's against the web server's.
         const boxes = await calloutBoxes(page);

@@ -65,9 +65,12 @@ test.describe('the row at 1440', () => {
     expect(await replayButton(page).innerText()).toBe('');
 
     const b = await boxes(page);
-    expect(b.map((x) => x.w)).toEqual([52, 36, 118, 36, 152]);
-    expect(b.map((x) => x.h)).toEqual([34, 34, 34, 34, 34]);
-    expect(b.map((x) => x.x)).toEqual([995, 1053, 1095, 1219, 1261]);
+    // D19: the four are one line at the foot of the guide, and the forward button is under them, as wide as the guide.
+    expect(b.map((x) => x.w)).toEqual([52, 36, 118, 36, 355]);
+    expect(b.map((x) => x.h)).toEqual([34, 34, 34, 34, 40]);
+    expect(b.map((x) => x.x)).toEqual([1056, 1114, 1156, 1280, 1056]);
+    expect(b.map((x) => x.y).slice(0, 4)).toEqual([765, 765, 765, 765]);
+    expect(b[4]!.y).toBe(805);
     expect(b[4]!.x + b[4]!.w).toBeLessThanOrEqual(1440);
 
     // Orange is the forward button's alone; the replay icon and the play button take the plain tile.
@@ -79,7 +82,7 @@ test.describe('the row at 1440', () => {
     expect(accent.length).toBeGreaterThan(0);
     expect(orange).toMatch(/^rgb\((240, 112, 46|176, 70, 23)\)$/); // dark #f0702e, light #b04617
 
-    await expect(nextButton(page)).toHaveAttribute('title', 'Next step (→)');
+    await expect(nextButton(page)).toHaveAttribute('title', 'Next: TCP Connection, step 3 (→)');
     await expect(playButton(page)).toHaveAttribute('title', 'Play all (Space)');
     await expect(page.getByRole('button', { name: 'Previous step', exact: true })).toHaveAttribute('title', 'Previous step (←)');
     await expect(replayButton(page)).toHaveAttribute('title', 'Replay step');
@@ -119,7 +122,7 @@ test.describe('the row at 1440', () => {
     await open(page, `${HTTP}?step=99`);
     await expect(kicker(page)).toContainText('Practice');
     await expect(replayButton(page)).toHaveAttribute('aria-disabled', 'true');
-    await expect(nextButton(page)).toHaveText('Next lesson');
+    await expect(nextButton(page)).toHaveText('Next lesson: HTTPS');
   });
 
   test('13: after a replay of DHCP step 4 (its table remounts) the figure equals a fresh arrival at step 4', async ({ page, context }) => {
@@ -170,7 +173,7 @@ test.describe('14: reduced motion lands a step complete at once', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   const full = (page: Page) => logRows(page);
 
-  test('the forward button, Back then Next, a ?step= load, an outline click and Resume', async ({ page }) => {
+  test('the forward button, Back then Next, a ?step= load, a press of a stop and Resume', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await open(page, HTTP);
     await hydrated(page);
@@ -179,7 +182,8 @@ test.describe('14: reduced motion lands a step complete at once', () => {
     await nextButton(page).click();
     await expect(kicker(page)).toContainText('Step 3 of');
     await expect(full(page)).toHaveCount(5, { timeout: 150 });
-    await expect(page.locator('.topbar__fill')).toHaveCount(0);
+    // Under reduced motion the timeline draws no fill, however long it plays.
+    expect(await page.evaluate(() => document.getAnimations().filter((a) => (a as CSSAnimation).animationName === 'tl-fill').length)).toBe(0);
     await page.getByRole('button', { name: 'Previous step', exact: true }).click();
     await nextButton(page).click();
     await expect(full(page)).toHaveCount(5, { timeout: 150 });
@@ -189,7 +193,7 @@ test.describe('14: reduced motion lands a step complete at once', () => {
     await expect(kicker(page)).toContainText('Step 3 of');
     await expect(full(page)).toHaveCount(5, { timeout: 300 });
 
-    await page.locator('.console__outline').getByRole('button', { name: /^HTTP Exchange/ }).click();
+    await page.getByRole('navigation', { name: 'This lesson' }).getByRole('button', { name: /^Step 4, HTTP Exchange/ }).click();
     await expect(kicker(page)).toContainText('Step 4 of');
     const at4 = await full(page).count();
     await page.waitForTimeout(6000);
@@ -231,6 +235,8 @@ for (const width of [375, 390]) {
           expect(b[4]!.w, where).toBe(width - 12 - 236);
           expect((await pageOverflow(page)).sideways, where).toBe(0);
           await expectUnclipped(page, where);
+          // No chevron on a phone: the words take its room (D19, 4.4).
+          expect(await nextButton(page).evaluate((el) => getComputedStyle(el.querySelector('svg')!).display), where).toBe('none');
           // The play button shows no words on a phone; its name is Play all or Pause.
           expect(await playButton(page).evaluate((el) => el.getBoundingClientRect().width), where).toBe(48);
           await expect(playButton(page)).toHaveAccessibleName('Play all');
@@ -280,6 +286,9 @@ for (const [width, height, forward, arrow, controls] of [
   });
 }
 
+// D19 (H20, E5 of job 15 retired): the controls have left the log's head, so no legend is near them. From 1100px wide the
+// four buttons are one line with their words (Play all 118px) and the forward button is under them; on a tablet on its side
+// the five are one row of 44px buttons at the foot of the words, Play all icon-only (B23 tunes that range).
 for (const [width, height] of [
   [1100, 800],
   [1120, 800],
@@ -289,12 +298,11 @@ for (const [width, height] of [
   [1165, 800],
   [1200, 800],
   [1280, 800],
-  // A tablet on its side: the desktop row at 44px, the outline in a tab.
   [900, 600],
   [1024, 768],
   [1099, 700],
 ]) {
-  test(`E5 at ${width}x${height}: DHCP's Learn, log open: the legend clears the row, one line, nothing clipped, the play button ${width <= 1163 && width >= 1100 ? 'drops its words' : 'keeps them'}`, async ({ page }) => {
+  test(`34 at ${width}x${height}: DHCP's Learn, log open: ${width >= 1100 ? 'four buttons on a line with Play all in words, the forward button under them' : 'five 44px buttons on one row, Play all icon-only'}, nothing clipped, no legend near them`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await open(page, `${DHCP}?step=99`);
     await hydrated(page);
@@ -304,29 +312,32 @@ for (const [width, height] of [
     await settledFrame(page);
     await page.evaluate(() => document.fonts.ready);
     const m = await page.evaluate(() => {
-      const speed = document.querySelector('.console__controls .cbtn--speed')!.getBoundingClientRect();
-      const legend = [...document.querySelectorAll<HTMLElement>('.log__legend li')];
       const row = [...document.querySelectorAll<HTMLElement>('.console__controls > .cbtn')].map((b) => b.getBoundingClientRect());
       return {
-        gap: Math.min(...legend.map((li) => speed.left - li.getBoundingClientRect().right)),
-        legendClipped: legend.some((li) => li.scrollWidth > li.clientWidth),
-        tops: new Set(row.map((r) => Math.round(r.top))).size,
+        tops: new Set(row.slice(0, 4).map((r) => Math.round(r.top))).size,
+        goTop: Math.round(row[4]!.top),
+        rowBottom: Math.round(row[0]!.bottom),
         heights: row.map((r) => Math.round(r.height)),
         play: Math.round(row[2]!.width),
+        inLog: document.querySelector('.log__head .console__controls') !== null,
         goClipped: (() => {
           const go = document.querySelector<HTMLElement>('.cbtn--go .go__label')!;
           return go.scrollWidth > go.clientWidth;
         })(),
       };
     });
-    expect(m.gap).toBeGreaterThanOrEqual(8);
-    expect(m.legendClipped).toBe(false);
+    expect(m.inLog, 'the controls left the log head').toBe(false);
     expect(m.tops).toBe(1);
-    const tall = width < 1100 ? 44 : 34;
-    expect(m.heights).toEqual(Array(5).fill(tall));
     expect(m.goClipped).toBe(false);
-    if (width <= 1163 && width >= 1100) expect(m.play).toBe(36);
-    else expect(m.play).toBeGreaterThanOrEqual(118);
+    if (width >= 1100) {
+      expect(m.heights).toEqual([34, 34, 34, 34, 40]);
+      expect(m.play).toBeGreaterThanOrEqual(118);
+      expect(m.goTop).toBeGreaterThan(m.rowBottom);
+    } else {
+      expect(m.heights).toEqual(Array(5).fill(44));
+      expect(m.play).toBe(44);
+      expect(m.goTop).toBe(Math.round(m.goTop));
+    }
     await expect(playButton(page)).toHaveAccessibleName('Play all');
     expect((await pageOverflow(page)).sideways).toBe(0);
   });
