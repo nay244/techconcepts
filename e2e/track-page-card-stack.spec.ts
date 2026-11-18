@@ -395,6 +395,46 @@ test.describe('what moves when progress loads (check 16)', () => {
     }
   }
 
+  for (const t of TRACKS) {
+    test(`${t.id}: every lesson put in progress in turn (its marks at Practice) keeps its stop's height, at 700 to 1440`, async ({ browser }) => {
+      test.setTimeout(300_000);
+      for (const w of [700, 767, 768, 1023, 1024, 1199, 1200, 1440]) {
+        const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, ...desktopOnly });
+        const slugs = slugsOf(t.id);
+        const heightsOf = async (seed: Seed) => {
+          const page = await ctx.newPage();
+          await seedInit(page, seed, null);
+          await page.goto(t.path);
+          await hydrated(page);
+          await settle(page);
+          const hs = await page.locator('li.stop').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+          await page.close();
+          return hs;
+        };
+        const base = await heightsOf({});
+        for (const [i, slug] of slugs.entries()) {
+          // A high position: the lesson's last place, its Practice, the widest marks.
+          const hs = await heightsOf({ [slug]: { status: 'in-progress', furthestPosition: 99 } });
+          expect(Math.abs(hs[i]! - base[i]!), `${t.id} ${slug} at ${w}`).toBeLessThanOrEqual(1);
+        }
+        await ctx.close();
+      }
+    });
+  }
+
+  test('a part\'s count sits 12px of margin and one space after its name, at 1440 (the prototype)', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await visit(page, `/${NET}`);
+    const gap = await page.evaluate(() => {
+      const h = document.querySelector('.route-stage h2')!.getBoundingClientRect();
+      return document.querySelector('.route-stage__count')!.getBoundingClientRect().left - h.right;
+    });
+    expect(Math.abs(gap - 16.7)).toBeLessThanOrEqual(1);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await settle(page);
+    expect(Math.abs((await page.evaluate(() => document.documentElement.scrollHeight)) - 4305)).toBeLessThanOrEqual(1);
+  });
+
   test('with storage blocked the page shows a first visit and no error', async ({ browser }) => {
     for (const blocked of [STORAGE_BLOCKED.S5, STORAGE_BLOCKED.S5b]) {
       const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -410,10 +450,10 @@ test.describe('what moves when progress loads (check 16)', () => {
     }
   });
 
-  test('the up-next card is 186px for every lesson of both tracks put up next, in each kind, at 320 and 1440', async ({ browser }) => {
-    test.setTimeout(480_000);
-    for (const w of [320, 1440]) {
-      const ctx = await browser.newContext({ viewport: { width: w, height: w === 320 ? 640 : 900 }, ...desktopOnly });
+  test('the up-next card is 186px for every lesson of both tracks put up next, in each kind, at 320, 375, 768 and 1440', async ({ browser }) => {
+    test.setTimeout(900_000);
+    for (const w of [320, 375, 768, 1440]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: w === 320 ? 640 : w === 1440 ? 900 : 812 }, ...desktopOnly });
       for (const t of TRACKS) {
         const slugs = slugsOf(t.id);
         for (const [i, slug] of slugs.entries()) {
@@ -425,9 +465,9 @@ test.describe('what moves when progress loads (check 16)', () => {
             await seedInit(page, seed, slug);
             await page.goto(t.path);
             await hydrated(page);
-            await settledFrame(page);
+            await settle(page);
             const h = await page.locator('main .upnext').evaluate((el) => el.getBoundingClientRect().height);
-            expect(Math.abs(h - 186), `${t.id} ${slug} ${kind} at ${w}`).toBeLessThanOrEqual(1);
+            expect.soft(Math.abs(h - 186), `${t.id} ${slug} ${kind} at ${w}`).toBeLessThanOrEqual(1);
             await page.close();
           }
         }
@@ -1257,7 +1297,21 @@ for (const [vname, viewport] of VIEWS) {
               const g = groundOf(el);
               named[name] = ratio(over(parse(getComputedStyle(el)[prop]), g), g);
             };
-            pair('stamp tick', '.stamp svg', 'stroke');
+            pair('stamp tick', '.stop:not(.stop--now) .stamp svg', 'stroke');
+            pair('stamp tick on the wash', '.stop--now .stamp svg', 'stroke');
+            /** A graphic's own fill against what is under it (the element's parent). */
+            const gfx = (name: string, sel: string, pseudo?: string) => {
+              const el = document.querySelector(sel);
+              if (el === null) return;
+              const g = groundOf(el.parentElement!);
+              const fill = parse(getComputedStyle(el, pseudo).backgroundColor);
+              named[name] = ratio(over(fill, g), g);
+            };
+            gfx('here chip on paper', '.upnext__n[data-state="here"]');
+            gfx('here tab marker on paper', '.upnext__k.cs-tab--here', '::before');
+            gfx('here square on the ground', '.strip__sq i[data-state="current"]');
+            gfx('done square on the ground', '.strip__sq i[data-state="done"]');
+            gfx('done chip on paper', '.stop--done .stop__node');
             pair('done chip number', '.stop--done .stop__node', 'color');
             pair('h1', 'main h1', 'color');
             pair('lede', '.lede', 'color');
@@ -1283,7 +1337,22 @@ for (const [vname, viewport] of VIEWS) {
             expect(result.named['done chip number']!).toBeGreaterThanOrEqual((light ? 4.64 : 9.17) - 0.05);
             expect(result.named['status done']!).toBeGreaterThanOrEqual((light ? 5.7 : 9.87) - 0.05);
           }
-          if (result.named['stamp tick'] !== undefined) expect(result.named['stamp tick']).toBeGreaterThanOrEqual(3);
+          // §8's pairs for graphics, each at its figure less 0.05, where the state draws it.
+          const graphics: Record<string, [number, number]> = {
+            'stamp tick': [5.7, 9.87],
+            'stamp tick on the wash': [4.93, 8.33],
+            'here chip on paper': [5.42, 5.64],
+            'here tab marker on paper': [5.42, 5.64],
+            'here square on the ground': [4.52, 6.27],
+            'done square on the ground': [3.87, 10.19],
+            'done chip on paper': [4.64, 9.17],
+          };
+          for (const [name, [l, d]] of Object.entries(graphics)) {
+            if (result.named[name] !== undefined) expect(result.named[name]!, name).toBeGreaterThanOrEqual((light ? l : d) - 0.06);
+          }
+          expect(result.named['stamp tick']).toBeDefined();
+          if (sname === 'S1') for (const n of ['here chip on paper', 'here tab marker on paper', 'here square on the ground', 'stamp tick on the wash']) expect(result.named[n], n).toBeDefined();
+          if (sname === 'S3') for (const n of ['done square on the ground', 'done chip on paper']) expect(result.named[n], n).toBeDefined();
         });
       }
     });

@@ -44,6 +44,7 @@ export default function TrackRoute({ parts, entries, known }: Props) {
           <h2 className="disp" id={`stage-${part.n}`}>
             {part.title}
           </h2>
+          {/* The space is the prototype's: the count sits 12px of margin and one space after the name, and wraps under it where it does not fit. */}{' '}
           <p className="route-stage__count">{`${part.lessons.length} ${part.lessons.length === 1 ? 'lesson' : 'lessons'}`}</p>
           <ol className="route-stops" role="list">
             {part.lessons.map((lesson) =>

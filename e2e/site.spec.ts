@@ -684,6 +684,7 @@ test.describe('desktop', () => {
       for (const y of steps) {
         await page.evaluate((to) => window.scrollTo(0, to), y);
         await settledFrame(page);
+        await transitionsDone(page);
         const box = await buttonBox();
         const view = page.viewportSize()!;
         expect(box.y, `y ${y}: top clear of the header`).toBeGreaterThanOrEqual((await headFoot()) - 1);
