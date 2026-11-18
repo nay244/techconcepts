@@ -157,6 +157,8 @@ for (const [vname, viewport] of VIEWS) {
             const c = getComputedStyle(el);
             return { w: r.width, h: r.height, bg: c.backgroundColor, ring: c.boxShadow, op: c.opacity };
           });
+        // With reduced motion a transition still lasts one frame (0.01ms): the squares take their colours a frame after the page is up.
+        await settledFrame(page);
         const ready = await sq('ready');
         const done = await sq('done');
         const cur = await sq('current');
