@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 24: the header and footer in the Card stack look
 
-**Status: go (2026-11-19; 2.123): the layout kept, the Lesson page's header in Patch with the styles in `card-stack.css`, D23 on Fable 5.2.** Planned under 2.122. The owner, at job 23's end, to whether the header and footer join Card stack: "Yes, plan it as a job" (2.121). Numbers claimed on `revamp` (a6589ba, checked free): job 24, direction rows from 2.122, S25, D23, B29, F24.
+**Status: D23 approved and frozen (2026-11-19; 2.124): variant A, the Tracks fix in, the Lesson page's skip link a unit after. Go (2.123): the layout kept, the Lesson page's header in Patch with the styles in `card-stack.css`, D23 on Fable 5.2.** Planned under 2.122. The owner, at job 23's end, to whether the header and footer join Card stack: "Yes, plan it as a job" (2.121). Numbers claimed on `revamp` (a6589ba, checked free): job 24, direction rows from 2.122, S25, D23, B29, F24.
 
 ## Inputs
 
@@ -87,4 +87,4 @@ A build unit that fails two reviews comes back to the orchestrator with both rep
 
 ## Not in this job
 
-The Lesson page's own look (2.84); the dead code above (`overHero`, `site-head.ts`, `ThemeToggle.tsx`, `LogoMark.tsx`, the footer's stale comment), a cleanup unit of its own after this job; any lesson's or page's words; the Glossary's paused entries (Phase 5); Tracks' `:371` read without `transitionsDone` (2.120).
+The Lesson page's skip link under its header (2.124: a small unit after this job); the Lesson page's own look (2.84); the dead code above (`overHero`, `site-head.ts`, `ThemeToggle.tsx`, `LogoMark.tsx`, the footer's stale comment), a cleanup unit of its own after this job; any lesson's or page's words; the Glossary's paused entries (Phase 5); Tracks' `:371` read without `transitionsDone` (2.120).
