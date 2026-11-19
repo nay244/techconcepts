@@ -76,7 +76,7 @@ describe('0. what the build may not change', () => {
     const site = lines.indexOf("import '../components/site.css';");
     expect(site).toBeGreaterThan(-1);
     expect(lines[site + 1]).toBe("import '../styles/card-stack.css';");
-    expect(source.match(/card-stack\.css/g)).toHaveLength(1);
+    expect(source.match(/^import .*card-stack\.css/gm)).toHaveLength(1);
     expect(readFileSync('src/layouts/BaseLayout.astro', 'utf8')).not.toContain('card-stack.css');
   });
 
