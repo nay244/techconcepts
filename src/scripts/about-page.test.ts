@@ -2,15 +2,17 @@
 // The page is rendered with Astro's container (which needs this file's default node environment, and the React
 // renderer for the page's ResetProgress island) and parsed with jsdom. Each expected value is worked out from the same
 // sources the page uses, so a value written into the page by hand fails here once the content moves on.
+import { existsSync, readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { getContainerRenderer } from '@astrojs/react/container-renderer';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { loadRenderers } from 'astro:container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
 import { expect, test, vi } from 'vitest';
-import { checkedOn, getEntries, trackTotals } from '../content/registry';
+import { checkedOn, getEntries, getLesson, trackTotals } from '../content/registry';
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
-import { comingTracksSentence, factCheckSentence } from '../lib/about';
+import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
 import About from '../pages/about.astro';
 
 // The build's analytics token, which each render here sets for itself.
@@ -22,8 +24,22 @@ vi.mock('../lib/analytics', async (importOriginal) => ({
   },
 }));
 
+// The number of source rows the page is given in place of the DHCP lesson's, when a test sets one.
+const rows = vi.hoisted(() => ({ count: null as number | null }));
+vi.mock('../lib/about', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/about')>();
+  return {
+    ...actual,
+    sourceRows: (sources: Parameters<typeof actual.sourceRows>[0]) =>
+      rows.count === null
+        ? actual.sourceRows(sources)
+        : Array.from({ length: rows.count }, (_, i) => ({ standard: `Standard ${i + 1}`, title: `Title ${i + 1}`, url: `https://example.com/${i + 1}` })),
+  };
+});
+
 async function about(token?: string): Promise<Document> {
   analytics.token = token;
+  rows.count = null;
   const container = await AstroContainer.create({ renderers: await loadRenderers([getContainerRenderer()]) });
   return new JSDOM(await container.renderToString(About)).window.document;
 }
@@ -76,4 +92,157 @@ test('the analytics sentence is there only when the build was given a token', as
   expect(says(await about())).toBe(false);
   expect(says(await about('   '))).toBe(false);
   expect(says(await about('a-test-token'))).toBe(true);
+});
+
+// ---------------------------------------------------------------- Folders (D21b, B27)
+
+const pageText = readFileSync('src/pages/about.astro', 'utf8');
+const style = pageText.slice(pageText.indexOf('<style is:global>'));
+
+/** The words of an element with the fold's two summary spans taken out, which are the only new words on the page. */
+function wordsWithoutFold(el: Element, also: string[] = []): string {
+  const copy = el.cloneNode(true) as Element;
+  for (const gone of copy.querySelectorAll(['.a-src__closed', '.a-src__open', ...also].join(','))) gone.remove();
+  return words(copy);
+}
+
+test('every sentence of today’s page is on the page, in today’s order within its section (check 1)', async () => {
+  const today = JSON.parse(readFileSync('src/scripts/about-words.fixture.json', 'utf8')) as Record<string, string>;
+  const doc = await about();
+  // The list of sections moved into the opening; its words are the only addition there.
+  expect(wordsWithoutFold(doc.querySelector('section.a-open')!, ['nav.a-toc'])).toBe(today.opening);
+  const ids = [...doc.querySelectorAll('section.a-sec')].map((s) => s.id);
+  expect(ids).toEqual(['what', 'lessons', 'facts', 'credits', 'privacy']);
+  for (const id of ids) expect(wordsWithoutFold(doc.getElementById(id)!), id).toBe(today[id]);
+});
+
+test('the fold’s summary holds exactly its two sets of words, and its list is named for the rows it holds', async () => {
+  const doc = await about();
+  const summary = doc.querySelector('details.a-src__more > summary')!;
+  expect([...summary.children].map((c) => [c.className, words(c)])).toEqual([
+    ['a-src__closed', 'Show the other 13'],
+    ['a-src__open', 'Hide the other 13'],
+  ]);
+  expect(doc.querySelector('details.a-src__more > ul')?.getAttribute('aria-label')).toBe('Sources 4 to 16');
+});
+
+test('one h1, five h2 that are their sections’ tabs, three h3 in the parts, and the sources’ h3 (check 2)', async () => {
+  const doc = await about();
+  expect(doc.querySelectorAll('h1')).toHaveLength(1);
+  expect(words(doc.querySelector('h1'))).toBe('Watch it happen, then learn its name.');
+  const h2s = [...doc.querySelectorAll('main h2')];
+  expect(h2s.map(words)).toEqual(['What TechConcepts is', 'How a lesson works', 'Where the facts come from', 'Credits', 'Your progress stays with you']);
+  for (const h2 of h2s) {
+    expect(h2.classList.contains('cs-tab')).toBe(true);
+    const section = h2.parentElement!;
+    expect(section.firstElementChild).toBe(h2);
+    expect(section.getAttribute('aria-labelledby')).toBe(h2.id);
+  }
+  expect([...doc.querySelectorAll('ol.a-steps h3')].map(words)).toEqual(['See it happen', 'Get the idea, then the name', 'Check yourself']);
+  expect([...doc.querySelectorAll('ol.a-steps .n')].map((n) => [n.innerHTML, words(n)])).toEqual([
+    ['<b>1</b> Watch', '1 Watch'],
+    ['<b>2</b> Learn', '2 Learn'],
+    ['<b>3</b> Practice', '3 Practice'],
+  ]);
+  expect(words(doc.querySelector('div.a-src h3'))).toBe('Sources in the DHCP lesson');
+});
+
+test('the counts are one card of three cells, each its figure after its words in the markup (check 3)', async () => {
+  const doc = await about();
+  const dl = doc.querySelector('dl.stats')!;
+  expect(dl.classList.contains('cs-card')).toBe(true);
+  for (const cell of dl.children) expect([...cell.children].map((c) => c.tagName)).toEqual(['DT', 'DD']);
+});
+
+test('the list of sections is a card in the opening, after the counts, with five links and no lit one (checks 4, 27)', async () => {
+  const doc = await about();
+  const side = doc.querySelector('.a-open__side')!;
+  expect([...side.children].map((c) => c.tagName + '.' + [...c.classList].join('.'))).toEqual(['DL.stats.cs-card', 'NAV.a-toc.cs-card']);
+  const nav = side.querySelector('nav')!;
+  expect(nav.getAttribute('aria-label')).toBe('On this page');
+  expect(words(nav.querySelector('p.a-toc__h.cs-tab'))).toBe('On this page');
+  expect([...nav.querySelectorAll('a')].map((a) => [a.getAttribute('href'), words(a)])).toEqual([
+    ['#what', 'What it is'],
+    ['#lessons', 'How a lesson works'],
+    ['#facts', 'Where the facts come from'],
+    ['#credits', 'Credits'],
+    ['#privacy', 'Your progress'],
+  ]);
+  expect(doc.querySelectorAll('[aria-current="location"]')).toHaveLength(0);
+});
+
+test('the sources show three rows and fold the rest, the same sources in the same order (check 5)', async () => {
+  const doc = await about();
+  const facts = doc.querySelector('.a-src')!;
+  const shown = [...facts.querySelectorAll(':scope > ul > li')];
+  const folded = [...facts.querySelectorAll('details.a-src__more > ul > li')];
+  expect(shown).toHaveLength(3);
+  expect(folded).toHaveLength(13);
+  expect(doc.querySelector('details.a-src__more')?.hasAttribute('open')).toBe(false);
+  const today = [...facts.querySelectorAll('a')].map((a) => [a.getAttribute('href'), words(a)]);
+  const dhcp = getLesson('dhcp')!;
+  const expected = sourceRows(dhcp.units.flatMap((u) => u.references)).map((r) => [r.url, r.title]);
+  expect(today).toEqual(expected);
+});
+
+test.each([
+  [6, 6, 0, null],
+  [4, 4, 0, null],
+  [7, 3, 4, 'Sources 4 to 7'],
+])('with %i sources the page shows %i and folds %i (the number is the list’s length less three, not a figure written in)', async (count, shown, folded, label) => {
+  analytics.token = undefined;
+  rows.count = count;
+  const container = await AstroContainer.create({ renderers: await loadRenderers([getContainerRenderer()]) });
+  const doc = new JSDOM(await container.renderToString(About)).window.document;
+  rows.count = null;
+  expect(doc.querySelectorAll('.a-src > ul > li')).toHaveLength(shown);
+  expect(doc.querySelectorAll('details.a-src__more > ul > li')).toHaveLength(folded);
+  if (folded === 0) expect(doc.querySelector('details')).toBeNull();
+  else {
+    expect(words(doc.querySelector('.a-src__closed'))).toBe(`Show the other ${folded}`);
+    expect(doc.querySelector('details.a-src__more > ul')?.getAttribute('aria-label')).toBe(label);
+  }
+});
+
+test('#privacy keeps its order: the words, the table, the analytics sentence, “To start fresh”, the island (check 28)', async () => {
+  const doc = await about('a-test-token');
+  const keep = doc.querySelector('#privacy .a-keep')!;
+  expect([...keep.children].filter((c) => !['SCRIPT', 'STYLE'].includes(c.tagName)).map((c) => (c.tagName === 'ASTRO-ISLAND' ? 'island' : c.tagName === 'P' ? words(c).slice(0, 14) : c.className))).toEqual([
+    'TechConcepts r',
+    'a-savedbox',
+    'The site count',
+    'To start fresh',
+    'island',
+  ]);
+  const table = keep.querySelector('.a-savedbox > table.a-saved')!;
+  expect(words(table.querySelector('caption'))).toBe('What the site remembers');
+  expect([...table.querySelectorAll('tbody tr')].map(words)).toEqual([
+    'Which lessons you started and finishedThis browser only',
+    'Light or dark themeThis browser only',
+    'Your Practice answersNot saved at all',
+  ]);
+});
+
+test('no script runs on the page but the header’s and the Reset island: the list-lighting script is gone, and so is every mention of it (check 27)', () => {
+  const toc = 'src/scripts/about-' + 'toc';
+  expect(existsSync(`${toc}.ts`)).toBe(false);
+  expect(existsSync(`${toc}.test.ts`)).toBe(false);
+  expect(pageText).not.toContain('<script');
+  // The two names are split here so this file does not find itself.
+  const gone = ['about-' + 'toc', 'follow' + 'Sections'].join('\\|');
+  expect((execSync(`git grep -n "${gone}" -- src e2e README.md || true`, { encoding: 'utf8' }) as string).trim()).toBe('');
+});
+
+test('the page imports the Card stack stylesheet on the line after site.css (case 0.4)', () => {
+  expect(pageText).toMatch(/import '\.\.\/components\/site\.css';\nimport '\.\.\/styles\/card-stack\.css';\n/);
+});
+
+test('the page’s styles: the scroll paddings, the open menu’s inside its media query, no blue links, no transition (checks 6, 17)', () => {
+  expect(style).toMatch(/html\s*\{[^}]*scroll-behavior:\s*smooth;[^}]*scroll-padding-top:\s*80px;[^}]*scroll-padding-bottom:\s*12px;/);
+  expect(style).toMatch(/@media \(max-width: 959px\)\s*\{\s*html:has\(#menu-panel:not\(\[hidden\]\)\)\s*\{\s*scroll-padding-top:\s*403px;/);
+  expect(style.match(/403px/g)).toHaveLength(1);
+  expect(style).not.toContain('var(--link)');
+  expect(style).not.toMatch(/transition/);
+  expect(style).not.toMatch(/position:\s*sticky/);
+  expect(style).not.toMatch(/\.ab--|\.pt-|\.toc-h|\bcard\b\s*\{/);
 });
