@@ -445,13 +445,13 @@ test.describe('the Glossary in the Card stack look', () => {
     expect((await padding('/networking/dhcp'))[0]).toBe('69px');
   });
 
-  test('--cs-edge is set on /glossary and on no page that does not import the stylesheet', async ({ page }) => {
+  test('--cs-edge is set on /glossary and on the 404 page, and on no page that does not import the stylesheet', async ({ page }) => {
     const edge = async (path: string) => {
       await page.goto(path);
       return page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim());
     };
     expect(await edge('/glossary')).not.toBe('');
-    expect(await edge('/does-not-exist')).toBe('');
+    expect(await edge('/does-not-exist')).not.toBe('');
     expect(await edge('/networking/dhcp')).toBe('');
   });
 

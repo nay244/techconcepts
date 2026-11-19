@@ -85,12 +85,12 @@ test.describe('the page reads the Card stack, and only this page and its neighbo
     expect(await rootStyle(page, 'scrollPaddingTop')).toBe('69px');
   });
 
-  test('--cs-edge is set on /about and still empty on a missing page and on a lesson', async ({ page }) => {
+  test('--cs-edge is set on /about and on a missing page, and still empty on a lesson', async ({ page }) => {
     const edge = (): Promise<string> => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim());
     await visit(page, '/about');
     expect(await edge()).not.toBe('');
     await page.goto('/does-not-exist');
-    expect(await edge()).toBe('');
+    expect(await edge()).not.toBe('');
     await visit(page, '/networking/dhcp');
     expect(await edge()).toBe('');
   });

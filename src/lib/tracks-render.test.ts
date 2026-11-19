@@ -194,12 +194,13 @@ describe('the words: every text in main is the list written from §9', () => {
 });
 
 describe('the shared Card stack stylesheet', () => {
-  test('is imported by Home, the Tracks page, the track page, About and the Glossary, and by nothing else', () => {
+  test('is imported by Home, the Tracks page, the track page, About, the Glossary and the 404 page, and by nothing else', () => {
     const importers = (execSync("grep -rlE \"import .*card-stack\\.css\" src || true", { encoding: 'utf8' }) as string)
       .split('\n')
       .filter((f) => f !== '' && !f.endsWith('.test.ts'))
       .sort();
     expect(importers).toEqual([
+      'src/pages/404.astro',
       'src/pages/[track]/index.astro',
       'src/pages/about.astro',
       'src/pages/glossary.astro',

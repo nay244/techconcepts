@@ -1,5 +1,5 @@
 /* The Card stack's shared parts (prototypes/d17-home-card-stack.md, prototypes/d18-tracks-card-stack.md §3): cards with a
-   hard edge on Patch's ground. Imported by Home (src/pages/index.astro), the Tracks page (src/pages/tracks.astro), the track page (src/pages/[track]/index.astro), About (src/pages/about.astro) and the Glossary (src/pages/glossary.astro)
+   hard edge on Patch's ground. Imported by Home (src/pages/index.astro), the Tracks page (src/pages/tracks.astro), the track page (src/pages/[track]/index.astro), About (src/pages/about.astro), the Glossary (src/pages/glossary.astro) and the 404 page (src/pages/404.astro)
    only. Every part is a `--cs-*` name, an opt-in `cs-` class, or scoped to `main`, so the file reaches neither the
    header, nor the footer, nor a page that does not import it. */
 

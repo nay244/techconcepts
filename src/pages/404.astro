@@ -5,6 +5,7 @@ import { pageFigure } from '../art/figures/pages';
 import { startLesson } from '../lib/start';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import '../components/site.css';
+import '../styles/card-stack.css';
 
 // Lesson 1 is HTTP, where status codes are met.
 const lesson = startLesson();
@@ -25,66 +26,99 @@ const lesson = startLesson();
         <a href={lesson.url}>Lesson {lesson.number}, {lesson.title}</a> shows where it comes from.
       </p>
     </div>
-    <div class="notfound__art">
+    <div class="notfound__art cs-card">
       <Fragment set:html={pageFigure('notFound')} />
     </div>
   </div>
 </BaseLayout>
 
 <style>
+  /* Keyboard focus stays clear of the sticky header, as on Tracks, the track page, About and the Glossary.
+     403px is the open header on this page (391px) plus 12px. */
+  :global(html) {
+    scroll-padding-top: 80px;
+    scroll-padding-bottom: 12px;
+  }
+  @media (max-width: 959px) {
+    :global(html:has(#menu-panel:not([hidden]))) {
+      scroll-padding-top: 403px;
+    }
+  }
+
   .notfound {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: clamp(24px, 4vw, 64px);
+    gap: clamp(20px, 4vw, 64px);
     align-items: center;
-    padding-block: clamp(32px, 6vw, 88px);
+    padding-block: clamp(20px, 5vw, 64px);
   }
+  /* "Error 404": a chip of the lesson-number family (2px edge, 6px corners), set in the tabs' type. */
   .notfound__code {
-    display: inline-block;
-    margin: 0 0 14px;
-    padding: 4px 10px;
-    /* A strip of label tape, like the port's own label. */
-    border: 1px solid var(--line-strong);
-    border-radius: 2px;
-    background: var(--card);
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    margin: 0 0 12px;
+    padding: 0 10px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 6px;
+    background: var(--cs-card);
     color: var(--ink-strong);
-    font: 600 15px/1.2 var(--display);
-    letter-spacing: 0.02em;
+    font: 600 16px/1 var(--display);
+    letter-spacing: 0.01em;
   }
   .notfound h1 {
     margin: 0;
     font-size: clamp(44px, 6.4vw, 88px);
     line-height: 0.94;
     letter-spacing: -0.005em;
+    text-wrap: balance;
   }
   .notfound__lede {
     max-width: 30em;
-    margin: 18px 0 0;
+    margin: 16px 0 0;
     color: var(--ink-strong);
     font-size: 19px;
   }
+  /* The buttons are card-stack.css's (main .btn). The row keeps room for their 3px offset edge, so the edge ends
+     on the column's own line. */
   .notfound__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin: 22px 0 0;
+    gap: 12px;
+    margin: 20px 0 0;
+    padding: 0 var(--cs-off) var(--cs-off) 0;
   }
   .notfound__why {
     max-width: 32em;
-    margin: 28px 0 0;
+    margin: 25px 0 0;
     padding-top: 16px;
-    border-top: 1px solid var(--line-strong);
+    border-top: 1px solid var(--cs-hair);
+    color: var(--ink);
     font-size: 16px;
   }
-  .notfound__why a {
-    color: var(--link);
+  /* The figure stands on a flat card (class cs-card): re-tinted, its paper is the card's. */
+  .notfound__art {
+    overflow: hidden;
   }
   @media (max-width: 860px) {
     .notfound {
       grid-template-columns: minmax(0, 1fr);
     }
+    /* The figure first, and never wider than 480px, so the heading is on the first screen of a wide phone too. */
     .notfound__art {
       order: -1;
+      max-width: 480px;
+    }
+    /* The buttons and the rule end on the card's right edge. */
+    .notfound__actions,
+    .notfound__why {
+      max-width: 480px;
+    }
+    /* The two share one row, as wide as the figure's card, down to 320px: their side padding gives way (card-stack.css
+       sets 22px), and what room is left is shared between them. */
+    .notfound__actions .btn {
+      flex: 1 1 auto;
+      padding-inline: 8px;
     }
   }
 </style>
