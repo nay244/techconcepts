@@ -932,10 +932,13 @@ test.describe('the Glossary in the Card stack look', () => {
     await page.evaluate(() => window.scrollTo(0, 0));
     const key = page.locator('a.gl-key').nth(3);
     await key.hover();
+    // Read before the wait: a transition left on the key is running now and gone after the wait.
+    expect(await key.evaluate((e) => e.getAnimations().length), 'no transition on hover').toBe(0);
     await settle(page);
     expect(await key.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(await token(page, '--cs-quiet'));
     expect(await key.evaluate((e) => e.getAnimations().length)).toBe(0);
     await page.mouse.down();
+    expect(await key.evaluate((e) => e.getAnimations().length), 'no transition when pressed').toBe(0);
     await settle(page);
     expect(await key.evaluate((e) => getComputedStyle(e).transform)).toBe('matrix(1, 0, 0, 1, 1, 1)');
     expect(await key.evaluate((e) => e.getAnimations().length)).toBe(0);
