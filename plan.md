@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 23: 404 in the Card stack look
 
-**Status: go (2026-11-19; 2.117): the layout kept, D22 on Fable 5.2 by the owner's word.** Planned under 2.116. The owner: "Start the 404 page". 404 is the last page of 2.84's move (Card stack on every page but the Lesson page). Numbers claimed on `revamp` (b14f4d1, checked free): job 23, direction rows from 2.116, S24, D22, B28, F23.
+**Status: go (2026-11-19; 2.117): the layout kept, D22 on Fable 5.2 by the owner's word. D22 approved and frozen (2.118, `8c6c43d`); next the spec review.** Planned under 2.116. The owner: "Start the 404 page". 404 is the last page of 2.84's move (Card stack on every page but the Lesson page). Numbers claimed on `revamp` (b14f4d1, checked free): job 23, direction rows from 2.116, S24, D22, B28, F23.
 
 ## Inputs
 
