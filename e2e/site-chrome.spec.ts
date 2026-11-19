@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { gzipSize } from '../scripts/check-budgets.mjs';
-import { open, pageOverflow, scrollSettled, transitionsDone } from './support';
+import { open, pageOverflow, scrollSettled, settledFrame, transitionsDone } from './support';
 
 /*
  * The site's header and footer in the Card stack look (job 24, B29; prototypes/d23-header-footer.md and
@@ -892,6 +892,7 @@ test.describe('the header and the footer in the Card stack look', () => {
     });
   const press = async (page: Page, key: 'Tab' | 'Shift+Tab'): Promise<Stop> => {
     await page.keyboard.press(key);
+    await settledFrame(page); // a smooth scroll begins on the frame after the key
     await scrollSettled(page); // About scrolls smoothly: wait for the scroll, then for the transitions
     await transitionsDone(page);
     return readStop(page);

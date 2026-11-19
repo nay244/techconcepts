@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pageFigure } from '../art/figures/pages';
 import { startLesson } from './start';
 import NotFound from '../pages/404.astro';
-import { expectCardStackGrant, expectTracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from './card-stack-guards';
 
 /** The commit D22 was approved and frozen at: every "untouched" and "unchanged" below is read against it. */
 const BASE = '1d8e446';
@@ -61,11 +61,18 @@ describe('0. what the build may not change', () => {
   });
 
   test('1b: tracks.astro gains the track page’s open-menu rule and nothing else (job 24)', () => {
-    expectTracksGrant(BASE);
+    const t = tracksGrant(BASE);
+    expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
+    expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
+    expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
   });
 
   test('2: card-stack.css changes only its opening comment, two reworded comments and the header and footer block (job 24); the opening comment stays four lines and names six importers', () => {
-    expectCardStackGrant(BASE);
+    const g = cardStackGrant(BASE);
+    expect(g.changed, 'lines outside the three comments that are not the old text').toEqual(CARD_STACK_GRANT.changed);
+    expect(g.comments, 'the three comments: lines 1 to 4, 6 to 8, 48 to 49').toEqual(CARD_STACK_GRANT.comments);
+    expect(g.frame, 'the old length, the blank line, the block begins, the block ends').toEqual(CARD_STACK_GRANT.frame);
+    expect(g.markers, 'BEGIN and END once each').toEqual(CARD_STACK_GRANT.markers);
     const head = (readFileSync('src/styles/card-stack.css', 'utf8') as string).split('\n').slice(0, 4).join('\n');
     for (const page of ['src/pages/index.astro', 'src/pages/tracks.astro', 'src/pages/[track]/index.astro', 'src/pages/about.astro', 'src/pages/glossary.astro', 'src/pages/404.astro']) expect(head, page).toContain(page);
   });

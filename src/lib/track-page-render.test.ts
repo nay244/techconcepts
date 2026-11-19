@@ -15,7 +15,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { getEntries } from '../content/registry';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import TrackPage from '../pages/[track]/index.astro';
-import { expectCardStackGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from './card-stack-guards';
 
 const TRACKS = [
   { track: networkingTrack, lessons: 20, parts: 6, end: 'New to IT? How the Internet Works is the gentler start.', to: '/how-the-internet-works', words: '20 of 20 lessons done' },
@@ -206,7 +206,11 @@ describe('the files the page changes', () => {
 
   test('card-stack.css changes only its opening comment, two reworded comments and the header and footer block (job 24), and names no part of the track page (check 27)', () => {
     // e6441c2 predates the file (the old guard's whole-file hunk passed on nothing); 1d8e446 is the last commit that holds it as it was.
-    expectCardStackGrant('1d8e446');
+    const g = cardStackGrant('1d8e446');
+    expect(g.changed, 'lines outside the three comments that are not the old text').toEqual(CARD_STACK_GRANT.changed);
+    expect(g.comments, 'the three comments: lines 1 to 4, 6 to 8, 48 to 49').toEqual(CARD_STACK_GRANT.comments);
+    expect(g.frame, 'the old length, the blank line, the block begins, the block ends').toEqual(CARD_STACK_GRANT.frame);
+    expect(g.markers, 'BEGIN and END once each').toEqual(CARD_STACK_GRANT.markers);
     expect(read('src/styles/card-stack.css')).not.toMatch(/\.tk\b|\.stop\b|\.route\b|\.upnext\b|\.strip\b|\.wlp\b/);
   });
 
