@@ -1,5 +1,9 @@
 // The Glossary page rendered with Astro's container and parsed with jsdom, as `no-script.test.ts` renders the lesson page
 // (E2: the data-exact parts of D9's checks 3, 11, 12, 13, 15, 16, 18, 19 and 20, as D9a changes them, run here, from the glossary itself).
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { execSync } from 'node:child_process';
+// @ts-expect-error - no @types/node in this project; vitest runs under node
+import { readFileSync } from 'node:fs';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 // @ts-expect-error - no @types/jsdom in this project; jsdom is already here for the component tests
 import { JSDOM } from 'jsdom';
@@ -241,5 +245,90 @@ describe('19 and 20. words, and the page without JavaScript', () => {
   test('no island and no script inside main', () => {
     expect(html).not.toContain('astro-island');
     expect(doc.querySelector('main script')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------- the Card stack look (job 22, B26; prototypes/d21-glossary.md, prototypes/d21-cases.md)
+
+const source = readFileSync('src/pages/glossary.astro', 'utf8') as string;
+const style = /<style is:global>([\s\S]*)<\/style>/.exec(source)![1]!;
+/** The rule that opens at `selector`, its body, taken from the page's own style text (comments out). */
+const stripped = style.replace(/\/\*[\s\S]*?\*\//g, '');
+const ruleOf = (css: string, selector: string): string => {
+  const at = css.indexOf(`${selector} {`);
+  expect(at, `${selector} is in the style text`).toBeGreaterThanOrEqual(0);
+  return css.slice(css.indexOf('{', at) + 1, css.indexOf('}', at));
+};
+
+describe('D21, 0.4: the stylesheet and the page', () => {
+  test('the page imports card-stack.css on the line after site.css, once', () => {
+    const lines = source.split('\n');
+    const site = lines.indexOf("import '../components/site.css';");
+    expect(site).toBeGreaterThan(-1);
+    expect(lines[site + 1]).toBe("import '../styles/card-stack.css';");
+    expect(source.match(/card-stack\.css/g)).toHaveLength(1);
+  });
+  test('no component of the page and not the layout imports it, so it reaches no other page', () => {
+    for (const file of ['src/components/GlossaryEntry.astro', 'src/components/GlossaryKeys.astro', 'src/components/GlossaryStamp.astro', 'src/layouts/BaseLayout.astro']) {
+      expect(readFileSync(file, 'utf8') as string, file).not.toContain('card-stack.css');
+    }
+  });
+  test('Home, Tracks, the track pages, the header, the footer and the tokens are untouched, and card-stack.css has no hunk at all', () => {
+    const touched = (execSync("git diff --name-only f30e876 -- src/pages/index.astro src/pages/tracks.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/styles/card-stack.css src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
+    expect(touched).toBe('');
+  });
+});
+
+describe('D21, G-11 and G-12: the page’s style text', () => {
+  test('the page’s scroll padding: 80px above and 12px below; the 403px of the open menu sits inside a media query at 959px', () => {
+    const root = ruleOf(stripped, 'html');
+    expect(root).toMatch(/scroll-padding-top:\s*80px/);
+    expect(root).toMatch(/scroll-padding-bottom:\s*12px/);
+    const at = stripped.indexOf('html:has(#menu-panel:not([hidden]))');
+    expect(at).toBeGreaterThan(-1);
+    const media = stripped.lastIndexOf('@media', at);
+    expect(stripped.slice(media, at)).toMatch(/^@media \(max-width: 959px\)\s*\{\s*$/);
+    // The media block's own braces close after the rule, so the rule is inside it and not after it.
+    const rule = stripped.slice(at, stripped.indexOf('}', at) + 1);
+    expect(rule).toMatch(/scroll-padding-top:\s*403px/);
+    expect(stripped.slice(media, at).match(/\}/g)).toBeNull();
+  });
+  test('"All letters" draws its ring inside: a stuck bar sits under the header, so the ring may not grow above it', () => {
+    expect(stripped).toMatch(/\.gl-up:focus-visible\s*\{\s*outline-offset:\s*-3px/);
+    // And so does a pointer link flush under its bar (a card whose first row is a pointer).
+    expect(stripped).toMatch(/\.gl-entry--see:first-child \.gl-see a:focus-visible\s*\{\s*outline-offset:\s*-3px/);
+    // And so does a pointer link flush under its bar (a card whose first row is a pointer).
+    expect(stripped).toMatch(/\.gl-entry--see:first-child \.gl-see a:focus-visible\s*\{\s*outline-offset:\s*-3px/);
+  });
+  test('no transition, no Patch parts and none of the prototype’s own', () => {
+    for (const part of ['var(--link)', 'transition', '--here-soft', '--line-strong', '--r-tile', '.pbar', '#p-l1', '#p-l2', '.gl-az__all', 'gl-key--all', 'gl-key--first', ':root:has(', 'scroll-behavior']) {
+      expect(stripped, part).not.toContain(part);
+    }
+  });
+  test('the card’s edge, the keys’ and the tab’s read the stylesheet’s names, and a pressed key moves 1px', () => {
+    expect(ruleOf(stripped, '.gl-list')).toMatch(/border:\s*2px solid var\(--cs-edge\)/);
+    expect(ruleOf(stripped, '.gl-key')).toMatch(/border:\s*2px solid var\(--cs-edge\)/);
+    expect(ruleOf(stripped, '.gl-bar::after')).toMatch(/background:\s*var\(--cs-edge\)/);
+    expect(ruleOf(stripped, 'a.gl-key:active')).toMatch(/translate\(1px, 1px\)/);
+  });
+  test('the keys go to 6 columns below 375px and the phone’s gutter is 14px', () => {
+    expect(stripped).toMatch(/@media \(max-width: 374px\)\s*\{\s*\.gl-az ul \{ grid-template-columns: repeat\(6,/);
+    expect(stripped).toMatch(/@media \(max-width: 599px\)[\s\S]*?\.gl \{[^}]*padding-inline: 14px/);
+  });
+});
+
+describe('D21, G-1: what main holds, counted', () => {
+  test('105 terms, 110 definitions, 48 pointers, 153 names, 404 sources, 20 live keys and 6 empty, one stamp, no layout-2 key', () => {
+    const main = doc.querySelector('main')!;
+    expect(main.querySelectorAll('.gl-entry:not(.gl-entry--see)')).toHaveLength(105);
+    expect(main.querySelectorAll('.gl-def')).toHaveLength(110);
+    expect(main.querySelectorAll('.gl-entry--see')).toHaveLength(48);
+    expect(main.querySelectorAll('dt')).toHaveLength(153);
+    expect(main.querySelectorAll('a.gl-src')).toHaveLength(404);
+    expect(main.querySelectorAll('a.gl-key')).toHaveLength(20);
+    expect([...main.querySelectorAll('span.gl-key--none')].map((k) => words(k.querySelector('.sr-only')))).toEqual(['G, no terms', 'Q, no terms', 'V, no terms', 'X, no terms', 'Y, no terms', 'Z, no terms']);
+    expect(main.querySelectorAll('a.stamp[href="/about#facts"]')).toHaveLength(1);
+    expect(main.querySelector('.gl-az__all, .gl-key--all, .gl-key--first')).toBeNull();
+    expect(html).not.toContain('data-astro-cid');
   });
 });
