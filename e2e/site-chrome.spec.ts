@@ -292,6 +292,28 @@ test.describe('the header and the footer in the Card stack look', () => {
     }
   });
 
+  test('19: each page grows by the footer\'s growth: +29 up to 720px, +5 from 721px (Home within 3, the others within 2)', async ({ page }) => {
+    test.setTimeout(120_000);
+    // revamp's scrollHeight (13af135, built, light, first visit) at 320, 375, 390, 720, 721, 959, 960 and 1440.
+    const BASE: Record<string, number[]> = {
+      '/': [4696, 4490, 4471, 5029, 4957, 3211, 3212, 3621],
+      '/tracks': [2533, 2368, 2343, 1953, 1902, 1946, 1946, 1599],
+      '/how-the-internet-works': [3652, 3499, 3474, 3261, 3210, 2841, 2841, 2365],
+      '/networking': [4686, 4330, 4305, 3971, 3921, 3387, 3387, 2910],
+      '/about': [6344, 5587, 5377, 4295, 4244, 3450, 3451, 3364],
+      '/glossary': [52004, 45324, 43702, 33092, 33042, 26353, 26191, 20300],
+      '/does-not-exist': [1430, 1423, 1409, 1418, 1367, 1088, 1088, 1201],
+    };
+    const SIZES: Array<[number, number]> = [[320, 640], [375, 812], [390, 844], [720, 900], [721, 900], [959, 900], [960, 900], [1440, 900]];
+    for (const path of SEVEN) {
+      for (const [i, [w, h]] of SIZES.entries()) {
+        await visit(page, path, w, h, 'light');
+        const height = await page.evaluate(() => document.documentElement.scrollHeight);
+        near(height - BASE[path]![i]!, w <= 720 ? 29 : 5, path === '/' ? 3 : 2, `${path} ${w}: the page's growth`);
+      }
+    }
+  });
+
   test('20: no sideways scroll, closed and open, at the top and the foot', async ({ page }) => {
     test.setTimeout(240_000);
     const WIDE = [...Array.from({ length: 11 }, (_, i) => 320 + i * 8), 512, 640, 719, 720, 721, 768, 896, 959, 960, 1024, 1152, 1280, 1408, 1440];
