@@ -1,5 +1,6 @@
 // The header and footer block at the end of card-stack.css, read from the file as it is (job 24, prototypes/d23-cases.md
 // case 5). The built site's CSS is minified (the clamp is rewritten, the prefixed pairs folded), so only the source is read.
+// @ts-expect-error - no @types/node in this project; vitest runs under node
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 

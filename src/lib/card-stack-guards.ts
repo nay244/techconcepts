@@ -1,4 +1,6 @@
+// @ts-expect-error - no @types/node in this project; vitest runs under node
 import { execSync } from 'node:child_process';
+// @ts-expect-error - no @types/node in this project; vitest runs under node
 import { readFileSync } from 'node:fs';
 import { expect } from 'vitest';
 
