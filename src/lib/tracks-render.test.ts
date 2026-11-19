@@ -194,15 +194,18 @@ describe('the words: every text in main is the list written from §9', () => {
 });
 
 describe('the shared Card stack stylesheet', () => {
-  // Job 22 (D21 cases S1): while the Glossary (B26) and About (B27) are built side by side, either may import it too.
-  // F22 makes this exact again once both are merged.
-  test('is imported by Home, the Tracks page and the track page, and by nothing else but the Glossary and About', () => {
+  test('is imported by Home, the Tracks page, the track page, About and the Glossary, and by nothing else', () => {
     const importers = (execSync("grep -rlE \"import .*card-stack\\.css\" src || true", { encoding: 'utf8' }) as string)
       .split('\n')
       .filter((f) => f !== '' && !f.endsWith('.test.ts'))
       .sort();
-    for (const f of ['src/pages/[track]/index.astro', 'src/pages/index.astro', 'src/pages/tracks.astro']) expect(importers).toContain(f);
-    for (const f of importers) expect(['src/pages/[track]/index.astro', 'src/pages/index.astro', 'src/pages/tracks.astro', 'src/pages/glossary.astro', 'src/pages/about.astro']).toContain(f);
+    expect(importers).toEqual([
+      'src/pages/[track]/index.astro',
+      'src/pages/about.astro',
+      'src/pages/glossary.astro',
+      'src/pages/index.astro',
+      'src/pages/tracks.astro',
+    ]);
   });
 
   test('the page’s own rules reach nothing outside it: the strip, the progress logic, the tokens, the header and the footer are not in the page’s diff', () => {
