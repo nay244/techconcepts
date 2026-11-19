@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 23: 404 in the Card stack look
 
-**Status: planned (2026-11-19; 2.116), waiting for the owner's go.** The owner: "Start the 404 page". 404 is the last page of 2.84's move (Card stack on every page but the Lesson page). Numbers claimed on `revamp` (b14f4d1, checked free): job 23, direction rows from 2.116, S24, D22, B28, F23.
+**Status: go (2026-11-19; 2.117): the layout kept, D22 on Fable 5.2 by the owner's word.** Planned under 2.116. The owner: "Start the 404 page". 404 is the last page of 2.84's move (Card stack on every page but the Lesson page). Numbers claimed on `revamp` (b14f4d1, checked free): job 23, direction rows from 2.116, S24, D22, B28, F23.
 
 ## Inputs
 
@@ -42,7 +42,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
 | S24 | scout | scout (Haiku), 0.11 million | Done: `prototypes/s24-404-facts.md`, with the orchestrator's measures in its Part 8. | |
-| D22 | design | designer (Opus 5.5, or Fable 5.2 on the owner's word) | `prototypes/d22-404.html` and `.md`: the layout(s) of decision 2, the widths and themes of decision 4, length and weight ruled, every word listed. | The orchestrator looks at it in the browser at 320, 375 and 1440, light and dark; heights against S24's. |
+| D22 | design | designer (Fable 5.2, the owner's word, 2.117) | `prototypes/d22-404.html` and `.md`: the layout(s) of decision 2, the widths and themes of decision 4, length and weight ruled, every word listed. | The orchestrator looks at it in the browser at 320, 375 and 1440, light and dark; heights against S24's. |
 | Gate | design | the owner | D22's prototype and spec. | The owner's words. |
 | B28 spec | build | reviewer (Opus) | Holes and attack cases, the keyboard walks of decision 7, the tests that change: `prototypes/d22-cases.md`. | Holes with one answer closed as errata; taste back to `designer`. |
 | B28 | build | builder (Sonnet) | 404 as approved; the four tests of decision 8; each case a test. | `npm test`; `npm run build`; its specs at d1440-dark, phone and reduced-motion; heights and weight; the other five Card stack pages byte-identical. |
