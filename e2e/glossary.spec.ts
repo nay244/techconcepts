@@ -1027,6 +1027,20 @@ test.describe('the Glossary in the Card stack look', () => {
     }
   }
 
+  test('a mouse click on a source link and on a key draws no focus ring (:focus-visible only)', async ({ page }) => {
+    await page.setViewportSize(SIZES[1]);
+    await page.goto('/glossary');
+    for (const sel of ['a.gl-key', '#ping a.gl-src']) {
+      const link = page.locator(sel).first();
+      await link.scrollIntoViewIfNeeded();
+      // The click is held back from following the link (a source would open a tab and take the focus away); the mouse press still focuses it.
+      await link.evaluate((e) => e.addEventListener('click', (ev) => ev.preventDefault()));
+      await link.click();
+      await settle(page);
+      expect(await link.evaluate((e) => [e === document.activeElement, getComputedStyle(e).outlineStyle])).toEqual([true, 'none']);
+    }
+  });
+
   // ---- the keyboard: checks 9 and 10, cases K-1 and K-2
 
   for (const size of [SIZES[0], SIZES[1], SIZES[2], SIZES[3], SIZES[5]]) {
