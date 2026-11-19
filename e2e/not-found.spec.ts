@@ -26,6 +26,8 @@ const SIX = [
   'Go to Home See the tracks',
   'The server is working, but it has nothing at this address. That is what the number 404 means. Lesson 1, HTTP shows where it comes from.',
 ];
+/** The open menu's panel, as the header renders it: the five links, then Start learning. */
+const PANEL = ['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About', 'Start learning'];
 const STOPS = ['Go to Home', 'See the tracks', 'Lesson 1, HTTP'];
 
 /** The contrast reader of glossary.spec.ts: the WCAG ratio of two colours, each a CSS colour string (a canvas reads any syntax the page computes). */
@@ -586,7 +588,7 @@ test.describe('width', () => {
 
 test.describe('heights and weight', () => {
   const HEIGHTS: Array<[number, number, number]> = [[1440, 900, 1201], [768, 1024, 1376], [390, 844, 1409], [375, 812, 1423], [320, 640, 1430]];
-  test('22: the page’s height at five sizes, light and dark the same', async ({ page }) => {
+  test('39: the page’s height at five sizes, light and dark the same', async ({ page }) => {
     for (const [width, height, expected] of HEIGHTS) {
       const read: number[] = [];
       for (const colorScheme of SCHEMES) {
@@ -598,7 +600,7 @@ test.describe('heights and weight', () => {
     }
   });
 
-  test('23: the page weighs under 33,000 bytes gzipped', async ({ page }) => {
+  test('40: the page weighs under 33,000 bytes gzipped', async ({ page }) => {
     const body = await (await page.request.get(MISSING)).text();
     const size = gzipSize(body);
     expect(size, `the 404's HTML is ${size} bytes gzipped`).toBeLessThan(33_000);
@@ -787,7 +789,7 @@ test.describe('keyboard walks', () => {
     test(`47: menu open at ${size.width}: six panel links, then three stops, to the footer and back; the panel stays open`, async ({ page }) => {
       await visit(page, MISSING, size.width, size.height);
       const w = await walk(page, true);
-      expect(w.panel).toHaveLength(6);
+      expect(w.panel).toEqual(PANEL);
       expect(w.going.map((s) => s.name)).toEqual(STOPS);
       expect(w.coming.map((s) => s.name)).toEqual([...STOPS].reverse());
       clear([...w.going, ...w.coming], `${size.width} open`);
@@ -803,8 +805,9 @@ test.describe('keyboard walks', () => {
     clear([...closed.going, ...closed.coming], 'dark closed');
     await visit(page, MISSING, 375, 812, 'dark');
     const open = await walk(page, true);
-    expect(open.panel).toHaveLength(6);
+    expect(open.panel).toEqual(PANEL);
     expect(open.going.map((s) => s.name)).toEqual(STOPS);
+    expect(open.coming.map((s) => s.name)).toEqual([...STOPS].reverse());
     clear([...open.going, ...open.coming], 'dark open');
   });
 
@@ -901,7 +904,8 @@ test.describe('JavaScript off', () => {
         blocks: [...document.querySelector('.notfound__words')!.children].map((c) => (c as HTMLElement).innerText.replace(/\s+/g, ' ').trim()),
         edge: getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim(),
         card: getComputedStyle(document.querySelector('.notfound__art')!).borderTopWidth,
-        shadow: getComputedStyle(document.querySelector('.notfound__actions .btn')!).boxShadow,
+        cardEdge: getComputedStyle(document.querySelector('.notfound__art')!).borderTopColor,
+        shadows: [...document.querySelectorAll('.notfound__actions .btn')].map((b) => getComputedStyle(b).boxShadow),
         padding: getComputedStyle(document.documentElement).scrollPaddingTop,
         panelHidden: document.querySelector('#menu-panel')!.hasAttribute('hidden'),
         height: document.documentElement.scrollHeight,
@@ -909,7 +913,13 @@ test.describe('JavaScript off', () => {
       expect(read.blocks, `${width}`).toEqual(SIX);
       expect(read.edge).not.toBe('');
       expect(read.card).toBe('2px');
-      expect(read.shadow).toMatch(/3px 3px 0px 0px/);
+      const edge = await probe(page, 'var(--cs-edge)', 'borderTopColor');
+      expect(read.cardEdge).toBe(edge);
+      expect(read.shadows).toHaveLength(2);
+      for (const shadow of read.shadows) {
+        expect(shadow).toMatch(/3px 3px 0px 0px/);
+        expect(shadow).toContain(edge);
+      }
       expect([read.padding, read.panelHidden]).toEqual(['80px', true]);
       near(read.height, expected, 20, `${width} height`);
       await expect(page.locator('.site-head .theme-toggle')).toBeHidden();
