@@ -85,8 +85,8 @@ const GREEN_TEXT: GreenText[] = [
   { source: 'console.css', selector: '.explain__finished', grounds: (theme) => ({ card: tokens[theme].card }) },
   // A lesson card's Finished badge, on its own green tint over the card.
   { source: 'site.css', selector: '.badge.done', grounds: (theme) => ({ badge: mix(tokens[theme].allowed, tokens[theme].card, 10) }) },
-  // About's "Progress reset" status, on the page.
-  { source: 'about.astro', selector: ".a-reset [role='status']", grounds: (theme) => ({ bg: tokens[theme].bg }) },
+  // About's "Progress cleared" status, on its section's card (Folders, D21b).
+  { source: 'about.astro', selector: ".a-reset [role='status']", grounds: (theme) => ({ card: tokens[theme].card }) },
 ];
 
 test('the tinted grounds are the ones the CSS paints', () => {

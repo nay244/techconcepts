@@ -90,6 +90,24 @@ export async function transitionsDone(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => document.getAnimations().filter((a) => a instanceof CSSTransition && a.playState === 'running').length), { intervals: [5, 10, 20] }).toBe(0);
 }
 
+/**
+ * Waits, polling from Node (so it works with scripts off), until the page has stopped scrolling: `scrollY` the same on
+ * three polls in a row, 16ms apart, at most 3s. A page with `scroll-behavior: smooth` (About) scrolls for a second
+ * after a key, a click or a fragment, and `transitionsDone` does not see that: it counts CSS transitions only. Wait for
+ * this first, then `transitionsDone`, before any read after a scroll on such a page.
+ */
+export async function scrollSettled(page: Page): Promise<void> {
+  let last = Number.NaN;
+  let same = 0;
+  for (let waited = 0; waited <= 3000; waited += 16) {
+    const y = await page.evaluate(() => window.scrollY);
+    same = y === last ? same + 1 : 1;
+    last = y;
+    if (same >= 3) return;
+    await page.waitForTimeout(16);
+  }
+}
+
 /** How far the page itself overflows the window, down and sideways, in CSS pixels; 0 when it does not. */
 export async function pageOverflow(page: Page): Promise<{ down: number; sideways: number }> {
   await settledFrame(page);
