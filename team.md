@@ -1257,3 +1257,28 @@ Planned on 2026-11-18 in job 21's session on Opus 5.5: the owner said "Lets do t
 | B27 fix check | orchestrator | Opus 5.5 | 1 | not counted | Fix 1 at `reduced-motion`, `--repeat-each=3 --trace=off`: 3 passed; fix 2 red with `outline: 0` in `.cs-card--soon` (1 failed of 19); fix 3 red without `scroll-margin-top: 54px`; fix 4 red without `.a-toc a:focus-visible`; all green once restored. **B27 done.** |
 | B26 | builder | Sonnet | 1 | 266,001 | `job22/b26`: d7188e1 (the Glossary in Ledger, tests first), 22cb56d, c4abb5e, c85fe6d (waits). vitest 2,550 passed; build within budget; CI's e2e pass 1,203 passed, 3 skipped, `glossary.spec.ts:143` no longer held; the spec at `reduced-motion`, its waits 560 of 560 at `--repeat-each=10`. 1440 / 375 / 320: 20,847 / 50,158 / 57,255 → 20,300 / 45,324 / 52,004px; 34,148 → 35,145 bytes gzipped, `main` byte-identical. Home, Tracks and `/networking` 12 of 12 byte-identical. Departure: a card whose first row is a pointer (W) draws its focus ring inside, as E12. |
 | B26 review | reviewer | Opus, high | 1 | 177,719 | PASS WITH FIXES, no blocker: pixel-identical to layout 1 at 6 widths, light and dark; `main` byte-identical; 11 of 11 CSS mutations red; 594 repeat runs passed. Fixes: the `card-stack.css` guard allows B27's lines 1–4 (E2); a test for K-5 (a click draws no ring). The departure accepted as an erratum (E16). |
+| B26 fixes | builder (continued) | Sonnet | 1 | 13,426 (279,427 reported in all, less the build) | `e586a41`: `card-stack.css` may change in lines 1 to 4 only, and in no rule; `c15a436`: a mouse click on a source link and on a key draws no ring (K-5). Its touch-overlap tests timed out at 30s while two builds shared the machine; unchanged, they pass at 120s and in the final CI run. |
+| B26 fix check | orchestrator | Opus 5.5 | 1 | not counted | On `revamp` after the merge: fix 1 green with B27's comment lines in, red with a rule appended to `card-stack.css`; fix 2 red with `main a:focus{outline:2px solid red}` in the page, green without. |
+| F22 | orchestrator | Opus 5.5 | 1 | not counted | `job22/b27` and `job22/b26` merged into `revamp` (`46ea1a6`, `3dbe83c`); the importer test exact again, five pages (`9fa303a`). vitest 2,557 passed (172 files); build within budget on 42 pages; CI's end-to-end pass 1,264 passed, 3 skipped, 0 failed (`glossary.spec.ts:143` replaced, so no test is held); `glossary`, `about` and `tracks-card-stack` at `reduced-motion` 253 passed, 17 skipped, 2 failed: Tracks' contrast test (`tracks-card-stack.spec.ts:278`, dark), which fails as often at f30e876 (3 of 20) and at fb02521, before job 21 (3 of 40): it reads the done squares two frames after load, with no wait for the strip or `transitionsDone`. A follow-up, not this job's. Home, Tracks and both track pages build byte-identical to f30e876 apart from the islands' random ids. Measured on the merged build: About 1440 / 375 / 320 4,826 / 6,883 / 8,466 (357 wide) → 3,364 / 5,587 / 6,344px (320 wide), 51,406 → 52,191 bytes gzipped; the Glossary 20,847 / 50,158 / 57,255 → 20,300 / 45,324 / 52,004px, 34,159 → 35,156 bytes. |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| scout | Haiku | 234,657 |
+| designer (D21a, D21b) | Fable 5.2 (the owner's word, 2.111) | 547,327 |
+| reviewer (spec, two builds) | Opus | 676,689 |
+| builder (B26, B27, fixes) | Sonnet | 618,614 |
+| **Total** | | **2,077,287** (estimate 2.1 to 3.15 million plus the scout's 0.23; stop at 3.7) |
+
+## Could go one model lower next time
+
+- Both units' fixes (a guard's range, one missing test; three tests and two rules) came with their checks named; a Haiku `builder` would have done.
+- The spec review's ownership table and test lists for two pages built side by side were bookkeeping more than judgment; the holes needed Opus, the lists did not.
+
+## What to do differently next time
+
+- **Two builds and their end-to-end runs at once slow the machine** past Playwright's 30s: B26's touch tests timed out, and B27 stopped a whole CI run at 334 tests. Stagger the long runs, or give the side-by-side briefs `--timeout=120000` for their own runs and leave the full CI pass to the merge.
+- **A port can be held by an agent's leftover server** (a `python -m http.server` on 4496 from an earlier run). Check `lsof -iTCP:<port> -sTCP:LISTEN` before handing out ports.
+- **A guard written by one side-by-side unit can block the other's allowed change** (B26's `card-stack.css` test against B27's comment, E2). When the cases give a shared file to one unit, the other unit's guard must be written against that grant; say so in both briefs.
+- **Run the touched specs at `reduced-motion` on the base before the job starts**, so an old flake (Tracks' contrast test) is known before it is found at the end.
