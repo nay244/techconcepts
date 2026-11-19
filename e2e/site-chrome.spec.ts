@@ -84,6 +84,13 @@ test.describe('the header and the footer in the Card stack look', () => {
     await scrollSettled(page);
     await transitionsDone(page);
   };
+  /** How many lines an element's words take: the distinct tops of a range over its content (a box has one rect however its words wrap). */
+  const textLines = (page: Page, sel: string): Promise<number> =>
+    page.locator(sel).first().evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top))).size;
+    });
   const blur = (page: Page): Promise<void> => page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
   // ------------------------------------------------------------ 0. what the build may not change
@@ -424,7 +431,7 @@ test.describe('the header and the footer in the Card stack look', () => {
           near(b.height, 44, 0.25, `${path} ${w} height`);
           near(b.width, 130.5, 0.5, `${path} ${w} width`);
           near(b.right + 3, w === 960 ? 928 : 1340, 0.5, `${path} ${w} right`);
-          expect(await page.locator(sel).evaluate((el) => [...el.getClientRects()].length), `${path} ${w}: one line`).toBe(1);
+          expect(await textLines(page, sel), `${path} ${w}: one line`).toBe(1);
           const edge = await tok(page, 'var(--cs-edge)');
           expect(await edges(page, sel, 'width')).toEqual(['2px', '2px', '2px', '2px']);
           expect(await edges(page, sel, 'color')).toEqual([edge, edge, edge, edge]);
@@ -536,12 +543,18 @@ test.describe('the header and the footer in the Card stack look', () => {
       await visit(page, path, 960, 900, 'light');
       const read = await page.evaluate(() => {
         const q = (s: string): HTMLElement[] => [...document.querySelectorAll<HTMLElement>(s)];
-        const lines = (els: HTMLElement[]): number[] => els.map((e) => e.getClientRects().length);
+        // The lines of an element's words: the distinct tops of a range over its content (a box has one rect however its words wrap).
+        const lines = (els: HTMLElement[]): number[] =>
+          els.map((e) => {
+            const range = document.createRange();
+            range.selectNodeContents(e);
+            return new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top))).size;
+          });
         const r = (s: string): DOMRect => document.querySelector(s)!.getBoundingClientRect();
         const start = document.querySelector<HTMLElement>('.head-end a.btn');
         const wrap = document.querySelector('.site-head .wrap')!;
         return {
-          lines: [...lines(q('.site-head .brand')), ...lines(q('.site-nav a')), ...lines(q('#theme-toggle')), ...(start ? lines([start]) : [])],
+          lines: [...lines(q('.site-head .brand b')), ...lines(q('.site-nav a')), ...(start ? lines([start]) : [])],
           brandToNav: r('.site-nav').left - r('.site-head .brand').right,
           navToTheme: r('#theme-toggle').left - r('.site-nav').right,
           themeToStart: start ? start.getBoundingClientRect().left - r('#theme-toggle').right : null,
@@ -706,7 +719,7 @@ test.describe('the header and the footer in the Card stack look', () => {
       }
     }
     await visit(page, '/about', 390, 844, 'light');
-    expect(await page.locator('.site-foot a[href="/networking"]').evaluate((a) => a.getClientRects().length), 'Networking Concepts on one line at 390').toBe(1);
+    expect(await textLines(page, '.site-foot a[href="/networking"]'), 'Networking Concepts on one line at 390').toBe(1);
     await visit(page, '/about', 1440, 900, 'light');
     const link = page.locator('.site-foot .foot-grid ul a', { hasText: 'Glossary' });
     await link.hover();
