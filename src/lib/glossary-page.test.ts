@@ -18,6 +18,7 @@ import { tracks } from '../content/tracks';
 import { siteGlossary } from './glossary-site';
 import { stampLine } from './glossary';
 import GlossaryPage from '../pages/glossary.astro';
+import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from './card-stack-guards';
 
 const words = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 let html = '';
@@ -273,16 +274,22 @@ describe('D21, 0.4: the stylesheet and the page', () => {
       expect(readFileSync(file, 'utf8') as string, file).not.toContain('card-stack.css');
     }
   });
-  test('Home, Tracks, the track pages, the header, the footer and the tokens are untouched', () => {
-    const touched = (execSync("git diff --name-only f30e876 -- src/pages/index.astro src/pages/tracks.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
+  test('Home, the track pages, the header, the footer and the tokens are untouched, and Tracks gains one rule (job 24)', () => {
+    const t = tracksGrant('f30e876');
+    expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
+    expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
+    expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
+    const touched = (execSync("git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
   });
-  test('card-stack.css changes in no line after line 4 (the opening comment is About’s, E2): every hunk of the diff lies within lines 1 to 4', () => {
-    const diff = execSync('git diff -U0 f30e876 -- src/styles/card-stack.css || true', { encoding: 'utf8' }) as string;
-    const hunks = [...diff.matchAll(/^@@ -(\d+)(?:,(\d+))? \+/gm)].map((m) => ({ start: Number(m[1]), count: m[2] === undefined ? 1 : Number(m[2]) }));
-    // A hunk with no old lines (count 0) sits after line `start`; otherwise it covers start .. start + count - 1.
-    for (const h of hunks) expect(h.count === 0 ? h.start : h.start + h.count - 1, JSON.stringify(h)).toBeLessThanOrEqual(4);
+  test('card-stack.css changes only its opening comment (About’s and the Glossary’s, E2), two reworded comments and the header and footer block (job 24)', () => {
+    const g = cardStackGrant('f30e876');
+    expect(g.changed, 'lines outside the three comments that are not the old text').toEqual(CARD_STACK_GRANT.changed);
+    expect(g.comments, 'the three comments: lines 1 to 4, 6 to 8, 48 to 49').toEqual(CARD_STACK_GRANT.comments);
+    expect(g.frame, 'the old length, the blank line, the block begins, the block ends').toEqual(CARD_STACK_GRANT.frame);
+    expect(g.markers, 'BEGIN and END once each').toEqual(CARD_STACK_GRANT.markers);
   });
+
 });
 
 describe('D21, G-11 and G-12: the page’s style text', () => {

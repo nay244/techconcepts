@@ -16,6 +16,7 @@ import { checkedOn, getEntries, getLesson, trackTotals } from '../content/regist
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
 import About from '../pages/about.astro';
+import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from '../lib/card-stack-guards';
 
 // The build's analytics token, which each render here sets for itself.
 const analytics = vi.hoisted(() => ({ token: undefined as string | undefined }));
@@ -249,16 +250,23 @@ test('the page’s styles: the scroll paddings, the open menu’s inside its med
   expect(style).not.toMatch(/\.ab--|\.pt-|\.toc-h|\bcard\b\s*\{/);
 });
 
-test('card-stack.css changes only its opening comment, which names About and the Glossary; Home, Tracks, the track page and the shared files are untouched (case 0.1)', () => {
+test('card-stack.css changes only its opening comment (which names About and the Glossary), two reworded comments and the header and footer block (job 24); Home, the track page and the shared files are untouched, and Tracks gains one rule (case 0.1)', () => {
   const run = (cmd: string): string => (execSync(`${cmd} || true`, { encoding: 'utf8' }) as string).trim();
-  const hunks = run('git diff -U0 f30e876 -- src/styles/card-stack.css').split('\n').filter((l) => l.startsWith('@@'));
-  for (const h of hunks) expect(Number(/\+(\d+)/.exec(h)![1]), h).toBeLessThanOrEqual(4);
+  const g = cardStackGrant('f30e876');
+  expect(g.changed, 'lines outside the three comments that are not the old text').toEqual(CARD_STACK_GRANT.changed);
+  expect(g.comments, 'the three comments: lines 1 to 4, 6 to 8, 48 to 49').toEqual(CARD_STACK_GRANT.comments);
+  expect(g.frame, 'the old length, the blank line, the block begins, the block ends').toEqual(CARD_STACK_GRANT.frame);
+  expect(g.markers, 'BEGIN and END once each').toEqual(CARD_STACK_GRANT.markers);
+  const t = tracksGrant('f30e876');
+  expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
+  expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
+  expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
   const head = readFileSync('src/styles/card-stack.css', 'utf8').split('\n').slice(0, 4).join('\n');
   expect(head).toContain('src/pages/about.astro');
   expect(head).toContain('src/pages/glossary.astro');
   expect(
     run(
-      "git diff --name-only f30e876 -- src/pages/index.astro src/pages/tracks.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
+      "git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
     ),
   ).toBe('');
 });

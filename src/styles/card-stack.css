@@ -1,11 +1,11 @@
 /* The Card stack's shared parts (prototypes/d17-home-card-stack.md, prototypes/d18-tracks-card-stack.md §3): cards with a
    hard edge on Patch's ground. Imported by Home (src/pages/index.astro), the Tracks page (src/pages/tracks.astro), the track page (src/pages/[track]/index.astro), About (src/pages/about.astro), the Glossary (src/pages/glossary.astro) and the 404 page (src/pages/404.astro)
-   only. Every part is a `--cs-*` name, an opt-in `cs-` class, or scoped to `main`, so the file reaches neither the
-   header, nor the footer, nor a page that does not import it. */
+   only. Every part is a `--cs-*` name, an opt-in `cs-` class, scoped to `main`, or, in the block at the file's end, scoped to the header and the footer
+   (`.site-head`, `.site-foot`; prototypes/d23-header-footer.md), so the file reaches no page that does not import it; the Lesson page does not, and its header keeps Patch. */
 
-/* TOKENS BEGIN: the Card stack's own names, on :root. No Patch token is given a new value here, so the header
-   and the footer, which read only Patch's, do not change. The page's ground stays Patch's ground. Colour variant A:
-   Patch's own colours, so this block adds no colour value to the site. */
+/* TOKENS BEGIN: the Card stack's own names, on :root. No Patch token is given a new value here, so a page that does not import this file
+   (the Lesson page, its header included) does not change. The page's ground stays Patch's ground. Colour variant A: Patch's own colours,
+   so this block adds no colour value to the site. */
 :root {
   /* construction */
   --cs-edge: var(--ink-strong);
@@ -45,8 +45,8 @@
 }
 /* TOKENS END */
 
-/* ---------- Buttons: a hard edge and a solid offset edge, pressed in when pressed. Scoped to main, so the
-   header's "Start learning" keeps Patch. ---------- */
+/* ---------- Buttons: a hard edge and a solid offset edge, pressed in when pressed. Scoped to main; the header's "Start learning"
+   is the same button, in the block at the file's end. ---------- */
 main .btn {
   min-height: 48px;
   padding: 0 22px;
@@ -194,3 +194,180 @@ main,
   background: var(--cs-here);
   box-shadow: 0 0 0 1.5px var(--cs-edge);
 }
+
+/* HEADER AND FOOTER BEGIN: the site's header and footer in the Card stack look (prototypes/d23-header-footer.md).
+   The components' own Patch styles (SiteHeader.astro, SiteFooter.astro, ThemeToggle.css, site.css) are the base; this
+   block restyles them on the pages that import this file. The Lesson page does not, so its header keeps Patch.
+   Every selector starts at header.site-head, .site-head, footer.site-foot or .site-foot and carries one more class or
+   element than the rule it restyles, so it wins in any order, with no !important. The header stays 69px: a 67px row
+   and a 2px edge. Open below 960px it stays 391px (329px without Start learning): a 322px (260px) panel. */
+/* The header is solid now, so the skip link, which sat under it (z-index 10 under 20), is lifted over it. */
+a.skip-link {
+  z-index: 21;
+}
+header.site-head {
+  border-bottom: 2px solid var(--cs-edge);
+  background: var(--ground);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+/* 1px of padding on top puts the 44px controls on whole pixels (12px above, 11px and the edge below). Below 342px the
+   side padding gives way evenly, so the brand and the two 44px buttons fit: 278px is 164 + 16 + 44 + 10 + 44. */
+header.site-head .wrap {
+  height: 67px;
+  padding: 1px clamp(16px, (100vw - 278px) / 2, 32px) 0;
+}
+/* The five links: one strip of card. The section you are in has the orange marker and the pale orange wash. */
+.site-head .pillnav {
+  gap: 2px;
+  padding: 2px;
+  border: 2px solid var(--cs-edge);
+  border-radius: var(--cs-r-in);
+  background: var(--cs-card);
+  box-shadow: none;
+}
+.site-head .pillnav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 4px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.site-head .pillnav a:not([aria-current]):hover {
+  background: var(--cs-quiet);
+  color: var(--ink-strong);
+}
+.site-head .pillnav a[aria-current] {
+  background: var(--cs-here-wash);
+  box-shadow: none;
+  color: var(--ink-strong);
+}
+.site-head .pillnav a[aria-current]::before,
+.site-head .menu-panel a[aria-current]::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--cs-here);
+  box-shadow: 0 0 0 1.5px var(--cs-edge);
+}
+/* The theme and menu buttons: 44px, a hard edge, no offset edge (they change the page you are on, they do not take you on). */
+.site-head .icon-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--cs-edge);
+  border-radius: var(--cs-r-in);
+  background: var(--cs-card);
+}
+.site-head .icon-btn:hover {
+  background: var(--cs-quiet);
+}
+.site-head .icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+/* The menu is open: the button is filled in. */
+.site-head .menu-btn[aria-expanded='true'] {
+  background: var(--cs-edge);
+  color: var(--cs-card);
+}
+/* Start learning: the Card stack button, 44px in the row and 48px in the menu. Its offset edge ends on the column's line. */
+.site-head .btn {
+  margin-right: var(--cs-off);
+  border: 2px solid var(--cs-edge);
+  border-radius: var(--cs-r-in);
+  box-shadow: var(--cs-act-edge);
+  white-space: nowrap;
+  transition:
+    transform 80ms var(--ease-out),
+    box-shadow 80ms var(--ease-out);
+}
+.site-head .btn--primary {
+  background: var(--cs-act);
+  color: var(--cs-act-ink);
+}
+.site-head .btn--primary:hover {
+  background: color-mix(in srgb, var(--cs-act) 88%, var(--cs-edge));
+}
+.site-head .btn--small {
+  min-height: 44px;
+  font-size: 17px;
+}
+.site-head .btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--cs-edge);
+}
+@media (max-width: 959px) {
+  /* 1 + 8 + five rows of 45 + their gaps + 18 = 260px; with Start learning (2 + 12 + 48) 322px. */
+  .site-head .menu-panel {
+    border-top: 1px solid var(--cs-hair);
+    padding: 8px clamp(16px, (100vw - 278px) / 2, 32px) 18px;
+  }
+  .site-head .menu-panel a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 45px;
+    padding: 0;
+    border-bottom: 1px solid var(--cs-hair);
+    font: 600 18px/1.2 var(--display);
+    letter-spacing: 0.01em;
+  }
+  .site-head .menu-panel a[aria-current] {
+    font-weight: 700;
+  }
+  .site-head .menu-panel .btn {
+    min-height: 48px;
+    margin-top: 12px;
+    border: 2px solid var(--cs-edge);
+    color: var(--cs-act-ink);
+  }
+}
+
+/* The footer: the last card, as wide as the page. */
+footer.site-foot {
+  border-top: 2px solid var(--cs-edge);
+  background: var(--cs-card);
+}
+.site-foot .foot-grid p {
+  color: var(--ink);
+}
+/* A link's own 4px of padding stands in for 4px of the heading's margin, so heading to words is 14px, as before. */
+.site-foot .foot-grid h3 {
+  margin-bottom: 10px;
+}
+.site-foot .foot-grid ul {
+  gap: 2px;
+}
+.site-foot .foot-grid ul a {
+  display: inline-block;
+  padding: 4px 0;
+  color: var(--ink);
+}
+.site-foot .foot-grid ul a:hover {
+  color: var(--ink-strong);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.site-foot .foot-base {
+  border-top: 1px solid var(--cs-hair);
+}
+/* On a phone each link is a 44.8px target, and the grid gives back 28px of its padding. */
+@media (max-width: 720px) {
+  .site-foot .foot-grid {
+    padding: 40px 0 28px;
+  }
+  .site-foot .foot-grid ul {
+    gap: 0;
+  }
+  .site-foot .foot-grid ul a {
+    padding: 10px 0;
+  }
+}
+/* HEADER AND FOOTER END */

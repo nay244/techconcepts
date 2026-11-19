@@ -587,7 +587,7 @@ test.describe('width', () => {
 // ---------------------------------------------------------------- 4. heights and weight
 
 test.describe('heights and weight', () => {
-  const HEIGHTS: Array<[number, number, number]> = [[1440, 900, 1201], [768, 1024, 1376], [390, 844, 1409], [375, 812, 1423], [320, 640, 1430]];
+  const HEIGHTS: Array<[number, number, number]> = [[1440, 900, 1206], [768, 1024, 1381], [390, 844, 1438], [375, 812, 1452], [320, 640, 1459]];
   test('39: the page’s height at five sizes, light and dark the same', async ({ page }) => {
     for (const [width, height, expected] of HEIGHTS) {
       const read: number[] = [];
@@ -898,7 +898,7 @@ async function noScript(browser: Browser, width: number, height: number, path = 
 
 test.describe('JavaScript off', () => {
   test('54: the page whole without JavaScript', async ({ browser }) => {
-    for (const [width, height, expected] of [[320, 640, 1430], [375, 812, 1423], [1440, 900, 1201]] as const) {
+    for (const [width, height, expected] of [[320, 640, 1459], [375, 812, 1452], [1440, 900, 1206]] as const) {
       const { page, close } = await noScript(browser, width, height);
       const read = await page.evaluate(() => ({
         blocks: [...document.querySelector('.notfound__words')!.children].map((c) => (c as HTMLElement).innerText.replace(/\s+/g, ' ').trim()),

@@ -432,7 +432,7 @@ test.describe('what moves when progress loads (check 16)', () => {
     expect(Math.abs(gap - 16.7)).toBeLessThanOrEqual(1);
     await page.setViewportSize({ width: 390, height: 844 });
     await settle(page);
-    expect(Math.abs((await page.evaluate(() => document.documentElement.scrollHeight)) - 4305)).toBeLessThanOrEqual(1);
+    expect(Math.abs((await page.evaluate(() => document.documentElement.scrollHeight)) - 4334)).toBeLessThanOrEqual(1);
   });
 
   test('with storage blocked the page shows a first visit and no error', async ({ browser }) => {
