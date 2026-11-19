@@ -81,6 +81,7 @@ test.describe('the Glossary page', () => {
   test('"See TTL" puts #ttl in the address and the entry under every sticky foot', async ({ page }) => {
     for (const size of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
       await page.setViewportSize(size);
+      await settle(page);
       await page.goto('/glossary');
       await page.locator('#time-to-live').getByRole('link', { name: 'TTL' }).click();
       await expect(page).toHaveURL(/\/glossary#ttl$/);
@@ -108,7 +109,10 @@ test.describe('the Glossary page', () => {
   test('landing on #ttl at 375 and 1440: below the sticky foot, within the first screen, tinted', async ({ page }) => {
     for (const size of [{ width: 375, height: 812 }, { width: 1440, height: 900 }]) {
       await page.setViewportSize(size);
+      await transitionsDone(page);
+      await settledFrame(page);
       await page.goto('/glossary#ttl');
+      await transitionsDone(page);
       await settledFrame(page);
       const t = await top(page, '#ttl');
       expect(t).toBeGreaterThan(await stickyFoot(page) - 1);
@@ -180,17 +184,23 @@ test.describe('the Glossary page', () => {
       return { name: await at('.gl-name'), def: await at('.gl-def'), src: await at('.gl-foot .gl-row:nth-child(1)'), tracks: await at('.gl-foot .gl-row--tracks') };
     };
     await page.setViewportSize({ width: 375, height: 812 });
+    await transitionsDone(page);
+    await settledFrame(page);
     await page.goto('/glossary');
     let p = await parts();
     expect(p.name.y).toBeLessThan(p.def.y);
     expect(p.def.y).toBeLessThan(p.src.y);
     expect(p.src.y).toBeLessThan(p.tracks.y);
     await page.setViewportSize({ width: 768, height: 900 });
+    await transitionsDone(page);
+    await settledFrame(page);
     p = await parts();
     expect(p.name.x).toBeLessThan(p.def.x);
     expect(Math.abs(p.name.y - p.def.y)).toBeLessThan(40);
     expect(p.src.y).toBeGreaterThan(p.def.y + p.def.height - 1);
     await page.setViewportSize({ width: 1440, height: 900 });
+    await transitionsDone(page);
+    await settledFrame(page);
     p = await parts();
     expect(p.name.x).toBeLessThan(p.def.x);
     expect(p.def.x).toBeLessThan(p.src.x);
@@ -198,8 +208,12 @@ test.describe('the Glossary page', () => {
     expect(Math.abs(p.src.y - p.def.y)).toBeLessThan(40);
     expect(p.def.width).toBeLessThanOrEqual(612.5);
     await page.setViewportSize({ width: 960, height: 900 });
+    await transitionsDone(page);
+    await settledFrame(page);
     expect((await box(page, '#ping dt')).width).toBeCloseTo(220, 0);
     await page.setViewportSize({ width: 1200, height: 900 });
+    await transitionsDone(page);
+    await settledFrame(page);
     const dd = await box(page, '#ping dd');
     expect((await box(page, '#ping dt')).width).toBeCloseTo(280, 0);
     expect((await box(page, '#ping .gl-foot')).width).toBeCloseTo(300, 0);
@@ -919,7 +933,9 @@ test.describe('the Glossary in the Card stack look', () => {
     });
   }
 
-  test('a link’s underline turns to the words’ colour on hover; a key turns --cs-quiet, moves 1px when pressed, and has no transition', async ({ page }) => {
+  test('a link’s underline turns to the words’ colour on hover; a key turns --cs-quiet, moves 1px when pressed, and has no transition', async ({ page }, testInfo) => {
+    // Under reduced motion every change runs a 0.01ms transition (global.css), so a read before the wait can see one: the running-transition reads are the 1440 projects'.
+    const running = testInfo.project.name !== 'reduced-motion';
     await page.setViewportSize(SIZES[1]);
     await page.goto('/glossary');
     for (const sel of ['#ping a.gl-src', '#time-to-live .gl-see a', '#letter-a .gl-up']) {
@@ -933,12 +949,12 @@ test.describe('the Glossary in the Card stack look', () => {
     const key = page.locator('a.gl-key').nth(3);
     await key.hover();
     // Read before the wait: a transition left on the key is running now and gone after the wait.
-    expect(await key.evaluate((e) => e.getAnimations().length), 'no transition on hover').toBe(0);
+    if (running) expect(await key.evaluate((e) => e.getAnimations().length), 'no transition on hover').toBe(0);
     await settle(page);
     expect(await key.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(await token(page, '--cs-quiet'));
     expect(await key.evaluate((e) => e.getAnimations().length)).toBe(0);
     await page.mouse.down();
-    expect(await key.evaluate((e) => e.getAnimations().length), 'no transition when pressed').toBe(0);
+    if (running) expect(await key.evaluate((e) => e.getAnimations().length), 'no transition when pressed').toBe(0);
     await settle(page);
     expect(await key.evaluate((e) => getComputedStyle(e).transform)).toBe('matrix(1, 0, 0, 1, 1, 1)');
     expect(await key.evaluate((e) => e.getAnimations().length)).toBe(0);
