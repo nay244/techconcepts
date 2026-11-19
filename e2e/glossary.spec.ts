@@ -570,17 +570,20 @@ test.describe('the Glossary in the Card stack look', () => {
     const total = await page.locator('.gl-entry--see').evaluateAll((els) => els.reduce((n, e) => n + e.getBoundingClientRect().height, 0));
     expect(Math.abs(total - 2270) / 2270).toBeLessThanOrEqual(0.02);
     await page.setViewportSize(SIZES[0]);
+    await settle(page);
     for (const h of await page.locator('.gl-entry--see').evaluateAll((els) => els.map((e) => [e.id, e.querySelector('.gl-see')!.getClientRects().length]))) expect((h as [string, number])[1]).toBeGreaterThan(0);
     // At 320 the two longest spellings wrap to two lines (99px, as drawn); "See" and its link are one line box.
     const widest = await page.locator('.gl-entry--see').evaluateAll((els) => Math.max(...els.map((e) => e.getBoundingClientRect().height)));
     expect(widest).toBeLessThanOrEqual(100);
     await page.setViewportSize(SIZES[1]);
+    await settle(page);
     // At 375 the longest wrap to 73px.
     expect(await page.locator('.gl-entry--see').evaluateAll((els) => Math.max(...els.map((e) => e.getBoundingClientRect().height)))).toBeLessThanOrEqual(74);
-    await page.setViewportSize(SIZES[4]);
     await page.setViewportSize(SIZES[5]);
+    await settle(page);
     expect(Math.abs((await line('address-resolution-protocol')).h - 35)).toBeLessThanOrEqual(1);
     await page.setViewportSize(SIZES[3]);
+    await settle(page);
     expect(Math.abs((await line('address-resolution-protocol')).h - 55)).toBeLessThanOrEqual(1.5);
   });
 
