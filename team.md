@@ -1344,3 +1344,27 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 | B29 | builder | Sonnet | 1 | 353,540 | Branch `job24/b29` in `.superpowers/wt/b29`, six commits (289c81b to 7ee9dc4): the block appended to `card-stack.css` (variant A), Tracks' 341px open-menu rule, a guard helper `src/lib/card-stack-guards.ts`, `e2e/site-chrome.spec.ts` (36 tests). Unit tests 2,571 pass; build within budget; the ten specs 982 passed at d1440-dark + phone and 861 at reduced-motion (one Tracks S0–S4 flake, the same on `revamp`); tablet 56; Part 9 OK. Header 69 / 391 / 329, footer 629 / 582 / 376px; every page's HTML 800–1,000 bytes lighter gzipped, the linked sheet 1,654. Each new test shown red on `revamp` or under a seed. Departures: two pins the cases missed (404 without JavaScript, About's weight: page and sheet 53,039 against the old 52,500); the track-page guard reads 1d8e446; Home 375 closed one more stop under the header. |
 | B29 review | reviewer | Opus | 1 | 173,361 | PASS WITH FIXES, no blocker. The block is §10 character for character; no component touched. Unit tests 2,571 and case 70's five scratch edits rerun; `site-chrome.spec` 84 passed, 2 failed. Fixes: (1) the walk without JavaScript (test 55) times out every run, since 45dc01d's frame wait never returns without JavaScript, and its `:1116` check could not fail; (2) the About walk did not compare its stops with `revamp`'s list; (3) case 20's no-JS sideways-scroll check was in no test; (4) three walks at 3 repeats, not 10. The builder's six departures judged right; About's first visit +626 bytes gzipped (53,039 page and sheet), accepted under E1. |
 | B29 fixes | builder (same) | Sonnet | 1 | 15,092 | Three commits (8956158, 8abcb0e, 9170a1e), tests only, and a new `e2e/site-chrome-stops.ts` holding `revamp`'s stops. The orchestrator ran each "fixed when" on port 4503: test 55 at 10 repeats 20/20; the no-JS sideways-scroll test 2/2; the Home, networking and how-the-internet-works walks at 10 repeats 60/60 (15.6 minutes); the About walk red with the `/networking` footer link hidden, green again restored. |
+| F24 | orchestrator | Opus 5.5 | 1 | not counted | `job24/b29` merged into `revamp` (`39bcbef`), its worktree removed. On `revamp`: vitest 2,571 passed (174 files); build within budget on 42 pages; CI's end-to-end pass 1,379 passed, 4 skipped, 0 failed (23.6 minutes); the ten touched specs and `site-chrome.spec.ts` at `reduced-motion` 908 passed, 19 skipped, 0 failed; `tablet.spec.ts` 56 passed; Part 9 on `13af135` against `revamp`: "OK: every main equal; every other page, every lesson and every shared asset byte-identical". |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| scout | Haiku | 238,941 |
+| designer (D23) | Fable 5.2 (the owner's word, 2.123) | 293,431 |
+| reviewer (spec, build) | Opus | 476,230 |
+| builder (B29, fixes) | Sonnet | 368,632 |
+| **Total** | | **1,377,234** (estimate 0.85 to 1.45 million plus the scout's 0.24; stop at 1.8) |
+
+## Could go one model lower next time
+
+- B29's four fixes came with their checks named and touched only tests; a Haiku `builder` would have done.
+- The scout's list of guards pinned to old commits saved the build a red run; Haiku was right for it.
+
+## What to do differently next time
+
+- **Brief a scout to return its report in its reply**: its rules forbid report files, so the orchestrator wrote S25 from the reply.
+- **Name every spec's pins in the spec review, weight tests included.** Two pins the cases missed (404 without JavaScript, About's weight) went red in B29's own run; About's weight test counted a shared sheet as inline, and the linked file changed what it measured.
+- **A wait that needs animation frames hangs with scripts off.** B29's walk helper gained a frame wait in a fix and the no-JavaScript walk timed out; `pageOverflow` has the same limit. A helper used by both kinds of test needs a no-script path.
+- **A test that logs a list does not compare it.** The walks logged their stops; the review asked for them pinned (`e2e/site-chrome-stops.ts`), and a hidden footer link now turns them red.
+- **Tracks' `:371` flake** (S0–S4, a font size read mid-transition) showed again in B29's reduced-motion run, the same on `revamp`; it is still open from job 23.

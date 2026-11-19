@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 24: the header and footer in the Card stack look
 
-**Status: D23 approved and frozen (2026-11-19; 2.124): variant A, the Tracks fix in, the Lesson page's skip link a unit after. Go (2.123): the layout kept, the Lesson page's header in Patch with the styles in `card-stack.css`, D23 on Fable 5.2.** Planned under 2.122. The owner, at job 23's end, to whether the header and footer join Card stack: "Yes, plan it as a job" (2.121). Numbers claimed on `revamp` (a6589ba, checked free): job 24, direction rows from 2.122, S25, D23, B29, F24.
+**Status: done (2026-11-19; 2.126): B29 merged into `revamp` at `39bcbef` and verified; nothing pushed. D23 approved and frozen (2.124): variant A, the Tracks fix in, the Lesson page's skip link a unit after. Go (2.123): the layout kept, the Lesson page's header in Patch with the styles in `card-stack.css`, D23 on Fable 5.2.** Planned under 2.122. The owner, at job 23's end, to whether the header and footer join Card stack: "Yes, plan it as a job" (2.121). Numbers claimed on `revamp` (a6589ba, checked free): job 24, direction rows from 2.122, S25, D23, B29, F24.
 
 ## Inputs
 
