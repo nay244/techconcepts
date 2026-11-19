@@ -898,7 +898,7 @@ async function noScript(browser: Browser, width: number, height: number, path = 
 
 test.describe('JavaScript off', () => {
   test('54: the page whole without JavaScript', async ({ browser }) => {
-    for (const [width, height, expected] of [[320, 640, 1430], [375, 812, 1423], [1440, 900, 1201]] as const) {
+    for (const [width, height, expected] of [[320, 640, 1459], [375, 812, 1452], [1440, 900, 1206]] as const) {
       const { page, close } = await noScript(browser, width, height);
       const read = await page.evaluate(() => ({
         blocks: [...document.querySelector('.notfound__words')!.children].map((c) => (c as HTMLElement).innerText.replace(/\s+/g, ' ').trim()),

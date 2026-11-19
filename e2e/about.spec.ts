@@ -1012,14 +1012,17 @@ test.describe('the built page', () => {
     expect(html).not.toMatch(new RegExp('markSectionInView|follow' + 'Sections|aria-current="location"'));
   });
 
-  // The spec's 52,000 bytes (check 33) was measured on the prototype, where the shared stylesheet is a file. In the build
-  // Astro writes card-stack.css (3.4 KB, under its 4 KB limit) into the page's head, as on Home and Tracks: that is
-  // about 1 KB gzipped. So the page is held to today's weight (51,395 bytes) without that shared style, and to 52,500
-  // with it (the budget table's real limit for a page is far higher).
-  test('weighs no more than today’s page without the shared stylesheet, and under 52.5 KB gzipped with it', () => {
-    const own = html.replace(/<style>:root\{--cs-edge.*?<\/style>/s, '');
-    expect(own.length).toBeLessThan(html.length);
-    expect((gzipSync(own) as { length: number }).length).toBeLessThanOrEqual(51_395);
+  // The spec's 52,000 bytes (check 33) was measured on the prototype, where the shared stylesheet is a file. Job 24's block
+  // took card-stack.css past Astro's 4 KB inline limit (6.2 KB), so it is a linked file now (/_astro/card-stack.*.css,
+  // shared by the seven Card stack pages) and no longer part of the page. The page is held to today's weight without the
+  // shared style (51,395 bytes) plus the link that replaces it (a few bytes), to 52,500 as before, and the one linked file
+  // to 7,000 bytes (D23 check 26, E1).
+  test('weighs no more than today’s page without the shared stylesheet, and its one linked stylesheet is under 7,000 bytes', () => {
+    expect(html).not.toMatch(/<style>:root\{--cs-edge/);
+    const links = [...html.matchAll(/<link rel="stylesheet" href="(\/_astro\/card-stack\.[\w-]+\.css)"/g)].map((m) => m[1]!);
+    expect(links).toHaveLength(1);
+    expect((gzipSync(html) as { length: number }).length).toBeLessThanOrEqual(51_395 + 100);
     expect((gzipSync(html) as { length: number }).length).toBeLessThanOrEqual(52_500);
+    expect((readFileSync(`dist${links[0]}`, 'utf8') as string).length).toBeLessThan(7_000);
   });
 });
