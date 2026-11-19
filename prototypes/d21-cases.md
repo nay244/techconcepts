@@ -61,6 +61,7 @@ Closed by the orchestrator, 2026-11-18; where an erratum and a spec differ, the 
 - **E11** (A3): About's check 9 as A3 answers (the card 256px wide to x 288, the third cell to 286, ±1).
 - **E12** (T1, the designer's ruling): `.gl-up:focus-visible { outline-offset: -3px }`, an inside ring; the bar stays 48px; the ring's top at or below 69px with the bar stuck, 3:1 on the ground in both themes.
 - **E13** (T2, the designer's ruling): as drawn; check 5 adds "44px or more wide from 708px".
+- **E15** (B27's build, its review's ruling): About's check 33 reads "at most 52,500 bytes gzipped": Astro inlines `card-stack.css` into the page (about 1 KB gzipped), and without it the page is 248 bytes under today's.
 - **E14** (T3, the designer's ruling): as drawn; for a wrapped tab check 15 asserts only that its top is at or below the header's foot.
 
 ## Which unit owns which file
