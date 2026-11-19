@@ -978,7 +978,7 @@ html.d23-rings .site-head .menu-panel a:not(.btn) { border-radius: 4px; }
     paint();
   });
   window.addEventListener('resize', fit);
-  if (window.innerWidth <= 700) s.w = String(window.innerWidth);
+  if (window.innerWidth > 0 && window.innerWidth <= 700 && !/(^|[#&])w=/.test(location.hash)) s.w = String(window.innerWidth);
   build(); paint();
 })();
 </script>
