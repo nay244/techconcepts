@@ -912,9 +912,10 @@ test.describe('the header and the footer in the Card stack look', () => {
         cut: r.left - grow < -0.5 || r.right + grow > innerWidth + 0.5 || top < -0.5 || bottom > innerHeight + 0.5,
       } as Stop;
     });
-  const press = async (page: Page, key: 'Tab' | 'Shift+Tab'): Promise<Stop> => {
+  const press = async (page: Page, key: 'Tab' | 'Shift+Tab', scripts = true): Promise<Stop> => {
     await page.keyboard.press(key);
-    await settledFrame(page); // a smooth scroll begins on the frame after the key
+    // A smooth scroll begins on the frame after the key; animation frames never come with scripts off, and the page has no smooth scroll then.
+    if (scripts) await settledFrame(page);
     await scrollSettled(page); // About scrolls smoothly: wait for the scroll, then for the transitions
     await transitionsDone(page);
     return readStop(page);
@@ -1101,11 +1102,17 @@ test.describe('the header and the footer in the Card stack look', () => {
         await page.goto(path);
         await transitionsDone(page);
         const names: string[] = [];
+        let first: Stop | undefined;
         for (let i = 0; i < 60; i++) {
-          const s = await press(page, 'Tab');
-          if (s.where === 'main') break;
+          const s = await press(page, 'Tab', false);
+          if (s.where === 'main') {
+            first = s;
+            break;
+          }
           names.push(s.where === 'skip' ? 'skip' : s.name);
         }
+        expect(first, `${path} ${w}: the walk reaches main`).toBeDefined();
+        expect(first!.under, `${path} ${w}: the first stop of main is not under the header`).toBe(false);
         expect(names, `${path} ${w}`).toEqual(w === 1440 ? ['skip', 'TechConcepts home', ...five, ...(path === '/about' ? ['Start learning'] : [])] : ['skip', 'TechConcepts home', 'Menu']);
         if (w === 375) {
           await page.locator('#menu').focus();
@@ -1113,7 +1120,6 @@ test.describe('the header and the footer in the Card stack look', () => {
           await transitionsDone(page);
           await expect(page.locator('#menu-panel')).toBeHidden();
         }
-        expect((await readStop(page)).where === 'main' || w === 375, `${path} ${w}: nothing under the header`).toBe(true);
       }
     });
 
