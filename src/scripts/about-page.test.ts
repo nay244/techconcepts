@@ -2,7 +2,9 @@
 // The page is rendered with Astro's container (which needs this file's default node environment, and the React
 // renderer for the page's ResetProgress island) and parsed with jsdom. Each expected value is worked out from the same
 // sources the page uses, so a value written into the page by hand fails here once the content moves on.
+// @ts-expect-error - no @types/node; vitest runs under node
 import { existsSync, readFileSync } from 'node:fs';
+// @ts-expect-error - no @types/node; vitest runs under node
 import { execSync } from 'node:child_process';
 import { getContainerRenderer } from '@astrojs/react/container-renderer';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
