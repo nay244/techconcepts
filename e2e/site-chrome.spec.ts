@@ -1150,6 +1150,21 @@ test.describe('the header and the footer in the Card stack look', () => {
       }
     });
 
+    test('20: no sideways scroll without JavaScript, at the top and the foot', async ({ page }) => {
+      // pageOverflow waits two animation frames, which never come with scripts off (as not-found.spec.ts says): read the widths directly.
+      const sideways = () => page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - window.innerWidth));
+      for (const path of SEVEN) {
+        for (const w of [320, 1440]) {
+          await page.setViewportSize({ width: w, height: 800 });
+          await page.goto(path);
+          await transitionsDone(page);
+          expect(await sideways(), `${path} ${w} top`).toBe(0);
+          await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+          expect(await sideways(), `${path} ${w} foot`).toBe(0);
+        }
+      }
+    });
+
     test('57: dark from the system', async ({ page }) => {
       await page.emulateMedia({ colorScheme: 'dark' });
       for (const [path, w] of [['/about', 375], ['/about', 1440], ['/tracks', 375], ['/tracks', 1440]] as const) {
