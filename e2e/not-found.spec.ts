@@ -518,13 +518,16 @@ test.describe('width', () => {
         const h = document.querySelector('.notfound h1')!;
         const lineHeight = parseFloat(getComputedStyle(h).fontSize) * 0.94;
         const text = h.firstChild as Text;
-        const range = document.createRange();
-        range.setStart(text, 0);
-        range.setEnd(text, 'That page'.length);
-        const first = document.createRange();
-        first.setStart(text, 0);
-        first.setEnd(text, 1);
-        return { lines: Math.round(h.getBoundingClientRect().height / lineHeight), firstLine: range.getClientRects().length === 1 && Math.abs(range.getClientRects()[0]!.top - first.getClientRects()[0]!.top) < 1 };
+        const top = (from: number, to: number): number[] => {
+          const range = document.createRange();
+          range.setStart(text, from);
+          range.setEnd(text, to);
+          return [...range.getClientRects()].map((r) => r.top);
+        };
+        const that = top(0, 'That page'.length);
+        const rest = top('That page '.length, text.length);
+        // "That page" is one box on the first line, and the rest starts on a line below it.
+        return { lines: Math.round(h.getBoundingClientRect().height / lineHeight), firstLine: that.length === 1 && rest.length >= 1 && Math.min(...rest) > that[0]! + lineHeight / 2 };
       });
     for (const width of [320, 375, 390, 408, 861, 1440]) {
       await visit(page, MISSING, width, 900);
@@ -534,7 +537,9 @@ test.describe('width', () => {
     }
     for (const width of [409, 545, 768, 860]) {
       await visit(page, MISSING, width, 900);
-      expect((await lines()).lines, `${width} lines`).toBe(1);
+      const r = await lines();
+      expect(r.lines, `${width} lines`).toBe(1);
+      expect(r.firstLine, `${width} one line: nothing below "That page"`).toBe(false);
     }
   });
 
@@ -715,7 +720,23 @@ async function walk(page: Page, menuOpen: boolean): Promise<{ going: Stop[]; com
         } satisfies Stop,
       };
     });
-    if (base.inMain) base.stop.clipped = await clippingContainers(page.locator(':focus'));
+    if (base.inMain) {
+      // The element's box (clippingContainers) and its ring's box, the box grown by 5px: no clipping ancestor may cut either.
+      const rings = await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const r = el.getBoundingClientRect();
+        const cut: string[] = [];
+        for (let node = el.parentElement; node !== null; node = node.parentElement) {
+          const c = getComputedStyle(node);
+          if ([c.overflowX, c.overflowY].some((v) => v !== 'visible')) {
+            const room = node.getBoundingClientRect();
+            if (r.top - 5 < room.top - 0.5 || r.bottom + 5 > room.bottom + 0.5 || r.left - 5 < room.left - 0.5 || r.right + 5 > room.right + 0.5) cut.push(`ring cut by ${node.className || node.tagName}`);
+          }
+        }
+        return cut;
+      });
+      base.stop.clipped = [...(await clippingContainers(page.locator(':focus'))), ...rings];
+    }
     return base;
   };
   const press = async (key: string): Promise<void> => {
