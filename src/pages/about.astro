@@ -2,7 +2,7 @@
 // About (docs/direction.md §11). A plain opening with the site's three counts, then what it is, how a lesson works,
 // where the facts come from, credits, and where progress is kept. The counts, the tracks still to come and the DHCP
 // lesson's sources are worked out from the content. Only Reset progress runs as an island. The "On this page" list
-// is plain links; a small module script marks the section being read.
+// is plain links in the opening, and no script runs on the page but the header's and that island (D21b, Folders).
 import { pageFigure } from '../art/figures/pages';
 import { spot } from '../art/figures/spots';
 import { getLesson } from '../content/registry';
@@ -14,6 +14,7 @@ import { analyticsToken } from '../lib/analytics';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ResetProgress from '../components/ResetProgress';
 import '../components/site.css';
+import '../styles/card-stack.css';
 
 // The first track, How the Internet Works, is the one "Who it's for" names: the beginner entry.
 const track = tracks[0]!;
@@ -34,6 +35,11 @@ const tracksPlanned = tracks.length + plannedTracks.length + comingSoonTracks.le
 const coming = comingTracksSentence([...plannedTracks, ...comingSoonTracks].map((t) => t.title));
 const dhcp = readyLesson('dhcp');
 const sources = sourceRows(dhcp.units.flatMap((u) => u.references));
+// The first three sources show; the rest are behind a native fold (Home's pattern). Six or fewer need no fold.
+const SHOWN = 3;
+const folded = sources.length > 6;
+const shown = folded ? sources.slice(0, SHOWN) : sources;
+const rest = folded ? sources.slice(SHOWN) : [];
 // How many ready lessons have passed the fact-checker (src/lib/checked.ts); Home says the same sentence.
 const checks = lessonCheckCounts();
 // A lesson two tracks list is one lesson, so the ready count is the distinct count, not a sum over tracks.
@@ -47,41 +53,42 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
   description="What TechConcepts is, how its lessons are made, who inspired it, and how it keeps your progress private."
 >
   <section class="wrap a-open" aria-labelledby="about-title">
-    <nav class="a-crumbs" aria-label="Breadcrumb">
-      <ol>
-        <li><a href="/">Home</a></li>
-        <li><span aria-current="page">About</span></li>
-      </ol>
-    </nav>
-    <h1 id="about-title">Watch it happen, then learn its name.</h1>
-    <div class="a-open__row">
+    <div class="a-open__main">
+      <nav class="a-crumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><span aria-current="page">About</span></li>
+        </ol>
+      </nav>
+      <h1 id="about-title">Watch it happen, then learn its name.</h1>
       <p class="a-lede">
         TechConcepts is a free site of short, visual lessons on how technology works. You watch a real process play out one step at a time, then
         read what it was, in plain words.
       </p>
-      <dl class="stats">
+    </div>
+    <div class="a-open__side">
+      <dl class="stats cs-card">
         <div><dt>tracks planned</dt><dd>{tracksPlanned}</dd></div>
         <div><dt>lessons ready</dt><dd>{lessonsReady}</dd></div>
         <div><dt>accounts needed</dt><dd>0</dd></div>
       </dl>
+      <nav class="a-toc cs-card" aria-label="On this page">
+        <p class="a-toc__h cs-tab">On this page</p>
+        <ol>
+          <li><a href="#what">What it is</a></li>
+          <li><a href="#lessons">How a lesson works</a></li>
+          <li><a href="#facts">Where the facts come from</a></li>
+          <li><a href="#credits">Credits</a></li>
+          <li><a href="#privacy">Your progress</a></li>
+        </ol>
+      </nav>
     </div>
   </section>
 
   <div class="wrap a-body">
-    <nav class="a-toc" aria-label="On this page">
-      <p class="toc-h">On this page</p>
-      <ol>
-        <li><a href="#what">What it is</a></li>
-        <li><a href="#lessons">How a lesson works</a></li>
-        <li><a href="#facts">Where the facts come from</a></li>
-        <li><a href="#credits">Credits</a></li>
-        <li><a href="#privacy">Your progress</a></li>
-      </ol>
-    </nav>
-
-    <div>
-      <section class="a-sec" id="what" aria-labelledby="what-h">
-        <h2 id="what-h">What TechConcepts is</h2>
+    <section class="a-sec cs-card" id="what" aria-labelledby="what-h">
+      <h2 class="cs-tab" id="what-h">What TechConcepts is</h2>
+      <div class="a-cols">
         <p>
           TechConcepts teaches how technology works by showing it. Each lesson plays a real process, such as a laptop asking the network for an
           address, one step at a time, and explains each step in plain words.
@@ -90,37 +97,39 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
           The first track, {track.title}, is written for anyone starting out, including people studying for entry-level IT certifications. {coming}
         </p>
         <p>You don’t need an account, and you can open any lesson in any order.</p>
-      </section>
+      </div>
+    </section>
 
-      <section class="a-sec" id="lessons" aria-labelledby="lessons-h">
-        <h2 id="lessons-h">How a lesson works</h2>
-        <p>Every lesson has the same three parts, so you always know where you are.</p>
-        <ol class="a-steps">
-          <li class="card">
-            <div class="art" set:html={spot('watch')} />
-            <div class="body">
-              <span class="n">1 Watch</span>
-              <h3>See it happen</h3>
-              <p>A scene plays the process step by step. Pause it, slow it down, or go back a step whenever you like.</p>
-            </div>
-          </li>
-          <li class="card">
-            <div class="art" set:html={spot('learn')} />
-            <div class="body">
-              <span class="n">2 Learn</span>
-              <h3>Get the idea, then the name</h3>
-              <p>Each idea starts with an everyday comparison, then gives you the real term. Exam detail waits under Go deeper, closed until you want it.</p>
-            </div>
-          </li>
-          <li class="card">
-            <div class="art" set:html={spot('practice')} />
-            <div class="body">
-              <span class="n">3 Practice</span>
-              <h3>Check yourself</h3>
-              <p>A few questions, just for you. Each answer says why it’s right or not. Nothing is scored or saved.</p>
-            </div>
-          </li>
-        </ol>
+    <section class="a-sec cs-card" id="lessons" aria-labelledby="lessons-h">
+      <h2 class="cs-tab" id="lessons-h">How a lesson works</h2>
+      <p>Every lesson has the same three parts, so you always know where you are.</p>
+      <ol class="a-steps">
+        <li>
+          <div class="art" set:html={spot('watch')} />
+          <div class="body">
+            <span class="n"><b>1</b> Watch</span>
+            <h3>See it happen</h3>
+            <p>A scene plays the process step by step. Pause it, slow it down, or go back a step whenever you like.</p>
+          </div>
+        </li>
+        <li>
+          <div class="art" set:html={spot('learn')} />
+          <div class="body">
+            <span class="n"><b>2</b> Learn</span>
+            <h3>Get the idea, then the name</h3>
+            <p>Each idea starts with an everyday comparison, then gives you the real term. Exam detail waits under Go deeper, closed until you want it.</p>
+          </div>
+        </li>
+        <li>
+          <div class="art" set:html={spot('practice')} />
+          <div class="body">
+            <span class="n"><b>3</b> Practice</span>
+            <h3>Check yourself</h3>
+            <p>A few questions, just for you. Each answer says why it’s right or not. Nothing is scored or saved.</p>
+          </div>
+        </li>
+      </ol>
+      <div class="a-after">
         <div class="a-note">
           <svg class="t" viewBox="0 0 24 24" aria-hidden="true"
             ><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"></circle><path
@@ -136,21 +145,23 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
           </p>
         </div>
         <p>The example networks use addresses set aside for documentation and private use, so nothing in a lesson points at a real machine.</p>
-      </section>
+      </div>
+    </section>
 
-      <section class="a-sec" id="facts" aria-labelledby="facts-h">
-        <h2 id="facts-h">Where the facts come from</h2>
-        <div class="a-facts">
+    <section class="a-sec cs-card" id="facts" aria-labelledby="facts-h">
+      <h2 class="cs-tab" id="facts-h">Where the facts come from</h2>
+      <div class="a-facts">
+        <div>
           <p>
             Each lesson lists the standards it draws on under Sources at the end of Learn. {factCheck}
           </p>
           <div class="a-facts__art" aria-hidden="true" set:html={pageFigure('sources')} />
         </div>
-        <div class="card a-src">
+        <div class="a-src">
           <h3>Sources in the {dhcp.title} lesson</h3>
           <ul>
             {
-              sources.map((s) => (
+              shown.map((s) => (
                 <li>
                   <span>{s.standard}</span>
                   <a href={s.url}>{s.title}</a>
@@ -158,11 +169,31 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
               ))
             }
           </ul>
+          {
+            folded && (
+              <details class="a-src__more">
+                <summary>
+                  <span class="a-src__closed">Show the other {rest.length}</span>
+                  <span class="a-src__open">Hide the other {rest.length}</span>
+                </summary>
+                <ul aria-label={`Sources ${SHOWN + 1} to ${sources.length}`}>
+                  {rest.map((s) => (
+                    <li>
+                      <span>{s.standard}</span>
+                      <a href={s.url}>{s.title}</a>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )
+          }
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="a-sec" id="credits" aria-labelledby="credits-h">
-        <h2 id="credits-h">Credits</h2>
+    <section class="a-sec cs-card" id="credits" aria-labelledby="credits-h">
+      <h2 class="cs-tab" id="credits-h">Credits</h2>
+      <div class="a-two">
         <p>
           Protocol Explorer and TryHackMe inspired TechConcepts: the first for the idea of watching a protocol work, the second for its friendly,
           guided way of teaching. They are inspiration only. TechConcepts is not affiliated with, endorsed by, or built from either of them.
@@ -176,53 +207,60 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
             Barlow Semi Condensed, by the Barlow Project Authors.
           </dd>
         </dl>
-      </section>
+      </div>
+    </section>
 
-      <section class="a-sec" id="privacy" aria-labelledby="privacy-h">
-        <h2 id="privacy-h">Your progress stays with you</h2>
+    <section class="a-sec cs-card" id="privacy" aria-labelledby="privacy-h">
+      <h2 class="cs-tab" id="privacy-h">Your progress stays with you</h2>
+      <div class="a-two a-keep">
         <p>
           TechConcepts remembers a few things so you can pick up where you left off. They are saved only in this browser, on this device, and
           never sent to a server. There are no accounts.
         </p>
-        <table class="a-saved">
-          <caption>What the site remembers</caption>
-          <thead>
-            <tr><th scope="col">What</th><th scope="col">Where it’s kept</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">Which lessons you started and finished</th>
-              <td><span class="where"><span class="dot" aria-hidden="true"></span>This browser only</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Light or dark theme</th>
-              <td><span class="where"><span class="dot" aria-hidden="true"></span>This browser only</span></td>
-            </tr>
-            <tr>
-              <th scope="row">Your Practice answers</th>
-              <td><span class="where"><span class="dot off" aria-hidden="true"></span>Not saved at all</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="a-savedbox">
+          <table class="a-saved">
+            <caption>What the site remembers</caption>
+            <thead>
+              <tr><th scope="col">What</th><th scope="col">Where it’s kept</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Which lessons you started and finished</th>
+                <td><span class="where"><span class="dot" aria-hidden="true"></span>This browser only</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Light or dark theme</th>
+                <td><span class="where"><span class="dot" aria-hidden="true"></span>This browser only</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Your Practice answers</th>
+                <td><span class="where"><span class="dot off" aria-hidden="true"></span>Not saved at all</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         {analyticsToken?.trim() && <p>The site counts page views with privacy-friendly analytics that use no cookies and know nothing about your progress.</p>}
         <p>To start fresh, reset it here. Clearing your browser data does the same.</p>
         <ResetProgress client:load />
-      </section>
-    </div>
+      </div>
+    </section>
   </div>
 </BaseLayout>
-
-<script>
-  import { followSections } from '../scripts/about-toc';
-
-  // The list marks the section being read. Without JavaScript its links still work, and nothing is marked.
-  const nav = document.querySelector<HTMLElement>('.a-toc');
-  if (nav) followSections(nav);
-</script>
 
 <style is:global>
   html {
     scroll-behavior: smooth;
+    /* Keyboard focus and every anchor stop clear of the 68px sticky header (as /tracks), and a focus ring clear of the
+       window's foot. */
+    scroll-padding-top: 80px;
+    scroll-padding-bottom: 12px;
+  }
+  /* While the header's menu is open (below 960px) the header is 391px tall on this page (five links and Start
+     learning): its height plus 12px. */
+  @media (max-width: 959px) {
+    html:has(#menu-panel:not([hidden])) {
+      scroll-padding-top: 403px;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -230,25 +268,37 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
     }
   }
 
-  /* ---------- The opening: the line, what the site is, and its three counts ---------- */
+  /* ---------- The opening: the line and what the site is at the left; the counts and the list of sections at the right ---------- */
   .a-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 0 clamp(32px, 5vw, 80px);
+    align-items: start;
     padding-top: clamp(24px, 4vw, 48px);
     padding-bottom: clamp(28px, 4vw, 48px);
   }
   .a-crumbs ol {
     display: flex;
     gap: 8px;
-    margin: 0 0 18px;
+    margin: 0 0 6px;
     padding: 0;
     list-style: none;
     color: var(--muted);
     font-size: 15px;
+  }
+  .a-crumbs li {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
   }
   .a-crumbs li + li::before {
     content: '/';
     margin-right: 8px;
   }
   .a-crumbs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     color: inherit;
     text-decoration: none;
   }
@@ -261,103 +311,102 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
   .a-open h1 {
     max-width: 13em;
     margin: 0;
-    font-size: clamp(44px, 7.4vw, 104px);
+    font-size: clamp(44px, 6.6vw, 96px);
     line-height: 0.92;
     letter-spacing: -0.008em;
     text-wrap: balance;
   }
-  .a-open__row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 24px clamp(24px, 5vw, 80px);
-    align-items: end;
-    margin-top: clamp(20px, 3vw, 36px);
-    padding-top: 20px;
-    border-top: 2px solid var(--ink-strong);
-  }
   .a-lede {
     max-width: 34em;
-    margin: 0;
+    margin: clamp(20px, 2.4vw, 32px) 0 0;
     color: var(--ink-strong);
     font-size: 19px;
     line-height: 1.5;
   }
-  /* The counts: each a large figure over its words. */
+
+  /* The counts: one card, a cell a count, the figure over its words. The figure is sized from the card's own width
+     (cqi) and its words stand one over the other at every width, so three cells fit a 256px card whatever the
+     figures are. The card is a size container, so it is given a width (the column's) and never sized by its content. */
   .stats {
-    display: flex;
-    gap: clamp(20px, 3vw, 44px);
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     margin: 0;
   }
-  .stats div {
+  .stats > div {
     display: flex;
     flex-direction: column-reverse;
-    gap: 2px;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+    padding: 14px clamp(8px, 4.5cqi, 18px) 12px;
+  }
+  .stats > div + div {
+    border-left: 2px solid var(--cs-edge);
   }
   .stats dd {
     margin: 0;
     color: var(--ink-strong);
-    font: 700 clamp(40px, 4.6vw, 64px) / 0.9 var(--display);
+    font: 700 clamp(30px, 12cqi, 56px) / 0.9 var(--display);
+    overflow-wrap: anywhere;
   }
   .stats dt {
+    width: min-content;
     color: var(--muted);
     font: 600 15px/1.2 var(--display);
     letter-spacing: 0.02em;
-    white-space: nowrap;
   }
 
-  /* ---------- The body: a list of the sections beside a reading column ---------- */
-  .a-body {
-    display: grid;
-    grid-template-columns: 200px minmax(0, 46rem);
-    gap: clamp(28px, 6vw, 96px);
-    align-items: start;
-    padding-top: clamp(28px, 4vw, 48px);
-  }
+  /* The list of sections is a card named on its tab, a row a section. */
   .a-toc {
-    position: sticky;
-    top: 96px;
+    margin-top: 54px;
   }
   .a-toc ol {
-    display: grid;
-    gap: 2px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
   .a-toc a {
-    display: block;
-    padding: 8px 10px;
-    border-left: 3px solid var(--line);
-    color: var(--ink);
-    font: 600 16px/1.25 var(--display);
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 6px 18px;
+    color: var(--ink-strong);
+    font: 600 17px/1.25 var(--display);
+    letter-spacing: 0.01em;
     text-decoration: none;
   }
+  .a-toc li + li a {
+    border-top: 1px solid var(--line);
+  }
+  .a-toc li:last-child a {
+    border-radius: 0 0 8px 8px;
+  }
   .a-toc a:hover {
-    color: var(--ink-strong);
+    background: var(--cs-quiet);
   }
-  .a-toc a[aria-current] {
-    border-left-color: var(--here);
-    background: var(--here-soft);
-    color: var(--ink-strong);
+  .a-toc a:focus-visible {
+    outline-offset: -4px;
   }
+
+  /* ---------- A section: the card, its name on a taller tab. A link lands the tab's top 92px down. ---------- */
   .a-sec {
-    padding-bottom: clamp(36px, 5vw, 64px);
-    /* Clear of the sticky header when a link lands here. */
-    scroll-margin-top: 92px;
+    margin-top: 72px;
+    padding: clamp(20px, 2.6vw, 36px);
+    scroll-margin-top: 54px;
   }
-  .a-sec + .a-sec {
-    padding-top: clamp(28px, 4vw, 44px);
-    border-top: 1px solid var(--line-strong);
-  }
-  .a-sec:last-child {
-    padding-bottom: 0;
-  }
-  .a-sec h2 {
-    margin: 0 0 14px;
-    font-size: clamp(30px, 3.4vw, 42px);
-    line-height: 1.05;
+  .a-sec > h2.cs-tab {
+    height: auto;
+    min-height: 44px;
+    max-width: calc(100% + 4px);
+    padding: 6px 18px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: normal;
   }
   .a-sec p {
+    max-width: 36em;
     margin: 0 0 14px;
     font-size: 18px;
     line-height: 1.55;
@@ -365,59 +414,85 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
   .a-sec p:last-child {
     margin-bottom: 0;
   }
-  .a-sec a {
-    color: var(--link);
+  /* Links in the page are ink with an underline, as on every Card stack page (global.css); no blue. */
+  .a-cols {
+    columns: 2;
+    column-gap: clamp(32px, 5vw, 72px);
+  }
+  .a-cols > * {
+    break-inside: avoid;
   }
 
-  /* How a lesson works: three parts in order, each with its small figure. */
+  /* How a lesson works: three parts across, a hairline between them; each part's number is a chip. */
   .a-steps {
     display: grid;
-    gap: 12px;
-    margin: 20px 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 22px 0 26px;
     padding: 0;
     list-style: none;
+    border-top: 1px solid var(--cs-hair);
+    border-bottom: 1px solid var(--cs-hair);
   }
   .a-steps li {
-    display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
-    align-items: center;
-    overflow: hidden;
+    padding: 0 0 20px;
+  }
+  .a-steps li + li {
+    border-left: 1px solid var(--cs-hair);
   }
   .a-steps .art {
-    align-self: stretch;
     display: grid;
     place-items: center;
-    border-right: 1px solid var(--line-strong);
+    overflow: hidden;
     background: var(--fig-bg);
   }
-  .a-steps .art svg {
+  .a-steps .art svg,
+  .a-facts__art svg {
     display: block;
     width: 100%;
     height: auto;
   }
   .a-steps .body {
-    padding: 18px 22px;
+    padding: 4px 22px 0;
   }
   .a-steps .n {
-    color: var(--here);
-    font: 600 15px/1.2 var(--display);
-    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--ink-strong);
+    font: 600 16px/1 var(--display);
+    letter-spacing: 0.01em;
+  }
+  .a-steps .n b {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 6px;
+    font: 700 15px/1 var(--display);
   }
   .a-steps h3 {
-    margin: 4px 0 6px;
+    margin: 0 0 6px;
     font-size: 24px;
   }
   .a-steps p {
     font-size: 16.5px;
   }
+  .a-after {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
   .a-note {
     display: grid;
     grid-template-columns: 22px minmax(0, 1fr);
     gap: 12px;
-    margin: 0 0 14px;
+    margin: 0;
     padding: 14px 16px;
-    border-left: 3px solid var(--ink-strong);
-    background: var(--card);
+    border-radius: var(--cs-r-in);
+    background: var(--cs-quiet);
   }
   .a-note b {
     color: var(--ink-strong);
@@ -432,24 +507,20 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
     font-size: 17px;
   }
 
-  /* Where the facts come from: the words beside the figure, then one lesson's sources as the example. */
+  /* Where the facts come from: the words and the figure at the left, one lesson's sources at the right. The first
+     three sources show; the rest are behind a native <details> (Home's pattern). */
   .a-facts {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 260px;
-    gap: 24px;
-    align-items: center;
-    margin-bottom: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px clamp(32px, 5vw, 72px);
+    align-items: start;
   }
-  .a-facts__art svg {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-  .a-src {
-    padding: 18px 22px;
+  .a-facts__art {
+    max-width: 300px;
+    margin-top: 8px;
   }
   .a-src h3 {
-    margin: 0 0 10px;
+    margin: 0 0 4px;
     color: var(--muted);
     font: 600 15px/1.2 var(--display);
     letter-spacing: 0.02em;
@@ -462,29 +533,90 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
   }
   .a-src li {
     display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-columns: 11rem minmax(0, 1fr);
     gap: 14px;
+    align-items: baseline;
     padding: 10px 0;
     border-top: 1px solid var(--line);
     font-size: 16.5px;
+  }
+  .a-src > ul > li:first-child {
+    border-top: 0;
   }
   .a-src li span {
     color: var(--ink-strong);
     font: 500 15px/1.6 var(--mono);
   }
+  .a-src li a {
+    justify-self: start;
+    overflow-wrap: anywhere;
+  }
+  .a-src__more > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    border-top: 1px solid var(--cs-hair);
+    color: var(--ink-strong);
+    font: 600 16px/1.2 var(--display);
+    letter-spacing: 0.01em;
+    list-style: none;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .a-src__more > summary::-webkit-details-marker {
+    display: none;
+  }
+  /* Home's marker: a small square with a plus, a minus once open. */
+  .a-src__more > summary::before {
+    content: '';
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--cs-edge);
+    border-radius: 4px;
+    background:
+      linear-gradient(var(--ink-strong), var(--ink-strong)) center / 7px 1.5px no-repeat,
+      linear-gradient(var(--ink-strong), var(--ink-strong)) center / 1.5px 7px no-repeat;
+  }
+  .a-src__more[open] > summary::before {
+    background: linear-gradient(var(--ink-strong), var(--ink-strong)) center / 7px 1.5px no-repeat;
+  }
+  .a-src__more > summary:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .a-src__more > summary:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  .a-src__open,
+  .a-src__more[open] .a-src__closed {
+    display: none;
+  }
+  .a-src__more[open] .a-src__open {
+    display: inline;
+  }
 
+  .a-two {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
   .a-credits {
     display: grid;
     grid-template-columns: 96px minmax(0, 1fr);
     gap: 0 14px;
-    margin: 18px 0 0;
-    border-top: 1px solid var(--line-strong);
+    margin: 0;
   }
   .a-credits dt,
   .a-credits dd {
     margin: 0;
     padding: 12px 0;
-    border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--line);
     font-size: 16.5px;
   }
   .a-credits dt {
@@ -492,16 +624,31 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
     font: 600 15px/1.7 var(--display);
     letter-spacing: 0.02em;
   }
+  .a-credits dt:first-of-type,
+  .a-credits dt:first-of-type + dd {
+    border-top: 0;
+    padding-top: 0;
+  }
 
-  /* What the site remembers. */
+  /* Your progress: the words and Reset at the left, the table at the right. The markup keeps its order (the words,
+     the table, the sentences, Reset); the table is placed in the second column across the rows. */
+  .a-keep > * {
+    grid-column: 1;
+  }
+  .a-keep > .a-savedbox {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+  .a-keep p {
+    margin: 0;
+  }
   .a-saved {
     width: 100%;
-    margin: 18px 0;
     border-collapse: collapse;
     font-size: 16.5px;
   }
   .a-saved caption {
-    padding-bottom: 8px;
+    padding-bottom: 10px;
     color: var(--muted);
     font: 600 15px/1.2 var(--display);
     letter-spacing: 0.02em;
@@ -516,7 +663,7 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
     vertical-align: top;
   }
   .a-saved thead th {
-    border-top: 1px solid var(--line-strong);
+    border-top-color: var(--cs-hair);
     color: var(--muted);
     font: 600 14px/1.2 var(--display);
     letter-spacing: 0.02em;
@@ -540,10 +687,15 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
     background: transparent;
     box-shadow: inset 0 0 0 1.5px var(--muted);
   }
+  /* Reset progress: card-stack.css draws the buttons (48px, the offset edge); the row leaves room for that edge. */
+  .a-keep .a-reset {
+    grid-column: 1;
+  }
   .a-reset {
-    margin-top: 16px;
+    padding: 0 3px 3px 0;
   }
   .a-reset .q {
+    flex-basis: 100%;
     margin: 0 0 10px;
     color: var(--ink-strong);
     font-weight: 600;
@@ -552,51 +704,77 @@ const factCheck = factCheckSentence(checks.checked, checks.total);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+  }
+  .a-reset [role='group']:focus-visible {
+    outline-offset: 6px;
   }
   .a-reset [role='status'] {
-    margin: 10px 0 0;
+    display: block;
     color: var(--allowed-text);
     font-size: 16px;
   }
+  .a-reset [role='status']:not(:empty) {
+    margin-top: 12px;
+  }
 
+  /* ---------- 860px and down: one column ---------- */
   @media (max-width: 860px) {
-    .a-open__row {
-      grid-template-columns: minmax(0, 1fr);
-      align-items: start;
-    }
-    .a-body {
+    .a-open {
       grid-template-columns: minmax(0, 1fr);
     }
-    /* On a phone the list of sections is a row to swipe, under the opening and no longer stuck. */
-    .a-toc {
-      position: static;
-    }
-    .a-toc .toc-h {
-      display: none;
-    }
-    .a-toc ol {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 6px;
+    .a-open__side {
+      margin-top: 24px;
     }
     .a-toc a {
-      border: 1px solid var(--line-strong);
-      border-radius: 4px;
-      white-space: nowrap;
+      min-height: 44px;
     }
-    .a-toc a[aria-current] {
-      border-color: var(--here);
+    /* The cards reach 16px past the column on each side, so their words keep the column's width. */
+    .a-sec {
+      margin-inline: -16px;
+      padding: 20px 14px;
     }
-    .a-steps li {
-      grid-template-columns: 110px minmax(0, 1fr);
+    .a-sec > h2.cs-tab {
+      padding-inline: 14px;
+      font-size: 21px;
     }
-    .a-facts {
+    .a-cols {
+      columns: auto;
+    }
+    .a-steps {
       grid-template-columns: minmax(0, 1fr);
     }
-    .a-facts__art {
-      max-width: 300px;
+    .a-steps li {
+      display: grid;
+      grid-template-columns: clamp(96px, 22vw, 180px) minmax(0, 1fr);
+      align-items: start;
+      padding: 14px 0;
+    }
+    .a-steps li + li {
+      border-top: 1px solid var(--cs-hair);
+      border-left: 0;
+    }
+    .a-steps .body {
+      padding: 0 0 0 12px;
+    }
+    .a-after,
+    .a-facts,
+    .a-two {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .a-keep > .a-savedbox {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .a-src li {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      padding: 10px 0 2px;
+    }
+    .a-src li a {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
     }
   }
 </style>
