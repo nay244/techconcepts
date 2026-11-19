@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 24: the header and footer in the Card stack look
 
-**Status: planned (2026-11-19; 2.122), waiting for the owner's go.** The owner, at job 23's end, to whether the header and footer join Card stack: "Yes, plan it as a job" (2.121). Numbers claimed on `revamp` (a6589ba, checked free): job 24, direction rows from 2.122, S25, D23, B29, F24.
+**Status: go (2026-11-19; 2.123): the layout kept, the Lesson page's header in Patch with the styles in `card-stack.css`, D23 on Fable 5.2.** Planned under 2.122. The owner, at job 23's end, to whether the header and footer join Card stack: "Yes, plan it as a job" (2.121). Numbers claimed on `revamp` (a6589ba, checked free): job 24, direction rows from 2.122, S25, D23, B29, F24.
 
 ## Inputs
 
@@ -39,7 +39,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 8. **Keyboard and motion, as in jobs 18 to 23.** The spec review names Tab and Shift+Tab walks at 320, 375, 390, 959, 960 and 1440 with the menu closed and open, focus never under the sticky header; the builder runs its specs at `reduced-motion` before review, uses `transitionsDone` for any read after a state, scroll or focus change, and proves each wait with `--trace=off --repeat-each=10`. Every agent writes its report in parts. After sending fixes the orchestrator checks the branch's commits within the hour.
 9. **Tests changed on purpose, never loosened past the grant.** The guards pinned to old commits (S25 Part 6) allow exactly the files this job grants (`card-stack.css`'s new block and its opening comment, `SiteHeader.astro`, `SiteFooter.astro`, `ThemeToggle.css` and `site.css` if D23 needs them) and keep every other file pinned; `site.spec.ts:1884-1885` and `:1911` take the approved values; the comparisons between pages stay as they are. The spec review lists every other test that pins the header or footer in Patch, changed once in the build. "Nothing else changed" is a command run at merge time (job 23's lesson), not a test in the suite.
 10. **One build unit**, B29 (`.superpowers/wt/b29`, branch `job24/b29`, `E2E_PORT=4502`, review on 4503; ports checked free with `lsof` before the brief), since the header, footer and `card-stack.css` are restyled together.
-11. **A base run before the design:** the specs B29 will touch (`site`, `not-found`, `about`, `glossary`, `tracks-card-stack`, `track-page-card-stack`, `home`, `lesson-layout`, `lesson-layout-small`) at `reduced-motion` on `revamp`, in the main folder, so an old flake is known before the end (job 22's lesson).
+11. **A base run before the design:** the specs B29 will touch (`site`, `not-found`, `about`, `glossary`, `tracks-card-stack`, `track-page-card-stack`, `card-stack-home`, `lesson-layout`, `lesson-layout-small`, `tablet`) at `reduced-motion` on `revamp`, in the main folder, so an old flake is known before the end (job 22's lesson).
 
 ## Units
 
