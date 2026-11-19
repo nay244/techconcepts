@@ -1329,3 +1329,11 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 - **This session's worktree has its own copy of `node_modules`**, in which Playwright loads twice and no test starts; run end-to-end checks in the main folder or in a `.superpowers/wt/` worktree with `node_modules` linked.
 - **The weekly limit stopped the builder's tail and the reviewer mid-read**; both resumed from where they stopped with one message. Keep reports written in parts.
 - **Tracks' island-state test (`:371`) still has a read without `transitionsDone`**, as `:278` had (2.115); the other `settle` reads in that spec are the same risk.
+
+# Job 24: the header and footer in the Card stack look
+
+Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the session that closed job 23. The owner: "Yes, plan it as a job" (direction 2.121, 2.122). Numbers claimed on `revamp` (a6589ba): job 24, rows from 2.122, S25, D23, B29, F24. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S25 | scout | Haiku | 1 | 238,941 | Its report came back in its reply, not as a file (its rules forbid report files); the orchestrator wrote `prototypes/s25-header-footer-facts.md` from it and measured Part 8. Header 219 lines (22 rule blocks, one media query at 959px), footer 96 (11, one at 720px); about 65 end-to-end and 45 unit tests read them; five guards pinned to old commits go red on any header or footer edit; no page passes `overHero`. Measured: 69px closed, 391 / 329 open, footer 600 / 553 / 371px. |
