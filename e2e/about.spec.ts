@@ -132,7 +132,7 @@ test.describe('the page reads the Card stack, and only this page and its neighbo
 test.describe('width', () => {
   const widths = [
     ...Array.from({ length: 81 }, (_, i) => 320 + i),
-    ...Array.from({ length: 63 }, (_, i) => 416 + i * 16),
+    ...Array.from({ length: 65 }, (_, i) => 416 + i * 16),
     860,
     861,
     959,
@@ -147,6 +147,8 @@ test.describe('width', () => {
     const bad: string[] = [];
     for (const w of widths) {
       await page.setViewportSize({ width: w, height: 800 });
+      // Under reduced motion each changed property is a 0.01ms transition: read once they have ended.
+      await transitionsDone(page);
       if ((await overflow(page)) !== 0) bad.push(`${w}: ${await overflow(page)}px`);
     }
     expect(bad).toEqual([]);
@@ -157,6 +159,7 @@ test.describe('width', () => {
       await page.evaluate((c) => document.querySelectorAll('.stats dd').forEach((dd, i) => (dd.textContent = c[i]!)), counts);
       for (const w of [320, 356, 375, 860, 1440]) {
         await page.setViewportSize({ width: w, height: 800 });
+        await transitionsDone(page);
         expect(await overflow(page), `${counts.join(',')} at ${w}`).toBe(0);
         const outside = await page.evaluate(
           () =>
@@ -286,6 +289,31 @@ test.describe('the page’s length', () => {
         expect(edge, `${scheme} ${w}`).toBe(await token(off, scheme === 'dark' ? '--ink' : '--ink-strong'));
         await ctx.close();
       }
+    }
+  });
+
+  test('with JavaScript off the five addresses land the tab 92px down at 320 and 1440, and the page is no taller than with it on', async ({ browser, page, baseURL }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await visit(page, '/about');
+    const withScript = await pageHeight(page);
+    for (const [w, h] of [
+      [320, 640],
+      [1440, 900],
+    ] as const) {
+      const ctx = await browser.newContext({ javaScriptEnabled: false, viewport: { width: w, height: h } });
+      const off = await ctx.newPage();
+      await off.goto(`${baseURL}/about`);
+      await off.evaluate(() => document.fonts.ready);
+      if (w === 1440) expect(await pageHeight(off), 'scripts off, 1440').toBeLessThanOrEqual(withScript);
+      for (const id of SECTIONS) {
+        await off.goto(`${baseURL}/about#${id}`);
+        await off.evaluate(() => document.fonts.ready);
+        await scrolling(off);
+        await settle(off, false);
+        const l = await off.evaluate((i) => ({ tab: document.getElementById(i)!.querySelector('h2')!.getBoundingClientRect().top, atFoot: scrollY + innerHeight >= document.documentElement.scrollHeight - 1.5 }), id);
+        if (!l.atFoot) expect(Math.abs(l.tab - 92), `scripts off ${w} #${id}`).toBeLessThanOrEqual(2);
+      }
+      await ctx.close();
     }
   });
 
@@ -942,6 +970,22 @@ test.describe('Tab and Shift+Tab never leave focus under the header', () => {
     await settle(page);
     await expect(page.locator('main .a-crumbs a')).toBeFocused();
     expect((await focusRead(page))!.clearTop).toBeGreaterThanOrEqual(0);
+  });
+
+  test('a list link reached by Tab draws its ring 4px inside the row', async ({ page }) => {
+    for (const [w, h] of [
+      [1440, 900],
+      [375, 812],
+    ] as const) {
+      await page.setViewportSize({ width: w, height: h });
+      await visit(page, '/about');
+      await page.locator('main .a-crumbs a').focus();
+      await page.keyboard.press('Tab');
+      await settle(page);
+      const link = page.locator('.a-toc a').first();
+      await expect(link).toBeFocused();
+      expect(await link.evaluate((el) => [el.matches(':focus-visible'), getComputedStyle(el).outlineOffset, getComputedStyle(el).outlineStyle]), `${w}`).toEqual([true, '-4px', 'solid']);
+    }
   });
 
   test('a click on a list link or on the fold’s summary draws no focus ring', async ({ page }) => {

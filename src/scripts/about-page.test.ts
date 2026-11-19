@@ -248,3 +248,17 @@ test('the page’s styles: the scroll paddings, the open menu’s inside its med
   expect(style).not.toMatch(/position:\s*sticky/);
   expect(style).not.toMatch(/\.ab--|\.pt-|\.toc-h|\bcard\b\s*\{/);
 });
+
+test('card-stack.css changes only its opening comment, which names About and the Glossary; Home, Tracks, the track page and the shared files are untouched (case 0.1)', () => {
+  const run = (cmd: string): string => (execSync(`${cmd} || true`, { encoding: 'utf8' }) as string).trim();
+  const hunks = run('git diff -U0 f30e876 -- src/styles/card-stack.css').split('\n').filter((l) => l.startsWith('@@'));
+  for (const h of hunks) expect(Number(/\+(\d+)/.exec(h)![1]), h).toBeLessThanOrEqual(4);
+  const head = readFileSync('src/styles/card-stack.css', 'utf8').split('\n').slice(0, 4).join('\n');
+  expect(head).toContain('src/pages/about.astro');
+  expect(head).toContain('src/pages/glossary.astro');
+  expect(
+    run(
+      "git diff --name-only f30e876 -- src/pages/index.astro src/pages/tracks.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
+    ),
+  ).toBe('');
+});
