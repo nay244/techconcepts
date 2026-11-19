@@ -1306,3 +1306,26 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 | B28 review | reviewer | Opus, high | 1 (resumed once after the weekly limit) | 123,368 | PASS WITH FIXES, no blocker: 0 pixels different from the prototype at 320, 375, 390, 768 and 1440, light and dark; no word changed; its own build of 0fd851c against the branch: every file but `404.html` byte-identical; `card-stack.css` only its four-line comment; the four decision-8 tests not loosened, each red without the import; 12 of 12 mutations red. Departures 1–6 accepted. Fixes: case 61 pinned whole trees to a commit (it would go red on any later work); case 54 read one button and no colour; cases 47 and 48 counted names without checking them; two tests misnumbered. `.superpowers/job23/b28-review.md` in the worktree. |
 | B28 fixes | builder (continued) | Sonnet | 1 | 8,622 (253,101 reported in all, less B28) | `df3d0c9`: the four fixes, each red under its mutation. vitest 2,568; `not-found.spec.ts` 71 + 1 skipped in each 1440 project, 72 at `reduced-motion`. |
 | B28 fix check | orchestrator | Opus 5.5 | 1 | not counted | Fix 1: a comment in `src/lib/start.ts` leaves `not-found-page.test.ts` green (11 passed), deleting `about.spec.ts:95` turns it red; fix 2: `.btn:nth-child(2) { box-shadow: none }` in the page turns case 54 red; fix 3: one panel name changed turns 47 and 48 red (5 failed); fix 4: the grep prints nothing; restored, 47, 48 and 54 6 passed. **B28 done.** |
+| F23 | orchestrator | Opus 5.5 | 1 | not counted | `job23/b28` merged into `revamp` (`5712efe`). vitest 2,568 passed (173 files); build within budget on 42 pages, `/404` 32.3 KB; CI's end-to-end pass 1,335 passed, 4 skipped, 0 failed; `not-found`, `tracks-card-stack`, `about`, `glossary` and `site` at `reduced-motion` 560 passed, 19 skipped, 1 failed (`tracks-card-stack.spec.ts:371`, a font-size read mid-transition after a reseed), then 561 passed on the rerun; `:371` alone 100 of 100 on `revamp` and on `b14f4d1`, so a rare flake under load from before this job. Measured on the merged build: 1,201 / 1,376 / 1,409 / 1,423 / 1,430px at 1440 / 768 / 390 / 375 / 320, light = dark, no sideways scroll; 32,178 bytes gzipped. Worktree `b28` removed; its report and review kept in `.superpowers/job23/`. |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| scout | Haiku | 106,929 |
+| designer (D22) | Fable 5.2 (the owner's word, 2.117) | 228,437 |
+| reviewer (spec, build) | Opus | 279,744 |
+| builder (B28, fixes) | Sonnet | 253,101 |
+| **Total** | | **868,211** (estimate 0.7 to 1.2 million plus the scout's 0.11; stop at 1.5) |
+
+## Could go one model lower next time
+
+- B28's four fixes (drop a check, extend three tests, rename two) came with their checks named; a Haiku `builder` would have done.
+- The scout's test list was the job's most useful find (three tests that used 404 as the page without Card stack); Haiku was right for it.
+
+## What to do differently next time
+
+- **Brief a test that guards "nothing else changed" as a merge-time command, not a test in the suite.** B28's case 61 pinned whole trees to a commit and would have gone red on the next job's work; the review caught it.
+- **This session's worktree has its own copy of `node_modules`**, in which Playwright loads twice and no test starts; run end-to-end checks in the main folder or in a `.superpowers/wt/` worktree with `node_modules` linked.
+- **The weekly limit stopped the builder's tail and the reviewer mid-read**; both resumed from where they stopped with one message. Keep reports written in parts.
+- **Tracks' island-state test (`:371`) still has a read without `transitionsDone`**, as `:278` had (2.115); the other `settle` reads in that spec are the same risk.
