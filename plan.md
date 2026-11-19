@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 22: the Glossary and About in the Card stack look
 
-**Status: the owner said go, both layouts open, the design on Fable 5.2 (2.111); D21 under way.** Planned under 2.110. The owner, 2026-11-18: "Lets do the Glossary and About in the same session", then, when the separate session could not be given its brief, "Run it here". Numbers claimed on `revamp` (c336e82, checked free): job 22, direction rows from 2.110, S23, D21, build B26 and B27, F22.
+**Status: the owner said go, both layouts open, the design on Fable 5.2 (2.111); D21 approved and frozen: the Glossary in layout 1 Ledger, About in layout 2 Folders (2.112); the spec review next.** Planned under 2.110. The owner, 2026-11-18: "Lets do the Glossary and About in the same session", then, when the separate session could not be given its brief, "Run it here". Numbers claimed on `revamp` (c336e82, checked free): job 22, direction rows from 2.110, S23, D21, build B26 and B27, F22.
 
 ## Inputs
 
