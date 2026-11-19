@@ -62,6 +62,7 @@ Closed by the orchestrator, 2026-11-18; where an erratum and a spec differ, the 
 - **E12** (T1, the designer's ruling): `.gl-up:focus-visible { outline-offset: -3px }`, an inside ring; the bar stays 48px; the ring's top at or below 69px with the bar stuck, 3:1 on the ground in both themes.
 - **E13** (T2, the designer's ruling): as drawn; check 5 adds "44px or more wide from 708px".
 - **E15** (B27's build, its review's ruling): About's check 33 reads "at most 52,500 bytes gzipped": Astro inlines `card-stack.css` into the page (about 1 KB gzipped), and without it the page is 248 bytes under today's.
+- **E16** (B26's build, its review's ruling): on the Glossary, a card whose first row is a pointer (B, C and W) draws that link's focus ring inside it, as E12 does for "All letters": drawn outside, its top is hidden under the stuck bar.
 - **E14** (T3, the designer's ruling): as drawn; for a wrapped tab check 15 asserts only that its top is at or below the header's foot.
 
 ## Which unit owns which file
