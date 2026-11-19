@@ -279,6 +279,7 @@ for (const [vname, viewport] of VIEWS) {
         await seedInit(page, S3, 'what-is-tls');
         await open(page, '/tracks');
         await settle(page);
+        await transitionsDone(page);
         const failures = await page.evaluate(() => {
           const lum = (c: number[]) => {
             const f = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
