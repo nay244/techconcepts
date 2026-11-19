@@ -797,13 +797,13 @@ test.describe('the track page wears the Card stack and the rest of the site is u
     }
   }
   // /about and /glossary are pinned by their own specs since job 22 (D21 cases S1).
-  for (const path of ['/does-not-exist', '/networking/dhcp']) {
+  for (const path of ['/networking/dhcp']) {
     test(`${path} does not read the Card stack's names`, async ({ page }) => {
       await page.goto(path);
       expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim())).toBe('');
     });
   }
-  for (const path of ['/networking', '/how-the-internet-works']) {
+  for (const path of ['/networking', '/how-the-internet-works', '/does-not-exist']) {
     test(`${path} reads the Card stack's names`, async ({ page }) => {
       await page.goto(path);
       expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cs-edge').trim())).not.toBe('');
