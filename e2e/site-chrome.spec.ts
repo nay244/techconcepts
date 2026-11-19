@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { gzipSize } from '../scripts/check-budgets.mjs';
+import { STOPS } from './site-chrome-stops';
 import { open, pageOverflow, scrollSettled, settledFrame, transitionsDone } from './support';
 
 /*
@@ -962,6 +963,8 @@ test.describe('the header and the footer in the Card stack look', () => {
           const t = tally(all);
           const key = `${label} ${w}x${h} ${menuOpen ? 'open' : 'closed'}`;
           console.log(`WALK ${testInfo.project.name} ${key} ${JSON.stringify({ ...t, stops: `${forth.length}+${back.length}`, names: NAMES(all) })}`);
+          // The stops, in order, are revamp's (case 44, 49): a stop that goes missing or moves is seen here.
+          expect(NAMES(all), `${key}: the stops and their order`).toBe(STOPS[key]);
           expect(forth.some((s) => s.where === 'main'), `${key}: the walk enters main`).toBe(true);
           expect(forth[forth.length - 1]!.name, key).toBe('About');
           // Soft, so a red run still walks every size and logs its counts (the report sets them against revamp's).
