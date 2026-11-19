@@ -1282,3 +1282,11 @@ Planned on 2026-11-18 in job 21's session on Opus 5.5: the owner said "Lets do t
 - **A port can be held by an agent's leftover server** (a `python -m http.server` on 4496 from an earlier run). Check `lsof -iTCP:<port> -sTCP:LISTEN` before handing out ports.
 - **A guard written by one side-by-side unit can block the other's allowed change** (B26's `card-stack.css` test against B27's comment, E2). When the cases give a shared file to one unit, the other unit's guard must be written against that grant; say so in both briefs.
 - **Run the touched specs at `reduced-motion` on the base before the job starts**, so an old flake (Tracks' contrast test) is known before it is found at the end.
+
+## After the job: Tracks' contrast flake (the owner's yes, "Yes, fix it here")
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| F22a cause | orchestrator | Opus 5.5 | 1 | not counted | Logged the running CSS transitions at the read in `tracks-card-stack.spec.ts:278`: in 1 of 40 runs background-color and background-position transitions on many elements, in 11 of 40 `.upnext__n`'s and `.sr-only`'s font-size; the test waited two frames. |
+| F22a | builder | Sonnet | 1 | 73,284 | `ee066a8`: one `transitionsDone` before the read. Red before, 2 of 80; after, 160 of 160; the spec 236 of 236 in three projects. It left the spec's other `settle` reads; its reason (a font-size transition moves no height) is wrong, but they passed 590 of 590 at `reduced-motion` `--repeat-each=5` (the orchestrator's run). |
+| F22a check | orchestrator | Opus 5.5 | 1 | not counted | `:278` at `reduced-motion` `--repeat-each=40`: 160 passed. Merged into `revamp` (`cc3f8a3`). A one-line wait whose cause is measured would have done on Haiku. |
