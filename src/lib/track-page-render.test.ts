@@ -15,6 +15,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { getEntries } from '../content/registry';
 import { internetTrack, networkingTrack } from '../content/tracks';
 import TrackPage from '../pages/[track]/index.astro';
+import { expectCardStackGrant } from './card-stack-guards';
 
 const TRACKS = [
   { track: networkingTrack, lessons: 20, parts: 6, end: 'New to IT? How the Internet Works is the gentler start.', to: '/how-the-internet-works', words: '20 of 20 lessons done' },
@@ -203,12 +204,9 @@ describe('the files the page changes', () => {
     expect(page).toMatch(/\.stop\)::before\s*\{[^}]*left: -24px/);
   });
 
-  test('card-stack.css changes only its header comment, and names no part of the track page (check 27)', () => {
-    const diff = (execSync('git diff -U0 e6441c2 -- src/styles/card-stack.css || true', { encoding: 'utf8' }) as string).split('\n').filter((l) => l.startsWith('@@'));
-    for (const hunk of diff) {
-      const start = Number(/\+(\d+)/.exec(hunk)![1]);
-      expect(start, hunk).toBeLessThanOrEqual(4);
-    }
+  test('card-stack.css changes only its opening comment, two reworded comments and the header and footer block (job 24), and names no part of the track page (check 27)', () => {
+    // e6441c2 predates the file (the old guard's whole-file hunk passed on nothing); 1d8e446 is the last commit that holds it as it was.
+    expectCardStackGrant('1d8e446');
     expect(read('src/styles/card-stack.css')).not.toMatch(/\.tk\b|\.stop\b|\.route\b|\.upnext\b|\.strip\b|\.wlp\b/);
   });
 

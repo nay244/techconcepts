@@ -114,6 +114,12 @@ const art = (id: CoverId): string =>
   :global(html) {
     scroll-padding-top: 80px;
   }
+  /* While the header's menu is open (below 960px) it is 329px on this page; the root keeps that and 12px above what has focus, as the track page does. */
+  @media (max-width: 959px) {
+    :global(html:has(#menu-panel:not([hidden]))) {
+      scroll-padding-top: 341px;
+    }
+  }
   .panel {
     scroll-margin-top: 34px;
     scroll-margin-inline: 16px;

@@ -467,7 +467,7 @@ test.describe('desktop', () => {
       await page.setViewportSize({ width: 960, height: 800 });
       await expect(page.locator('.menu-btn'), path).toBeHidden();
       await expect(page.locator('.site-nav'), path).toBeVisible();
-      for (const box of await page.locator('.site-nav a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(Math.round(box), path).toBe(32);
+      for (const box of await page.locator('.site-nav a').evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height))) expect(Math.round(box), path).toBe(LESSONS.some((l) => l.path === path) ? 32 : 36);
       const start = page.locator('.site-head .head-end a.btn--primary');
       if (['/tracks', '/networking', INTERNET_TRACK, ...LESSONS.map((l) => l.path)].includes(path)) await expect(start, path).toHaveCount(0);
       else expect((await start.boundingBox())!.width, path).toBeGreaterThanOrEqual(122);
@@ -1857,7 +1857,7 @@ test.describe('B20: Home in the Card stack look', () => {
     test.describe(`${cfg.width}x${cfg.height}, ${cfg.scheme}`, () => {
       test.use({ viewport: { width: cfg.width, height: cfg.height }, colorScheme: cfg.scheme, isMobile: false, hasTouch: false });
 
-      test('3: the header is the same on Home and on /about: the page’s look is scoped to the page', async ({ page }) => {
+      test('3: the header is the same on Home and on /about, and is the Card stack’s on every page that imports it (job 24): a page’s own .btn rule still does not reach it', async ({ page }) => {
         const read = async (path: string) => {
           await page.goto(path);
           await page.evaluate(() => document.fonts.ready);
@@ -1873,6 +1873,7 @@ test.describe('B20: Home in the Card stack look', () => {
               link: pick(link, ['border-top-left-radius', 'box-shadow', 'background-color', 'border-top-width']),
               start: pick(start, ['background-color', 'border-top-left-radius', 'box-shadow', 'border-top-width', 'border-top-color', 'transform', 'font-size']),
               startText: start.textContent,
+              startHeight: Math.round(start.getBoundingClientRect().height),
             };
           });
         };
@@ -1880,20 +1881,17 @@ test.describe('B20: Home in the Card stack look', () => {
         const about = await read('/about');
         expect(home.startText).toBe('Start learning');
         expect(home).toEqual(about);
-        // The nearest leak: a rule written as `.btn` inside :global(...) gives the header's button the page's offset edge.
-        expect(home.start['box-shadow']).toBe('none');
-        expect(home.start['border-top-width']).toBe('1px');
+        // With the header in the Card stack look (job 24) the edge and the offset edge are the design, so they no longer tell a
+        // leak from it. What a page's `main .btn`-style rule would still change is the size: 18px type, 48px tall, 22px padding.
+        expect(home.start['box-shadow']).toBe(`${EDGE[cfg.scheme]} 3px 3px 0px 0px`);
+        expect(home.start['border-top-width']).toBe('2px');
+        expect(home.start['font-size']).toBe('17px');
+        if (!phone) expect(home.startHeight).toBe(44);
       });
 
       test('4: one ground from the header down: main is clear, and no rule is drawn above the opening', async ({ page }) => {
         await b20Home(page);
         const r = await page.evaluate(() => {
-          const rgb = (c: string): number[] => {
-            const m = /^rgba?\(([^)]+)\)$/.exec(c);
-            if (m !== null) return m[1]!.split(/[ ,/]+/).slice(0, 3).map(Number);
-            const s = /^color\(srgb ([^)]+)\)$/.exec(c)!;
-            return s[1]!.split(/[ /]+/).slice(0, 3).map((v) => Math.round(Number(v) * 255));
-          };
           const head = document.querySelector('.site-head')!.getBoundingClientRect();
           const h1 = document.querySelector('main h1')!.getBoundingClientRect();
           const between = [...document.querySelectorAll('main *')].filter((el) => el.closest('svg') === null).filter((el) => {
@@ -1901,14 +1899,16 @@ test.describe('B20: Home in the Card stack look', () => {
             return b.height > 0 && b.top >= head.bottom - 0.5 && b.bottom <= h1.top + 0.5;
           });
           return {
-            head: rgb(getComputedStyle(document.querySelector('.site-head')!).backgroundColor),
-            body: rgb(getComputedStyle(document.body).backgroundColor),
+            headGround: getComputedStyle(document.querySelector('.site-head')!).backgroundColor,
+            bodyGround: getComputedStyle(document.body).backgroundColor,
+            headBackdrop: getComputedStyle(document.querySelector('.site-head')!).backdropFilter,
             main: getComputedStyle(document.querySelector('main')!).backgroundColor,
             between: between.map((el) => ({ tag: el.className, borders: ['Top', 'Right', 'Bottom', 'Left'].map((s) => getComputedStyle(el).getPropertyValue(`border-${s.toLowerCase()}-width`)), bg: getComputedStyle(el).backgroundColor })),
             tryHead: getComputedStyle(document.querySelector('.try__head')!).borderTopWidth,
           };
         });
-        r.head.forEach((v, i) => expect(Math.abs(v - r.body[i]!), 'the header and the page share a ground').toBeLessThanOrEqual(1));
+        expect(r.headGround, 'the header’s ground is the page’s, solid: the same string, no alpha').toBe(r.bodyGround);
+        expect(r.headBackdrop, 'no blur behind the header').toBe('none');
         expect(r.main).toBe('rgba(0, 0, 0, 0)');
         for (const el of r.between) {
           expect(el.borders.every((w) => w === '0px'), `${el.tag} draws no rule`).toBe(true);

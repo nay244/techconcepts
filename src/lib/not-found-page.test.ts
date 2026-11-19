@@ -11,6 +11,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pageFigure } from '../art/figures/pages';
 import { startLesson } from './start';
 import NotFound from '../pages/404.astro';
+import { expectCardStackGrant, expectTracksGrant } from './card-stack-guards';
 
 /** The commit D22 was approved and frozen at: every "untouched" and "unchanged" below is read against it. */
 const BASE = '1d8e446';
@@ -54,20 +55,18 @@ describe('0. what the build may not change', () => {
   test('1: the shared files are untouched', () => {
     expect(
       run(
-        `git diff --name-only ${BASE} -- src/pages/index.astro src/pages/tracks.astro 'src/pages/[track]' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/global.css src/styles/tokens.ts src/art e2e/support.ts`,
+        `git diff --name-only ${BASE} -- src/pages/index.astro 'src/pages/[track]' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/global.css src/styles/tokens.ts src/art e2e/support.ts`,
       ),
     ).toBe('');
   });
 
-  test('2: card-stack.css changes only its opening comment, which stays four lines and names six importers (check 29, H9)', () => {
-    const hunks = [...run(`git diff -U0 ${BASE} -- src/styles/card-stack.css`).matchAll(/^@@ -(\d+)(?:,(\d+))? \+/gm)].map((m) => ({ start: Number(m[1]), count: m[2] === undefined ? 1 : Number(m[2]) }));
-    for (const h of hunks) expect(h.count === 0 ? h.start : h.start + h.count - 1, JSON.stringify(h)).toBeLessThanOrEqual(4);
-    const now: string[] = (readFileSync('src/styles/card-stack.css', 'utf8') as string).split('\n');
-    const then: string[] = (execSync(`git show ${BASE}:src/styles/card-stack.css`, { encoding: 'utf8' }) as string).split('\n');
-    expect(now).toHaveLength(then.length);
-    expect(now).toHaveLength(197); // 196 lines and the final newline
-    expect(now.slice(4)).toEqual(then.slice(4));
-    const head = now.slice(0, 4).join('\n');
+  test('1b: tracks.astro gains the track page’s open-menu rule and nothing else (job 24)', () => {
+    expectTracksGrant(BASE);
+  });
+
+  test('2: card-stack.css changes only its opening comment, two reworded comments and the header and footer block (job 24); the opening comment stays four lines and names six importers', () => {
+    expectCardStackGrant(BASE);
+    const head = (readFileSync('src/styles/card-stack.css', 'utf8') as string).split('\n').slice(0, 4).join('\n');
     for (const page of ['src/pages/index.astro', 'src/pages/tracks.astro', 'src/pages/[track]/index.astro', 'src/pages/about.astro', 'src/pages/glossary.astro', 'src/pages/404.astro']) expect(head, page).toContain(page);
   });
 
