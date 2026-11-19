@@ -1290,3 +1290,11 @@ Planned on 2026-11-18 in job 21's session on Opus 5.5: the owner said "Lets do t
 | F22a cause | orchestrator | Opus 5.5 | 1 | not counted | Logged the running CSS transitions at the read in `tracks-card-stack.spec.ts:278`: in 1 of 40 runs background-color and background-position transitions on many elements, in 11 of 40 `.upnext__n`'s and `.sr-only`'s font-size; the test waited two frames. |
 | F22a | builder | Sonnet | 1 | 73,284 | `ee066a8`: one `transitionsDone` before the read. Red before, 2 of 80; after, 160 of 160; the spec 236 of 236 in three projects. It left the spec's other `settle` reads; its reason (a font-size transition moves no height) is wrong, but they passed 590 of 590 at `reduced-motion` `--repeat-each=5` (the orchestrator's run). |
 | F22a check | orchestrator | Opus 5.5 | 1 | not counted | `:278` at `reduced-motion` `--repeat-each=40`: 160 passed. Merged into `revamp` (`cc3f8a3`). A one-line wait whose cause is measured would have done on Haiku. |
+
+# Job 23: 404 in the Card stack look
+
+Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the session that closed job 22. The owner: "Start the 404 page" (direction 2.116). Numbers claimed on `revamp` (b14f4d1): job 23, rows from 2.116, S24, D22, B28, F23. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S24 | scout | Haiku | 1 | 106,929 | `prototypes/s24-404-facts.md` (8 parts; Part 8 measured by the orchestrator). 90 lines, 14 strings, one media query at 860px; `notFound` at `pages.ts:45-91`, used only here; `site.css` gives only the buttons. Found three end-to-end tests that use `/does-not-exist` as the page without Card stack (`tracks-card-stack.spec.ts:800`, `about.spec.ts:88`, `glossary.spec.ts:448`), so four tests change, not one. Measured: 1,245 / 1,454 / 1,519px at 1440 / 375 / 320, 31.2 KB gzipped, no sideways scroll. |
