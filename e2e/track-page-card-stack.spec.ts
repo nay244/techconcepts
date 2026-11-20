@@ -170,6 +170,38 @@ test.describe('the way in leads where progress says, on the built pages (check 8
     await ctx.close();
   });
 
+  test.describe('the done chip, frame by frame', () => {
+    // Under reduced motion no transition runs, so no frame paints the done chip at its old colours (job 28, B35).
+    test.use({ reducedMotion: 'reduce' });
+
+    test('S3: no frame draws the chip done with a background or colour other than the done chip\'s', async ({ page }) => {
+      await page.addInitScript(() => {
+        const w = window as unknown as { __f: { s: string; bg: string; c: string }[] };
+        w.__f = [];
+        const loop = () => {
+          const el = document.querySelector('main .upnext__n');
+          if (el) {
+            const cs = getComputedStyle(el);
+            w.__f.push({ s: el.getAttribute('data-state') ?? '', bg: cs.backgroundColor, c: cs.color });
+          }
+          if (w.__f.length < 400) requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      });
+      await open(page, `/${HIW}`);
+      await page.evaluate((v) => window.localStorage.setItem('techconcepts:v2', v), record(S3(HIW), 'what-is-tls'));
+      await open(page, `/${HIW}`);
+      type F = { s: string; bg: string; c: string };
+      const done = () => page.evaluate(() => (window as unknown as { __f: F[] }).__f.filter((f) => f.s === 'done').length);
+      await expect.poll(done, { message: 'frames drawn with the chip done' }).toBeGreaterThanOrEqual(5);
+      const bg = await token(page, '--cs-done');
+      const ink = await token(page, '--cs-card');
+      const frames = await page.evaluate(() => (window as unknown as { __f: F[] }).__f);
+      const wrong = frames.filter((f) => f.s === 'done' && (f.bg !== bg || f.c !== ink));
+      expect(wrong, `${wrong.length} frames with the chip done and other colours`).toEqual([]);
+    });
+  });
+
   test('S2: one lesson finished and the next not started: Start to it, with no step', async ({ page }) => {
     await visit(page, `/${HIW}`, S2, 'what-is-tcp');
     await expect(page.locator('main .upnext__n')).toHaveText('Lesson 04');
