@@ -1490,3 +1490,11 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 - **When a flake sets reduced motion, suspect the reduced-motion rule first.** Both flakes here, and 2.115's, were the 0.01ms transitions that every change started; the spec comments had described the symptom for weeks ("a frame at a time down the tree") as something to wait for.
 - **Probe what is painted, not what a frame callback sees.** A frame callback runs before style and layout; an `IntersectionObserver`'s entries are computed after layout and resize observers, just before paint, and told the two causes apart (the button's fit was no fault).
 - **Stop a subagent that keeps waking after its report** (`TaskStop`): the builder's leftover watch woke it a dozen times.
+
+# Job 29: the open items of jobs 24 to 28
+
+Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the session that closed job 28 (direction 2.141). Numbers claimed on `revamp` (e9d0fe2): job 29, rows from 2.141, D24, B37 to B41, S26, F29. The orchestrator's diagnosis of items 5 and 6 (three instrumented specs, about 200 runs, one trial, `.superpowers/job29/`) is not counted. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S26 | scout | Haiku | 1 | 156,832 | `prototypes/s26-job-29-facts.md`: Home's and the pages' scroll padding with the pins and guards, the footer walk's skips, the dead code and its tests, the legacy path gone since job 9. |
