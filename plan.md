@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 25: the Lesson page's skip link over its header
 
-**Status: planned (2026-11-19; 2.127).** The owner, at D23's gate, to the Lesson page's skip link hidden under its header: "Small unit after this job" (2.124). Numbers claimed on `revamp` (1009fae, checked free): job 25, direction rows from 2.127, B30, F25.
+**Status: building (2026-11-19; 2.127, spec review 2.128).** The owner, at D23's gate, to the Lesson page's skip link hidden under its header: "Small unit after this job" (2.124). Numbers claimed on `revamp` (1009fae, checked free): job 25, direction rows from 2.127, B30, F25.
 
 ## Inputs
 
@@ -29,13 +29,34 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | Unit | Phase | Owner (model) | What | Check |
 |---|---|---|---|---|
 | B30 spec | build | reviewer (Opus) | Holes and attack cases for decision 1 and 4. | Holes with one answer closed as errata. |
-| B30 | build | builder (Sonnet) | The rule of decision 1; the tests of decision 4, the new one red on `revamp` first. | `npm test`; `npm run build`; `site-chrome.spec.ts`, `lesson-layout.spec.ts`, `lesson-layout-small.spec.ts` and `site.spec.ts` at d1440-dark, phone and reduced-motion; the merge-time command. |
+| B30 | build | builder (Sonnet) | The rule of decision 1; the tests of decision 4, the new one red on `revamp` first. | `npm test`; `npm run build`; `site-chrome.spec.ts`, `lesson-layout.spec.ts`, `lesson-layout-small.spec.ts` and `site.spec.ts` at d1440-dark and reduced-motion (E2); the merge-time command (E1). |
 | B30 review | build | reviewer (Opus) | The diff against this section and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
 | F25 | end | orchestrator (Opus 5.5) | Into `revamp`; CI's end-to-end pass; the merge-time command; the ledger and direction. | As "Done means". |
 
 ### B30's attack cases
 
-(Written by the spec review.)
+From the spec review (reviewer, Opus, 2026-11-19, measured on `revamp` 4f308ac and on a trial with the rule). Nothing else on the Lesson page can cover the link at z-index 21: the console's layers are 5, 2 and 1, all below the header's 69px; the open menu panel lies inside the header's stacking context; the Outline `<dialog>` makes the page inert. The trial passed at 320, 375, 1024 and 1440, light and dark, scripts on and off, with and without reduced motion; `revamp` finds `.site-head` at all three points.
+
+**Errata** (2.128): **E1** (H1) "byte-identical" as Part 9's command for this job (below): the rule also renames `_astro/LessonConsole.*.js` with its bytes unchanged, and every island page's `uid=` is random. **E2** (H2) the `phone` project runs only `site.spec.ts @phone`, so the specs run at d1440-dark and reduced-motion (case 1 sets its own sizes; reduced-motion is where H14 bites). **E3** (H3) case 35's comment ("The Lesson page is not asserted either way") is reworded and `LESSON` joins its loop. **E4** (H14) under reduced motion the link's `top` reads −82.4 just after Tab: keep case 35's poll (`top` 8 ±0.5 and `:focus`), then `transitionsDone`, before any read.
+
+1. **[E2E] The Lesson page's link on top.** `/networking/dhcp` joins case 35's loop (`site-chrome.spec.ts`): 320 × 640, 375 × 812 and 1440 × 900, light and dark; Tab, then E4's poll. Passes when `elementFromPoint` at the centre and 2px inside the top-left and bottom-right corners is the link (or inside it) and its `zIndex` is `21`. Red on `revamp`.
+2. **[E2E] A bare selector loses.** `.skip-link { z-index: 21 }` (0,1,0) in `console.css` loses to `global.css`, whose sheet comes later. Passes when case 1 goes red with it (a seed, reported, not kept).
+3. **[E2E] Scripts off.** Case 1 at 375 and 1440 with `javaScriptEnabled: false` (`.console` is in the server's HTML). Passes when on top.
+4. **[E2E] Its look kept.** Case 37 becomes `['21', '21']`, the rest of the comparison unchanged. Passes when green: `global.css` is the only source of the look.
+5. **[E2E] Case 62 pins `21`** and every other Patch value it pins stays. Passes when green; importing `card-stack.css` on the Lesson page would turn it red.
+6. **[UNIT] The source.** `console.css` has `body:has(.console) .skip-link { z-index: 21; }` exactly once, with no `!important`; `global.css`'s `.skip-link` keeps `z-index: 10`. Passes when both hold.
+7. **[E2E] The walks.** `lesson-layout.spec.ts` and `lesson-layout-small.spec.ts` green unchanged.
+8. **[MERGE] The command.** Passes when it prints `OK`; red if the rule goes in `global.css` or the lesson sheet gains anything else (both measured).
+
+**The merge-time command** (from the main folder; the script is `.superpowers/job25/compare.py`, git-ignored; it allows exactly the one `_lesson_.*.css` swapped and differing only by `body:has(.console) .skip-link{z-index:21}`, `LessonConsole.*.js` renamed byte for byte, the lesson pages differing only by those two hrefs, and every page's `uid=`; everything else byte-equal; 34 lesson pages measured):
+
+```sh
+BASE=$(git merge-base revamp job25/b30); W=.superpowers/job25/cmp; rm -rf "$W"; mkdir -p "$W"
+for c in "$BASE" job25/b30; do d="$W/$(git rev-parse --short "$c")"; mkdir -p "$d"
+  git archive "$c" | tar -x -C "$d"; ln -s "$PWD/node_modules" "$d/node_modules"
+  (cd "$d" && npx astro build --outDir dist > build.log 2>&1) || { echo "build failed: $c"; break; }; done
+python3 -I "$W/../compare.py" "$W/$(git rev-parse --short "$BASE")/dist" "$W/$(git rev-parse --short job25/b30)/dist"
+```
 
 ## When the work stops for the owner
 

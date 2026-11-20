@@ -1375,3 +1375,4 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
+| B30 spec | reviewer | Opus | 1 | 81,241 | Four holes, none taste: byte-identity as a command (`LessonConsole.*.js` renamed, `uid=` random), the `phone` project runs none of the specs, case 35's comment, the reduced-motion read. 8 cases; `.superpowers/job25/compare.py` measured `OK` on a trial. Closed as E1–E4 (2.128). |
