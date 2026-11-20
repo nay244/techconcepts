@@ -667,7 +667,8 @@ test.describe('the header and the footer in the Card stack look', () => {
   test('35, 36, 37: the skip link is over the header when focused', async ({ page }) => {
     for (const scheme of SCHEMES) {
       for (const [w, h] of [[320, 640], [375, 812], [1440, 900]] as const) {
-        for (const path of SEVEN) {
+        // The Lesson page keeps Patch but its link is lifted the same (B30): it is asserted with the seven.
+        for (const path of [...SEVEN, LESSON]) {
           await visit(page, path, w, h, scheme);
           await page.keyboard.press('Tab');
           const link = page.locator('a.skip-link');
@@ -695,7 +696,7 @@ test.describe('the header and the footer in the Card stack look', () => {
     };
     const about = await read('/about');
     const lesson = await read(LESSON);
-    expect([about.c['z-index'], lesson.c['z-index']]).toEqual(['21', '10']);
+    expect([about.c['z-index'], lesson.c['z-index']]).toEqual(['21', '21']);
     expect({ ...about.c, 'z-index': '' }).toEqual({ ...lesson.c, 'z-index': '' });
     near(about.b.width, lesson.b.width, 0.5, 'skip link width');
     near(about.b.height, lesson.b.height, 0.5, 'skip link height');
@@ -1098,6 +1099,25 @@ test.describe('the header and the footer in the Card stack look', () => {
   test.describe('without JavaScript', () => {
     test.use({ javaScriptEnabled: false });
 
+    test('35 (B30, scripts off): the Lesson page’s skip link is over the header when focused', async ({ page }) => {
+      for (const [w, h] of [[375, 812], [1440, 900]] as const) {
+        await page.setViewportSize({ width: w, height: h });
+        await page.goto(LESSON);
+        await transitionsDone(page);
+        await page.keyboard.press('Tab');
+        await expect(page.locator('a.skip-link')).toBeFocused();
+        await expect.poll(async () => Math.abs((await box(page, 'a.skip-link')).top - 8) < 0.5).toBe(true);
+        await transitionsDone(page);
+        const top = await page.evaluate(() => {
+          const a = document.querySelector('a.skip-link')!;
+          const r = a.getBoundingClientRect();
+          const at = (x: number, y: number): boolean => a.contains(document.elementFromPoint(x, y));
+          return { centre: at(r.left + r.width / 2, r.top + r.height / 2), tl: at(r.left + 2, r.top + 2), br: at(r.right - 2, r.bottom - 2), z: getComputedStyle(a).zIndex };
+        });
+        expect(top, `${w}`).toEqual({ centre: true, tl: true, br: true, z: '21' });
+      }
+    });
+
     test('55: the walk', async ({ page }) => {
       const five = ['Tracks', 'Glossary', 'How a lesson works', 'Sources', 'About'];
       for (const [path, w, h] of [['/about', 1440, 900], ['/tracks', 1440, 900], ['/about', 375, 812], ['/tracks', 375, 812]] as const) {
@@ -1303,7 +1323,7 @@ test.describe('the header and the footer in the Card stack look', () => {
       expect(`${tt['border-top-width']} ${tt['border-top-style']} ${tt['border-top-color']}`).toBe(BTN[scheme]);
       expect(tt['border-top-left-radius']).toBe('4px');
       await expect(page.locator('.head-end a.btn')).toHaveCount(0);
-      expect((await css(page, 'a.skip-link', ['z-index']))['z-index']).toBe('10');
+      expect((await css(page, 'a.skip-link', ['z-index']))['z-index']).toBe('21');
     }
     for (const scheme of SCHEMES) {
       await visit(page, LESSON, 375, 812, scheme);

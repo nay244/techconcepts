@@ -44,7 +44,12 @@
 :root:has(.console) {
   scroll-padding-top: 69px;
 }
-/* The one rule the Lesson page adds to the header: its open menu (under 960px) lies over the lesson, so the one-screen page does not grow. */
+/* The two rules the Lesson page adds to the header. The first lifts the focused skip link over the sticky header (z-index 20), the layer the
+   Card stack pages give it in card-stack.css; the Lesson page keeps Patch and does not load that sheet. */
+body:has(.console) .skip-link {
+  z-index: 21;
+}
+/* The second: its open menu (under 960px) lies over the lesson, so the one-screen page does not grow. */
 body:has(.console) .site-head .menu-panel {
   position: absolute;
   inset: 100% 0 auto;
