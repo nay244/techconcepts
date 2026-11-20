@@ -1397,3 +1397,10 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 - **A one-rule unit needs no design or base run**: the spec review's trial build measured everything the build later proved.
 - **Tell a builder not to leave a Monitor or timer running**: B30's re-sent its report four times until stopped.
 - **Two old flakes now show in CI's pass**: `site-chrome.spec.ts:178` (case 13 runs 56 visits against the 30-second default) and `proxies.spec.ts:151` (20c, 1 in 10 on a base before this job). Each is a small unit of its own.
+
+# Job 26: two flaky end-to-end tests
+
+Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the session that closed job 25 (direction 2.130). Numbers claimed on `revamp` (7cd51b4): job 26, rows from 2.130, B31, B32, F26. The orchestrator's diagnosis of 20c (an instrumented copy, 60 runs, `.superpowers/job26/`) is not counted. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
