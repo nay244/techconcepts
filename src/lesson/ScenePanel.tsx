@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { FigureId } from '../art/scenes/types';
 import type { SceneEvent, Unit } from '../content/schema';
@@ -76,9 +76,12 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   // The figure's driver, made once the figure is on the page and let go when it leaves.
   const figureBox = useRef<HTMLDivElement>(null);
   const driver = useRef<SceneDriver | null>(null);
-  // The running play's controller, so the driver's cleanup can stop it first: React runs this effect's cleanup before the play effect's.
+  // The running play's controller, so the driver's cleanup can stop it first: React runs this layout effect's cleanup before the play effect's.
   const running = useRef<AbortController | null>(null);
-  useEffect(() => {
+  // This and the play effect below are layout effects, not passive ones, on purpose: a timer's update (Play all's tick) commits
+  // in the Default lane, and a passive effect would then run a frame later, so the words would paint a frame before the figure.
+  // As layout effects the figure is shown and its play started in the same commit as the words. Keep them in this order, and keep them layout effects.
+  useLayoutEffect(() => {
     const svg = figureBox.current?.querySelector<SVGSVGElement>('svg[data-figure]');
     const id = svg?.getAttribute('data-figure');
     if (svg == null || id == null || !Object.hasOwn(DRIVERS, id)) return;
@@ -98,7 +101,8 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   // The playback state the latest play was started for. A play starts once per state, so a return to Network does not replay.
   // `figureData` is here because new data remakes the driver (the effect above), and the new driver must show the scene too.
   const playedFor = useRef<PlaybackState | null>(null);
-  useEffect(() => {
+  // A layout effect, in the same commit as the words (see the driver's effect above); declared after it, so it finds the driver made.
+  useLayoutEffect(() => {
     const isNew = playedFor.current !== playback;
     playedFor.current = playback;
     const d = driver.current;
