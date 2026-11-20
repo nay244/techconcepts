@@ -1437,3 +1437,25 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
 | B33 spec | reviewer | Opus | 1 | 192,553 | Eight holes with one answer, all measured on a trial built to the letter, one of taste (the guide following the rule being read; for later): a `<Profiler onRender>` probe for updates a component makes to itself, the jsdom stubs, the move measured (Firewalls 0 frames), `MARKED_ROW`'s home, the diag specs' run, the specs named (tablet case 18 flaky on `revamp`), a comment, the effect's place. 27 cases, `prototypes/b33-cases.md`. Closed as E11–E18 (2.135). Over its 0.08–0.12 share: three diag passes and 260 runs of tablet case 18. |
+| B33 | builder | Sonnet | 1 | 127,279 | Commit 837e6ce on `job27/b33`: three effects `useLayoutEffect` with comments; the guide's row-into-view moved into `ScenePanel` after the play effect, `MARKED_ROW` exported from there; `LayoutEffects.test.tsx`, 19 tests from the reviewer's probes and the cases. Every seed red on its probes (the guide left in `LessonConsole`: P4a, P4b and four more). Diag specs: 0 wrong for every effect at 1440, 390 and in the Table tab, Firewalls 0 frames (was 47). E10's list 439 passed, 1 skipped; `lesson.spec.ts` at reduced-motion 213; `phone` 104; `tablet` 54 passed, 2 failed (case 18, the known flake). vitest 2,592; build within budget. Left nothing running; reported once. The review's two fixes (continued, 3,562 of the total): commit 4f8b23d, C11 red on the `p.top + 30` mutant and green on the build, no `console.log`. |
+| B33 review | reviewer | Opus | 1 | 102,252 | PASS WITH FIXES, no blocker: C11's test could not catch a scroll in the commit that marks an already-inside row (a `p.top + 30` mutant passed); X2's name and three `console.log` lines. Every rule broken in a copy turned its tests red; diag specs 0 wrong at both sizes and in the Table tab; the named specs, reduced-motion and `phone` green; vitest 2,592; build within budget. Case 18 interleaved four rounds each: `revamp` 26 of 160, B33 32 of 160 (spread 1 to 13 a round; Fisher p ≈ 0.5); its clicks, turns and media-query changes are all flushed before paint, so B33 cannot move it. Notes: C13 queries the scene section, not the portal; the stubs are deleted in the test, not `afterEach`. |
+| F27 | orchestrator | Opus 5.5 | 1 | not counted | Diagnosis (two instrumented specs, 63 runs at two sizes, two layout-effect trials; the fourth effect found, and Firewalls' 0.8s). Both fixed-when checks rerun (C11 red on the mutant, green on the build; no `console.log`). Case 18 measured 9 of 40 on `revamp`, 12 of 40 on the branch. B33 merged at `b0ab8cb`, worktrees removed. On `revamp`: vitest 2,592 passed (175 files); build within budget on 42 pages; CI's end-to-end pass 1,380 passed, 4 skipped, 0 failed (23.1 min, `--trace=off`, the machine kept awake). |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| reviewer (spec, build) | Opus | 294,805 |
+| builder (B33 and its two fixes) | Sonnet | 127,279 |
+| **Total** | | **422,084** (estimate 0.2 to 0.4 million, 6% over; stop at 0.6) |
+
+## Could go one model lower next time
+
+- B33's two review fixes (3,562 tokens, one test line, a name, three deleted lines) would have done on Haiku. The build itself started from the reviewer's measured trial and probes; a builder on Sonnet was right for the 19 tests and the seeds.
+
+## What to do differently next time
+
+- **When a spec review builds the unit to measure it, hand its trial to the builder, as here.** The spec review cost 0.19 million, past its share, because it built and measured the plan; the build then cost 0.12 million and had no blocker.
+- **Sweep every effect of the kind before planning, not only the ones named.** The fourth lag (the Table tab's) shared `MARKED_ROW` with a named one and was found only by reading that constant's other use.
+- **Write the diagnosis's logs where the main folder's `.superpowers` is, not the session worktree's**: the reviewer looked for case 18's logs there and did not find them.
+

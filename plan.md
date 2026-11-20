@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 27: the other one-frame lags during Play all
 
-**Status: the owner's go (2026-11-20; 2.135); B33's spec review done, errata E11–E18; B33 building.** Planned under 2.134. The owner said "Yes, plan job 27" to the three passive effects B32's spec review found (2.132, 2.133). Numbers claimed on `revamp` (0d94b6c, checked free): job 27, direction rows from 2.134, B33, F27.
+**Status: done (2026-11-20; 2.136): B33 merged at `b0ab8cb`, verified; nothing pushed.** Planned under 2.134 and 2.135. The owner said "Yes, plan job 27" to the three passive effects B32's spec review found (2.132, 2.133). Numbers claimed on `revamp` (0d94b6c, checked free): job 27, direction rows from 2.134, B33, F27.
 
 ## Inputs
 
