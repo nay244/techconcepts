@@ -28,3 +28,11 @@ test('the faces have one name each: data is set in --mono, and the old --font-mo
   expect(globalCss).not.toMatch(/--font-mono/);
   expect(globalCss).toMatch(/table\.data \{\s*font-family: var\(--mono\);/);
 });
+
+test('the Lesson page’s skip link is lifted over its header by console.css alone (B30), and global.css keeps its own layer', () => {
+  const bare = consoleCss.replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = /body:has\(\.console\) \.skip-link \{\s*z-index: 21;\s*\}/g;
+  expect(bare.match(rule)?.length).toBe(1);
+  expect(bare).not.toMatch(/\.skip-link[^{}]*\{[^}]*!important/);
+  expect(globalCss.match(/\.skip-link \{[^}]*\}/)![0]).toMatch(/z-index: 10;/);
+});
