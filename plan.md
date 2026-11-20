@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 26: two flaky end-to-end tests
 
-**Status: building (2026-11-19; 2.130 to 2.132).** B31 merged at `d69cd1e`. The owner asked for a session of its own for the two flakes job 25's CI pass showed (2.129). Numbers claimed on `revamp` (7cd51b4, checked free): job 26, direction rows from 2.130, B31, B32, F26.
+**Status: done (2026-11-20; 2.133): B31 merged at `d69cd1e`, B32 at `aff8ab7`, verified; nothing pushed.** Planned under 2.130 to 2.132. The owner asked for a session of its own for the two flakes job 25's CI pass showed (2.129). Numbers claimed on `revamp` (7cd51b4, checked free): job 26, direction rows from 2.130, B31, B32, F26.
 
 ## Inputs
 

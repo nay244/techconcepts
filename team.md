@@ -1408,3 +1408,24 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 | B31 | builder | Sonnet | 1 | 80,750 | Commit a9959e3 on `job26/b31`: three lines in case 13, at `:178` still. `--timeout=20000` red on `revamp`, green on the branch; 20/20 at three workers, 25.5 to 26.1s; d1440-light 26.0s, reduced-motion 11.0s; the 19px seed red "392 against 391"; a stuck transition red at 5.2s; vitest 2,572; build clean. It ran a Monitor but left nothing running and reported once. |
 | B31 review | reviewer | Opus | 1 | 28,121 | PASS, no fix. E1's check rerun on 4509: green at 25.3s past a 20s command-line limit. Merged at `d69cd1e`, worktree removed. |
 | B32 spec | reviewer | Opus | 1 | 114,978 | Four holes, none taste: a layout-effect probe for the unit test, 20c's seed red by chance (2/20), the gap check defined (≤ 1.0ms, no frame between), the 19 lesson specs and reduced-motion named. 23 cases, `prototypes/b32-cases.md`. Closed as E7–E10 (2.132). |
+| B32 | builder | Sonnet | 1 | 101,241 | Commit f5f6e3f on `job26/b32`: `ScenePanel`'s two effects `useLayoutEffect`, in order, with comments; a probe unit test (red on `revamp`'s ScenePanel, green after, red on the seed). vitest 2,573; build within budget; 20c 20/20 at three workers; gaps max 0.2ms, no frame between (seed 11 to 29ms, 9 frames between, 20c red 4/20); 19 lesson specs 439 passed, 1 skipped; `lesson.spec.ts` at reduced-motion 213. A20 not run. Left nothing running; reported once. |
+| B32 review | reviewer | Opus | 1 | 49,017 | PASS, no fix. Ran A20: all 42 built pages identical to `revamp`'s with hashes and island ids masked; same build warnings; the proxies no-JavaScript test 20/20. Probe red on the seed and with the play effect alone passive; 20c 20/20; gaps ≤ 0.1ms. Note: the comment says the figure "would" lag; it does sometimes (13 in 120). Merged at `aff8ab7`. |
+| F26 | orchestrator | Opus 5.5 | 1 | not counted | Diagnosis of 20c (instrumented spec, 60 runs: the figure trailed the words 16.6ms on average, a wrong frame in 13 of 120 step changes; a layout-effect trial 0). B31 merged at `d69cd1e`, B32 at `aff8ab7`, worktrees removed. On `revamp`: vitest 2,573 passed; build within budget on 42 pages; CI's end-to-end pass 1,380 passed, 4 skipped, 0 failed (case 13 29.1s, 20c 17.8s); a first pass cut off by the session's end at 456 passed was rerun whole with the machine kept awake. |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| reviewer (two specs, two builds) | Opus | 271,885 |
+| builder (B31, B32) | Sonnet | 181,991 |
+| **Total** | | **453,876** (estimate 0.3 to 0.6 million; stop at 0.9) |
+
+## Could go one model lower next time
+
+- B31 was three lines with every case written out; a Haiku `builder` would likely have done. B31's build review, 28,000 tokens, re-ran one check: a Sonnet reviewer would have done.
+
+## What to do differently next time
+
+- **Before a flake is called a flake, ask whether the test reads what a reader sees.** 20c was right all along: the lesson drew a wrong frame about one step change in nine, and it was carried as an old flake for two jobs. An instrumented copy of the test (a `MutationObserver` on each element and a frame callback) found the cause in one run and sized the fix in two.
+- **A repeat run of a test alone does not make a full run's load.** Case 13 passed 20 of 20 alone and on a busy CPU; the check that told the fix apart was a smaller limit on the command line (`--timeout=20000`), which a case's own budget overrides.
+- **Ask the app to keep the machine awake before a 30-minute pass** (`request_keep_awake`): the first pass was cut off at the session's end.
