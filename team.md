@@ -1465,3 +1465,4 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
+| B34 spec | reviewer | Opus | 1 | 86,661 | Seven holes, none of taste: three unit guards pin `global.css` (`npm test` 3 failed on the trial), the Tracks probe must set reduce itself, `vpn.spec.ts` passes either value, glossary's gate, the tablet probe's proof it watched, where the cases live, the projects. 31 cases, `prototypes/b34-cases.md`; the whole `reduced-motion` project on the trial 1,120 passed, 3 failed (the planned pins). Closed as E19–E25 (2.138). |

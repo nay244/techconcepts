@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 28: two more flaky end-to-end tests, and the frame they read
 
-**Status: planned (2026-11-20; 2.137); waiting for the owner's go to B34.** Started from the session that closed job 27, as job 26 was. Numbers claimed on `revamp` (246e33a, checked free): job 28, direction rows from 2.137, B34, F28.
+**Status: in progress (2026-11-20; 2.137, 2.138): the owner's go to B34; its spec review done, errata E19–E25.** Started from the session that closed job 27, as job 26 was. Numbers claimed on `revamp` (246e33a, checked free): job 28, direction rows from 2.137, B34, F28.
 
 ## Inputs
 
@@ -48,6 +48,12 @@ Nothing in `src` listens for `transitionend` or reads `getAnimations`, and no ru
 | B34 | build | builder (Sonnet) | Decisions 1 to 3. | Case 18 and `:371` at `--repeat-each=20 --trace=off --workers=3` green; each red on a seed it guards (case 18: the sideways rule that lands Explain removed; `:371`: the done chip's `font-size: 0` removed), reported, not kept; both probes red with `0.01ms` put back, green on the build; the whole `reduced-motion` project, the `tablet` project, `phone`; `npm test`; `npm run build`. |
 | B34 review | build | reviewer (Opus) | The diff against this section and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
 | F28 | end | orchestrator (Opus 5.5) | Into `revamp`; vitest, build, CI's end-to-end pass with the machine kept awake. | As "Done means". |
+
+### B34's spec review
+
+Reviewer (Opus), 2026-11-20, on `revamp` f31e3bd with the orchestrator's trial (`.superpowers/wt/diag28`): 7 holes, each with one answer, none of taste; 31 attack cases in `prototypes/b34-cases.md`. On the trial the whole `reduced-motion` project ran 1,120 passed, 3 failed, the three planned `1e-05s` pins.
+
+**Errata** (2.138): **E19** (H1) three unit guards require `global.css` unchanged (`src/lib/glossary-page.test.ts:282`, `src/lib/not-found-page.test.ts:58`, `src/scripts/about-page.test.ts:269`; `npm test` 3 failed on the trial): `global.css` leaves their name-only lists and one grant in job 24's pattern (`src/lib/card-stack-guards.ts`) allows exactly the one changed declaration and comment lines, used by all three. **E20** (H2) the Tracks probe sets `reducedMotion: 'reduce'` itself: the chip has no transition of its own and CI never emulates reduce, so without it the probe is green whatever `global.css` says. **E21** (H3) `vpn.spec.ts:116-117` asserts `< 0.001`, which both values pass: it asserts exactly `'0s'`, its comment reworded. **E22** (H4) `glossary.spec.ts:937-938`'s `running` gate goes with its reason (measured 10 of 10 green without it; it tightens). **E23** (H5) the tablet probe proves it watched: the first entry arrived before the turn and the observed `.tpanel` is still the connected node after it; with Log chosen, one entry at width 1024 and ratio 1 (with Table chosen no threshold is crossed, so none comes). **E24** (H6) the cases are tracked in `prototypes/b34-cases.md`, as B31's to B33's. **E25** (H7) case 18 and the tablet probe run in `--project=tablet`; `:371` and the Tracks probe in `--project=reduced-motion`, the probe also red in `d1440-dark` on the seed.
 
 ## When the work stops for the owner
 
