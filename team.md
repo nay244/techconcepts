@@ -1404,3 +1404,4 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
+| B31 spec | reviewer | Opus | 1 | 79,769 | Six holes, one of taste (the 120s's cost, accepted): the repeat check cannot fail on `revamp` (20/20), so a `--timeout=20000` check discriminates; the call inside the body; the comment's facts; two more projects; the seed's place. 13 cases, `prototypes/b31-cases.md`. Closed as E1–E6 (2.131). |
