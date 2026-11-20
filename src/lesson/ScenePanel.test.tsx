@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, render, screen, within } from '@testing-library/react';
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, test, vi } from 'vitest';
 import type { Lesson } from '../content/schema';
@@ -297,4 +297,34 @@ test('a driver whose play fails is caught, and the panel carries on', async () =
   rerender(panel(at(2, 1, 'step')));
   expect(plays()).toHaveLength(3);
   logged.mockRestore();
+});
+
+test('ScenePanel shows and plays the figure in the commit, before any passive effect and so before the next paint', () => {
+  // A later sibling's layout effect runs after ScenePanel's own, in the same commit, before passive effects.
+  // (render and rerender run inside act(), which flushes passive effects, so only a probe like this can tell the two apart.)
+  const seen: { create: number; show: number; play: number; firstPlayAborted: boolean }[] = [];
+  function Probe() {
+    useLayoutEffect(() => {
+      seen.push({
+        create: fake.module.create.mock.calls.length,
+        show: fake.driver.show.mock.calls.length,
+        play: fake.driver.play.mock.calls.length,
+        firstPlayAborted: plays()[0]?.[2].signal.aborted ?? false,
+      });
+    });
+    return null;
+  }
+  const withProbe = (s: PlaybackState) => (
+    <>
+      {panel(s)}
+      <Probe />
+    </>
+  );
+
+  const { rerender } = render(withProbe(at(1, 0, 'step')));
+  expect(seen.at(-1)).toMatchObject({ create: 1, show: 1, play: 1, firstPlayAborted: false });
+
+  // A timer's step change, as Play all's hold ending makes it.
+  rerender(withProbe(at(2, 0, 'step')));
+  expect(seen.at(-1)).toMatchObject({ create: 1, show: 2, play: 2, firstPlayAborted: true });
 });
