@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 25: the Lesson page's skip link over its header
 
-**Status: building (2026-11-19; 2.127, spec review 2.128).** The owner, at D23's gate, to the Lesson page's skip link hidden under its header: "Small unit after this job" (2.124). Numbers claimed on `revamp` (1009fae, checked free): job 25, direction rows from 2.127, B30, F25.
+**Status: done (2026-11-19; 2.129): B30 merged into `revamp` at `cf73bbb` and verified; nothing pushed.** Planned under 2.127, spec review 2.128. The owner, at D23's gate, to the Lesson page's skip link hidden under its header: "Small unit after this job" (2.124). Numbers claimed on `revamp` (1009fae, checked free): job 25, direction rows from 2.127, B30, F25.
 
 ## Inputs
 

@@ -1376,3 +1376,24 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
 | B30 spec | reviewer | Opus | 1 | 81,241 | Four holes, none taste: byte-identity as a command (`LessonConsole.*.js` renamed, `uid=` random), the `phone` project runs none of the specs, case 35's comment, the reduced-motion read. 8 cases; `.superpowers/job25/compare.py` measured `OK` on a trial. Closed as E1–E4 (2.128). |
+| B30 | builder | Sonnet | 1 | 116,725 | Commit 8dd0246 on `job25/b30`: the rule in `console.css`, case 35 with the Lesson page, a scripts-off case, cases 37 and 62 at 21, a unit test in `global.test.ts`. Cases 1 and 3 red on `revamp` first; a bare `.skip-link` seed red in case 35 and the unit test. vitest 2,572; build within budget; the four specs at d1440-dark and reduced-motion 745 passed, 4 skipped, 1 failed (case 13, a timeout; green alone). It re-sent its report on idle timers and was stopped. |
+| B30 review | reviewer | Opus | 1 | 47,494 | PASS, no fix. The seed turned the unit test, case 35, the scripts-off case and case 62 red; the lesson walks 188 passed; case 13 an old flake (56 visits against a 30s limit, no Lesson page); both departures right (case 3 by `page.goto`, E3 as a loop comment). |
+| F25 | orchestrator | Opus 5.5 | 1 | not counted | Merged at `cf73bbb`, worktree removed. Merge-time command OK (34 lesson pages; every other file byte-identical). Headless look at 320, 375 and 1440, light and dark: before the header, after the link (`.superpowers/job25/look/`). vitest 2,572 passed; build within budget on 42 pages; CI's end-to-end pass 1,378 passed, 4 skipped, 2 failed (case 13: 5/5 on rerun; `proxies.spec.ts:151` 20c: 4/5 on `revamp`, 9/10 on f439a5c, an old flake). `d23-cases.md` cases 35 and note 7 annotated. |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| reviewer (spec, build) | Opus | 128,735 |
+| builder (B30) | Sonnet | 116,725 |
+| **Total** | | **245,460** (estimate 0.2 to 0.4 million; stop at 0.6) |
+
+## Could go one model lower next time
+
+- B30 was one rule and four test edits with the cases written out; a Haiku `builder` would likely have done.
+
+## What to do differently next time
+
+- **A one-rule unit needs no design or base run**: the spec review's trial build measured everything the build later proved.
+- **Tell a builder not to leave a Monitor or timer running**: B30's re-sent its report four times until stopped.
+- **Two old flakes now show in CI's pass**: `site-chrome.spec.ts:178` (case 13 runs 56 visits against the 30-second default) and `proxies.spec.ts:151` (20c, 1 in 10 on a base before this job). Each is a small unit of its own.
