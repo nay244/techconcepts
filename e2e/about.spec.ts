@@ -147,7 +147,7 @@ test.describe('width', () => {
     const bad: string[] = [];
     for (const w of widths) {
       await page.setViewportSize({ width: w, height: 800 });
-      // Under reduced motion each changed property is a 0.01ms transition: read once they have ended.
+      // Under reduced motion no transition runs (global.css gives them 0s); the wait costs nothing there and is needed with motion on.
       await transitionsDone(page);
       if ((await overflow(page)) !== 0) bad.push(`${w}: ${await overflow(page)}px`);
     }

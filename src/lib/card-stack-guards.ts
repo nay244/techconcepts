@@ -71,3 +71,26 @@ export const TRACKS_GRANT = {
   removed: [],
   added: ['@media (max-width: 959px) {', ':global(html:has(#menu-panel:not([hidden]))) {', 'scroll-padding-top: 341px;', '}', '}'],
 } as const;
+
+/**
+ * Gl(C): how `src/styles/global.css` differs from its text at commit `commit`, comments and blank lines left out (job 28, B34):
+ * the lines that differ, as [old, new] pairs, and whether the two have as many lines.
+ */
+export function globalGrant(commit: string): { changed: [string, string][]; sameLength: boolean } {
+  const lines = (css: string): string[] =>
+    css
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l !== '');
+  const now = lines(readFileSync('src/styles/global.css', 'utf8') as string);
+  const then = lines(git(`git show ${commit}:src/styles/global.css`));
+  const changed: [string, string][] = [];
+  for (let i = 0; i < Math.max(now.length, then.length); i++) if (now[i] !== then[i]) changed.push([then[i] ?? '', now[i] ?? '']);
+  return { changed, sameLength: now.length === then.length };
+}
+/** What Gl(C) must return: the one declaration of the reduced-motion rule, 0.01ms to 0s, and no other line. */
+export const GLOBAL_GRANT = {
+  changed: [['transition-duration: 0.01ms !important;', 'transition-duration: 0s !important;']],
+  sameLength: true,
+} as const;

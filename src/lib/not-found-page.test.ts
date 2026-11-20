@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pageFigure } from '../art/figures/pages';
 import { startLesson } from './start';
 import NotFound from '../pages/404.astro';
-import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, TRACKS_GRANT, cardStackGrant, globalGrant, tracksGrant } from './card-stack-guards';
 
 /** The commit D22 was approved and frozen at: every "untouched" and "unchanged" below is read against it. */
 const BASE = '1d8e446';
@@ -55,9 +55,15 @@ describe('0. what the build may not change', () => {
   test('1: the shared files are untouched', () => {
     expect(
       run(
-        `git diff --name-only ${BASE} -- src/pages/index.astro 'src/pages/[track]' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/global.css src/styles/tokens.ts src/art e2e/support.ts`,
+        `git diff --name-only ${BASE} -- src/pages/index.astro 'src/pages/[track]' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/tokens.ts src/art e2e/support.ts`,
       ),
     ).toBe('');
+  });
+
+  test('1a: global.css changes the reduced-motion rule’s one declaration and nothing else (job 28)', () => {
+    const g = globalGrant(BASE);
+    expect(g.changed).toEqual(GLOBAL_GRANT.changed);
+    expect(g.sameLength, 'no line added or removed').toBe(true);
   });
 
   test('1b: tracks.astro gains the track page’s open-menu rule and nothing else (job 24)', () => {

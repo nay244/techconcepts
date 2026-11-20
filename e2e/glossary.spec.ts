@@ -933,9 +933,8 @@ test.describe('the Glossary in the Card stack look', () => {
     });
   }
 
-  test('a link’s underline turns to the words’ colour on hover; a key turns --cs-quiet, moves 1px when pressed, and has no transition', async ({ page }, testInfo) => {
-    // Under reduced motion every change runs a 0.01ms transition (global.css), so a read before the wait can see one: the running-transition reads are the 1440 projects'.
-    const running = testInfo.project.name !== 'reduced-motion';
+  test('a link’s underline turns to the words’ colour on hover; a key turns --cs-quiet, moves 1px when pressed, and has no transition', async ({ page }) => {
+    // No transition runs under reduced motion either (global.css gives them 0s), so the reads before the wait hold in every project.
     await page.setViewportSize(SIZES[1]);
     await page.goto('/glossary');
     for (const sel of ['#ping a.gl-src', '#time-to-live .gl-see a', '#letter-a .gl-up']) {
@@ -949,12 +948,12 @@ test.describe('the Glossary in the Card stack look', () => {
     const key = page.locator('a.gl-key').nth(3);
     await key.hover();
     // Read before the wait: a transition left on the key is running now and gone after the wait.
-    if (running) expect(await key.evaluate((e) => e.getAnimations().length), 'no transition on hover').toBe(0);
+    expect(await key.evaluate((e) => e.getAnimations().length), 'no transition on hover').toBe(0);
     await settle(page);
     expect(await key.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(await token(page, '--cs-quiet'));
     expect(await key.evaluate((e) => e.getAnimations().length)).toBe(0);
     await page.mouse.down();
-    if (running) expect(await key.evaluate((e) => e.getAnimations().length), 'no transition when pressed').toBe(0);
+    expect(await key.evaluate((e) => e.getAnimations().length), 'no transition when pressed').toBe(0);
     await settle(page);
     expect(await key.evaluate((e) => getComputedStyle(e).transform)).toBe('matrix(1, 0, 0, 1, 1, 1)');
     expect(await key.evaluate((e) => e.getAnimations().length)).toBe(0);

@@ -483,8 +483,8 @@ test.describe('the header and the footer in the Card stack look', () => {
             expect(p['box-shadow']).toBe(`${EDGE[scheme]} 1px 1px 0px 0px`);
             expect(p.transform).not.toBe('none');
             expect(p.transform).not.toContain('0.97');
-            // Under reduced motion global.css gives every element one duration (0.01ms), so the computed list has one entry.
-            expect(p['transition-duration']).toBe((await reduced()) ? '1e-05s' : '0.08s, 0.08s');
+            // Under reduced motion global.css gives every element one duration (0s: no transition at all), so the computed list has one entry.
+            expect(p['transition-duration']).toBe((await reduced()) ? '0s' : '0.08s, 0.08s');
             await page.mouse.move(5, 400);
             await page.mouse.up();
             await transitionsDone(page);
@@ -1285,8 +1285,8 @@ test.describe('the header and the footer in the Card stack look', () => {
         }
         if (w === 1440) {
           const dur = await page.evaluate(() => ({ start: getComputedStyle(document.querySelector('.head-end a.btn')!).transitionDuration, theme: getComputedStyle(document.querySelector('#theme-toggle')!).transitionDuration }));
-          expect(dur.start, motion).toBe(motion === 'reduce' ? '1e-05s' : '0.08s, 0.08s');
-          expect(dur.theme, motion).toBe(motion === 'reduce' ? '1e-05s' : '0.12s, 0.15s');
+          expect(dur.start, motion).toBe(motion === 'reduce' ? '0s' : '0.08s, 0.08s');
+          expect(dur.theme, motion).toBe(motion === 'reduce' ? '0s' : '0.12s, 0.15s');
         }
         expect(await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && (a.effect as KeyframeEffect | null)?.target?.closest('.site-head, .site-foot')).length), `${motion} ${w}: nothing in the header or footer is moving`).toBe(0);
         await ctx.close();

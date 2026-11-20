@@ -418,6 +418,35 @@ test.describe('the island’s states', () => {
   });
 });
 
+// Under reduced motion the done chip is drawn as it is in the frame it is set (job 28, B34): global.css's 0.01ms transitions drew its
+// first frame at the old 14px, "Lesson 14" over the tick. The chip has no transition of its own and CI never asks for reduced motion,
+// so the probe asks itself. A frame callback from the load reads each frame just before paint.
+test.describe('the done chip, frame by frame', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false, reducedMotion: 'reduce' });
+
+  test('S3: no frame draws the chip done with its words at 14px', async ({ page }) => {
+    await page.addInitScript(() => {
+      const w = window as unknown as { __f: { s: string; fs: string }[] };
+      w.__f = [];
+      const loop = () => {
+        const el = document.querySelector('main article.panel#how-the-internet-works .upnext__n');
+        if (el) w.__f.push({ s: el.getAttribute('data-state') ?? '', fs: getComputedStyle(el).fontSize });
+        if (w.__f.length < 400) requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+    await open(page, '/tracks');
+    await page.evaluate((v) => window.localStorage.setItem('techconcepts:v2', v), record(S3, 'what-is-tls'));
+    await open(page, '/tracks');
+    // It watched the chip done: enough frames with it, read after the wrong one could have been drawn.
+    const done = () => page.evaluate(() => (window as unknown as { __f: { s: string }[] }).__f.filter((f) => f.s === 'done').length);
+    await expect.poll(done, { message: 'frames drawn with the chip done' }).toBeGreaterThanOrEqual(5);
+    const frames = await page.evaluate(() => (window as unknown as { __f: { s: string; fs: string }[] }).__f);
+    const wrong = frames.filter((f) => f.s === 'done' && f.fs !== '0px');
+    expect(wrong, `${wrong.length} frames with the chip done and its words drawn`).toEqual([]);
+  });
+});
+
 for (const width of [320, 375, 768, 1000, 1440]) {
   test.describe(`heights at ${width}`, () => {
     test.use({ viewport: { width, height: 900 }, isMobile: false, hasTouch: false });

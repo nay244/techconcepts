@@ -562,7 +562,7 @@ for (const [w, h, order] of [
       const pinned = w < 900 || h > w;
       for (let i = 0; i < 90; i += 1) {
         await page.keyboard.press('Tab');
-        // The skip link is in place once its transition (0.01ms under reduced motion, a frame at a time down the tree) has run.
+        // The skip link is in place once any transition on it has run (none does under reduced motion).
         await transitionsDone(page);
         const f = await describeFocus(page);
         if (f.region === 'skip' && forward.length > 0) break;

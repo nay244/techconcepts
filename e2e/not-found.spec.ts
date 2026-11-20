@@ -881,7 +881,7 @@ test('53: under reduced motion the page looks the same, nothing animates, and th
     reduce.boxes.forEach((b, i) => b.forEach((v, j) => near(v, none.boxes[i]![j]!, 0.5, `${width} box ${i}`)));
     expect([reduce.animations, none.animations]).toEqual([0, 0]);
     // The site's rule sets one duration for every property, so the computed list can be one value long.
-    expect(reduce.duration.split(', ').every((d) => d === '1e-05s')).toBe(true);
+    expect(reduce.duration.split(', ').every((d) => d === '0s')).toBe(true);
     expect(none.duration).toBe('0.08s, 0.08s');
   }
 });

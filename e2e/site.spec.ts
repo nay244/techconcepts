@@ -1813,7 +1813,7 @@ const b20Rect = (loc: Locator) =>
 /** Checks a radio by a script click: no focus ring, no scroll, a state to measure from. */
 const b20Pick = async (page: Page, id: string): Promise<void> => {
   await page.evaluate((i) => (document.getElementById(i) as HTMLInputElement).click(), id);
-  // The change is drawn once its transitions have run (under reduced motion they are 0.01ms, but a value inherited down the tree starts them a frame at a time).
+  // The change is drawn once its transitions have run (under reduced motion there are none, so the wait costs nothing there).
   await transitionsDone(page);
 };
 const b20Scroll = (page: Page, y: number): Promise<void> => page.evaluate((top) => window.scrollTo({ top, behavior: 'instant' }), y);
