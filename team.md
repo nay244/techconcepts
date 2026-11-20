@@ -1466,3 +1466,24 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
 | B34 spec | reviewer | Opus | 1 | 86,661 | Seven holes, none of taste: three unit guards pin `global.css` (`npm test` 3 failed on the trial), the Tracks probe must set reduce itself, `vpn.spec.ts` passes either value, glossary's gate, the tablet probe's proof it watched, where the cases live, the projects. 31 cases, `prototypes/b34-cases.md`; the whole `reduced-motion` project on the trial 1,120 passed, 3 failed (the planned pins). Closed as E19–E25 (2.138). |
+| B34 | builder | Sonnet | 1 | 134,970 | Commit 13a925e on `job28/b34`: the one declaration, its comment, the E19 grant, the pins and comments, two probes and a unit test. Case 18 40/40, `:371` 20/20 at three workers; seeds red (40, 20); probes red with 0.01ms back (40; 20 and 20), green on the build; E19 guards red on other changes; `reduced-motion` 1,124 passed, 0 failed; `tablet` + `phone` 162; vitest 2,594; build clean. Cases 2, 5, 12, 29 not run. It kept a watch running after reporting and was stopped by the orchestrator; its figure includes those wake-ups. |
+| B34 review | reviewer | Opus | 1 | 75,257 | PASS, no fix. Ran cases 2, 5, 12 and 29; CI's pass on the branch 1,381 passed, 0 failed; with 0.01ms back both probes and the pinned specs red; E19 guards red on an unrelated rule and an `animation-duration` change, green on a comment. Note: the track page's done chip has the same fix and no test. Merged at `991d069`, worktrees removed. |
+| F28 | orchestrator | Opus 5.5 | 1 | not counted | Diagnosis (instrumented specs with a frame callback and an `IntersectionObserver`, about 300 runs; a `flushSync` trial that changed nothing, then the `0s` trial). Errata E19–E25 closed. On `revamp` at `991d069`: vitest 2,594 passed (175 files); build within budget on 42 pages; CI's end-to-end pass 1,381 passed, 4 skipped, 0 failed (23.4 min, `--trace=off`, the machine kept awake). |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| reviewer (spec, build) | Opus | 161,918 |
+| builder (B34) | Sonnet | 134,970 |
+| **Total** | | **296,888** (estimate 0.25 to 0.45 million; stop at 0.7) |
+
+## Could go one model lower next time
+
+- The build review re-ran four cases and the CI pass and found nothing; with every check scripted in the cases file, a Sonnet reviewer would likely have done.
+
+## What to do differently next time
+
+- **When a flake sets reduced motion, suspect the reduced-motion rule first.** Both flakes here, and 2.115's, were the 0.01ms transitions that every change started; the spec comments had described the symptom for weeks ("a frame at a time down the tree") as something to wait for.
+- **Probe what is painted, not what a frame callback sees.** A frame callback runs before style and layout; an `IntersectionObserver`'s entries are computed after layout and resize observers, just before paint, and told the two causes apart (the button's fit was no fault).
+- **Stop a subagent that keeps waking after its report** (`TaskStop`): the builder's leftover watch woke it a dozen times.

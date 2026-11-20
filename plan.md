@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 28: two more flaky end-to-end tests, and the frame they read
 
-**Status: in progress (2026-11-20; 2.137, 2.138): the owner's go to B34; its spec review done, errata E19–E25.** Started from the session that closed job 27, as job 26 was. Numbers claimed on `revamp` (246e33a, checked free): job 28, direction rows from 2.137, B34, F28.
+**Status: done (2026-11-20; 2.139): B34 merged at `991d069`, verified; nothing pushed.** Planned under 2.137 and 2.138. Started from the session that closed job 27, as job 26 was. Numbers claimed on `revamp` (246e33a, checked free): job 28, direction rows from 2.137, B34, F28.
 
 ## Inputs
 
