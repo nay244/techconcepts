@@ -1470,13 +1470,16 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 | B34 review | reviewer | Opus | 1 | 75,257 | PASS, no fix. Ran cases 2, 5, 12 and 29; CI's pass on the branch 1,381 passed, 0 failed; with 0.01ms back both probes and the pinned specs red; E19 guards red on an unrelated rule and an `animation-duration` change, green on a comment. Note: the track page's done chip has the same fix and no test. Merged at `991d069`, worktrees removed. |
 | F28 | orchestrator | Opus 5.5 | 1 | not counted | Diagnosis (instrumented specs with a frame callback and an `IntersectionObserver`, about 300 runs; a `flushSync` trial that changed nothing, then the `0s` trial). Errata E19–E25 closed. On `revamp` at `991d069`: vitest 2,594 passed (175 files); build within budget on 42 pages; CI's end-to-end pass 1,381 passed, 4 skipped, 0 failed (23.4 min, `--trace=off`, the machine kept awake). |
 
+| B35 | builder | Sonnet | 1 | 79,012 | After the job, at the owner's yes (2.140). Commit 40afa25 on `job28/b35`: one probe in `track-page-card-stack.spec.ts`, the done chip's background and colour frame by frame under reduced motion. 20/20 green and 20/20 red with 0.01ms back in `reduced-motion` and `d1440-dark`, rerun by the orchestrator; vitest 2,594. Merged at `6209ae0`; CI's pass 1,382 passed, 0 failed. Saw `:954` fail once (20/20 on rerun). |
+
 ## Spend by role
 
 | Role | Model | Growth |
 |---|---|---|
 | reviewer (spec, build) | Opus | 161,918 |
 | builder (B34) | Sonnet | 134,970 |
-| **Total** | | **296,888** (estimate 0.25 to 0.45 million; stop at 0.7) |
+| builder (B35, after the job) | Sonnet | 79,012 |
+| **Total** | | **375,900** (B34's estimate 0.25 to 0.45 million, met at 296,888; B35 added at the owner's yes; stop at 0.7) |
 
 ## Could go one model lower next time
 

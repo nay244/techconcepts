@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 28: two more flaky end-to-end tests, and the frame they read
 
-**Status: done (2026-11-20; 2.139): B34 merged at `991d069`, verified; nothing pushed.** Planned under 2.137 and 2.138. Started from the session that closed job 27, as job 26 was. Numbers claimed on `revamp` (246e33a, checked free): job 28, direction rows from 2.137, B34, F28.
+**Status: done (2026-11-20; 2.139): B34 merged at `991d069`, verified; nothing pushed.** Planned under 2.137 and 2.138. B35 added after the job at the owner's yes, merged at `6209ae0` (2.140). Started from the session that closed job 27, as job 26 was. Numbers claimed on `revamp` (246e33a, checked free): job 28, direction rows from 2.137, B34, F28.
 
 ## Inputs
 
@@ -54,6 +54,10 @@ Nothing in `src` listens for `transitionend` or reads `getAnimations`, and no ru
 Reviewer (Opus), 2026-11-20, on `revamp` f31e3bd with the orchestrator's trial (`.superpowers/wt/diag28`): 7 holes, each with one answer, none of taste; 31 attack cases in `prototypes/b34-cases.md`. On the trial the whole `reduced-motion` project ran 1,120 passed, 3 failed, the three planned `1e-05s` pins.
 
 **Errata** (2.138): **E19** (H1) three unit guards require `global.css` unchanged (`src/lib/glossary-page.test.ts:282`, `src/lib/not-found-page.test.ts:58`, `src/scripts/about-page.test.ts:269`; `npm test` 3 failed on the trial): `global.css` leaves their name-only lists and one grant in job 24's pattern (`src/lib/card-stack-guards.ts`) allows exactly the one changed declaration and comment lines, used by all three. **E20** (H2) the Tracks probe sets `reducedMotion: 'reduce'` itself: the chip has no transition of its own and CI never emulates reduce, so without it the probe is green whatever `global.css` says. **E21** (H3) `vpn.spec.ts:116-117` asserts `< 0.001`, which both values pass: it asserts exactly `'0s'`, its comment reworded. **E22** (H4) `glossary.spec.ts:937-938`'s `running` gate goes with its reason (measured 10 of 10 green without it; it tightens). **E23** (H5) the tablet probe proves it watched: the first entry arrived before the turn and the observed `.tpanel` is still the connected node after it; with Log chosen, one entry at width 1024 and ratio 1 (with Table chosen no threshold is crossed, so none comes). **E24** (H6) the cases are tracked in `prototypes/b34-cases.md`, as B31's to B33's. **E25** (H7) case 18 and the tablet probe run in `--project=tablet`; `:371` and the Tracks probe in `--project=reduced-motion`, the probe also red in `d1440-dark` on the seed.
+
+### B35, after the job: the track page's done chip
+
+The owner's yes (2.140), to the build review's note: the track page's done chip (`src/pages/[track]/index.astro:251`, background `--cs-done`, colour `--cs-card`) has B34's fix and no test. B35 adds one probe to `e2e/track-page-card-stack.spec.ts`, the Tracks probe's pattern (`tracks-card-stack.spec.ts`, "the done chip, frame by frame"): reduced motion set by the probe, a frame callback from load, no frame with the chip done and its background or colour not the done chip's; the probe proves it watched (at least five frames with the chip done). Test only; builder (Sonnet), `.superpowers/wt/b35`, branch `job28/b35`, `E2E_PORT=4521`. Check: green at `--repeat-each=20 --trace=off --workers=3` in `reduced-motion` and `d1440-dark`; red with 0.01ms back in both (if it cannot go red, the probe is dropped and that is reported); `npm test`. Merged without a separate review, as job 26's B31 could have been: one test, its red and green checks run by the orchestrator.
 
 ## When the work stops for the owner
 
