@@ -1368,3 +1368,10 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 - **A wait that needs animation frames hangs with scripts off.** B29's walk helper gained a frame wait in a fix and the no-JavaScript walk timed out; `pageOverflow` has the same limit. A helper used by both kinds of test needs a no-script path.
 - **A test that logs a list does not compare it.** The walks logged their stops; the review asked for them pinned (`e2e/site-chrome-stops.ts`), and a hidden footer link now turns them red.
 - **Tracks' `:371` flake** (S0–S4, a font size read mid-transition) showed again in B29's reduced-motion run, the same on `revamp`; it is still open from job 23.
+
+# Job 25: the Lesson page's skip link over its header
+
+Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the session that closed job 24. The owner: "Small unit after this job" (direction 2.124, 2.127). Numbers claimed on `revamp` (1009fae): job 25, rows from 2.127, B30, F25. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
