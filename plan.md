@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 26: two flaky end-to-end tests
 
-**Status: building (2026-11-19; 2.130, 2.131).** The owner asked for a session of its own for the two flakes job 25's CI pass showed (2.129). Numbers claimed on `revamp` (7cd51b4, checked free): job 26, direction rows from 2.130, B31, B32, F26.
+**Status: building (2026-11-19; 2.130 to 2.132).** B31 merged at `d69cd1e`. The owner asked for a session of its own for the two flakes job 25's CI pass showed (2.129). Numbers claimed on `revamp` (7cd51b4, checked free): job 26, direction rows from 2.130, B31, B32, F26.
 
 ## Inputs
 
@@ -55,6 +55,12 @@ A frame callback runs in the frame's rendering step, just before paint, so a fra
 Reviewer (Opus), 2026-11-19, on `revamp` 5a7348e: 6 holes, 13 attack cases, all in `prototypes/b31-cases.md` (the builder turns each into a check). Measured: case 13 alone takes 25.3 to 26.2s at 1440 and 10.5s under reduced motion, and 20 of 20 pass on `revamp` at 3 or 8 workers and on a busy CPU; about 15s of it is the header's transitions running in real time. Every `expect` in it keeps its own 5s limit, so a stuck transition is still red in about 5s.
 
 **Errata** (2.131): **E1** (H1) the repeat check cannot fail on `revamp`, so it proves no regression only; the discriminating check is case 13 at `--timeout=20000`, red on `revamp` (measured), green on the build, because the case's own budget overrides the command line's; F26 records case 13's time in CI's pass. **E2** (H2) the comment and the call go inside the body, so the case stays at `:178` with its title byte for byte. **E3** (H3) the comment's facts: 56 visits (two schemes, four widths, seven pages), open and Escape at each, transitions in real time, about 26s alone against the 30s default, overrun by a full run's load; not "race", not 27.4s. **E4** (H4, the orchestrator's call) the 120s is accepted: it lets a one-off stall of up to about 94s in `goto`, a click or `fonts.ready` pass slowly, still red at its end, and hides no wrong value; case 13 asserts heights, not time. **E5** (H5) case 13 also runs once at d1440-light and reduced-motion, times reported. **E6** (H6) the seed is `card-stack.css:309`'s bottom padding 18px → 19px (open 392 / 330, closed 69 kept), red on the first height assertion within seconds, not on a timeout.
+
+### B32's spec review
+
+Reviewer (Opus), 2026-11-19, on `revamp` with the trial: 4 holes, 23 attack cases, all in `prototypes/b32-cases.md`. On the trial the unit suite (2,572) and the lessons' specs (439 at d1440-dark, 213 at reduced-motion) were green; no existing test can tell a layout effect from a passive one.
+
+**Errata** (2.132): **E7** (H1) the unit test is a probe component whose own `useLayoutEffect` counts `show` and `play` calls after a rerender: red on the seed, green on the build (measured); a plain "rerender, then show was called" passes either way. **E8** (H2) 20c on the seed is red only by chance (2 of 20 measured), so the seed's required reds are E7's probe and E9's gaps; 20c's count on the seed is reported. **E9** (H3) the diagnosis's spec is copied to `e2e/zz-diag.spec.ts` for the run and deleted, never committed: `--repeat-each=12 --trace=off --workers=3` at d1440-dark, the build passes with every gap ≤ 1.0ms and no frame between in every run; the seed's gaps for steps 2 to 5 are ≥ 5ms (measured 10.1 to 28.0). **E10** (H4) "every lesson's spec" is the 19 files the cases name, at d1440-dark, plus `lesson.spec.ts` at reduced-motion.
 
 ## When the work stops for the owner
 
