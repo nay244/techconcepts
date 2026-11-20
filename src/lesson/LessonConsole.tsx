@@ -1,5 +1,5 @@
 import { flushSync } from 'react-dom';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Panel } from '../content/schema';
 import { forwardButton, holding, usePlayback } from '../engine/playback';
@@ -15,7 +15,7 @@ import { LogPanel } from './LogPanel';
 import { Outline } from './Outline';
 import { PlaybackControls } from './PlaybackControls';
 import type { Picks } from './Practice';
-import { ScenePanel } from './ScenePanel';
+import { MARKED_ROW, ScenePanel } from './ScenePanel';
 import { StackedPlaces, Timeline, positionsOf } from './Timeline';
 import { TopBar } from './TopBar';
 import { stepAnnouncement } from './announce';
@@ -57,9 +57,6 @@ function panelChange(panel: Panel | null, derived: ReturnType<typeof deriveState
   });
   return changed?.id ?? null;
 }
-
-/** The row that decided, to bring into view when the tab opens: the table's marked row, or the rule that allowed or denied. */
-const MARKED_ROW = '.tpanel [data-highlight], .rpanel [data-state="allow"], .rpanel [data-state="deny"]';
 
 export interface LessonConsoleProps {
   trackId: string;
@@ -148,7 +145,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   // The last change the reader has seen in the panel: the tab says when there is one they have not. Not stored.
   const change = panelTab === undefined ? null : panelChange(unit.scene.panel, derived);
   const [changeSeen, setChangeSeen] = useState<string | null>(null);
-  useEffect(() => {
+  // A layout effect: Play all advances on a timer, and a passive effect could run a frame after the marked row is painted.
+  useLayoutEffect(() => {
     if (tab !== 'table' || change === null) return;
     setChangeSeen(change);
     consoleEl.current?.querySelector(MARKED_ROW)?.scrollIntoView?.({ block: 'nearest' });
@@ -185,18 +183,6 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const [guideTable, setGuideTable] = useState<HTMLElement | null>(null);
   const roomForTable = useMediaQuery('(min-width: 1100px) and (min-height: 890px)');
   const tableInGuide = roomForTable && (slot.kind === 'overview' || slot.kind === 'step') && unit.scene.panel?.type !== 'labels';
-  // In the guide the table is capped and scrolls inside itself, so the row the step is about is brought into its view
-  // (the panel's own scroll box only: the page and the guide never move).
-  useEffect(() => {
-    if (!tableInGuide || guideTable === null) return;
-    const row = guideTable.querySelector<HTMLElement>(`${MARKED_ROW}, .rpanel__chip[data-known]`);
-    const panel = row?.closest<HTMLElement>('.tpanel, .rpanel');
-    if (row == null || panel == null) return;
-    const r = row.getBoundingClientRect();
-    const p = panel.getBoundingClientRect();
-    if (r.top < p.top) panel.scrollTop -= p.top - r.top + 4;
-    else if (r.bottom > p.bottom) panel.scrollTop += r.bottom - p.bottom + 4;
-  });
   // The forward button: the full words from 1100px wide, the short form on a phone, and under 1100px above that
   // whichever fits the room the controls give it (PlaybackControls measures).
   const phoneWidth = useMediaQuery('(max-width: 760px)');

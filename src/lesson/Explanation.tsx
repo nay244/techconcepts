@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Fragment, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import '../components/site.css';
 import type { AvailableSummary } from '../content/registry';
 import type { Fact, Lesson, Paragraph, Source, Statement, Unit } from '../content/schema';
@@ -254,7 +254,8 @@ export function Explanation(props: ExplanationProps) {
 
   const ownPanel = useRef<HTMLElement>(null);
   const panel = panelRef ?? ownPanel;
-  useEffect(() => {
+  // A layout effect: Play all advances on a timer, and a passive effect could run a frame after the new words are painted.
+  useLayoutEffect(() => {
     if (panel.current !== null) panel.current.scrollTop = 0;
   }, [panel, position]);
 
