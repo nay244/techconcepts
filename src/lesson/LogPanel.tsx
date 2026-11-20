@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, type ReactNode } from 'react';
 import type { LogDef } from '../content/schema';
 import type { LogRow } from '../engine/timeline';
 
@@ -137,7 +137,8 @@ export function LogPanel({ log, rows, idle, fresh = null, fold = null }: LogPane
   const flagColumn = log.columns.some((c) => c.key === 'plain') ? 'plain' : (log.columns.find(isProse) ?? log.columns.at(-1)!).key;
 
   const scroller = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  // A layout effect: Play all advances on a timer, and a passive effect could run a frame after the new row is painted.
+  useLayoutEffect(() => {
     const box = scroller.current;
     if (box !== null) box.scrollTop = box.scrollHeight;
   }, [rows.length, fold?.open]);

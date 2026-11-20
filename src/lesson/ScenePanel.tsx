@@ -33,6 +33,9 @@ interface Marks {
   list: readonly PanelMark[];
 }
 
+/** The row that decided, to bring into view (in the Table tab, and in the guide's table): the table's marked row, or the rule that allowed or denied. */
+export const MARKED_ROW = '.tpanel [data-highlight], .rpanel [data-state="allow"], .rpanel [data-state="deny"]';
+
 const NO_MARK_LIST: readonly PanelMark[] = [];
 const NO_MARKS: Marks = { for: null, list: NO_MARK_LIST };
 
@@ -136,6 +139,20 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   // The row that has just played, if this step played it (as the log's fresh row).
   const latest = derived.log.at(-1);
   const current = latest !== undefined && derived.events.some((e) => e.id === latest.eventId) ? latest : null;
+
+  // In the guide the table is capped and scrolls inside itself, so the row the step is about is brought into its view (the panel's
+  // own scroll box only: the page and the guide never move). A layout effect with no dependency list, so it runs in the commit of
+  // every mark, tick and event; Play all advances on a timer, and a passive effect could run a frame after the row is painted.
+  useLayoutEffect(() => {
+    if (panelHome === null) return;
+    const row = panelHome.querySelector<HTMLElement>(`${MARKED_ROW}, .rpanel__chip[data-known]`);
+    const box = row?.closest<HTMLElement>('.tpanel, .rpanel');
+    if (row == null || box == null) return;
+    const r = row.getBoundingClientRect();
+    const p = box.getBoundingClientRect();
+    if (r.top < p.top) box.scrollTop -= p.top - r.top + 4;
+    else if (r.bottom > p.bottom) box.scrollTop += r.bottom - p.bottom + 4;
+  });
 
   const panel = <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} playing={pending} />;
 
