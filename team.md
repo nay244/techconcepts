@@ -1436,3 +1436,4 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
+| B33 spec | reviewer | Opus | 1 | 192,553 | Eight holes with one answer, all measured on a trial built to the letter, one of taste (the guide following the rule being read; for later): a `<Profiler onRender>` probe for updates a component makes to itself, the jsdom stubs, the move measured (Firewalls 0 frames), `MARKED_ROW`'s home, the diag specs' run, the specs named (tablet case 18 flaky on `revamp`), a comment, the effect's place. 27 cases, `prototypes/b33-cases.md`. Closed as E11–E18 (2.135). Over its 0.08–0.12 share: three diag passes and 260 runs of tablet case 18. |

@@ -5,7 +5,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 27: the other one-frame lags during Play all
 
-**Status: planned (2026-11-20; 2.134), waiting for the owner's go.** The owner said "Yes, plan job 27" to the three passive effects B32's spec review found (2.132, 2.133). Numbers claimed on `revamp` (0d94b6c, checked free): job 27, direction rows from 2.134, B33, F27.
+**Status: the owner's go (2026-11-20; 2.135); B33's spec review done, errata E11–E18; B33 building.** Planned under 2.134. The owner said "Yes, plan job 27" to the three passive effects B32's spec review found (2.132, 2.133). Numbers claimed on `revamp` (0d94b6c, checked free): job 27, direction rows from 2.134, B33, F27.
 
 ## Inputs
 
@@ -33,7 +33,7 @@ Every wrong frame lasted one frame. None is dropped: each lags, and a layout eff
 
 ## Decisions in this plan
 
-1. **The log's, the explanation's and the Table tab's effects become `useLayoutEffect`**, with their dependencies unchanged (`[rows.length, fold?.open]`, `[panel, position]`, `[tab, change]`) and a comment each saying why. The Table tab's also sets `changeSeen`; in a layout effect that re-render happens before the paint too, so the tab's unseen mark clears in the same frame. For a click nothing changes (React already runs passive effects in a click's own task); for a timer's tick the scroll lands in the commit that changes the words.
+1. **The log's, the explanation's and the Table tab's effects become `useLayoutEffect`**, with their dependencies unchanged (`[rows.length, fold?.open]`, `[panel, position]`, `[tab, change]`) and a comment each saying why. (E17: the Table tab effect's comment says only that the row is brought into view in the commit that marks it.) For a click nothing changes (React already runs passive effects in a click's own task); for a timer's tick the scroll lands in the commit that changes the words.
 2. **The guide's row-into-view moves from `LessonConsole` into `ScenePanel`, as a `useLayoutEffect` with no dependency list, run only while the panel is portalled into the guide (`panelHome !== null`).** `ScenePanel` renders the table (`:165`) and holds the marks, and is not memoised, so the effect runs in the commit of every render that changes the table or its marks: the one-frame lag and Firewalls' 0.8s both go. Same selector (`MARKED_ROW` and the known chip), same arithmetic, same 4px margin; only its home and its timing change. A `useLayoutEffect` left in `LessonConsole` would fix the lag and keep Firewalls' fault.
 3. **One build unit, B33**, one writer for the four files (`LogPanel.tsx`, `Explanation.tsx`, `LessonConsole.tsx`, `ScenePanel.tsx`) and their tests: `.superpowers/wt/b33`, branch `job27/b33`, `E2E_PORT` checked free with `lsof` when the brief is written (job 26 took 4508 to 4512, the diagnosis 4513).
 4. **A probe unit test per effect (four)**, as B32's E7: nothing else tells a layout effect from a passive one (the unit suite and every spec pass either way). jsdom does no layout, so the probes read what the effect wrote (`scrollTop`, or a stubbed rectangle), not the screen.
@@ -48,6 +48,12 @@ Every wrong frame lasted one frame. None is dropped: each lags, and a layout eff
 | B33 | build | builder (Sonnet) | Decisions 1, 2 and 4. | The four probes red on the seeds (each effect back to `useEffect`; the guide's effect back in `LessonConsole`) and green on the build; `diag-27.spec.ts` at both sizes and `diag-27b.spec.ts`, `--repeat-each=3`: 0 wrong for every effect, Firewalls' 47 frames 0; the lesson specs at d1440-dark and `lesson.spec.ts` at reduced-motion; `npm test`; `npm run build`. |
 | B33 review | build | reviewer (Opus) | The diff against this section and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
 | F27 | end | orchestrator (Opus 5.5) | Into `revamp`; vitest, build, CI's end-to-end pass with the machine kept awake. | As "Done means". |
+
+### B33's spec review
+
+Reviewer (Opus), 2026-11-20, on `revamp` 0a636f0, with a trial built to the letter of decisions 1, 2 and 4 (`.superpowers/job27/b33-trial.diff`, its probes `b33probe.test.tsx`): 8 holes with one answer each, measured, and 1 of taste; 27 attack cases, all in `prototypes/b33-cases.md`. On the trial the unit suite (2,578) and the `phone` project were green, and both diag specs counted 0 wrong frames at both sizes, Firewalls' included.
+
+**Errata** (2.135): **E11** (H1) B32's sibling probe sees only updates from the top: P1 (log) and P2 (explanation) are later siblings; P3 (Table tab) and P4b (guide, a tick) read the DOM in a `<Profiler onRender>` around `LessonConsole`, P4a (guide, marks) around `ScenePanel`; P4a is the probe that proves the move. **E12** (H2) the jsdom stubs (`scrollHeight`, `scrollTop` set before, `scrollIntoView` assigned and deleted, `getBoundingClientRect` following `scrollTop`), or every probe passes on the seed. **E13** (H3) the move is measured: Firewalls 0 frames out of view in 3 of 3 (47 before). **E14** (H4) `MARKED_ROW` exported from `ScenePanel.tsx`, imported by `LessonConsole.tsx`, defined once. **E15** (H5) the diag specs are copied to `e2e/zz-diag27.spec.ts` and `e2e/zz-diag27b.spec.ts`, read from their lines, deleted, never committed; the explanation can fail only at 390. **E16** (H6) the specs: B32's E10 list at d1440-dark, `lesson.spec.ts` at reduced-motion, the `phone` and `tablet` projects; `tablet.spec.ts:289` (case 18) is flaky on `revamp` (15%) and is reported, not a pass condition. **E17** (H7) the Table tab's mark is drawn only off the tab, so the comment says nothing about it. **E18** (H8) the new effect goes after `ScenePanel`'s play effect. **Not in B33** (H9, taste): the guide does not follow the rule being read ("Checking"), so at Firewalls step 2 rule 3 is read below the guide's edge for about 0.7s at 1× before "Fits → deny" brings it in; for the owner and a later job.
 
 ## When the work stops for the owner
 
