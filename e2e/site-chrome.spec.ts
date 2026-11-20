@@ -176,6 +176,9 @@ test.describe('the header and the footer in the Card stack look', () => {
   });
 
   test('13: open the header is 391px (329 without Start learning), the panel 322 and 260; Escape closes it and focus returns', async ({ page }) => {
+    // 56 visits (two schemes, four widths, seven pages), each opening the menu and closing it with Escape, whose transitions run in real time:
+    // about 26s alone, against Playwright's 30s default, which a full run's load overran (job 25).
+    test.setTimeout(120_000);
     for (const scheme of SCHEMES) {
       for (const [w, h] of [[320, 640], [375, 812], [390, 844], [959, 900]] as const) {
         for (const path of SEVEN) {
