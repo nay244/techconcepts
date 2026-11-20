@@ -1429,3 +1429,10 @@ Planned on 2026-11-19 in a session of its own on Opus 5.5, started from the sess
 - **Before a flake is called a flake, ask whether the test reads what a reader sees.** 20c was right all along: the lesson drew a wrong frame about one step change in nine, and it was carried as an old flake for two jobs. An instrumented copy of the test (a `MutationObserver` on each element and a frame callback) found the cause in one run and sized the fix in two.
 - **A repeat run of a test alone does not make a full run's load.** Case 13 passed 20 of 20 alone and on a busy CPU; the check that told the fix apart was a smaller limit on the command line (`--timeout=20000`), which a case's own budget overrides.
 - **Ask the app to keep the machine awake before a 30-minute pass** (`request_keep_awake`): the first pass was cut off at the session's end.
+
+# Job 27: the other one-frame lags during Play all
+
+Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the session that closed job 26 (direction 2.134). Numbers claimed on `revamp` (0d94b6c): job 27, rows from 2.134, B33, F27. The orchestrator's diagnosis (two instrumented specs, 63 runs at two sizes and a layout-effect trial, `.superpowers/job27/`) is not counted. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
