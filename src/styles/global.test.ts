@@ -36,3 +36,15 @@ test('the Lesson page’s skip link is lifted over its header by console.css alo
   expect(bare).not.toMatch(/\.skip-link[^{}]*\{[^}]*!important/);
   expect(globalCss.match(/\.skip-link \{[^}]*\}/)![0]).toMatch(/z-index: 10;/);
 });
+
+test('under reduced motion every transition has a duration of exactly 0s, so none runs and none paints a frame at its old value (job 28, B34)', () => {
+  // A 0.01ms transition paints its start value for one frame: the reader saw every change a frame late.
+  const bare = globalCss.replace(/\/\*[\s\S]*?\*\//g, '');
+  const blocks = [...bare.matchAll(/@media \(prefers-reduced-motion: reduce\) \{((?:[^{}]|\{[^{}]*\})*)\}/g)].map((m) => m[1]!);
+  expect(blocks, 'one reduced-motion block').toHaveLength(1);
+  expect(blocks[0]!.match(/^\s*\*,\s*\*::before,\s*\*::after \{[^}]*\}/)?.[0], 'on every element and pseudo-element').toBeDefined();
+  const decls = blocks[0]!.match(/transition[\w-]*:[^;]*;/g) ?? [];
+  expect(decls, 'the one transition declaration').toEqual(['transition-duration: 0s !important;']);
+  // Nothing outside that block sets a transition duration through the reduced-motion query, and the block is all there is of it.
+  expect(bare.match(/prefers-reduced-motion/g), 'the query is used once').toHaveLength(1);
+});

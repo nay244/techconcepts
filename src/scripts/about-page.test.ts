@@ -16,7 +16,7 @@ import { checkedOn, getEntries, getLesson, trackTotals } from '../content/regist
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
 import About from '../pages/about.astro';
-import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from '../lib/card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, TRACKS_GRANT, cardStackGrant, globalGrant, tracksGrant } from '../lib/card-stack-guards';
 
 // The build's analytics token, which each render here sets for itself.
 const analytics = vi.hoisted(() => ({ token: undefined as string | undefined }));
@@ -266,7 +266,10 @@ test('card-stack.css changes only its opening comment (which names About and the
   expect(head).toContain('src/pages/glossary.astro');
   expect(
     run(
-      "git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
+      "git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
     ),
   ).toBe('');
+  const gl = globalGrant('f30e876');
+  expect(gl.changed, 'global.css: the reduced-motion rule’s one declaration (job 28)').toEqual(GLOBAL_GRANT.changed);
+  expect(gl.sameLength, 'global.css: no line added or removed').toBe(true);
 });

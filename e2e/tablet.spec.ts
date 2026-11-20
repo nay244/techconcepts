@@ -301,6 +301,44 @@ for (const theme of THEMES) {
       }
     });
 
+    // Under reduced motion the turn paints the page as it is now, in the frame it turns (job 28, B34): global.css's 0.01ms transitions
+    // painted every property at its old value for one frame, so the table sat at 34% (Table) or 12% (Log) in view, below the scene.
+    // An IntersectionObserver's entries are computed just before paint, so it sees each frame the reader would. Its thresholds
+    // include 1 and values under both wrong ratios; the entries from the turn on are the ones at the new window's width.
+    test('18, the frame: the table is wholly in view in every frame from the turn, with Log and with Table chosen', async ({ page }) => {
+      for (const chosen of ['Log', 'Table']) {
+        await openAt(page, `${DHCP}?step=2`, [768, 1024], theme);
+        await tabButton(page, chosen).click();
+        await expect(tabButton(page, chosen)).toHaveAttribute('aria-pressed', 'true');
+        await settledFrame(page);
+        await page.evaluate(() => {
+          const w = window as unknown as { __io: { rw: number | undefined; r: number; y: number }[]; __tp: Element | null };
+          w.__io = [];
+          w.__tp = document.querySelector('.tpanel');
+          new IntersectionObserver(
+            (entries) => {
+              for (const e of entries) w.__io.push({ rw: e.rootBounds?.width, r: Math.round(e.intersectionRatio * 1000) / 1000, y: Math.round(e.boundingClientRect.y) });
+            },
+            { threshold: [0, 0.05, 0.25, 0.5, 0.75, 0.99, 1] },
+          ).observe(w.__tp!);
+        });
+        // It is watching: the observer has delivered its first entry, for the upright window.
+        await expect.poll(() => page.evaluate(() => (window as unknown as { __io: unknown[] }).__io.length), { message: `${chosen}: the first entry` }).toBeGreaterThan(0);
+        const before = await page.evaluate(() => (window as unknown as { __io: unknown[] }).__io.length);
+        await page.setViewportSize({ width: 1024, height: 768 });
+        for (let i = 0; i < 4; i++) await settledFrame(page);
+        const seen = await page.evaluate(() => {
+          const w = window as unknown as { __io: { rw: number | undefined; r: number; y: number }[]; __tp: Element | null };
+          return { entries: w.__io.slice(), same: w.__tp !== null && w.__tp.isConnected && w.__tp === document.querySelector('.tpanel') };
+        });
+        expect(seen.same, `${chosen}: the table it watched is the page's table`).toBe(true);
+        const after = seen.entries.slice(before);
+        expect(after.filter((e) => e.r < 1), `${chosen}: a frame after the turn drew the table partly out of view: ${JSON.stringify(after)}`).toEqual([]);
+        // With Log chosen the table was hidden upright, so showing it is a crossing: one entry, whole, at the new width.
+        if (chosen === 'Log') expect(after.map((e) => [e.rw, e.r]), 'Log: one entry, whole').toEqual([[1024, 1]]);
+      }
+    });
+
     test('focus at 1024x768: the ring of a stop is drawn, and no box with overflow cuts the 4px it is drawn out to', async ({ page }) => {
       await openAt(page, `${DHCP}?step=2`, [1024, 768], theme);
       for (const name of [/^Step 2, /, /^Step 4, /]) {

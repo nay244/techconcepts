@@ -18,7 +18,7 @@ import { tracks } from '../content/tracks';
 import { siteGlossary } from './glossary-site';
 import { stampLine } from './glossary';
 import GlossaryPage from '../pages/glossary.astro';
-import { CARD_STACK_GRANT, TRACKS_GRANT, cardStackGrant, tracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, TRACKS_GRANT, cardStackGrant, globalGrant, tracksGrant } from './card-stack-guards';
 
 const words = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 let html = '';
@@ -279,8 +279,11 @@ describe('D21, 0.4: the stylesheet and the page', () => {
     expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
     expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
     expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
-    const touched = (execSync("git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/styles/global.css src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
+    const touched = (execSync("git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
+    const g = globalGrant('f30e876');
+    expect(g.changed, 'global.css: the reduced-motion rule’s one declaration (job 28)').toEqual(GLOBAL_GRANT.changed);
+    expect(g.sameLength, 'global.css: no line added or removed').toBe(true);
   });
   test('card-stack.css changes only its opening comment (About’s and the Glossary’s, E2), two reworded comments and the header and footer block (job 24)', () => {
     const g = cardStackGrant('f30e876');

@@ -176,13 +176,15 @@ table.data {
   transform: none;
 }
 
+/* Transitions are off under reduced motion, not shortened: a transition of 0.01ms still paints its start value for one frame, so a
+   reader saw every change a frame late. A duration of 0s makes none. Animations keep 0.01ms: their first frame is the one they draw. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0s !important;
     scroll-behavior: auto !important;
   }
 }

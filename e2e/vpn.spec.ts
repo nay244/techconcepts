@@ -113,8 +113,8 @@ test('32: under reduced motion the listener’s parts and its glow do not fade',
     [...document.querySelectorAll<SVGElement>('.nm-hear-head, .nm-hear-body, .nm-glow')].map((el) => getComputedStyle(el).transitionDuration),
   );
   expect(durations.length, 'the listener’s parts are on the page').toBeGreaterThanOrEqual(3);
-  // The reduced-motion rule sets the duration to 0.00001ms, which the browser reports as 1e-05s: no fade.
-  expect(durations.every((d) => parseFloat(d) < 0.001), `transition durations: ${durations.join(', ')}`).toBe(true);
+  // The reduced-motion rule sets every transition duration to 0s: no fade, and no first frame at the old value.
+  expect(durations.every((d) => d === '0s'), `transition durations: ${durations.join(', ')}`).toBe(true);
 });
 
 test('33: the band at step 3 is 7 units wide with no vector-effect, at 0.42 opacity, and draws 7 × its figure’s scale, which is more than 3.5 × the scale', async ({ page }) => {
