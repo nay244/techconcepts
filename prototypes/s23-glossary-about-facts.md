@@ -4,7 +4,7 @@ Scout report for job 22 (Card stack for Glossary and About). Read-only: no sourc
 
 **Checkout.** The worktree is at `fb02521` on `claude/vibrant-mirzakhani-d38081`, clean at the start. The brief names `c336e82` (`docs: the ledger, B25 review's path`), which is a descendant of `fb02521`, not an ancestor. Among the files this report reads, the only difference is one comment line in `src/styles/card-stack.css` (see Part 3). The files were not diffed one by one beyond that.
 
-Paths below are relative to the worktree root `/Users/naaay/Developer/WebProjects/TechConcept/.claude/worktrees/vibrant-mirzakhani-d38081`.
+Paths below are relative to the root of job 21's worktree (`.claude/worktrees/vibrant-mirzakhani-d38081`).
 
 ## Part 1: each page's code
 
