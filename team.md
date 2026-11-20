@@ -1459,3 +1459,9 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 - **Sweep every effect of the kind before planning, not only the ones named.** The fourth lag (the Table tab's) shared `MARKED_ROW` with a named one and was found only by reading that constant's other use.
 - **Write the diagnosis's logs where the main folder's `.superpowers` is, not the session worktree's**: the reviewer looked for case 18's logs there and did not find them.
 
+# Job 28: two more flaky end-to-end tests, and the frame they read
+
+Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the session that closed job 27 (direction 2.137). Numbers claimed on `revamp` (246e33a): job 28, rows from 2.137, B34, F28. The orchestrator's diagnosis (two instrumented specs, about 300 runs, two trials, `.superpowers/job28/`) is not counted. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
