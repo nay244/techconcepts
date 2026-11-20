@@ -191,7 +191,6 @@ test('P4b the guide table brings the marked row into view in the commit of a tim
   await wait(12000);
   const firsts = log.filter((r, i) => i > 0 && r.mark !== null && r.mark !== log[i - 1]!.mark);
   expect(firsts.length).toBeGreaterThan(0);
-  console.log('P4b', JSON.stringify(firsts));
   for (const r of firsts) expect(r.inside, JSON.stringify(firsts)).toBe(true);
 });
 
@@ -210,17 +209,14 @@ test('X1 under the scene (no panelHome) nothing scrolls', () => {
   delete Element.prototype.scrollIntoView;
 });
 
-test('X2 a row above the box is brought down to 4px under its top; the known chip too', () => {
+test('C9 the known chip at step 5, once the event has landed, is brought into the box', () => {
   stubBoxes();
   const home = document.body.appendChild(document.createElement('div'));
   // Step 5: the reply is known, the chip is marked once the event has landed.
   const p5 = FWP(5);
   const { rerender } = render(<Harness s={{ position: p5, eventIndex: 0, mode: 'step', speed: 1 }} home={home} />);
-  const chips = home.querySelectorAll('.rpanel__chip');
-  console.log('X2 chips', chips.length, home.querySelector('.rpanel__chip[data-known]') !== null);
   rerender(<Harness s={{ position: p5, eventIndex: 99, mode: 'step', speed: 1 }} home={home} />);
   const chip = home.querySelector('.rpanel__chip[data-known]');
-  console.log('X2 known after', chip !== null, home.querySelector<HTMLElement>('.rpanel')!.scrollTop);
   expect(chip === null ? null : inside(chip)).toBe(true);
 });
 
@@ -362,6 +358,7 @@ test('C11 a row already inside does not creep, render after render', () => {
   h.querySelector<HTMLElement>('.rpanel')!.scrollTop = 200;
   fireMarks(ALLOW_DENY);
   expect(inside(deny(h))).toBe(true);
+  expect(h.querySelector<HTMLElement>('.rpanel')!.scrollTop).toBe(200);
   const before = h.querySelector<HTMLElement>('.rpanel')!.scrollTop;
   for (let i = 0; i < 3; i++) rerender(<Harness s={s} home={h} />);
   expect(h.querySelector<HTMLElement>('.rpanel')!.scrollTop).toBe(before);
