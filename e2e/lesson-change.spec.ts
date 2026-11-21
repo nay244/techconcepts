@@ -491,23 +491,24 @@ test.describe('state', () => {
     await expect(viewSwitch(page).getByRole('button', { name: 'Sequence' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('definitions, the deeper box and the log fold start closed in the next lesson; the outline\'s folds carry (B44-5.4, 5.5, D-27)', async ({ page }) => {
+  test('an open definition and the deeper box start closed in the next lesson; the outline\'s folds carry (B44-5.4, 5.5, D-27)', async ({ page }) => {
     await openMarked(page, `${HTIW}/what-is-https`);
-    // Open the "Email" part of the column, then change.
+    // Open the "Email" part of the column, then walk to Learn and open "TLS handshake", which TCP's Learn names too.
     const email = page.locator('.console__track details', { has: page.locator('summary', { hasText: /Email/i }) }).first();
-    if (await email.count()) await email.locator('summary').click();
-    await walkToPractice(page);
-    const terms = page.locator('.explain__term');
-    if (await terms.count()) await terms.first().click();
-    await nextButton(page).click();
+    await email.locator('summary').click();
+    for (let i = 0; i < 14 && (await page.locator('.explain__kicker').textContent()) !== 'Learn'; i += 1) await nextButton(page).click();
+    const handshake = page.locator('button.explain__term[aria-controls="def-term-handshake"]');
+    await handshake.click();
+    await expect(handshake).toHaveAttribute('aria-expanded', 'true');
+    await nextButton(page).click(); // Practice
+    await nextButton(page).click(); // Next lesson: TCP
     await expect(page).toHaveURL(/\/what-is-tcp$/);
-    if (await email.count()) await expect(email).toHaveAttribute('open', '');
-    await walkToPractice(page);
-    await expect(page.locator('.explain__term[aria-expanded="true"]')).toHaveCount(0);
-    await expect(page.locator('.console__log .log__fold[aria-expanded="true"]')).toHaveCount(0);
-    // The part that held HTTPS is a fold now, open; the one holding TCP is the plain section (D-27).
-    const parts = await page.evaluate(() => ({ details: [...document.querySelectorAll('.console__track details.part')].map((d) => d.hasAttribute('open')), sections: document.querySelectorAll('.console__track section.part').length }));
-    expect(parts.sections).toBe(1);
+    await expect(email).toHaveAttribute('open', '');
+    for (let i = 0; i < 14 && (await page.locator('.explain__kicker').textContent()) !== 'Learn'; i += 1) await nextButton(page).click();
+    await expect(page.locator('button.explain__term[aria-controls="def-term-handshake"]')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('button.explain__term[aria-expanded="true"]')).toHaveCount(0);
+    // The log's fold is closed as a load has it.
+    await expect(page.locator('.log__fold[aria-expanded="true"]')).toHaveCount(0);
   });
 
   test('progress: a swap records the visit as a load does, and counting goes on (B44-6.2, 6.3, D-22)', async ({ page }) => {

@@ -75,14 +75,14 @@ test('a lesson handed in is opened as a load opens it: position 0, unit 1 only t
   await user.click(screen.getByRole('button', { name: /Gamma/ }));
   expect(document.querySelector('.outline__unit[data-state="current"]')!.textContent).toContain('Gamma');
   await user.click(screen.getByRole('button', { name: 'Apps' }));
-  await user.click(screen.getByRole('button', { name: 'Log', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Log' }));
   // Another three-unit lesson of the same drawing, as the host hands it over.
   const second = props(HTTPS);
   rerender(<Console {...second} arrived={{ text: lessonLine(second, 14), id: 1 }} />);
   expect(screen.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
   const marks = [...document.querySelectorAll('.outline__unit')].map((el) => el.getAttribute('data-state'));
   expect(marks).toStrictEqual(['current', undefined, undefined].map((m) => m ?? null));
-  expect(screen.getByRole('button', { name: 'Explain', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Explain' })).toHaveAttribute('aria-pressed', 'true');
   expect(region()).toBe('HTTPS. Lesson 2 of 14. Alpha, Overview.');
   expect(document.querySelector('.console__explain .explain__kicker')!.textContent).toMatch(/Overview/);
   // The next move says what it does today, and the line does not come back at the Overview.
@@ -117,7 +117,7 @@ test('the host: a plain click on a row of the same drawing fetches the lesson\'s
   const user = userEvent.setup();
   const target = TWO_NETWORKING.find((e): e is AvailableSummary => e.available && e.slug === 'mac-address')!;
   const file = { lesson: MAC, entry: target, next: neighbors(TWO_NETWORKING, 'mac-address').next, nextFigure: null, definitions: {}, stamp: buildStamp };
-  const fetchMock = vi.fn(async () => ({ status: 200, json: async () => file }));
+  const fetchMock = vi.fn(async (_url: string) => ({ status: 200, json: async () => file }));
   vi.stubGlobal('fetch', fetchMock);
   const p = props(DHCP);
   render(<LessonConsole {...p} />);
