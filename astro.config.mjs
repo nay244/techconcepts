@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+// @ts-expect-error - no @types/node in this project; the config runs under node
 import { execSync } from 'node:child_process';
 
 // One stamp for the whole build: the commit it is made from, else the build's time when git is not there.
