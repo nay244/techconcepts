@@ -753,8 +753,9 @@ test('no prose is left with the mockup’s markup: bold is **term**, and no tag 
 
 // ---------------------------------------------------------------- the map, as the console shows it
 
-// The sweep shows the map about 1,100 times and compares it with a fresh copy at 198 moments: some 8 s under jsdom.
-test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', { timeout: 60_000 }, () => {
+// The sweep shows the map about 1,100 times and compares it with a fresh copy at 198 moments: some 18 s under jsdom
+// here, and over 60 s on CI's runner beside the other test files.
+test('show draws every moment of the lesson, forwards, backwards and jumping, as a fresh driver draws it', { timeout: 180_000 }, () => {
   // Every position (each unit's steps, plus its Overview, Learn and Practice) and every event of every step once more.
   const events = internet.units.reduce((sum, u) => sum + u.steps.reduce((n, s) => n + s.events.length, 0), 0);
   expect(showSweep(internet)).toBe(slotsFor(internet).length + events);

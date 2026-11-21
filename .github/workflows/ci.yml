@@ -23,22 +23,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # The whole history: the git-diff guards compare files with the commits before a job (git show <commit>:<path>).
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
-      - run: npm test
+      # The drawing sweeps take 1 to 5 s here and over 5 s on the runner, so its limit per test is 30 s.
+      - run: npm test -- --testTimeout=30000
       - run: npm run build
       - run: npx vitest run src/lib/lesson-json.test.ts
 
   # One pass of the end-to-end tests: the 1440 dark desktop project, which runs every behaviour check, and the phone.
   # The other desktop sizes, the light theme and reduced motion stay a local run (npm run e2e): all seven projects
   # together take about six times as long. Playwright builds and serves the site itself (playwright.config.ts).
+  # On one runner the pass reached 334 of its 1,498 tests in 30 minutes, so it is split across ten runners that run
+  # at once; each builds the site and runs every tenth of the tests.
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -47,12 +57,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --grep-invert @visual --project=d1440-dark --project=phone
+      - run: npx playwright test --grep-invert @visual --project=d1440-dark --project=phone --shard=${{ matrix.shard }}/10
       # The traces of failed tests (playwright.config.ts keeps them on failure), for whoever reads the red run.
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-test-results
+          name: playwright-test-results-${{ matrix.shard }}
           path: test-results/
           retention-days: 7
           if-no-files-found: ignore
