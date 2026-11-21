@@ -1547,3 +1547,15 @@ Planned on 2026-11-21 in the main folder on Fable 5.2, by the owner's word for t
 | (beacon) | web-fetch | default | 1 | 15,350 | Cloudflare's FAQ: a single-page app's route changes are counted, no setting. |
 | B43 | builder | Sonnet | 1 + 2 fix rounds | 92,887 | `[lesson].json.ts` and `build-stamp.ts`: 34 files equal the island's props, every HTML byte for byte as revamp's. The first fix said done with `npm run build` red (astro check on the config's Node import); the orchestrator's run caught it; fixed with `@ts-expect-error`. Into `job30/int` at 75f7734. |
 | B43 review | reviewer | Opus | 1 | 32,474 | PASS WITH FIXES: the stamp's Node import would be stubbed in a browser bundle (now a Vite `define`); the props test skipped in CI (a step after the build). Each "fixed when" run by the orchestrator. |
+| B44 | builder (B43's continued) | Sonnet | 1 + 2 fix rounds | 285,777 | `useLessonChange.ts`, the console, outline and bar, `lesson-figures.ts`, `playback.ts`'s `load`, the strip fix in `net-map.ts`; `e2e/lesson-change.spec.ts` 55 cases, mutation proofs for each rule. The orchestrator's own run found one wait test bound to the server's speed (D-1 red at 165 ms); rewritten to answer the data inside the page; 55 × 3 green. Into `job30/int` at f59dcea. |
+| B44 review | reviewer | Opus | 1 | 194,270 | PASS WITH FIXES (5): a second press during the tape dropped the live region to "Overview"; four tests that could not fail. Film by "Next lesson": 0 in-between frames at 1440 and on the phone. Fix 1's test red on 66ead35 and green on the fix, run by the orchestrator. |
+| F30 | orchestrator | Opus 5.5 | 1 | not counted | `revamp` at f4a6193: vitest 2,612 passed; build exit 0; CI pass 1,486 passed, 2 timed out under load and passed alone. Swap 270 / 141 / 34 ms and 10.5 KB against a page load's 968 / 255 / 45 ms and 152 KB; filmed 1 and 0 in-between frames against 36 and 37–38 (`measure-swap.mjs`, `film.mjs`). |
+
+**Totals by role (growth):** scout 222,540; designer 260,044; reviewer 444,950 (spec 218,206, B43 32,474, B44 194,270); builder 378,664 (one continued agent); web-fetch 15,350. **1,321,548 in all**, against 1.6 to 2.5 million.
+
+## What to do differently next time
+
+- **Ask for the exit code, and run the check yourself.** B43's first fix was reported done with `npm run build` red (only `astro build` had been run); the orchestrator's own run of each "fixed when" caught it, and B44's one timing-bound test too.
+- **A test of "fast" must not depend on the server's speed.** Answer the data from inside the page with a body fetched beforehand, and time in the page; the first version passed for the builder and failed in the orchestrator's run.
+- **A swap needs its own timing script.** `measure.mjs` forces a page load (`location.assign`); `measure-swap.mjs` times the click to the new lesson in the page.
+- **Two long end-to-end tests time out under the full pass** (the Glossary's walk, 15 min; `reading.spec.ts:126`, 30 s) and pass alone, as in job 24: worth a job of their own before the next full `npm run e2e`.

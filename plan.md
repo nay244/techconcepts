@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 30: a lesson change without a page load
 
-**Status: the owner's go, 2026-11-21 (2.149): "Go, on Opus 5.5". Carried out by a fresh session on Opus 5.5, starting with D26.. D26 approved, variant A (2.150).** Planned under 2.148. Asked by the owner on 2026-11-21: "navigating between the different lessons, TCP, UDP, IP, etc.. causes a reload to a new page. However, for Protocol Explorer each of their topics are all under one page with no reload between each topic", then "Plan it using Fable 5.2". Planned in the main folder on Fable 5.2 by that word. Numbers claimed on `revamp` (3341203, checked free): job 30, direction rows from 2.148, S27, D26, B43, B44, F30.
+**Status: the owner's go, 2026-11-21 (2.149): "Go, on Opus 5.5". Carried out by a fresh session on Opus 5.5, starting with D26.. D26 approved, variant A (2.150). Done 2026-11-21 (2.152): merged into `revamp` at f4a6193, nothing pushed.** Planned under 2.148. Asked by the owner on 2026-11-21: "navigating between the different lessons, TCP, UDP, IP, etc.. causes a reload to a new page. However, for Protocol Explorer each of their topics are all under one page with no reload between each topic", then "Plan it using Fable 5.2". Planned in the main folder on Fable 5.2 by that word. Numbers claimed on `revamp` (3341203, checked free): job 30, direction rows from 2.148, S27, D26, B43, B44, F30.
 
 ## Inputs
 
