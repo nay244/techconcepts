@@ -691,3 +691,241 @@ test.describe('what is not a swap', () => {
     await plain.close();
   });
 });
+
+// ================================================================ the wait, its marks and its limits (decision 8, D26 sections 2 and 3)
+
+test.describe('the wait at 1440', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('answered at once: the marks never show (D-1) and the swap is the first change', async ({ page }) => {
+    await openMarked(page, TCP);
+    await recordMarks(page);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    const log = await times(page);
+    expect(log.filter((e) => e.what.startsWith('signal') || e.what.startsWith('tape'))).toStrictEqual([]);
+    expect(await page.evaluate(() => [...((window as unknown as { __ever: Set<string> }).__ever)])).toStrictEqual([]);
+  });
+
+  test('held 300 ms: the going mark from the press, the signal from 100 ms to the swap, no tape, no "Opening" (D-2, D-7, D-10)', async ({ page }) => {
+    const answer = await hold(page, 'what-is-udp', 300);
+    await openMarked(page, TCP);
+    await recordMarks(page);
+    const boxes = () => page.evaluate(() => ['.console__top', '.console__stage', '.console__track', '.console__guide'].map((s) => JSON.stringify(document.querySelector(s)!.getBoundingClientRect())));
+    const before = await boxes();
+    const ariaBefore = await row(page, 'what-is-udp').evaluate((el) => ({ label: el.getAttribute('aria-label'), role: el.getAttribute('role'), current: el.getAttribute('aria-current'), text: el.textContent }));
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    // The going mark from the press; TCP's row keeps aria-current and its solid edge until the swap.
+    await expect(row(page, 'what-is-udp')).toHaveAttribute('data-going', '');
+    await expect(row(page, 'what-is-tcp')).toHaveAttribute('aria-current', 'page');
+    expect(await row(page, 'what-is-udp').evaluate((el) => ({ label: el.getAttribute('aria-label'), role: el.getAttribute('role'), current: el.getAttribute('aria-current'), text: el.textContent }))).toStrictEqual(ariaBefore);
+    await expect(page.locator('.console .signal')).toHaveCount(1);
+    expect(await boxes()).toStrictEqual(before);
+    expect(await page.locator('.console .signal').getAttribute('aria-hidden')).toBe('true');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    const log = await times(page);
+    const at = first(log, 'signal+');
+    expect(at, 'the signal appears').not.toBeNull();
+    expect(at!).toBeGreaterThanOrEqual(90);
+    expect(at!).toBeLessThan(200);
+    expect(first(log, 'tape+')).toBeNull();
+    expect(first(log, 'signal-')).not.toBeNull();
+    expect(await page.evaluate(() => [...((window as unknown as { __ever: Set<string> }).__ever)])).toStrictEqual([]);
+    await expect(page.locator('.console [data-going]')).toHaveCount(0);
+    expect(answer.answered()).not.toBeNull();
+  });
+
+  test('held 1000 ms: the tape from 400 ms as "Opening UDP" in sentence case, the live region says it, then the line (D-3, D-20)', async ({ page }) => {
+    await hold(page, 'what-is-udp', 1000);
+    await openMarked(page, TCP);
+    await recordMarks(page);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await expect(page.locator('.console .tape')).toHaveCount(1);
+    expect(await page.locator('.console .tape').textContent()).toBe('Opening UDP');
+    expect(await page.locator('.console .tape').getAttribute('aria-hidden')).toBe('true');
+    expect(await page.locator('.console [aria-live]').count()).toBe(1);
+    await expect(live(page)).toHaveText('Opening UDP.');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    const log = await times(page);
+    expect(first(log, 'tape+')!).toBeGreaterThanOrEqual(390);
+    expect(first(log, 'tape+')!).toBeLessThan(520);
+    expect(first(log, 'tape-')).not.toBeNull();
+    await expect(live(page)).toHaveText('UDP. Lesson 4 of 14. Overview.');
+    await expect(page.locator('.console .tape, .console .signal')).toHaveCount(0);
+    expect(await page.locator('.console [aria-live]').count()).toBe(1);
+  });
+
+  test('held 399 ms: no tape and no "Opening" (D-3)', async ({ page }) => {
+    await hold(page, 'what-is-udp', 330);
+    await openMarked(page, TCP);
+    await recordMarks(page);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    expect(first(await times(page), 'tape+')).toBeNull();
+    expect(await page.evaluate(() => [...((window as unknown as { __ever: Set<string> }).__ever)])).toStrictEqual([]);
+  });
+
+  test('the forward button and the card give no going mark; the signal and tape are as for a row (D-8)', async ({ page }) => {
+    await hold(page, 'what-is-udp', 700);
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    await recordMarks(page);
+    await press(page, '.console__controls .cbtn--go');
+    await expect(page.locator('.console .signal')).toHaveCount(1);
+    await expect(page.locator('.console [data-going]')).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    // The card.
+    await page.goto(TCP);
+    await hydrated(page);
+    await walkToPractice(page);
+    await recordMarks(page);
+    await press(page, 'a.upnext');
+    await expect(page.locator('.console .signal')).toHaveCount(1);
+    await expect(page.locator('.console [data-going]')).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    // After the card: focus is on the visible h1 (D-15), the address is the lesson's own.
+    await expect(page.locator('h1.top__name:visible')).toBeFocused();
+  });
+
+  test('never answered: at 2000 ms a page load of UDP starts, pushState was never called, the marks stay up (D-4)', async ({ page }) => {
+    await hold(page, 'what-is-udp', Infinity);
+    await openMarked(page, TCP);
+    await recordMarks(page);
+    let loadAt = 0;
+    page.on('request', (r) => {
+      if (r.isNavigationRequest() && new URL(r.url()).pathname === UDP) loadAt = Date.now();
+    });
+    const t0 = Date.now();
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await page.waitForURL(`**${UDP}`, { timeout: 8000 });
+    expect(loadAt - t0).toBeGreaterThanOrEqual(1950);
+    expect(loadAt - t0).toBeLessThan(2400);
+    // The new document: not the old one.
+    expect((await sameDocument(page)).mark).toBe(false);
+  });
+
+  test('never answered: pushState is not called and the old lesson, signal and tape are on screen up to the load (D-4)', async ({ page }) => {
+    await hold(page, 'what-is-udp', Infinity);
+    await openMarked(page, TCP);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await page.waitForTimeout(1500);
+    expect(await page.evaluate(() => (window as unknown as { __pushes: number }).__pushes)).toBe(0);
+    await expect(page.locator('.console .signal')).toHaveCount(1);
+    await expect(page.locator('.console .tape')).toHaveCount(1);
+    expect(new URL(page.url()).pathname).toBe(TCP);
+  });
+
+  for (const fail of ['404', '500', 'abort', 'not json', 'another build', 'another drawing'] as const) {
+    test(`the data fails (${fail}): a page load of UDP starts at once, with no pushState (D-5)`, async ({ page }) => {
+      let answered = 0;
+      await page.route(jsonOf('what-is-udp'), async (route: Route) => {
+        answered = Date.now();
+        if (fail === '404') return route.fulfill({ status: 404, contentType: 'text/html', body: '<html></html>' });
+        if (fail === '500') return route.fulfill({ status: 500, body: 'no' });
+        if (fail === 'abort') return route.abort();
+        if (fail === 'not json') return route.fulfill({ status: 200, contentType: 'application/json', body: '<html>not json</html>' });
+        const response = await route.fetch();
+        const data = (await response.json()) as { stamp: string; lesson: { figure: string } };
+        if (fail === 'another build') data.stamp += 'x';
+        else data.lesson.figure = 'dhcp';
+        return route.fulfill({ response, body: JSON.stringify(data) });
+      });
+      await openMarked(page, TCP);
+      let loadAt = 0;
+      page.on('request', (r) => {
+        if (r.isNavigationRequest() && new URL(r.url()).pathname === UDP) loadAt = Date.now();
+      });
+      await press(page, '.console__track a[href$="what-is-udp"]');
+      await page.waitForURL(`**${UDP}`, { timeout: 8000 });
+      expect(loadAt - answered, 'the load starts within 150 ms of the answer').toBeLessThan(150);
+      expect((await sameDocument(page)).mark).toBe(false);
+    });
+  }
+
+  test('late but good: held 1900 ms is a swap; held 2300 ms is a load, and the late answer does not swap the old page (B44-8.3)', async ({ page }) => {
+    await hold(page, 'what-is-udp', 1850);
+    await openMarked(page, TCP);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`), { timeout: 5000 });
+    expect((await sameDocument(page)).mark).toBe(true);
+    // Too late.
+    await page.unroute(jsonOf('what-is-udp'));
+    await page.goto(TCP);
+    await hydrated(page);
+    await openMarked(page, TCP);
+    await hold(page, 'what-is-udp', 2300);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await page.waitForURL(`**${UDP}`, { timeout: 8000 });
+    await page.waitForTimeout(500);
+    expect((await sameDocument(page)).mark).toBe(false);
+  });
+
+  test('Back with no answer: at 2000 ms the page reloads, with no added entry (B44-8.4)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await row(page, 'what-is-udp').click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await hold(page, 'what-is-tcp', Infinity);
+    const length = await page.evaluate(() => history.length);
+    await page.evaluate(() => history.back());
+    await page.waitForEvent('load', { timeout: 8000 });
+    await hydrated(page);
+    expect(new URL(page.url()).pathname).toBe(TCP);
+    expect(await page.evaluate(() => history.length)).toBe(length);
+    expect((await sameDocument(page)).mark).toBe(false);
+  });
+
+  test('a second press during the wait takes over: one fetch is left, the going mark is on the second row, the swap is to the second lesson, one new entry (D-24)', async ({ page }) => {
+    await hold(page, 'what-is-udp', 1500);
+    await hold(page, 'what-is-ip', 500);
+    const aborted: string[] = [];
+    page.on('requestfailed', (r) => {
+      if (new URL(r.url()).pathname.endsWith('.json')) aborted.push(`${new URL(r.url()).pathname} ${r.failure()?.errorText}`);
+    });
+    await openMarked(page, TCP);
+    const length = await page.evaluate(() => history.length);
+    await row(page, 'what-is-udp').click();
+    await expect(row(page, 'what-is-udp')).toHaveAttribute('data-going', '');
+    await row(page, 'what-is-ip').click();
+    await expect(row(page, 'what-is-ip')).toHaveAttribute('data-going', '');
+    await expect(page.locator('.console [data-going]')).toHaveCount(1);
+    await expect(page).toHaveURL(/what-is-ip$/);
+    // UDP's late answer must not swap anything.
+    await page.waitForTimeout(1800);
+    await expect(page).toHaveURL(/what-is-ip$/);
+    expect(await page.evaluate(() => history.length)).toBe(length + 1);
+    expect(aborted).toStrictEqual([`${UDP}.json net::ERR_ABORTED`]);
+    await expect(live(page)).toHaveText('IP. Lesson 5 of 14. Overview.');
+  });
+});
+
+// ================================================================ the film probe (B44-9)
+
+test.describe('the film', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+
+  test('TCP to UDP by "Next lesson", filmed from the click: no frame is neither lesson, and the first frame that is not TCP is UDP whole (B44-9.1)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    await settle(page);
+    await page.waitForTimeout(1500);
+    const cdp = await page.context().newCDPSession(page);
+    const frames: { t: number; data: string }[] = [];
+    cdp.on('Page.screencastFrame', (f) => {
+      frames.push({ t: f.metadata.timestamp!, data: f.data });
+      cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
+    });
+    await cdp.send('Page.startScreencast', { format: 'png', everyNthFrame: 1 });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => (document.querySelector('.console__controls .cbtn--go') as HTMLElement).click());
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await page.waitForTimeout(1500);
+    await cdp.send('Page.stopScreencast');
+    // Frames sorted by what they show: the first one is TCP as it stood, the last is UDP as it ends; anything else is a frame a reader saw in between.
+    const kinds = frames.map((f) => (f.data === frames[0]!.data ? 'old' : f.data === frames.at(-1)!.data ? 'new' : 'mid'));
+    const mids = kinds.filter((k) => k === 'mid').length;
+    expect(frames.length, 'frames were presented').toBeGreaterThan(1);
+    expect(mids, `${mids} frames show neither lesson (the swap is one frame)`).toBe(0);
+    // The page is still the same document, with no empty stage at any time: the drawing node was never made again.
+    expect((await sameDocument(page)).svg).toBe(true);
+  });
+});
