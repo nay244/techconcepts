@@ -175,8 +175,9 @@ export function useLessonChange(initial: LessonView, trackId: string, entries: L
       const controller = new AbortController();
       const running: Job = { controller, timers: [] };
       job.current = running;
-      const carried = latest.current.wait !== null && latest.current.wait.phase !== 'idle';
-      setWait({ going: how === 'row' || how === 'sheet' ? entry.key : null, phase: carried ? 'signal' : 'idle', title: entry.title });
+      // A press during a wait takes over with the marks already up kept as they are (no gap, and the live region never drops back to the old place's line).
+      const phase = latest.current.wait?.phase ?? 'idle';
+      setWait({ going: how === 'row' || how === 'sheet' ? entry.key : null, phase, title: entry.title });
       const at = (ms: number, run: () => void) => running.timers.push(setTimeout(() => job.current === running && run(), ms));
       at(SIGNAL_MS, () => setWait((w) => (w === null ? w : { ...w, phase: w.phase === 'tape' ? 'tape' : 'signal' })));
       at(TAPE_MS, () => setWait((w) => (w === null ? w : { ...w, phase: 'tape' })));

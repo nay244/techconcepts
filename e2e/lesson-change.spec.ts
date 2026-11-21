@@ -500,6 +500,11 @@ test.describe('state', () => {
     const handshake = page.locator('button.explain__term[aria-controls="def-term-handshake"]');
     await handshake.click();
     await expect(handshake).toHaveAttribute('aria-expanded', 'true');
+    // The deeper box and the log's fold, open as the reader left them.
+    await page.locator('details.explain__deeper > summary').click();
+    await expect(page.locator('details.explain__deeper')).toHaveAttribute('open', '');
+    await page.locator('.log__fold').click();
+    await expect(page.locator('.log__fold')).toHaveAttribute('aria-expanded', 'true');
     await nextButton(page).click(); // Practice
     await nextButton(page).click(); // Next lesson: TCP
     await expect(page).toHaveURL(/\/what-is-tcp$/);
@@ -507,7 +512,8 @@ test.describe('state', () => {
     for (let i = 0; i < 14 && (await page.locator('.explain__kicker').textContent()) !== 'Learn'; i += 1) await nextButton(page).click();
     await expect(page.locator('button.explain__term[aria-controls="def-term-handshake"]')).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('button.explain__term[aria-expanded="true"]')).toHaveCount(0);
-    // The log's fold is closed as a load has it.
+    // The deeper box and the log's fold are closed as a load has them.
+    await expect(page.locator('details.explain__deeper[open]')).toHaveCount(0);
     await expect(page.locator('.log__fold[aria-expanded="true"]')).toHaveCount(0);
   });
 
@@ -552,13 +558,20 @@ test.describe('what is not a swap', () => {
 
   /** Presses with `action` and expects a page load of `path`, with no data fetched and no mark ever drawn. */
   async function expectLoad(page: Page, path: string, action: () => Promise<void>, json: string[]): Promise<void> {
+    // The marks are looked for from inside the page and the answer is kept in sessionStorage, which outlives the load that follows.
     await page.evaluate(() => {
-      (window as unknown as { __t0: number }).__t0 = performance.now();
+      sessionStorage.removeItem('__marks');
+      const look = () => {
+        if (document.querySelector('.console [data-going], .console .signal, .console .tape') !== null) sessionStorage.setItem('__marks', 'shown');
+      };
+      new MutationObserver(look).observe(document.documentElement, { subtree: true, childList: true, attributes: true });
+      look();
     });
-    await recordMarks(page);
     const navigated = page.waitForEvent('framenavigated', (f) => f === page.mainFrame() && new URL(f.url()).pathname === path);
     await action();
     await navigated;
+    await page.waitForLoadState('domcontentloaded');
+    expect(await page.evaluate(() => sessionStorage.getItem('__marks')), 'no going mark, signal or tape in any frame of a load').toBeNull();
     expect(json, 'no lesson data fetched').toStrictEqual([]);
   }
 
@@ -1182,6 +1195,24 @@ test.describe('the sheet at 375', () => {
     await page.evaluate(() => (document.querySelector('.outline__dialog a[href$="/nat"]') as HTMLElement).click());
     await expect(page).toHaveURL(/\/networking\/nat$/);
     await expect(page.getByRole('button', { name: 'Explain', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+test.describe('the tape at 1440 x 900', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('"Opening TLS/SSL" clears the scene\'s title line and the view switch (D-11)', async ({ page }) => {
+    await hold(page, 'what-is-tls', 1700);
+    await openMarked(page, '/networking/what-is-https');
+    await pressRowQuiet(page, 'what-is-tls');
+    await expect(page.locator('.console__top .tape')).toHaveText('Opening TLS/SSL');
+    const clear = await page.evaluate(() => {
+      const tape = document.querySelector('.console__top .tape')!.getBoundingClientRect();
+      const boxes = ['.stage__title', '.stage__views'].map((s) => document.querySelector(s)?.getBoundingClientRect()).filter((b): b is DOMRect => b !== undefined);
+      return { count: boxes.length, clear: boxes.every((b) => tape.right <= b.left || tape.left >= b.right || tape.bottom <= b.top || tape.top >= b.bottom) };
+    });
+    expect(clear.count).toBeGreaterThan(0);
+    expect(clear.clear).toBe(true);
   });
 });
 

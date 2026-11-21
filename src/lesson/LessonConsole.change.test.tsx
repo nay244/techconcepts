@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { buildEntries, neighbors, type AvailableSummary } from '../content/registry';
@@ -167,4 +167,46 @@ test('"Next lesson" to a lesson of another drawing calls navigate, not the host 
   await user.click(forward());
   expect(p.navigate).toHaveBeenCalledExactlyOnceWith('/networking/firewalls');
   expect(fetch).not.toHaveBeenCalled();
+});
+
+test('a second press while "Opening ..." is up: the live region goes from one "Opening" to the next and never back to the old place\'s line (review fix 1, D26 section 10)', async () => {
+  const user = userEvent.setup();
+  const lessons = ['what-is-http', 'what-is-https', 'what-is-tcp'].map((slug) => liftedFixture(makeLesson({ slug, title: slug.replace('what-is-', '').toUpperCase(), figure: 'net-map' })));
+  const entries = buildEntries(internetTrack, { 'what-is-http': lessons[0]!, 'what-is-https': lessons[1]!, 'what-is-tcp': lessons[2]! }, () => 'how-the-internet-works');
+  const entry = entries.find((e): e is AvailableSummary => e.available && e.slug === 'what-is-http')!;
+  window.history.replaceState({}, '', entry.url);
+  // The data never comes.
+  vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+  render(<LessonConsole trackId={internetTrack.id} trackTitle={internetTrack.title} lesson={lessons[0]!} entry={entry} total={entries.length} next={neighbors(entries, 'what-is-http').next} nextFigure={null} entries={entries} navigate={vi.fn()} />);
+  const heard: string[] = [];
+  new MutationObserver(() => {
+    const text = region() ?? '';
+    if (heard.at(-1) !== text) heard.push(text);
+  }).observe(document.querySelector('[data-announce]')!, { childList: true, characterData: true, subtree: true });
+  await user.click(document.querySelector('a.outline__lesson[href$="what-is-https"]')!);
+  await waitFor(() => expect(region()).toBe('Opening HTTPS.'), { timeout: 1500 });
+  await user.click(document.querySelector('a.outline__lesson[href$="what-is-tcp"]')!);
+  await waitFor(() => expect(region()).toBe('Opening TCP.'), { timeout: 1500 });
+  expect(heard).not.toContain('Overview');
+  expect(heard.filter((t) => t.startsWith('Opening'))).toStrictEqual(['Opening HTTPS.', 'Opening TCP.']);
+});
+
+test('the Table tab\'s "changed" mark starts again in the next lesson: a change seen in the old table does not hide the new one (review fix 4, B44-5.6)', async () => {
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('prefers-reduced-motion'), media: q, addEventListener() {}, removeEventListener() {} }));
+  const user = userEvent.setup();
+  const first = props(DHCP);
+  const { rerender } = render(<Console {...first} />);
+  const tabs = () => screen.getByRole('group', { name: 'Show' });
+  const goTo = async (steps: number) => {
+    for (let i = 0; i < steps; i += 1) await user.click(document.querySelector('.cbtn--go')!);
+  };
+  await goTo(2); // step 2: the table's first row
+  await user.click(screen.getByRole('button', { name: /^Table/ }));
+  expect(screen.getByRole('button', { name: 'Table' })).toHaveAttribute('aria-pressed', 'true');
+  // The next lesson, whose table has the very same event ids.
+  const second = props(MAC);
+  rerender(<Console {...second} arrived={{ text: lessonLine(second, 20), id: 1 }} />);
+  expect(screen.getByRole('button', { name: 'Explain' })).toHaveAttribute('aria-pressed', 'true');
+  await goTo(2);
+  expect(within(tabs()).getByRole('button', { name: 'Table, changed' })).toBeTruthy();
 });
