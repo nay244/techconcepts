@@ -1,3 +1,4 @@
+import { flushSync } from 'react-dom';
 import { useLayoutEffect, useRef, useState, type Dispatch } from 'react';
 import type { Lesson, Unit } from '../content/schema';
 import { canReplay, playButton, SPEEDS, type ForwardButton, type PlaybackAction, type PlaybackState } from '../engine/playback';
@@ -73,7 +74,8 @@ export function PlaybackControls({ lesson, state, dispatch, unit, forward, form:
       setFits(full.getBoundingClientRect().width <= room + 0.5);
     };
     check();
-    const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check);
+    // flushSync: the observer's update commits in the frame the size changed, so no frame paints the old form.
+    const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => flushSync(check));
     if (go.current !== null) watch?.observe(go.current);
     void document.fonts?.ready.then(check);
     return () => watch?.disconnect();

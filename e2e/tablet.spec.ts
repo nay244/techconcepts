@@ -445,3 +445,145 @@ for (const theme of THEMES) test.describe(`with JavaScript off, ${theme} theme`,
     });
   }
 });
+
+/**
+ * B39 (job 29): the forward button's fit commits in the frame its size changes. Two probes, each made after hydration and
+ * made again right before each resize, so each runs after the page's own ResizeObserver (observers run in the order they were
+ * made): an IntersectionObserver rooted on the button sees a cut label or arrow (ratio under 1); a ResizeObserver reads
+ * whether the form shown is the one that fits, as the page's check does. An entry for an arrow that is not rendered
+ * (the arrow is display:none below 1100px: it has no box) is not a frame a reader sees, and is skipped. Neither reads text in an IntersectionObserver callback.
+ */
+type FitRec = { k: 'io' | 'ro'; r?: number; fits?: boolean; full?: boolean; t: string; room?: number };
+const FIT_LESSONS = [
+  '/networking/dhcp?step=2',
+  '/networking/firewalls?step=2',
+  '/networking/load-balancers?step=1',
+  '/how-the-internet-works/what-is-https?step=3',
+  '/networking/subnetting?step=1',
+  '/networking/proxies?step=3',
+];
+const frames = (page: Page, n: number) =>
+  page.evaluate((count) => new Promise<void>((done) => { let i = 0; const f = () => (++i >= count ? done() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
+const installFitProbe = (page: Page) =>
+  page.evaluate(() => {
+    const w = window as unknown as { __fit?: { io: IntersectionObserver; ro: ResizeObserver; rec: unknown[] } };
+    w.__fit?.io.disconnect();
+    w.__fit?.ro.disconnect();
+    const button = document.querySelector<HTMLElement>('.cbtn--go')!;
+    const label = button.querySelector<HTMLElement>('.go__label')!;
+    const arrow = button.querySelector<SVGElement>('svg')!;
+    const rec: unknown[] = [];
+    const io = new IntersectionObserver(
+      (entries) => { for (const e of entries) if (e.target.isConnected && e.rootBounds !== null && e.rootBounds.width > 0) rec.push({ k: 'io', r: e.intersectionRatio, t: e.target === arrow ? 'arrow' : label.textContent }); },
+      { root: button, threshold: [0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99, 1] },
+    );
+    io.observe(label);
+    io.observe(arrow);
+    const ro = new ResizeObserver(() => {
+      const measure = button.querySelector<HTMLElement>('.go__measure');
+      if (!measure) return;
+      const s = getComputedStyle(button);
+      const room = button.clientWidth - parseFloat(s.paddingLeft) - parseFloat(s.paddingRight);
+      rec.push({ k: 'ro', fits: measure.getBoundingClientRect().width <= room + 0.5, full: label.textContent === measure.textContent, t: label.textContent, room: Math.round(room) });
+    });
+    ro.observe(button);
+    w.__fit = { io, ro, rec };
+  });
+const takeFit = (page: Page) => page.evaluate(() => (window as unknown as { __fit: { rec: FitRec[] } }).__fit.rec.splice(0));
+
+test.describe('B39: the forward button fits in the frame its size changes', () => {
+  test.setTimeout(120_000);
+  for (const path of FIT_LESSONS) {
+    for (const [from, to] of [
+      [[768, 1024], [1024, 768]],
+      [[1024, 768], [768, 1024]],
+    ] as const) {
+      test(`5-7 ${path} ${from.join('x')} -> ${to.join('x')}`, async ({ page }) => {
+        await page.setViewportSize({ width: from[0], height: from[1] });
+        await page.goto(path);
+        await hydrated(page);
+        await page.evaluate(() => document.fonts.ready);
+        await frames(page, 3);
+        await installFitProbe(page);
+        await frames(page, 2);
+        const init = await takeFit(page);
+        const before = await page.locator('.cbtn--go .go__label').textContent();
+        await page.setViewportSize({ width: to[0], height: to[1] });
+        await frames(page, 4);
+        const after = await takeFit(page);
+        // Not vacuous: the probe watched (the first entry, ratio 1), the form changed, the late observer fired.
+        expect(init.some((r) => r.k === 'io' && r.r === 1), 'io saw the button whole before the turn').toBe(true);
+        expect(await page.locator('.cbtn--go .go__label').textContent(), 'the form changed').not.toBe(before);
+        const ros = after.filter((r) => r.k === 'ro');
+        expect(ros.length, 'the late observer fired after the resize').toBeGreaterThan(0);
+        // The verdicts.
+        expect(after.filter((r) => r.k === 'io' && r.r! < 0.999).map((r) => `${r.r!.toFixed(2)} ${r.t}`), 'cut label or arrow painted').toEqual([]);
+        expect(ros.filter((r) => r.fits !== r.full).map((r) => `fits=${r.fits} shown="${r.t}" room=${r.room}`), 'the wrong form painted').toEqual([]);
+      });
+    }
+  }
+
+  // Case 3: the mode changes (full -> fit at 1100, short -> fit at 761) still give the right form in the first frame.
+  for (const [from, to] of [
+    [[1100, 900], [1099, 900]],
+    [[760, 900], [761, 900]],
+  ] as const) {
+    test(`3 the mode turn ${from.join('x')} -> ${to.join('x')}`, async ({ page }) => {
+      await page.setViewportSize({ width: from[0], height: from[1] });
+      await page.goto(FIT_LESSONS[0]);
+      await hydrated(page);
+      await page.evaluate(() => document.fonts.ready);
+      await frames(page, 3);
+      await installFitProbe(page);
+      await frames(page, 2);
+      const init = await takeFit(page);
+      await page.setViewportSize({ width: to[0], height: to[1] });
+      await frames(page, 4);
+      const after = await takeFit(page);
+      expect(init.some((r) => r.k === 'io' && r.r === 1), 'io saw the button whole before the turn').toBe(true);
+      expect(after.filter((r) => r.k === 'io' && r.r! < 0.999).map((r) => `${r.r!.toFixed(2)} ${r.t}`), 'cut label or arrow painted').toEqual([]);
+      expect(after.filter((r) => r.k === 'ro' && r.fits !== r.full).map((r) => `fits=${r.fits} shown="${r.t}" room=${r.room}`), 'the wrong form painted').toEqual([]);
+    });
+  }
+
+  test('9 the sweep 1120 -> 740 -> 1120 by 7px: no cut and no wrong frame', async ({ page }) => {
+    await page.setViewportSize({ width: 1120, height: 900 });
+    await page.goto(FIT_LESSONS[0]);
+    await hydrated(page);
+    await page.evaluate(() => document.fonts.ready);
+    await frames(page, 3);
+    const widths: number[] = [];
+    for (let x = 1120; x >= 740; x -= 7) widths.push(x);
+    for (let x = 740; x <= 1120; x += 7) widths.push(x);
+    const bad: string[] = [];
+    for (const x of widths) {
+      await frames(page, 2);
+      await installFitProbe(page);
+      await frames(page, 2);
+      await takeFit(page);
+      await page.setViewportSize({ width: x, height: 900 });
+      await frames(page, 4);
+      for (const r of await takeFit(page)) {
+        if (r.k === 'io' && r.r! < 0.999) bad.push(`${x} cut ${r.r} ${r.t}`);
+        if (r.k === 'ro' && r.fits !== r.full) bad.push(`${x} wrong ${r.t}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  test('2 focus stays on the forward button across a turn', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto(FIT_LESSONS[0]);
+    await hydrated(page);
+    await frames(page, 3);
+    await page.locator('.cbtn--go').focus();
+    await page.evaluate(() => { (window as unknown as { __go: Element | null }).__go = document.activeElement; });
+    const nameBefore = await page.locator('.cbtn--go').getAttribute('aria-label');
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await frames(page, 4);
+    const r = await page.evaluate(() => ({ same: document.activeElement === (window as unknown as { __go: Element }).__go, name: document.activeElement?.getAttribute('aria-label'), label: document.activeElement?.querySelector('.go__label')?.textContent }));
+    expect(r.same).toBe(true);
+    expect(r.name, 'the name follows the form shown, in the same commit').not.toBe(nameBefore);
+    expect(r.label).not.toBeNull();
+  });
+});
