@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 29: the open items of jobs 24 to 28
 
-**Status: planned (2026-11-20; 2.141), waiting for the owner's go.** Started from the session that closed job 28, while that session ran the full `npm run e2e` in the main folder. Numbers claimed on `revamp` (e9d0fe2, checked free): job 29, direction rows from 2.141, D24, B37 to B41, S26, F29.
+**Status: planned (2026-11-20; 2.141), waiting for the owner's go.** Started from the session that closed job 28, while that session ran the full `npm run e2e` in the main folder. Numbers claimed on `revamp` (e9d0fe2, checked free): job 29, direction rows from 2.141, D24, B37 to B41, S26, F29; D25 and B42 added (2.143, 2.144).
 
 ## Inputs
 
@@ -45,11 +45,12 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | D24 | design | designer (Opus 5.5) | Item 1: how Firewalls' guide shows the rule being read, at 1440 (the guide's capped rules table) and at 375 (the Table tab); two variants at most; `prototypes/d24-firewalls-guide.html` and `.md`. | The prototype plays step 2 at 1× and shows every rule read in view; both widths looked at in the browser; the owner's design gate. |
 | B37–B40 spec | build | reviewer (Opus) | On the owner's go: holes and attack cases for decisions 1 to 4, from the diagnosis and S26. Measures Home's open header at 320 to 959. | Holes with one answer closed as errata; cases in `prototypes/b37-cases.md` to `b40-cases.md`. |
 | B37 | build | builder (Sonnet) | Decision 3. `.superpowers/wt/b37`, `job29/b37`, `E2E_PORT=4531`. | Home's walk at 320 and 375, menu open and closed: 0 stops under the header; Home's anchors (`#` links) and the demo's inputs land within 1px of `revamp`; the footer rings uncut on Home, Tracks and both track pages; the walk (`site-chrome.spec.ts` 44 to 49) green in `d1440-dark` and `reduced-motion`; `tracks-card-stack`, `track-page-card-stack`, `card-stack-home`, `glossary` specs; `npm test`; `npm run build`. |
-| B38 | build | builder (Sonnet, B37's continued) | Decision 4, after B37 merges. `.superpowers/wt/b38`, `job29/b38`, `E2E_PORT=4533`. | `npm test`; `npm run build`; the built pages compared with B37's: only the header's script and style differ; `site-chrome.spec.ts` and `site.spec.ts` in `d1440-dark`. |
+| B38 | build | builder (Sonnet, B37's continued) | Decision 4, after B42 merges, with the Lesson page's now-redundant menu handler (`LessonConsole.tsx:203-215`, 2.144). `.superpowers/wt/b38`, `job29/b38`, `E2E_PORT=4533`. | `npm test`; `npm run build`; the built pages compared with B37's: only the header's script and style differ; `site-chrome.spec.ts` and `site.spec.ts` in `d1440-dark`. |
 | B37+B38 review | build | reviewer (Opus) | Both diffs against this section and the cases. | PASS, or PASS WITH FIXES with each "fixed when" run. |
 | B39 | build | builder (Sonnet) | Decision 2. `.superpowers/wt/b39`, `job29/b39`, `E2E_PORT=4534`. | The probe red on `revamp` (six lessons), green on the build at `--repeat-each=10 --workers=3`; `tablet` project; the lesson specs in `d1440-dark`; `npm test`; `npm run build`. |
 | B39 review | build | reviewer (Opus) | The diff against this section and the cases. | PASS, or PASS WITH FIXES. |
 | B40 | build | builder (Sonnet) | Decision 1. `.superpowers/wt/b40`, `job29/b40`, `E2E_PORT=4536`. | `:954` green at `--repeat-each=30 --workers=4` in `reduced-motion` and `d1440-dark` (the as-written copy failed 1 in 20); red on a seed it guards; the whole spec once at `reduced-motion`; `npm test`. |
+| B42 | build | builder (Sonnet, B37's continued) | D25 as approved (2.144), after B37 merges: the `focusin` rule in `SiteHeader.astro`, the walk's open `STOPS`, Home's open rows asserted, the specs that expected the panel open after focus left it. `.superpowers/wt/b42`, `job29/b42`, `E2E_PORT=4531`. | D25's acceptance checks; the walk 44 to 49 and case 51; `not-found`, `about`, `track-page-card-stack`, `site`, `lesson-layout-small` specs in `d1440-dark` and `reduced-motion`; `npm test`; `npm run build`. Reviewed with B37 and B38. |
 | B41 | build | spec review, builder, reviewer | D24 as approved, after the design gate. | From the approved spec. |
 | F29 | end | orchestrator (Opus 5.5) | Into `job29/int`, then `revamp`; vitest, build, CI's end-to-end pass with the machine kept awake. | As "Done means". |
 
