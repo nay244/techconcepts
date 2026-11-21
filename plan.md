@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 29: the open items of jobs 24 to 28
 
-**Status: planned (2026-11-20; 2.141), waiting for the owner's go.** Started from the session that closed job 28, while that session ran the full `npm run e2e` in the main folder. Numbers claimed on `revamp` (e9d0fe2, checked free): job 29, direction rows from 2.141, D24, B37 to B41, S26, F29; D25 and B42 added (2.143, 2.144).
+**Status: done (2026-11-21; 2.147): every item fixed, merged into `job29/int` and `revamp`, verified; nothing pushed.** Planned under 2.141, go and D24 approved 2.142, D25 approved 2.144. Started from the session that closed job 28, while that session ran the full `npm run e2e` in the main folder. Numbers claimed on `revamp` (e9d0fe2, checked free): job 29, direction rows from 2.141, D24, B37 to B41, S26, F29; D25 and B42 added (2.143, 2.144).
 
 ## Inputs
 

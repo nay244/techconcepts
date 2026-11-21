@@ -1509,3 +1509,29 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 | B41 review | reviewer | Opus | 1 | 92,420 | PASS WITH FIXES, no blocker: matches the prototype at 1440 and 375; skipped e2e cases covered by unit tests. Three tests that could not fail. Fixed when, run by the orchestrator: the `closest` filter swapped for `document.querySelector` turns D5b red; Pause letting go turns D5 red; built 36/36; the guide's scroll compared before and after. Notes: a tall first row moves twice (to 0, then 4px); case 66's baselines not listed. Merged. |
 | B37 | builder | Sonnet | 2 | 179,438 | Commit b178da6 on `job29/b37`: Home's root padding 80 / 12 / 403 open with E26's 81px radios and margins; Tracks and the track pages 12px at the foot; five pins, the guards' grants (`pageGrant`, comment lines free), the walk strict on every page; new `e2e/home-scroll-padding.spec.ts`, 110 landings per size within 1px of ec80bf5. Every named spec green in `d1440-dark` and `reduced-motion`; red proofs for the radio height, a margin and four guard mutations; build ok. Fixes 69900da (with B42's work, counted there). |
 | B37 review | reviewer | Opus | 1 | 72,482 | PASS WITH FIXES, no blocker: the guards had lost `[track]/[lesson].astro`; the walk's exemption hid the Watch tab too. `pageGrant` as strict as job 24's on every line not a comment. Fixed when, run by the orchestrator: a comment appended to `[lesson].astro` turns all three guards red, 64/64 as built; Home's walk 2/2 in both projects with the narrowed exemption. The builder also moved `not-found.spec.ts` 44's pin, which B37 had turned red. Merged. |
+| B42 | builder | Sonnet | 1 | 69,200 | B37's builder continued (with B37's two fixes, 69900da). Commit 802321d on `job29/b42`: D25's `focusin` rule in `SiteHeader.astro` with `SITE_HEADER_GRANT`; 24 open `STOPS` keys, every open row asserted with 0 under; new `menu-closes-on-focus-leave.spec.ts`, red with the rule inverted; `not-found` 47, `about` and track-page open-menu reads changed. Fix 46aecdc (after the review, 2,342): D25 check 3 at 375. |
+| B38 | builder | Sonnet | 1 | 50,099 | Continued. Commit 0d7f2cc on `job29/b38`: `overHero` and its noscript rule, six dead files and the Lesson page's menu handler gone; stale words fixed; grants for `BaseLayout.astro`, `SiteFooter.astro`, `logo.ts`. E34's comparison with a B42 build: HTML equal once hashes, island ids and the noscript rule are masked; the CSS less exactly four rules; the header script 1,690 → 1,446 bytes; LessonConsole's script smaller. vitest 2,584; build ok. |
+| B42+B38 review | reviewer | Opus | 1 | 94,349 | PASS WITH FIXES, no blocker: D25 check 3's within-1px untested. The Lesson page's menu still closes (case 47 red with the header's rule disabled). Fixed when, run by the orchestrator: test 3 red 2/2 without `setOpen(false)`, the spec 42/42 as built. Notes: whole-line `//` comments free in every guard; check 11 holds by construction. Merged at 551e66b. |
+| F29 | orchestrator | Opus 5.5 | 1 | not counted | Diagnosis of items 5 and 6 (three instrumented specs, about 200 runs, the `flushSync` trial); errata E26–E60 closed, two ruled; merges; every "fixed when" run. On `job29/int` at 551e66b: vitest 2,601 passed (172 files); build within budget on 42 pages; CI's end-to-end pass 1,433 passed, 10 skipped, 0 failed (25.3 min, `--trace=off`, the machine kept awake). |
+
+## Spend by role
+
+| Role | Model | Growth |
+|---|---|---|
+| designer (D24, D25) | Opus 5.5 | 486,041 |
+| reviewer (two spec reviews, four build reviews) | Opus | 795,460 |
+| builder (B37, B42, B38 one continued; B39; B40; B41) | Sonnet | 736,346 |
+| scout (S26) | Haiku | 156,832 |
+| **Total** | | **2,174,679** (estimate 1.1 to 1.7 million before D25 and B42 were added; stop at 2.2, not reached) |
+
+## Could go one model lower next time
+
+- The B39 and B42+B38 build reviews re-ran scripted cases and found one test each that could not fail; a Sonnet reviewer told to break each guarded line would likely have found them.
+
+## What to do differently next time
+
+- **A spec review that trials the plan finds what the plan's own check would miss.** B37's check list did not run `site.spec.ts`; the reviewer's trial of decision 3 turned seven of D17's tap tests red. Name every spec that pins a page's behaviour in a unit's check, not only the ones about the change.
+- **A diagnosis's probe must run after the page's own observer.** The fit probe's `ResizeObserver` was made first, so it read the old form even on the fix (E38); make probes after hydration and again before each change.
+- **Four units building at once drove the load to 19** and the unit suite timed out in files no unit touched; run the final checks with the machine quiet.
+- **Review a unit on its own before stacking two more on it.** B37 was reviewed while B42 built on top, so its two fixes were made once and rebased, not found after three units.
+
