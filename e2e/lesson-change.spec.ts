@@ -17,8 +17,6 @@ test.beforeEach(({ page: _page }, testInfo) => {
 const HTIW = '/how-the-internet-works';
 const TCP = `${HTIW}/what-is-tcp`;
 const UDP = `${HTIW}/what-is-udp`;
-/** How the Internet Works, in order (14 lessons). */
-const HTIW_ORDER = ['what-is-ip', 'what-is-dns', 'what-is-tcp', 'what-is-udp', 'what-is-http', 'what-is-https', 'what-is-dhcp', 'what-is-icmp', 'what-is-smtp', 'what-is-imap', 'what-is-pop3', 'what-is-ftp', 'what-is-ssh', 'what-is-tls'];
 /** Networking's lessons that draw `net-map`, in the track's order: each is opened from the one before by the outline. */
 const NET_MAP_NETWORKING = ['ports', 'tcp-udp', 'nat', 'what-is-dns', 'what-is-http', 'what-is-https', 'what-is-tls', 'proxies', 'vpn', 'packets', 'arp', 'router'];
 
@@ -104,6 +102,8 @@ async function snapshot(page: Page) {
     while (walker.nextNode()) comments.push(walker.currentNode);
     comments.forEach((c) => c.parentNode?.removeChild(c));
     clone.normalize();
+    // useId's ids count the components a page has made; a swapped page's are not a fresh page's. The pairs still match.
+    // (Done on the text below.)
     // The order attributes were written in is not a difference a reader can see.
     clone.querySelectorAll('*').forEach((e) => {
       const attrs = [...e.attributes].map((a) => [a.name, a.value] as const).sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0));
@@ -111,8 +111,9 @@ async function snapshot(page: Page) {
       for (const [name, value] of attrs) e.setAttribute(name, value);
     });
     const svg = clone.querySelector('svg[data-figure]');
+    const ids = (html: string) => html.replace(/_r[0-9a-z]+_[0-9a-z_-]*/g, '_ID_');
     return {
-      console: clone.outerHTML,
+      console: ids(clone.outerHTML),
       svg: svg === null ? '' : svg.outerHTML,
       head: {
         title: document.title,
@@ -333,5 +334,212 @@ test.describe('a swap at 1440', () => {
         }),
     );
     expect(seen).toStrictEqual({ opacity: '1', animations: 0 });
+  });
+});
+
+// ================================================================ a swapped lesson is a loaded one (decision 5)
+
+test.describe('equality along the tracks', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+  test.setTimeout(600_000);
+
+  test('along all 14 lessons of How the Internet Works by "Next lesson": at the Overview and walked to the last position, equal to a fresh load (B44-3.5)', async ({ page, context }) => {
+    const errors = collectErrors(page);
+    // The track's order, read from the page: the lesson links in the column's lesson links, folded parts included.
+    await open(page, TCP);
+    const order = await page.evaluate(() => [...document.querySelectorAll('.console__track a.outline__lesson')].map((a) => a.getAttribute('href')!.split('/').pop()!));
+    expect(order).toHaveLength(14);
+    await openMarked(page, `${HTIW}/${order[0]}`);
+    const HTIW_ORDER = order;
+    let swaps = 0;
+    for (let i = 0; i < HTIW_ORDER.length; i += 1) {
+      const slug = HTIW_ORDER[i]!;
+      if (i > 0) await expectEqualToFresh(page, context, `${HTIW_ORDER[i - 1]} to ${slug}, Overview`, false);
+      await walkToPractice(page);
+      await settle(page);
+      if (i > 0) await expectEqualToFresh(page, context, `${slug}, walked`, true);
+      if (i === HTIW_ORDER.length - 1) break;
+      await nextButton(page).click();
+      await expect(page).toHaveURL(new RegExp(`/${HTIW_ORDER[i + 1]}$`));
+      swaps += 1;
+    }
+    expect(swaps).toBe(13);
+    expect(await sameDocument(page)).toStrictEqual({ mark: true, navigations: 1, svg: true, svgCount: 1, slot: 1 });
+    expect(errors).toStrictEqual([]);
+  });
+
+  test('across Networking\'s 12 net-map lessons by the outline: equal to a fresh load, the document and the drawing node kept (B44-3.5)', async ({ page, context }) => {
+    const errors = collectErrors(page);
+    await openMarked(page, `/networking/${NET_MAP_NETWORKING[0]}`);
+    for (let i = 1; i < NET_MAP_NETWORKING.length; i += 1) {
+      const slug = NET_MAP_NETWORKING[i]!;
+      await walkToPractice(page);
+      await settle(page);
+      await pressRow(page, slug);
+      await expect(page).toHaveURL(new RegExp(`/networking/${slug}$`));
+      await expectEqualToFresh(page, context, `Networking ${NET_MAP_NETWORKING[i - 1]} to ${slug}, Overview`, false);
+      await walkToPractice(page);
+      await settle(page);
+      await expectEqualToFresh(page, context, `Networking ${slug}, walked`, true);
+    }
+    expect(await sameDocument(page)).toMatchObject({ mark: true, navigations: 1, svg: true, svgCount: 1 });
+    expect(errors).toStrictEqual([]);
+  });
+
+  test('the longer old lesson: TCP walked to its end, "Next lesson": UDP opens at its Overview, no error, its words (B44-3.6)', async ({ page }) => {
+    const errors = collectErrors(page);
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    await nextButton(page).click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Overview');
+    await expect(page.locator('.console__explain .explain__title')).toHaveText('UDP');
+    expect(errors).toStrictEqual([]);
+  });
+
+  test('a lesson listed in both tracks keeps the address under the track it is read in; the canonical is the home\'s (B44-0.6, 3.2)', async ({ page }) => {
+    await openMarked(page, '/networking/nat');
+    await pressRow(page, 'what-is-dns');
+    await expect(page).toHaveURL(/\/networking\/what-is-dns$/);
+    expect(await page.evaluate(() => document.querySelector('link[rel="canonical"]')!.getAttribute('href'))).toBe(`https://techconcepts.app${HTIW}/what-is-dns`);
+    expect(await page.evaluate(() => document.querySelector('meta[property="og:url"]')!.getAttribute('content'))).toBe(`https://techconcepts.app${HTIW}/what-is-dns`);
+    await expect(live(page)).toHaveText('DNS. Lesson 13 of 20. Overview.');
+    // Same lesson in the other track's address is another page: the number is that track's.
+    await expect(page.locator('.console__track .top__of, .track__lesson .top__of')).toHaveText('Lesson 13 of 20');
+  });
+});
+
+// ================================================================ what carries over and what starts again
+
+test.describe('state', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('Play all running when UDP is pressed: UDP is idle at its Overview and no timer of TCP\'s run reaches it (B44-4.1, D-28)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await playButton(page).click();
+    await expect(playButton(page)).toHaveText('Pause');
+    await row(page, 'what-is-udp').click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await expect(playButton(page)).toHaveText('Play all');
+    await page.waitForTimeout(3000);
+    await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Overview');
+    await expect(playButton(page)).toHaveText('Play all');
+  });
+
+  test('?step= in the old address: the swap opens the Overview at the lesson\'s own address, offers Resume when UDP has a place, never deep-links (B44-4.2, 4.3, 6.5)', async ({ page }) => {
+    // UDP has a place of its own: step 2, kept from an earlier visit.
+    await page.addInitScript(() => {
+      if (localStorage.getItem('techconcepts:v2') === null) {
+        const d = { version: 2, lessons: { 'what-is-udp': { status: 'in-progress', furthestPosition: 2, lastOpened: '2026-11-01T00:00:00.000Z' } }, lastLesson: 'what-is-udp', lastTrack: 'how-the-internet-works' };
+        localStorage.setItem('techconcepts:v2', JSON.stringify(d));
+      }
+    });
+    await openMarked(page, `${TCP}?step=3`);
+    await expect(page.locator('.console__explain .explain__kicker')).toContainText('Step 3');
+    await walkToPractice(page);
+    await nextButton(page).click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    expect(new URL(page.url()).search).toBe('');
+    await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Overview');
+    await expect(page.getByRole('button', { name: /^Resume at / })).toBeVisible();
+    // Back onto TCP's address: the Overview, the lesson's own address (E66), no jump to step 3.
+    await page.goBack();
+    await expect(page.locator('.console__explain .explain__title')).toHaveText('TCP');
+    await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Overview');
+    expect(new URL(page.url()).search).toBe('');
+    expect((await sameDocument(page)).navigations).toBe(1);
+  });
+
+  test('Practice picks start again both ways (B44-4.4)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    await page.locator('.practice__option').first().click();
+    await expect(page.locator('.practice__option[aria-pressed="true"]')).toHaveCount(1);
+    await nextButton(page).click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await walkToPractice(page);
+    await expect(page.locator('.practice__option[aria-pressed="true"]')).toHaveCount(0);
+    await page.goBack();
+    await expect(page.locator('.console__explain .explain__title')).toHaveText('TCP');
+    await walkToPractice(page);
+    await expect(page.locator('.practice__option[aria-pressed="true"]')).toHaveCount(0);
+  });
+
+  test('speed and the chosen view carry over; a lesson with no Sequence shows Network and the choice comes back (B44-5.1, 5.2, D-25)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await speedButton(page).click(); // 1× to 1.5×
+    await expect(speedButton(page)).toHaveText('1.5×');
+    await viewSwitch(page).getByRole('button', { name: 'Sequence' }).click();
+    await row(page, 'what-is-udp').click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await expect(speedButton(page)).toHaveText('1.5×');
+    await expect(speedButton(page)).toHaveAccessibleName('Speed 1.5×. Click for 2×');
+    await expect(viewSwitch(page).getByRole('button', { name: 'Sequence' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.stage__figure')).toBeHidden();
+    // Choose Network, then compare with a fresh UDP (the drawing was not touched while hidden).
+    await viewSwitch(page).getByRole('button', { name: 'Network' }).click();
+    // Networking: TCP/UDP has Sequence; NAT has none (Network shown), and DNS brings Sequence back.
+    await page.goto('/networking/tcp-udp');
+    await hydrated(page);
+    await viewSwitch(page).getByRole('button', { name: 'Sequence' }).click();
+    await pressRow(page, 'nat');
+    await expect(page).toHaveURL(/\/networking\/nat$/);
+    await expect(viewSwitch(page)).toHaveCount(0);
+    await expect(page.locator('.stage__figure')).toBeVisible();
+    await pressRow(page, 'what-is-dns');
+    await expect(page).toHaveURL(/\/networking\/what-is-dns$/);
+    await expect(viewSwitch(page).getByRole('button', { name: 'Sequence' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('definitions, the deeper box and the log fold start closed in the next lesson; the outline\'s folds carry (B44-5.4, 5.5, D-27)', async ({ page }) => {
+    await openMarked(page, `${HTIW}/what-is-https`);
+    // Open the "Email" part of the column, then change.
+    const email = page.locator('.console__track details', { has: page.locator('summary', { hasText: /Email/i }) }).first();
+    if (await email.count()) await email.locator('summary').click();
+    await walkToPractice(page);
+    const terms = page.locator('.explain__term');
+    if (await terms.count()) await terms.first().click();
+    await nextButton(page).click();
+    await expect(page).toHaveURL(/\/what-is-tcp$/);
+    if (await email.count()) await expect(email).toHaveAttribute('open', '');
+    await walkToPractice(page);
+    await expect(page.locator('.explain__term[aria-expanded="true"]')).toHaveCount(0);
+    await expect(page.locator('.console__log .log__fold[aria-expanded="true"]')).toHaveCount(0);
+    // The part that held HTTPS is a fold now, open; the one holding TCP is the plain section (D-27).
+    const parts = await page.evaluate(() => ({ details: [...document.querySelectorAll('.console__track details.part')].map((d) => d.hasAttribute('open')), sections: document.querySelectorAll('.console__track section.part').length }));
+    expect(parts.sections).toBe(1);
+  });
+
+  test('progress: a swap records the visit as a load does, and counting goes on (B44-6.2, 6.3, D-22)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    await nextButton(page).click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    const store = () =>
+      page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('techconcepts:v2') ?? '{}');
+        return { lastLesson: d.lastLesson, lastTrack: d.lastTrack, tcp: d.lessons?.['what-is-tcp']?.status ?? null, udp: d.lessons?.['what-is-udp'] ?? null };
+      });
+    expect(await store()).toMatchObject({ lastLesson: 'what-is-udp', lastTrack: 'how-the-internet-works', tcp: 'finished', udp: null });
+    await nextButton(page).click(); // step 1
+    await expect.poll(async () => (await store()).udp?.status).toBe('in-progress');
+    await walkToPractice(page);
+    await expect.poll(async () => (await store()).udp?.status).toBe('finished');
+    await expect(row(page, 'what-is-udp').locator('.outline__lesson-status')).toContainText('Done');
+    await expect(page.locator('.track__got').first()).toContainText('2 of 14 done');
+    // TCP's row: its own status (D-22); the strip's orange segment is the 4th.
+    await expect(row(page, 'what-is-tcp').locator('.outline__lesson-status')).toContainText('Done');
+    expect(await page.locator('.track__got .cable i[data-s="here"]').evaluate((el) => [...el.parentElement!.children].indexOf(el))).toBe(3);
+  });
+
+  test('the current lesson\'s own row is a page load; the track crumb is a page load (B44-6.9, 0.4, D-23)', async ({ page }) => {
+    const json = watchJson(page);
+    await openMarked(page, TCP);
+    await Promise.all([page.waitForURL(`**${TCP}`), page.waitForEvent('framenavigated'), row(page, 'what-is-tcp').click()]);
+    await hydrated(page);
+    expect((await sameDocument(page)).mark).toBe(false);
+    await openMarked(page, TCP);
+    await Promise.all([page.waitForURL('**/tracks'), page.locator('.top__trk a, .console__top a[href="/tracks"]').first().click()]);
+    expect(json).toStrictEqual([]);
   });
 });
