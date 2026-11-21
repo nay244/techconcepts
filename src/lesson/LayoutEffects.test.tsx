@@ -478,11 +478,24 @@ test('D4 (12d) a hand on the box holds it; a new playback state with an event to
 test('D5 a pause (no event to play) does not let the table go', () => {
   stubBoxes();
   const h = home();
-  const { rerender } = render(<Harness s={state({ mode: 'run' })} home={h} />);
+  const { rerender } = render(<Harness s={state({ mode: 'step', eventIndex: 99 })} home={h} />);
+  expect(boxOf(h).scrollTop).toBe(164);
+  boxOf(h).scrollTop = 0;
   fireEvent.wheel(boxOf(h));
-  rerender(<Harness s={state({ mode: 'hold' })} home={h} />);
-  fireMarks(RULE_3);
+  rerender(<Harness s={state({ mode: 'hold', eventIndex: 99 })} home={h} />);
   expect(boxOf(h).scrollTop).toBe(0);
+});
+
+test('D5b a wheel or a touch on the figure or the view buttons takes nothing: only a hand on the table does', () => {
+  stubBoxes();
+  const h = home();
+  const { container, rerender } = render(<Harness s={state({ eventIndex: 99 })} home={h} />);
+  boxOf(h).scrollTop = 0;
+  fireEvent.wheel(container.querySelector('.stage__figure')!);
+  fireEvent.touchStart(screen.getByRole('button', { name: 'Network' }));
+  fireEvent.pointerDown(screen.getByRole('button', { name: 'Network' }));
+  rerender(<Harness s={state({ eventIndex: 98 })} home={h} />);
+  expect(boxOf(h).scrollTop).toBe(164);
 });
 
 test('D6 each hand takes the table: wheel, touchstart, pointerdown, a scrolling key; a script scroll, an ArrowLeft and a wheel elsewhere do not', () => {

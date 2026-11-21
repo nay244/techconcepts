@@ -378,10 +378,13 @@ test.describe('taking the table by hand, 1440 x 900', () => {
     const bits = page.locator('.guide__table .bits').first();
     if ((await bits.count()) === 0) test.skip(true, 'no bits board in the guide at this step');
     const box = (await bits.boundingBox())!;
+    const guideTop = () => page.evaluate(() => document.querySelector('.console__guide')?.scrollTop ?? 0);
+    const before = await guideTop();
     await page.mouse.move(box.x + 5, box.y + 5);
     await page.mouse.wheel(0, 50);
     await bits.click({ position: { x: 5, y: 5 } });
-    expect(await page.evaluate(() => document.querySelector('.console__guide')?.scrollTop ?? 0)).toBe(await page.evaluate(() => document.querySelector('.console__guide')?.scrollTop ?? 0));
+    await page.waitForTimeout(300);
+    expect(await guideTop()).toBe(before);
     expect(errors).toEqual([]);
   });
 
