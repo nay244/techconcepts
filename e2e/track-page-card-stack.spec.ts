@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 // @ts-expect-error - no @types/node in this project; the e2e files run under node
 import { gzipSync } from 'node:zlib';
-import { hydrated, open, readyLessons, requireLessons, settledFrame, transitionsDone } from './support';
+import { hydrated, open, readyLessons, requireLessons, scrollSettled, settledFrame, transitionsDone } from './support';
 
 /**
  * The track page in the Card stack, layout 1, Route (job 21, B25; prototypes/d20-track-page-card-stack.md §11 and
@@ -956,10 +956,14 @@ test.describe('the window scrolls and the side column sticks', () => {
     await visit(page, `/${NET}`);
     await page.keyboard.press('PageDown');
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+    await scrollSettled(page);
     await page.evaluate(() => window.scrollTo(0, 0));
     await settle(page);
+    await scrollSettled(page);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     await page.keyboard.press('Space');
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+    await scrollSettled(page);
     await page.locator('li.stop', { hasText: 'Load Balancers' }).locator('h3 a').focus();
     await settle(page);
     await expect(page.locator('li.stop', { hasText: 'Load Balancers' })).toBeInViewport({ ratio: 1 });
