@@ -543,3 +543,151 @@ test.describe('state', () => {
     expect(json).toStrictEqual([]);
   });
 });
+
+// ================================================================ which changes swap, which load a page (decision 1, 2, 7)
+
+test.describe('what is not a swap', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  /** Presses with `action` and expects a page load of `path`, with no data fetched and no mark ever drawn. */
+  async function expectLoad(page: Page, path: string, action: () => Promise<void>, json: string[]): Promise<void> {
+    await page.evaluate(() => {
+      (window as unknown as { __t0: number }).__t0 = performance.now();
+    });
+    await recordMarks(page);
+    const navigated = page.waitForEvent('framenavigated', (f) => f === page.mainFrame() && new URL(f.url()).pathname === path);
+    await action();
+    await navigated;
+    expect(json, 'no lesson data fetched').toStrictEqual([]);
+  }
+
+  test('another drawing is a page load: Subnetting to Router by "Next lesson", Switch to ARP by the row, IP Address to MAC Address, TLS/SSL to Firewalls by "Next lesson" and the card, Load Balancers beside Proxies (B44-0.2, 0.3, 0.5, D-30)', async ({ page }) => {
+    const json = watchJson(page);
+    // Subnetting (subnet) to Router (net-map) by "Next lesson".
+    await open(page, '/networking/subnetting');
+    await walkToPractice(page);
+    await expectLoad(page, '/networking/router', () => nextButton(page).click(), json);
+    // Switch (switch) to ARP (net-map) by the outline row.
+    await open(page, '/networking/switch');
+    await expectLoad(page, '/networking/arp', () => pressRow(page, 'arp'), json);
+    // IP Address (subnet) to MAC Address (dhcp).
+    await open(page, '/networking/ip-address');
+    await expectLoad(page, '/networking/mac-address', () => pressRow(page, 'mac-address'), json);
+    // TLS/SSL (net-map) to Firewalls (firewall): "Next lesson", then the Up next card.
+    await open(page, '/networking/what-is-tls');
+    await walkToPractice(page);
+    await expectLoad(page, '/networking/firewalls', () => nextButton(page).click(), json);
+    await open(page, '/networking/what-is-tls');
+    await walkToPractice(page);
+    await expectLoad(page, '/networking/firewalls', () => page.locator('a.upnext').click(), json);
+    // Proxies (net-map) and the next lesson, Load Balancers (pool): the rule is the drawing, not the neighbour.
+    await open(page, '/networking/proxies');
+    await expectLoad(page, '/networking/load-balancers', () => pressRow(page, 'load-balancers'), json);
+    // The track crumb and the track title are page loads.
+    await open(page, TCP);
+    await expectLoad(page, HTIW, () => page.locator('.console__top a.track__title').click(), json);
+  });
+
+  test('the rule is the figure, not adjacency: Networking\'s ARP row pressed at Packets is a swap (B44-0.5)', async ({ page }) => {
+    await openMarked(page, '/networking/packets');
+    await pressRow(page, 'arp');
+    await expect(page).toHaveURL(/\/networking\/arp$/);
+    expect((await sameDocument(page)).navigations).toBe(1);
+  });
+
+  test('Networking: Ports to TCP/UDP and TCP/UDP to NAT swap (D-30)', async ({ page }) => {
+    await openMarked(page, '/networking/ports');
+    await pressRow(page, 'tcp-udp');
+    await expect(page).toHaveURL(/\/networking\/tcp-udp$/);
+    await expect(live(page)).toHaveText('TCP/UDP. Lesson 11 of 20. Overview.');
+    await pressRow(page, 'nat');
+    await expect(page).toHaveURL(/\/networking\/nat$/);
+    expect((await sameDocument(page)).navigations).toBe(1);
+  });
+
+  test('a modified press is the browser\'s own: Ctrl, Cmd, Shift, Alt and a middle click on a row and on the card; "Next lesson" with a modifier is today\'s load in the same tab (B44-7.1, 7.3, E71)', async ({ page }) => {
+    const json = watchJson(page);
+    // A modified click is dispatched into the page (a real Ctrl-click is a context menu on macOS); `dispatchEvent` says whether it was cancelled.
+    // The browser then does what it does with it (a new tab, a window, a load), so each starts from a fresh page.
+    for (const key of ['ctrlKey', 'metaKey', 'shiftKey', 'altKey'] as const) {
+      await openMarked(page, TCP);
+      const prevented = await page.evaluate((k) => {
+        const link = document.querySelector('.console__track a[href$="what-is-udp"]')!;
+        return !link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, [k]: true }));
+      }, key);
+      expect(prevented, `${key}-click on the row`).toBe(false);
+      await page.waitForTimeout(300);
+      for (const other of page.context().pages()) if (other !== page) await other.close();
+    }
+    // The Up next card, modified.
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    const cardPrevented = await page.evaluate(() => !document.querySelector('a.upnext')!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, shiftKey: true })));
+    expect(cardPrevented).toBe(false);
+    for (const other of page.context().pages()) if (other !== page) await other.close();
+    // A middle click raises `auxclick`, which the console never listens to.
+    await openMarked(page, TCP);
+    await row(page, 'what-is-udp').click({ button: 'middle' });
+    await page.waitForTimeout(150);
+    for (const other of page.context().pages()) if (other !== page) await other.close();
+    expect(json).toStrictEqual([]);
+    expect(await page.evaluate(() => (window as unknown as { __pushes: number }).__pushes)).toBe(0);
+    expect(new URL(page.url()).pathname).toBe(TCP);
+    await walkToPractice(page);
+    // "Next lesson" with Shift: a page load in this tab (today's), not a swap.
+    const loaded = page.waitForEvent('framenavigated', (f) => f === page.mainFrame() && new URL(f.url()).pathname === UDP);
+    await nextButton(page).click({ modifiers: ['Shift'] });
+    await loaded;
+    expect(json).toStrictEqual([]);
+  });
+
+  test('a click another handler has prevented is left alone (B44-7.4)', async ({ page }) => {
+    const json = watchJson(page);
+    await openMarked(page, TCP);
+    await page.evaluate(() => {
+      document.querySelector('.console__track')!.addEventListener('click', (e) => e.preventDefault(), true);
+    });
+    await row(page, 'what-is-udp').click();
+    await page.waitForTimeout(300);
+    expect(json).toStrictEqual([]);
+    expect(new URL(page.url()).pathname).toBe(TCP);
+  });
+
+  test('Enter on a row and Space on "Next lesson" swap (B44-7.2)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await row(page, 'what-is-udp').focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await walkToPractice(page);
+    await nextButton(page).focus();
+    await page.keyboard.press('Space');
+    await expect(page).toHaveURL(/what-is-ip$/);
+    expect((await sameDocument(page)).navigations).toBe(1);
+    // "Next lesson": the same button keeps focus, named for the next place (D-16, E69).
+    await expect(nextButton(page)).toBeFocused();
+    await expect(nextButton(page)).toHaveAccessibleName(/^Next: .+, step 1$/);
+  });
+
+  test('a press before the island listens is a page load with no data fetched; without JavaScript the row is a plain link (B44-1.2, 1.3)', async ({ page, browser }) => {
+    const json = watchJson(page);
+    // Hold the console's script.
+    await page.route('**/_astro/LessonConsole.*.js', async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.continue();
+    });
+    await page.goto(TCP, { waitUntil: 'domcontentloaded' });
+    const loaded = page.waitForEvent('framenavigated', (f) => f === page.mainFrame() && new URL(f.url()).pathname === UDP);
+    await row(page, 'what-is-udp').click();
+    await loaded;
+    expect(json).toStrictEqual([]);
+    // JavaScript off.
+    const plain = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+    const bare = await plain.newPage();
+    const bareJson = watchJson(bare);
+    await bare.goto(TCP);
+    await bare.locator('.console__track a.outline__lesson[href$="what-is-udp"]').click();
+    await expect(bare).toHaveURL(new RegExp(`${UDP}$`));
+    expect(bareJson).toStrictEqual([]);
+    await plain.close();
+  });
+});
