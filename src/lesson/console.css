@@ -2852,7 +2852,8 @@ button.explain__term[aria-expanded='true'] { border-color: var(--ink-strong); }
 :root .console .console__top > .tape,
 :root .console .outline__dialog-head > .tape {
   position: absolute;
-  top: calc(100% + 4px);
+  /* 4px under the edge: the box's own 1px border is inside the 100%. */
+  top: calc(100% + 5px);
   right: 12px;
   z-index: 6;
   display: block;

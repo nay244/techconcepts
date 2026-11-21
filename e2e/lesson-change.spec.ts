@@ -929,3 +929,249 @@ test.describe('the film', () => {
     expect((await sameDocument(page)).svg).toBe(true);
   });
 });
+
+// ================================================================ focus, what is heard, the column (D26 sections 4, 5, 7)
+
+test.describe('focus, words and the column at 1440', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('HTTPS to TCP by the row: focus is on TCP\'s row, the part of HTTPS is an open fold and TCP\'s part the plain section (D-13, D-27)', async ({ page }) => {
+    await openMarked(page, `${HTIW}/what-is-https`);
+    await pressRow(page, 'what-is-tcp');
+    await expect(page).toHaveURL(/\/what-is-tcp$/);
+    await expect(row(page, 'what-is-tcp')).toBeFocused();
+    await expect(row(page, 'what-is-tcp')).toHaveAttribute('aria-current', 'page');
+    const parts = await page.evaluate(() => ({
+      sections: [...document.querySelectorAll('.console__track section.part')].map((s) => s.querySelector('.part__name')!.textContent),
+      folds: [...document.querySelectorAll('.console__track details.part')].map((d) => ({ name: d.querySelector('.part__name')!.textContent, open: d.hasAttribute('open') })),
+    }));
+    expect(parts.sections).toHaveLength(1);
+    const httpsPart = await page.evaluate(() => document.querySelector('.console__track a[href$="what-is-https"]')!.closest('.part')!.querySelector('.part__name')!.textContent);
+    expect(parts.sections[0]).not.toBe(httpsPart);
+    expect(parts.folds.find((f) => f.name === httpsPart)?.open).toBe(true);
+  });
+
+  test('IP to DNS by "Next lesson" (another part): the DNS row is wholly inside the list after the swap, 8 px clear where it had to scroll (D-29)', async ({ page }) => {
+    await openMarked(page, `${HTIW}/what-is-ip`);
+    // Fold the parts open so the list is long enough to scroll, then walk on.
+    await page.locator('.console__track details > summary').evaluateAll((all) => all.forEach((s) => (s as HTMLElement).click()));
+    await walkToPractice(page);
+    await nextButton(page).click();
+    await expect(page).toHaveURL(/what-is-dns$/);
+    const fit = await page.evaluate(() => {
+      const list = document.querySelector('.console__track .track__list')!.getBoundingClientRect();
+      const r = document.querySelector('.console__track a[aria-current="page"]')!.getBoundingClientRect();
+      return { inside: r.top >= list.top - 0.5 && r.bottom <= list.bottom + 0.5 };
+    });
+    expect(fit.inside).toBe(true);
+  });
+
+  test('the column\'s scroll carries and the explanation starts at its top (B44-5.7, 5.8)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await page.locator('.console__track .track__list').evaluate((el) => (el.scrollTop = 40));
+    const before = await page.locator('.console__track .track__list').evaluate((el) => el.scrollTop);
+    await page.locator('.console__explain').evaluate((el) => (el.scrollTop = 30));
+    await row(page, 'what-is-udp').click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    expect(await page.locator('.console__track .track__list').evaluate((el) => el.scrollTop)).toBe(before);
+    expect(await page.locator('.console__explain').evaluate((el) => el.scrollTop)).toBe(0);
+    expect(await page.locator('.console__guide').evaluate((el) => el.scrollTop)).toBe(0);
+  });
+
+  test('the live region: Back says TCP, the next move is today\'s announcement, two quick swaps end on the last (D-19, D-19b, D-19c)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await row(page, 'what-is-udp').click();
+    await expect(live(page)).toHaveText('UDP. Lesson 4 of 14. Overview.');
+    await nextButton(page).click();
+    await expect(live(page)).not.toHaveText('UDP. Lesson 4 of 14. Overview.');
+    await expect(live(page)).toContainText('Connectionless Send');
+    await page.keyboard.press('Tab'); // focus off the button for the shortcut
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('ArrowLeft');
+    await expect(live(page)).toHaveText('Overview');
+    await page.goBack();
+    await expect(live(page)).toHaveText('TCP. Lesson 3 of 14. Overview.');
+    // Two quick swaps: UDP then IP during the wait.
+    await hold(page, 'what-is-udp', 800);
+    await row(page, 'what-is-udp').click();
+    await row(page, 'what-is-ip').click();
+    await expect(page).toHaveURL(/what-is-ip$/);
+    await expect(live(page)).toHaveText('IP. Lesson 5 of 14. Overview.');
+    await page.waitForTimeout(1000);
+    await expect(live(page)).toHaveText('IP. Lesson 5 of 14. Overview.');
+    expect(await page.locator('.console [aria-live]').count()).toBe(1);
+  });
+
+  test('during a wait the old lesson is live: Space plays it, the right arrow moves it on (D-18, E67)', async ({ page }) => {
+    await hold(page, 'what-is-udp', Infinity);
+    await openMarked(page, TCP);
+    await page.evaluate(() => (document.querySelector('.console__track a[href$="what-is-udp"]') as HTMLElement).click());
+    await expect(page.locator('.console .signal')).toHaveCount(1);
+    // Focus moved off the pressed control: the scene takes it; keys act on the old lesson.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('.console__explain .explain__kicker')).toContainText('Step 1');
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('.console__explain .explain__kicker')).toHaveText('Overview');
+    await page.keyboard.press('Space');
+    await expect(playButton(page)).toHaveText('Pause');
+  });
+
+  test('a Sequence view that was hidden is still the new lesson\'s drawing when Network is chosen (B44-2.6) and the drawing after Back and Forward is the same node (B44-2.2)', async ({ page, context }) => {
+    await openMarked(page, TCP);
+    await viewSwitch(page).getByRole('button', { name: 'Sequence' }).click();
+    await row(page, 'what-is-udp').click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await viewSwitch(page).getByRole('button', { name: 'Network' }).click();
+    await settledFrame(page);
+    await expectEqualToFresh(page, context, 'Sequence chosen, TCP to UDP, then Network', false);
+    await page.goBack();
+    await page.goForward();
+    expect((await sameDocument(page)).svg).toBe(true);
+  });
+
+  test('the track page and back: from a swapped UDP the crumb opens the track page, Back is UDP (B44-6.8)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await row(page, 'what-is-udp').click();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await Promise.all([page.waitForURL(`**${HTIW}`), page.locator('.console__top a.track__title').click()]);
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await hydrated(page);
+    await expect(page.locator('h1.top__name:visible')).toHaveText('UDP');
+  });
+});
+
+// ================================================================ a phone: the lessons sheet (D26 section 8)
+
+test.describe('the sheet at 375', () => {
+  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true });
+
+  const sheetButton = (page: Page) => page.locator('.top__lessons');
+  const openSheet = async (page: Page) => {
+    await sheetButton(page).click();
+    await expect(page.locator('.outline__dialog')).toHaveAttribute('open', '');
+  };
+
+  test('a sheet row: the sheet stays open under the going mark, the signal sits on its head, the tape under it; at the swap the sheet is closed and focus is on the bar\'s name (D-7b, D-9, D-14, D-21)', async ({ page }) => {
+    await hold(page, 'what-is-udp', 1000);
+    await openMarked(page, TCP);
+    await openSheet(page);
+    await press(page, '.outline__dialog a.outline__lesson[href$="what-is-udp"]');
+    await expect(sheetRow(page, 'what-is-udp')).toHaveAttribute('data-going', '');
+    await expect(page.locator('.outline__dialog')).toHaveAttribute('open', '');
+    await expect(page.locator('.outline__dialog-head .signal')).toHaveCount(1);
+    await expect(page.locator('.console__top .signal')).toHaveCount(0);
+    await expect(page.locator('.outline__dialog-head .tape')).toHaveCount(1);
+    const geometry = await page.evaluate(() => {
+      const head = document.querySelector('.outline__dialog-head')!.getBoundingClientRect();
+      const signal = document.querySelector('.outline__dialog-head .signal')!.getBoundingClientRect();
+      const tape = document.querySelector('.outline__dialog-head .tape')!.getBoundingClientRect();
+      return { signalBottom: Math.round(signal.bottom - head.bottom), tapeTop: Math.round(tape.top - head.bottom), tapeRight: Math.round(head.right - tape.right) };
+    });
+    expect(geometry).toStrictEqual({ signalBottom: 0, tapeTop: 4, tapeRight: 12 });
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    await expect(page.locator('.outline__dialog')).not.toHaveAttribute('open', '');
+    const name = page.locator('h1.top__name:visible');
+    await expect(name).toBeFocused();
+    await expect(name).toHaveText('UDP');
+    await expect(name).toHaveAttribute('tabindex', '-1');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('h1.top__name[tabindex]')).toHaveCount(0);
+    await expect(page.locator('.top__lessons')).toHaveAccessibleName('4 of 14: all 14 lessons, this is lesson 4');
+  });
+
+  test('the sheet is closed in the swap\'s first presented frame (D-21), and not in a frame before it', async ({ page }) => {
+    await openMarked(page, TCP);
+    await openSheet(page);
+    const result = await page.evaluate(
+      () =>
+        new Promise<{ open: boolean; path: string }>((resolve) => {
+          const dialog = document.querySelector('.outline__dialog') as HTMLDialogElement;
+          const check = () => {
+            if (location.pathname.endsWith('what-is-udp')) requestAnimationFrame(() => resolve({ open: dialog.open, path: location.pathname }));
+            else requestAnimationFrame(check);
+          };
+          (document.querySelector('.outline__dialog a[href$="what-is-udp"]') as HTMLElement).click();
+          check();
+        }),
+    );
+    expect(result.open).toBe(false);
+  });
+
+  test('"Opening TLS/SSL" clears the Network / Sequence switch (D-11)', async ({ page }) => {
+    await hold(page, 'what-is-tls', 1000);
+    await openMarked(page, '/networking/what-is-https');
+    await press(page, '.console__top .top__lessons').catch(() => {});
+    // The longest title a swap can reach, pressed from the column-less layout by the sheet's row.
+    await page.evaluate(() => (document.querySelector('.top__lessons') as HTMLElement).click());
+    await page.evaluate(() => (document.querySelector('.outline__dialog a[href$="what-is-tls"]') as HTMLElement).click());
+    // With the sheet open the tape sits on the sheet; close it with Escape (the change goes on) and read the bar's tape.
+    await expect(page.locator('.outline__dialog-head .tape')).toHaveText('Opening TLS/SSL');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.console__top .tape')).toHaveCount(1);
+    const clear = await page.evaluate(() => {
+      const tape = document.querySelector('.console__top .tape')!.getBoundingClientRect();
+      const views = document.querySelector('.stage__views')?.getBoundingClientRect();
+      const bar = document.querySelector('.console__top')!.getBoundingClientRect();
+      return { tapeLeft: Math.round(tape.left), tapeRight: Math.round(tape.right), clearOfViews: views === undefined || tape.left >= views.right || tape.top >= views.bottom || tape.bottom <= views.top, rightInset: Math.round(bar.right - tape.right) };
+    });
+    expect(clear.clearOfViews).toBe(true);
+    expect(clear.rightInset).toBe(12);
+    await expect(page).toHaveURL(/\/networking\/what-is-tls$/);
+    // The sheet was closed by Escape during the wait: at the swap focus is on the name (D26 section 8).
+    await expect(page.locator('h1.top__name:visible')).toBeFocused();
+  });
+
+  test('Up next at 375 puts focus on the bar\'s name; "Next lesson" names the next place as the short form (D-15, D-16, E69)', async ({ page }) => {
+    await openMarked(page, TCP);
+    await walkToPractice(page);
+    await page.locator('a.upnext').focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${UDP}$`));
+    const name = page.locator('h1.top__name:visible');
+    await expect(name).toBeFocused();
+    expect(await name.evaluate((el) => el.matches(':focus-visible'))).toBe(true);
+    await walkToPractice(page);
+    // "Next lesson" into the lesson after UDP: the same button node keeps focus.
+    await nextButton(page).focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/what-is-ip$/);
+    await expect(nextButton(page)).toBeFocused();
+    await expect(nextButton(page)).toHaveAccessibleName(/^Next: step 1, .+/);
+  });
+
+  test('the Log and Table tabs start again as Explain after a swap (B44-5.3, D-26)', async ({ page }) => {
+    await openMarked(page, '/networking/tcp-udp');
+    await page.getByRole('button', { name: 'Log', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Log', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await page.evaluate(() => (document.querySelector('.top__lessons') as HTMLElement).click());
+    await page.evaluate(() => (document.querySelector('.outline__dialog a[href$="/nat"]') as HTMLElement).click());
+    await expect(page).toHaveURL(/\/networking\/nat$/);
+    await expect(page.getByRole('button', { name: 'Explain', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+test.describe('the narrowest window with the column, 1100 x 800', () => {
+  test.use({ viewport: { width: 1100, height: 800 } });
+
+  test('the tape clears the scene\'s views and title line (D-11)', async ({ page }) => {
+    await hold(page, 'what-is-tls', 1700);
+    await openMarked(page, '/networking/what-is-https');
+    await pressRowQuiet(page, 'what-is-tls');
+    await expect(page.locator('.console__top .tape')).toHaveCount(1);
+    const clear = await page.evaluate(() => {
+      const tape = document.querySelector('.console__top .tape')!.getBoundingClientRect();
+      const boxes = ['.stage__title', '.stage__views'].map((s) => document.querySelector(s)?.getBoundingClientRect()).filter((b): b is DOMRect => b !== undefined);
+      return boxes.every((b) => tape.right <= b.left || tape.left >= b.right || tape.bottom <= b.top || tape.top >= b.bottom);
+    });
+    expect(clear).toBe(true);
+  });
+});
+
+/** Presses a row without waiting for the lesson to change. */
+async function pressRowQuiet(page: Page, slug: string): Promise<void> {
+  const link = row(page, slug);
+  if (!(await link.isVisible())) await page.locator('.console__track details:has(a[href$="/' + slug + '"]) > summary').click();
+  await link.click({ noWaitAfter: true });
+}
