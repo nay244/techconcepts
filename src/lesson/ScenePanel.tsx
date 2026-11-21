@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { FigureId } from '../art/scenes/types';
 import type { SceneEvent, Unit } from '../content/schema';
@@ -33,8 +33,55 @@ interface Marks {
   list: readonly PanelMark[];
 }
 
+/** The row being read: a panel marks it current while the driver reads it (the rules panel, `aria-current="true"` on `data-state="check"`). */
+export const READ_ROW = '.tpanel tbody tr[aria-current="true"], .rpanel tbody tr[aria-current="true"]';
 /** The row that decided, to bring into view (in the Table tab, and in the guide's table): the table's marked row, or the rule that allowed or denied. */
 export const MARKED_ROW = '.tpanel [data-highlight], .rpanel [data-state="allow"], .rpanel [data-state="deny"]';
+/** The connection a landed reply belongs to. */
+export const KNOWN_CHIP = '.rpanel__chip[data-known]';
+
+/** The table box the reader has taken by hand, and the box the follow last found drawn. */
+export interface Hold {
+  held: Element | null;
+  drawn: Element | null;
+}
+
+/**
+ * Keeps one row of a lesson's table in its own box: the row being read, else the row the step marked, else the connection a
+ * reply belongs to (in that order, the first that exists). Only the box's `scrollTop` is set, so it moves at once and the page
+ * and the guide never move. A box that is not drawn is left alone. A box the reader has taken (`hold`) is left alone while it
+ * is the same box and was drawn at the last commit; a box that was remade, moved or hidden since is followed again.
+ */
+export function keepRowInView(root: ParentNode, hold?: Hold): void {
+  let row: HTMLElement | null = null;
+  for (const selector of [READ_ROW, MARKED_ROW, KNOWN_CHIP]) {
+    row = root.querySelector<HTMLElement>(selector);
+    if (row !== null) break;
+  }
+  const box = row?.closest<HTMLElement>('.tpanel, .rpanel');
+  if (row === null || box == null) return;
+  const p = box.getBoundingClientRect();
+  if (p.height === 0) {
+    if (hold !== undefined && hold.drawn === box) hold.drawn = null;
+    return;
+  }
+  if (hold !== undefined) {
+    if (hold.drawn !== box) hold.held = null;
+    hold.drawn = box;
+    if (hold.held === box) return;
+  }
+  const r = row.getBoundingClientRect();
+  const first = row.matches('tbody tr:first-child');
+  if (r.height > p.height - 8) {
+    // A row too tall for its box with 4px either side: its top first, so the box does not flip between its two ends.
+    if (r.top < p.top && first) box.scrollTop = 0;
+    else if (Math.abs(r.top - (p.top + 4)) > 0.5) box.scrollTop += r.top - (p.top + 4);
+  } else if (r.top < p.top && first) box.scrollTop = 0;
+  else if (r.top < p.top) box.scrollTop -= p.top - r.top + 4;
+  else if (r.bottom > p.bottom) box.scrollTop += r.bottom - p.bottom + 4;
+}
+
+const HAND_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ']);
 
 const NO_MARK_LIST: readonly PanelMark[] = [];
 const NO_MARKS: Marks = { for: null, list: NO_MARK_LIST };
@@ -104,10 +151,14 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   // The playback state the latest play was started for. A play starts once per state, so a return to Network does not replay.
   // `figureData` is here because new data remakes the driver (the effect above), and the new driver must show the scene too.
   const playedFor = useRef<PlaybackState | null>(null);
+  const hold = useRef<Hold>({ held: null, drawn: null });
   // A layout effect, in the same commit as the words (see the driver's effect above); declared after it, so it finds the driver made.
   useLayoutEffect(() => {
     const isNew = playedFor.current !== playback;
     playedFor.current = playback;
+    // A new playback state with an event to play (the next event, Replay, a new speed, Resume) lets the reader's table go.
+    // Before the guards below: the Sequence view and a missing driver start no play, but the reader's hold still ends.
+    if (isNew && pending !== null) hold.current.held = null;
     const d = driver.current;
     if (d === null || view !== 'network') return;
     d.show(scene);
@@ -140,24 +191,44 @@ export function ScenePanel({ unit, figure, figureData, derived, playback, reduce
   const latest = derived.log.at(-1);
   const current = latest !== undefined && derived.events.some((e) => e.id === latest.eventId) ? latest : null;
 
-  // In the guide the table is capped and scrolls inside itself, so the row the step is about is brought into its view (the panel's
-  // own scroll box only: the page and the guide never move). A layout effect with no dependency list, so it runs in the commit of
-  // every mark, tick and event; Play all advances on a timer, and a passive effect could run a frame after the row is painted.
+  // The table's own box keeps one row in view, wherever the table is drawn (the guide, the Table tab, under the scene), in the
+  // commit of every mark, tick and event: Play all advances on a timer, and a passive effect could run a frame after the row is
+  // painted. A layout effect with no dependency list, declared after the play effect, so a let-go there comes first. Only the
+  // box's own scroll moves: the page and the guide never do. A resize that changes the box is not followed until the next commit.
+  const sectionRef = useRef<HTMLElement>(null);
+  const place = useRef(`${derived.slot.unit}/${derived.slot.kind}/${derived.slot.step}`);
   useLayoutEffect(() => {
-    if (panelHome === null) return;
-    const row = panelHome.querySelector<HTMLElement>(`${MARKED_ROW}, .rpanel__chip[data-known]`);
-    const box = row?.closest<HTMLElement>('.tpanel, .rpanel');
-    if (row == null || box == null) return;
-    const r = row.getBoundingClientRect();
-    const p = box.getBoundingClientRect();
-    if (r.top < p.top) box.scrollTop -= p.top - r.top + 4;
-    else if (r.bottom > p.bottom) box.scrollTop += r.bottom - p.bottom + 4;
+    // The console moved to another place: compared by value, here, so the commit that lands it already follows.
+    const here = `${derived.slot.unit}/${derived.slot.kind}/${derived.slot.step}`;
+    if (place.current !== here) {
+      place.current = here;
+      hold.current.held = null;
+    }
+    const root = panelHome ?? sectionRef.current;
+    if (root !== null) keepRowInView(root, hold.current);
   });
+
+  // The reader takes the table with a wheel, a touch, a press or a scrolling key on its box. A scroll made by script does not.
+  const take = (target: EventTarget) => {
+    const box = target instanceof Element ? target.closest('.tpanel, .rpanel') : null;
+    if (box !== null) hold.current = { held: box, drawn: box };
+  };
+  const takeKey = (event: KeyboardEvent) => {
+    if (HAND_KEYS.has(event.key)) take(event.target);
+  };
 
   const panel = <UnitPanel panel={unit.scene.panel} derived={derived} marks={shownMarks} playing={pending} />;
 
   return (
-    <section className="console__panel console__stage" aria-labelledby={titleId}>
+    <section
+      ref={sectionRef}
+      className="console__panel console__stage"
+      aria-labelledby={titleId}
+      onWheel={(e) => take(e.target)}
+      onTouchStart={(e) => take(e.target)}
+      onPointerDown={(e) => take(e.target)}
+      onKeyDown={takeKey}
+    >
       <div className="stage__head">
         {hasSequence ? (
           <div className="stage__views" role="group" aria-label="View">
