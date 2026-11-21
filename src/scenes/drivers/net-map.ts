@@ -517,7 +517,12 @@ function create(root: SVGSVGElement, data: unknown): SceneDriver {
     for (const [name, strip] of strips) {
       const text = Object.hasOwn(labels, name) ? labels[name]! : null;
       if (text === null) {
+        // Hidden, and put back as the figure is drawn (empty, 19 wide), so a drawing kept across a lesson change equals a fresh one.
         strip.setAttribute('display', 'none');
+        strip.querySelector('rect')!.setAttribute('width', '19');
+        const hidden = strip.querySelector('text')!;
+        hidden.setAttribute('x', String(Math.round((Number(strip.dataset.x) + 9.5) * 10) / 10));
+        hidden.textContent = '';
         continue;
       }
       strip.removeAttribute('display');

@@ -1,10 +1,12 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { LessonSummary } from '../content/registry';
 import type { Lesson, Unit } from '../content/schema';
 import { positionOf, type Position } from '../engine/timeline';
 import { byPart, STATUS_TEXT } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
 import type { LessonProgress, ProgressData } from '../progress/store';
+import { ChangeMarks } from './TopBar';
+import type { Wait } from './useLessonChange';
 
 export interface OutlineProps {
   lesson: Lesson;
@@ -27,6 +29,8 @@ export interface OutlineProps {
   /** The lessons sheet (the dialog, under 1100px wide): open or not, and how it closes. */
   sheetOpen: boolean;
   onSheetClose(): void;
+  /** A lesson change on its way: the row going gets its mark, and the sheet its signal and tape. */
+  wait?: Wait | null;
 }
 
 type Filter = 'all' | NonNullable<Unit['group']>;
@@ -82,7 +86,7 @@ function statusOf(progress: ProgressData, key: string): LessonProgress['status']
   return Object.hasOwn(progress.lessons, key) ? progress.lessons[key]!.status : null;
 }
 
-function LessonLink({ entry, current, status }: { entry: LessonSummary; current: boolean; status: LessonProgress['status'] | null }) {
+function LessonLink({ entry, current, status, going }: { entry: LessonSummary; current: boolean; status: LessonProgress['status'] | null; going: boolean }) {
   const body = (
     <>
       <span className="outline__lesson-n" aria-hidden="true">
@@ -105,7 +109,7 @@ function LessonLink({ entry, current, status }: { entry: LessonSummary; current:
     </>
   );
   return entry.available ? (
-    <a className="outline__lesson" href={entry.url} aria-current={current ? 'page' : undefined}>
+    <a className="outline__lesson" href={entry.url} aria-current={current ? 'page' : undefined} data-going={going ? '' : undefined}>
       {body}
     </a>
   ) : (
@@ -129,6 +133,10 @@ const CHEVRON = (
 interface TrackPartsProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 'progress'> {
   /** Every part open and none a button (the lessons sheet); else only the part with this lesson is open and the rest fold. */
   all?: boolean;
+  /** The key of the row a lesson change is going to. */
+  going?: string | null;
+  /** The parts the reader has had open as this lesson's: they stay open when it is not (a `details`, open). */
+  carried?: ReadonlySet<string>;
 }
 
 /**
@@ -136,7 +144,7 @@ interface TrackPartsProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 
  * lessons: number, title, and "✓ Done" or "In progress". The part that holds this lesson is open and a plain heading;
  * every other part is a `<details>` (closed, and working without JavaScript), unless `all`.
  */
-export function TrackParts({ entries, currentKey, progress, all = false }: TrackPartsProps) {
+export function TrackParts({ entries, currentKey, progress, all = false, going = null, carried }: TrackPartsProps) {
   return (
     <>
       {byPart(entries).map((part) => {
@@ -152,7 +160,7 @@ export function TrackParts({ entries, currentKey, progress, all = false }: Track
           <ol>
             {part.entries.map((entry) => (
               <li key={entry.key}>
-                <LessonLink entry={entry} current={entry.key === currentKey} status={statusOf(progress, entry.key)} />
+                <LessonLink entry={entry} current={entry.key === currentKey} status={statusOf(progress, entry.key)} going={entry.key === going} />
               </li>
             ))}
           </ol>
@@ -170,7 +178,7 @@ export function TrackParts({ entries, currentKey, progress, all = false }: Track
           );
         }
         return (
-          <details key={part.title} className="part">
+          <details key={part.title} className="part" open={carried?.has(part.title) ? true : undefined}>
             <summary>
               {CHEVRON}
               <span className="part__name">{part.title}</span>
@@ -198,7 +206,7 @@ function TrackGot({ entries, currentKey, progress }: Pick<OutlineProps, 'entries
   );
 }
 
-interface SheetProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 'progress' | 'trackTitle' | 'trackUrl'> {
+interface SheetProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 'progress' | 'trackTitle' | 'trackUrl' | 'wait'> {
   open: boolean;
   onClose(): void;
 }
@@ -207,11 +215,12 @@ interface SheetProps extends Pick<OutlineProps, 'entries' | 'currentKey' | 'prog
  * The lessons sheet, under 1100px wide: a modal dialog from the bar's "9 of 20" button, with the track's head
  * ("Tracks /", its name, the strip) and the same parts as the column, every one open.
  */
-function LessonsSheet({ entries, currentKey, progress, trackTitle, trackUrl, open, onClose }: SheetProps) {
+function LessonsSheet({ entries, currentKey, progress, trackTitle, trackUrl, open, onClose, wait = null }: SheetProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
-  useEffect(() => {
+  // A layout effect: a lesson opened in place closes the sheet in the frame that shows the lesson, never a frame later.
+  useLayoutEffect(() => {
     const box = dialog.current;
     if (box === null) return;
     // jsdom has no showModal; the attribute alone is enough there.
@@ -241,6 +250,7 @@ function LessonsSheet({ entries, currentKey, progress, trackTitle, trackUrl, ope
           <button type="button" className="cbtn" onClick={onClose}>
             <span aria-hidden="true">×</span> Close
           </button>
+          {open && wait !== null ? <ChangeMarks wait={wait} /> : null}
         </div>
         {open ? (
           <>
@@ -254,7 +264,7 @@ function LessonsSheet({ entries, currentKey, progress, trackTitle, trackUrl, ope
               <TrackGot entries={entries} currentKey={currentKey} progress={progress} />
             </div>
             <div className="track__list">
-              <TrackParts entries={entries} currentKey={currentKey} progress={progress} all />
+              <TrackParts entries={entries} currentKey={currentKey} progress={progress} all going={wait?.going ?? null} />
             </div>
           </>
         ) : null}
@@ -271,8 +281,21 @@ function LessonsSheet({ entries, currentKey, progress, trackTitle, trackUrl, ope
  * the column, with this lesson in view on load. A lesson of many units lists them (with the filters) above the parts.
  * The lessons sheet (the dialog) lives here too: it is the same list for the widths with no column.
  */
-export function Outline({ lesson, position, current, seen, onGo, entries, currentKey, progress, trackTitle, trackUrl, number, total, sheetOpen, onSheetClose }: OutlineProps) {
+export function Outline({ lesson, position, current, seen, onGo, entries, currentKey, progress, trackTitle, trackUrl, number, total, sheetOpen, onSheetClose, wait = null }: OutlineProps) {
   const [filter, setFilter] = useState<Filter>('all');
+  // A lesson opened in place: the filter starts again, and the part that held the old lesson stays open as a fold.
+  const [shownLesson, setShownLesson] = useState(lesson);
+  const [shownKey, setShownKey] = useState(currentKey);
+  const [carried, setCarried] = useState<ReadonlySet<string>>(() => new Set());
+  if (shownLesson !== lesson) {
+    setShownLesson(lesson);
+    setFilter('all');
+  }
+  if (shownKey !== currentKey) {
+    setShownKey(currentKey);
+    const before = entries.find((e) => e.key === shownKey);
+    if (before !== undefined) setCarried((c) => new Set(c).add(before.partTitle));
+  }
   const many = lesson.units.length > 1;
   const list = useRef<HTMLDivElement>(null);
 
@@ -284,7 +307,7 @@ export function Outline({ lesson, position, current, seen, onGo, entries, curren
     const top = row.offsetTop - box.offsetTop;
     if (top < box.scrollTop) box.scrollTop = top - 8;
     else if (top + row.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = top + row.offsetHeight - box.clientHeight + 8;
-  }, []);
+  }, [currentKey]);
 
   /** One unit's places. In a lesson of many units they sit, shorter, under the unit's row. */
   function parts(u: number) {
@@ -357,7 +380,7 @@ export function Outline({ lesson, position, current, seen, onGo, entries, curren
         ) : null}
         <nav className="track__nav" aria-label={`${trackTitle}, the track's lessons`}>
           <div ref={list} className="track__list">
-            <TrackParts entries={entries} currentKey={currentKey} progress={progress} />
+            <TrackParts entries={entries} currentKey={currentKey} progress={progress} going={wait?.going ?? null} carried={carried} />
           </div>
         </nav>
       </div>
@@ -369,6 +392,7 @@ export function Outline({ lesson, position, current, seen, onGo, entries, curren
         trackUrl={trackUrl}
         open={sheetOpen}
         onClose={onSheetClose}
+        wait={wait}
       />
     </>
   );

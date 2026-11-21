@@ -2,7 +2,7 @@ import { flushSync } from 'react-dom';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AvailableSummary, LessonSummary } from '../content/registry';
 import type { Lesson, Panel } from '../content/schema';
-import { forwardButton, holding, usePlayback } from '../engine/playback';
+import { forwardButton, holding, initialPlayback, usePlayback } from '../engine/playback';
 import { appliedEvents, deriveState, parseStepParam, resumeLabel, slotsFor, type Position } from '../engine/timeline';
 import { knownFrom } from '../lib/entries';
 import { STATUS_WORDS } from '../lib/hub';
@@ -19,6 +19,7 @@ import { MARKED_ROW, ScenePanel } from './ScenePanel';
 import { StackedPlaces, Timeline, positionsOf } from './Timeline';
 import { TopBar } from './TopBar';
 import { stepAnnouncement } from './announce';
+import { useLessonChange, type Arrived, type Wait } from './useLessonChange';
 import { useLessonShortcuts } from './useLessonShortcuts';
 import { useMediaQuery } from './useMediaQuery';
 import { useReducedMotion } from './useReducedMotion';
@@ -79,6 +80,10 @@ export interface LessonConsoleProps {
   figureData?: unknown;
   /** Opens a page: "Next lesson" at the last Practice. Left out, the browser's own navigation; tests hand in their own. */
   navigate?: (url: string) => void;
+  /** A lesson change on its way (the host's): the row going, the signal and the tape. Left out, none. */
+  wait?: Wait | null;
+  /** The lesson line of the swap that has just been made, said once by the live region. */
+  arrived?: Arrived | null;
 }
 
 /** What the log says while it is empty, unless the step says otherwise. */
@@ -108,9 +113,14 @@ function FinishedMarker() {
  * the learner has opened (a many-unit lesson's list ticks them) and the Practice picks, per
  * unit, so a visit elsewhere does not clear them.
  */
-export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, definitions, figure, figureData, navigate = (url) => window.location.assign(url) }: LessonConsoleProps) {
+export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next, nextFigure, entries, definitions, figure, figureData, navigate = (url) => window.location.assign(url), wait = null, arrived = null }: LessonConsoleProps) {
+  // A lesson opened in place (the host hands in another `lesson`): the reader's own state is cleared below, in this same
+  // render, so the new lesson never meets the old one's position. Until then this render works from a fresh cursor.
+  const [shownLesson, setShownLesson] = useState(lesson);
+  const changed = shownLesson !== lesson;
   // Each event waits as long as the figure's driver takes to play it.
-  const [state, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
+  const [playing, dispatch] = usePlayback(lesson, (e) => DRIVERS[lesson.figure].duration(e, figureData));
+  const state = changed ? { ...initialPlayback(), speed: playing.speed } : playing;
   const { position, eventIndex } = state;
   const derived = useMemo(() => deriveState(lesson, position, eventIndex), [lesson, position, eventIndex]);
   const { slot } = derived;
@@ -266,7 +276,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const { update } = progress;
   const [deepLinked, setDeepLinked] = useState(false);
 
-  // After the first render, which matched the server's Overview, follow a ?step= link.
+  // After the first render, which matched the server's Overview, follow a ?step= link. Only then: a lesson opened in place
+  // is the lesson's own address, at its Overview.
   useEffect(() => {
     const target = parseStepParam(window.location.search, lesson);
     if (target === null) return;
@@ -275,7 +286,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     // (This runs after the effect above that marks the first unit, so it replaces it.)
     setSeen(new Set([slotsFor(lesson)[target]!.unit]));
     dispatch({ type: 'go', position: target });
-  }, [lesson, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Keyed on the position, never on the progress data: every update hands out a new data object.
   useEffect(() => {
@@ -302,10 +314,34 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   const step = slot.kind === 'step' ? unit.steps[slot.step - 1]! : null;
   // At a step: its title, the latest row it has played, then any table changes since (stepAnnouncement). Elsewhere: the
   // place's name.
-  const announcement = step === null ? resumeLabel(lesson, position) : stepAnnouncement(step.title, derived);
+  const moved = step === null ? resumeLabel(lesson, position) : stepAnnouncement(step.title, derived);
+  // A lesson opened in place says its own line first (D26 section 5), and "Opening ..." while the data is on its way; the next move says what it does today.
+  const [lead, setLead] = useState<Arrived | null>(null);
+  const opening = wait !== null && wait.phase === 'tape' ? `Opening ${wait.title}.` : null;
+  const announcement = opening ?? (lead !== null && position === 0 ? lead.text : moved);
   // A step may say what its empty log means (How the Internet Works' quiet first steps); otherwise, and always at the Overview,
   // the unit's log says it, as the mockups' log does before anything has played.
   const idle = (step === null ? undefined : step.idle) ?? unit.scene.log.idle ?? IDLE;
+
+  // The lesson opened in place: everything the reader did in the old one starts again (D26 section 7). The speed, the chosen
+  // view and the outline's folds stay. These updates are made while rendering, so the new lesson is first drawn already cleared.
+  if (changed) {
+    setShownLesson(lesson);
+    dispatch({ type: 'load' });
+    setTab('explain');
+    setChangeSeen(null);
+    setLogOpen(false);
+    setSeen(new Set([0]));
+    setPicks({});
+    setDeepLinked(false);
+    setSheetOpen(false);
+    setLead(arrived);
+  } else if (lead !== null && position !== 0) setLead(null);
+  // The guide starts at its top (the explanation, keyed below, is made again).
+  useLayoutEffect(() => {
+    const guide = consoleEl.current?.querySelector<HTMLElement>('.console__guide');
+    if (guide != null) guide.scrollTop = 0;
+  }, [lesson]);
 
   return (
     <div
@@ -330,6 +366,8 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         reducedMotion={reducedMotion}
         onGo={go}
         onOpenLessons={() => setSheetOpen(true)}
+        wait={wait}
+        sheetOpen={sheetOpen}
       />
       <Outline
         lesson={lesson}
@@ -346,6 +384,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         total={total}
         sheetOpen={sheetOpen}
         onSheetClose={() => setSheetOpen(false)}
+        wait={wait}
       />
       <main id="main" className="console__main">
         <ScenePanel
@@ -380,6 +419,7 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
         </div>
         <div className="console__panel console__guide">
           <Explanation
+            key={entry.key}
             lesson={lesson}
             position={position}
             slot={slot}
@@ -425,4 +465,14 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
   );
 }
 
-export default LessonConsole;
+/**
+ * The island: the lesson console, with the lesson it shows held here so that a change to another lesson of the same
+ * track that draws the same figure is made in the page (`useLessonChange`). Every other change is the browser's own.
+ */
+export function LessonConsoleHost(props: LessonConsoleProps) {
+  const { lesson, entry, next, nextFigure, definitions, trackId, entries, navigate = (url) => window.location.assign(url) } = props;
+  const change = useLessonChange({ lesson, entry, next, nextFigure, definitions }, trackId, entries, navigate);
+  return <LessonConsole {...props} {...change.view} wait={change.wait} arrived={change.arrived} navigate={change.navigate} />;
+}
+
+export default LessonConsoleHost;

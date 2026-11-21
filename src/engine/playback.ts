@@ -45,7 +45,9 @@ export type PlaybackAction =
   | { type: 'tick'; position: Position; eventIndex: number }
   /** Ends a hold. It names the step it was set for, so a late one is ignored. */
   | { type: 'holdDone'; position: Position }
-  | { type: 'cycleSpeed' };
+  | { type: 'cycleSpeed' }
+  /** A new lesson opened in place: the cursor starts again at the Overview, idle; the speed is the reader's and stays. */
+  | { type: 'load' };
 
 export function initialPlayback(): PlaybackState {
   return { position: 0, eventIndex: 0, mode: 'idle', speed: 1 };
@@ -118,6 +120,8 @@ export function createPlaybackReducer(lesson: Lesson): (s: PlaybackState, a: Pla
         return s.mode === 'hold' && a.position === s.position ? runFrom(s, s.position + 1) : s;
       case 'cycleSpeed':
         return { ...s, speed: SPEEDS[(SPEEDS.indexOf(s.speed) + 1) % SPEEDS.length]! };
+      case 'load':
+        return { ...initialPlayback(), speed: s.speed };
     }
   };
 }
