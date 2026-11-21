@@ -31,6 +31,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: npx vitest run src/lib/lesson-json.test.ts
 
   # One pass of the end-to-end tests: the 1440 dark desktop project, which runs every behaviour check, and the phone.
   # The other desktop sizes, the light theme and reduced motion stay a local run (npm run e2e): all seven projects
