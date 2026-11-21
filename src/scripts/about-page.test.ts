@@ -274,7 +274,7 @@ test('card-stack.css changes only its opening comment (which names About and the
   expect(head).toContain('src/pages/glossary.astro');
   expect(
     run(
-      "git diff --name-only f30e876 -- src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
+      "git diff --name-only f30e876 -- 'src/pages/[track]/[lesson].astro' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
     ),
   ).toBe('');
   const gl = globalGrant('f30e876');

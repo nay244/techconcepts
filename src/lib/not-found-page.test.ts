@@ -55,7 +55,7 @@ describe('0. what the build may not change', () => {
   test('1: the shared files are untouched', () => {
     expect(
       run(
-        `git diff --name-only ${BASE} -- src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/tokens.ts src/art e2e/support.ts`,
+        `git diff --name-only ${BASE} -- 'src/pages/[track]/[lesson].astro' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/tokens.ts src/art e2e/support.ts`,
       ),
     ).toBe('');
   });

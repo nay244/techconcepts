@@ -971,9 +971,10 @@ test.describe('the header and the footer in the Card stack look', () => {
           const all = [...forth, ...back];
           const t = tally(all);
           const key = `${label} ${w}x${h} ${menuOpen ? 'open' : 'closed'}`;
-          // B37-H3, with the designer: on Home with the menu open, the demo's radios (the Watch tab, step 1's tile; their rings) can sit under the open header
-          // at 320 x 640 and 959 x 900. Those stops are counted here, not asserted; D25's unit (B42) asserts them.
-          const stepsUnderMenu = path === '/' && menuOpen ? all.filter((s) => s.under && /^Watch( part|, step )/.test(s.name)).length : 0;
+          // B37-H3 (D25's unit, B42, asserts these): with the menu open on Home, the demo's step radios can sit under the open header at
+          // 320 x 640 and 959 x 900 (two stops each), and at 320 x 640 the Watch tab's too (one). Counted, not asserted, and only these.
+          const exempt = (s: Stop): boolean => path === '/' && menuOpen && ((w === 320 && h === 640) || (w === 959 && h === 900)) && (/^Watch, step \d/.test(s.name) || (w === 320 && s.name === 'Watch part'));
+          const stepsUnderMenu = all.filter((s) => s.under && exempt(s)).length;
           console.log(`WALK ${testInfo.project.name} ${key} ${JSON.stringify({ ...t, stepsUnderMenu, underNames: all.filter((s) => s.under).map((s) => s.name), stops: `${forth.length}+${back.length}`, names: NAMES(all) })}`);
           // The stops, in order, are revamp's (case 44, 49): a stop that goes missing or moves is seen here.
           expect(NAMES(all), `${key}: the stops and their order`).toBe(STOPS[key]);

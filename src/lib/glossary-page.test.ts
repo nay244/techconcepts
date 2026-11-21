@@ -287,7 +287,7 @@ describe('D21, 0.4: the stylesheet and the page', () => {
     expect(trackPage.hunks, 'the track page: the root’s 12px below (job 29)').toEqual(TRACK_PAGE_GRANT.hunks);
     expect(trackPage.removed, 'the track page: nothing removed').toEqual(TRACK_PAGE_GRANT.removed);
     expect(trackPage.added, 'the track page: the one declaration').toEqual(TRACK_PAGE_GRANT.added);
-    const touched = (execSync("git diff --name-only f30e876 -- src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
+    const touched = (execSync("git diff --name-only f30e876 -- 'src/pages/[track]/[lesson].astro' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
     const g = globalGrant('f30e876');
     expect(g.changed, 'global.css: the reduced-motion rule’s one declaration (job 28)').toEqual(GLOBAL_GRANT.changed);
