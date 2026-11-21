@@ -13,6 +13,7 @@ import { JSDOM } from 'jsdom';
 import { beforeAll, describe, expect, test } from 'vitest';
 import Tracks from '../pages/tracks.astro';
 import { homeStops } from './home';
+import { SITE_HEADER_GRANT, pageGrant } from './card-stack-guards';
 
 let html = '';
 let doc: Document;
@@ -210,8 +211,12 @@ describe('the shared Card stack stylesheet', () => {
   });
 
   test('the page’s own rules reach nothing outside it: the strip, the progress logic, the tokens, the header and the footer are not in the page’s diff', () => {
-    const touched = (execSync('git diff --name-only e6441c2 -- src/components/hub/TrackStrip.tsx src/components/hub/useUpNext.ts src/styles/tokens.ts src/components/SiteHeader.astro src/components/SiteFooter.astro || true', { encoding: 'utf8' }) as string).trim();
+    const touched = (execSync('git diff --name-only e6441c2 -- src/components/hub/TrackStrip.tsx src/components/hub/useUpNext.ts src/styles/tokens.ts src/components/SiteFooter.astro || true', { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
+    const header = pageGrant('e6441c2', 'src/components/SiteHeader.astro');
+    expect(header.hunks, 'the header: the focusin rule (job 29, D25)').toEqual(SITE_HEADER_GRANT.hunks);
+    expect(header.removed, 'the header: nothing removed').toEqual(SITE_HEADER_GRANT.removed);
+    expect(header.added, 'the header: the rule’s lines').toEqual(SITE_HEADER_GRANT.added);
   });
 
   test('shadow-sm, the "task 8" rules and the prototype’s switch are not built', () => {

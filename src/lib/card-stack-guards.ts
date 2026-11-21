@@ -73,7 +73,7 @@ export const TRACKS_GRANT = {
 } as const;
 
 /**
- * P(C, file): how a page differs from its text at commit `commit` with block comments and blank lines left out (job 29, B37):
+ * P(C, file): how a page differs from its text at commit `commit` with block comments, whole-line `//` comments and blank lines left out (job 29, B37):
  * the hunks (old start and count, the new side as N, counted in those lines), the removed lines and the added lines, each
  * trimmed. A small LCS, since `git diff` would count the comments.
  */
@@ -83,7 +83,7 @@ export function pageGrant(commit: string, file: string): { hunks: string[]; remo
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .split('\n')
       .map((l) => l.trim())
-      .filter((l) => l !== '');
+      .filter((l) => l !== '' && !l.startsWith('// '));
   const a = lines(git(`git show ${commit}:'${file}'`));
   const b = lines(readFileSync(file, 'utf8') as string);
   const n = a.length;
@@ -121,7 +121,7 @@ export function pageGrant(commit: string, file: string): { hunks: string[]; remo
 }
 /** What P(C, 'src/pages/index.astro') must return: the root's padding, the open menu's, the section anchors' 8px and the demo's radios. */
 export const INDEX_GRANT = {
-  hunks: ['@@ -320,0 +N', '@@ -331,1 +N', '@@ -432,1 +N', '@@ -436,1 +N', '@@ -440,1 +N', '@@ -444,1 +N', '@@ -448,1 +N'],
+  hunks: ['@@ -309,0 +N', '@@ -320,1 +N', '@@ -421,1 +N', '@@ -425,1 +N', '@@ -429,1 +N', '@@ -433,1 +N', '@@ -437,1 +N'],
   removed: ['scroll-margin-top: 88px;', 'height: 1px;', 'scroll-margin-top: 70px;', 'scroll-margin-bottom: 360px;', 'scroll-margin-bottom: 80px;', 'scroll-margin-bottom: 324px;'],
   added: [
     ':global(html) {',
@@ -143,7 +143,7 @@ export const INDEX_GRANT = {
 } as const;
 /** What P(C, 'src/pages/[track]/index.astro') must return: the root's 12px below. */
 export const TRACK_PAGE_GRANT = {
-  hunks: ['@@ -73,0 +N'],
+  hunks: ['@@ -62,0 +N'],
   removed: [],
   added: ['scroll-padding-bottom: 12px;'],
 } as const;
@@ -169,4 +169,11 @@ export function globalGrant(commit: string): { changed: [string, string][]; same
 export const GLOBAL_GRANT = {
   changed: [['transition-duration: 0.01ms !important;', 'transition-duration: 0s !important;']],
   sameLength: true,
+} as const;
+
+/** What P(C, 'src/components/SiteHeader.astro') must return (job 29, B42; D25): the focusin rule after the Escape handler. */
+export const SITE_HEADER_GRANT = {
+  hunks: ['@@ -70,0 +N'],
+  removed: [],
+  added: ["document.addEventListener('focusin', (e) => {", "if (button.getAttribute('aria-expanded') !== 'true') return;", "if (e.target instanceof Element && e.target.closest('.site-head')) return;", 'setOpen(false);', '});'],
 } as const;

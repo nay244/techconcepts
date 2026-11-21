@@ -786,14 +786,14 @@ test.describe('keyboard walks', () => {
   }
 
   for (const size of SIZES.filter((s) => s.width < 960)) {
-    test(`47: menu open at ${size.width}: six panel links, then three stops, to the footer and back; the panel stays open`, async ({ page }) => {
+    test(`47: menu open at ${size.width}: six panel links, then three stops, to the footer and back; the panel folds away when focus leaves it`, async ({ page }) => {
       await visit(page, MISSING, size.width, size.height);
       const w = await walk(page, true);
       expect(w.panel).toEqual(PANEL);
       expect(w.going.map((s) => s.name)).toEqual(STOPS);
       expect(w.coming.map((s) => s.name)).toEqual([...STOPS].reverse());
       clear([...w.going, ...w.coming], `${size.width} open`);
-      expect(w.panelOpenAtEnd).toBe(true);
+      expect(w.panelOpenAtEnd).toBe(false);
     });
   }
 

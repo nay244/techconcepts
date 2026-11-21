@@ -16,7 +16,7 @@ import { checkedOn, getEntries, getLesson, trackTotals } from '../content/regist
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
 import About from '../pages/about.astro';
-import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from '../lib/card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, SITE_HEADER_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from '../lib/card-stack-guards';
 
 // The build's analytics token, which each render here sets for itself.
 const analytics = vi.hoisted(() => ({ token: undefined as string | undefined }));
@@ -269,12 +269,16 @@ test('card-stack.css changes only its opening comment (which names About and the
   expect(trackPage.hunks, 'the track page: the root’s 12px below (job 29)').toEqual(TRACK_PAGE_GRANT.hunks);
   expect(trackPage.removed, 'the track page: nothing removed').toEqual(TRACK_PAGE_GRANT.removed);
   expect(trackPage.added, 'the track page: the one declaration').toEqual(TRACK_PAGE_GRANT.added);
+  const header = pageGrant('f30e876', 'src/components/SiteHeader.astro');
+  expect(header.hunks, 'the header: the focusin rule (job 29, D25)').toEqual(SITE_HEADER_GRANT.hunks);
+  expect(header.removed, 'the header: nothing removed').toEqual(SITE_HEADER_GRANT.removed);
+  expect(header.added, 'the header: the rule’s lines').toEqual(SITE_HEADER_GRANT.added);
   const head = readFileSync('src/styles/card-stack.css', 'utf8').split('\n').slice(0, 4).join('\n');
   expect(head).toContain('src/pages/about.astro');
   expect(head).toContain('src/pages/glossary.astro');
   expect(
     run(
-      "git diff --name-only f30e876 -- 'src/pages/[track]/[lesson].astro' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
+      "git diff --name-only f30e876 -- 'src/pages/[track]/[lesson].astro' src/styles/tokens.ts src/layouts src/components/SiteFooter.astro src/components/site.css src/components/hub",
     ),
   ).toBe('');
   const gl = globalGrant('f30e876');

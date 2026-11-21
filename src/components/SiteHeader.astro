@@ -79,6 +79,13 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
         button.focus();
       }
     });
+    // Below 960px the open menu lies over the page, so it closes when focus moves outside the header: Tab past its last
+    // link, Shift+Tab past the brand to the skip link, or a tap on a control in the page. Focus stays where it went (D25).
+    document.addEventListener('focusin', (e) => {
+      if (button.getAttribute('aria-expanded') !== 'true') return;
+      if (e.target instanceof Element && e.target.closest('.site-head')) return;
+      setOpen(false);
+    });
   }
 
   // Home's header turns solid once the page has scrolled a little. Without JavaScript it is solid throughout.
