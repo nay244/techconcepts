@@ -1498,3 +1498,4 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 | Unit | Agent | Model | Tries | Growth | Result |
 |---|---|---|---|---|---|
 | S26 | scout | Haiku | 1 | 156,832 | `prototypes/s26-job-29-facts.md`: Home's and the pages' scroll padding with the pins and guards, the footer walk's skips, the dead code and its tests, the legacy path gone since job 9. |
+| D24 | designer | Opus 5.5 | 1 | 323,172 | `prototypes/d24-firewalls-guide.html` and `.md` (`c7c25da`): rule 3 half hidden for its whole read at 1440 (42 of 42 frames at 1×), "Fits → deny" never shown at 375 × 667, 16 of 114 marked steps out under the scene; variant A follows the row being read in its own box everywhere, with a hand hold; B also grows the guide's box. Approved as A with the hold and under the scene (2.142). Counted apart, as the designer's spend. |
