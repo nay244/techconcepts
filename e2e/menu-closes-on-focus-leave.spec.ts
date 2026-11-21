@@ -50,6 +50,32 @@ test.describe('the open menu closes when focus leaves the header (D25)', () => {
     }
   });
 
+  test('3: at 375, walking into the page with the menu open lands each stop where the closed-menu walk does', async ({ page }) => {
+    const mainStops = async (menuOpen: boolean): Promise<Array<{ name: string; top: number }>> => {
+      await visit(page, '/', 375, 812);
+      if (menuOpen) {
+        await openMenu(page);
+        await page.locator('#menu').focus();
+      }
+      const stops: Array<{ name: string; top: number }> = [];
+      for (let i = 0; i < 40 && stops.length < 12; i++) {
+        await page.keyboard.press('Tab');
+        await settle(page);
+        const r = await page.evaluate(() => {
+          const el = document.activeElement as HTMLElement;
+          return { inMain: !!el.closest('main'), name: el.getAttribute('aria-label') ?? (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40), top: el.getBoundingClientRect().top };
+        });
+        if (r.inMain) stops.push({ name: r.name, top: r.top });
+      }
+      return stops;
+    };
+    const closed = await mainStops(false);
+    const open = await mainStops(true);
+    expect(closed).toHaveLength(12);
+    expect(open.map((s) => s.name)).toEqual(closed.map((s) => s.name));
+    open.forEach((s, i) => expect(Math.abs(s.top - closed[i]!.top), `${s.name}: ${s.top} against ${closed[i]!.top}`).toBeLessThanOrEqual(1));
+  });
+
   test('4: Shift+Tab from the first stop reaches Menu, closed; Enter opens it again and Tab reaches Tracks', async ({ page }) => {
     for (const [w, h] of SIZES) {
       await visit(page, '/', w, h);
