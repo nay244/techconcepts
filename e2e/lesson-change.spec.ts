@@ -161,15 +161,17 @@ async function expectEqualToFresh(page: Page, context: BrowserContext, label: st
 }
 
 /** Holds a lesson's data for `ms` before it is answered (never, with `Infinity`). */
-async function hold(page: Page, slug: string, ms: number): Promise<{ answered: () => number | null; started: () => number | null }> {
+async function hold(page: Page, slug: string, ms: number, track = 'how-the-internet-works'): Promise<{ answered: () => number | null; started: () => number | null }> {
   let answered: number | null = null;
   let started: number | null = null;
+  // The body is fetched now, so how long the server takes never adds to the wait the test sets.
+  const body = ms === Infinity ? '' : await (await page.request.get(`/${track}/${slug}.json`)).text();
   await page.route(jsonOf(slug), async (route: Route) => {
     started ??= Date.now();
     if (ms === Infinity) return; // never answered
     await new Promise((r) => setTimeout(r, ms));
     answered = Date.now();
-    await route.continue();
+    await route.fulfill({ status: 200, contentType: 'application/json', body });
   });
   return { answered: () => answered, started: () => started };
 }
@@ -712,6 +714,8 @@ test.describe('the wait at 1440', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('answered at once: the marks never show (D-1) and the swap is the first change', async ({ page }) => {
+    // Answered from the body fetched beforehand, at once: how fast the preview server is plays no part.
+    await hold(page, 'what-is-udp', 0);
     await openMarked(page, TCP);
     await recordMarks(page);
     await press(page, '.console__track a[href$="what-is-udp"]');
@@ -1146,7 +1150,7 @@ test.describe('the sheet at 375', () => {
   });
 
   test('"Opening TLS/SSL" clears the Network / Sequence switch (D-11)', async ({ page }) => {
-    await hold(page, 'what-is-tls', 1000);
+    await hold(page, 'what-is-tls', 1000, 'networking');
     await openMarked(page, '/networking/what-is-https');
     await press(page, '.console__top .top__lessons').catch(() => {});
     // The longest title a swap can reach, pressed from the column-less layout by the sheet's row.
@@ -1202,7 +1206,7 @@ test.describe('the tape at 1440 x 900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('"Opening TLS/SSL" clears the scene\'s title line and the view switch (D-11)', async ({ page }) => {
-    await hold(page, 'what-is-tls', 1700);
+    await hold(page, 'what-is-tls', 1700, 'networking');
     await openMarked(page, '/networking/what-is-https');
     await pressRowQuiet(page, 'what-is-tls');
     await expect(page.locator('.console__top .tape')).toHaveText('Opening TLS/SSL');
@@ -1220,7 +1224,7 @@ test.describe('the narrowest window with the column, 1100 x 800', () => {
   test.use({ viewport: { width: 1100, height: 800 } });
 
   test('the tape clears the scene\'s views and title line (D-11)', async ({ page }) => {
-    await hold(page, 'what-is-tls', 1700);
+    await hold(page, 'what-is-tls', 1700, 'networking');
     await openMarked(page, '/networking/what-is-https');
     await pressRowQuiet(page, 'what-is-tls');
     await expect(page.locator('.console__top .tape')).toHaveCount(1);
