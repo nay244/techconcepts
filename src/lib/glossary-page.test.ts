@@ -18,7 +18,7 @@ import { tracks } from '../content/tracks';
 import { siteGlossary } from './glossary-site';
 import { stampLine } from './glossary';
 import GlossaryPage from '../pages/glossary.astro';
-import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, SITE_HEADER_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, BASE_LAYOUT_GRANT, COMMENT_ONLY_GRANT, INDEX_GRANT, SITE_HEADER_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from './card-stack-guards';
 
 const words = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 let html = '';
@@ -291,7 +291,12 @@ describe('D21, 0.4: the stylesheet and the page', () => {
     expect(header.hunks, 'the header: the focusin rule (job 29, D25)').toEqual(SITE_HEADER_GRANT.hunks);
     expect(header.removed, 'the header: nothing removed').toEqual(SITE_HEADER_GRANT.removed);
     expect(header.added, 'the header: the rule’s lines').toEqual(SITE_HEADER_GRANT.added);
-    const touched = (execSync("git diff --name-only f30e876 -- 'src/pages/[track]/[lesson].astro' src/styles/tokens.ts src/layouts src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
+    const layout = pageGrant('f30e876', 'src/layouts/BaseLayout.astro');
+    expect(layout.hunks, 'the layout: overHero goes (job 29, B38)').toEqual(BASE_LAYOUT_GRANT.hunks);
+    expect(layout.removed, 'the layout: the lines it lost').toEqual(BASE_LAYOUT_GRANT.removed);
+    expect(layout.added, 'the layout: the lines it gained').toEqual(BASE_LAYOUT_GRANT.added);
+    expect(pageGrant('f30e876', 'src/components/SiteFooter.astro'), 'src/components/SiteFooter.astro: its comments only (job 29, B38)').toEqual(COMMENT_ONLY_GRANT);
+    const touched = (execSync("git diff --name-only f30e876 -- 'src/pages/[track]/[lesson].astro' src/styles/tokens.ts src/layouts ':!src/layouts/BaseLayout.astro' src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
     const g = globalGrant('f30e876');
     expect(g.changed, 'global.css: the reduced-motion rule’s one declaration (job 28)').toEqual(GLOBAL_GRANT.changed);

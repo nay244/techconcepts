@@ -24,7 +24,6 @@ Your standing instructions (`.claude/agents/author.md`) hold. This file adds wha
 ## Which files you change
 
 - The lesson's file: `defineLesson`, in the form of `src/content/lessons/what-is-icmp.ts` and `what-is-dhcp.ts` (the newest checked tour lessons; read one whole).
-- `src/content/legacy.ts`: your slug's line goes. `src/content/legacy.test.ts`: the count in the title and your unit id in the filter.
 - `src/content/tracks/how-the-internet-works.test.ts`: only your lesson's rows, and only where your change makes one false.
 - `src/content/sources.ts` and `sources.test.ts`: only for a document the analyst missed.
 - **Never:** Home's files (`src/lib/home*`, `src/pages/`), `e2e/`, `src/art/`, `src/scenes/`, another lesson's file or rows, any file under `docs/` (the fact-checker alone writes the report). If one of these must change for your lesson to be true, stop and report it.

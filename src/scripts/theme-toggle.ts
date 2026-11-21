@@ -1,7 +1,6 @@
-// The theme button in the site header (SiteHeader.astro), on every page but the lesson. It runs without React, so a
-// page whose only moving part is this button loads no framework. The lesson console's button is the React one
-// (src/components/ThemeToggle.tsx); both read and write the same two things: the root element's data-theme and the
-// saved choice.
+// The theme button in the site header (SiteHeader.astro), on every page that has the header, the lesson's included. It runs
+// without React, so a page whose only moving part is this button loads no framework. It reads and writes two things: the
+// root element's data-theme and the saved choice.
 import { createSafeStorage, type SafeStorage } from '../lib/storage';
 import { THEME_KEY, applyTheme, themeInEffect, type Theme } from '../lib/theme';
 

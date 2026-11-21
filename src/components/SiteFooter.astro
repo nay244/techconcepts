@@ -2,8 +2,8 @@
 import { logoMark } from '../art/logo';
 
 // The brand rules (.brand) come with SiteHeader, which always renders alongside this.
-// The role is said outright: a split page (the track page) renders this footer at the end of its scrolling route,
-// inside main, where a plain <footer> would stop being the page's contentinfo landmark.
+// The footer is the layout's, after main (BaseLayout), so as a child of body it is the page's contentinfo landmark
+// already; the role is said outright all the same, belt and braces.
 ---
 
 <footer class="site-foot" role="contentinfo">
