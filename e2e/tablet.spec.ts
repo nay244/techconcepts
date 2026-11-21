@@ -450,8 +450,8 @@ for (const theme of THEMES) test.describe(`with JavaScript off, ${theme} theme`,
  * B39 (job 29): the forward button's fit commits in the frame its size changes. Two probes, each made after hydration and
  * made again right before each resize, so each runs after the page's own ResizeObserver (observers run in the order they were
  * made): an IntersectionObserver rooted on the button sees a cut label or arrow (ratio under 1); a ResizeObserver reads
- * whether the form shown is the one that fits, as the page's check does. An entry for a button that is not rendered
- * (the layout changes at 1100px and hides it: its root has no box) is not a frame a reader sees, and is skipped. Neither reads text in an IntersectionObserver callback.
+ * whether the form shown is the one that fits, as the page's check does. An entry for an arrow that is not rendered
+ * (the arrow is display:none below 1100px: it has no box) is not a frame a reader sees, and is skipped. Neither reads text in an IntersectionObserver callback.
  */
 type FitRec = { k: 'io' | 'ro'; r?: number; fits?: boolean; full?: boolean; t: string; room?: number };
 const FIT_LESSONS = [
@@ -521,6 +521,29 @@ test.describe('B39: the forward button fits in the frame its size changes', () =
         expect(ros.filter((r) => r.fits !== r.full).map((r) => `fits=${r.fits} shown="${r.t}" room=${r.room}`), 'the wrong form painted').toEqual([]);
       });
     }
+  }
+
+  // Case 3: the mode changes (full -> fit at 1100, short -> fit at 761) still give the right form in the first frame.
+  for (const [from, to] of [
+    [[1100, 900], [1099, 900]],
+    [[760, 900], [761, 900]],
+  ] as const) {
+    test(`3 the mode turn ${from.join('x')} -> ${to.join('x')}`, async ({ page }) => {
+      await page.setViewportSize({ width: from[0], height: from[1] });
+      await page.goto(FIT_LESSONS[0]);
+      await hydrated(page);
+      await page.evaluate(() => document.fonts.ready);
+      await frames(page, 3);
+      await installFitProbe(page);
+      await frames(page, 2);
+      const init = await takeFit(page);
+      await page.setViewportSize({ width: to[0], height: to[1] });
+      await frames(page, 4);
+      const after = await takeFit(page);
+      expect(init.some((r) => r.k === 'io' && r.r === 1), 'io saw the button whole before the turn').toBe(true);
+      expect(after.filter((r) => r.k === 'io' && r.r! < 0.999).map((r) => `${r.r!.toFixed(2)} ${r.t}`), 'cut label or arrow painted').toEqual([]);
+      expect(after.filter((r) => r.k === 'ro' && r.fits !== r.full).map((r) => `fits=${r.fits} shown="${r.t}" room=${r.room}`), 'the wrong form painted').toEqual([]);
+    });
   }
 
   test('9 the sweep 1120 -> 740 -> 1120 by 7px: no cut and no wrong frame', async ({ page }) => {
