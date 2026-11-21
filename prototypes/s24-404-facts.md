@@ -2,7 +2,7 @@
 
 Scout report for job 23 (the 404 page moves from Patch to the Card stack). Read-only: no source file, build, dev server or Playwright run. The only file written is this one.
 
-**Checkout.** The worktree is at `b14f4d1` on `claude/job23-404-f9d693`, clean at the start. Paths below are relative to the worktree root `/Users/naaay/Developer/WebProjects/TechConcept/.claude/worktrees/job23-404-f9d693`.
+**Checkout.** The worktree is at `b14f4d1` on `claude/job23-404-f9d693`, clean at the start. Paths below are relative to the root of job 23's worktree (`.claude/worktrees/job23-404-f9d693`).
 
 ## Part 1: the page's code
 

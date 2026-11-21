@@ -209,7 +209,7 @@ Counts are `it(` / `test(` declarations by grep (`^\s*(it|test)(\.each(…))?(\.
 
 ## Part 7: the built page's size (Q7)
 
-`dist/` exists at `/Users/naaay/Developer/WebProjects/TechConcept/dist` (mtime Nov 17 10:19). Its build revision is not recorded in the folder, and it was not compared with `aa6d838`. Gzip of each page's `index.html` (`gzip -c | wc -c`):
+`dist/` exists in the main folder (mtime Nov 17 10:19). Its build revision is not recorded in the folder, and it was not compared with `aa6d838`. Gzip of each page's `index.html` (`gzip -c | wc -c`):
 
 | Page | Path | Raw bytes | Gzipped bytes |
 |---|---|---|---|
