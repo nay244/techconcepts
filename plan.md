@@ -62,6 +62,12 @@ Reviewer (Opus), 2026-11-20, on `job29/int` a7985bd with trials (`.superpowers/j
 
 **To `designer`** (H3, taste): with the menu open, step 1's tile is drawn 162 to 358px above the step radio, so the walk finds it under the 391px header at 320 × 640 (where the port is 225px and no margin brings both in) and at 959 × 900, two stops each (23 today). B37 builds everything else meanwhile; the answer is added before its review.
 
+### B41's spec review
+
+Reviewer (Opus), 2026-11-20, on `job29/int` d68743a with a trial of the follow (`.superpowers/job29/spec41-trial-follow.diff`): 14 holes, 66 attack cases in `prototypes/b41-cases.md`, which holds each hole's full answer; the builder follows it.
+
+**Errata** (2.145): **E47** (H1) a row taller than its box less 8px flipped the box at every commit (320 × 568: Proxies 1, 3, 5, Load Balancers 3, ICMP 6; a phone on its side): such a row is brought top first, its top 4px under the box's top, and left once there; the orchestrator's ruling on which end (the top: its first line names it, as step 5). **E48** (H2) the hold is the element the reader took, not a flag, so a remounted, hidden or moved box is followed. **E49** (H3) on the phone `LessonConsole`'s tab effect stays as D24 §2.3 says, so at landing it may bring the deciding rule back once if the reader scrolled it out; the orchestrator's ruling, recorded for the owner. **E50** (H4) let go on a new playback state with an event to play, before the view and driver guards (the speed button and Resume let go, Pause does not). **E51** (H5) the place compared by value in the follow's own commit. **E52** (H6) React handlers on the section, filtered to `.tpanel, .rpanel`. **E53** (H7) check 7 takes the table with a pointer or touch at rule 1, a wheel up during rule 3, PageUp or Home then a settle. **E54** (H8) `scrollIntoView` counted in the browser on desktop only. **E55** (H9) the priority probed on hand-built markup. **E56** (H10) check 6 with Rules open; check 10's first half a unit probe. **E57** (H11) §2.2 and the prototype govern Replay. **E58** (H12) one new spec file in `d1440-dark` and `reduced-motion`, sizes set in it. **E59** (H13) the floor is half a read's frames. **E60** (H14) no `ResizeObserver`.
+
 ## When the work stops for the owner
 
 - The plan (this section), before D24 and the spec review.
