@@ -2,6 +2,7 @@ import type { Lesson, Unit } from '../content/schema';
 import { holding, type PlaybackState } from '../engine/playback';
 import type { Position, Slot } from '../engine/timeline';
 import { placeLabel } from './placeLabel';
+import type { Wait } from './useLessonChange';
 import { Timeline, positionsOf } from './Timeline';
 
 export interface TopBarProps {
@@ -22,6 +23,21 @@ export interface TopBarProps {
   onGo(position: Position): void;
   /** Opens the lessons sheet (the button under 1100px wide). */
   onOpenLessons(): void;
+  /** A lesson change on its way: its signal and tape stand under the bar (not while the sheet, which has its own, is open). */
+  wait?: Wait | null;
+  sheetOpen?: boolean;
+}
+
+/** The signal (the cable running under the bar, from 100 ms) and the tape ("Opening UDP", from 400 ms) of a lesson change. Drawn over the edge, taking no room; read by nobody (the live region says the words). */
+export function ChangeMarks({ wait }: { wait: Wait }) {
+  return (
+    <>
+      {wait.phase === 'idle' ? null : <span className="signal" aria-hidden="true" />}
+      {wait.phase === 'tape' ? (
+        <span className="tape" aria-hidden="true">{`Opening ${wait.title}`}</span>
+      ) : null}
+    </>
+  );
 }
 
 const LIST_ICON = (
@@ -39,7 +55,7 @@ const LIST_ICON = (
  * the column's head holds it from 1100px, and CSS shows exactly one of the two), and the button "9 of 20" opens the
  * lessons sheet. The bar is a `div`: the site's header is the page's one banner.
  */
-export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion, onGo, onOpenLessons }: TopBarProps) {
+export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slot, unit, reducedMotion, onGo, onOpenLessons, wait = null, sheetOpen = false }: TopBarProps) {
   const hold = reducedMotion ? null : holding(state);
   return (
     <div className="console__panel console__top">
@@ -76,6 +92,7 @@ export function TopBar({ lesson, trackTitle, trackUrl, number, total, state, slo
         {LIST_ICON}
         <span aria-hidden="true">{`${number} of ${total}`}</span>
       </button>
+      {wait !== null && !sheetOpen ? <ChangeMarks wait={wait} /> : null}
     </div>
   );
 }
