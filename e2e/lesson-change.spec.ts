@@ -898,6 +898,38 @@ test.describe('the wait at 1440', () => {
   });
 });
 
+test.describe('the signal under reduced motion and the sheet\'s fall-back', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('the signal marches only when motion is allowed; its dashes are drawn either way, and no element is named for a settle (D-6)', async ({ page }, testInfo) => {
+    await hold(page, 'what-is-udp', 600);
+    await openMarked(page, TCP);
+    await press(page, '.console__track a[href$="what-is-udp"]');
+    await expect(page.locator('.console .signal')).toHaveCount(1);
+    const style = await page.locator('.console .signal').evaluate((el) => ({ name: getComputedStyle(el).animationName, image: getComputedStyle(el).backgroundImage }));
+    expect(style.image).toContain('repeating-linear-gradient');
+    expect(style.name).toBe(testInfo.project.name === 'reduced-motion' ? 'none' : 'signal-march');
+    const names = await page.evaluate(() => document.getAnimations().map((a) => (a as CSSAnimation).animationName));
+    expect(names.filter((n) => /settle/i.test(n))).toStrictEqual([]);
+    // The going mark: the here row's ground and the edge drawn as dashes.
+    const mark = await row(page, 'what-is-udp').evaluate((el) => ({ image: getComputedStyle(el).backgroundImage, shadow: getComputedStyle(el).boxShadow }));
+    expect(mark.image).toContain('repeating-linear-gradient');
+    expect(mark.shadow).toBe('none');
+  });
+
+  test('on the fall-back a sheet press leaves the sheet open to unload (B44-8.5, D-21)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await hold(page, 'what-is-udp', Infinity);
+    await openMarked(page, TCP);
+    await page.locator('.top__lessons').click();
+    await page.evaluate(() => (document.querySelector('.outline__dialog a[href$="what-is-udp"]') as HTMLElement).click());
+    await page.waitForTimeout(1700);
+    await expect(page.locator('.outline__dialog')).toHaveAttribute('open', '');
+    await page.waitForURL(`**${UDP}`, { timeout: 5000 });
+    expect((await sameDocument(page)).mark).toBe(false);
+  });
+});
+
 // ================================================================ the film probe (B44-9)
 
 test.describe('the film', () => {
