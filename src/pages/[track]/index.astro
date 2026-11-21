@@ -80,10 +80,11 @@ const slim = islandEntries(entries);
 
 <style>
   /* The 68px sticky header must not hide what has keyboard focus: the root keeps 80px above anything scrolled into view
-     (as /tracks does), and while the header's menu is open (below 960px; from there up the menu is not drawn) its
+     (as /tracks does) and 12px below it, for the footer's rings, and while the header's menu is open (below 960px; from there up the menu is not drawn) its
      height, 329px at 320 to 959 wide on this page, plus 12px. If the menu's links change, this number changes with them. */
   :global(html) {
     scroll-padding-top: 80px;
+    scroll-padding-bottom: 12px;
   }
   @media (max-width: 959px) {
     :global(html:has(#menu-panel:not([hidden]))) {

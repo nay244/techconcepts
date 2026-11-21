@@ -113,6 +113,8 @@ const art = (id: CoverId): string =>
      links need (the header, the 34px tab, 12px of air) less that, so the anchors land where they always have. */
   :global(html) {
     scroll-padding-top: 80px;
+    /* The 12px below keeps the footer's rings whole. */
+    scroll-padding-bottom: 12px;
   }
   /* While the header's menu is open (below 960px) it is 329px on this page; the root keeps that and 12px above what has focus, as the track page does. */
   @media (max-width: 959px) {

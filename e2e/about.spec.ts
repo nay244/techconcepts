@@ -73,14 +73,16 @@ const VIEWS = [
 test.describe('the page reads the Card stack, and only this page and its neighbours do', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('the root’s scroll padding is 80px above and 12px below on /about; / is auto, /tracks 80px, a lesson 69px', async ({ page }) => {
+  test('the root’s scroll padding is 80px above and 12px below on /about; / and /tracks 80px, a lesson 69px', async ({ page }) => {
     await visit(page, '/about');
     expect(await rootStyle(page, 'scrollPaddingTop')).toBe('80px');
     expect(await rootStyle(page, 'scrollPaddingBottom')).toBe('12px');
     await visit(page, '/');
-    expect(await rootStyle(page, 'scrollPaddingTop')).toBe('auto');
+    expect(await rootStyle(page, 'scrollPaddingTop')).toBe('80px');
+    expect(await rootStyle(page, 'scrollPaddingBottom')).toBe('12px');
     await visit(page, '/tracks');
     expect(await rootStyle(page, 'scrollPaddingTop')).toBe('80px');
+    expect(await rootStyle(page, 'scrollPaddingBottom')).toBe('12px');
     await visit(page, '/networking/dhcp');
     expect(await rootStyle(page, 'scrollPaddingTop')).toBe('69px');
   });

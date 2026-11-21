@@ -335,6 +335,19 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
       scroll-behavior: auto;
     }
   }
+  /* The 68px sticky header must not hide what has keyboard focus: the root keeps 80px above anything scrolled into view
+     and 12px below it (the footer's rings), and while the header's menu is open (below 960px; from there up the menu is not
+     drawn) its height, 391px on Home at 320 to 959 wide, plus 12px. If the menu's links change, this number changes with them.
+     Every scroll margin below is what a landing wanted less the 80px, so each lands where it always has. */
+  :global(html) {
+    scroll-padding-top: 80px;
+    scroll-padding-bottom: 12px;
+  }
+  @media (max-width: 959px) {
+    :global(html:has(#menu-panel:not([hidden]))) {
+      scroll-padding-top: 403px;
+    }
+  }
   :global(main) {
     --gap: clamp(56px, 7vw, 96px);
   }
@@ -345,8 +358,8 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
     letter-spacing: 0;
   }
   section[id] {
-    /* Clear of the sticky header when a link lands here. */
-    scroll-margin-top: 88px;
+    /* A link lands 88px under the window's top: the root's 80px padding and these 8px. */
+    scroll-margin-top: 8px;
   }
   /* Links are ink, underlined; blue means a request and nothing else. */
   a:not(.btn) {
@@ -454,32 +467,35 @@ const addrParts = (text: string): string[] => text.split(/(?<= ·) /);
   }
   /* The radio buttons are out of sight, and still reached by Tab and the arrow keys. Each sits in the grid area where its
      group shows its result, so focusing it (a tap on a label does) scrolls nowhere when that place is on screen, and
-     only as far as that place when it is not. The top margin is the header's height, and no more. */
+     only as far as that place when it is not. Chrome scrolls a focused element only when its own box lies outside the
+     scroll port (the window less the root's padding), margins not counted; so each radio's box is 81px tall, and with the
+     -10px margin its 80px of padding and 70px (the header's height, and no more) put the landing where it always was. The
+     bottom margins are what they were (360, 80 and 324px) less the 80px of padding above and the 12px below. */
   .demo__in {
     position: absolute;
     top: 0;
     left: 0;
     width: 1px;
-    height: 1px;
+    height: 81px;
     margin: 0;
     opacity: 0;
     pointer-events: none;
-    scroll-margin-top: 70px;
+    scroll-margin-top: -10px;
   }
   /* The tabs, the figure and the top of the part; */
   .demo__in--part {
     grid-area: parts;
-    scroll-margin-bottom: 360px;
+    scroll-margin-bottom: 268px;
   }
   /* the top of the narration, clear of the phone's Next bar; */
   .demo__in--step {
     grid-area: says;
-    scroll-margin-bottom: 80px;
+    scroll-margin-bottom: -12px;
   }
   /* the question, its three answers and the hint below them. */
   .demo__in--answer {
     grid-area: rows;
-    scroll-margin-bottom: 324px;
+    scroll-margin-bottom: 232px;
   }
   .demo__ui {
     display: contents;

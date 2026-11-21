@@ -192,8 +192,8 @@ describe('the files the page changes', () => {
     expect(left).toBe('');
   });
 
-  test('the scroll padding is 80px, and 341px only while the menu is open below 960px (H10); the not-ready square’s rule is :not([data-state]) (H6)', () => {
-    expect(page).toMatch(/:global\(html\)\s*\{\s*scroll-padding-top: 80px;/);
+  test('the scroll padding is 80px above and 12px below, and 341px only while the menu is open below 960px (H10); the not-ready square’s rule is :not([data-state]) (H6)', () => {
+    expect(page).toMatch(/:global\(html\)\s*\{\s*scroll-padding-top: 80px;\s*scroll-padding-bottom: 12px;/);
     expect(page).toMatch(/@media \(max-width: 959px\)\s*\{\s*:global\(html:has\(#menu-panel:not\(\[hidden\]\)\)\)\s*\{\s*scroll-padding-top: 341px;/);
     expect(page).toContain(':global(.strip__sq i:not([data-state]))');
     expect(page).not.toContain("[data-state='']");

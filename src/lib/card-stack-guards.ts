@@ -65,11 +65,87 @@ export function tracksGrant(commit: string): { hunks: string[]; removed: string[
       .filter((l) => l !== '' && !/^\/\*.*\*\/$/.test(l)),
   };
 }
-/** What T(C) must return: one insertion after line 116 (`-116,0`), nothing removed, the track page's five lines. */
+/** What T(C) must return: one insertion after line 115 (`-115,0`), nothing removed, the root's 12px below (job 29) and the track page's five lines. */
 export const TRACKS_GRANT = {
-  hunks: ['@@ -116,0 +N'],
+  hunks: ['@@ -115,0 +N'],
   removed: [],
-  added: ['@media (max-width: 959px) {', ':global(html:has(#menu-panel:not([hidden]))) {', 'scroll-padding-top: 341px;', '}', '}'],
+  added: ['scroll-padding-bottom: 12px;', '}', '@media (max-width: 959px) {', ':global(html:has(#menu-panel:not([hidden]))) {', 'scroll-padding-top: 341px;', '}'],
+} as const;
+
+/**
+ * P(C, file): how a page differs from its text at commit `commit` with block comments and blank lines left out (job 29, B37):
+ * the hunks (old start and count, the new side as N, counted in those lines), the removed lines and the added lines, each
+ * trimmed. A small LCS, since `git diff` would count the comments.
+ */
+export function pageGrant(commit: string, file: string): { hunks: string[]; removed: string[]; added: string[] } {
+  const lines = (text: string): string[] =>
+    text
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l !== '');
+  const a = lines(git(`git show ${commit}:'${file}'`));
+  const b = lines(readFileSync(file, 'utf8') as string);
+  const n = a.length;
+  const m = b.length;
+  const lcs: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) lcs[i]![j] = a[i] === b[j] ? lcs[i + 1]![j + 1]! + 1 : Math.max(lcs[i + 1]![j]!, lcs[i]![j + 1]!);
+  const hunks: string[] = [];
+  const removed: string[] = [];
+  const added: string[] = [];
+  let i = 0;
+  let j = 0;
+  let open: { start: number; count: number } | null = null;
+  const close = (): void => {
+    if (open) hunks.push(`@@ -${open.count === 0 ? open.start - 1 : open.start},${open.count} +N`);
+    open = null;
+  };
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i] === b[j]) {
+      close();
+      i++;
+      j++;
+    } else if (j >= m || (i < n && lcs[i + 1]![j]! >= lcs[i]![j + 1]!)) {
+      open ??= { start: i + 1, count: 0 };
+      open.count++;
+      removed.push(a[i]!);
+      i++;
+    } else {
+      open ??= { start: i + 1, count: 0 };
+      added.push(b[j]!);
+      j++;
+    }
+  }
+  close();
+  return { hunks, removed, added };
+}
+/** What P(C, 'src/pages/index.astro') must return: the root's padding, the open menu's, the section anchors' 8px and the demo's radios. */
+export const INDEX_GRANT = {
+  hunks: ['@@ -320,0 +N', '@@ -331,1 +N', '@@ -432,1 +N', '@@ -436,1 +N', '@@ -440,1 +N', '@@ -444,1 +N', '@@ -448,1 +N'],
+  removed: ['scroll-margin-top: 88px;', 'height: 1px;', 'scroll-margin-top: 70px;', 'scroll-margin-bottom: 360px;', 'scroll-margin-bottom: 80px;', 'scroll-margin-bottom: 324px;'],
+  added: [
+    ':global(html) {',
+    'scroll-padding-top: 80px;',
+    'scroll-padding-bottom: 12px;',
+    '}',
+    '@media (max-width: 959px) {',
+    ':global(html:has(#menu-panel:not([hidden]))) {',
+    'scroll-padding-top: 403px;',
+    '}',
+    '}',
+    'scroll-margin-top: 8px;',
+    'height: 81px;',
+    'scroll-margin-top: -10px;',
+    'scroll-margin-bottom: 268px;',
+    'scroll-margin-bottom: -12px;',
+    'scroll-margin-bottom: 232px;',
+  ],
+} as const;
+/** What P(C, 'src/pages/[track]/index.astro') must return: the root's 12px below. */
+export const TRACK_PAGE_GRANT = {
+  hunks: ['@@ -73,0 +N'],
+  removed: [],
+  added: ['scroll-padding-bottom: 12px;'],
 } as const;
 
 /**

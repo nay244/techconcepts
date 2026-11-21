@@ -219,8 +219,8 @@ test.describe('the header and the footer in the Card stack look', () => {
 
   test('15: the scroll paddings, closed and with the menu open (H5)', async ({ page }) => {
     const read = () => page.evaluate(() => ({ top: getComputedStyle(document.documentElement).scrollPaddingTop, bottom: getComputedStyle(document.documentElement).scrollPaddingBottom }));
-    const closed: Record<string, [string, string]> = { '/': ['auto', 'auto'], '/tracks': ['80px', 'auto'], '/how-the-internet-works': ['80px', 'auto'], '/networking': ['80px', 'auto'], '/about': ['80px', '12px'], '/glossary': ['80px', '12px'], '/does-not-exist': ['80px', '12px'], [LESSON]: ['69px', 'auto'] };
-    const opened: Record<string, string> = { '/': 'auto', '/tracks': '341px', '/how-the-internet-works': '341px', '/networking': '341px', '/about': '403px', '/glossary': '403px', '/does-not-exist': '403px' };
+    const closed: Record<string, [string, string]> = { '/': ['80px', '12px'], '/tracks': ['80px', '12px'], '/how-the-internet-works': ['80px', '12px'], '/networking': ['80px', '12px'], '/about': ['80px', '12px'], '/glossary': ['80px', '12px'], '/does-not-exist': ['80px', '12px'], [LESSON]: ['69px', 'auto'] };
+    const opened: Record<string, string> = { '/': '403px', '/tracks': '341px', '/how-the-internet-works': '341px', '/networking': '341px', '/about': '403px', '/glossary': '403px', '/does-not-exist': '403px' };
     for (const [path, [top, bottom]] of Object.entries(closed)) {
       await visit(page, path, 375, 812, 'light');
       expect(await read(), `${path} closed`).toEqual({ top, bottom });
@@ -229,7 +229,7 @@ test.describe('the header and the footer in the Card stack look', () => {
       expect((await read()).top, `${path} open`).toBe(opened[path]);
       await page.setViewportSize({ width: 1440, height: 900 });
       await transitionsDone(page);
-      expect((await read()).top, `${path} opened at 375, then 1440`).toBe(path === '/' ? 'auto' : '80px');
+      expect((await read()).top, `${path} opened at 375, then 1440`).toBe('80px');
     }
     await visit(page, '/tracks', 959, 900, 'light');
     await openMenu(page);
@@ -901,17 +901,22 @@ test.describe('the header and the footer in the Card stack look', () => {
   /** The focused element: where it is, its name, and its ring (its box grown by the outline's width and offset) against the header and the window. */
   const readStop = (page: Page): Promise<Stop> =>
     page.evaluate(() => {
-      const el = document.activeElement as HTMLElement;
+      const focused = document.activeElement as HTMLElement;
+      // A demo radio is drawn nowhere (opacity 0): its ring is the one a reader sees, on the visible element it stands for (case 28);
+      // the stop keeps the radio's name. Hidden panes keep a ring at 0,0, so only an element with a box counts.
+      const el = focused.matches('.demo__in')
+        ? ([...document.querySelectorAll<HTMLElement>('main .demo *')].find((e) => e !== focused && getComputedStyle(e).outlineStyle !== 'none' && e.getClientRects().length > 0) ?? focused)
+        : focused;
       const cs = getComputedStyle(el);
       const r = el.getBoundingClientRect();
       const grow = cs.outlineStyle === 'none' ? 5 : parseFloat(cs.outlineWidth) + parseFloat(cs.outlineOffset);
       const head = document.querySelector('.site-head')!.getBoundingClientRect();
-      const where = el.classList.contains('skip-link') ? 'skip' : el.closest('.site-head') ? 'head' : el.closest('.site-foot') ? 'foot' : 'main';
+      const where = focused.classList.contains('skip-link') ? 'skip' : el.closest('.site-head') ? 'head' : el.closest('.site-foot') ? 'foot' : 'main';
       const top = r.top - grow;
       const bottom = r.bottom + grow;
       return {
         where,
-        name: (el.getAttribute('aria-label') ?? (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40)) || el.tagName,
+        name: (focused.getAttribute('aria-label') ?? (focused.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40)) || focused.tagName,
         under: where !== 'head' && where !== 'skip' && top < head.bottom - 0.5,
         cutFoot: bottom > innerHeight + 0.5,
         cut: r.left - grow < -0.5 || r.right + grow > innerWidth + 0.5 || top < -0.5 || bottom > innerHeight + 0.5,
@@ -949,15 +954,15 @@ test.describe('the header and the footer in the Card stack look', () => {
   const NAMES = (stops: Stop[]): string => stops.filter((s) => s.where !== 'skip').map((s) => `${s.where}:${s.name}`).join('|');
   const tally = (stops: Stop[]) => ({ under: stops.filter((s) => s.under).length, cutFoot: stops.filter((s) => s.cutFoot).length, headerCut: stops.filter((s) => s.where === 'head' && s.cut).length, mainStops: stops.filter((s) => s.where === 'main').length });
 
-  const WALK_PAGES: Array<{ path: string; label: string; strict: 'all' | 'no-foot' | 'none' }> = [
-    { path: '/about', label: 'About', strict: 'all' },
-    { path: '/does-not-exist', label: '404', strict: 'all' },
-    { path: '/tracks', label: 'Tracks', strict: 'no-foot' },
-    { path: '/networking', label: 'networking', strict: 'no-foot' },
-    { path: '/how-the-internet-works', label: 'how-the-internet-works', strict: 'no-foot' },
-    { path: '/', label: 'Home', strict: 'none' },
+  const WALK_PAGES: Array<{ path: string; label: string }> = [
+    { path: '/about', label: 'About' },
+    { path: '/does-not-exist', label: '404' },
+    { path: '/tracks', label: 'Tracks' },
+    { path: '/networking', label: 'networking' },
+    { path: '/how-the-internet-works', label: 'how-the-internet-works' },
+    { path: '/', label: 'Home' },
   ];
-  for (const { path, label, strict } of WALK_PAGES) {
+  for (const { path, label } of WALK_PAGES) {
     test(`44 to 49: the keyboard walk on ${label}, closed and open`, async ({ page }, testInfo) => {
       test.setTimeout(300_000);
       for (const [w, h] of SIZES_WALK) {
@@ -966,17 +971,19 @@ test.describe('the header and the footer in the Card stack look', () => {
           const all = [...forth, ...back];
           const t = tally(all);
           const key = `${label} ${w}x${h} ${menuOpen ? 'open' : 'closed'}`;
-          console.log(`WALK ${testInfo.project.name} ${key} ${JSON.stringify({ ...t, stops: `${forth.length}+${back.length}`, names: NAMES(all) })}`);
+          // B37-H3 (D25's unit, B42, asserts these): with the menu open on Home, the demo's step radios can sit under the open header at
+          // 320 x 640 and 959 x 900 (two stops each), and at 320 x 640 the Watch tab's too (one). Counted, not asserted, and only these.
+          const exempt = (s: Stop): boolean => path === '/' && menuOpen && ((w === 320 && h === 640) || (w === 959 && h === 900)) && (/^Watch, step \d/.test(s.name) || (w === 320 && s.name === 'Watch part'));
+          const stepsUnderMenu = all.filter((s) => s.under && exempt(s)).length;
+          console.log(`WALK ${testInfo.project.name} ${key} ${JSON.stringify({ ...t, stepsUnderMenu, underNames: all.filter((s) => s.under).map((s) => s.name), stops: `${forth.length}+${back.length}`, names: NAMES(all) })}`);
           // The stops, in order, are revamp's (case 44, 49): a stop that goes missing or moves is seen here.
           expect(NAMES(all), `${key}: the stops and their order`).toBe(STOPS[key]);
           expect(forth.some((s) => s.where === 'main'), `${key}: the walk enters main`).toBe(true);
           expect(forth[forth.length - 1]!.name, key).toBe('About');
           // Soft, so a red run still walks every size and logs its counts (the report sets them against revamp's).
           expect.soft(t.headerCut, `${key}: no header stop's ring is cut`).toBe(0);
-          // E6, E7: at the window's foot and on Home the faults are counted in the report, not asserted.
-          if (strict !== 'none') expect.soft(t.under, `${key}: no stop under the header`).toBe(0);
-          if (strict === 'all') expect.soft(t.cutFoot, `${key}: no stop cut at the foot`).toBe(0);
-          if (strict === 'none' && !menuOpen) expect.soft(all.filter((s) => s.where === 'foot' && s.under).length, `${key}: no footer stop under the header`).toBe(0);
+          expect.soft(t.under - stepsUnderMenu, `${key}: no stop under the header`).toBe(0);
+          expect.soft(t.cutFoot, `${key}: no stop cut at the foot`).toBe(0);
         }
       }
     });

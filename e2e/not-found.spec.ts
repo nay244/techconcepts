@@ -646,8 +646,8 @@ test.describe('the scroll padding', () => {
       await visit(page, path);
       return padding(page);
     };
-    expect((await at('/'))[0]).toBe('auto');
-    expect(await at('/tracks')).toEqual(['80px', 'auto']);
+    expect(await at('/')).toEqual(['80px', '12px']);
+    expect(await at('/tracks')).toEqual(['80px', '12px']);
     expect((await at('/networking/dhcp'))[0]).toBe('69px');
     expect(await at('/about')).toEqual(['80px', '12px']);
     expect(await at('/glossary')).toEqual(['80px', '12px']);
