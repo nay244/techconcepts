@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pageFigure } from '../art/figures/pages';
 import { startLesson } from './start';
 import NotFound from '../pages/404.astro';
-import { CARD_STACK_GRANT, GLOBAL_GRANT, TRACKS_GRANT, cardStackGrant, globalGrant, tracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from './card-stack-guards';
 
 /** The commit D22 was approved and frozen at: every "untouched" and "unchanged" below is read against it. */
 const BASE = '1d8e446';
@@ -55,7 +55,7 @@ describe('0. what the build may not change', () => {
   test('1: the shared files are untouched', () => {
     expect(
       run(
-        `git diff --name-only ${BASE} -- src/pages/index.astro 'src/pages/[track]' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/tokens.ts src/art e2e/support.ts`,
+        `git diff --name-only ${BASE} -- src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/tokens.ts src/art e2e/support.ts`,
       ),
     ).toBe('');
   });
@@ -68,9 +68,20 @@ describe('0. what the build may not change', () => {
 
   test('1b: tracks.astro gains the track page’s open-menu rule and nothing else (job 24)', () => {
     const t = tracksGrant(BASE);
-    expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
+    expect(t.hunks, 'one insertion after line 115').toEqual(TRACKS_GRANT.hunks);
     expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
     expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
+  });
+
+  test('1c: Home and the track page change their scroll paddings and margins and nothing else (job 29)', () => {
+    const home = pageGrant(BASE, 'src/pages/index.astro');
+    expect(home.hunks, 'Home: the root padding, the section margin and the demo radios (job 29)').toEqual(INDEX_GRANT.hunks);
+    expect(home.removed, 'Home: the lines it lost').toEqual(INDEX_GRANT.removed);
+    expect(home.added, 'Home: the lines it gained').toEqual(INDEX_GRANT.added);
+    const trackPage = pageGrant(BASE, 'src/pages/[track]/index.astro');
+    expect(trackPage.hunks, 'the track page: the root’s 12px below (job 29)').toEqual(TRACK_PAGE_GRANT.hunks);
+    expect(trackPage.removed, 'the track page: nothing removed').toEqual(TRACK_PAGE_GRANT.removed);
+    expect(trackPage.added, 'the track page: the one declaration').toEqual(TRACK_PAGE_GRANT.added);
   });
 
   test('2: card-stack.css changes only its opening comment, two reworded comments and the header and footer block (job 24); the opening comment stays four lines and names six importers', () => {

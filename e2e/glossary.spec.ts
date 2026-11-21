@@ -440,7 +440,7 @@ test.describe('the Glossary in the Card stack look', () => {
       });
     };
     expect(await padding('/glossary')).toEqual(['80px', '12px', 'auto']);
-    expect((await padding('/'))[0]).toBe('auto');
+    expect((await padding('/'))[0]).toBe('80px');
     expect((await padding('/tracks'))[0]).toBe('80px');
     expect((await padding('/networking/dhcp'))[0]).toBe('69px');
   });

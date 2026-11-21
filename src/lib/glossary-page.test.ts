@@ -18,7 +18,7 @@ import { tracks } from '../content/tracks';
 import { siteGlossary } from './glossary-site';
 import { stampLine } from './glossary';
 import GlossaryPage from '../pages/glossary.astro';
-import { CARD_STACK_GRANT, GLOBAL_GRANT, TRACKS_GRANT, cardStackGrant, globalGrant, tracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from './card-stack-guards';
 
 const words = (el: Element | null | undefined): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 let html = '';
@@ -274,12 +274,20 @@ describe('D21, 0.4: the stylesheet and the page', () => {
       expect(readFileSync(file, 'utf8') as string, file).not.toContain('card-stack.css');
     }
   });
-  test('Home, the track pages, the header, the footer and the tokens are untouched, and Tracks gains one rule (job 24)', () => {
+  test('the header, the footer and the tokens are untouched, Tracks gains one rule (job 24), and Home and the track pages only their scroll paddings and margins (job 29)', () => {
     const t = tracksGrant('f30e876');
-    expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
+    expect(t.hunks, 'one insertion after line 115').toEqual(TRACKS_GRANT.hunks);
     expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
     expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
-    const touched = (execSync("git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
+    const home = pageGrant('f30e876', 'src/pages/index.astro');
+    expect(home.hunks, 'Home: the root padding, the section margin and the demo radios (job 29)').toEqual(INDEX_GRANT.hunks);
+    expect(home.removed, 'Home: the lines it lost').toEqual(INDEX_GRANT.removed);
+    expect(home.added, 'Home: the lines it gained').toEqual(INDEX_GRANT.added);
+    const trackPage = pageGrant('f30e876', 'src/pages/[track]/index.astro');
+    expect(trackPage.hunks, 'the track page: the root’s 12px below (job 29)').toEqual(TRACK_PAGE_GRANT.hunks);
+    expect(trackPage.removed, 'the track page: nothing removed').toEqual(TRACK_PAGE_GRANT.removed);
+    expect(trackPage.added, 'the track page: the one declaration').toEqual(TRACK_PAGE_GRANT.added);
+    const touched = (execSync("git diff --name-only f30e876 -- src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub src/components/GlossaryEntry.astro src/components/GlossaryKeys.astro src/components/GlossaryStamp.astro src/lib/glossary.ts src/lib/glossary-site.ts || true", { encoding: 'utf8' }) as string).trim();
     expect(touched).toBe('');
     const g = globalGrant('f30e876');
     expect(g.changed, 'global.css: the reduced-motion rule’s one declaration (job 28)').toEqual(GLOBAL_GRANT.changed);

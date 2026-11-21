@@ -639,14 +639,14 @@ test.describe('the page’s height (measured: 1,599 at 1440 and 2,368 at 375 wit
 });
 
 test.describe('keyboard focus never hides under the sticky header (E11)', () => {
-  test('the root scroll-padding-top is 80px on /tracks and on both track pages, 69px on a lesson (the site header, E14), auto elsewhere', async ({ page }) => {
+  test('the root scroll-padding-top is 80px on /tracks and on both track pages, 69px on a lesson (the site header, E14), and 80px on Home', async ({ page }) => {
     const padding = async (path: string) => {
       await page.goto(path);
       return page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingTop);
     };
     for (const path of ['/tracks', '/networking', '/how-the-internet-works']) expect(await padding(path), path).toBe('80px');
     // /about and /glossary are pinned by their own specs since job 22 (D21 cases S1).
-    for (const path of ['/']) expect(await padding(path), path).toBe('auto');
+    for (const path of ['/']) expect(await padding(path), path).toBe('80px');
     expect(await padding('/networking/dhcp')).toBe('69px');
   });
 

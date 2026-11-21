@@ -16,7 +16,7 @@ import { checkedOn, getEntries, getLesson, trackTotals } from '../content/regist
 import { comingSoonTracks, plannedTracks, tracks } from '../content/tracks';
 import { comingTracksSentence, factCheckSentence, sourceRows } from '../lib/about';
 import About from '../pages/about.astro';
-import { CARD_STACK_GRANT, GLOBAL_GRANT, TRACKS_GRANT, cardStackGrant, globalGrant, tracksGrant } from '../lib/card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from '../lib/card-stack-guards';
 
 // The build's analytics token, which each render here sets for itself.
 const analytics = vi.hoisted(() => ({ token: undefined as string | undefined }));
@@ -258,15 +258,23 @@ test('card-stack.css changes only its opening comment (which names About and the
   expect(g.frame, 'the old length, the blank line, the block begins, the block ends').toEqual(CARD_STACK_GRANT.frame);
   expect(g.markers, 'BEGIN and END once each').toEqual(CARD_STACK_GRANT.markers);
   const t = tracksGrant('f30e876');
-  expect(t.hunks, 'one insertion after line 116').toEqual(TRACKS_GRANT.hunks);
+  expect(t.hunks, 'one insertion after line 115').toEqual(TRACKS_GRANT.hunks);
   expect(t.removed, 'nothing removed').toEqual(TRACKS_GRANT.removed);
   expect(t.added, 'the track page’s open-menu rule').toEqual(TRACKS_GRANT.added);
+  const home = pageGrant('f30e876', 'src/pages/index.astro');
+  expect(home.hunks, 'Home: the root padding, the section margin and the demo radios (job 29)').toEqual(INDEX_GRANT.hunks);
+  expect(home.removed, 'Home: the lines it lost').toEqual(INDEX_GRANT.removed);
+  expect(home.added, 'Home: the lines it gained').toEqual(INDEX_GRANT.added);
+  const trackPage = pageGrant('f30e876', 'src/pages/[track]/index.astro');
+  expect(trackPage.hunks, 'the track page: the root’s 12px below (job 29)').toEqual(TRACK_PAGE_GRANT.hunks);
+  expect(trackPage.removed, 'the track page: nothing removed').toEqual(TRACK_PAGE_GRANT.removed);
+  expect(trackPage.added, 'the track page: the one declaration').toEqual(TRACK_PAGE_GRANT.added);
   const head = readFileSync('src/styles/card-stack.css', 'utf8').split('\n').slice(0, 4).join('\n');
   expect(head).toContain('src/pages/about.astro');
   expect(head).toContain('src/pages/glossary.astro');
   expect(
     run(
-      "git diff --name-only f30e876 -- src/pages/index.astro 'src/pages/[track]' src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
+      "git diff --name-only f30e876 -- src/styles/tokens.ts src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/components/hub",
     ),
   ).toBe('');
   const gl = globalGrant('f30e876');
