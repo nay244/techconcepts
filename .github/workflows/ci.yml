@@ -41,9 +41,11 @@ jobs:
   # The other desktop sizes, the light theme and reduced motion stay a local run (npm run e2e): all seven projects
   # together take about six times as long. Playwright builds and serves the site itself (playwright.config.ts).
   # On one runner the pass reached 334 of its 1,498 tests in 30 minutes, so it is split across ten runners that run
-  # at once; each builds the site and runs every tenth of the tests.
+  # at once; each builds the site and runs every tenth of the tests. It runs on macOS: the specs' widths and heights
+  # are measured with the Mac's text, and Chromium on Linux rounds each letter's width, so 24 of them failed there.
+  # The runner has three cores, where Playwright would start one worker, so it is given two.
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -57,7 +59,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --grep-invert @visual --project=d1440-dark --project=phone --shard=${{ matrix.shard }}/10
+      - run: npx playwright test --grep-invert @visual --project=d1440-dark --project=phone --shard=${{ matrix.shard }}/10 --workers=2
       # The traces of failed tests (playwright.config.ts keeps them on failure), for whoever reads the red run.
       - if: failure()
         uses: actions/upload-artifact@v7
