@@ -1519,10 +1519,10 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 | Role | Model | Growth |
 |---|---|---|
 | designer (D24, D25) | Opus 5.5 | 486,041 |
-| reviewer (two spec reviews, four build reviews) | Opus | 795,460 |
+| reviewer (two spec reviews, four build reviews) | Opus | 795,461 |
 | builder (B37, B42, B38 one continued; B39; B40; B41) | Sonnet | 736,346 |
 | scout (S26) | Haiku | 156,832 |
-| **Total** | | **2,174,679** (estimate 1.1 to 1.7 million before D25 and B42 were added; stop at 2.2, not reached) |
+| **Total** | | **2,174,680** (estimate 1.1 to 1.7 million before D25 and B42 were added; stop at 2.2, not reached) |
 
 ## Could go one model lower next time
 
