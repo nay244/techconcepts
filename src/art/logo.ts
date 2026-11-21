@@ -18,7 +18,7 @@ export const LOGO_ACCENT = 'var(--logo-accent, #b04617)';
 
 /**
  * The three shapes, back to front. Each is filled and stroked in one paint (the stroke rounds its corners): the ink
- * for the lid and the tray, the accent for the message. The React mark (src/components/LogoMark.tsx) draws these too.
+ * for the lid and the tray, the accent for the message. The header, the footer, the favicon and the share image all draw these.
  */
 export const LOGO_SHAPES = [
   { d: LID, paint: 'ink', stroke: 1.6 },

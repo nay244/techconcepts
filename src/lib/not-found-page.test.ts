@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { pageFigure } from '../art/figures/pages';
 import { startLesson } from './start';
 import NotFound from '../pages/404.astro';
-import { CARD_STACK_GRANT, GLOBAL_GRANT, INDEX_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from './card-stack-guards';
+import { CARD_STACK_GRANT, GLOBAL_GRANT, BASE_LAYOUT_GRANT, COMMENT_ONLY_GRANT, INDEX_GRANT, SITE_HEADER_GRANT, TRACKS_GRANT, TRACK_PAGE_GRANT, cardStackGrant, globalGrant, pageGrant, tracksGrant } from './card-stack-guards';
 
 /** The commit D22 was approved and frozen at: every "untouched" and "unchanged" below is read against it. */
 const BASE = '1d8e446';
@@ -55,7 +55,7 @@ describe('0. what the build may not change', () => {
   test('1: the shared files are untouched', () => {
     expect(
       run(
-        `git diff --name-only ${BASE} -- 'src/pages/[track]/[lesson].astro' src/pages/about.astro src/pages/glossary.astro src/layouts src/components/SiteHeader.astro src/components/SiteFooter.astro src/components/site.css src/styles/tokens.ts src/art e2e/support.ts`,
+        `git diff --name-only ${BASE} -- 'src/pages/[track]/[lesson].astro' src/pages/about.astro src/pages/glossary.astro src/layouts ':!src/layouts/BaseLayout.astro' src/components/site.css src/styles/tokens.ts src/art ':!src/art/logo.ts' e2e/support.ts`,
       ),
     ).toBe('');
   });
@@ -82,6 +82,16 @@ describe('0. what the build may not change', () => {
     expect(trackPage.hunks, 'the track page: the root’s 12px below (job 29)').toEqual(TRACK_PAGE_GRANT.hunks);
     expect(trackPage.removed, 'the track page: nothing removed').toEqual(TRACK_PAGE_GRANT.removed);
     expect(trackPage.added, 'the track page: the one declaration').toEqual(TRACK_PAGE_GRANT.added);
+    const header = pageGrant(BASE, 'src/components/SiteHeader.astro');
+    expect(header.hunks, 'the header: the focusin rule (job 29, D25)').toEqual(SITE_HEADER_GRANT.hunks);
+    expect(header.removed, 'the header: nothing removed').toEqual(SITE_HEADER_GRANT.removed);
+    expect(header.added, 'the header: the rule’s lines').toEqual(SITE_HEADER_GRANT.added);
+    const layout = pageGrant(BASE, 'src/layouts/BaseLayout.astro');
+    expect(layout.hunks, 'the layout: overHero goes (job 29, B38)').toEqual(BASE_LAYOUT_GRANT.hunks);
+    expect(layout.removed, 'the layout: the lines it lost').toEqual(BASE_LAYOUT_GRANT.removed);
+    expect(layout.added, 'the layout: the lines it gained').toEqual(BASE_LAYOUT_GRANT.added);
+    expect(pageGrant(BASE, 'src/components/SiteFooter.astro'), 'src/components/SiteFooter.astro: its comments only (job 29, B38)').toEqual(COMMENT_ONLY_GRANT);
+    expect(pageGrant(BASE, 'src/art/logo.ts'), 'src/art/logo.ts: its comments only (job 29, B38)').toEqual(COMMENT_ONLY_GRANT);
   });
 
   test('2: card-stack.css changes only its opening comment, two reworded comments and the header and footer block (job 24); the opening comment stays four lines and names six importers', () => {

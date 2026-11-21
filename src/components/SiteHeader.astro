@@ -6,11 +6,9 @@ import './site.css';
 interface Props {
   /** The section the page belongs to; its link gets aria-current ("page" on the section's own page, else "true"). */
   current?: 'tracks' | 'glossary' | 'how' | 'about';
-  /** Home: the header sits over the hero, clear at the top of the page and solid once it scrolls (home-v6). */
-  overHero?: boolean;
 }
 
-const { current, overHero = false } = Astro.props;
+const { current } = Astro.props;
 // Start learning opens the Tracks page, so it is not offered on Tracks or any track page (both pass current="tracks").
 const showStart = current !== 'tracks';
 const links = [
@@ -26,7 +24,7 @@ const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined : l.href === here ? 'page' : 'true');
 ---
 
-<header class="site-head" data-over-hero={overHero ? '' : undefined}>
+<header class="site-head">
   <div class="wrap">
     <a class="brand" href="/" aria-label="TechConcepts home">
       <Fragment set:html={logoMark()} />
@@ -58,7 +56,6 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
 </header>
 
 <script>
-  import { solidOnScroll } from '../scripts/site-head';
   import { wireThemeToggle } from '../scripts/theme-toggle';
 
   // The narrow-screen menu. Without JavaScript the button does nothing and the panel stays hidden.
@@ -79,11 +76,14 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
         button.focus();
       }
     });
+    // Below 960px the open menu lies over the page, so it closes when focus moves outside the header: Tab past its last
+    // link, Shift+Tab past the brand to the skip link, or a tap on a control in the page. Focus stays where it went (D25).
+    document.addEventListener('focusin', (e) => {
+      if (button.getAttribute('aria-expanded') !== 'true') return;
+      if (e.target instanceof Element && e.target.closest('.site-head')) return;
+      setOpen(false);
+    });
   }
-
-  // Home's header turns solid once the page has scrolled a little. Without JavaScript it is solid throughout.
-  const head = document.querySelector<HTMLElement>('.site-head[data-over-hero]');
-  if (head) solidOnScroll(head);
 
   // The theme button. Without JavaScript it cannot work, so BaseLayout's <noscript> style hides it.
   const themeButton = document.getElementById('theme-toggle');
@@ -160,28 +160,6 @@ const currentOf = (l: (typeof links)[number]) => (current !== l.key ? undefined 
   .menu-btn,
   .menu-panel {
     display: none;
-  }
-  .site-head[data-over-hero] {
-    position: fixed;
-    inset: 0 0 auto;
-    border-bottom-color: transparent;
-    background: transparent;
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    transition: background-color 200ms ease;
-  }
-  .site-head[data-over-hero].solid,
-  .site-head[data-over-hero]:has(.menu-panel:not([hidden])) {
-    border-bottom-color: var(--line);
-    background: color-mix(in srgb, var(--ground) 88%, transparent);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
-  .site-head[data-over-hero] .icon-btn {
-    background: color-mix(in srgb, var(--card) 70%, transparent);
-  }
-  .site-head[data-over-hero] .icon-btn:hover {
-    background: var(--bg-soft);
   }
 
   @media (max-width: 959px) {

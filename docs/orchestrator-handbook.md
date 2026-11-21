@@ -13,7 +13,7 @@ Written 2026-11-12 by the session that ran job 7, for the orchestrator that take
 
 ## 2. Where the project stands
 
-- Phase 4 (every lesson cited and fact-checked) is done (2026-11-12, job 8): all of How the Internet Works and Networking's DHCP, Subnetting and Firewalls are checked, and the legacy list (`src/content/legacy.ts`) is empty. Its path is dead code, to remove in a unit of its own (`plan.md`, "After this job").
+- Phase 4 (every lesson cited and fact-checked) is done (2026-11-12, job 8): all of How the Internet Works and Networking's DHCP, Subnetting and Firewalls are checked, and the legacy path was removed in job 9 (`925d15d`).
 - Then Phase 5 (a Glossary of written, fact-checked definitions since 2026-11-13, direction 2.39, begun as a pilot; `plan.md`. It was the Practice page, now held), then "After the revamp" in `docs/direction.md` §3: Networking Concepts' 15 lessons still to write, CompTIA A+, the glossary.
 - Everything is on branch `revamp`, local. **Nothing is pushed**; push, pull request, merge to `main` and deploy are the owner's.
 - `plan.md` holds the last plan (job 7, done) and is the form to follow. `team.md` is the ledger; each job ends with "What to do differently next time". Read job 7's.
@@ -49,7 +49,7 @@ Details that matter:
 - **After a check.** Verify with `--check` (or `--recheck --check`) yourself, run `npm test` in the worktree, commit the report. A failing report is committed as written before any fix. A near-pass (at most 3 items held back, none wrong) allows a targeted re-check of at most 12 items; `npm run fact-check -- <slug> --recheck` prints the sheet or refuses. More than 12 means a full check.
 - **Fixes after a check.** When the checker's note names the fix (a trace, a few words), send it straight to the author. Otherwise the lesson's analyst rules it. To keep a re-check small: add a new Learn fact at the **end** of `learn.facts` and never widen a Learn part many items trace to.
 - **A glossary group** runs the same steps (analyst brief `docs/briefs/analyst-glossary-group.md`, author brief `author-glossary-group.md`, the command `npm run fact-check -- glossary/<id>`). Its fact-checker's prompt is `The glossary group: <id>. Work in the folder: <path>`. Agents are loaded when a session starts: if `.claude/agents/` changed since, give the check to a general-purpose Opus agent told to follow `.claude/agents/fact-checker.md` from disk, then that line and nothing else (job 9).
-- **Merging.** Three branches collide in `src/content/legacy.ts`, `legacy.test.ts`, the end of `sources.ts` and `sources.test.ts`. Print each conflict before resolving it, and keep each registry entry a separate object.
+- **Merging.** Three branches collide at the end of `sources.ts` and in `sources.test.ts`. Print each conflict before resolving it, and keep each registry entry a separate object.
 - **Reading a page yourself.** Some allowed sites refuse a command line (`www.cloudflare.com`, some Cisco and Baeldung pages). Read them in the built-in browser and put the exact passage and its heading in the rulings; the fact-checker reads them in the browser too.
 - **Tokens.** An agent's figure is the size of its context. Where it was summarised, count from its transcript: `python3 scripts/team/tokens.py <transcript.jsonl>`. `scripts/team/registry_entries.py` pulls registry entries out of an analyst's report; `scripts/team/track_report.py <old-ref> <new-ref> <slug>...` checks the report sections' quotes against the lesson files and can join them (`--write <out> <intro>`).
 

@@ -200,19 +200,6 @@ export function LessonConsole({ trackId, trackTitle, lesson, entry, total, next,
     if (gained) stopFocus.current = stop.dataset.target ?? null;
     else if (e.relatedTarget !== null) stopFocus.current = null;
   }, []);
-  // The header's open menu (under 960px) lies over the lesson on this page, so it closes when focus leaves the header
-  // (Tab past its last link): focus never lands on a part of the lesson under the panel (E28). SiteHeader's own rules
-  // (Escape, a link, a second press) are as on every page.
-  useEffect(() => {
-    const closeMenu = (e: FocusEvent) => {
-      const menu = document.getElementById('menu');
-      if (menu?.getAttribute('aria-expanded') !== 'true') return;
-      if (e.target instanceof Element && e.target.closest('.site-head') !== null) return;
-      menu.click();
-    };
-    document.addEventListener('focusin', closeMenu);
-    return () => document.removeEventListener('focusin', closeMenu);
-  }, []);
   useEffect(() => {
     const forget = () => {
       stopFocus.current = null;

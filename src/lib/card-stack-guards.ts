@@ -73,7 +73,7 @@ export const TRACKS_GRANT = {
 } as const;
 
 /**
- * P(C, file): how a page differs from its text at commit `commit` with block comments and blank lines left out (job 29, B37):
+ * P(C, file): how a page differs from its text at commit `commit` with block comments, whole-line `//` comments and blank lines left out (job 29, B37):
  * the hunks (old start and count, the new side as N, counted in those lines), the removed lines and the added lines, each
  * trimmed. A small LCS, since `git diff` would count the comments.
  */
@@ -83,7 +83,7 @@ export function pageGrant(commit: string, file: string): { hunks: string[]; remo
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .split('\n')
       .map((l) => l.trim())
-      .filter((l) => l !== '');
+      .filter((l) => l !== '' && !l.startsWith('// '));
   const a = lines(git(`git show ${commit}:'${file}'`));
   const b = lines(readFileSync(file, 'utf8') as string);
   const n = a.length;
@@ -121,7 +121,7 @@ export function pageGrant(commit: string, file: string): { hunks: string[]; remo
 }
 /** What P(C, 'src/pages/index.astro') must return: the root's padding, the open menu's, the section anchors' 8px and the demo's radios. */
 export const INDEX_GRANT = {
-  hunks: ['@@ -320,0 +N', '@@ -331,1 +N', '@@ -432,1 +N', '@@ -436,1 +N', '@@ -440,1 +N', '@@ -444,1 +N', '@@ -448,1 +N'],
+  hunks: ['@@ -309,0 +N', '@@ -320,1 +N', '@@ -421,1 +N', '@@ -425,1 +N', '@@ -429,1 +N', '@@ -433,1 +N', '@@ -437,1 +N'],
   removed: ['scroll-margin-top: 88px;', 'height: 1px;', 'scroll-margin-top: 70px;', 'scroll-margin-bottom: 360px;', 'scroll-margin-bottom: 80px;', 'scroll-margin-bottom: 324px;'],
   added: [
     ':global(html) {',
@@ -143,7 +143,7 @@ export const INDEX_GRANT = {
 } as const;
 /** What P(C, 'src/pages/[track]/index.astro') must return: the root's 12px below. */
 export const TRACK_PAGE_GRANT = {
-  hunks: ['@@ -73,0 +N'],
+  hunks: ['@@ -62,0 +N'],
   removed: [],
   added: ['scroll-padding-bottom: 12px;'],
 } as const;
@@ -170,3 +170,61 @@ export const GLOBAL_GRANT = {
   changed: [['transition-duration: 0.01ms !important;', 'transition-duration: 0s !important;']],
   sameLength: true,
 } as const;
+
+/**
+ * What P(C, 'src/components/SiteHeader.astro') must return: B42's focusin rule (job 29, D25) and B38's removal of the over-hero
+ * header (the prop, its attribute, the script's solidOnScroll call and the four `data-over-hero` rules).
+ */
+export const SITE_HEADER_GRANT = {
+  hunks: ['@@ -7,1 +N', '@@ -9,1 +N', '@@ -21,1 +N', '@@ -52,1 +N', '@@ -70,0 +N', '@@ -72,2 +N', '@@ -146,22 +N'],
+  removed: [
+    'overHero?: boolean;',
+    'const { current, overHero = false } = Astro.props;',
+    '<header class="site-head" data-over-hero={overHero ? \'\' : undefined}>',
+    "import { solidOnScroll } from '../scripts/site-head';",
+    "const head = document.querySelector<HTMLElement>('.site-head[data-over-hero]');",
+    'if (head) solidOnScroll(head);',
+    '.site-head[data-over-hero] {',
+    'position: fixed;',
+    'inset: 0 0 auto;',
+    'border-bottom-color: transparent;',
+    'background: transparent;',
+    '-webkit-backdrop-filter: none;',
+    'backdrop-filter: none;',
+    'transition: background-color 200ms ease;',
+    '}',
+    '.site-head[data-over-hero].solid,',
+    '.site-head[data-over-hero]:has(.menu-panel:not([hidden])) {',
+    'border-bottom-color: var(--line);',
+    'background: color-mix(in srgb, var(--ground) 88%, transparent);',
+    '-webkit-backdrop-filter: blur(10px);',
+    'backdrop-filter: blur(10px);',
+    '}',
+    '.site-head[data-over-hero] .icon-btn {',
+    'background: color-mix(in srgb, var(--card) 70%, transparent);',
+    '}',
+    '.site-head[data-over-hero] .icon-btn:hover {',
+    'background: var(--bg-soft);',
+    '}',
+  ],
+  added: ['const { current } = Astro.props;', '<header class="site-head">', "document.addEventListener('focusin', (e) => {", "if (button.getAttribute('aria-expanded') !== 'true') return;", "if (e.target instanceof Element && e.target.closest('.site-head')) return;", 'setOpen(false);', '});'],
+} as const;
+
+/** What P(C, 'src/layouts/BaseLayout.astro') must return (B38; C is 1d8e446 or f30e876): `overHero` goes, with the noscript rule that served it. */
+export const BASE_LAYOUT_GRANT = {
+  hunks: ['@@ -19,1 +N', '@@ -26,1 +N', '@@ -44,1 +N', '@@ -63,1 +N'],
+  removed: [
+    'overHero?: boolean;',
+    'const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, main = true, current, overHero = false, canonical, footer = true } = Astro.props;',
+    '<noscript><style>.theme-toggle, .stage__views, .console__tabs, .console__controls, .log__fold, .log__idle-words, .timeline__nav, .top__lessons, .sheet, .keys, .track__units { display: none !important; } :root .site-head[data-over-hero] { background: var(--ground); }</style></noscript>',
+    '<SiteHeader current={current} overHero={overHero} />',
+  ],
+  added: [
+    'const { title, description, image = DEFAULT_IMAGE, imageAlt, chrome = true, main = true, current, canonical, footer = true } = Astro.props;',
+    '<noscript><style>.theme-toggle, .stage__views, .console__tabs, .console__controls, .log__fold, .log__idle-words, .timeline__nav, .top__lessons, .sheet, .keys, .track__units { display: none !important; }</style></noscript>',
+    '<SiteHeader current={current} />',
+  ],
+} as const;
+
+/** What P(C, file) must return for `SiteFooter.astro` and `src/art/logo.ts` (B38): their comments change and no code line does. */
+export const COMMENT_ONLY_GRANT = { hunks: [], removed: [], added: [] } as const;

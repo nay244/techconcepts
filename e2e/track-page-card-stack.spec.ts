@@ -1166,6 +1166,10 @@ test.describe('Tab and Shift+Tab never leave focus under the header', () => {
           expect(s.clearTop, s.name).toBeGreaterThanOrEqual(0);
           expect(s.clearBottom, s.name).toBeGreaterThanOrEqual(0);
         }
+        // The panel folds away once focus leaves the header (D25); Menu opens it again for the height.
+        expect(await page.locator('#menu').getAttribute('aria-expanded')).toBe('false');
+        await page.locator('#menu').click();
+        await settle(page);
         const head = await page.locator('.site-head').evaluate((el) => el.getBoundingClientRect().height);
         expect(Math.abs(head - 329)).toBeLessThanOrEqual(2);
       });

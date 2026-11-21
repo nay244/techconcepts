@@ -41,7 +41,7 @@ On GitHub, every pull request and every push to `main` or `revamp` runs `npm tes
 - `src/art/` the figures, drawn at build time into the HTML as inline SVG:
   - `kit/` the Anatomy kit the figures are built with (vendored, MIT licence, see `kit/SOURCE.md`)
   - `lumen.css` and `defs.ts` the lumen finish every figure wears
-  - `logo.ts` the TechConcepts mark, drawn once: the header, the footer, the lesson's top bar (through `src/components/LogoMark.tsx`) and the favicon all take it from here
+  - `logo.ts` the TechConcepts mark, drawn once: the header, the footer, the share image and the favicon all take it from here
   - `figures/` the track covers, the small figures on lesson cards, the name tiles on How the Internet Works' cards, and `pages.ts`, the figures for the site's own pages
   - `scenes/` the five lesson figures, and `parts.ts`, the `FIGURE_PARTS` a lesson may name on each
 - `src/scenes/` what moves a figure in the browser: `driver.ts` (the driver contract), `drivers/` (one driver per figure), `motion.ts` (tweens and waits) and the Sequence view
