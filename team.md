@@ -1535,3 +1535,10 @@ Planned on 2026-11-20 in a session of its own on Opus 5.5, started from the sess
 - **Four units building at once drove the load to 19** and the unit suite timed out in files no unit touched; run the final checks with the machine quiet.
 - **Review a unit on its own before stacking two more on it.** B37 was reviewed while B42 built on top, so its two fixes were made once and rebased, not found after three units.
 
+# Job 30: a lesson change without a page load
+
+Planned on 2026-11-21 in the main folder on Fable 5.2, by the owner's word for this plan ("Plan it using Fable 5.2"; direction 2.148). Numbers claimed on `revamp` (3341203): job 30, rows from 2.148, S27, D26, B43, B44, F30. The orchestrator's measurement (a compressed server over `dist`, 15 timed runs, 18 filmed runs, two trials of `@view-transition`; `.superpowers/job30/`) is not counted. Token figures are the agents' reported totals.
+
+| Unit | Agent | Model | Tries | Growth | Result |
+|---|---|---|---|---|---|
+| S27 | scout | Haiku | 1 | 222,540 | `prototypes/s27-job-30-facts.md`: 192 facts on what the console keeps for a lesson's whole life, how the drawing reaches the page and is repainted, which lesson changes share a drawing, the page's head, the links between lessons, progress, the tests and guards, and the size of each prop. |
