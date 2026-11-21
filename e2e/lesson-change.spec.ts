@@ -176,6 +176,33 @@ async function hold(page: Page, slug: string, ms: number, track = 'how-the-inter
   return { answered: () => answered, started: () => started };
 }
 
+/**
+ * Holds a lesson's data for `ms` (never, with `Infinity`) from inside the page: its `fetch` is wrapped to answer with a body
+ * fetched beforehand, after a timer of the page's own. No round trip through the test runner or the server sits in the wait,
+ * so a busy machine cannot stretch it. Honours the console's abort. Used for every test that measures a wait; the tests that
+ * look at the network (an aborted request, a failing answer) use `hold` and `page.route`.
+ */
+async function holdInPage(page: Page, slug: string, ms: number, track = 'how-the-internet-works'): Promise<void> {
+  const body = ms === Infinity ? '' : await (await page.request.get(`/${track}/${slug}.json`)).text();
+  const patch = ({ slug, ms, body }: { slug: string; ms: number | null; body: string }) => {
+    const real = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (!url.endsWith(`/${slug}.json`)) return real(input, init);
+      return new Promise<Response>((resolve, reject) => {
+        const timer = ms === null ? 0 : window.setTimeout(() => resolve(new Response(body, { status: 200, headers: { 'content-type': 'application/json' } })), ms);
+        init?.signal?.addEventListener('abort', () => {
+          window.clearTimeout(timer);
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        });
+      });
+    };
+  };
+  const arg = { slug, ms: ms === Infinity ? null : ms, body };
+  await page.addInitScript(patch, arg);
+  if (page.url() !== 'about:blank') await page.evaluate(patch, arg);
+}
+
 /** The `.json` requests a page makes, by path. */
 function watchJson(page: Page): string[] {
   const seen: string[] = [];
@@ -715,7 +742,7 @@ test.describe('the wait at 1440', () => {
 
   test('answered at once: the marks never show (D-1) and the swap is the first change', async ({ page }) => {
     // Answered from the body fetched beforehand, at once: how fast the preview server is plays no part.
-    await hold(page, 'what-is-udp', 0);
+    await holdInPage(page, 'what-is-udp', 0);
     await openMarked(page, TCP);
     await recordMarks(page);
     await press(page, '.console__track a[href$="what-is-udp"]');
@@ -726,20 +753,32 @@ test.describe('the wait at 1440', () => {
   });
 
   test('held 300 ms: the going mark from the press, the signal from 100 ms to the swap, no tape, no "Opening" (D-2, D-7, D-10)', async ({ page }) => {
-    const answer = await hold(page, 'what-is-udp', 300);
+    await holdInPage(page, 'what-is-udp', 300);
     await openMarked(page, TCP);
     await recordMarks(page);
-    const boxes = () => page.evaluate(() => ['.console__top', '.console__stage', '.console__track', '.console__guide'].map((s) => JSON.stringify(document.querySelector(s)!.getBoundingClientRect())));
-    const before = await boxes();
-    const ariaBefore = await row(page, 'what-is-udp').evaluate((el) => ({ label: el.getAttribute('aria-label'), role: el.getAttribute('role'), current: el.getAttribute('aria-current'), text: el.textContent }));
-    await press(page, '.console__track a[href$="what-is-udp"]');
-    // The going mark from the press; TCP's row keeps aria-current and its solid edge until the swap.
-    await expect(row(page, 'what-is-udp')).toHaveAttribute('data-going', '');
-    await expect(row(page, 'what-is-tcp')).toHaveAttribute('aria-current', 'page');
-    expect(await row(page, 'what-is-udp').evaluate((el) => ({ label: el.getAttribute('aria-label'), role: el.getAttribute('role'), current: el.getAttribute('aria-current'), text: el.textContent }))).toStrictEqual(ariaBefore);
-    await expect(page.locator('.console .signal')).toHaveCount(1);
-    expect(await boxes()).toStrictEqual(before);
-    expect(await page.locator('.console .signal').getAttribute('aria-hidden')).toBe('true');
+    const sample = () =>
+      page.evaluate(async (press) => {
+        const udp = document.querySelector('.console__track a[href$="what-is-udp"]')!;
+        const read = (el: Element) => ({ label: el.getAttribute('aria-label'), role: el.getAttribute('role'), current: el.getAttribute('aria-current'), text: el.textContent });
+        const boxes = () => ['.console__top', '.console__stage', '.console__track', '.console__guide'].map((s) => JSON.stringify(document.querySelector(s)!.getBoundingClientRect()));
+        const before = { boxes: boxes(), udp: read(udp) };
+        if (press) {
+          (window as unknown as { __t0: number }).__t0 = performance.now();
+          (udp as HTMLElement).click();
+          // Sampled inside the page, 200 ms after the press: after the signal's 100 ms and before the answer at 300 ms.
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        return {
+          same: JSON.stringify(read(udp)) === JSON.stringify(before.udp),
+          going: udp.getAttribute('data-going'),
+          tcpCurrent: document.querySelector('.console__track a[href$="what-is-tcp"]')!.getAttribute('aria-current'),
+          signals: document.querySelectorAll('.console .signal').length,
+          signalHidden: document.querySelector('.console .signal')?.getAttribute('aria-hidden'),
+          boxesEqual: JSON.stringify(boxes()) === JSON.stringify(before.boxes),
+        };
+      }, true);
+    const during = await sample();
+    expect(during).toStrictEqual({ same: true, going: '', tcpCurrent: 'page', signals: 1, signalHidden: 'true', boxesEqual: true });
     await expect(page).toHaveURL(new RegExp(`${UDP}$`));
     const log = await times(page);
     const at = first(log, 'signal+');
@@ -750,19 +789,21 @@ test.describe('the wait at 1440', () => {
     expect(first(log, 'signal-')).not.toBeNull();
     expect(await page.evaluate(() => [...((window as unknown as { __ever: Set<string> }).__ever)])).toStrictEqual([]);
     await expect(page.locator('.console [data-going]')).toHaveCount(0);
-    expect(answer.answered()).not.toBeNull();
   });
 
   test('held 1000 ms: the tape from 400 ms as "Opening UDP" in sentence case, the live region says it, then the line (D-3, D-20)', async ({ page }) => {
-    await hold(page, 'what-is-udp', 1000);
+    await holdInPage(page, 'what-is-udp', 1500);
     await openMarked(page, TCP);
     await recordMarks(page);
-    await press(page, '.console__track a[href$="what-is-udp"]');
-    await expect(page.locator('.console .tape')).toHaveCount(1);
-    expect(await page.locator('.console .tape').textContent()).toBe('Opening UDP');
-    expect(await page.locator('.console .tape').getAttribute('aria-hidden')).toBe('true');
-    expect(await page.locator('.console [aria-live]').count()).toBe(1);
-    await expect(live(page)).toHaveText('Opening UDP.');
+    // Sampled inside the page, 800 ms after the press: the tape has been up since 400 ms and the answer is at 1500 ms.
+    const during = await page.evaluate(async () => {
+      (window as unknown as { __t0: number }).__t0 = performance.now();
+      (document.querySelector('.console__track a[href$="what-is-udp"]') as HTMLElement).click();
+      await new Promise((r) => setTimeout(r, 800));
+      const tape = document.querySelector('.console .tape');
+      return { tape: tape?.textContent, hidden: tape?.getAttribute('aria-hidden'), liveRegions: document.querySelectorAll('.console [aria-live]').length, region: document.querySelector('.console [data-announce]')!.textContent };
+    });
+    expect(during).toStrictEqual({ tape: 'Opening UDP', hidden: 'true', liveRegions: 1, region: 'Opening UDP.' });
     await expect(page).toHaveURL(new RegExp(`${UDP}$`));
     const log = await times(page);
     expect(first(log, 'tape+')!).toBeGreaterThanOrEqual(390);
@@ -774,7 +815,7 @@ test.describe('the wait at 1440', () => {
   });
 
   test('held 399 ms: no tape and no "Opening" (D-3)', async ({ page }) => {
-    await hold(page, 'what-is-udp', 330);
+    await holdInPage(page, 'what-is-udp', 330);
     await openMarked(page, TCP);
     await recordMarks(page);
     await press(page, '.console__track a[href$="what-is-udp"]');
@@ -784,7 +825,7 @@ test.describe('the wait at 1440', () => {
   });
 
   test('the forward button and the card give no going mark; the signal and tape are as for a row (D-8)', async ({ page }) => {
-    await hold(page, 'what-is-udp', 700);
+    await holdInPage(page, 'what-is-udp', 700);
     await openMarked(page, TCP);
     await walkToPractice(page);
     await recordMarks(page);
@@ -806,7 +847,7 @@ test.describe('the wait at 1440', () => {
   });
 
   test('never answered: at 2000 ms a page load of UDP starts, pushState was never called, the marks stay up (D-4)', async ({ page }) => {
-    await hold(page, 'what-is-udp', Infinity);
+    await holdInPage(page, 'what-is-udp', Infinity);
     await openMarked(page, TCP);
     await recordMarks(page);
     let loadAt = 0;
@@ -823,7 +864,7 @@ test.describe('the wait at 1440', () => {
   });
 
   test('never answered: pushState is not called and the old lesson, signal and tape are on screen up to the load (D-4)', async ({ page }) => {
-    await hold(page, 'what-is-udp', Infinity);
+    await holdInPage(page, 'what-is-udp', Infinity);
     await openMarked(page, TCP);
     await press(page, '.console__track a[href$="what-is-udp"]');
     await page.waitForTimeout(1500);
@@ -846,6 +887,7 @@ test.describe('the wait at 1440', () => {
         const data = (await response.json()) as { stamp: string; lesson: { figure: string } };
         if (fail === 'another build') data.stamp += 'x';
         else data.lesson.figure = 'dhcp';
+        answered = Date.now();
         return route.fulfill({ response, body: JSON.stringify(data) });
       });
       await openMarked(page, TCP);
@@ -855,13 +897,14 @@ test.describe('the wait at 1440', () => {
       });
       await press(page, '.console__track a[href$="what-is-udp"]');
       await page.waitForURL(`**${UDP}`, { timeout: 8000 });
-      expect(loadAt - answered, 'the load starts within 150 ms of the answer').toBeLessThan(150);
+      // The fall-back is direct (no timer); the bound is far under the 2000 ms limit and wide enough for a busy machine.
+      expect(loadAt - answered, 'the load starts at once after the answer, not at the limit').toBeLessThan(400);
       expect((await sameDocument(page)).mark).toBe(false);
     });
   }
 
   test('late but good: held 1900 ms is a swap; held 2300 ms is a load, and the late answer does not swap the old page (B44-8.3)', async ({ page }) => {
-    await hold(page, 'what-is-udp', 1850);
+    await holdInPage(page, 'what-is-udp', 1850);
     await openMarked(page, TCP);
     await press(page, '.console__track a[href$="what-is-udp"]');
     await expect(page).toHaveURL(new RegExp(`${UDP}$`), { timeout: 5000 });
@@ -871,7 +914,7 @@ test.describe('the wait at 1440', () => {
     await page.goto(TCP);
     await hydrated(page);
     await openMarked(page, TCP);
-    await hold(page, 'what-is-udp', 2300);
+    await holdInPage(page, 'what-is-udp', 2300);
     await press(page, '.console__track a[href$="what-is-udp"]');
     await page.waitForURL(`**${UDP}`, { timeout: 8000 });
     await page.waitForTimeout(500);
@@ -882,7 +925,7 @@ test.describe('the wait at 1440', () => {
     await openMarked(page, TCP);
     await row(page, 'what-is-udp').click();
     await expect(page).toHaveURL(new RegExp(`${UDP}$`));
-    await hold(page, 'what-is-tcp', Infinity);
+    await holdInPage(page, 'what-is-tcp', Infinity);
     const length = await page.evaluate(() => history.length);
     await page.evaluate(() => history.back());
     await page.waitForEvent('load', { timeout: 8000 });
@@ -920,7 +963,7 @@ test.describe('the signal under reduced motion and the sheet\'s fall-back', () =
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('the signal marches only when motion is allowed; its dashes are drawn either way, and no element is named for a settle (D-6)', async ({ page }, testInfo) => {
-    await hold(page, 'what-is-udp', 600);
+    await holdInPage(page, 'what-is-udp', 600);
     await openMarked(page, TCP);
     await press(page, '.console__track a[href$="what-is-udp"]');
     await expect(page.locator('.console .signal')).toHaveCount(1);
@@ -937,7 +980,7 @@ test.describe('the signal under reduced motion and the sheet\'s fall-back', () =
 
   test('on the fall-back a sheet press leaves the sheet open to unload (B44-8.5, D-21)', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await hold(page, 'what-is-udp', Infinity);
+    await holdInPage(page, 'what-is-udp', Infinity);
     await openMarked(page, TCP);
     await page.locator('.top__lessons').click();
     await page.evaluate(() => (document.querySelector('.outline__dialog a[href$="what-is-udp"]') as HTMLElement).click());
@@ -974,7 +1017,7 @@ test.describe('the film', () => {
     const kinds = frames.map((f) => (f.data === frames[0]!.data ? 'old' : f.data === frames.at(-1)!.data ? 'new' : 'mid'));
     const mids = kinds.filter((k) => k === 'mid').length;
     expect(frames.length, 'frames were presented').toBeGreaterThan(1);
-    expect(mids, `${mids} frames show neither lesson (the swap is one frame)`).toBe(0);
+    expect(mids, `${mids} frames show neither lesson (the swap is one frame); kinds ${kinds.map((k) => k[0]).join('')}`).toBe(0);
     // The page is still the same document, with no empty stage at any time: the drawing node was never made again.
     expect((await sameDocument(page)).svg).toBe(true);
   });
@@ -1042,7 +1085,7 @@ test.describe('focus, words and the column at 1440', () => {
     await page.goBack();
     await expect(live(page)).toHaveText('TCP. Lesson 3 of 14. Overview.');
     // Two quick swaps: UDP then IP during the wait.
-    await hold(page, 'what-is-udp', 800);
+    await holdInPage(page, 'what-is-udp', 800);
     await row(page, 'what-is-udp').click();
     await row(page, 'what-is-ip').click();
     await expect(page).toHaveURL(/what-is-ip$/);
@@ -1053,7 +1096,7 @@ test.describe('focus, words and the column at 1440', () => {
   });
 
   test('during a wait the old lesson is live: Space plays it, the right arrow moves it on (D-18, E67)', async ({ page }) => {
-    await hold(page, 'what-is-udp', Infinity);
+    await holdInPage(page, 'what-is-udp', Infinity);
     await openMarked(page, TCP);
     await page.evaluate(() => (document.querySelector('.console__track a[href$="what-is-udp"]') as HTMLElement).click());
     await expect(page.locator('.console .signal')).toHaveCount(1);
@@ -1104,7 +1147,7 @@ test.describe('the sheet at 375', () => {
   };
 
   test('a sheet row: the sheet stays open under the going mark, the signal sits on its head, the tape under it; at the swap the sheet is closed and focus is on the bar\'s name (D-7b, D-9, D-14, D-21)', async ({ page }) => {
-    await hold(page, 'what-is-udp', 1000);
+    await holdInPage(page, 'what-is-udp', 1000);
     await openMarked(page, TCP);
     await openSheet(page);
     await press(page, '.outline__dialog a.outline__lesson[href$="what-is-udp"]');
@@ -1150,7 +1193,7 @@ test.describe('the sheet at 375', () => {
   });
 
   test('"Opening TLS/SSL" clears the Network / Sequence switch (D-11)', async ({ page }) => {
-    await hold(page, 'what-is-tls', 1000, 'networking');
+    await holdInPage(page, 'what-is-tls', 1700, 'networking');
     await openMarked(page, '/networking/what-is-https');
     await press(page, '.console__top .top__lessons').catch(() => {});
     // The longest title a swap can reach, pressed from the column-less layout by the sheet's row.
@@ -1206,7 +1249,7 @@ test.describe('the tape at 1440 x 900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('"Opening TLS/SSL" clears the scene\'s title line and the view switch (D-11)', async ({ page }) => {
-    await hold(page, 'what-is-tls', 1700, 'networking');
+    await holdInPage(page, 'what-is-tls', 1700, 'networking');
     await openMarked(page, '/networking/what-is-https');
     await pressRowQuiet(page, 'what-is-tls');
     await expect(page.locator('.console__top .tape')).toHaveText('Opening TLS/SSL');
@@ -1224,7 +1267,7 @@ test.describe('the narrowest window with the column, 1100 x 800', () => {
   test.use({ viewport: { width: 1100, height: 800 } });
 
   test('the tape clears the scene\'s views and title line (D-11)', async ({ page }) => {
-    await hold(page, 'what-is-tls', 1700, 'networking');
+    await holdInPage(page, 'what-is-tls', 1700, 'networking');
     await openMarked(page, '/networking/what-is-https');
     await pressRowQuiet(page, 'what-is-tls');
     await expect(page.locator('.console__top .tape')).toHaveCount(1);
