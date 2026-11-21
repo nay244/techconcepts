@@ -4,7 +4,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 
 # Job 30: a lesson change without a page load
 
-**Status: planned (2026-11-21; 2.148), waiting for the owner's go.** Asked by the owner on 2026-11-21: "navigating between the different lessons, TCP, UDP, IP, etc.. causes a reload to a new page. However, for Protocol Explorer each of their topics are all under one page with no reload between each topic", then "Plan it using Fable 5.2". Planned in the main folder on Fable 5.2 by that word. Numbers claimed on `revamp` (3341203, checked free): job 30, direction rows from 2.148, S27, D26, B43, B44, F30.
+**Status: the owner's go, 2026-11-21 (2.149): "Go, on Opus 5.5". Carried out by a fresh session on Opus 5.5, starting with D26.** Planned under 2.148. Asked by the owner on 2026-11-21: "navigating between the different lessons, TCP, UDP, IP, etc.. causes a reload to a new page. However, for Protocol Explorer each of their topics are all under one page with no reload between each topic", then "Plan it using Fable 5.2". Planned in the main folder on Fable 5.2 by that word. Numbers claimed on `revamp` (3341203, checked free): job 30, direction rows from 2.148, S27, D26, B43, B44, F30.
 
 ## Inputs
 
@@ -14,7 +14,7 @@ How the work is divided is in `CLAUDE.md` (Team); how a job runs is in `docs/orc
 | **Done means** | On a change between two lessons that share a drawing: no page load, the drawing's node is the one that was there, no filmed frame has an empty stage, and the console is the same as that lesson loaded fresh. Every lesson keeps its address, its built page and its Overview without JavaScript. On `revamp` `npx vitest run --maxWorkers=3`, `npm run build` and CI's end-to-end pass green with 0 failed; the measurement below repeated and reported; the ledger and the direction doc updated. Nothing pushed. |
 | **Budget** | 1.6 to 2.5 million subagent tokens of growth with the scout's 0.22 (design 0.3 to 0.5; one spec review 0.2 to 0.35; builds 0.6 to 1.0; build reviews 0.25 to 0.4). A stop for the owner at 3.2 million. |
 | **References** | `prototypes/s27-job-30-facts.md` (the scout); the orchestrator's measurement, its scripts, log and sample frames in `.superpowers/job30/` (git-ignored: `serve.mjs`, `measure.mjs`, `film.mjs`, `measure.log`, `frames/`); `docs/research/2026-11-03-reference-research.md` (Protocol Explorer); `docs/direction.md` §7 and 2.123. |
-| **Models** | scout Haiku, builder Sonnet, reviewer Opus, as `.claude/agents/` has them. `designer` takes the session's model, and this session is on Fable by the owner's word for the plan only, so the designer is started with Opus 5.5 named. Who carries the job out (a fresh session on Opus 5.5, the standing rule, or this one on Fable) is the owner's answer at the go. |
+| **Models** | scout Haiku, builder Sonnet, reviewer Opus, as `.claude/agents/` has them. `designer` takes the session's model, and this session is on Fable by the owner's word for the plan only, so the designer is started with Opus 5.5 named. The job is carried out by a fresh session on Opus 5.5 (the owner at the go, 2.149); nothing in it runs on Fable. |
 
 ## What the measurement found
 
